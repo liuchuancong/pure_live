@@ -203,6 +203,53 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       );
     }
 
+    // The answer's own head: how many songs are in hand, and the two verbs
+    // the whole answer has. Every other song list in the module gives them —
+    // the charts, the playlists, the album, the artist, 我的列表, 本地音乐 —
+    // and here the page only had the number, so a search answer could only be
+    // taken one row at a time.
+    Widget resultsHead() {
+      final songs = state.songs;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(
+                t.music.songsCount(count: songs.length),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+              ),
+            ),
+            Wrap(
+              spacing: DsSpace.s8,
+              runSpacing: DsSpace.s8,
+              children: [
+                DsButton(
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.play, size: 16),
+                  onPressed: () => unawaited(playerController.playAll(songs)),
+                  child: Text(t.music.playAll),
+                ),
+                // A one-song answer has nothing to shuffle; the verb would be
+                // a button that does not do anything.
+                if (songs.length > 1)
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.shuffle, size: 16),
+                    onPressed: () => unawaited(playerController.playAll([...songs]..shuffle(math.Random()))),
+                    child: Text(t.music.modeRandom),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final Widget body;
     if (state.query.isEmpty) {
       body = history.isEmpty && hot.isEmpty
@@ -316,13 +363,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
-                child: Text(
-                  t.music.songsCount(count: state.songs.length),
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-              ),
+              resultsHead(),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: DsSpace.s16),
@@ -350,13 +391,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
-                    child: Text(
-                      t.music.songsCount(count: state.songs.length),
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                    ),
-                  ),
+                  resultsHead(),
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.only(bottom: DsSpace.s16),
