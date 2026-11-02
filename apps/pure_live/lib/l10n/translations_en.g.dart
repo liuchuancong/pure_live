@@ -1400,10 +1400,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get selectionRemove => 'Remove';
 	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
 	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
-	@override String downloadsSummary({required Object count, required Object size}) => 'Downloaded ${count} · ${size}';
-	@override String get downloadFilterAll => 'All';
-	@override String get downloadFilterActive => 'In progress';
-	@override String get downloadFilterDone => 'Finished';
 	@override String get downloadFilterEmpty => 'Nothing in this filter yet';
 	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
@@ -1469,7 +1465,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadPause => 'Pause';
 	@override String get downloadCancel => 'Cancel';
 	@override String get downloadsEmptyTitle => 'No downloads yet';
-	@override String downloadsEmptyDescription({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.';
+	@override String get downloadsEmptyDescription => 'Download from a song row’s menu and it appears here.';
 	@override String get localAddFolder => 'Add a folder';
 	@override String get localHint => 'Add a folder of audio files; the scan makes them play like online songs.';
 	@override String localFiles({required Object count}) => '${count} files';
@@ -5899,10 +5895,6 @@ extension on TranslationsEn {
 			'music.selectionRemove' => 'Remove',
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
-			'music.downloadsSummary' => ({required Object count, required Object size}) => 'Downloaded ${count} · ${size}',
-			'music.downloadFilterAll' => 'All',
-			'music.downloadFilterActive' => 'In progress',
-			'music.downloadFilterDone' => 'Finished',
 			'music.downloadFilterEmpty' => 'Nothing in this filter yet',
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
@@ -5968,7 +5960,7 @@ extension on TranslationsEn {
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
 			'music.downloadsEmptyTitle' => 'No downloads yet',
-			'music.downloadsEmptyDescription' => ({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.',
+			'music.downloadsEmptyDescription' => 'Download from a song row’s menu and it appears here.',
 			'music.localAddFolder' => 'Add a folder',
 			'music.localHint' => 'Add a folder of audio files; the scan makes them play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
@@ -6052,12 +6044,12 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
 			'music.desktopLyricAlignCenter' => 'Center',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignRight' => 'Right',
 			'music.desktopLyricColorWhite' => 'White',
 			'music.desktopLyricColorYellow' => 'Yellow',
@@ -6566,12 +6558,12 @@ extension on TranslationsEn {
 			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
 			'recorder.pollingEnable' => 'Turn on',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
 			'recorder.cacheLimitEnabledDesc' => 'Delete the oldest finished takes when the cap is exceeded; active recordings are never deleted.',
 			'recorder.cacheLimit' => 'Cache cap',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.cacheLimitDesc' => 'Measured in MB; above it the oldest takes are deleted, never an active recording.',
 			'recorder.cacheSize' => 'Current recording cache',
 			'recorder.cacheSizeDesc' => 'Total bytes of finished and active files in the managed folder.',
@@ -7080,12 +7072,12 @@ extension on TranslationsEn {
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
 			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'No restart after the proxy app changes.',
@@ -7594,12 +7586,12 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => 'Bigger buffers and reconnect backoff. Trades memory for fewer stalls.',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => 'Low latency',
 			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => 'How audio and video clocks align. audio is the mpv default; display-resample is smoothest but GPU heavy and pairs with interpolation; vdrop/drop variants drop frames on drift. Desktop only.',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
 			'settings.playerGuideEntryInterpolationBody' => 'Motion-interpolated rendering. Noticeably smoother pans; requires display-resample sync and real GPU headroom. Desktop only.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryScaleTitle' => '--scale',
 			'settings.playerGuideEntryScaleBody' => 'Upscaling kernel. lanczos is the balanced pick; ewa_lanczossharp the sharpest; ewa_lanczos4sharpest is designed for interpolation; bilinear/nearest are fastest but soft or blocky. Mobile only offers lanczos and bilinear.',
 			'settings.playerGuideEntryDeinterlaceTitle' => '--deinterlace',
@@ -8108,12 +8100,12 @@ extension on TranslationsEn {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
 			'settings.douyuForceRenew' => 'Renew the Douyu login every 5 minutes',
 			'settings.douyuForceRenewDesc' => 'Refresh the Douyu cookie periodically after signing in so long sessions keep their login.',
@@ -8622,12 +8614,12 @@ extension on TranslationsEn {
 			'vod.downloadRetryOff' => 'No retry',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
 			'vod.downloadRetryDelay' => 'Retry interval',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
 			'vod.downloadManagerTitle' => 'Downloads',
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadClearFinished' => 'Clear finished',
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',

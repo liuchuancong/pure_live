@@ -3898,18 +3898,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '正在下载 {count} 首'
 	String downloadsActive({required Object count}) => '正在下载 ${count} 首';
 
-	/// zh-CN: '已完成 {count} 首 · {size}'
-	String downloadsSummary({required Object count, required Object size}) => '已完成 ${count} 首 · ${size}';
-
-	/// zh-CN: '全部'
-	String get downloadFilterAll => '全部';
-
-	/// zh-CN: '进行中'
-	String get downloadFilterActive => '进行中';
-
-	/// zh-CN: '已完成'
-	String get downloadFilterDone => '已完成';
-
 	/// zh-CN: '这一类还没有任务'
 	String get downloadFilterEmpty => '这一类还没有任务';
 
@@ -4105,8 +4093,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '还没有下载任务'
 	String get downloadsEmptyTitle => '还没有下载任务';
 
-	/// zh-CN: '在歌曲行的「更多」里下载，文件会保存到 {directory}。'
-	String downloadsEmptyDescription({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。';
+	/// zh-CN: '在歌曲行的「更多」里下载，文件会出现在这里。'
+	String get downloadsEmptyDescription => '在歌曲行的「更多」里下载，文件会出现在这里。';
 
 	/// zh-CN: '添加文件夹'
 	String get localAddFolder => '添加文件夹';
@@ -14348,10 +14336,6 @@ extension on Translations {
 			'music.selectionRemove' => '移除',
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
-			'music.downloadsSummary' => ({required Object count, required Object size}) => '已完成 ${count} 首 · ${size}',
-			'music.downloadFilterAll' => '全部',
-			'music.downloadFilterActive' => '进行中',
-			'music.downloadFilterDone' => '已完成',
 			'music.downloadFilterEmpty' => '这一类还没有任务',
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
@@ -14417,7 +14401,7 @@ extension on Translations {
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
 			'music.downloadsEmptyTitle' => '还没有下载任务',
-			'music.downloadsEmptyDescription' => ({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。',
+			'music.downloadsEmptyDescription' => '在歌曲行的「更多」里下载，文件会出现在这里。',
 			'music.localAddFolder' => '添加文件夹',
 			'music.localHint' => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
@@ -14501,12 +14485,12 @@ extension on Translations {
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
 			'music.desktopLyricAlignCenter' => '居中',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignRight' => '右对齐',
 			'music.desktopLyricColorWhite' => '白色',
 			'music.desktopLyricColorYellow' => '黄色',
@@ -15015,12 +14999,12 @@ extension on Translations {
 			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。',
 			'recorder.pollingEnable' => '打开',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
 			'recorder.cacheLimitEnabled' => '限制录制缓存',
 			'recorder.cacheLimitEnabledDesc' => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。',
 			'recorder.cacheLimit' => '缓存上限',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.cacheLimitDesc' => '超过上限从最旧的已完成录像删起；正在录制的不动。',
 			'recorder.cacheSize' => '当前录制缓存',
 			'recorder.cacheSizeDesc' => '录制目录中已完成与正在录制的文件总大小。',
@@ -15529,12 +15513,12 @@ extension on Translations {
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
 			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理开关变化后无需重启应用。',
@@ -16043,12 +16027,12 @@ extension on Translations {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => '低延迟',
 			'settings.playerGuideEntryPresetLowLatencyBody' => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
 			'settings.playerGuideEntryInterpolationBody' => '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryScaleTitle' => '--scale',
 			'settings.playerGuideEntryScaleBody' => '画面放大算法。lanczos 均衡推荐；ewa_lanczossharp 最锐利；ewa_lanczos4sharpest 专为插帧设计；bilinear/nearest 最快但糊或块状。移动端只提供 lanczos 与 bilinear。',
 			'settings.playerGuideEntryDeinterlaceTitle' => '--deinterlace',
@@ -16557,12 +16541,12 @@ extension on Translations {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
 			'settings.douyuForceRenew' => '斗鱼每 5 分钟自动续期',
 			'settings.douyuForceRenewDesc' => '登录后定期续期 Cookie，降低长时间观看掉登录的概率。',
@@ -17071,12 +17055,12 @@ extension on Translations {
 			'vod.downloadRetryOff' => '不重试',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
 			'vod.downloadRetryDelay' => '重试间隔',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
 			'vod.downloadManagerTitle' => '下载管理',
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadClearFinished' => '清除已完成',
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',
