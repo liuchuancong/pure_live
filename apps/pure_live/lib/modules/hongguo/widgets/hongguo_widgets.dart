@@ -534,15 +534,16 @@ final class HongguoRankRow extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (series.category.isNotEmpty)
+                if (series.category.isNotEmpty || series.episodeCount > 0)
                   Text(
-                    series.category,
+                    [
+                      if (series.category.isNotEmpty) series.category,
+                      if (series.episodeCount > 0) t.hongguo.allEpisodesCount(count: series.episodeCount),
+                    ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.caption.copyWith(color: colors.textMuted),
                   ),
-                // The board's social figures sit beside the heat it prints at
-                // the title's end, as the station's own row lays them out.
                 if (series.favoriteText.isNotEmpty || series.likeText.isNotEmpty)
                   Wrap(
                     spacing: DsSpace.s12,
@@ -551,13 +552,6 @@ final class HongguoRankRow extends StatelessWidget {
                       if (series.favoriteText.isNotEmpty) _RankFigure(icon: DsIcons.heart, label: series.favoriteText),
                       if (series.likeText.isNotEmpty) _RankFigure(icon: DsIcons.thumbsUp, label: series.likeText),
                     ],
-                  ),
-                if (series.intro.isNotEmpty)
-                  Text(
-                    series.intro,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
                   ),
                 if (statusTags.isNotEmpty || series.score.isNotEmpty || series.today)
                   Wrap(
