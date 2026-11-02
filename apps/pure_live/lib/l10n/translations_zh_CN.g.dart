@@ -988,6 +988,12 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '其他方式'
 	String get transportsSection => '其他方式';
 
+	/// zh-CN: '备份方式'
+	String get methodsSection => '备份方式';
+
+	/// zh-CN: '帮助与管理'
+	String get moreSection => '帮助与管理';
+
 	late final Translations$backup$webdavHelp$zh_CN webdavHelp = Translations$backup$webdavHelp$zh_CN.internal(_root);
 	late final Translations$backup$cloud$zh_CN cloud = Translations$backup$cloud$zh_CN.internal(_root);
 }
@@ -10720,6 +10726,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '复制路径'
 	String get storageFolderCopyPath => '复制路径';
 
+	/// zh-CN: '本地备份'
+	String get localBackupTitle => '本地备份';
+
+	/// zh-CN: '把备份文件写进本机文件夹，并从中恢复。'
+	String get localBackupDescription => '把备份文件写进本机文件夹，并从中恢复。';
+
 	/// zh-CN: '云端备份'
 	String get cloudBackupTitle => '云端备份';
 
@@ -13077,6 +13089,8 @@ extension on Translations {
 			'backup.secretsSwitchTitle' => '备份与同步时包含账号凭据',
 			'backup.secretsSwitchDescription' => '关闭时任何备份、上传与局域网同步都不会带上 Cookie 与密码；打开后在挑选内容时才会出现该项。',
 			'backup.transportsSection' => '其他方式',
+			'backup.methodsSection' => '备份方式',
+			'backup.moreSection' => '帮助与管理',
 			'backup.webdavHelp.introSection' => '开始前说明',
 			'backup.webdavHelp.introBody' => '坚果云支持通过 WebDAV 备份和管理文件。本页以坚果云个人账号为示例。\n免费版当前每月上传流量 1 GB、下载流量 3 GB，空间随上传的数据增长。套餐规则可能调整，依赖额度前请查看官方页面。',
 			'backup.webdavHelp.paramsSection' => '连接参数',
@@ -13288,10 +13302,10 @@ extension on Translations {
 			'favorites.refreshFailed' => ({required int count}) => '${count} 个直播间刷新失败',
 			'favorites.statusLiveNow' => '已开播',
 			'favorites.statusOfflineNow' => '未开播',
-			'favorites.justStarted' => '刚刚开播',
-			'favorites.liveFor' => ({required Object duration}) => '已播 ${duration}',
 			_ => null,
 		} ?? switch (path) {
+			'favorites.justStarted' => '刚刚开播',
+			'favorites.liveFor' => ({required Object duration}) => '已播 ${duration}',
 			'favorites.durationMinutes' => ({required Object m}) => '${m} 分钟',
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} 小时 ${m} 分',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} 天 ${h} 小时',
@@ -13802,10 +13816,10 @@ extension on Translations {
 			'iptv.favouritesEmptyTitle' => '还没有收藏频道',
 			'iptv.favouritesEmptyDescription' => '在频道列表里点收藏，频道会出现在这里。',
 			'iptv.zapperTitle' => '换台',
-			'iptv.zapperOpen' => '换台面板',
-			'iptv.zapperGroups' => '分组',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.zapperOpen' => '换台面板',
+			'iptv.zapperGroups' => '分组',
 			'iptv.zapperChannels' => '频道',
 			'iptv.zapperProgrammes' => '节目',
 			'iptv.zapperHint' => '方向键选择，确认键播放或回看，返回键收起。',
@@ -14316,10 +14330,10 @@ extension on Translations {
 			'music.clearQueue' => '清空播放队列',
 			'music.clearQueueConfirmTitle' => '清空播放队列？',
 			'music.clearQueueConfirmBody' => '队列中的所有歌曲都会被移除，此操作无法撤销。',
-			'music.exportLyric' => '导出歌词',
-			'music.associateLyric' => '关联本地歌词',
 			_ => null,
 		} ?? switch (path) {
+			'music.exportLyric' => '导出歌词',
+			'music.associateLyric' => '关联本地歌词',
 			'music.associateLyricDone' => '已关联歌词',
 			'music.associateLyricFailed' => '关联失败：文件里没有可用的歌词',
 			'music.lyricOverrideRemove' => '取消关联歌词',
@@ -14830,10 +14844,10 @@ extension on Translations {
 			'recorder.startNowStarted' => '已开始录制',
 			'recorder.startNowOffline' => '直播间未开播',
 			'recorder.startNowNoStream' => '没有可录制的线路',
-			'recorder.startNowTimeout' => '读取直播流超时',
-			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.startNowTimeout' => '读取直播流超时',
+			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'recorder.cacheOtherRoot' => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。',
 			'recorder.searchHint' => '搜索直播间添加录制',
@@ -15344,10 +15358,10 @@ extension on Translations {
 			'settings.danmakuInteractionGroup' => '弹幕交互',
 			'settings.styleTapInteraction' => '点按弹幕',
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
-			'settings.styleLongPressInteraction' => '长按弹幕',
-			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleLongPressInteraction' => '长按弹幕',
+			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
 			'settings.danmakuStyleDescription' => '弹幕的字体、大小、速度、区域、描边与帧率。',
 			'settings.danmakuDisplayDescription' => '聊天列表显示谁、显示什么、怎么排。',
@@ -15858,10 +15872,10 @@ extension on Translations {
 			'settings.qualityStandard' => '标清',
 			'settings.qualitySmooth' => '流畅',
 			'settings.defaultMuted' => '默认静音',
-			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
-			'settings.defaultVolume' => '默认音量',
 			_ => null,
 		} ?? switch (path) {
+			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
+			'settings.defaultVolume' => '默认音量',
 			'settings.defaultVolumeDesc' => '新播放器默认音量：移动端 50%，桌面 100%。',
 			'settings.volumeWheelStep' => '滚轮音量步长',
 			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
@@ -16372,10 +16386,10 @@ extension on Translations {
 			'settings.logExportFormatLog' => '日志文件 (.log)',
 			'settings.logExportFormatJsonl' => 'JSON Lines (.jsonl)',
 			'settings.logRotationGroup' => '文件轮转',
-			'settings.logFileMaxBytes' => '单文件上限',
-			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.logFileMaxBytes' => '单文件上限',
+			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
 			'settings.logFilesKept' => '保留文件数',
 			'settings.logFilesKeptDesc' => '写满一个文件后轮转，超出保留数的旧文件会删除。',
 			'settings.logFilesKeptUnlimited' => '不限制',
@@ -16414,6 +16428,8 @@ extension on Translations {
 			'settings.hongguoDownloadTitle' => '视频下载',
 			'settings.hongguoDownloadDescription' => '下载队列、清晰度与保存目录',
 			'settings.storageFolderCopyPath' => '复制路径',
+			'settings.localBackupTitle' => '本地备份',
+			'settings.localBackupDescription' => '把备份文件写进本机文件夹，并从中恢复。',
 			'settings.cloudBackupTitle' => '云端备份',
 			'settings.cloudBackupDescription' => '登录后把备份存到云端，换设备登录同一账号即可恢复。',
 			'settings.cloudAdminTitle' => '账号管理',
@@ -16884,12 +16900,12 @@ extension on Translations {
 			'wallpaper.sourceAlcyTx' => '栗次元 · tx',
 			'wallpaper.sourceAlcyLai' => '栗次元 · lai',
 			'wallpaper.sourceAlcyXhl' => '栗次元 · xhl',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyBd' => '栗次元 · bd',
 			'wallpaper.groupWuming' => '无铭 API',
 			'wallpaper.sourceWumingGirl' => '无铭随机美囡图片',
 			'wallpaper.sourceWumingBlackStocking' => '无铭随机黑丝图片',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceWumingDouyinGirl' => '抖音美女·无铭API',
 			'wallpaper.sourceWumingWhiteStocking' => '无铭随机白丝图片',
 			'wallpaper.sourceWumingDouyinGirlAlt' => '无铭随机抖音美女图片',

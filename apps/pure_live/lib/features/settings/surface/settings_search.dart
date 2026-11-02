@@ -428,9 +428,10 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.storageFolders, s.storageFolderScreenshots, 'screenshots tray pictures capture 截图 图片 拍摄'),
     _hit(SettingsSection.storageFolders, s.storageFoldersResetAll, 'reset all folders default restore 全部 恢复 默认 重置 还原'),
     // Backup.
-    _hit(SettingsSection.backup, t.backup.createTitle, 'backup create 备份 创建'),
-    _hit(SettingsSection.backup, t.backup.createFollowsTitle, 'follows backup 关注 备份'),
-    _hit(SettingsSection.backup, t.backup.folderTitle, 'backup folder 备份 文件夹'),
+    _hit(SettingsSection.backup, t.backup.summaryTitle, 'backup data summary ways 备份 当前数据 方式'),
+    _hit(SettingsSection.localBackup, t.backup.createTitle, 'backup create local file 备份 创建 本地 文件'),
+    _hit(SettingsSection.localBackup, t.backup.createFollowsTitle, 'follows backup 关注 备份'),
+    _hit(SettingsSection.localBackup, t.backup.folderTitle, 'backup folder 备份 文件夹'),
     _hit(SettingsSection.webdavSync, t.backup.webdavAccounts, 'webdav server accounts 服务器 账号 同步'),
     _hit(SettingsSection.webdavSync, t.backup.webdavAddAccount, 'webdav account add more server 账号 添加 多 服务器'),
     _hit(

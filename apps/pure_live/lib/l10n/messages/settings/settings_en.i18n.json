@@ -1330,6 +1330,8 @@
   "hongguoDownloadTitle": "Downloads",
   "hongguoDownloadDescription": "The download queue, quality and save folder",
   "storageFolderCopyPath": "Copy path",
+  "localBackupTitle": "Local backup",
+  "localBackupDescription": "Write backup files into a folder on this device and restore from it.",
   "cloudBackupTitle": "Cloud backup",
   "cloudBackupDescription": "Sign in to keep a backup in the cloud; sign in on another device to restore it.",
   "cloudAdminTitle": "Accounts",

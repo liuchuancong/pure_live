@@ -164,6 +164,8 @@
   "secretsSwitchTitle": "备份与同步时包含账号凭据",
   "secretsSwitchDescription": "关闭时任何备份、上传与局域网同步都不会带上 Cookie 与密码；打开后在挑选内容时才会出现该项。",
   "transportsSection": "其他方式",
+  "methodsSection": "备份方式",
+  "moreSection": "帮助与管理",
   "webdavHelp": {
     "introSection": "开始前说明",
     "introBody": "坚果云支持通过 WebDAV 备份和管理文件。本页以坚果云个人账号为示例。\n免费版当前每月上传流量 1 GB、下载流量 3 GB，空间随上传的数据增长。套餐规则可能调整，依赖额度前请查看官方页面。",

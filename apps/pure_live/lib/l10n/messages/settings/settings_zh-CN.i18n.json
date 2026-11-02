@@ -1330,6 +1330,8 @@
   "hongguoDownloadTitle": "视频下载",
   "hongguoDownloadDescription": "下载队列、清晰度与保存目录",
   "storageFolderCopyPath": "复制路径",
+  "localBackupTitle": "本地备份",
+  "localBackupDescription": "把备份文件写进本机文件夹，并从中恢复。",
   "cloudBackupTitle": "云端备份",
   "cloudBackupDescription": "登录后把备份存到云端，换设备登录同一账号即可恢复。",
   "cloudAdminTitle": "账号管理",

@@ -63,6 +63,7 @@ enum SettingsSection {
   storageFolders(DsIcons.hardDrive),
   logs(DsIcons.terminal),
   backup(DsIcons.databaseBackup),
+  localBackup(DsIcons.folderArchive),
   webdavSync(DsIcons.cloudUpload),
   webdavHelp(DsIcons.circleQuestionMark),
   cloudBackup(DsIcons.cloud),
@@ -154,6 +155,7 @@ enum SettingsSection {
     SettingsSection.storageFolders => t.settings.storageFolders,
     SettingsSection.logs => t.settings.navLogs,
     SettingsSection.backup => t.settings.navBackup,
+    SettingsSection.localBackup => t.settings.localBackupTitle,
     SettingsSection.lanSync => t.settings.lanSync,
     SettingsSection.webdavSync => t.settings.webdavSyncTitle,
     SettingsSection.webdavHelp => t.settings.webdavHelpTitle,
@@ -236,6 +238,7 @@ enum SettingsSection {
     SettingsSection.storageFolders => t.settings.storageFoldersDescription,
     SettingsSection.logs => t.settings.logPageDescription,
     SettingsSection.backup => t.settings.backupDescription,
+    SettingsSection.localBackup => t.settings.localBackupDescription,
     SettingsSection.lanSync => t.settings.lanSyncDescription,
     SettingsSection.webdavSync => t.settings.webdavSyncDescription,
     SettingsSection.webdavHelp => t.settings.webdavHelpDescription,
@@ -309,6 +312,7 @@ enum SettingsSection {
     SettingsSection.vodPlayback || SettingsSection.vodDownload || SettingsSection.vodInterface => SettingsSection.vod,
     // The help is a page beside the WebDAV one, not under it: the menu
     // lists the backup, so all three children hang from that row.
+    SettingsSection.localBackup ||
     SettingsSection.webdavSync ||
     SettingsSection.lanSync ||
     SettingsSection.webdavHelp ||
@@ -391,6 +395,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.iptv => const [SettingsSection.iptvBrowse, SettingsSection.iptvGroups],
   SettingsSection.vod => const [SettingsSection.vodPlayback, SettingsSection.vodDownload, SettingsSection.vodInterface],
   SettingsSection.backup => const [
+    SettingsSection.localBackup,
     SettingsSection.cloudBackup,
     SettingsSection.cloudAdmin,
     SettingsSection.webdavSync,

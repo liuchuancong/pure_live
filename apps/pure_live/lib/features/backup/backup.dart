@@ -14,6 +14,7 @@ export 'document/backup_settings.dart';
 export 'panes/backup_actions.dart';
 export 'panes/backup_pane.dart';
 export 'panes/backup_section_picker.dart';
+export 'panes/local_backup_pane.dart';
 export 'webdav/webdav_accounts.dart';
 export 'webdav/webdav_client.dart';
 export 'webdav/webdav_file_manager.dart';

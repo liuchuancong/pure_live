@@ -164,6 +164,8 @@
   "secretsSwitchTitle": "Include account credentials in backups and syncs",
   "secretsSwitchDescription": "Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.",
   "transportsSection": "Other ways",
+  "methodsSection": "Ways to back up",
+  "moreSection": "Help and management",
   "webdavHelp": {
     "introSection": "Before you start",
     "introBody": "Jianguoyun supports WebDAV access for backup and file management. This guide uses a personal Jianguoyun account as an example.\nFree plan: 1 GB uploads/month and 3 GB downloads/month. Storage grows with uploaded data. Plans can change; check the official pages before relying on a quota.",

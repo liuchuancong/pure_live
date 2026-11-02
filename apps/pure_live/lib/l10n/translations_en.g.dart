@@ -387,6 +387,8 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get secretsSwitchTitle => 'Include account credentials in backups and syncs';
 	@override String get secretsSwitchDescription => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.';
 	@override String get transportsSection => 'Other ways';
+	@override String get methodsSection => 'Ways to back up';
+	@override String get moreSection => 'Help and management';
 	@override late final _Translations$backup$webdavHelp$en webdavHelp = _Translations$backup$webdavHelp$en._(_root);
 	@override late final _Translations$backup$cloud$en cloud = _Translations$backup$cloud$en._(_root);
 }
@@ -3716,6 +3718,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoDownloadTitle => 'Downloads';
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
 	@override String get storageFolderCopyPath => 'Copy path';
+	@override String get localBackupTitle => 'Local backup';
+	@override String get localBackupDescription => 'Write backup files into a folder on this device and restore from it.';
 	@override String get cloudBackupTitle => 'Cloud backup';
 	@override String get cloudBackupDescription => 'Sign in to keep a backup in the cloud; sign in on another device to restore it.';
 	@override String get cloudAdminTitle => 'Accounts';
@@ -4750,6 +4754,8 @@ extension on TranslationsEn {
 			'backup.secretsSwitchTitle' => 'Include account credentials in backups and syncs',
 			'backup.secretsSwitchDescription' => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.',
 			'backup.transportsSection' => 'Other ways',
+			'backup.methodsSection' => 'Ways to back up',
+			'backup.moreSection' => 'Help and management',
 			'backup.webdavHelp.introSection' => 'Before you start',
 			'backup.webdavHelp.introBody' => 'Jianguoyun supports WebDAV access for backup and file management. This guide uses a personal Jianguoyun account as an example.\nFree plan: 1 GB uploads/month and 3 GB downloads/month. Storage grows with uploaded data. Plans can change; check the official pages before relying on a quota.',
 			'backup.webdavHelp.paramsSection' => 'Connection details',
@@ -4961,10 +4967,10 @@ extension on TranslationsEn {
 			'favorites.refreshFailed' => ({required int count}) => '${count} rooms could not be refreshed',
 			'favorites.statusLiveNow' => 'Online',
 			'favorites.statusOfflineNow' => 'Offline',
-			'favorites.justStarted' => 'Just started',
-			'favorites.liveFor' => ({required Object duration}) => 'Live ${duration}',
 			_ => null,
 		} ?? switch (path) {
+			'favorites.justStarted' => 'Just started',
+			'favorites.liveFor' => ({required Object duration}) => 'Live ${duration}',
 			'favorites.durationMinutes' => ({required Object m}) => '${m} min',
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} h ${m} min',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} d ${h} h',
@@ -5475,10 +5481,10 @@ extension on TranslationsEn {
 			'iptv.favouritesEmptyTitle' => 'No favourite channels yet',
 			'iptv.favouritesEmptyDescription' => 'Tap the favourite mark in the channel list and it appears here.',
 			'iptv.zapperTitle' => 'Channels',
-			'iptv.zapperOpen' => 'Channel panel',
-			'iptv.zapperGroups' => 'Groups',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.zapperOpen' => 'Channel panel',
+			'iptv.zapperGroups' => 'Groups',
 			'iptv.zapperChannels' => 'Channels',
 			'iptv.zapperProgrammes' => 'Programmes',
 			'iptv.zapperHint' => 'Arrow keys to move, OK to play or replay, back to close.',
@@ -5989,10 +5995,10 @@ extension on TranslationsEn {
 			'music.clearQueue' => 'Clear the queue',
 			'music.clearQueueConfirmTitle' => 'Clear the play queue?',
 			'music.clearQueueConfirmBody' => 'Every song in the queue will be removed. This cannot be undone.',
-			'music.exportLyric' => 'Export the lyric',
-			'music.associateLyric' => 'Use a local lyric',
 			_ => null,
 		} ?? switch (path) {
+			'music.exportLyric' => 'Export the lyric',
+			'music.associateLyric' => 'Use a local lyric',
 			'music.associateLyricDone' => 'Lyric linked',
 			'music.associateLyricFailed' => 'Could not link: the file has no usable lyric',
 			'music.lyricOverrideRemove' => 'Unlink the lyric',
@@ -6503,10 +6509,10 @@ extension on TranslationsEn {
 			'recorder.startNowStarted' => 'Recording started',
 			'recorder.startNowOffline' => 'The room is not live',
 			'recorder.startNowNoStream' => 'No recordable line',
-			'recorder.startNowTimeout' => 'Reading the stream timed out',
-			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.startNowTimeout' => 'Reading the stream timed out',
+			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
 			'recorder.cacheOtherRoot' => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.',
 			'recorder.searchHint' => 'Search a room to record',
@@ -7017,10 +7023,10 @@ extension on TranslationsEn {
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
 			'settings.styleTapInteraction' => 'Tap danmaku',
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
-			'settings.styleLongPressInteraction' => 'Long-press danmaku',
-			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleLongPressInteraction' => 'Long-press danmaku',
+			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
 			'settings.danmakuStyleGroup' => 'Danmaku style',
 			'settings.danmakuStyleDescription' => 'The typeface, size, speed, area, outline and frame rate of a danmaku.',
 			'settings.danmakuDisplayDescription' => 'Who the chat list shows, what it keeps and how it is set.',
@@ -7531,10 +7537,10 @@ extension on TranslationsEn {
 			'settings.qualityStandard' => 'SD',
 			'settings.qualitySmooth' => 'Smooth',
 			'settings.defaultMuted' => 'Start muted',
-			'settings.defaultMutedDesc' => 'Every new room opens muted.',
-			'settings.defaultVolume' => 'Starting volume',
 			_ => null,
 		} ?? switch (path) {
+			'settings.defaultMutedDesc' => 'Every new room opens muted.',
+			'settings.defaultVolume' => 'Starting volume',
 			'settings.defaultVolumeDesc' => 'Starting volume for new players: 50% on mobile, 100% on desktop.',
 			'settings.volumeWheelStep' => 'Volume wheel step',
 			'settings.volumeWheelStepDesc' => 'How much the mouse wheel and the arrow keys change the volume at a time.',
@@ -8045,10 +8051,10 @@ extension on TranslationsEn {
 			'settings.logExportFormatLog' => 'Log file (.log)',
 			'settings.logExportFormatJsonl' => 'JSON Lines (.jsonl)',
 			'settings.logRotationGroup' => 'File rotation',
-			'settings.logFileMaxBytes' => 'Per-file limit',
-			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.logFileMaxBytes' => 'Per-file limit',
+			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
 			'settings.logFilesKept' => 'Files kept',
 			'settings.logFilesKeptDesc' => 'A full file rotates to the next; older files beyond the limit are deleted.',
 			'settings.logFilesKeptUnlimited' => 'Unlimited',
@@ -8087,6 +8093,8 @@ extension on TranslationsEn {
 			'settings.hongguoDownloadTitle' => 'Downloads',
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
 			'settings.storageFolderCopyPath' => 'Copy path',
+			'settings.localBackupTitle' => 'Local backup',
+			'settings.localBackupDescription' => 'Write backup files into a folder on this device and restore from it.',
 			'settings.cloudBackupTitle' => 'Cloud backup',
 			'settings.cloudBackupDescription' => 'Sign in to keep a backup in the cloud; sign in on another device to restore it.',
 			'settings.cloudAdminTitle' => 'Accounts',
@@ -8557,12 +8565,12 @@ extension on TranslationsEn {
 			'wallpaper.sourceAlcyTx' => 'Alcy · tx',
 			'wallpaper.sourceAlcyLai' => 'Alcy · lai',
 			'wallpaper.sourceAlcyXhl' => 'Alcy · xhl',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyBd' => 'Alcy · bd',
 			'wallpaper.groupWuming' => 'Wuming API',
 			'wallpaper.sourceWumingGirl' => 'Wuming · random girls',
 			'wallpaper.sourceWumingBlackStocking' => 'Wuming · black stockings',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceWumingDouyinGirl' => 'Wuming · Douyin girls',
 			'wallpaper.sourceWumingWhiteStocking' => 'Wuming · white stockings',
 			'wallpaper.sourceWumingDouyinGirlAlt' => 'Wuming · random Douyin girls',
