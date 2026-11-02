@@ -3392,6 +3392,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadFilterAll => 'All';
 	@override String get downloadFilterEmpty => 'Nothing under this status';
 	@override String get downloadKindFilter => 'Filter by kind';
+	@override String get downloadFilterLabel => 'Filter';
+	@override String get downloadFilterTitle => 'Filter downloads';
+	@override String get downloadFilterPlayable => 'Only files still on disk';
+	@override String get downloadFilterReset => 'Clear filters';
+	@override String get downloadRecheck => 'Re-check files';
 	@override String get downloadColumnFile => 'File';
 	@override String get downloadColumnSize => 'Size';
 	@override String get downloadColumnTime => 'Time';
@@ -7837,6 +7842,11 @@ extension on TranslationsEn {
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
 			'settings.downloadKindFilter' => 'Filter by kind',
+			'settings.downloadFilterLabel' => 'Filter',
+			'settings.downloadFilterTitle' => 'Filter downloads',
+			'settings.downloadFilterPlayable' => 'Only files still on disk',
+			'settings.downloadFilterReset' => 'Clear filters',
+			'settings.downloadRecheck' => 'Re-check files',
 			'settings.downloadColumnFile' => 'File',
 			'settings.downloadColumnSize' => 'Size',
 			'settings.downloadColumnTime' => 'Time',
@@ -8104,13 +8114,13 @@ extension on TranslationsEn {
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
 			'settings.danmakuShowGifts' => 'Show gifts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
@@ -8618,13 +8628,13 @@ extension on TranslationsEn {
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
 			'vod.downloadRetry' => 'Retry automatically',
 			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadRetryOff' => 'No retry',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
 			'vod.downloadRetryDelay' => 'Retry interval',
 			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
 			'vod.downloadManagerTitle' => 'Downloads',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
 			'vod.downloadClearFinished' => 'Clear finished',

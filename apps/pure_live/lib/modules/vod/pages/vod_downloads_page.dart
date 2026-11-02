@@ -14,16 +14,16 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart' show M
 import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
-import 'package:pure_live/features/settings/settings.dart'
-    show SettingsChoiceRow, SettingsConfigRow, openModuleItem;
+import 'package:pure_live/features/settings/settings.dart' show SettingsChoiceRow, SettingsConfigRow, openModuleItem;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice;
 import 'package:pure_live/shared/shared.dart'
     show
         DownloadDetails,
-        DownloadFilterOption,
-        DownloadWorkspace,
+        DownloadDetailsPane,
+        DownloadQueueAction,
+        DownloadQueueHeader,
         LiveWindow,
         NavigationItem,
         cachedImage,
@@ -62,6 +62,192 @@ Future<void> _removeRecord(BuildContext context, WidgetRef ref, String id) async
   // under it); a dead context must not reach the page's store callback.
   if (!confirmed || !context.mounted) return;
   await ref.read(vodDownloadsProvider.notifier).remove(id);
+}
+
+/// Opens the app's own preview on [task], with the queue's other finished parts
+/// beside it and the danmaku the download wrote next to the video.
+///
+/// The row card's play button, its table twin and its menu all come through
+/// here, so the run a part joins is one list rather than three that drift.
+Future<void> _openVodPreview(BuildContext context, WidgetRef ref, VodDownloadItem task) async {
+  final t = context.t;
+  final items = _vodPreviewItems(ref.read(vodDownloadsProvider), t);
+  final index = items.indexWhere((item) => item.id == task.id);
+  if (index < 0) {
+    showDsToast(context: context, title: t.vod.previewUnavailable, status: DsStatus.warning);
+    return;
+  }
+  await openMediaPreview(
+    context,
+    title: t.vod.previewTitle,
+    items: items,
+    initialIndex: index,
+    // A file deleted from the player leaves the row pointing at nothing: the
+    // task goes with it (its bytes are already off disk), so the queue cannot
+    // offer a part that will only fail to open.
+    onDeleted: (item) => ref.read(vodDownloadsProvider.notifier).remove(item.id),
+  );
+}
+
+/// What a row's phase says about itself, as the table's state column shows it:
+/// the phase, and how far a transfer still owed bytes has got.
+Widget _vodPhaseBadge(BuildContext context, VodDownloadItem task, {required bool missing}) {
+  final t = context.t;
+  return switch (task.phase) {
+    // A finished row whose file the viewer moved or deleted is said here, in
+    // the same words the row's own caption and the facts column use: the record
+    // is true of the transfer, not of the disk.
+    VodDownloadPhase.done when missing => DsBadge(status: DsStatus.danger, label: Text(t.common.previewFileMissing)),
+    VodDownloadPhase.done => DsBadge(status: DsStatus.success, label: Text(t.settings.downloadStatusDone)),
+    // A running row counts itself out loud; a part that never got its total
+    // only says it is moving.
+    VodDownloadPhase.running => DsBadge(
+      status: DsStatus.info,
+      label: Text(
+        task.total > 0
+            ? t.settings.downloadPercent(percent: '${task.received * 100 ~/ task.total}')
+            : t.settings.downloadStatusRunning,
+      ),
+    ),
+    VodDownloadPhase.queued => DsBadge(label: Text(t.vod.downloadPhaseQueued)),
+    VodDownloadPhase.paused => DsBadge(status: DsStatus.warning, label: Text(t.vod.downloadPhasePaused)),
+    VodDownloadPhase.failed => DsBadge(status: DsStatus.danger, label: Text(t.vod.downloadPhaseFailed)),
+  };
+}
+
+/// The phases in the order a queue reads: what is moving, what waits for a
+/// lane, what stopped on purpose, what stopped on its own, what landed.
+int _vodPhaseRank(VodDownloadPhase phase) => switch (phase) {
+  VodDownloadPhase.running => 0,
+  VodDownloadPhase.queued => 1,
+  VodDownloadPhase.paused => 2,
+  VodDownloadPhase.failed => 3,
+  VodDownloadPhase.done => 4,
+};
+
+/// The one verb a part's phase allows: stop a transfer, carry a waiting or
+/// stopped one on, fetch a failed one again, or watch the part that landed.
+///
+/// The card and the table name the same verb for the same phase and say it the
+/// same way, so the two shapes cannot drift apart; everything else a row can do
+/// sits in [_vodRowMenu].
+Widget _vodPhaseVerb(BuildContext context, WidgetRef ref, VodDownloadItem task, {required bool missing}) {
+  final t = context.t;
+  final controller = ref.read(vodDownloadsProvider.notifier);
+  return switch (task.phase) {
+    VodDownloadPhase.running => DsButton.icon(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      icon: const DsIcon(DsIcons.pause),
+      semanticLabel: t.settings.downloadPause,
+      onPressed: () => unawaited(controller.pause(task.id)),
+    ),
+    VodDownloadPhase.queued || VodDownloadPhase.paused => DsButton.icon(
+      size: DsSize.sm,
+      icon: const DsIcon(DsIcons.play),
+      semanticLabel: t.settings.downloadResume,
+      onPressed: () => unawaited(controller.resume(task.id)),
+    ),
+    VodDownloadPhase.failed => DsButton.icon(
+      size: DsSize.sm,
+      icon: const DsIcon(DsIcons.rotateCw),
+      semanticLabel: t.common.retry,
+      onPressed: () => unawaited(controller.resume(task.id)),
+    ),
+    // A part whose file is gone has nothing to preview: the button keeps its
+    // place, shows what happened and stays out of reach, so the row cannot
+    // promise an opening that only fails.
+    VodDownloadPhase.done => DsButton.icon(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      icon: DsIcon(missing ? DsIcons.fileX : DsIcons.play),
+      semanticLabel: missing ? t.common.previewFileMissing : t.settings.backgroundPreviewMedia,
+      onPressed: missing ? null : () => unawaited(_openVodPreview(context, ref, task)),
+    ),
+  };
+}
+
+/// Everything one part can be asked for beyond its phase's own verb.
+///
+/// The card's trailing menu and the table's row menu read the same list: 详情,
+/// and for a finished part the file's own ways out — open it, open the folder
+/// beside it, delete it — ending in the record's removal. A part whose file went
+/// away keeps the folder (what is left beside it is still worth seeing) and
+/// drops the two verbs that act on a file that is not there.
+List<Widget> _vodRowMenu(BuildContext context, WidgetRef ref, VodDownloadItem task, {required bool missing}) {
+  final t = context.t;
+  final controller = ref.read(vodDownloadsProvider.notifier);
+  Future<void> deleteFile() async {
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.vod.downloadDeleteFile,
+      description: t.vod.downloadDeleteFileBody,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await controller.remove(task.id, deleteFile: true);
+    } on Object {
+      if (context.mounted) {
+        showDsToast(context: context, title: t.vod.downloadDeleteFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  return [
+    DsMenuItem(
+      leading: const DsIcon(DsIcons.info),
+      label: Text(t.common.downloadDetails),
+      onPressed: () => unawaited(
+        showDownloadDetails(
+          context,
+          _detailsOf(
+            context,
+            task,
+            t,
+            retryLimit: ref.read(vodDownloadRetryProvider),
+            retryDelay: ref.read(vodDownloadRetryDelayProvider),
+            retryPending: controller.hasPendingRetry(task.id),
+            onRemove: () => unawaited(_removeRecord(context, ref, task.id)),
+          ),
+        ),
+      ),
+    ),
+    const DsMenuDivider(),
+    if (task.phase == VodDownloadPhase.done) ...[
+      if (!missing)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.externalLink),
+          label: Text(t.settings.downloadOpenFile),
+          onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
+        ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.folderOpen),
+        label: Text(t.settings.downloadManagerOpenFolder),
+        onPressed: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
+      ),
+      if (!missing) ...[
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.trash2),
+          label: Text(t.vod.downloadDeleteFile),
+          destructive: true,
+          onPressed: () => unawaited(deleteFile()),
+        ),
+        const DsMenuDivider(),
+      ],
+    ],
+    DsMenuItem(
+      leading: const DsIcon(DsIcons.trash2),
+      // The one action a gone file still has: the record goes, the name says
+      // so rather than 删除文件 over an empty path.
+      label: Text(missing ? t.common.downloadRemoveFromList : t.settings.downloadRemove),
+      destructive: true,
+      onPressed: () => unawaited(_removeRecord(context, ref, task.id)),
+    ),
+  ];
 }
 
 /// 下载管理 — the station's download settings under Settings → 视频.
@@ -219,69 +405,18 @@ final class VodDownloadsPane extends ConsumerWidget {
   }
 }
 
-/// One part's row: the file's name over its phase's caption and bar, with
-/// the actions that phase allows at the end.
+/// One part's row, as the window too narrow for a table shows it: the file's
+/// name over its phase's caption and bar, with the actions that phase allows at
+/// the end. The table shape reads the same phase, verb and menu through
+/// [_vodPhaseBadge], [_vodPhaseVerb] and [_vodRowMenu], so the two agree.
 final class _VodTaskRow extends ConsumerWidget {
-  const _VodTaskRow({required this.task, this.selected = false, this.onSelect, this.inBlock = false, super.key});
+  const _VodTaskRow({required this.task, this.inBlock = false, super.key});
 
   final VodDownloadItem task;
 
   /// Whether a header above names this row's archive and its cover. In a block
   /// the row drops both and reads as the part it is.
   final bool inBlock;
-
-  /// Whether the wide workspace shows this row's facts at the right.
-  final bool selected;
-
-  /// Marks this row as the one the workspace speaks about.
-  final VoidCallback? onSelect;
-
-  Future<void> _remove(BuildContext context, WidgetRef ref) => _removeRecord(context, ref, task.id);
-
-  Future<void> _deleteFile(BuildContext context, WidgetRef ref) async {
-    final t = context.t;
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.vod.downloadDeleteFile,
-      description: t.vod.downloadDeleteFileBody,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
-    );
-    if (!confirmed || !context.mounted) return;
-    try {
-      await ref.read(vodDownloadsProvider.notifier).remove(task.id, deleteFile: true);
-    } on Object {
-      if (context.mounted) {
-        showDsToast(context: context, title: t.vod.downloadDeleteFailed, status: DsStatus.danger);
-      }
-    }
-  }
-
-  /// Opens the app's own preview on this part, with the queue's other
-  /// finished parts beside it and the danmaku the download wrote next to the
-  /// video. A part whose file went away after the row was built is said so
-  /// rather than quietly showing a neighbour.
-  Future<void> _openPreview(BuildContext context, WidgetRef ref) async {
-    final t = context.t;
-    final items = _vodPreviewItems(ref.read(vodDownloadsProvider), t);
-    final index = items.indexWhere((item) => item.id == task.id);
-    if (index < 0) {
-      showDsToast(context: context, title: t.vod.previewUnavailable, status: DsStatus.warning);
-      return;
-    }
-    await openMediaPreview(
-      context,
-      title: t.vod.previewTitle,
-      items: items,
-      initialIndex: index,
-      // A file deleted from the player leaves the row pointing at nothing: the
-      // task goes with it (its bytes are already off disk), so the queue cannot
-      // offer a part that will only fail to open.
-      onDeleted: (item) => ref.read(vodDownloadsProvider.notifier).remove(item.id),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -315,8 +450,6 @@ final class _VodTaskRow extends ConsumerWidget {
     // only fail.
     final missing = _vodFileMissing(task);
     return DsListRow(
-      selected: selected,
-      onPressed: onSelect,
       leading: inBlock
           ? null
           : DsAvatar(
@@ -348,37 +481,7 @@ final class _VodTaskRow extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          switch (task.phase) {
-            VodDownloadPhase.running => DsButton.icon(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              icon: const DsIcon(DsIcons.pause),
-              semanticLabel: t.settings.downloadPause,
-              onPressed: () => unawaited(controller.pause(task.id)),
-            ),
-            VodDownloadPhase.queued || VodDownloadPhase.paused => DsButton.icon(
-              size: DsSize.sm,
-              icon: const DsIcon(DsIcons.play),
-              semanticLabel: t.settings.downloadResume,
-              onPressed: () => unawaited(controller.resume(task.id)),
-            ),
-            VodDownloadPhase.failed => DsButton.icon(
-              size: DsSize.sm,
-              icon: const DsIcon(DsIcons.rotateCw),
-              semanticLabel: t.common.retry,
-              onPressed: () => unawaited(controller.resume(task.id)),
-            ),
-            // A part whose file is gone has nothing to preview: the button
-            // keeps its place, shows what happened and stays out of reach, so
-            // the row cannot promise an opening that only fails.
-            VodDownloadPhase.done => DsButton.icon(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              icon: DsIcon(missing ? DsIcons.fileX : DsIcons.play),
-              semanticLabel: missing ? t.common.previewFileMissing : t.settings.backgroundPreviewMedia,
-              onPressed: missing ? null : () => unawaited(_openPreview(context, ref)),
-            ),
-          },
+          _vodPhaseVerb(context, ref, task, missing: missing),
           DsMenuAnchor(
             semanticLabel: t.common.more,
             align: DsAlign.end,
@@ -397,60 +500,7 @@ final class _VodTaskRow extends ConsumerWidget {
                 );
               },
             ),
-            items: [
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.info),
-                label: Text(t.common.downloadDetails),
-                onPressed: () => unawaited(
-                  showDownloadDetails(
-                    context,
-                    _detailsOf(
-                      context,
-                      task,
-                      t,
-                      retryLimit: ref.watch(vodDownloadRetryProvider),
-                      retryDelay: ref.watch(vodDownloadRetryDelayProvider),
-                      retryPending: ref.read(vodDownloadsProvider.notifier).hasPendingRetry(task.id),
-                      onRemove: () => unawaited(_remove(context, ref)),
-                    ),
-                  ),
-                ),
-              ),
-              const DsMenuDivider(),
-              if (task.phase == VodDownloadPhase.done) ...[
-                // A part whose file is gone keeps the folder (what is left
-                // beside it is still worth seeing) and drops the two verbs
-                // that act on a file that is not there.
-                if (!missing)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.externalLink),
-                    label: Text(t.settings.downloadOpenFile),
-                    onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
-                  ),
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.folderOpen),
-                  label: Text(t.settings.downloadManagerOpenFolder),
-                  onPressed: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
-                ),
-                if (!missing) ...[
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.trash2),
-                    label: Text(t.vod.downloadDeleteFile),
-                    destructive: true,
-                    onPressed: () => unawaited(_deleteFile(context, ref)),
-                  ),
-                  const DsMenuDivider(),
-                ],
-              ],
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.trash2),
-                // The one action a gone file still has: the record goes, the
-                // name says so rather than 删除文件 over an empty path.
-                label: Text(missing ? t.common.downloadRemoveFromList : t.settings.downloadRemove),
-                destructive: true,
-                onPressed: () => unawaited(_remove(context, ref)),
-              ),
-            ],
+            items: _vodRowMenu(context, ref, task, missing: missing),
           ),
         ],
       ),
@@ -470,27 +520,24 @@ String? _etaOf(Translations t, {required int speed, required int total, required
   return t.vod.downloadEta(time: hours > 0 ? '$hours:$mm:$ss' : '$mm:$ss');
 }
 
-/// What the manager's filter shows.
-enum _VodDownloadFilter {
-  all,
+/// The phase's own word, said the same way in a row's badge and in the filter
+/// panel: one phase, one spelling.
+String _vodPhaseLabel(Translations t, VodDownloadPhase phase) => switch (phase) {
+  VodDownloadPhase.queued => t.vod.downloadPhaseQueued,
+  VodDownloadPhase.running => t.settings.downloadStatusRunning,
+  VodDownloadPhase.paused => t.vod.downloadPhasePaused,
+  VodDownloadPhase.failed => t.vod.downloadPhaseFailed,
+  VodDownloadPhase.done => t.vod.downloadPhaseDone,
+};
 
-  /// The queue and everything still owed a file: running, waiting, paused
-  /// and the ones that failed.
-  active,
-
-  /// The parts that finished and can be watched.
-  done;
-
-  String label(Translations t) => switch (this) {
-    _VodDownloadFilter.all => t.vod.downloadFilterAll,
-    _VodDownloadFilter.active => t.vod.downloadFilterActive,
-    _VodDownloadFilter.done => t.vod.downloadFilterDone,
-  };
-}
-
-/// The station's download manager as its own page: the folder the files land
-/// in, the queue with its filters and batch actions, and the finished videos
-/// with their in-app preview — the same rows the settings pane carries.
+/// The station's download manager as its own page: the queue as a table with
+/// its search, its filters and its batch verbs, the finished parts opened in
+/// the app's own preview, and the folder they land in.
+///
+/// A window too narrow for the table's columns keeps the row cards the station
+/// already drew — a part's cover and its progress bar say more there than four
+/// ellipsised cells would, and the head folds its verbs into 更多 instead of
+/// pushing the queue away.
 final class VodDownloadsPage extends ConsumerStatefulWidget {
   /// The download manager, opening on the whole queue.
   const VodDownloadsPage({super.key});
@@ -500,18 +547,174 @@ final class VodDownloadsPage extends ConsumerStatefulWidget {
 }
 
 final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
-  _VodDownloadFilter _filter = _VodDownloadFilter.all;
+  /// What the search box holds, matched against the archive, its part and the
+  /// file the queue wrote.
+  String _query = '';
 
-  /// The row whose facts sit in the wide workspace's right column; null lets
-  /// the first visible row speak.
-  String? _selectedId;
+  /// The phases ticked in the panel; none ticked reads as every phase, so an
+  /// empty set is the queue's own 全部 rather than a hidden filter.
+  final Set<VodDownloadPhase> _phases = {};
+
+  /// Whether a row must still name a file the disk holds.
+  bool _playableOnly = false;
+
+  /// The table's sorted column.
+  DsTableSort? _sort;
+
+  /// The ticked rows — the batch verbs' objects.
+  final Set<Object> _selected = {};
+
+  /// The row the wide window's facts column speaks about; null lets the first
+  /// visible row speak.
+  String? _factsId;
+
+  /// Asks the disk again. The queue is a live store rather than a folder read,
+  /// so the one thing a refresh can add here is the stat behind 文件不在了:
+  /// every finished row is asked once more whether its bytes are where the row
+  /// says they are.
+  int _recheck = 0;
+
+  /// The rows on screen: searched, cut to the ticked phases, and to the files
+  /// still on disk when that is ticked — in the order the store keeps them, so
+  /// the table's own sort is the only thing that reorders a queue.
+  List<VodDownloadItem> _visible(List<VodDownloadItem> tasks) {
+    final query = _query.trim().toLowerCase();
+    return [
+      for (final task in tasks)
+        if ((_phases.isEmpty || _phases.contains(task.phase)) &&
+            (!_playableOnly || (task.phase == VodDownloadPhase.done && downloadFilePresent(task.filePath))) &&
+            (query.isEmpty ||
+                task.title.toLowerCase().contains(query) ||
+                task.part.toLowerCase().contains(query) ||
+                task.fileName.toLowerCase().contains(query)))
+          task,
+    ];
+  }
+
+  /// The ticked rows, in the queue's order.
+  List<VodDownloadItem> _picked(List<VodDownloadItem> tasks) => [
+    for (final task in tasks)
+      if (_selected.contains(task.id)) task,
+  ];
+
+  /// Runs [verb] over [rows], one after another: the store writes per task, so
+  /// a batch is a run of writes rather than a call of its own.
+  Future<void> _runOver(List<VodDownloadItem> rows, Future<void> Function(VodDownloadsController, String) verb) async {
+    final controller = ref.read(vodDownloadsProvider.notifier);
+    for (final task in rows) {
+      await verb(controller, task.id);
+    }
+  }
+
+  /// Drops the ticked records after one ask; the files they name stay on disk,
+  /// which is what the body says rather than leaves to be guessed.
+  Future<void> _removePicked(List<VodDownloadItem> picked) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.settings.downloadDeleteSelected(count: picked.length),
+      description: t.settings.downloadRemoveBody,
+      confirmLabel: t.settings.downloadRemove,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) return;
+    await _runOver(picked, (controller, id) => controller.remove(id));
+    if (mounted) setState(_selected.clear);
+  }
+
+  /// Deletes the ticked parts' files and records after one ask. The store's own
+  /// remove answers for a file that already went away, so a batch that names
+  /// more than the disk holds says so instead of quietly reporting a smaller
+  /// number.
+  Future<void> _deletePicked(List<VodDownloadItem> picked) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.settings.downloadDeleteSelected(count: picked.length),
+      description: t.vod.downloadDeleteFileBody,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) return;
+    final controller = ref.read(vodDownloadsProvider.notifier);
+    for (final task in picked) {
+      try {
+        await controller.remove(task.id, deleteFile: true);
+      } on Object {
+        if (mounted) showDsToast(context: context, title: t.vod.downloadDeleteFailed, status: DsStatus.danger);
+      }
+    }
+    if (mounted) setState(_selected.clear);
+  }
+
+  /// The queue's conditions, behind the head's one entry: which phases show and
+  /// whether a row must still name a file the disk holds. Nothing else about a
+  /// queue is a condition — where it lands is a setting, and its size is what
+  /// the head already says.
+  Future<void> _openFilter(List<VodDownloadItem> tasks) async {
+    final t = context.t;
+    final picked = {..._phases};
+    var playable = _playableOnly;
+    void apply() => setState(() {
+      _phases
+        ..clear()
+        ..addAll(picked);
+      _playableOnly = playable;
+      _selected.clear();
+    });
+    await showDsPanel<void>(
+      context: context,
+      builder: (panelContext) => DsPanel(
+        title: Text(t.settings.downloadFilterTitle),
+        child: DsListSection(
+          children: [
+            for (final phase in VodDownloadPhase.values)
+              DsListRow(
+                title: Text(_vodPhaseLabel(t, phase)),
+                detail: Text('${tasks.where((task) => task.phase == phase).length}'),
+                trailing: DsCheckbox(
+                  value: picked.contains(phase),
+                  onChanged: (value) {
+                    if (value == true) {
+                      picked.add(phase);
+                    } else {
+                      picked.remove(phase);
+                    }
+                    apply();
+                  },
+                ),
+              ),
+            DsListRow(
+              title: Text(t.settings.downloadFilterPlayable),
+              trailing: DsSwitch(
+                value: playable,
+                onChanged: (value) {
+                  playable = value;
+                  apply();
+                },
+              ),
+            ),
+            DsListRow(
+              title: Text(t.settings.downloadFilterReset),
+              onPressed: () {
+                picked.clear();
+                playable = false;
+                apply();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final tasks = ref.watch(vodDownloadsProvider);
     final controller = ref.read(vodDownloadsProvider.notifier);
     final directory = ref.watch(appPathsProvider).videos.path;
@@ -519,201 +722,311 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     // the two settings that decide it.
     final retry = ref.watch(vodDownloadRetryProvider);
     final retryDelay = ref.watch(vodDownloadRetryDelayProvider);
+    // A tick on a row the queue no longer holds no longer counts, and the batch
+    // bar would otherwise promise an action on nothing.
+    _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
+    final shown = _visible(tasks);
+    // One stat per visible row per read, not one per cell: the same part answers
+    // through its badge, its verb and its menu, and asking the disk three times
+    // for one row is how a queue of a hundred parts starts to cost a frame.
+    final missing = {for (final task in shown) task.id: _vodFileMissing(task)};
     final moving = tasks
         .where((task) => task.phase == VodDownloadPhase.queued || task.phase == VodDownloadPhase.running)
         .length;
     final stopped = tasks.any((task) => task.phase == VodDownloadPhase.paused || task.phase == VodDownloadPhase.failed);
     final finished = tasks.where((task) => task.phase == VodDownloadPhase.done).toList();
-    // What the queue has already put on disk, the counter's second half.
+    // What the queue has already put on disk, the summary's second half.
     final finishedBytes = finished.fold<int>(0, (sum, task) => sum + (task.total > 0 ? task.total : task.received));
-    final shown = switch (_filter) {
-      _VodDownloadFilter.all => tasks,
-      _VodDownloadFilter.active => tasks.where((task) => task.phase != VodDownloadPhase.done).toList(),
-      _VodDownloadFilter.done => finished,
-    };
-    final selectedTask =
-        (_selectedId == null ? null : tasks.where((task) => task.id == _selectedId).firstOrNull) ??
-        (shown.isEmpty ? null : shown.first);
-    Widget queueList({required bool wide}) => shown.isEmpty
-        ? Center(
-            child: DsEmptyState(
-              icon: const DsIcon(DsIcons.download),
-              title: Text(tasks.isEmpty ? t.vod.downloadEmpty : t.vod.downloadFilterEmpty),
-              description: Text(tasks.isEmpty ? t.vod.downloadEmptyDesc : t.vod.downloadFilterEmptyDesc),
-              actions: [
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.folderOpen, size: 14),
-                  onPressed: () => unawaited(openDownloadedPath(context, directory)),
-                  child: Text(t.settings.downloadManagerOpenFolder),
-                ),
-              ],
-            ),
-          )
-        : ListView(
-            padding: EdgeInsets.only(left: inset, right: inset, bottom: DsSpace.s16),
-            children: _vodQueueBlocks(
-              shown,
-              rowOf: (task, {required inBlock}) => _VodTaskRow(
-                key: ValueKey(task.id),
-                task: task,
-                inBlock: inBlock,
-                selected: wide && task.id == selectedTask?.id,
-                onSelect: wide ? () => setState(() => _selectedId = task.id) : null,
-              ),
-            ),
-          );
+    // What it is pulling right now, its third half: the lanes' own total, so a
+    // running row's speed is not asked of every row to be read once.
+    final speed = tasks.fold<int>(0, (sum, task) => sum + task.speed);
+    final picked = _picked(tasks);
+    final pausable = picked
+        .where((task) => task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.queued)
+        .toList();
+    final resumable = picked
+        .where((task) => task.phase == VodDownloadPhase.paused || task.phase == VodDownloadPhase.failed)
+        .toList();
+    final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
+    final filterActive = _phases.isNotEmpty || _playableOnly;
     return LayoutBuilder(
       builder: (context, constraints) {
-        // A manager with room for three panes reads like a workspace: the
-        // filters, the queue, and the selected task's facts. A narrower one
-        // keeps the list and the sheet the row menu already offers.
-        final wide = constraints.maxWidth >= LiveWindow.downloadWorkspace;
+        final width = constraints.maxWidth;
+        // The table starts where a queue's columns fit; below it the parts keep
+        // the row cards, with their cover and their bar.
+        final asTable = width >= LiveWindow.table;
+        // The facts column rides beside a table only where the table still
+        // keeps its columns after 340 pixels are taken from it.
+        final withFacts = width >= LiveWindow.downloadWorkspace;
+        // A table says it has nothing through its own slot; the card list
+        // needs the page's empty state, because a list of one block is not a
+        // queue at all.
+        final queue = asTable
+            ? _table(
+                t,
+                shown,
+                narrow: width < 720,
+                withFacts: withFacts,
+                tasks: tasks,
+                isMissing: (task) => missing[task.id] ?? false,
+              )
+            : shown.isEmpty
+            ? _empty(t, tasks, directory)
+            : _cards(shown);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s8,
-                children: [
-                  Row(
-                    spacing: DsSpace.s12,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: DsSpace.s3,
-                          children: [
-                            // The page's name belongs to the menu entry that
-                            // opened it; what only this page can answer is how
-                            // big the queue is and where the files land.
-                            Text(
-                              [
-                                t.vod.downloadTaskCount(count: tasks.length, active: moving),
-                                if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
-                              ].join(' · '),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textMuted),
-                            ),
-                            Text(
-                              directory,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Flexible(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          reverse: true,
-                          child: Row(
-                            spacing: DsSpace.s8,
-                            children: [
-                              if (moving > 0)
-                                DsButton(
-                                  variant: DsButtonVariant.secondary,
-                                  size: DsSize.sm,
-                                  onPressed: () => unawaited(controller.pauseAll()),
-                                  child: Text(t.vod.downloadPauseAll),
-                                ),
-                              if (stopped)
-                                DsButton(
-                                  variant: DsButtonVariant.secondary,
-                                  size: DsSize.sm,
-                                  onPressed: () => unawaited(controller.resumeAll()),
-                                  child: Text(t.vod.downloadResumeAll),
-                                ),
-                              if (finished.isNotEmpty)
-                                DsButton(
-                                  variant: DsButtonVariant.secondary,
-                                  size: DsSize.sm,
-                                  onPressed: () => unawaited(
-                                    confirmClearFinished(
-                                      context,
-                                      title: t.vod.downloadClearFinished,
-                                      clear: controller.clearFinished,
-                                    ),
-                                  ),
-                                  child: Text(t.vod.downloadClearFinished),
-                                ),
-                              DsButton(
-                                variant: DsButtonVariant.secondary,
-                                size: DsSize.sm,
-                                onPressed: () => unawaited(openDownloadedPath(context, directory)),
-                                child: Text(t.settings.downloadManagerOpenFolder),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+              padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),
+              child: DownloadQueueHeader(
+                summary: [
+                  t.vod.downloadTaskCount(count: tasks.length, active: moving),
+                  if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
+                  if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
+                ].join(' · '),
+                directory: directory,
+                searchHint: t.settings.downloadSearchPlaceholder,
+                query: _query,
+                onQuery: (value) => setState(() {
+                  _query = value;
+                  _selected.clear();
+                }),
+                filterLabel: t.settings.downloadFilterLabel,
+                filterActive: filterActive,
+                onFilter: () => unawaited(_openFilter(tasks)),
+                actions: [
+                  DownloadQueueAction(
+                    label: t.settings.downloadManagerOpenFolder,
+                    icon: DsIcons.folderOpen,
+                    onPressed: () => unawaited(openDownloadedPath(context, directory)),
                   ),
-                  if (!wide)
-                    SizedBox(
-                      height: 40,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DsSegmentedControl<_VodDownloadFilter>(
-                          value: _filter,
-                          onChanged: (filter) => setState(() => _filter = filter),
-                          semanticLabel: t.vod.downloadManagerTitle,
-                          segments: [
-                            for (final filter in _VodDownloadFilter.values)
-                              DsSegment(value: filter, label: Text(filter.label(t))),
-                          ],
+                  if (moving > 0)
+                    DownloadQueueAction(
+                      label: t.vod.downloadPauseAll,
+                      icon: DsIcons.pause,
+                      onPressed: () => unawaited(controller.pauseAll()),
+                    ),
+                  if (stopped)
+                    DownloadQueueAction(
+                      label: t.vod.downloadResumeAll,
+                      icon: DsIcons.play,
+                      onPressed: () => unawaited(controller.resumeAll()),
+                    ),
+                  if (finished.isNotEmpty)
+                    DownloadQueueAction(
+                      label: t.vod.downloadClearFinished,
+                      icon: DsIcons.trash2,
+                      destructive: true,
+                      onPressed: () => unawaited(
+                        confirmClearFinished(
+                          context,
+                          title: t.vod.downloadClearFinished,
+                          clear: controller.clearFinished,
                         ),
                       ),
+                    ),
+                  DownloadQueueAction(
+                    label: t.settings.downloadRecheck,
+                    icon: DsIcons.refresh,
+                    onPressed: () => setState(() => _recheck++),
+                  ),
+                ],
+                selectedLabel: picked.isEmpty ? null : t.settings.downloadSelectedCount(count: picked.length),
+                selectionActions: [
+                  if (pausable.isNotEmpty)
+                    DownloadQueueAction(
+                      label: t.settings.downloadPause,
+                      icon: DsIcons.pause,
+                      onPressed: () => unawaited(_runOver(pausable, (controller, id) => controller.pause(id))),
+                    ),
+                  if (resumable.isNotEmpty)
+                    DownloadQueueAction(
+                      label: t.settings.downloadResume,
+                      icon: DsIcons.play,
+                      onPressed: () => unawaited(_runOver(resumable, (controller, id) => controller.resume(id))),
+                    ),
+                  DownloadQueueAction(
+                    label: t.settings.downloadRemove,
+                    icon: DsIcons.trash2,
+                    destructive: true,
+                    onPressed: () => unawaited(_removePicked(picked)),
+                  ),
+                  if (picked.any((task) => task.phase == VodDownloadPhase.done))
+                    DownloadQueueAction(
+                      label: t.vod.downloadDeleteFile,
+                      icon: DsIcons.fileX,
+                      destructive: true,
+                      onPressed: () => unawaited(_deletePicked(picked)),
                     ),
                 ],
               ),
             ),
             Expanded(
-              child: wide
-                  ? DownloadWorkspace<_VodDownloadFilter>(
-                      options: [
-                        for (final value in _VodDownloadFilter.values)
-                          DownloadFilterOption(
-                            value: value,
-                            icon: switch (value) {
-                              _VodDownloadFilter.all => DsIcons.list,
-                              _VodDownloadFilter.active => DsIcons.download,
-                              _VodDownloadFilter.done => DsIcons.checkCircle,
-                            },
-                            label: value.label(t),
-                            count: switch (value) {
-                              _VodDownloadFilter.all => tasks.length,
-                              _VodDownloadFilter.active =>
-                                tasks.where((task) => task.phase != VodDownloadPhase.done).length,
-                              _VodDownloadFilter.done => finished.length,
-                            },
-                          ),
-                      ],
-                      selected: _filter,
-                      onSelected: (filter) => setState(() => _filter = filter),
-                      list: queueList(wide: true),
-                      details: selectedTask == null
-                          ? null
-                          : _detailsOf(
-                              context,
-                              selectedTask,
-                              t,
-                              retryLimit: retry,
-                              retryDelay: retryDelay,
-                              retryPending: controller.hasPendingRetry(selectedTask.id),
-                              onRemove: () => unawaited(_removeRecord(context, ref, selectedTask.id)),
-                            ),
-                    )
-                  : queueList(wide: false),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s16,
+                children: [
+                  Expanded(child: queue),
+                  if (withFacts)
+                    SizedBox(
+                      width: LiveWindow.downloadDetails,
+                      child: DownloadDetailsPane(
+                        details: factsTask == null
+                            ? null
+                            : _detailsOf(
+                                context,
+                                factsTask,
+                                t,
+                                retryLimit: retry,
+                                retryDelay: retryDelay,
+                                retryPending: controller.hasPendingRetry(factsTask.id),
+                                onRemove: () => unawaited(_removeRecord(context, ref, factsTask.id)),
+                              ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         );
       },
+    );
+  }
+
+  /// The queue as the row cards: one block per archive, its head carrying the
+  /// verbs for the parts it holds.
+  Widget _cards(List<VodDownloadItem> shown) => ListView(
+    padding: EdgeInsets.only(left: _inset, right: _inset, bottom: DsSpace.s16),
+    children: _vodQueueBlocks(
+      shown,
+      rowOf: (task, {required inBlock}) => _VodTaskRow(key: ValueKey(task.id), task: task, inBlock: inBlock),
+    ),
+  );
+
+  /// Where the page keeps its own margin: the head and the queue read the same
+  /// number, so their left edges line up.
+  double get _inset => LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+
+  /// Nothing on screen: what the queue holds in total answers better than an
+  /// empty table would, because a filtered-out task is still a task the viewer
+  /// has to un-tick to see.
+  Widget _empty(Translations t, List<VodDownloadItem> tasks, String directory) => Center(
+    child: DsEmptyState(
+      icon: const DsIcon(DsIcons.download),
+      title: Text(tasks.isEmpty ? t.vod.downloadEmpty : t.vod.downloadFilterEmpty),
+      description: Text(tasks.isEmpty ? t.vod.downloadEmptyDesc : t.vod.downloadFilterEmptyDesc),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: const DsIcon(DsIcons.folderOpen, size: 14),
+          onPressed: () => unawaited(openDownloadedPath(context, directory)),
+          child: Text(t.settings.downloadManagerOpenFolder),
+        ),
+      ],
+    ),
+  );
+
+  /// The queue as a table: the part and what became of it, then the bytes, the
+  /// moment and the one verb its phase allows.
+  ///
+  /// A narrow table drops the two columns a row can do without — the size of a
+  /// part it has not finished is not the fact that decides anything, and the
+  /// facts column says the rest. Pressing a row is the facts column's own verb,
+  /// so a window with no facts column lets a click do what its checkbox does.
+  Widget _table(
+    Translations t,
+    List<VodDownloadItem> rows, {
+    required bool narrow,
+    required bool withFacts,
+    required List<VodDownloadItem> tasks,
+    required bool Function(VodDownloadItem task) isMissing,
+  }) {
+    final theme = DsTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s12),
+      child: DsTable<VodDownloadItem>(
+        semanticLabel: t.vod.downloadManagerTitle,
+        style: const DsTableStyle(rowHeight: 56),
+        rowsVersion: _recheck,
+        columns: [
+          DsTableColumn<VodDownloadItem>(
+            id: 'name',
+            label: t.settings.downloadColumnFile,
+            value: (task) => task.title,
+            sortable: true,
+            width: const DsTableColumnWidth.flex(3, 160),
+            // Two lines, as the library's rows do: the archive the part belongs
+            // to over the part itself, which is the half a queue of thirty parts
+            // actually differs on.
+            cell: (context, task) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(task.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  task.part.isEmpty ? 'P${task.index}' : 'P${task.index} ${task.part}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
+                ),
+              ],
+            ),
+          ),
+          DsTableColumn<VodDownloadItem>(
+            id: 'status',
+            label: t.common.downloadStatus,
+            sortable: true,
+            comparator: (a, b) => _vodPhaseRank(a.phase).compareTo(_vodPhaseRank(b.phase)),
+            width: const DsTableColumnWidth.intrinsic(min: 104),
+            cell: (context, task) => _vodPhaseBadge(context, task, missing: isMissing(task)),
+          ),
+          if (!narrow)
+            DsTableColumn<VodDownloadItem>(
+              id: 'size',
+              label: t.settings.downloadColumnSize,
+              value: (task) => task.total > 0 ? task.total : task.received,
+              text: (task) => formatDownloadBytes(task.total > 0 ? task.total : task.received),
+              numeric: true,
+              sortable: true,
+              width: const DsTableColumnWidth.intrinsic(min: 88),
+            ),
+          if (!narrow)
+            DsTableColumn<VodDownloadItem>(
+              id: 'time',
+              label: t.settings.downloadColumnTime,
+              value: (task) => task.stamp,
+              text: (task) => downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp)),
+              sortable: true,
+              width: const DsTableColumnWidth.intrinsic(min: 92),
+            ),
+          DsTableColumn<VodDownloadItem>(
+            id: 'actions',
+            label: t.settings.downloadColumnActions,
+            alignment: DsTableCellAlignment.end,
+            // A builder-only column measures nothing, so it names its width.
+            width: const DsTableColumnWidth.fixed(48),
+            cell: (context, task) => _vodPhaseVerb(context, ref, task, missing: isMissing(task)),
+          ),
+        ],
+        rows: rows,
+        rowKey: (task) => task.id,
+        sort: _sort,
+        onSortChanged: (sort) => setState(() => _sort = sort),
+        selected: _selected,
+        onSelectionChanged: (next) => setState(() {
+          _selected
+            ..clear()
+            ..addAll(next);
+        }),
+        onRowPressed: withFacts
+            ? (task) => setState(() {
+                _factsId = task.id;
+              })
+            : null,
+        rowMenuBuilder: (context, task) => _vodRowMenu(context, ref, task, missing: isMissing(task)),
+        showRowMenuButton: true,
+        emptyView: _empty(t, tasks, ref.read(appPathsProvider).videos.path),
+      ),
     );
   }
 }

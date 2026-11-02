@@ -9748,6 +9748,21 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '按类型筛选'
 	String get downloadKindFilter => '按类型筛选';
 
+	/// zh-CN: '筛选'
+	String get downloadFilterLabel => '筛选';
+
+	/// zh-CN: '筛选下载任务'
+	String get downloadFilterTitle => '筛选下载任务';
+
+	/// zh-CN: '只看还能打开的文件'
+	String get downloadFilterPlayable => '只看还能打开的文件';
+
+	/// zh-CN: '清空筛选'
+	String get downloadFilterReset => '清空筛选';
+
+	/// zh-CN: '重新检查文件'
+	String get downloadRecheck => '重新检查文件';
+
 	/// zh-CN: '文件'
 	String get downloadColumnFile => '文件';
 
@@ -16288,6 +16303,11 @@ extension on Translations {
 			'settings.downloadFilterAll' => '全部',
 			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
 			'settings.downloadKindFilter' => '按类型筛选',
+			'settings.downloadFilterLabel' => '筛选',
+			'settings.downloadFilterTitle' => '筛选下载任务',
+			'settings.downloadFilterPlayable' => '只看还能打开的文件',
+			'settings.downloadFilterReset' => '清空筛选',
+			'settings.downloadRecheck' => '重新检查文件',
 			'settings.downloadColumnFile' => '文件',
 			'settings.downloadColumnSize' => '大小',
 			'settings.downloadColumnTime' => '时间',
@@ -16555,13 +16575,13 @@ extension on Translations {
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
 			'settings.danmakuShowGifts' => '显示礼物',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
@@ -17069,13 +17089,13 @@ extension on Translations {
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
 			'vod.downloadRetry' => '自动重试',
 			'vod.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadRetryOff' => '不重试',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
 			'vod.downloadRetryDelay' => '重试间隔',
 			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
 			'vod.downloadManagerTitle' => '下载管理',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
 			'vod.downloadClearFinished' => '清除已完成',
