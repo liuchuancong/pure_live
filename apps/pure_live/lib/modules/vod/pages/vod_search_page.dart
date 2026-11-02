@@ -178,13 +178,14 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
               ],
             ),
             showLayout: false,
-            filter: filterable
-                ? VodFeedAction(
-                    icon: DsIcons.listFilter,
-                    label: t.vod.searchFilterTitle,
-                    onPressed: () => unawaited(_openFilters()),
-                  )
-                : null,
+            actions: [
+              if (filterable)
+                VodFeedAction(
+                  icon: DsIcons.listFilter,
+                  label: t.vod.searchFilterTitle,
+                  onPressed: () => unawaited(_openFilters()),
+                ),
+            ],
             onRefresh: searched ? _rerun : null,
           ),
         ),

@@ -9,6 +9,7 @@ import 'package:pure_live/features/account/account.dart' show showBilibiliWebLog
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
     show VodSeasonCard, VodVideoRow, kVodSeasonTileAspect, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
@@ -118,6 +119,39 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     await ref.read(vodHistoryProvider.notifier).clear();
   }
 
+  /// Whether the head's reload has something to re-ask: the platform's two
+  /// lists answer to it, while the module's own two are written by the player,
+  /// and re-reading what this device already holds draws the same rows.
+  bool get _reloadable => _tab == VodPersonalTab.toView || _tab == VodPersonalTab.following;
+
+  /// Asks the list the head is showing again.
+  Future<void> _refreshCurrent() async {
+    switch (_tab) {
+      case VodPersonalTab.toView:
+        ref.invalidate(vodWatchLaterProvider);
+      case VodPersonalTab.following:
+        ref.invalidate(vodFollowingSeasonsProvider(_seasonType));
+      case VodPersonalTab.history:
+      case VodPersonalTab.favourites:
+        return;
+    }
+  }
+
+  /// The scope the 追番 list reads under, in that list's own words.
+  String _scopeLabel(Translations t) => _seasonType == 2 ? t.vod.followingCinema : t.vod.followingBangumi;
+
+  /// 番剧 or 影视 — the one condition the 追番 list reads under, behind the
+  /// head's entry rather than as a second standing tab row.
+  Future<void> _openSeasonFilter() => showDsPanel<void>(
+    context: context,
+    builder: (context) => _SeasonTypePanel(
+      seasonType: _seasonType,
+      onPick: (type) {
+        if (type != _seasonType) setState(() => _seasonType = type);
+      },
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -126,6 +160,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final account = ref.watch(vodAccountProvider);
     final loggedIn = account.value?.isLogin ?? false;
+    final name = account.value?.name;
     final history = ref.watch(vodHistoryProvider);
     final favourites = ref.watch(vodFavouritesProvider);
     final toView = ref.watch(vodWatchLaterProvider).value ?? const <VodVideo>[];
@@ -136,81 +171,62 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       VodPersonalTab.favourites => favourites.length,
       VodPersonalTab.following => following?.seasons.length ?? 0,
     };
+    // The 追番 sub-list is only a choice once the platform's answer is on the
+    // screen; a guest gets the sign-in invitation, and an entry that opens an
+    // empty panel is not a choice.
+    final seasonFilter = _tab == VodPersonalTab.following && loggedIn;
+    final actions = <VodFeedAction>[
+      if (seasonFilter)
+        VodFeedAction(
+          icon: DsIcons.listFilter,
+          label: t.vod.searchFilterTitle,
+          onPressed: () => unawaited(_openSeasonFilter()),
+        ),
+      if (_tab == VodPersonalTab.history && history.isNotEmpty)
+        VodFeedAction(icon: DsIcons.trash2, label: t.vod.clearHistory, onPressed: () => unawaited(_clearHistory())),
+    ];
+    final summary = <String>[
+      if (seasonFilter) _scopeLabel(t),
+      ?name,
+      if (loggedIn || !_tab.needsLogin) t.vod.personalCount(count: count),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s8,
-            children: [
-              Row(
-                spacing: DsSpace.s12,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: DsSpace.s3,
-                      children: [
-                        Text(
-                          t.vod.personalTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.title.copyWith(color: colors.text),
-                        ),
-                        Text(
-                          account.value?.name == null
-                              ? t.vod.personalCount(count: count)
-                              : '${account.value!.name} · ${t.vod.personalCount(count: count)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (_tab == VodPersonalTab.history && history.isNotEmpty)
-                    DsButton.icon(
-                      variant: DsButtonVariant.secondary,
-                      size: DsSize.sm,
-                      semanticLabel: t.vod.clearHistory,
-                      onPressed: () => unawaited(_clearHistory()),
-                      icon: const DsIcon(DsIcons.trash2, size: 16),
-                    ),
-                ],
-              ),
-              SizedBox(
-                height: 40,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DsSegmentedControl<VodPersonalTab>(
-                    value: _tab,
-                    onChanged: (tab) => setState(() => _tab = tab),
-                    semanticLabel: t.vod.personalTitle,
-                    segments: [
-                      for (final tab in VodPersonalTab.values)
-                        DsSegment(value: tab, icon: DsIcon(tab.icon), label: Text(tab.label(t))),
-                    ],
-                  ),
-                ),
-              ),
-              if (_tab == VodPersonalTab.following)
-                SizedBox(
-                  height: 36,
-                  child: DsSegmentedControl<int>(
-                    value: _seasonType,
-                    onChanged: (type) => setState(() => _seasonType = type),
-                    semanticLabel: t.vod.personalFollowing,
-                    segments: [
-                      DsSegment(value: 1, label: Text(t.vod.followingBangumi)),
-                      DsSegment(value: 2, label: Text(t.vod.followingCinema)),
-                    ],
-                  ),
-                ),
-            ],
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, summary.isEmpty ? DsSpace.s8 : DsSpace.s4),
+          // The station's feed head, the same 44 the three browse pages and
+          // the search results use: the four lists at its start, their scope
+          // entry, cleanup and reload at its end — and on a narrow window one
+          // more icon carrying the same. The rail already names this page, so
+          // the head writes no title of its own over the lists, and the 追番
+          // scope reads from this head instead of adding a second tab row that
+          // pushes the list down.
+          child: VodFeedToolbar(
+            tabs: DsTopNav<VodPersonalTab>(
+              value: _tab,
+              onChanged: (tab) => setState(() => _tab = tab),
+              semanticLabel: t.vod.personalTitle,
+              items: [
+                for (final tab in VodPersonalTab.values)
+                  DsTopNavItem(value: tab, label: Text(tab.label(t)), icon: DsIcon(tab.icon)),
+              ],
+            ),
+            showLayout: false,
+            actions: actions,
+            onRefresh: loggedIn && _reloadable ? _refreshCurrent : null,
           ),
         ),
+        if (summary.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: Text(
+              summary.join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+          ),
         Expanded(
           child: !loggedIn && _tab.needsLogin
               ? _SignInState(tab: _tab)
@@ -429,6 +445,43 @@ final class _FollowingList extends StatelessWidget {
       items: seasons,
       aspectRatio: kVodSeasonTileAspect,
       itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season.seasonId)),
+    );
+  }
+}
+
+/// The 追番 list's scope in one panel behind the head's entry: 番剧 and 影视 as
+/// two chips, each applying where it is touched — a chooser rather than a set
+/// of conditions to submit, which is why it has no footer.
+final class _SeasonTypePanel extends StatelessWidget {
+  const _SeasonTypePanel({required this.seasonType, required this.onPick});
+
+  /// The type the list reads under now.
+  final int seasonType;
+
+  /// Moves the list to the chosen type.
+  final ValueChanged<int> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsPanel(
+      title: Text(t.vod.personalFollowing),
+      child: Wrap(
+        spacing: DsSpace.s8,
+        runSpacing: DsSpace.s8,
+        children: [
+          for (final (type, label) in [(1, t.vod.followingBangumi), (2, t.vod.followingCinema)])
+            DsChip(
+              label: Text(label),
+              selected: type == seasonType,
+              onChanged: (on) {
+                if (!on) return;
+                onPick(type);
+                Navigator.of(context).pop();
+              },
+            ),
+        ],
+      ),
     );
   }
 }

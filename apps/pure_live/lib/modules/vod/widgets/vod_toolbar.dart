@@ -25,15 +25,23 @@ final class VodFeedAction {
 }
 
 /// The video station's feed toolbar: its tabs at the head's start, the feed's
-/// own controls at its end — the card/list switch and a reload while the
-/// window holds them, and on a narrow window the tabs alone plus one more icon
-/// carrying the same actions. The same morphology the hot rooms page uses, so
-/// a feed the viewer can restyle is a feed that offers the restyle.
+/// own controls at its end — the card/list switch, the page's actions and a
+/// reload while the window holds them, and on a narrow window the tabs alone
+/// plus one more icon carrying the same actions. The same morphology the hot
+/// rooms page uses, so a feed the viewer can restyle is a feed that offers the
+/// restyle.
 final class VodFeedToolbar extends ConsumerWidget {
   /// The toolbar over [tabs]; [onRefresh] reloads the feed shown and is null
   /// on a page that has nothing to reload yet, [showLayout] is false on a grid
-  /// that has no second form, and [filter] is the page's condition entry.
-  const VodFeedToolbar({required this.tabs, required this.onRefresh, this.showLayout = true, this.filter, super.key});
+  /// that has no second form, and [actions] are the page's own head-end
+  /// actions — its condition entry, its cleanup — which sit before the reload.
+  const VodFeedToolbar({
+    required this.tabs,
+    required this.onRefresh,
+    this.showLayout = true,
+    this.actions = const <VodFeedAction>[],
+    super.key,
+  });
 
   /// The page's tab row.
   final Widget tabs;
@@ -45,14 +53,14 @@ final class VodFeedToolbar extends ConsumerWidget {
   /// Whether the feed switches between the card and the list layout.
   final bool showLayout;
 
-  /// The page's filter entry, opening the panel its conditions live in.
-  final VodFeedAction? filter;
+  /// The page's own actions, in the order they stand at the head's end.
+  final List<VodFeedAction> actions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final actions = <VodFeedAction>[
-      ?filter,
+    final head = <VodFeedAction>[
+      ...actions,
       if (onRefresh != null)
         VodFeedAction(icon: DsIcons.refresh, label: t.vod.refresh, onPressed: () => unawaited(onRefresh!())),
     ];
@@ -68,7 +76,7 @@ final class VodFeedToolbar extends ConsumerWidget {
               children: [
                 Expanded(child: tabs),
                 if (layouts.isNotEmpty) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
-                for (final action in actions) ...[
+                for (final action in head) ...[
                   const SizedBox(width: DsSpace.s8),
                   ChromeIconButton(
                     icon: action.icon,
@@ -81,7 +89,7 @@ final class VodFeedToolbar extends ConsumerWidget {
               ],
             );
           }
-          if (actions.isEmpty && layouts.isEmpty) return tabs;
+          if (head.isEmpty && layouts.isEmpty) return tabs;
           return Row(
             spacing: DsSpace.s8,
             children: [
@@ -90,7 +98,7 @@ final class VodFeedToolbar extends ConsumerWidget {
                 semanticLabel: t.common.more,
                 align: DsAlign.end,
                 items: [
-                  for (final (index, action) in actions.indexed) ...[
+                  for (final (index, action) in head.indexed) ...[
                     if (index > 0) const DsMenuDivider(),
                     DsMenuItem(leading: DsIcon(action.icon), label: Text(action.label), onPressed: action.onPressed),
                   ],
