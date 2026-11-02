@@ -215,7 +215,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
   static const int _batchSize = 12;
 
   HongguoGenre? _genre;
-  String _theme = '';
+
+  /// The genre's topics as the page last held them. A pick re-reads the shelf
+  /// from its first page, and that read empties the feed's selector panel
+  /// until the answer lands (`HongguoBrowseController._load`), so the bar's
+  /// entry and the shelf's own name would otherwise go blind for the length
+  /// of the pick — the entry disabling, the title falling back to the
+  /// topic's numeric id.
+  HongguoFilterRow? _topics;
+
   HongguoGenre _latest = HongguoGenre.shortPlay;
   int _batch = 0;
 
@@ -249,16 +257,28 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
     if (genre != null) unawaited(ref.read(hongguoBrowseProvider.notifier).open(genre));
   }
 
-  /// Switches the shelf: the theme filter and the batch walk start over, and
-  /// the new shelf's own feeds go out.
+  /// Switches the shelf: the topic goes back to the shelf's own selection,
+  /// the batch walk starts over, and the new shelf's feeds go out.
   void _selectGenre(HongguoGenre? genre) {
     if (genre == _genre) return;
     setState(() {
       _genre = genre;
-      _theme = '';
+      _topics = null;
       _batch = 0;
     });
     _openFeeds();
+  }
+
+  /// The genre's topics, in a panel over the shelves: the pick goes straight
+  /// to the shelf behind, as 找剧's selector panels do.
+  void _openThemes(HongguoGenre genre, HongguoFilterRow row) {
+    setState(() => _topics = row);
+    unawaited(
+      showDsPanel<void>(
+        context: context,
+        builder: (context) => _HomeThemePanel(genre: genre, row: row),
+      ),
+    );
   }
 
   @override
@@ -279,74 +299,53 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
       for (final row in browse?.groups ?? const <HongguoFilterRow>[])
         if (row.type == 'category_dim_theme') row,
     ];
-    final themeRow = themes.isEmpty ? null : themes.first;
-    final hot = _theme.isEmpty ? null : browse;
+    // The topic on the shelf is the feed's own selection, not a copy the page
+    // keeps: the chip wall this replaces reset its half on a genre switch
+    // while the shelf behind stayed filtered by the pick it left behind.
+    final themeRow = themes.isEmpty ? _topics : themes.first;
+    final theme = browse?.selection['category_dim_theme'] ?? '';
+    final hot = theme.isEmpty ? null : browse;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s20,
         children: [
-          // The station's genre bar, the live module's measure: one 44px
-          // scrollable row instead of a wall of chips.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-            child: SizedBox(
-              height: 44,
-              child: DsTopNav<String>(
-                value: genre?.name ?? '',
-                onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
-                items: [
-                  DsTopNavItem(value: '', label: Text(t.hongguo.homeTabAll)),
-                  for (final value in HongguoGenre.values) DsTopNavItem(value: value.name, label: Text(value.label(t))),
-                ],
-              ),
-            ),
-          ),
-          if (themeRow != null)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s12,
+          // The station's genre bar and the one condition this page carries.
+          // The topics sit behind an entry, as 找剧 and 榜单 do theirs: a
+          // genre's selector panel runs to twenty topics, and the wall of
+          // chips they used to be pushed every shelf below the fold. Which one
+          // is on gets said once — by the shelf it filters, whose name it
+          // already is.
+          SizedBox(
+            height: 44,
+            child: Row(
+              spacing: DsSpace.s8,
               children: [
-                SizedBox(
-                  width: 64,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: DsSpace.s6),
-                    child: Text(
-                      t.hongguo.shelfCategory,
-                      style: DsTheme.of(context).typography.caption
-                          .copyWith(color: DsTheme.colorsOf(context).textMuted),
-                    ),
-                  ),
-                ),
                 Expanded(
-                  child: Wrap(
-                    spacing: DsSpace.s8,
-                    runSpacing: DsSpace.s8,
-                    children: [
-                      DsChip(
-                        label: Text(t.hongguo.filterAll),
-                        selected: _theme.isEmpty,
-                        onChanged: (_) {
-                          setState(() => _theme = '');
-                          unawaited(browseController.select(genre!, 'category_dim_theme', null));
-                        },
-                      ),
-                      for (final option in themeRow.items)
-                        DsChip(
-                          label: Text(option.name),
-                          selected: _theme == option.id,
-                          onChanged: (selected) {
-                            final chosen = selected ? option.id : '';
-                            setState(() => _theme = chosen);
-                            unawaited(browseController.select(genre!, 'category_dim_theme', chosen));
-                          },
-                        ),
+                  child: DsTopNav<String>(
+                    value: genre?.name ?? '',
+                    onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
+                    items: [
+                      DsTopNavItem(value: '', label: Text(t.hongguo.homeTabAll)),
+                      for (final value in HongguoGenre.values)
+                        DsTopNavItem(value: value.name, label: Text(value.label(t))),
                     ],
                   ),
                 ),
+                // A genre is the only shelf that carries topics; 推荐 has no
+                // condition to set, so it gets no entry that cannot answer.
+                if (genre != null)
+                  DsButton(
+                    size: DsSize.sm,
+                    variant: DsButtonVariant.secondary,
+                    leading: const DsIcon(DsIcons.listFilter, size: 14),
+                    onPressed: themeRow == null ? null : () => _openThemes(genre, themeRow),
+                    child: Text(t.hongguo.filter),
+                  ),
               ],
             ),
+          ),
           HongguoShelf(
             title: t.hongguo.shelfForYou,
             items: home.items.skip(_batch * _batchSize).take(_batchSize).toList(),
@@ -369,15 +368,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
           ),
           HongguoShelf(
-            title: _theme.isEmpty ? t.hongguo.shelfHot : _themeLabel(themeRow, _theme),
-            items: (_theme.isEmpty ? heldRank.items : hot?.items ?? const <HongguoSeries>[]).take(_batchSize).toList(),
-            loading: _theme.isEmpty ? heldRank.loading : hot?.loading ?? true,
-            error: _theme.isEmpty ? heldRank.error : hot?.error,
-            onRetry: _theme.isEmpty
+            title: theme.isEmpty ? t.hongguo.shelfHot : _themeLabel(themeRow, theme),
+            items: (theme.isEmpty ? heldRank.items : hot?.items ?? const <HongguoSeries>[]).take(_batchSize).toList(),
+            loading: theme.isEmpty ? heldRank.loading : hot?.loading ?? true,
+            error: theme.isEmpty ? heldRank.error : hot?.error,
+            onRetry: theme.isEmpty
                 ? () => unawaited(rankController.refresh(board))
                 : () => unawaited(browseController.retry(genre!)),
             actions: [
-              if (_theme.isEmpty)
+              if (theme.isEmpty)
                 DsButton(
                   size: DsSize.sm,
                   variant: DsButtonVariant.secondary,
@@ -397,7 +396,7 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 size: DsSize.sm,
                 variant: DsButtonVariant.secondary,
                 leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                onPressed: _theme.isEmpty
+                onPressed: theme.isEmpty
                     ? () => unawaited(rankController.refresh(board))
                     : () => unawaited(browseController.retry(genre!)),
                 child: Text(t.hongguo.refreshShelf),
@@ -449,6 +448,50 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
       if (option.id == id) return option.name;
     }
     return id;
+  }
+}
+
+/// The home shelf's topics in the panel its bar opens: the one dimension that
+/// names the shelf it filters, so its pick goes straight to the shelf behind
+/// the panel and the row's own name says what is on.
+final class _HomeThemePanel extends ConsumerWidget {
+  const _HomeThemePanel({required this.genre, required this.row});
+
+  /// The shelf these topics belong to.
+  final HongguoGenre genre;
+
+  /// The topic row the page is holding.
+  final HongguoFilterRow row;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final controller = ref.read(hongguoBrowseProvider.notifier);
+    final selection =
+        ref.watch(hongguoBrowseProvider.select((feeds) => feeds[genre.name]?.selection)) ?? const <String, String>{};
+    return DsPanel(
+      title: Text(t.hongguo.filterPanelTitle),
+      footer: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: selection[row.type] == null ? null : () => unawaited(controller.select(genre, row.type, null)),
+              child: Text(t.hongguo.filterReset),
+            ),
+          ),
+          Expanded(
+            child: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.hongguo.filterDone)),
+          ),
+        ],
+      ),
+      child: HongguoFilterRowView(
+        row: row,
+        selection: selection,
+        onSelect: (id) => unawaited(controller.select(genre, row.type, id)),
+      ),
+    );
   }
 }
 
