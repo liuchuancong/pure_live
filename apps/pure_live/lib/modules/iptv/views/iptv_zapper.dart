@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
+import 'package:pure_live/app/providers/boot/environment_providers.dart' show deviceProfileProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
@@ -386,12 +387,21 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                     },
                   ),
                 ),
-                Text(
-                  t.iptv.zapperHint,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
+                // The line names this panel's own key bindings — the arrows it
+                // walks, Enter/Space that plays, Escape that folds it — so it
+                // belongs on the surfaces that have those keys. A phone or a
+                // tablet has none of them: the rows are tapped, the columns are
+                // switched by the segment above, and the ✕ beside the title is
+                // the way out. A caption that describes an input the device
+                // does not have is not a hint; it is a false claim about the
+                // panel, and it costs a row of height to make it.
+                if (ref.watch(deviceProfileProvider).isDesktop)
+                  Text(
+                    t.iptv.zapperHint,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
               ],
             ),
           ),
