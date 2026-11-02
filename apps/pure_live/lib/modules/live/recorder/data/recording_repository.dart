@@ -47,7 +47,11 @@ final class RecordingTaskRepository {
   /// Marks the task behind [id] as recording: a new session starts now, and
   /// the last one's facts (file, size, error) are cleared with it. A task
   /// never stored is a no-op — the engine adds its stub first.
-  Future<void> setRunning(String id) async {
+  ///
+  /// [takeDirectory] is the folder the capture writes into, stored from the
+  /// first byte: a process that dies mid-take leaves a row that still names
+  /// where its segments are, so the next start can finish them.
+  Future<void> setRunning(String id, {String? takeDirectory}) async {
     final stored = store.get(id);
     if (stored == null) return;
     final task = RecordingTask.fromJson(stored);
@@ -60,6 +64,7 @@ final class RecordingTaskRepository {
         quality: task.quality,
         state: RecordingTaskState.recording,
         startedAt: DateTime.now().toUtc(),
+        filePath: takeDirectory,
         scheduleEnabled: task.scheduleEnabled,
         scheduleDays: task.scheduleDays,
         scheduleStartMinutes: task.scheduleStartMinutes,
@@ -256,6 +261,13 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     state = (ready: true, tasks: repository.list());
   }
 
+  /// Reads the tasks back from the store (the page's pull); the store's
+  /// own changes arrive on their own, so this only re-reads what is there.
+  Future<void> reload() async {
+    final repository = ref.read(recordingRepositoryProvider).value;
+    if (repository != null) _refresh(repository);
+  }
+
   /// Stores [task] as given (the engine's stub before its first session).
   Future<void> add(RecordingTask task) async {
     final repository = ref.read(recordingRepositoryProvider).value;
@@ -278,17 +290,25 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
   }
 
   /// Marks the task behind [id] as recording (a new session starts).
-  Future<void> setRunning(String id) async {
+  Future<void> setRunning(String id, {String? takeDirectory}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setRunning(id);
+    await repository.setRunning(id, takeDirectory: takeDirectory);
   }
 
-  /// Marks the task behind [id] as ended with its file saved.
-  Future<void> setStopped(String id, {String? filePath, int? bytes, String? errorText}) async {
+  /// Marks the task behind [id] as ended with its file saved; [warning] is
+  /// the post-recording note the card shows under it.
+  Future<void> setStopped(String id, {String? filePath, int? bytes, String? errorText, String? warning}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setEnded(id, RecordingTaskState.stopped, filePath: filePath, bytes: bytes, errorText: errorText);
+    await repository.setEnded(
+      id,
+      RecordingTaskState.stopped,
+      filePath: filePath,
+      bytes: bytes,
+      errorText: errorText,
+      warning: warning,
+    );
   }
 
   /// Marks the task behind [id] as failed (its session ended in an error).

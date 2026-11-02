@@ -46,9 +46,7 @@ final class RecordingLiveMonitor {
       }),
       (previous, next) => _arm(immediate: true),
     );
-    if (_ref.read(recordingSettingsProvider).schedule.autoStartOnBoot) {
-      unawaited(_resumeInterrupted());
-    }
+    unawaited(_recoverInterrupted());
     unawaited(_recoverStaleProcessing());
     _ref.listen(recordingTasksProvider.select(_monitorKey), (previous, next) => _arm(immediate: true));
     _ref.onDispose(_stop);
@@ -61,28 +59,44 @@ final class RecordingLiveMonitor {
   final Map<String, DateTime> _lastChecked = {};
   final Map<String, int> _failures = {};
 
-  /// Returns tasks interrupted by the previous process (still marked
-  /// recording) to the waiting pool, so the live check can resume them.
-  Future<void> _resumeInterrupted() async {
+  /// The tasks the previous process left mid-take (still marked recording,
+  /// their claim held by nobody): the take on disk is finished first — the
+  /// same join, archive and rename a stop runs, read back from the folder
+  /// the row names — and the row then either returns to the waiting pool
+  /// (the boot setting on, so the live check resumes the room) or settles as
+  /// stopped with the finished take. A kill between the capture and the join
+  /// must not cost the recording its single file.
+  Future<void> _recoverInterrupted() async {
     try {
       final repository = await _ref.read(recordingRepositoryProvider.future);
       if (!_ref.mounted) return;
       final claims = _ref.read(appPathsProvider).recordingClaims;
+      final resume = _ref.read(recordingSettingsProvider).schedule.autoStartOnBoot;
+      final engine = _ref.read(recorderEngineProvider);
       var resumed = false;
       for (final task in repository.list()) {
         if (task.state != RecordingTaskState.recording) continue;
         // A row whose claim another process holds is not interrupted: that
-        // window is recording it right now, and turning the row into waiting
-        // would tell both windows otherwise. The probe is held across the write
-        // so a start cannot slip in between the check and the change.
+        // window is recording it right now, and touching the row would tell
+        // both windows otherwise. The probe is held across the write so a
+        // start cannot slip in between the check and the change.
         final probe = await acquireRecordingClaim(claims, task.id);
         if (probe == null) continue;
         try {
-          await repository.save(task.copyWith(state: RecordingTaskState.waiting));
-          resumed = true;
+          await repository.setEnded(task.id, RecordingTaskState.stopped);
         } finally {
           await releaseRecordingClaim(probe);
         }
+        // The finish runs from the folder alone (see `retryFinalize`): it
+        // begins here and goes on in the background, guarded by the take's
+        // own lock and start time, so a resumed room's new take never
+        // collides with it.
+        final stopped = repository.taskById(task.id) ?? task;
+        if (stopped.takeDirectory.isNotEmpty) await engine.retryFinalize(stopped);
+        if (!resume) continue;
+        final settled = repository.taskById(task.id) ?? stopped;
+        await repository.save(settled.copyWith(state: RecordingTaskState.waiting));
+        resumed = true;
       }
       // The reference checks once even when the periodic live check is off;
       // let the task mirror see the writes first, then run that one round.

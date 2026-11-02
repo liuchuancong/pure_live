@@ -2,6 +2,7 @@
 /// settings it stores, and the page the viewer drives it from.
 library;
 
+export 'data/recorder_search_handoff.dart';
 export 'data/recording_preview.dart';
 export 'data/recording_repository.dart';
 export 'data/recording_settings.dart';

@@ -180,6 +180,7 @@ final class _FinalizeTarget {
     required this.root,
     required this.takePrefix,
     required this.desiredTake,
+    required this.desiredFolder,
     required this.join,
     required this.close,
   });
@@ -200,6 +201,11 @@ final class _FinalizeTarget {
 
   /// The name the take is given afterwards; empty keeps [takePrefix].
   final String desiredTake;
+
+  /// The folder under the managed root the take is moved into afterwards —
+  /// the day it was taken, the platform, the room (`2026-11-02/douyu/6731182`);
+  /// empty leaves it where the capture wrote it.
+  final String desiredFolder;
 
   /// Joins the segments into one file. Null means this folder holds nothing
   /// joinable.
@@ -317,6 +323,7 @@ final class RecorderEngine {
       root: root.path,
       takePrefix: prefix,
       desiredTake: _desiredTakeName(task, at: task.startedAt.toLocal()),
+      desiredFolder: _desiredTakeFolder(task, at: task.startedAt.toLocal()),
       join: ({required onProgress, required onExecution}) async {
         final record = manifest;
         if (record != null) {
@@ -569,7 +576,7 @@ final class RecorderEngine {
       return 'cannot start: ${_errorOf(error)}';
     }
 
-    await repo.setRunning(task.id);
+    await repo.setRunning(task.id, takeDirectory: root);
     // The store's running entry is the session's truth, including the start
     // the repository stamped; a later join guards its file update on it.
     session
@@ -874,6 +881,7 @@ final class RecorderEngine {
         root: session.root,
         takePrefix: session.take,
         desiredTake: session.desiredTake,
+        desiredFolder: _desiredTakeFolder(session.task, at: session.task.startedAt.toLocal()),
         join: ({required onProgress, required onExecution}) =>
             session.backend.combineLastRecording(onProgress: onProgress, onExecution: onExecution),
         close: () => _disposeManager(session),
@@ -1455,6 +1463,24 @@ final class RecorderEngine {
     return safe.isEmpty ? stamp : '${safe}_$stamp';
   }
 
+  /// The folder a finished take lives in, relative to the managed root: the
+  /// day the take began, then the platform, then the room — a month of
+  /// recordings reads as a calendar, a day as the rooms taken that day, and
+  /// a room's takes sit together under it. Each part is made filesystem-safe
+  /// the way the take's own name is; a part that comes out empty is skipped
+  /// rather than producing an empty folder level.
+  String _desiredTakeFolder(RecordingTask task, {DateTime? at}) {
+    final now = at ?? DateTime.now();
+    String two(int value) => value.toString().padLeft(2, '0');
+    final day = '${now.year}-${two(now.month)}-${two(now.day)}';
+    final parts = [
+      day,
+      FfmpegRecordArguments.safeFilePrefix(task.platform),
+      FfmpegRecordArguments.safeFilePrefix(task.roomId),
+    ].where((part) => part.isNotEmpty);
+    return p.joinAll(parts);
+  }
+
   /// The name a take's notification shows for [task]: the room's title, which
   /// is what a viewer recognises an hour later — the capture prefix is a
   /// filesystem name. A room whose title the platform never gave falls back to
@@ -1589,10 +1615,28 @@ final class RecorderEngine {
       return (directory: target.root, filePath: sourceFile);
     }
     var root = oldRoot;
+    // The take moves under its day/platform/room folder of the managed root
+    // it was written in. A take that is not inside the managed root (an old
+    // directory being finished after the viewer moved it) stays beside its
+    // siblings instead of crossing into the new root — a rename across
+    // volumes would fail anyway.
+    var parent = oldRoot.parent;
+    if (target.desiredFolder.isNotEmpty) {
+      final managed = await _managedRoot();
+      if (p.isWithin(p.normalize(managed.path), p.normalize(oldRoot.path))) {
+        final nested = Directory(p.join(managed.path, target.desiredFolder));
+        try {
+          await nested.create(recursive: true);
+          parent = nested;
+        } on FileSystemException {
+          // A folder that cannot be made leaves the take where it is.
+        }
+      }
+    }
     // A take whose folder already carries the wanted name — a finish that was
     // interrupted between the rename and the status write — keeps it, so
     // re-running the step cannot produce a `_2` twin of the same take.
-    final wanted = _uniqueDirectory(oldRoot.parent, desired, keep: oldRoot);
+    final wanted = _uniqueDirectory(parent, desired, keep: oldRoot);
     if (!p.equals(p.normalize(wanted.path), p.normalize(oldRoot.path))) {
       try {
         await oldRoot.rename(wanted.path);

@@ -1,5 +1,5 @@
 import 'dart:async' show TimeoutException, unawaited;
-import 'dart:io' show File, FileSystemEntity, FileSystemEntityType;
+import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
@@ -16,6 +16,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/data/recorder_search_handoff.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
@@ -23,6 +24,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
     show NoRecordableStream, resolveRecordableStream;
+import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
 import 'package:pure_live/shared/shared.dart';
 
 /// The recording centre (the reference's recorder page): five status
@@ -71,6 +73,96 @@ enum _RecorderFilter {
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
   _RecorderFilter _filter = _RecorderFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    // The toolbar's word opens the room search picker over this page: a
+    // room found there becomes a task. The listener catches a word handed
+    // while the page is showing; the post-frame take catches one handed as
+    // the page arrives.
+    ref.listenManual(recorderSearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  void _takeHandoff() {
+    final word = ref.read(recorderSearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    unawaited(showRoomSearchPicker(context, query: word, title: context.t.recorder.searchHint, onPick: _addFromSearch));
+  }
+
+  /// Adds the picked room as a task: a live room starts recording now, an
+  /// offline one joins the waiting list and starts when the live check
+  /// sees it on air — each after the viewer confirms what will happen.
+  Future<void> _addFromSearch(LiveRoom room) async {
+    final t = context.t;
+    final live = room.broadcast.isLiveNow;
+    final title = room.content.title.trim().isEmpty ? room.anchor?.name ?? room.ref.roomId : room.content.title;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.recorder.addTitle,
+      description: live ? t.recorder.addBodyLive(title: title) : t.recorder.addBodyOffline(title: title),
+      confirmLabel: live ? t.recorder.addStartNow : t.recorder.addArm,
+      cancelLabel: t.common.cancel,
+      icon: const DsIcon(DsIcons.disc3),
+    );
+    if (!confirmed || !mounted) return;
+    final id = '${room.ref.platform}:${room.ref.roomId}';
+    if (ref.read(recorderEngineProvider).isRecording(id)) {
+      showDsToast(context: context, title: t.recorder.addAlreadyRecording, status: DsStatus.info);
+      return;
+    }
+    final settings = ref.read(recordingSettingsProvider);
+    final existing = ref.read(recordingTasksProvider).tasks.where((task) => task.id == id).firstOrNull;
+    final now = DateTime.now().toUtc();
+    if (live) {
+      final task =
+          existing?.copyWith(
+            roomTitle: room.content.title,
+            quality: settings.defaultQuality,
+            state: RecordingTaskState.stopped,
+            startedAt: now,
+          ) ??
+          RecordingTask(
+            id: id,
+            platform: room.ref.platform,
+            roomId: room.ref.roomId,
+            roomTitle: room.content.title,
+            quality: settings.defaultQuality,
+            state: RecordingTaskState.stopped,
+            startedAt: now,
+          );
+      await _startNow(task);
+      return;
+    }
+    // Nothing begins a take on its own with the live check off.
+    if (!settings.schedule.pollingEnabled) {
+      ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
+    }
+    final waiting =
+        existing?.copyWith(
+          roomTitle: room.content.title,
+          quality: settings.defaultQuality,
+          state: RecordingTaskState.waiting,
+          startedAt: now,
+        ) ??
+        RecordingTask(
+          id: id,
+          platform: room.ref.platform,
+          roomId: room.ref.roomId,
+          roomTitle: room.content.title,
+          quality: settings.defaultQuality,
+          state: RecordingTaskState.waiting,
+          startedAt: now,
+        );
+    await ref.read(recordingTasksProvider.notifier).add(waiting);
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: t.recorder.addArmed(seconds: ref.read(recordingSettingsProvider).schedule.liveCheckSeconds),
+      status: DsStatus.success,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,8 +219,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         ),
       );
     } else {
-      content = CardList<RecordingTask>(
+      // The tasks page the popular page's way: a wide window by number, a
+      // narrow one appending as the viewer reaches the end and pulling to
+      // re-read the store. A new filter is a new list, on its first page.
+      content = PagedCardList<RecordingTask>(
+        key: ValueKey('recorder-${_filter.name}'),
         items: visible,
+        onRefresh: ref.read(recordingTasksProvider.notifier).reload,
         itemBuilder: (context, task) {
           final preview = _canPreview(task);
           return _TaskCard(
@@ -289,14 +386,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// something to watch.
   bool _canPreview(RecordingTask task) {
     if (task.postProcessing || task.state == RecordingTaskState.recording) return false;
-    final path = (task.filePath ?? '').trim();
-    if (path.isEmpty) return false;
-    try {
-      return FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound;
-    } on Object {
-      return false;
-    }
+    // A folder that only holds the archive (its video deleted from the
+    // preview) has nothing to play, however much it still exists.
+    return playableFileAt(task.filePath) != null;
   }
+
 
   /// Opens the built-in preview on [task]'s take, with the centre's other
   /// takes listed beside it — the finished picture first, the folder's
@@ -311,7 +405,25 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       showDsToast(context: context, title: t.recorder.previewUnavailable, status: DsStatus.warning);
       return;
     }
-    await openMediaPreview(context, title: t.recorder.previewTitle, items: items, initialIndex: index);
+    await openMediaPreview(
+      context,
+      title: t.recorder.previewTitle,
+      items: items,
+      initialIndex: index,
+      // A take whose file the viewer deleted from the preview is no longer
+      // a saved recording: the row says so instead of still reading 已保存
+      // over a file that is gone. The entry stays — the take's folder may
+      // still hold the chat sidecars and the archived segments.
+      onDeleted: (item) async {
+        final row = ref.read(recordingTasksProvider).tasks.where((task) => task.id == item.id).firstOrNull;
+        if (row == null) return;
+        // The row keeps naming the take's folder, so 打开文件夹 still works
+        // on what is left in it.
+        await ref
+            .read(recordingTasksProvider.notifier)
+            .setStopped(item.id, filePath: row.takeDirectory, bytes: 0, warning: 'file-deleted');
+      },
+    );
   }
 
   /// Hands the tapped take to the system's own player, files it cannot name
@@ -704,8 +816,18 @@ final class _TaskCard extends StatelessWidget {
                 spacing: DsSpace.s3,
                 children: [
                   DsBadge(
-                    label: Text(task.postProcessing ? t.recorder.stateProcessing : _stateLabel(t, task.state)),
-                    status: task.postProcessing ? DsStatus.info : _stateStatus(task.state),
+                    label: Text(
+                      task.postProcessing
+                          ? t.recorder.stateProcessing
+                          : _fileDeleted
+                          ? t.recorder.stateFileDeleted
+                          : _stateLabel(t, task.state),
+                    ),
+                    status: task.postProcessing
+                        ? DsStatus.info
+                        : _fileDeleted
+                        ? DsStatus.neutral
+                        : _stateStatus(task.state),
                   ),
                   Text(
                     task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
@@ -740,6 +862,10 @@ final class _TaskCard extends StatelessWidget {
       ),
     );
   }
+
+  /// Whether the take's file was deleted from the preview: a settled row
+  /// whose recording is gone reads as that, not as saved.
+  bool get _fileDeleted => task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
 
   /// The state's badge label.
   static String _stateLabel(Translations t, RecordingTaskState state) => switch (state) {
@@ -1031,6 +1157,7 @@ String _warningLabel(Translations t, String warning) => switch (warning) {
   'stale' => t.recorder.warningStaleProcessing,
   'disk-low' => t.recorder.warningDiskLow,
   'canceled' => t.recorder.warningCanceled,
+  'file-deleted' => t.recorder.warningFileDeleted,
   _ => t.recorder.warningFinalizeFailed,
 };
 

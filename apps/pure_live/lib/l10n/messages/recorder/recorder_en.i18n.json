@@ -217,5 +217,15 @@
   "startNowTimeout": "Reading the stream timed out",
   "startNowFailed": "Could not start recording: {error}",
   "cacheBusy": "A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.",
-  "cacheOtherRoot": "A take is still writing to the old folder; this page's size, clear and automatic trimming cover the current folder only."
+  "cacheOtherRoot": "A take is still writing to the old folder; this page's size, clear and automatic trimming cover the current folder only.",
+  "searchHint": "Search a room to record",
+  "addTitle": "Add recording",
+  "addBodyLive": "“{title: String}” is live. Start recording now?",
+  "addBodyOffline": "“{title: String}” is offline. Add it to the waiting list and record once it goes live?",
+  "addStartNow": "Start recording",
+  "addArm": "Add to waiting",
+  "addArmed": "Added to waiting; checked every {seconds: int} seconds",
+  "addAlreadyRecording": "This room is already being recorded",
+  "stateFileDeleted": "File deleted",
+  "warningFileDeleted": "The video was deleted from the preview; the chat files and segments in the take folder remain"
 }

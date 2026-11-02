@@ -217,5 +217,15 @@
   "startNowTimeout": "读取直播流超时",
   "startNowFailed": "无法开始录制：{error}",
   "cacheBusy": "有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。",
-  "cacheOtherRoot": "另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。"
+  "cacheOtherRoot": "另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。",
+  "searchHint": "搜索直播间添加录制",
+  "addTitle": "添加录制",
+  "addBodyLive": "「{title: String}」正在直播，立即开始录制？",
+  "addBodyOffline": "「{title: String}」未开播，加入等待列表，开播后自动开始录制？",
+  "addStartNow": "开始录制",
+  "addArm": "加入等待",
+  "addArmed": "已加入等待，每 {seconds: int} 秒检查一次开播",
+  "addAlreadyRecording": "这个房间已在录制中",
+  "stateFileDeleted": "文件已删除",
+  "warningFileDeleted": "视频文件已在预览中删除；任务目录里的弹幕与分段仍保留"
 }
