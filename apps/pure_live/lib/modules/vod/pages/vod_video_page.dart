@@ -3,6 +3,7 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
@@ -86,6 +87,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   bool _globalMute = false;
   double _volume = 1;
   double _speed = 1;
+
+  /// The volume a drag on the picture or a wheel is setting right now; null
+  /// while no gesture shows it, and the chip fades on its own like the room's.
+  double? _volumeHud;
+  Timer? _volumeHudTimer;
+  double _dragVolume = 1;
+
+  /// Sound only: the part keeps playing and the picture is put away — the way
+  /// to keep listening to a 广播剧-style episode at a desk.
+  bool _audioOnly = false;
 
   /// Whether the overlay bars are up; a playing stream lets them settle away.
   bool _controlsVisible = true;
@@ -243,6 +254,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _hideTimer?.cancel();
     _hoverTimer?.cancel();
     _leaveTimer?.cancel();
+    _volumeHudTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -409,6 +421,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       await handle.setVolume(_volume);
       await handle.setMute(muted: _effectivelyMuted);
       await handle.setRate(_speed);
+      if (_audioOnly) await _applyAudioOnly(handle);
       final seekTo = resume ?? _resumeSeconds;
       _resumeSeconds = null;
       if (seekTo != null && seekTo > 5) {
@@ -631,6 +644,82 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     } on Object catch (_) {
       // Same as mute.
     }
+  }
+
+  /// Shows [value] on the picture's own volume chip and lets it settle away a
+  /// moment after the last move — the room's gesture, so a viewer learns it
+  /// once and finds it on every player here.
+  void _showVolumeHud(double value) {
+    _volumeHudTimer?.cancel();
+    setState(() => _volumeHud = value.clamp(0.0, 1.0));
+    _volumeHudTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _volumeHud = null);
+    });
+  }
+
+  void _beginVolumeDrag() {
+    _dragVolume = _volume;
+    _showVolumeHud(_dragVolume);
+  }
+
+  void _dragVolumeBy(double delta) {
+    final next = (_dragVolume - delta / 220).clamp(0.0, 1.0);
+    _dragVolume = next;
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
+  }
+
+  /// A wheel step takes the viewer's own share of the range (the 画质与音频
+  /// setting). The seek slider answers the wheel too, so the step only moves
+  /// when the pointer is over the picture rather than over the bar.
+  void _wheelVolume(double delta) {
+    if (_handle == null) return;
+    final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
+    final next = (_volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
+  }
+
+  /// 音频模式: keep the sound, put the picture away.
+  Future<void> _toggleAudioOnly() async {
+    setState(() => _audioOnly = !_audioOnly);
+    final handle = _handle;
+    if (handle == null) return;
+    await _applyAudioOnly(handle);
+  }
+
+  /// Writes the mode to [handle]; a kernel that has none leaves the picture up
+  /// rather than failing the part switch it is applied on.
+  Future<void> _applyAudioOnly(PlayerHandle handle) async {
+    try {
+      await handle.setAudioOnly(audioOnly: _audioOnly);
+    } on Object {
+      // The switch says what was asked; the next handle gets the same try.
+    }
+  }
+
+  /// Keeps the frame the part is showing in the viewer's screenshot folder, and
+  /// says how it went — a capture that fails silently reads as a dead button.
+  Future<void> _screenshot() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final file = await capturePlayerFrame(handle, ref.read(appPathsProvider).screenshots, prefix: 'pure_live_vod');
+    if (!mounted) return;
+    final t = context.t;
+    showDsToast(
+      context: context,
+      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      status: file == null ? DsStatus.danger : DsStatus.success,
+    );
+  }
+
+  /// Sends the part's own address to a DLNA receiver. Bilibili's CDN answers
+  /// only a request that carries the referer, so the headers travel with it —
+  /// a TV that cannot send them surfaces a cast failure, which is the truth.
+  Future<void> _cast() async {
+    final info = _play;
+    if (info == null) return;
+    await showCastUriDialog(context, url: info.url, title: _detail?.title ?? _part?.title, headers: info.headers);
   }
 
   Future<void> _setSpeed(double speed) async {
@@ -1012,17 +1101,63 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                       ),
                     ),
                   ),
+                // 音频模式 covers the frame rather than replacing the surface:
+                // the part keeps playing, and the episode's name says what is
+                // still running behind the card.
+                if (_audioOnly && handle != null)
+                  Positioned.fill(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s8,
+                        children: [
+                          const DsIcon(DsIcons.headphones, size: 32, color: playerInkSubtle),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Text(
+                              _part?.title ?? _detail?.title ?? '',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.title.copyWith(color: playerInk),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // The stream's own numbers, on the same session switch the room
+                // and the preview use.
+                if (handle case final player? when ref.watch(playerStatsVisibleProvider))
+                  Positioned.fill(
+                    child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                  ),
+                if (_volumeHud case final value?)
+                  PositionedDirectional(
+                    end: DsSpace.s20,
+                    top: 0,
+                    bottom: 0,
+                    child: PlayerVolumeHud(value: value),
+                  ),
                 // The picture itself is the bar's switch: a press toggles it,
-                // a double press plays or pauses.
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _toggleControls,
-                  onDoubleTap: handle == null
-                      ? null
-                      : () {
-                          _wake();
-                          unawaited(_togglePlay());
-                        },
+                // a double press plays or pauses. A vertical drag and the wheel
+                // set the volume, the room's rule.
+                Listener(
+                  onPointerSignal: (signal) {
+                    if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
+                  },
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggleControls,
+                    onVerticalDragStart: (_) => _beginVolumeDrag(),
+                    onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
+                    onDoubleTap: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_togglePlay());
+                          },
+                  ),
                 ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
@@ -1419,6 +1554,44 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             _wake();
                             unawaited(_startDownload());
                           },
+                  ),
+                  // The four verbs the room's bar has and this one lacked:
+                  // listen without the picture, keep the frame, send it to a
+                  // TV, read the numbers behind it.
+                  PlayerBarButton(
+                    icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
+                    label: t.room.audioOnlyMode,
+                    selected: _audioOnly,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_toggleAudioOnly());
+                          },
+                  ),
+                  if (handle?.canCaptureScreenshot ?? false)
+                    PlayerBarButton(
+                      icon: DsIcons.camera,
+                      label: t.room.screenshot,
+                      onPressed: () {
+                        _wake();
+                        unawaited(_screenshot());
+                      },
+                    ),
+                  if (_play != null)
+                    PlayerBarButton(
+                      icon: DsIcons.cast,
+                      label: t.room.cast,
+                      onPressed: () {
+                        _wake();
+                        unawaited(_cast());
+                      },
+                    ),
+                  PlayerBarButton(
+                    icon: DsIcons.activity,
+                    label: t.room.statsToggle,
+                    selected: ref.watch(playerStatsVisibleProvider),
+                    onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
                   ),
                   PlayerBarButton(
                     icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
