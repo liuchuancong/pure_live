@@ -703,7 +703,7 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
                           number: index + 1,
                           playing: false,
                           favourite: favourites.contains(song),
-                          subtitle: song.artist,
+                          subtitle: musicTrackCredits(song),
                           onPlay: () => unawaited(player.playAll(tracks, index: index)),
                           onFavourite: () => unawaited(favouritesController.toggle(song)),
                           onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),

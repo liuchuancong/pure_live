@@ -38,6 +38,22 @@ String? musicQualityBadgeOf(Translations t, audio.MusicTrack track) {
 String musicQualitiesText(Translations t, audio.MusicTrack track) =>
     [for (final quality in track.qualities) ?musicQualityByScriptName(quality.id)?.label(t)].join(' · ');
 
+/// Who sang it and which record it came off, as one line: the module's only
+/// spelling of a song's credits.
+///
+/// Empty pieces drop out and a song with neither yields null, so a row shows
+/// its own fallback rather than a dangling separator. The bar under every music
+/// page and the list rows both read this, so the same song cannot be credited
+/// one way in the bar and another way in the list above it.
+///
+/// The library's search results deliberately do not: that row spends its second
+/// piece on the source the song came from, which is the one fact that differs
+/// between two hits on the same title.
+String? musicTrackCredits(audio.MusicTrack track) {
+  final parts = [if (track.artist.isNotEmpty) track.artist, if (track.album.isNotEmpty) track.album];
+  return parts.isEmpty ? null : parts.join(' · ');
+}
+
 /// A song's album art: its cover, or the title's initials on a tone when the
 /// platform gave none.
 ///

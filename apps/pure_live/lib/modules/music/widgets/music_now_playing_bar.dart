@@ -264,8 +264,11 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
                               ),
+                              // Who sang it and off which record — the same
+                              // line the list rows above the bar use. A song
+                              // with neither says where it is, not nothing.
                               Text(
-                                track.artist.isEmpty ? t.music.nowPlaying : track.artist,
+                                musicTrackCredits(track) ?? t.music.nowPlaying,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.typography.caption.copyWith(color: colors.textSubtle),

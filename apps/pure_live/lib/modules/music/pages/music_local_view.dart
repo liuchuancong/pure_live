@@ -315,11 +315,11 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                                 : () => _toggleSelected(song, index),
                             // Tags name the song; the file name is the fallback
                             // for the files that carry none.
-                            subtitle: song.artist.isNotEmpty
-                                ? (song.album.isEmpty ? null : '${song.artist} · ${song.album}')
-                                : song.localPath == null
-                                ? null
-                                : musicFileNameOf(song.localPath!),
+                            // Credits the module says one way; a file the tags
+                            // never named falls back to its own file name.
+                            subtitle:
+                                musicTrackCredits(song) ??
+                                (song.localPath == null ? null : musicFileNameOf(song.localPath!)),
                             onPlay: () => unawaited(player.playAll(state.tracks, index: index)),
                             onFavourite: () => unawaited(favouritesController.toggle(song)),
                             onPlayNext: () => unawaited(player.playNext(song)),
