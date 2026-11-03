@@ -6,7 +6,14 @@ import 'package:pure_live/modules/music/controller/music_comments.dart' show Mus
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show decodeKrc;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
-    show MusicAlbum, MusicAlbumDetail, MusicAlbumSource;
+    show
+        MusicAlbum,
+        MusicAlbumDetail,
+        MusicAlbumSource,
+        MusicArtistDetail,
+        MusicArtistSource,
+        musicArtistPageFromSearch,
+        musicMainArtist;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
@@ -44,10 +51,11 @@ const Map<String, String> _krcHeaders = {
 
 /// The KuGou platform: search, boards and lyrics ride KuGou's own channel;
 /// play URLs come from the lx scripts (KuGou has no open URL endpoint), keyed
-/// by the per-quality file hashes the search response carries.
+/// by the per-quality file hashes the search response carries. The artist and
+/// album pages ride the same open v5/v3 channels.
 final class KgMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
-    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource {
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource, MusicArtistSource {
   /// A KuGou source over the lx runtime.
   KgMusicSource(super.runtime, super.http);
 
@@ -453,10 +461,7 @@ final class KgMusicSource extends LxPlatformSource
     String albumId,
     ({String name, String artist, String artistId, Uri? cover, int? year}) card,
   ) {
-    final line = LxPlatformSource.decodeName('${row['filename'] ?? ''}').trim();
-    final split = line.indexOf(' - ');
-    final singer = split < 0 ? '' : line.substring(0, split).trim();
-    final title = split < 0 ? line : line.substring(split + 3).trim();
+    final (singer, title) = _creditLine(LxPlatformSource.decodeName('${row['filename'] ?? ''}').trim());
     final track = _trackOf(
       row,
       songmid: '${row['audio_id'] ?? row['album_audio_id'] ?? ''}'.trim(),
@@ -469,6 +474,123 @@ final class KgMusicSource extends LxPlatformSource
     if (track == null) return null;
     final artist = singer.isEmpty ? card.artist : singer;
     return track.copyWith(artist: artist.isEmpty ? null : artist, coverUri: card.cover);
+  }
+
+  /// The artist's page — the reference's kg `singer.js`, three open v5 reads:
+  /// the card (name, portrait, counts), the discography and the songs. The
+  /// song rows name nothing on their own: like the album rows they carry one
+  /// `歌手 - 曲名` line, so the same split feeds both.
+  ///
+  /// A page opened by name alone has no singer id to ask with — the endpoints
+  /// take only that — so the id comes out of the platform's own search, and
+  /// when even that has none (some songs credit a singer KuGou never收录, id
+  /// 0) the page falls back to what the search alone can say.
+  @override
+  Future<MusicArtistDetail> artist(String name, {String? artistId}) async {
+    final subject = musicMainArtist(name);
+    final given = (artistId ?? '').trim();
+    final id = given.isEmpty ? await _singerIdOf(subject) : given;
+    if (id == null || id.isEmpty || id == '0') {
+      return await musicArtistPageFromSearch(search, name, artistId: artistId);
+    }
+    final card = await _singerCard(id);
+    final songs = <audio.MusicTrack>[];
+    final seen = <String>{};
+    for (final row in await _singerList('/api/v5/singer/song', id, 100)) {
+      final (singer, title) = _creditLine(LxPlatformSource.decodeName('${row['filename'] ?? ''}').trim());
+      final track = _trackOf(
+        row,
+        songmid: '${row['audio_id'] ?? row['album_audio_id'] ?? ''}'.trim(),
+        title: title,
+        suffix: '',
+        singers: null,
+        albumName: LxPlatformSource.decodeName('${row['album_name'] ?? ''}'),
+        albumId: '${row['album_id'] ?? ''}'.trim(),
+      );
+      if (track == null || !seen.add('${track.id}:${track.metadata['hash']}')) continue;
+      final artist = singer.isEmpty ? card.artist : singer;
+      songs.add(track.copyWith(artist: artist.isEmpty ? null : artist));
+    }
+    return (
+      name: card.name.isEmpty ? subject : card.name,
+      artistId: id,
+      avatarUri: card.avatar,
+      songs: songs,
+      albums: [for (final row in await _singerList('/api/v5/singer/album', id, 50)) ?_singerAlbumOf(row, id)],
+    );
+  }
+
+  /// The id of the singer a search row credits first.
+  Future<String?> _singerIdOf(String subject) async {
+    final page = await search(subject, pageSize: 20);
+    for (final track in page.items) {
+      if (musicMainArtist(track.artist) != subject) continue;
+      final id = '${track.metadata['artistId'] ?? ''}'.trim();
+      if (id.isNotEmpty && id != '0') return id;
+    }
+    return null;
+  }
+
+  /// One page of a singer endpoint's rows — info, albums and songs all answer
+  /// `{data:{total,info:[…]}}`, except the card, which answers the object
+  /// itself and is read by [_singerCard].
+  Future<List<Map<String, Object?>>> _singerList(String path, String id, int pageSize) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('mobiles.kugou.com', path, {'singerid': id, 'page': '1', 'pagesize': '$pageSize'}),
+        headers: _mobileHeaders,
+      ),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    final raw = data is Map ? data['info'] : null;
+    return [
+      if (raw is List)
+        for (final entry in raw)
+          if (entry is Map) entry.cast<String, Object?>(),
+    ];
+  }
+
+  Future<({String name, String artist, Uri? avatar})> _singerCard(String id) async {
+    final json = jsonDecode(
+      await getText(Uri.https('mobiles.kugou.com', '/api/v5/singer/info', {'singerid': id}), headers: _mobileHeaders),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (data is! Map) return (name: '', artist: '', avatar: null);
+    final name = LxPlatformSource.decodeName('${data['singername'] ?? ''}').trim();
+    return (name: name, artist: name, avatar: _pictureOf(data['imgurl']));
+  }
+
+  /// One discography row as the album card the artist page lists.
+  MusicAlbum? _singerAlbumOf(Map<String, Object?> row, String artistId) {
+    final id = '${row['albumid'] ?? ''}'.trim();
+    final name = LxPlatformSource.decodeName('${row['albumname'] ?? ''}').trim();
+    if (id.isEmpty || name.isEmpty) return null;
+    final published = '${row['publishtime'] ?? ''}'.trim();
+    return MusicAlbum(
+      id: id,
+      name: name,
+      artist: LxPlatformSource.decodeName('${row['singername'] ?? ''}').trim(),
+      artistId: artistId,
+      coverUri: _pictureOf(row['imgurl']),
+      trackCount: (row['songcount'] as num?)?.toInt() ?? 0,
+      year: published.length >= 4 ? int.tryParse(published.substring(0, 4)) : null,
+    );
+  }
+
+  /// A KuGou picture address, with the `{size}` placeholder the API leaves in
+  /// the URL resolved to the size these pages ask for.
+  static Uri? _pictureOf(Object? raw) {
+    final url = '${raw ?? ''}'.trim();
+    if (url.isEmpty) return null;
+    return Uri.tryParse(url.replaceFirst('{size}', '480'));
+  }
+
+  /// KuGou's one-line credit, `歌手 - 曲名` — the album and singer rows both
+  /// carry the song only in this shape.
+  static (String singer, String title) _creditLine(String line) {
+    final split = line.indexOf(' - ');
+    if (split < 0) return ('', line);
+    return (line.substring(0, split).trim(), line.substring(split + 3).trim());
   }
 
   Future<MusicPlaylistInfo> _specialInfo(String globalId) async {
@@ -716,6 +838,7 @@ final class KgMusicSource extends LxPlatformSource
         'albumId': albumId,
         'hash': hashes['128k'] ?? hashes.values.firstOrNull ?? '',
         'hashes': hashes,
+        'artistId': ?_leadSingerId(singers),
       },
     );
   }
@@ -726,6 +849,18 @@ final class KgMusicSource extends LxPlatformSource
       for (final singer in singers)
         if (singer is Map && singer[key] is String) singer[key] as String,
     ].join('、');
+  }
+
+  /// The id of the singer a credit list leads with — the only key the v5
+  /// singer endpoints take.
+  static String? _leadSingerId(Object? singers) {
+    if (singers is! List) return null;
+    for (final singer in singers) {
+      if (singer is! Map) continue;
+      final id = '${singer['id'] ?? ''}'.trim();
+      if (id.isNotEmpty && id != '0') return id;
+    }
+    return null;
   }
 
   /// The hot-search board lx-music's kg `hotSearch.js` rides: a fixed
