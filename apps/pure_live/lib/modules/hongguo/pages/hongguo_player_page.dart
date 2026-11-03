@@ -105,6 +105,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   final ScreenAwakeService _screenAwake = const PlatformScreenAwakeService();
   bool _screenHeld = false;
 
+  /// The Android background gate behind the app's 后台播放 switch: the room,
+  /// the IPTV page and the video station all keep one; this page played
+  /// without asking the switch, so the setting did nothing here.
+  BackgroundPlaybackGate? _backgroundGate;
+  PlayerId? _backgroundPausedHandle;
+
   /// The overlay's timers: the bar's hide, and a picker's open and close.
   Timer? _hideTimer;
   Timer? _hoverTimer;
@@ -231,9 +237,42 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    _backgroundGate = BackgroundPlaybackGate(
+      backgroundEnabled: () => ref.read(playbackSettingsProvider).backgroundPlay,
+      shouldPause: () =>
+          (_transport?.isPlaying ?? false) &&
+          _presentationMode != PresentationMode.pip &&
+          _presentationMode != PresentationMode.floating,
+      pause: () async {
+        _backgroundPausedHandle = _handle?.id;
+        try {
+          await _handle?.pause();
+        } on Object {
+          // A player that will not answer still counts as paused here.
+        }
+      },
+      canResume: () =>
+          _backgroundPausedHandle != null &&
+          _handle != null &&
+          _handle?.id == _backgroundPausedHandle &&
+          !(_transport?.isPlaying ?? false),
+      resume: () async {
+        _backgroundPausedHandle = null;
+        try {
+          await _handle?.play();
+        } on Object {
+          // The transport's own state decides what the bar shows next.
+        }
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_load());
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _backgroundGate?.handleLifecycle(state);
   }
 
   @override
@@ -270,6 +309,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   @override
   void dispose() {
     _disposed = true;
+    _backgroundGate?.dispose();
+    _backgroundGate = null;
     unawaited(_screenAwake.disable().catchError((Object _) {}));
     // The player goes quiet before anything else: the route's leave animation
     // runs while the release's queue drains, and the episode must not be
