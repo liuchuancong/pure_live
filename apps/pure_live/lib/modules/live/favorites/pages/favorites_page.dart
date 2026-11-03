@@ -21,6 +21,26 @@ import 'package:pure_live/shared/shared.dart';
 /// button over the visible slice with its progress bar, and the followed
 /// rooms as the shared room card — its own tags on the list rows — with the
 /// reference's pager under them once they fill more than one page.
+/// The favorites page's own refresh, offered to the phone's top bar: the
+/// page hands its visible-slice refresh in, the bar presses it on the
+/// viewer's behalf. Null while the page is away, and the button using it
+/// then has nothing to press.
+final followsPageRefreshProvider = NotifierProvider<FavoritesPageRefresh, void Function()?>(FavoritesPageRefresh.new);
+
+/// The handoff's state holder.
+final class FavoritesPageRefresh extends Notifier<void Function()?> {
+  @override
+  void Function()? build() => null;
+
+  /// The page publishes itself after the first frame; a stale closure is
+  /// harmless — it checks its own mounted state first.
+  void Function()? get handler => state;
+  set handler(void Function()? value) => state = value;
+
+  /// Runs the page's refresh when there is one.
+  void run() => state?.call();
+}
+
 final class FavoritesPage extends ConsumerStatefulWidget {
   /// The favorites page.
   const FavoritesPage({super.key});
@@ -66,6 +86,11 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // The phone's top bar learns the page's refresh after the first frame:
+    // a provider write in initState would be a modification during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(followsPageRefreshProvider.notifier).handler = _runRefresh;
+    });
     // A change from the settings surface re-arms the clock in place.
     ref.listenManual(followsAutoRefreshProvider, (_, _) {
       _syncTimer();
@@ -341,37 +366,45 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              // The group tabs on their own line; the refresh moves down to
-              // the platform row, where 热门 and 分区 keep theirs.
-              DsTabs<LiveFollowGroup?>(
-                value: _group,
-                onChanged: _selectGroup,
-                tabs: [
-                  // The reference's order: live, replay, offline, all.
-                  DsTab<LiveFollowGroup?>(
-                    value: LiveFollowGroup.live,
-                    label: Text(t.favorites.statusLiveNow),
-                    count: counts[LiveFollowGroup.live],
+              // The categories and their reload share the first line: the
+              // tabs scroll, the refresh keeps its width at the end.
+              Row(
+                spacing: DsSpace.s12,
+                children: [
+                  Expanded(
+                    child: DsTabs<LiveFollowGroup?>(
+                      value: _group,
+                      onChanged: _selectGroup,
+                      tabs: [
+                        // The reference's order: live, replay, offline, all.
+                        DsTab<LiveFollowGroup?>(
+                          value: LiveFollowGroup.live,
+                          label: Text(t.favorites.statusLiveNow),
+                          count: counts[LiveFollowGroup.live],
+                        ),
+                        DsTab<LiveFollowGroup?>(
+                          value: LiveFollowGroup.replay,
+                          label: Text(t.favorites.statusReplay),
+                          count: counts[LiveFollowGroup.replay],
+                        ),
+                        DsTab<LiveFollowGroup?>(
+                          value: LiveFollowGroup.offline,
+                          label: Text(t.favorites.statusOfflineNow),
+                          count: counts[LiveFollowGroup.offline],
+                        ),
+                        DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
+                      ],
+                    ),
                   ),
-                  DsTab<LiveFollowGroup?>(
-                    value: LiveFollowGroup.replay,
-                    label: Text(t.favorites.statusReplay),
-                    count: counts[LiveFollowGroup.replay],
-                  ),
-                  DsTab<LiveFollowGroup?>(
-                    value: LiveFollowGroup.offline,
-                    label: Text(t.favorites.statusOfflineNow),
-                    count: counts[LiveFollowGroup.offline],
-                  ),
-                  DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
+                  _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
-              // The platform tabs, the wall behind the chevron, the grid
-              // switch and the refresh: one row, exactly as 热门 and 分区 lay
-              // them out. Each name carries how many follows it holds in the
-              // shown group, and the wall repeats that count under the logo.
-              // A small screen keeps the tabs and the refresh and moves the
-              // wall and the layout behind one more icon.
+              // The platform tabs, the wall behind the chevron and the grid
+              // switch: one row, exactly as 热门 and 分区 lay them out. Each
+              // name carries how many follows it holds in the shown group,
+              // and the wall repeats that count under the logo. A small
+              // screen keeps the tabs alone and moves the wall and the layout
+              // behind one more icon.
               LayoutBuilder(
                 builder: (context, constraints) {
                   final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
@@ -389,23 +422,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                     ),
                     onChanged: _selectPlatform,
                   );
-                  final refresh = _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh);
-                  if (!narrow) {
-                    return Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        Expanded(child: tabs),
-                        refresh,
-                      ],
-                    );
-                  }
+                  if (!narrow) return tabs;
                   return SizedBox(
                     height: 44,
                     child: Row(
                       spacing: DsSpace.s8,
                       children: [
                         Expanded(child: tabs),
-                        refresh,
                         PlatformToolbarMore(
                           platforms: [kAllPlatforms, ...platformTabs],
                           current: platform,
