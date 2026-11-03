@@ -113,6 +113,20 @@ const SettingsGroup _sharedPlaybackGroup = (labelKey: 'groupPlayback', sections:
 
 const List<SettingsGroup> _sharedGroups = [_sharedAppearanceGroup, _sharedPlaybackGroup, _systemGroup, _aboutGroup];
 
+/// The same tail for a module the video kernel does not play for.
+///
+/// The 播放内核 page writes the engine choice (`player.backend`: mpv, ijk,
+/// better_player), the hardware decoder and the kernel's advanced switches, and
+/// every one of them is read when a **room-shaped** player opens — the live
+/// room and its multi-view, the IPTV play page, the hongguo player, the station
+/// video page. Music plays through `media_core_audio`'s own mpv audio stack and
+/// reads none of it: nothing under `modules/music` names
+/// `playerKernelBackendProvider` at all. Left in, that group is a wall of knobs
+/// that turn nothing, and the viewer who moves the decoder there and hears no
+/// difference stops trusting the settings that do work — the module's own 音效
+/// 中心, its output device and its quality tier.
+const List<SettingsGroup> _sharedGroupsWithoutKernel = [_sharedAppearanceGroup, _systemGroup, _aboutGroup];
+
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   // The live home's rail: the four home destinations as one block — the
@@ -208,7 +222,8 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         labelKey: 'groupMusicTools',
         sections: [SettingsSection.musicEq, SettingsSection.musicHotkeys, SettingsSection.musicSync],
       ),
-      ..._sharedGroups,
+      // No 播放内核 group: see [_sharedGroupsWithoutKernel].
+      ..._sharedGroupsWithoutKernel,
     ],
   ),
   AppModule.hongguo: ModuleNavigation(
