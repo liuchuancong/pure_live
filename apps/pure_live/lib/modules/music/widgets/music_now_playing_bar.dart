@@ -358,6 +358,17 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                       ],
                     ),
                   );
+                  // The numbers on their own: between the two widths the bar
+                  // has no room for the seek slider, and a playing song with no
+                  // clock anywhere on it tells the listener nothing about where
+                  // it stands. An unknown length says only what has passed.
+                  Widget clockRow() => Text(
+                    duration <= 0
+                        ? musicDurationText(Duration(milliseconds: shownPosition))
+                        : '${musicDurationText(Duration(milliseconds: shownPosition))} / ${musicDurationText(state.duration)}',
+                    textAlign: TextAlign.center,
+                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
+                  );
                   final row = regular
                       ? Row(
                           children: [
@@ -368,7 +379,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 spacing: DsSpace.s3,
-                                children: [transport(), if (expanded) progressRow()],
+                                children: [transport(), if (expanded) progressRow() else clockRow()],
                               ),
                             ),
                             const SizedBox(width: DsSpace.s12),
