@@ -1042,15 +1042,18 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               // the chat beside it in a card of the same corners: the page
               // reads as two panels on the canvas rather than a stage bleeding
               // to the edges.
+              //
+              // The stage — not the frame — is what the surface is given: the
+              // player's own fit keeps the picture at the stream's shape inside
+              // it, so the bars are part of the surface and its controls span
+              // the stage's full width and height. Sizing the surface to the
+              // ratio instead (the Center + AspectRatio this used to hold) left
+              // the bars outside it, and every control, picker and corner button
+              // with them: a wide stage read as a small player.
               final stageCorners = BorderRadius.circular(DsTheme.of(context).radii.card);
               Widget stageBox(Widget child) => ClipRRect(
                 borderRadius: stageCorners,
-                child: ColoredBox(
-                  color: kPlayerStageColor,
-                  child: Center(
-                    child: AspectRatio(aspectRatio: pictureRatio, child: child),
-                  ),
-                ),
+                child: ColoredBox(color: kPlayerStageColor, child: child),
               );
               if (chatCollapsed) {
                 return Padding(
