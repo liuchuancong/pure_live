@@ -5365,6 +5365,36 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '{count} 个文件'
 	String statFiles({required Object count}) => '${count} 个文件';
 
+	/// zh-CN: '排序方式'
+	String get sortLabel => '排序方式';
+
+	/// zh-CN: '最新录制'
+	String get sortNewest => '最新录制';
+
+	/// zh-CN: '最早录制'
+	String get sortOldest => '最早录制';
+
+	/// zh-CN: '文件名'
+	String get sortName => '文件名';
+
+	/// zh-CN: '文件大小'
+	String get sortSize => '文件大小';
+
+	/// zh-CN: '文件时长'
+	String get sortDuration => '文件时长';
+
+	/// zh-CN: '全选'
+	String get selectAll => '全选';
+
+	/// zh-CN: '列表'
+	String get listView => '列表';
+
+	/// zh-CN: '网格'
+	String get gridView => '网格';
+
+	/// zh-CN: '{count} 个文件 · {size}'
+	String groupSummary({required Object count, required Object size}) => '${count} 个文件 · ${size}';
+
 	/// zh-CN: '已完成的录制会出现在这里'
 	String get emptyFinishedTitle => '已完成的录制会出现在这里';
 
@@ -14932,6 +14962,16 @@ extension on Translations {
 			'recorder.statTodayFiles' => '今日录制',
 			'recorder.statLatest' => '最近录制',
 			'recorder.statFiles' => ({required Object count}) => '${count} 个文件',
+			'recorder.sortLabel' => '排序方式',
+			'recorder.sortNewest' => '最新录制',
+			'recorder.sortOldest' => '最早录制',
+			'recorder.sortName' => '文件名',
+			'recorder.sortSize' => '文件大小',
+			'recorder.sortDuration' => '文件时长',
+			'recorder.selectAll' => '全选',
+			'recorder.listView' => '列表',
+			'recorder.gridView' => '网格',
+			'recorder.groupSummary' => ({required Object count, required Object size}) => '${count} 个文件 · ${size}',
 			'recorder.emptyFinishedTitle' => '已完成的录制会出现在这里',
 			'recorder.emptyDescription' => '在直播间点击录制，任务会出现在这里。',
 			'recorder.qualityBest' => '最佳画质',
@@ -15110,6 +15150,8 @@ extension on Translations {
 			'recorder.combineTitle' => '结束后合并为 MP4',
 			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			'recorder.combineDeleteOriginals' => '合并后删除原分段',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
 			'recorder.transcodeDesc' => '把合并后的 MP4 重新编码为 H.264；耗时随录像长度增加，会降低源画质。',
@@ -15120,8 +15162,6 @@ extension on Translations {
 			'recorder.previewTitle' => '录像预览',
 			'recorder.previewUnavailable' => '这个任务还没有可播放的文件',
 			'recorder.recordChatGiftsTitle' => '录下礼物消息',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.recordChatGiftsDesc' => '把礼物消息按平台给出的文字写进同一条弹幕文件；默认只记聊天。',
 			'recorder.recordChatTitle' => '同时录制弹幕',
 			'recorder.recordChatDescription' => '在录像旁存同名弹幕文件，格式见「弹幕 → 弹幕保存格式」；平台需已接入弹幕',
@@ -15624,6 +15664,8 @@ extension on Translations {
 			'settings.refreshInterval' => '刷新间隔',
 			'settings.navNetwork' => '网络',
 			'settings.networkDescription' => '应用代理与传输行为。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxy' => '应用代理',
 			'settings.proxyHost' => '主机',
 			'settings.proxyHostDesc' => '代理服务器的主机名或地址。',
@@ -15634,8 +15676,6 @@ extension on Translations {
 			'settings.proxyPassword' => '密码',
 			'settings.proxyPasswordDesc' => '保存在系统钥匙串里，不写进偏好设置，也不会被备份导出。应用内请求、播放器与录制都会带上它；SOCKS 与 PAC 无法表达。',
 			'settings.proxyPasswordSaved' => '已保存',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyPasswordNone' => '未设置',
 			'settings.proxyPasswordReplace' => '输入新密码以替换',
 			'settings.proxyPasswordClear' => '清除已保存的密码',
@@ -16138,6 +16178,8 @@ extension on Translations {
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
 			'settings.playerGuideEntryHardwareSwitchBody' => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。',
@@ -16148,8 +16190,6 @@ extension on Translations {
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'mpv 把声音送到哪个系统通道。Windows 用 wasapi，Android 用 audiotrack/aaudio/opensles；null 表示静音。',
 			'settings.playerGuideEntryPresetDefaultTitle' => '均衡（推荐起点）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultBody' => '清除自定义输出与解码器选择，交给 mpv 自动决定。大多数设备和网络的首选。',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android 硬解兼容',
 			'settings.playerGuideEntryPresetAndroidCompatBody' => '改用 mediacodec_embed 直通表面并强制 mediacodec 硬解，花屏、绿屏或音画不同步时使用。仅 Android 显示。',
@@ -16652,6 +16692,8 @@ extension on Translations {
 			'settings.twitchLanguage_tr' => '土耳其语',
 			'settings.twitchLanguage_pl' => '波兰语',
 			'settings.holdDanmakuOnPress' => '按住冻结',
+			_ => null,
+		} ?? switch (path) {
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
 			'settings.youtubeAllChatDesc' => '关闭用网页默认 Top chat；开启请求全部聊天。',
@@ -16662,8 +16704,6 @@ extension on Translations {
 			'settings.clipboardRoomOpen' => '打开直播间',
 			'settings.backgroundAudioOnly' => '后台仅音频',
 			'settings.backgroundAudioOnlyDesc' => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pauseOnPipClose' => '关闭画中画时暂停',
 			'settings.pauseOnPipCloseDesc' => '关小窗即暂停，回应用继续。',
 			'settings.chatShowGifts' => '显示礼物',
@@ -17166,6 +17206,8 @@ extension on Translations {
 			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.historyCompleted' => '已看完',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => '从历史中移除',
@@ -17176,8 +17218,6 @@ extension on Translations {
 			'vod.clearHistoryTitle' => '清空观看历史？',
 			'vod.clearHistoryDesc' => '只删除本机的观看记录，不影响 Bilibili 上的进度。',
 			'vod.favouritesEmptyTitle' => '还没有收藏的视频',
-			_ => null,
-		} ?? switch (path) {
 			'vod.favouritesEmptyDescription' => '在视频页点收藏，视频会出现在这里。',
 			'vod.favouriteRemove' => '取消收藏',
 			'vod.saveVideo' => '收藏',

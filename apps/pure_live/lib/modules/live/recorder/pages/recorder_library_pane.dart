@@ -73,9 +73,6 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
 }
 
 final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane> {
-  /// The drilled folders: a day, then a platform, then a room.
-  List<String> _path = [];
-
   /// What the search box holds; matched against room, platform, day and file.
   String _query = '';
 
@@ -85,24 +82,20 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   /// Whether a row must hold something playable.
   bool _playableOnly = false;
 
-  /// Browsed folders, or the whole library as one flat list of takes.
-  bool _flat = false;
+  /// The list's order; newest first, the way a file manager opens.
+  _LibrarySort _sort = _LibrarySort.newest;
 
-  DsTableSort? _sort;
+  /// List rows, or a grid of covers.
+  bool _grid = false;
 
-  final Set<Object> _selected = {};
+  /// The days the viewer folded away; a day key, not a title.
+  final Set<String> _collapsed = {};
 
-  /// The levels the drill-down answers, in the tree's own order.
-  static const List<RecordingBrowseLevel> _levels = [
-    RecordingBrowseLevel.day,
-    RecordingBrowseLevel.platform,
-    RecordingBrowseLevel.room,
-    RecordingBrowseLevel.take,
-  ];
+  final Set<String> _selected = {};
 
   /// A day as the viewer reads it: today and yesterday name themselves, so a
-  /// week of takes reads as a calendar. Grouping and drilling use the folder's
-  /// real name; only this says it in words.
+  /// week of takes reads as a calendar. Grouping uses the folder's real name;
+  /// only this says it in words.
   String _dayTitle(String day) {
     final t = context.t;
     return recordingTakeOfDay(day).dayTitle(today: t.history.today, yesterday: t.history.yesterday);
@@ -125,8 +118,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     ];
   }
 
-  String get _rootPath => ref.read(appPathsProvider).recordings.path;
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -134,19 +125,19 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     final colors = theme.colors;
     final library = ref.watch(recordingLibraryProvider);
     final takes = _scope(library.value ?? const <RecordingTake>[]);
-    final filtered = _filter(takes);
-    final level = _flat ? RecordingBrowseLevel.take : _levels[_path.length.clamp(0, _levels.length - 1)];
-    final entries = recordingEntriesFor(
-      takesUnder(filtered, _flat ? const [] : _path),
-      level,
-      platformLabel: (take) => widget.platformName(take.platformId),
-      dayTitle: _dayTitle,
-    );
+    final filtered = _sort.sorted(_filter(takes));
     final width = MediaQuery.sizeOf(context).width;
     final inset = LiveWindow.pageInset(width);
     final compact = LiveWindow.isCompact(width);
     final root = ref.watch(appPathsProvider).recordings.path;
     final controller = ref.read(recordingLibraryProvider.notifier);
+    // The days in the shown order; the grouping never reorders, it follows
+    // the sort.
+    final daySet = <String>{};
+    final days = <String>[
+      for (final take in filtered)
+        if (daySet.add(take.day)) take.day,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -157,64 +148,66 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
             spacing: DsSpace.s8,
             children: [
               Row(
-                spacing: DsSpace.s12,
+                spacing: DsSpace.s8,
                 children: [
-                  if (widget.showHeading)
-                    Expanded(
-                      child: Text(t.recorder.libraryTitle, style: theme.typography.title.copyWith(color: colors.text)),
+                  Expanded(
+                    child: DsSearchField(
+                      initialValue: _query,
+                      onChanged: (value) => setState(() {
+                        _query = value;
+                        _selected.clear();
+                      }),
+                      placeholder: t.recorder.librarySearchHint,
+                      semanticLabel: t.recorder.librarySearchHint,
                     ),
-                  // One line says what is here and names the folder it lives in,
-                  // which is what the folder button then opens.
-                  if (!compact)
-                    Flexible(
-                      child: Text(
-                        '${t.recorder.librarySummary(count: filtered.length, size: formatRecordingBytes(_bytesOf(filtered)))} · $root',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                        style: theme.typography.small.copyWith(color: colors.textSubtle),
+                  ),
+                  DsButton.icon(
+                    variant: _platforms.isNotEmpty || _playableOnly
+                        ? DsButtonVariant.tinted
+                        : DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(_openFilter(takes)),
+                    icon: const DsIcon(DsIcons.filter, size: 16),
+                    semanticLabel: t.recorder.filterTitle,
+                  ),
+                  _SortMenu(sort: _sort, onChanged: (value) => setState(() => _sort = value)),
+                  DsSegmentedControl<bool>(
+                    value: _grid,
+                    semanticLabel: t.recorder.viewLabel,
+                    segments: [
+                      DsSegment(
+                        value: false,
+                        icon: const DsIcon(DsIcons.layoutList, size: 16),
+                        semanticLabel: t.recorder.listView,
                       ),
+                      DsSegment(
+                        value: true,
+                        icon: const DsIcon(DsIcons.layoutGrid, size: 16),
+                        semanticLabel: t.recorder.gridView,
+                      ),
+                    ],
+                    onChanged: (value) => setState(() {
+                      _grid = value;
+                      _selected.clear();
+                    }),
+                  ),
+                  if (!compact)
+                    DsButton.icon(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: () => unawaited(openDownloadedPath(context, root)),
+                      icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                      semanticLabel: t.recorder.openFolder,
                     ),
-                  _Toolbar(
-                    compact: compact,
-                    query: _query,
-                    onQuery: (value) => setState(() {
-                      _query = value;
-                      _selected.clear();
-                    }),
-                    onFilter: () => unawaited(_openFilter(takes)),
-                    filterActive: _platforms.isNotEmpty || _playableOnly,
-                    flat: _flat,
-                    onView: (value) => setState(() {
-                      _flat = value;
-                      _selected.clear();
-                    }),
-                    onReveal: () => unawaited(openDownloadedPath(context, root)),
-                    onRefresh: () => unawaited(controller.refresh()),
-                    loading: library.isLoading,
+                  DsButton.icon(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: library.isLoading ? null : () => unawaited(controller.refresh()),
+                    icon: const DsIcon(DsIcons.refresh, size: 16),
+                    semanticLabel: t.recorder.refresh,
                   ),
                 ],
               ),
-              if (!_flat) _breadcrumb(level, entries.length),
-              if (_selected.isNotEmpty)
-                Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        t.recorder.selectedCount(count: _selected.length),
-                        style: theme.typography.small.copyWith(color: colors.textMuted),
-                      ),
-                    ),
-                    DsButton(
-                      variant: DsButtonVariant.dangerSoft,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.trash2, size: 16),
-                      onPressed: () => unawaited(_deleteSelected(entries)),
-                      child: Text(t.recorder.deleteSelected),
-                    ),
-                  ],
-                ),
             ],
           ),
         ),
@@ -252,218 +245,172 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                 ],
               ),
             ),
-            (false, false) => Padding(
-              padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
-              child: _table(entries, level),
-            ),
+            (false, false) => _grid ? _gridBody(filtered, inset) : _listBody(filtered, days, inset),
           },
         ),
+        if (_selected.isNotEmpty)
+          Container(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(top: BorderSide(color: colors.border)),
+            ),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                DsCheckbox(
+                  value: _selected.length == filtered.length && filtered.isNotEmpty,
+                  semanticLabel: t.recorder.selectAll,
+                  onChanged: (value) => setState(() {
+                    _selected
+                      ..clear()
+                      ..addAll(value == true ? filtered.map((take) => take.filePath ?? take.folder) : const []);
+                  }),
+                ),
+                Expanded(
+                  child: Text(
+                    t.recorder.selectedCount(count: _selected.length),
+                    style: theme.typography.small.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.dangerSoft,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.trash2, size: 16),
+                  onPressed: () => unawaited(_deleteSelectedTakes(filtered)),
+                  child: Text(t.recorder.deleteSelected),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
 
-  /// The drilled path as pressable crumbs, ending where the viewer stands.
-  Widget _breadcrumb(RecordingBrowseLevel level, int shown) {
+  /// The file list: one collapsible day group after another, each take a
+  /// row like a file manager's — cover, name, facts, state, actions.
+  Widget _listBody(List<RecordingTake> filtered, List<String> days, double inset) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    Widget crumb(String label, {required bool current, VoidCallback? onPressed}) => DsButton(
-      variant: DsButtonVariant.ghost,
-      size: DsSize.sm,
-      onPressed: onPressed,
-      child: Text(
-        label,
-        style: theme.typography.small.copyWith(
-          color: current ? colors.text : colors.accent,
-          fontWeight: current ? FontWeight.w600 : null,
-        ),
-      ),
-    );
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          crumb(
-            t.recorder.libraryRoot,
-            current: _path.isEmpty,
-            onPressed: _path.isEmpty ? null : () => _drill(const []),
-          ),
-          for (var depth = 0; depth < _path.length; depth++) ...[
-            DsIcon(DsIcons.chevronRight, size: 14, color: colors.textSubtle),
-            crumb(
-              _crumbLabel(depth),
-              current: depth == _path.length - 1 && level != RecordingBrowseLevel.take,
-              onPressed: depth == _path.length - 1 && level != RecordingBrowseLevel.take
-                  ? null
-                  : () => _drill(_path.sublist(0, depth + 1)),
-            ),
-          ],
-          if (level == RecordingBrowseLevel.take && _path.isNotEmpty) ...[
-            DsIcon(DsIcons.chevronRight, size: 14, color: colors.textSubtle),
-            Text(
-              t.recorder.takesShown(count: shown),
-              style: theme.typography.small.copyWith(color: colors.textSubtle),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// A crumb's text: a day says it in words; a platform and a room use the
-  /// names the app can give them, because the folder names are the recorder's
-  /// safe spelling of an id the viewer never typed.
-  String _crumbLabel(int depth) {
-    if (depth == 0) return _dayTitle(_path.first);
-    final under = takesUnder(_filter(_all), _path.sublist(0, depth + 1));
-    if (under.isEmpty) return _path[depth].replaceAll('_', ' ');
-    final take = under.first;
-    return depth == 1 ? widget.platformName(take.platformId) : take.roomTitle;
-  }
-
-  Widget _table(List<RecordingEntry> entries, RecordingBrowseLevel level) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final leaf = level == RecordingBrowseLevel.take;
-    final columns = <DsTableColumn<RecordingEntry>>[
-      DsTableColumn(
-        id: 'name',
-        label: leaf ? t.recorder.columnFile : t.recorder.columnName,
-        sortable: true,
-        value: (entry) => entry.label,
-        width: const DsTableColumnWidth.flex(3, 160),
-        // A folder row counts what is inside it under its name; a take row says
-        // which room it came from, which its own file name never tells.
-        cell: (context, entry) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+      itemCount: days.length,
+      itemBuilder: (context, index) {
+        final day = days[index];
+        final dayTakes = [
+          for (final take in filtered)
+            if (take.day == day) take,
+        ];
+        final dayBytes = dayTakes.fold<int>(0, (total, take) => total + take.bytes);
+        final collapsed = _collapsed.contains(day);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(entry.label, maxLines: 1, overflow: TextOverflow.ellipsis),
-            if (entry.sublabel.isNotEmpty)
-              Text(
-                entry.unplayable ? '${entry.sublabel} · ${t.recorder.stateUnplayable}' : entry.sublabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
+            Padding(
+              padding: const EdgeInsets.only(top: DsSpace.s8),
+              child: DsPressable(
+                onPressed: () => setState(() {
+                  if (collapsed) {
+                    _collapsed.remove(day);
+                  } else {
+                    _collapsed.add(day);
+                  }
+                }),
+                builder: (context, states, _) => Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsIcon(collapsed ? DsIcons.chevronRight : DsIcons.chevronDown, size: 16, color: colors.textMuted),
+                    Text(_dayTitle(day), style: theme.typography.bodyStrong.copyWith(color: colors.text)),
+                    Text(
+                      t.recorder.groupSummary(count: dayTakes.length, size: formatRecordingBytes(dayBytes)),
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ],
+                ),
               ),
+            ),
+            if (!collapsed)
+              for (final take in dayTakes)
+                _TakeRow(
+                  take: take,
+                  selected: _selected,
+                  onSelect: _toggle,
+                  onPlay: () => _play(take),
+                  menu: _takeMenu(take),
+                  platformName: widget.platformName,
+                ),
           ],
-        ),
-      ),
-      if (!leaf)
-        DsTableColumn(
-          id: 'count',
-          label: t.recorder.columnCount,
-          numeric: true,
-          sortable: true,
-          value: (entry) => '${entry.takeCount}',
-          comparator: (a, b) => a.takeCount.compareTo(b.takeCount),
-          width: const DsTableColumnWidth.intrinsic(min: 64),
-        ),
-      if (leaf)
-        DsTableColumn(
-          id: 'duration',
-          label: t.recorder.columnDuration,
-          numeric: true,
-          sortable: true,
-          value: (entry) {
-            final duration = entry.take?.duration;
-            return duration == null ? '--:--' : formatRecordingDuration(duration);
-          },
-          width: const DsTableColumnWidth.intrinsic(min: 72),
-        ),
-      DsTableColumn(
-        id: 'size',
-        label: t.recorder.columnSize,
-        numeric: true,
-        sortable: true,
-        value: (entry) => formatRecordingBytes(entry.bytes),
-        comparator: (a, b) => a.bytes.compareTo(b.bytes),
-        width: const DsTableColumnWidth.intrinsic(min: 88),
-      ),
-      DsTableColumn(
-        id: 'time',
-        label: t.recorder.columnTime,
-        sortable: true,
-        value: (entry) => entry.takenAt == null ? '' : formatRecordingMoment(entry.takenAt!),
-        comparator: (a, b) => (a.takenAt ?? DateTime(1970)).compareTo(b.takenAt ?? DateTime(1970)),
-        width: const DsTableColumnWidth.intrinsic(min: 96),
-      ),
-    ];
-    return DsTable<RecordingEntry>(
-      columns: columns,
-      rows: entries,
-      rowKey: (entry) => entry.groupKey,
-      rowsVersion:
-          '${_path.join('|')}-$_flat-$_query-${_platforms.length}-$_playableOnly-${entries.length}-${_bytesOf(entries.map((entry) => entry.take).whereType<RecordingTake>().toList())}',
-      sort: _sort,
-      onSortChanged: (value) => setState(() => _sort = value),
-      selected: _selected,
-      onSelectionChanged: (value) => setState(() {
-        _selected
-          ..clear()
-          ..addAll(value);
-      }),
-      // A take plays; a folder walks in. The room a take came from is a menu
-      // step, never the row's press — the row is the recording.
-      onRowPressed: _press,
-      rowMenuBuilder: (context, entry) => _menu(entry),
-      showRowMenuButton: true,
-      semanticLabel: t.recorder.libraryTitle,
+        );
+      },
     );
   }
 
-  void _drill(List<String> path) => setState(() {
-    _path = List.of(path);
-    _selected.clear();
+  /// The cover grid: the same takes as cards, two or more across by width.
+  Widget _gridBody(List<RecordingTake> filtered, double inset) {
+    final width = MediaQuery.sizeOf(context).width;
+    final columns = width >= 1200 ? 4 : (width >= 800 ? 3 : 2);
+    return GridView.builder(
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s12),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        mainAxisSpacing: DsSpace.s12,
+        crossAxisSpacing: DsSpace.s12,
+        childAspectRatio: 0.82,
+      ),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final take = filtered[index];
+        return _TakeCard(
+          take: take,
+          selected: _selected.contains(take.filePath ?? take.folder),
+          onSelect: () => _toggle(take),
+          onPlay: () => _play(take),
+          menu: _takeMenu(take),
+          platformName: widget.platformName,
+        );
+      },
+    );
+  }
+
+  void _toggle(RecordingTake take) => setState(() {
+    final key = take.filePath ?? take.folder;
+    if (!_selected.remove(key)) _selected.add(key);
   });
 
-  void _press(RecordingEntry entry) {
-    if (!entry.isLeaf) {
-      _drill(entry.segments);
-      return;
-    }
-    final take = entry.take;
-    if (take == null) return;
+  void _play(RecordingTake take) {
     if (!take.playable) {
       showDsToast(context: context, title: context.t.recorder.previewUnavailable);
       return;
     }
     // The run is everything on screen, ordered as the viewer sees it, so the
-    // player's next and previous walk the library and its list can group by the
-    // folders the recorder filed the takes into.
-    widget.onPlay(_filter(_all), take);
+    // player's next and previous walk the library in its own order.
+    widget.onPlay(_sort.sorted(_filter(_all)), take);
   }
 
-  List<Widget> _menu(RecordingEntry entry) {
+  /// The row menu: play, the room, the folder, the path, the delete.
+  List<Widget> _takeMenu(RecordingTake take) {
     final t = context.t;
-    final takes = _takesOf(entry);
-    final first = takes.isEmpty ? null : takes.first;
-    final task = entry.task ?? first?.task;
+    final task = take.task;
     return [
-      if (entry.isLeaf && first != null && first.playable)
+      if (take.playable)
         DsMenuItem(
           leading: const DsIcon(DsIcons.play),
           label: Text(t.recorder.playRecording),
-          onPressed: () => _press(entry),
+          onPressed: () => _play(take),
         ),
-      if (!entry.isLeaf)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.chevronRight),
-          label: Text(t.recorder.enterFolder),
-          onPressed: () => _press(entry),
-        ),
-      // A hand-dropped file the store never made a row for has no room to open.
-      if (task != null && first != null)
+      if (task != null)
         DsMenuItem(
           leading: const DsIcon(DsIcons.externalLink),
           label: Text(widget.openRoomLabel ?? t.recorder.openRoom),
-          onPressed: () => widget.onOpenRoom(first),
+          onPressed: () => widget.onOpenRoom(take),
         ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.folderOpen),
         label: Text(t.recorder.openFolder),
-        onPressed: () => unawaited(openDownloadedPath(context, _folderOf(entry, takes))),
+        onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
       ),
-      if (first?.filePath case final file?)
+      if (take.filePath case final file?)
         DsMenuItem(
           leading: const DsIcon(DsIcons.copy),
           label: Text(t.recorder.copyPath),
@@ -472,16 +419,16 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       const DsMenuDivider(),
       DsMenuItem(
         leading: const DsIcon(DsIcons.trash2),
-        label: Text(entry.isLeaf ? t.recorder.delete : t.recorder.deleteHere),
+        label: Text(t.recorder.delete),
         destructive: true,
-        onPressed: () => unawaited(_confirmDelete(entry, takes)),
+        onPressed: () => unawaited(_confirmDeleteTake(take)),
       ),
     ];
   }
 
-  // -- state helpers -------------------------------------------------------
+  // -- state helpers --------------------------------------------------------
 
-  /// The takes on screen: searched, filtered, drilled to here.
+  /// The takes on screen: searched, filtered.
   List<RecordingTake> _filter(List<RecordingTake> takes) {
     final query = _query.trim().toLowerCase();
     final platformName = widget.platformName;
@@ -499,38 +446,21 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     ];
   }
 
-  /// The takes a row stands for: the one take, or everything inside the folder.
-  List<RecordingTake> _takesOf(RecordingEntry entry) => takesUnder(_filter(_all), entry.segments);
+  // -- actions --------------------------------------------------------------
 
-  /// The folder a row's "open the folder" answers with: the take's own folder,
-  /// or the folder the group row gathered.
-  String _folderOf(RecordingEntry entry, List<RecordingTake> takes) {
-    if (entry.isLeaf) return takes.isEmpty ? _rootPath : takes.first.folder;
-    if (takes.isEmpty) return _rootPath;
-    if (entry.segments.isEmpty) return _rootPath;
-    return p.joinAll([_rootPath, ...entry.segments.take(entry.level.index + 1)]);
-  }
-
-  int _bytesOf(List<RecordingTake> takes) => takes.fold(0, (total, take) => total + take.bytes);
-
-  // -- actions -------------------------------------------------------------
-
-  Future<void> _confirmDelete(RecordingEntry entry, List<RecordingTake> takes) async {
+  Future<void> _confirmDeleteTake(RecordingTake take) async {
     final t = context.t;
-    final single = takes.length == 1 ? takes.first : null;
     final ok = await showDsConfirm(
       context: context,
-      title: single == null
-          ? t.recorder.deleteHereTitle(name: entry.label)
-          : t.recorder.deleteTakeTitle(name: single.name),
-      description: t.recorder.deleteTakeBody(count: takes.length),
+      title: t.recorder.deleteTakeTitle(name: take.name),
+      description: t.recorder.deleteTakeBody(count: 1),
       confirmLabel: t.recorder.delete,
       destructive: true,
     );
     if (!ok || !mounted) return;
-    final removed = await _deleteAll(takes);
+    final removed = await _deleteAll([take]);
     if (!mounted) return;
-    setState(() => _selected.remove(entry.groupKey));
+    setState(() => _selected.remove(take.filePath ?? take.folder));
     showDsToast(
       context: context,
       title: removed == 0 ? t.recorder.deleteBlocked : t.recorder.deletedToast(count: removed),
@@ -540,20 +470,19 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     unawaited(ref.read(recordingTasksProvider.notifier).reload());
   }
 
-  Future<int> _deleteSelected(List<RecordingEntry> entries) async {
-    final picked = <RecordingTake>[];
-    for (final entry in entries) {
-      if (_selected.contains(entry.groupKey)) picked.addAll(_takesOf(entry));
-    }
+  Future<void> _deleteSelectedTakes(List<RecordingTake> filtered) async {
+    final picked = [
+      for (final take in filtered)
+        if (_selected.contains(take.filePath ?? take.folder)) take,
+    ];
     final removed = await _deleteAll(picked);
-    if (!mounted) return removed;
+    if (!mounted) return;
     setState(_selected.clear);
     showDsToast(
       context: context,
       title: removed == 0 ? context.t.recorder.deleteBlocked : context.t.recorder.deletedToast(count: removed),
     );
     if (removed > 0) unawaited(ref.read(recordingTasksProvider.notifier).reload());
-    return removed;
   }
 
   /// Deletes each take folder, skipping any the engine is still writing or
@@ -649,10 +578,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
 /// so the caption a list row shows, the order the player walks and what a
 /// delete inside the player does to the module's own records are one behaviour
 /// rather than two copies that drift apart. A file the viewer deletes from the
-/// player marks its task row file-deleted and re-reads the tree: the row keeps
-/// naming the take's folder, so 打开文件夹 still reaches whatever is left beside
-/// it, and the task strip — where a row like that stays listed — is the one
-/// place it can still be handled.
+/// player marks its task row file-deleted and re-reads the tree.
 Future<void> playRecordingTake(
   BuildContext context,
   WidgetRef ref, {
@@ -671,9 +597,6 @@ Future<void> playRecordingTake(
         id: file,
         title: candidate.roomTitle,
         path: file,
-        // The list groups by the folder the recorder filed the take into, and
-        // names it the way the breadcrumb does — day, platform, room — so the
-        // run reads as the tree rather than as a queue.
         groupPath: p.join(root, candidate.day, candidate.platformFolder, candidate.roomFolder),
         groupLabel: [
           candidate.dayTitle(today: t.history.today, yesterday: t.history.yesterday),
@@ -712,130 +635,323 @@ Future<void> playRecordingTake(
   );
 }
 
-/// The library's controls in one row: search, filter, the view switch, the
-/// folder and a refresh. On a narrow window only the search box and the
-/// overflow menu stay, as on every other toolbar in the app.
-final class _Toolbar extends StatelessWidget {
-  const _Toolbar({
-    required this.compact,
-    required this.query,
-    required this.onQuery,
-    required this.onFilter,
-    required this.filterActive,
-    required this.flat,
-    required this.onView,
-    required this.onReveal,
-    required this.onRefresh,
-    required this.loading,
-  });
+/// The list's orders; the file manager's sort menu.
+enum _LibrarySort {
+  newest,
+  oldest,
+  name,
+  size,
+  duration;
 
-  final bool compact;
-  final String query;
-  final ValueChanged<String> onQuery;
-  final VoidCallback onFilter;
-  final bool filterActive;
-  final bool flat;
-  final ValueChanged<bool> onView;
-  final VoidCallback onReveal;
-  final VoidCallback onRefresh;
-  final bool loading;
+  /// The takes in this order. A take without a stamp sorts as the oldest
+  /// thing on disk, a file-name order reads case-blind.
+  List<RecordingTake> sorted(List<RecordingTake> takes) {
+    int byName(RecordingTake a, RecordingTake b) => a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    return switch (this) {
+      _LibrarySort.newest => takes..sort((a, b) => b.takenAt.compareTo(a.takenAt)),
+      _LibrarySort.oldest => takes..sort((a, b) => a.takenAt.compareTo(b.takenAt)),
+      _LibrarySort.name => takes..sort(byName),
+      _LibrarySort.size => takes..sort((a, b) => b.bytes.compareTo(a.bytes)),
+      _LibrarySort.duration =>
+        takes..sort((a, b) => (b.duration?.inMilliseconds ?? 0).compareTo(a.duration?.inMilliseconds ?? 0)),
+    };
+  }
+}
+
+/// The sort menu: one checked order, the label carrying the active one.
+final class _SortMenu extends StatelessWidget {
+  const _SortMenu({required this.sort, required this.onChanged});
+
+  final _LibrarySort sort;
+  final ValueChanged<_LibrarySort> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final search = SizedBox(
-      width: compact ? 132 : 220,
-      child: DsSearchField(
-        initialValue: query,
-        onChanged: onQuery,
-        placeholder: t.recorder.librarySearchHint,
-        semanticLabel: t.recorder.librarySearchHint,
+    return DsMenuAnchor(
+      align: DsAlign.end,
+      semanticLabel: t.recorder.sortLabel,
+      items: [
+        for (final order in _LibrarySort.values)
+          DsMenuItem(
+            label: Text(switch (order) {
+              _LibrarySort.newest => t.recorder.sortNewest,
+              _LibrarySort.oldest => t.recorder.sortOldest,
+              _LibrarySort.name => t.recorder.sortName,
+              _LibrarySort.size => t.recorder.sortSize,
+              _LibrarySort.duration => t.recorder.sortDuration,
+            }),
+            checked: order == sort,
+            onPressed: () => onChanged(order),
+          ),
+      ],
+      builder: (context, controller, _) => DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        trailing: const DsIcon(DsIcons.chevronDown, size: 14),
+        onPressed: controller.toggle,
+        child: Text(switch (sort) {
+          _LibrarySort.newest => t.recorder.sortNewest,
+          _LibrarySort.oldest => t.recorder.sortOldest,
+          _LibrarySort.name => t.recorder.sortName,
+          _LibrarySort.size => t.recorder.sortSize,
+          _LibrarySort.duration => t.recorder.sortDuration,
+        }),
       ),
     );
-    if (compact) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          search,
-          DsMenuAnchor(
-            align: DsAlign.end,
-            semanticLabel: t.recorder.filterLabel,
-            items: [
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.filter),
-                label: Text(t.recorder.filterTitle),
-                trailing: filterActive ? const DsIcon(DsIcons.check, size: 14) : null,
-                onPressed: onFilter,
+  }
+}
+
+/// One take as the file manager draws it: the cover tile with its duration,
+/// the platform · title line, the facts line, the state's badge, and the
+/// play / folder / menu actions.
+final class _TakeRow extends StatelessWidget {
+  const _TakeRow({
+    required this.take,
+    required this.selected,
+    required this.onSelect,
+    required this.onPlay,
+    required this.menu,
+    required this.platformName,
+  });
+
+  final RecordingTake take;
+  final Set<String> selected;
+  final ValueChanged<RecordingTake> onSelect;
+  final VoidCallback onPlay;
+  final List<Widget> menu;
+  final String Function(String platformId) platformName;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    final key = take.filePath ?? take.folder;
+    final name = take.roomTitle.trim().isNotEmpty ? take.roomTitle.trim() : take.name;
+    final duration = take.duration;
+    final ok = take.playable;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+      child: DsCard(
+        onPressed: onPlay,
+        style: DsCardStyle(
+          padding: const EdgeInsets.all(DsSpace.s8),
+          borderRadius: BorderRadius.circular(theme.radii.card),
+        ),
+        child: Row(
+          spacing: DsSpace.s12,
+          children: [
+            DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
+            SizedBox(
+              width: 96,
+              height: 54,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
+                child: Stack(
+                  children: [
+                    Center(child: DsIcon(DsIcons.video, size: 20, color: colors.accentText)),
+                    if (duration != null)
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xB3000000),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            child: Text(
+                              formatRecordingDuration(duration),
+                              style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.folderOpen),
-                label: Text(t.recorder.openFolder),
-                onPressed: onReveal,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(
+                    '${platformName(take.platformId)} · $name',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                  ),
+                  Text(
+                    [
+                      formatRecordingMoment(take.takenAt),
+                      if (take.bytes > 0) formatRecordingBytes(take.bytes),
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ],
               ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.refresh),
-                label: Text(t.recorder.refresh),
-                onPressed: loading ? null : onRefresh,
-              ),
-              const DsMenuDivider(),
-              DsMenuItem(
-                leading: DsIcon(flat ? DsIcons.check : DsIcons.circle),
-                label: Text(t.recorder.allView),
-                onPressed: () => onView(true),
-              ),
-              DsMenuItem(
-                leading: DsIcon(!flat ? DsIcons.check : DsIcons.circle),
-                label: Text(t.recorder.folderView),
-                onPressed: () => onView(false),
-              ),
-            ],
-            builder: (context, controller, _) => DsButton.icon(
-              variant: DsButtonVariant.ghost,
+            ),
+            DsBadge(
+              label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
+              status: ok ? DsStatus.success : DsStatus.neutral,
+            ),
+            DsButton(
+              variant: DsButtonVariant.primary,
               size: DsSize.sm,
-              onPressed: controller.toggle,
-              icon: const DsIcon(DsIcons.ellipsisVertical),
-              semanticLabel: t.recorder.filterLabel,
+              leading: const DsIcon(DsIcons.play, size: 14),
+              onPressed: ok ? onPlay : null,
+              child: Text(t.recorder.playRecording),
+            ),
+            DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
+              icon: const DsIcon(DsIcons.folderOpen, size: 16),
+              semanticLabel: t.recorder.openFolder,
+            ),
+            DsMenuAnchor(
+              align: DsAlign.end,
+              semanticLabel: t.recorder.menuMore,
+              items: menu,
+              builder: (context, controller, _) => DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                onPressed: controller.toggle,
+                icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+                semanticLabel: t.recorder.menuMore,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One take as a cover card for the grid: the tile over the name, the
+/// facts under it, and the same actions as the row.
+final class _TakeCard extends StatelessWidget {
+  const _TakeCard({
+    required this.take,
+    required this.selected,
+    required this.onSelect,
+    required this.onPlay,
+    required this.menu,
+    required this.platformName,
+  });
+
+  final RecordingTake take;
+  final bool selected;
+  final VoidCallback onSelect;
+  final VoidCallback onPlay;
+  final List<Widget> menu;
+  final String Function(String platformId) platformName;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    final name = take.roomTitle.trim().isNotEmpty ? take.roomTitle.trim() : take.name;
+    final duration = take.duration;
+    final ok = take.playable;
+    return DsCard(
+      onPressed: onPlay,
+      style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            children: [
+              SizedBox(
+                height: 96,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.accentTint,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(theme.radii.card),
+                      topRight: Radius.circular(theme.radii.card),
+                    ),
+                  ),
+                  child: Center(child: DsIcon(DsIcons.video, size: 28, color: colors.accentText)),
+                ),
+              ),
+              Positioned(
+                left: 8,
+                top: 8,
+                child: DsCheckbox(value: selected, semanticLabel: name, onChanged: (_) => onSelect()),
+              ),
+              if (duration != null)
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(4)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      child: Text(
+                        formatRecordingDuration(duration),
+                        style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(DsSpace.s8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                ),
+                Text(
+                  [
+                    platformName(take.platformId),
+                    formatRecordingMoment(take.takenAt),
+                    if (take.bytes > 0) formatRecordingBytes(take.bytes),
+                  ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+                Row(
+                  spacing: DsSpace.s4,
+                  children: [
+                    DsBadge(
+                      label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
+                      status: ok ? DsStatus.success : DsStatus.neutral,
+                    ),
+                    const Spacer(),
+                    DsMenuAnchor(
+                      align: DsAlign.end,
+                      semanticLabel: t.recorder.menuMore,
+                      items: menu,
+                      builder: (context, controller, _) => DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: controller.toggle,
+                        icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+                        semanticLabel: t.recorder.menuMore,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
-      );
-    }
-    return Row(
-      spacing: DsSpace.s4,
-      children: [
-        search,
-        DsButton.icon(
-          variant: filterActive ? DsButtonVariant.tinted : DsButtonVariant.ghost,
-          size: DsSize.sm,
-          onPressed: onFilter,
-          icon: const DsIcon(DsIcons.filter),
-          semanticLabel: t.recorder.filterTitle,
-        ),
-        DsSegmentedControl<bool>(
-          value: flat,
-          semanticLabel: t.recorder.viewLabel,
-          segments: [
-            DsSegment(value: false, label: Text(t.recorder.folderView)),
-            DsSegment(value: true, label: Text(t.recorder.allView)),
-          ],
-          onChanged: onView,
-        ),
-        DsButton.icon(
-          variant: DsButtonVariant.ghost,
-          size: DsSize.sm,
-          onPressed: onReveal,
-          icon: const DsIcon(DsIcons.folderOpen),
-          semanticLabel: t.recorder.openFolder,
-        ),
-        DsButton.icon(
-          variant: DsButtonVariant.ghost,
-          size: DsSize.sm,
-          onPressed: loading ? null : onRefresh,
-          icon: const DsIcon(DsIcons.refresh),
-          semanticLabel: t.recorder.refresh,
-        ),
-      ],
+      ),
     );
   }
 }

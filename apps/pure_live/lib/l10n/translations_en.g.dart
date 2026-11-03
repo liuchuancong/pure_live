@@ -1913,6 +1913,16 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get statTodayFiles => 'Today';
 	@override String get statLatest => 'Latest';
 	@override String statFiles({required Object count}) => '${count} files';
+	@override String get sortLabel => 'Sort';
+	@override String get sortNewest => 'Newest first';
+	@override String get sortOldest => 'Oldest first';
+	@override String get sortName => 'Name';
+	@override String get sortSize => 'Size';
+	@override String get sortDuration => 'Duration';
+	@override String get selectAll => 'Select all';
+	@override String get listView => 'List';
+	@override String get gridView => 'Grid';
+	@override String groupSummary({required Object count, required Object size}) => '${count} files · ${size}';
 	@override String get emptyFinishedTitle => 'Finished recordings will show up here';
 	@override String get emptyDescription => 'Record from a live room; its task appears here.';
 	@override String get qualityBest => 'Best quality';
@@ -6413,6 +6423,16 @@ extension on TranslationsEn {
 			'recorder.statTodayFiles' => 'Today',
 			'recorder.statLatest' => 'Latest',
 			'recorder.statFiles' => ({required Object count}) => '${count} files',
+			'recorder.sortLabel' => 'Sort',
+			'recorder.sortNewest' => 'Newest first',
+			'recorder.sortOldest' => 'Oldest first',
+			'recorder.sortName' => 'Name',
+			'recorder.sortSize' => 'Size',
+			'recorder.sortDuration' => 'Duration',
+			'recorder.selectAll' => 'Select all',
+			'recorder.listView' => 'List',
+			'recorder.gridView' => 'Grid',
+			'recorder.groupSummary' => ({required Object count, required Object size}) => '${count} files · ${size}',
 			'recorder.emptyFinishedTitle' => 'Finished recordings will show up here',
 			'recorder.emptyDescription' => 'Record from a live room; its task appears here.',
 			'recorder.qualityBest' => 'Best quality',
@@ -6591,6 +6611,8 @@ extension on TranslationsEn {
 			'recorder.combineTitle' => 'Join into one MP4',
 			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
 			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
@@ -6601,8 +6623,6 @@ extension on TranslationsEn {
 			'recorder.previewTitle' => 'Recording preview',
 			'recorder.previewUnavailable' => 'This task holds no file a player can open',
 			'recorder.recordChatGiftsTitle' => 'Record gift messages',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.recordChatGiftsDesc' => 'Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.',
 			'recorder.recordChatTitle' => 'Record chat',
 			'recorder.recordChatDescription' => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku save formats; needs a platform with remote chat',
@@ -7105,6 +7125,8 @@ extension on TranslationsEn {
 			'settings.refreshInterval' => 'Interval',
 			'settings.navNetwork' => 'Network',
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
@@ -7115,8 +7137,6 @@ extension on TranslationsEn {
 			'settings.proxyPassword' => 'Password',
 			'settings.proxyPasswordDesc' => 'Kept in the system keychain — never in the preferences, never in a backup export. App requests, the player and recordings all present it; SOCKS and PAC cannot be expressed.',
 			'settings.proxyPasswordSaved' => 'Saved',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyPasswordNone' => 'Not set',
 			'settings.proxyPasswordReplace' => 'Type a new password to replace it',
 			'settings.proxyPasswordClear' => 'Clear the saved password',
@@ -7619,6 +7639,8 @@ extension on TranslationsEn {
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
@@ -7629,8 +7651,6 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'Which system channel carries the sound. Windows: wasapi; Android: audiotrack/aaudio/opensles; null mutes.',
 			'settings.playerGuideEntryPresetDefaultTitle' => 'Balanced (recommended)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultBody' => 'Clears custom output and decoder picks and leaves the choice to mpv. The first choice on most devices.',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android hardware-decode compat',
 			'settings.playerGuideEntryPresetAndroidCompatBody' => 'mediacodec_embed surface + forced mediacodec decode, for glitch/green-screen/AV-desync devices. Android only.',
@@ -8133,6 +8153,8 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_tr' => 'Turkish',
 			'settings.twitchLanguage_pl' => 'Polish',
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
+			_ => null,
+		} ?? switch (path) {
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
 			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
@@ -8143,8 +8165,6 @@ extension on TranslationsEn {
 			'settings.clipboardRoomOpen' => 'Open room',
 			'settings.backgroundAudioOnly' => 'Audio only in background',
 			'settings.backgroundAudioOnlyDesc' => 'Stop video decoding while in the background and keep the sound; the picture returns when the app comes back.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pauseOnPipClose' => 'Pause when picture-in-picture closes',
 			'settings.pauseOnPipCloseDesc' => 'Closing the mini window pauses; returning resumes.',
 			'settings.chatShowGifts' => 'Show gifts',
@@ -8647,6 +8667,8 @@ extension on TranslationsEn {
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.historyCompleted' => 'Finished',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',
@@ -8657,8 +8679,6 @@ extension on TranslationsEn {
 			'vod.clearHistoryTitle' => 'Clear the watch history?',
 			'vod.clearHistoryDesc' => 'Only this device\'s records are deleted; progress on Bilibili stays.',
 			'vod.favouritesEmptyTitle' => 'No favourites yet',
-			_ => null,
-		} ?? switch (path) {
 			'vod.favouritesEmptyDescription' => 'Tap the heart on a video and it appears here.',
 			'vod.favouriteRemove' => 'Remove from favourites',
 			'vod.saveVideo' => 'Favourite',
