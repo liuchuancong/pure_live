@@ -597,6 +597,30 @@ final class _PlatformNodeCard extends StatelessWidget {
   }
 }
 
+/// The log console's head action: the gear that opens the settings surface
+/// at the log section — the same page the sidebar reaches — where the
+/// rotation limits, the folder and the diagnostics live. The shells' head
+/// rows carry it, so it sits at the window's top-right on every width
+/// instead of floating inside the console's own content.
+final class LogsSettingsButton extends ConsumerWidget {
+  /// The log settings gear.
+  const LogsSettingsButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.md,
+      semanticLabel: context.t.settings.navLogs,
+      onPressed: () {
+        openSettingsSection(ref, SettingsSection.logs);
+        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location));
+      },
+      icon: const DsIcon(DsIcons.settings, size: 18),
+    );
+  }
+}
+
 /// The log page: the journal's own configuration and diagnostics card above
 /// the console — the records the running app wrote, searchable, following the
 /// newest line until the viewer scrolls away from the bottom.
@@ -643,14 +667,6 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       curve: Curves.easeOut,
     );
     setState(() => _autoScroll = true);
-  }
-
-  /// The gear opens the settings surface at the log section — the same page
-  /// the sidebar reaches — where the rotation limits, the folder and the
-  /// diagnostics live.
-  void _openSettings() {
-    openSettingsSection(ref, SettingsSection.logs);
-    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location));
   }
 
   /// Writes the in-memory records beside the log files, so they can be read
@@ -727,19 +743,6 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-        // The page's own top-right corner: the way to the rest of the log
-        // settings, at the edge on every width (a phone reaches it with a
-        // thumb as easily as a pointer reaches it here).
-        Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: DsButton.icon(
-            variant: DsButtonVariant.ghost,
-            size: DsSize.md,
-            semanticLabel: t.settings.navLogs,
-            onPressed: _openSettings,
-            icon: const DsIcon(DsIcons.settings, size: 18),
-          ),
-        ),
         // The page keeps only the two things a viewer changes while reading:
         // what is recorded and whether a file is written. The rest — the
         // rotation limits and the folder — is the settings page's, behind the

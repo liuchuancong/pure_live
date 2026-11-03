@@ -7,6 +7,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
+import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
 import 'package:pure_live/shared/shared.dart';
 
 /// The width the navigation drawer opens to.
@@ -216,6 +217,9 @@ final class MobileLayout extends ConsumerWidget {
             : breadcrumb,
         centerTitle: false,
         actions: [
+          // The log console's settings gear rides the top bar, the same
+          // corner the desktop's head row gives it.
+          if (selected == NavigationItem.logs) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
           // A window strip above this bar already carries the switch; two
           // moons stacked on a narrow desktop window would be one too many.
           if (!WindowChromeState.drawsStrip) const ThemeModeToggle(size: 48, iconSize: 20),

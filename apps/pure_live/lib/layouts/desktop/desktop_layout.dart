@@ -19,6 +19,7 @@ import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview.dart' show multiviewSearchHandoffProvider;
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart' show recorderSearchHandoffProvider;
+import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
 import 'package:pure_live/modules/music/controller/music_search.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -582,6 +583,15 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                       },
                                     ),
                                   ),
+                                ],
+                                // A page's own head action rides this row:
+                                // the log console keeps its settings gear
+                                // at the window's top-right, so the way to
+                                // the rest of the log settings is where a
+                                // head button belongs, narrow or wide.
+                                if (widget.module == AppModule.live && widget.menuValue == NavigationItem.logs) ...[
+                                  const LogsSettingsButton(),
+                                  const SizedBox(width: DsSpace.s8),
                                 ],
                                 // The self-drawn strip carries the mode
                                 // switch; a native caption leaves no strip,
