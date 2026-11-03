@@ -355,8 +355,14 @@ final class KgMusicSource extends LxPlatformSource
   @override
   Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String rawId) async {
     final globalId = _playlistIdOf(rawId);
-    final info = await _specialInfo(globalId);
-    final rows = await _specialSongs(globalId);
+    final MusicPlaylistInfo info;
+    final List<Map<String, Object?>> rows;
+    if (RegExp(r'^\d+$').hasMatch(globalId)) {
+      (info, rows) = await _specialPage(globalId);
+    } else {
+      final songs = await _specialSongs(globalId);
+      (info, rows) = (await _specialInfo(globalId), songs);
+    }
     final enriched = await _enrich(rows);
     final tracks = <audio.MusicTrack>[];
     final seen = <String>{};
@@ -367,6 +373,41 @@ final class KgMusicSource extends LxPlatformSource
       tracks.add(track);
     }
     return (info, tracks);
+  }
+
+  /// A numeric special id's page: the share page the reference scrapes, which
+  /// carries the card and every song row in one read.
+  ///
+  /// v5 `special/song_v2` refuses the signed calls with err_code 20028 —
+  /// "操作太频繁" — once the fixed device id in their params has asked a few
+  /// times, so the page is the path that keeps answering for these ids.
+  Future<(MusicPlaylistInfo, List<Map<String, Object?>>)> _specialPage(String id) async {
+    final body = await getText(
+      Uri.http('www2.kugou.kugou.com', '/yueku/v9/special/single/$id-5-9999.html'),
+      headers: _mobileHeaders,
+    );
+    final card = RegExp(r'global = {[\s\S]+?name: "(.+)"[\s\S]+?pic: "(.+)"[\s\S]+?};').firstMatch(body);
+    final rows = <Map<String, Object?>>[];
+    final json = RegExp(r'global\.data = (\[.+\]);').firstMatch(body)?.group(1);
+    if (json != null) {
+      final parsed = jsonDecode(json);
+      if (parsed is List) {
+        rows.addAll([
+          for (final entry in parsed)
+            if (entry is Map) entry.cast<String, Object?>(),
+        ]);
+      }
+    }
+    return (
+      MusicPlaylistInfo(
+        id: id,
+        name: card?.group(1) ?? '',
+        cover: (card?.group(2) ?? '').replaceFirst('{size}', '240'),
+        author: '',
+        trackCount: rows.length,
+      ),
+      rows,
+    );
   }
 
   /// The album's own page. The platform answers it as two reads: the card
@@ -600,19 +641,20 @@ final class KgMusicSource extends LxPlatformSource
         '&clienttime=$now&mid=$now&uuid=$now&dfid=-';
     final json = jsonDecode(
       await getText(
-        Uri.https('mobiles.kugou.com', '/api/v5/special/info_v2', _signed(params)),
+        _signedUri('https', 'mobiles.kugou.com', '/api/v5/special/info_v2', params),
         headers: _mobileHeaders,
       ),
     ) as Map<String, Object?>;
     final data = json['data'];
-    final info = data is Map ? data['info'] : null;
-    if (info is! Map) return MusicPlaylistInfo(id: globalId, name: '', cover: '', author: '', trackCount: 0);
+    // info_v2 answers the card itself as `data`, not a list under it; digging
+    // for `data.info` here is what made every playlist open empty.
+    if (data is! Map) return MusicPlaylistInfo(id: globalId, name: '', cover: '', author: '', trackCount: 0);
     return MusicPlaylistInfo(
       id: globalId,
-      name: '${info['specialname'] ?? info['name'] ?? ''}',
-      cover: '${info['img'] ?? info['imgurl'] ?? ''}'.replaceFirst('{size}', '240'),
-      author: '${info['nickname'] ?? info['list_create_username'] ?? ''}',
-      trackCount: (info['count'] as num?)?.toInt() ?? 0,
+      name: '${data['specialname'] ?? data['name'] ?? ''}',
+      cover: '${data['imgurl'] ?? data['img'] ?? ''}'.replaceFirst('{size}', '240'),
+      author: '${data['nickname'] ?? data['list_create_username'] ?? ''}',
+      trackCount: ((data['songcount'] ?? data['count']) as num?)?.toInt() ?? 0,
     );
   }
 
@@ -628,7 +670,7 @@ final class KgMusicSource extends LxPlatformSource
           '&pagesize=300&srcappid=2919&clientver=20000&clienttime=$now&mid=$now&uuid=$now&dfid=-';
       final json = jsonDecode(
         await getText(
-          Uri.https('mobiles.kugou.com', '/api/v5/special/song_v2', _signed(params)),
+          _signedUri('https', 'mobiles.kugou.com', '/api/v5/special/song_v2', params),
           headers: _mobileHeaders,
         ),
       ) as Map<String, Object?>;
@@ -655,19 +697,20 @@ final class KgMusicSource extends LxPlatformSource
     'clienttime': '1586163263991',
   };
 
-  /// lx-music's `signatureParams`: sort the query pairs, salt with the
-  /// platform key front and back, MD5 the whole thing.
-  static Map<String, String> _signed(String params) {
+  /// The request for a signed KuGou call.
+  ///
+  /// The salt is per gateway, not per app — the web key signs the special
+  /// (playlist) endpoints, while the comment service only answers the android
+  /// key, and asking it with the wrong one is refused with err_code 20006.
+  ///
+  /// The signed string is put on the wire verbatim instead of through a query
+  /// map: a map writes an empty value as a bare name (`clienttoken=` becomes
+  /// `clienttoken`), so the gateway recomputes its hash over a different
+  /// parameter string than ours and answers "err signature".
+  static Uri _signedUri(String scheme, String host, String path, String params, {String key = _webSignKey}) {
     final pairs = params.split('&')..sort();
-    const key = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt';
     final sign = md5.convert(utf8.encode('$key${pairs.join()}$key')).toString();
-    final query = <String, String>{};
-    for (final pair in params.split('&')) {
-      final split = pair.indexOf('=');
-      if (split > 0) query[pair.substring(0, split)] = pair.substring(split + 1);
-    }
-    query['signature'] = sign;
-    return query;
+    return Uri(scheme: scheme, host: host, path: path, query: '$params&signature=$sign');
   }
 
   /// The gateway answers a posted hash batch with full song rows; the fixed
@@ -683,8 +726,19 @@ final class KgMusicSource extends LxPlatformSource
       'x-router': 'kmr.service.kugou.com',
       'Content-Type': 'application/json',
     };
+    // The gateway takes `{hash}` pairs, deduplicated — not the rows it was
+    // built from. Both playlist reads name their file hash the same way, and
+    // the batch answers in the order it receives, so the hashes are collected
+    // into a set first.
+    final hashes = <String>{
+      for (final row in rows)
+        if ('${row['hash'] ?? ''}'.isNotEmpty) '${row['hash']}',
+    };
+    final pairs = [
+      for (final hash in hashes) {'hash': hash},
+    ];
     final answers = <Object?>[];
-    for (var i = 0; i < rows.length; i += 100) {
+    for (var i = 0; i < pairs.length; i += 100) {
       final batch = {
         'area_code': '1',
         'show_privilege': 1,
@@ -696,11 +750,14 @@ final class KgMusicSource extends LxPlatformSource
         'dfid': '-',
         'clienttime': DateTime.now().millisecondsSinceEpoch,
         'key': 'OIlwieks28dk2k092lksi2UIkp',
-        'fields': 'album_info,author_name,audio_info,ori_audio_name,base,songname,classification',
-        'data': rows.sublist(i, (i + 100).clamp(0, rows.length)),
+        'fields': 'album_info,author_name,audio_info,ori_audio_name,base,songname',
+        'data': pairs.sublist(i, (i + 100).clamp(0, pairs.length)),
       };
       try {
-        final answer = await postJson(Uri.http('gateway.kugou.com', '/v3/album_audio/audio'), gatewayHeaders, batch);
+        final envelope = await postJson(Uri.http('gateway.kugou.com', '/v2/album_audio/audio'), gatewayHeaders, batch);
+        // The gateway answers `{status, error_code, data:[[row]]}`; the rows
+        // sit inside `data`, one batch entry to a nested one-element list.
+        final answer = envelope is Map ? envelope['data'] : envelope;
         if (answer is List) {
           for (final entry in answer) {
             if (entry is List && entry.isNotEmpty && entry.first is Map) {
@@ -924,7 +981,13 @@ final class KgMusicSource extends LxPlatformSource
           headers: {'Referer': 'https://www.kugou.com/'},
         ),
       );
-      final record = json is List && json.isNotEmpty && json.first is Map ? (json.first as Map)['RecordDatas'] : null;
+      // The answer is an envelope — `{status, error_code, data:[{RecordDatas:
+      // […]}]}` — and the tips sit inside the first block of `data`; reading
+      // the envelope as if it were that list yields nothing, which is what
+      // this did before.
+      final blocks = json is Map ? json['data'] : null;
+      final first = blocks is List && blocks.isNotEmpty ? blocks.first : null;
+      final record = first is Map ? first['RecordDatas'] : null;
       if (record is! List) return const [];
       return [
         for (final entry in record)
@@ -954,7 +1017,13 @@ final class KgMusicSource extends LxPlatformSource
         '&clientver=11409&p=$page&clienttoken=&pagesize=$pageSize&ver=10&kugouid=0';
     final json = jsonDecode(
       await getText(
-        Uri.http('m.comment.service.kugou.com', hot ? '/r/v1/rank/topliked' : '/r/v1/rank/newest', _signed(params)),
+        _signedUri(
+          'http',
+          'm.comment.service.kugou.com',
+          hot ? '/r/v1/rank/topliked' : '/r/v1/rank/newest',
+          params,
+          key: _androidSignKey,
+        ),
         headers: {'User-Agent': _commentUserAgent},
       ),
     ) as Map<String, Object?>;
@@ -999,6 +1068,13 @@ final class KgMusicSource extends LxPlatformSource
     );
   }
 }
+
+/// The salt the web gateway's endpoints sign with — the specials (playlists).
+const String _webSignKey = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt';
+
+/// The salt the android gateway signs with — the comment service refuses the
+/// web key with err_code 20006.
+const String _androidSignKey = 'OIlwieks28dk2k092lksi2UIkp';
 
 /// The desktop user agent kg's comment service only answers with.
 const String _commentUserAgent =
