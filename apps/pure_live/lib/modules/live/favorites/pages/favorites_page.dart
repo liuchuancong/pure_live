@@ -595,7 +595,7 @@ final class _RefreshButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DsButton.icon(
-      variant: DsButtonVariant.ghost,
+      variant: DsButtonVariant.secondary,
       size: DsSize.sm,
       semanticLabel: context.t.favorites.refresh,
       loading: refreshing,

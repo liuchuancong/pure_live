@@ -180,7 +180,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                 onChanged: choosePlatform,
               );
               final refresh = DsButton.icon(
-                variant: DsButtonVariant.ghost,
+                variant: DsButtonVariant.secondary,
                 size: DsSize.sm,
                 semanticLabel: t.common.refresh,
                 onPressed: loadingFeed ? null : refreshFeed,

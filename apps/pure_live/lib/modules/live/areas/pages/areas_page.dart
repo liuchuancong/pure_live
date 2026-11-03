@@ -234,7 +234,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
         inPlatformView && ref.watch(areasCatalogProvider.select((catalog) => catalog[platform]?.loading ?? false));
     void refreshCatalog() => unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
     final refreshButton = DsButton.icon(
-      variant: DsButtonVariant.ghost,
+      variant: DsButtonVariant.secondary,
       size: DsSize.sm,
       semanticLabel: t.common.refresh,
       onPressed: loadingCatalog ? null : refreshCatalog,
