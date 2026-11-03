@@ -78,10 +78,16 @@ abstract interface class MusicArtistSource {
 /// "the platform never said". The photo stays null for the same reason: no
 /// adapter parses a singer picture, so the card wears the artist's initials
 /// rather than a cover borrowed from a song.
+///
+/// [albumsAnswered] says whether the platform can open an album at all. An
+/// album card that leads to a "this platform cannot show an album" page is
+/// worse than no card, so the list stays empty until the platform carries
+/// [MusicAlbumSource] too.
 Future<MusicArtistDetail> musicArtistPageFromSearch(
   Future<audio.MusicSourcePage<audio.MusicTrack>> Function(String keyword, {int page, int pageSize}) search,
   String name, {
   String? artistId,
+  bool albumsAnswered = true,
 }) async {
   final subject = musicMainArtist(name);
   final page = await search(subject, pageSize: 100);
@@ -91,8 +97,9 @@ Future<MusicArtistDetail> musicArtistPageFromSearch(
   ];
   final seen = <String>{};
   final albums = <MusicAlbum>[
-    for (final track in songs)
-      if (_albumOfSong(track, artistId: artistId) case final album? when seen.add(album.id)) album,
+    if (albumsAnswered)
+      for (final track in songs)
+        if (_albumOfSong(track, artistId: artistId) case final album? when seen.add(album.id)) album,
   ];
   return (name: subject, artistId: artistId, avatarUri: null, songs: songs, albums: albums);
 }

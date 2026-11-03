@@ -5,7 +5,7 @@ import 'package:media_core/media_core.dart' show SourceFormat;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
-    show MusicArtistDetail, MusicArtistSource, musicArtistPageFromSearch;
+    show MusicAlbumSource, MusicArtistDetail, MusicArtistSource, musicArtistPageFromSearch;
 
 const String platformUserAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -125,8 +125,12 @@ abstract class LxPlatformSource extends audio.MusicSource {
 /// the artist line and the album the song sits on — which is what the artist
 /// page and the home rail show. A platform with a real artist endpoint (Kuwo)
 /// implements [MusicArtistSource] on its own and does not carry this.
+///
+/// The albums are only listed where the platform can also open one: an album
+/// card whose page answers "this platform has no album page" is a door into a
+/// wall, so the row stays empty until [MusicAlbumSource] is carried too.
 mixin LxArtistPageFromSearch on LxPlatformSource implements MusicArtistSource {
   @override
   Future<MusicArtistDetail> artist(String name, {String? artistId}) =>
-      musicArtistPageFromSearch(search, name, artistId: artistId);
+      musicArtistPageFromSearch(search, name, artistId: artistId, albumsAnswered: this is MusicAlbumSource);
 }
