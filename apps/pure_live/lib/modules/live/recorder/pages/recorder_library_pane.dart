@@ -502,18 +502,29 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
     final filter = ref.watch(recorderLibraryFilterProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
     final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
+    void open() => unawaited(showRecordingLibraryFilter(context, ref, takes: takes, platformName: platformName));
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
       children: [
-        DsButton(
-          variant: filter.narrowed ? DsButtonVariant.tinted : DsButtonVariant.secondary,
-          size: DsSize.sm,
-          leading: const DsIcon(DsIcons.filter, size: 14),
-          onPressed: () =>
-              unawaited(showRecordingLibraryFilter(context, ref, takes: takes, platformName: platformName)),
-          child: compact ? const SizedBox.shrink() : Text(t.recorder.filterLabel),
-        ),
+        // A wide window says what the entry is; a small one spends its room on
+        // the list and lets the funnel glyph answer for it.
+        if (compact)
+          DsButton.icon(
+            variant: filter.narrowed ? DsButtonVariant.tinted : DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: open,
+            icon: const DsIcon(DsIcons.filter, size: 16),
+            semanticLabel: t.recorder.filterLabel,
+          )
+        else
+          DsButton(
+            variant: filter.narrowed ? DsButtonVariant.tinted : DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.filter, size: 14),
+            onPressed: open,
+            child: Text(t.recorder.filterLabel),
+          ),
         if (!compact)
           DsButton.icon(
             variant: DsButtonVariant.secondary,
