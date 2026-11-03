@@ -38,7 +38,7 @@ const String _neteaseUserAgent =
 /// The Netease platform: search, boards and lyrics ride the eapi/weapi
 /// encrypted channels; play URLs come from the lx scripts.
 final class WyMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
     implements MusicHotWords, MusicCommentsSource {
   /// A Netease source over the lx runtime.
   WyMusicSource(super.runtime, super.http);

@@ -68,6 +68,45 @@ abstract interface class MusicArtistSource {
   Future<MusicArtistDetail> artist(String name, {String? artistId});
 }
 
+/// The artist page a platform can build out of its own song search: the
+/// tracks whose credit line carries [name], and the albums those very tracks
+/// sit on.
+///
+/// This is deliberately not the platform's discography page: none of the four
+/// adapters here speaks the signed endpoint that answers one, so an album kept
+/// empty of counts and years stays empty — `0` and null are the model's own
+/// "the platform never said". The photo stays null for the same reason: no
+/// adapter parses a singer picture, so the card wears the artist's initials
+/// rather than a cover borrowed from a song.
+Future<MusicArtistDetail> musicArtistPageFromSearch(
+  Future<audio.MusicSourcePage<audio.MusicTrack>> Function(String keyword, {int page, int pageSize}) search,
+  String name, {
+  String? artistId,
+}) async {
+  final subject = musicMainArtist(name);
+  final page = await search(subject, pageSize: 100);
+  final songs = <audio.MusicTrack>[
+    for (final track in page.items)
+      if (track.artist.contains(subject)) track,
+  ];
+  final seen = <String>{};
+  final albums = <MusicAlbum>[
+    for (final track in songs)
+      if (_albumOfSong(track, artistId: artistId) case final album? when seen.add(album.id)) album,
+  ];
+  return (name: subject, artistId: artistId, avatarUri: null, songs: songs, albums: albums);
+}
+
+/// One album as the song that carries it names it: a blank album line and a
+/// `0` id are both no album, and the counts and years the search never said
+/// stay unset.
+MusicAlbum? _albumOfSong(audio.MusicTrack track, {String? artistId}) {
+  final name = track.album.trim();
+  final id = (track.albumId ?? '').trim();
+  if (name.isEmpty || id.isEmpty || id == '0') return null;
+  return MusicAlbum(id: id, name: name, artist: track.artist, artistId: artistId, coverUri: track.coverUri);
+}
+
 /// The artist a credit line leads with — the module joins several names with
 /// `、`, so the first one is the page's subject and the rest are features.
 String musicMainArtist(String artist) {

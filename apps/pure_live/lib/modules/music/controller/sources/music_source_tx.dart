@@ -78,7 +78,7 @@ String zzcSign(String text) {
 /// The QQ music platform: search and boards ride the signed android gateway;
 /// play URLs come from the lx scripts (the open gateway serves no URLs).
 final class TxMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
     implements MusicHotWords, MusicCommentsSource {
   /// A QQ music source over the lx runtime.
   TxMusicSource(super.runtime, super.http);

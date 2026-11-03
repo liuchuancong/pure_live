@@ -4,6 +4,8 @@ import 'package:live_net/live_net.dart';
 import 'package:media_core/media_core.dart' show SourceFormat;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
+    show MusicArtistDetail, MusicArtistSource, musicArtistPageFromSearch;
 
 const String platformUserAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -114,4 +116,17 @@ abstract class LxPlatformSource extends audio.MusicSource {
       .replaceAll('&gt;', '>')
       .replaceAll('&quot;', '"')
       .replaceAll('&#39;', "'");
+}
+
+/// The artist page an lx platform can answer out of its own song search.
+///
+/// Four of these platforms have no endpoint that lists an artist's
+/// discography, but every one of them answers a song search whose rows carry
+/// the artist line and the album the song sits on — which is what the artist
+/// page and the home rail show. A platform with a real artist endpoint (Kuwo)
+/// implements [MusicArtistSource] on its own and does not carry this.
+mixin LxArtistPageFromSearch on LxPlatformSource implements MusicArtistSource {
+  @override
+  Future<MusicArtistDetail> artist(String name, {String? artistId}) =>
+      musicArtistPageFromSearch(search, name, artistId: artistId);
 }

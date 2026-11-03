@@ -44,7 +44,7 @@ const Map<String, String> _krcHeaders = {
 /// play URLs come from the lx scripts (KuGou has no open URL endpoint), keyed
 /// by the per-quality file hashes the search response carries.
 final class KgMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
     implements MusicHotWords, MusicCommentsSource {
   /// A KuGou source over the lx runtime.
   KgMusicSource(super.runtime, super.http);

@@ -47,7 +47,7 @@ const String _mgUserAgent =
 /// The Migu platform: search rides the signed v3 gateway, boards and lyrics
 /// the open app endpoints; play URLs come from the lx scripts.
 final class MgMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
     implements MusicHotWords, MusicCommentsSource {
   /// A Migu source over the lx runtime.
   MgMusicSource(super.runtime, super.http);
