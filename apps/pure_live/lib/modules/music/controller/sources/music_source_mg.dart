@@ -699,17 +699,25 @@ final class MgMusicSource extends LxPlatformSource
   Future<List<String>> suggestions(String query) async {
     try {
       final json = jsonDecode(
-        await getText(
-          Uri.https('music.migu.cn', '/v3/api/search/suggest', {'keyword': query}),
-          headers: {'Referer': 'https://music.migu.cn/v3'},
-        ),
+        await getText(Uri.https('app.u.nf.migu.cn', '/pc/resource/content/tone_search_suggest/v1.0', {'text': query})),
       ) as Map<String, Object?>;
-      final songs = json['songs'];
-      if (songs is! List) return const [];
-      return [
-        for (final song in songs)
-          if (song is Map && song['name'] is String) '${song['name']} - ${song['singerName'] ?? ''}'.trim(),
-      ];
+      // The v5 site asks this host; the `/v3/api/search/suggest` path read
+      // here before now 301s to the site root, so it answered nothing. Its
+      // answer is `{code, info, data:{singerList, songList}}` and the two
+      // blocks name their row differently.
+      final data = json['data'];
+      if (data is! Map) return const [];
+      final tips = <String>[];
+      for (final block in [(data['singerList'], 'singerName'), (data['songList'], 'songName')]) {
+        final rows = block.$1;
+        if (rows is! List) continue;
+        for (final row in rows) {
+          if (row is! Map) continue;
+          final name = '${row[block.$2] ?? ''}'.trim();
+          if (name.isNotEmpty && !tips.contains(name)) tips.add(name);
+        }
+      }
+      return tips;
     } on Object {
       return const [];
     }
