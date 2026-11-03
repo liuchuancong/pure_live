@@ -15,7 +15,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
     show formatRecordingBytes, formatRecordingDuration, formatRecordingMoment;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, PlatformTabRow, kAllPlatforms;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — a day, the platforms recorded that day, the rooms behind a
@@ -74,10 +74,18 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
 
 final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane> {
   /// Only the sites ticked in the panel; empty means every site.
-  final Set<String> _platforms = {};
+  /// The platform the tabs row has picked; 'all' shows everything.
+  String _platform = kAllPlatforms;
 
   /// Whether a row must hold something playable.
   bool _playableOnly = false;
+
+  /// The platforms actually present in the library, in tab order.
+  List<String> _platformTabs(List<RecordingTake> takes) {
+    final ids = {for (final take in takes) take.platformId}.toList()
+      ..sort((a, b) => widget.platformName(a).compareTo(widget.platformName(b)));
+    return [kAllPlatforms, ...ids];
+  }
 
   /// The list's order; newest first, the way a file manager opens.
   _LibrarySort _sort = _LibrarySort.newest;
@@ -150,13 +158,14 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                 spacing: DsSpace.s8,
                 children: [
                   DsButton.icon(
-                    variant: _platforms.isNotEmpty || _playableOnly
-                        ? DsButtonVariant.tinted
-                        : DsButtonVariant.secondary,
+                    variant: _playableOnly ? DsButtonVariant.tinted : DsButtonVariant.secondary,
                     size: DsSize.sm,
-                    onPressed: () => unawaited(_openFilter(takes)),
-                    icon: const DsIcon(DsIcons.filter, size: 16),
-                    semanticLabel: t.recorder.filterTitle,
+                    onPressed: () => setState(() {
+                      _playableOnly = !_playableOnly;
+                      _selected.clear();
+                    }),
+                    icon: const DsIcon(DsIcons.play, size: 16),
+                    semanticLabel: t.recorder.filterPlayable,
                   ),
                   _SortMenu(sort: _sort, onChanged: (value) => setState(() => _sort = value)),
                   DsSegmentedControl<bool>(
@@ -195,6 +204,20 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                     semanticLabel: t.recorder.refresh,
                   ),
                 ],
+              ),
+              PlatformTabRow(
+                platforms: _platformTabs(takes),
+                current: _platform,
+                nameOf: widget.platformName,
+                semanticLabel: t.recorder.libraryTitle,
+                countOf: (id) =>
+                    id == kAllPlatforms ? takes.length : takes.where((take) => take.platformId == id).length,
+                showPlatformWall: false,
+                showLayoutToggle: false,
+                onChanged: (value) => setState(() {
+                  _platform = value;
+                  _selected.clear();
+                }),
               ),
             ],
           ),
@@ -420,7 +443,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   List<RecordingTake> _filter(List<RecordingTake> takes) {
     return [
       for (final take in takes)
-        if ((_platforms.isEmpty || _platforms.contains(take.platformId)) && (!_playableOnly || take.playable)) take,
+        if ((_platform == kAllPlatforms || take.platformId == _platform) && (!_playableOnly || take.playable)) take,
     ];
   }
 
@@ -488,64 +511,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     await Clipboard.setData(ClipboardData(text: path));
     if (!mounted) return;
     showDsToast(context: context, title: context.t.common.copied);
-  }
-
-  Future<void> _openFilter(List<RecordingTake> takes) async {
-    final t = context.t;
-    final sites = {for (final take in takes) take.platformId: widget.platformName(take.platformId)}.entries.toList()
-      ..sort((a, b) => a.value.compareTo(b.value));
-    final picked = {..._platforms};
-    var playable = _playableOnly;
-    void apply() => setState(() {
-      _platforms
-        ..clear()
-        ..addAll(picked);
-      _playableOnly = playable;
-      _selected.clear();
-    });
-    await showDsPanel<void>(
-      context: context,
-      builder: (panelContext) => DsPanel(
-        title: Text(t.recorder.filterTitle),
-        child: DsListSection(
-          children: [
-            for (final site in sites)
-              DsListRow(
-                title: Text(site.value),
-                trailing: DsCheckbox(
-                  value: picked.contains(site.key),
-                  onChanged: (value) {
-                    if (value == true) {
-                      picked.add(site.key);
-                    } else {
-                      picked.remove(site.key);
-                    }
-                    apply();
-                  },
-                ),
-              ),
-            DsListRow(
-              title: Text(t.recorder.filterPlayable),
-              trailing: DsSwitch(
-                value: playable,
-                onChanged: (value) {
-                  playable = value;
-                  apply();
-                },
-              ),
-            ),
-            DsListRow(
-              title: Text(t.recorder.reset),
-              onPressed: () {
-                picked.clear();
-                playable = false;
-                apply();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
