@@ -32,18 +32,40 @@ CastController createCastController(Ref ref) {
 /// The receiver fetches the line itself, so only a line it can reach works —
 /// a signed header the TV cannot send surfaces as a cast failure, never as a
 /// fake success.
-Future<void> showCastDialog(BuildContext context, {required LivePlayLine line, required String? title}) {
+Future<void> showCastDialog(BuildContext context, {required LivePlayLine line, required String? title}) =>
+    showCastUriDialog(context, url: line.url, title: title, headers: line.headers.toMap());
+
+/// The same picker for any address a renderer can be pointed at: a stream line,
+/// or a file on this machine's disk.
+///
+/// A local path is not a dead end — the DLNA backend rewrites one through its
+/// own `MediaHttpServer` (bound to this machine's LAN address, byte ranges
+/// answered, the registration dropped when the next cast replaces it), because
+/// a TV cannot read this computer's filesystem. The caller names the file; the
+/// serving is the package's.
+Future<void> showCastUriDialog(
+  BuildContext context, {
+  required String url,
+  required String? title,
+  Map<String, String> headers = const {},
+}) {
   return showDsDialog<void>(
     context: context,
-    builder: (context) => _CastDialog(line: line, title: title ?? context.t.room.castTitle),
+    builder: (context) => _CastDialog(url: url, title: title ?? context.t.room.castTitle, headers: headers),
   );
 }
 
 final class _CastDialog extends ConsumerWidget {
-  const _CastDialog({required this.line, required this.title});
+  const _CastDialog({required this.url, required this.title, this.headers = const {}});
 
-  final LivePlayLine line;
+  /// What the renderer is pointed at.
+  final String url;
+
+  /// The name the receiver shows.
   final String title;
+
+  /// Headers the source needs; empty for a file this machine serves.
+  final Map<String, String> headers;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -119,7 +141,7 @@ final class _CastDialog extends ConsumerWidget {
   Future<void> _cast(BuildContext context, CastController controller, CastDevice device) async {
     final room = context.t.room;
     try {
-      await controller.cast(device, CastMedia(url: line.url, title: title, headers: line.headers.toMap()));
+      await controller.cast(device, CastMedia(url: url, title: title, headers: headers));
       if (!context.mounted) return;
       Navigator.of(context).pop();
       showDsToast(context: context, title: room.castStarted);

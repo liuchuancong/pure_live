@@ -65,7 +65,8 @@ import 'package:pure_live/shared/shared.dart'
         playerInk,
         playerInkMuted,
         playerInkSubtle,
-        playerStatsVisibleProvider;
+        playerStatsVisibleProvider,
+        showCastUriDialog;
 
 /// Opens the media preview over [items], on the entry at [initialIndex].
 ///
@@ -1156,6 +1157,16 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         selected: ref.watch(playerStatsVisibleProvider),
         onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       ),
+      // 投屏 of the file itself. A renderer cannot read this disk, but the
+      // DLNA backend serves the path over the LAN through its own media server,
+      // so a finished take casts the way a stream does.
+      if (_current case final entry? when entry.exists)
+        SettingsPreviewCircleButton(
+          icon: DsIcons.cast,
+          semanticLabel: t.room.cast,
+          onPressed: () =>
+              unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
+        ),
       // The theatre is this page's own arrangement, so the page decides where it
       // exists: it needs the list column to float, which a narrow window has no
       // room for and a window the picture already owns does not need.
