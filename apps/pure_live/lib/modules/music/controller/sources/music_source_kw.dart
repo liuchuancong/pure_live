@@ -107,7 +107,9 @@ final class KwMusicSource extends LxPlatformSource
       'pay': '0',
       'needliveshow': '0',
     });
-    final json = jsonDecode(await getText(uri)) as Map<String, Object?>;
+    // The gateway answers this `ft` as a Python repr, not JSON — the reference
+    // runs the same body through its `objStr2JSON` first.
+    final json = jsonDecode(_reprToJson(await getText(uri))) as Map<String, Object?>;
     final raw = json['abslist'];
     if (raw is! List) return const MusicPlaylistPage(items: [], total: 0);
     final total = int.tryParse('${json['TOTAL'] ?? ''}') ?? 0;
@@ -227,7 +229,7 @@ final class KwMusicSource extends LxPlatformSource
       ) as Map<String, Object?>;
       final data = json['data'];
       if (json['code'] != 200 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
-      return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: (data['total'] as num?)?.toInt() ?? 0);
+      return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: _intOf(data['total']) ?? 0);
     }
     // The other digests are the 专题 pages: the qz gateway answers grouped
     // rows the reference flattens without a total.
@@ -266,7 +268,52 @@ final class KwMusicSource extends LxPlatformSource
     ) as Map<String, Object?>;
     final data = json['data'];
     if (json['code'] != 200 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
-    return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: (data['total'] as num?)?.toInt() ?? 0);
+    return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: _intOf(data['total']) ?? 0);
+  }
+
+  /// Kuwo's `r.s` answers some `ft` values as a Python repr — a dict of
+  /// single-quoted keys and values — which is not JSON, so `jsonDecode` throws
+  /// on the second character. Only the delimiters become double quotes: outside
+  /// a quoted run every `'` opens one, and one ends only when the next
+  /// non-space is a structural mark (`: , } ]`) or the text stops — so an
+  /// apostrophe inside a name survives. The reference does the same with
+  /// look-behind patterns, which Dart's RegExp cannot express.
+  static String _reprToJson(String text) {
+    final out = StringBuffer();
+    var inString = false;
+    for (var index = 0; index < text.length; index++) {
+      final char = text[index];
+      if (char != "'") {
+        out.write(char);
+        continue;
+      }
+      if (!inString) {
+        inString = true;
+        out.write('"');
+        continue;
+      }
+      var next = index + 1;
+      while (next < text.length && text[next] == ' ') {
+        next++;
+      }
+      if (next >= text.length || const <String>{':', ',', '}', ']'}.contains(text[next])) {
+        inString = false;
+        out.write('"');
+      } else {
+        out.write(char);
+      }
+    }
+    return out.toString();
+  }
+
+  /// A number the platform may answer either as a JSON number or as a decimal
+  /// string — the wapi counts are strings on some digests — so a cast would
+  /// throw on whichever shape it chose. Null stays null: it is the model's own
+  /// "the platform never said".
+  static int? _intOf(Object? raw) {
+    if (raw == null) return null;
+    if (raw is num) return raw.toInt();
+    return int.tryParse('$raw'.trim());
   }
 
   /// The plaza rows the wapi answers — the reference's `filterList`, the
@@ -281,7 +328,7 @@ final class KwMusicSource extends LxPlatformSource
             name: LxPlatformSource.decodeName('${entry['name']}').trim(),
             cover: '${entry['img'] ?? ''}',
             author: LxPlatformSource.decodeName('${entry['uname'] ?? ''}').trim(),
-            trackCount: (entry['total'] as num?)?.toInt() ?? 0,
+            trackCount: _intOf(entry['total']) ?? 0,
           ),
     ];
   }
@@ -302,7 +349,7 @@ final class KwMusicSource extends LxPlatformSource
                 name: LxPlatformSource.decodeName('${entry['name']}').trim(),
                 cover: '${entry['img'] ?? ''}',
                 author: LxPlatformSource.decodeName('${entry['uname'] ?? ''}').trim(),
-                trackCount: (entry['total'] as num?)?.toInt() ?? 0,
+                trackCount: _intOf(entry['total']) ?? 0,
               ),
     ];
   }
@@ -674,7 +721,7 @@ final class KwMusicSource extends LxPlatformSource
       if (json['code'] != 200) throw StateError('kuwo bodian list failed: $listId');
       final data = json['data'];
       if (data is! Map) break;
-      total = (data['total'] as num?)?.toInt() ?? 0;
+      total = _intOf(data['total']) ?? 0;
       final raw = data['list'];
       if (raw is! List || raw.isEmpty) break;
       rows.addAll([
@@ -920,9 +967,9 @@ final class KwMusicSource extends LxPlatformSource
         : const <String>[];
     final title = data['name'];
     final album = data['album'];
-    final albumId = (data['albumid'] as num?)?.toInt();
+    final albumId = _intOf(data['albumid']);
     final cover = data['pic'];
-    final seconds = (data['duration'] as num?)?.toInt();
+    final seconds = _intOf(data['duration']);
 
     return track.copyWith(
       title: title is String && title.isNotEmpty ? title : null,
