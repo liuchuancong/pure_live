@@ -472,7 +472,7 @@ final class KwMusicSource extends LxPlatformSource
     );
     final tracks = <audio.MusicTrack>[
       for (final entry in raw)
-        if (entry is Map) ?_albumTrackOf(entry.cast<String, Object?>(), albumName, albumId),
+        if (entry is Map) ?_albumTrackOf(entry.cast<String, Object?>(), albumName, albumId, cover),
     ];
     return (album: album, tracks: tracks);
   }
@@ -604,7 +604,16 @@ final class KwMusicSource extends LxPlatformSource
 
   /// The album track rows — the reference's album `filterListDetail`, the
   /// `formats` pipe list standing in for the usual N_MINFO.
-  static audio.MusicTrack? _albumTrackOf(Map<String, Object?> raw, String albumName, String albumId) {
+  /// One song of the album's own list. The row carries a picture only when the
+  /// platform chose to fill it in, so an empty one wears the album's cover —
+  /// the same picture the page's hero already shows, and the alternative is a
+  /// column of initials.
+  static audio.MusicTrack? _albumTrackOf(
+    Map<String, Object?> raw,
+    String albumName,
+    String albumId,
+    String albumCover,
+  ) {
     final songId = '${raw['id'] ?? ''}';
     final title = LxPlatformSource.decodeName('${raw['name'] ?? ''}').trim();
     if (songId.isEmpty || title.isEmpty) return null;
@@ -616,7 +625,8 @@ final class KwMusicSource extends LxPlatformSource
       if (formats.contains('HIRFLAC')) 'flac24bit',
     };
     final qualities = ['128k', '320k', 'flac', 'flac24bit'].where(found.contains).toList();
-    final pic = '${raw['pic'] ?? ''}';
+    final pic = '${raw['pic'] ?? ''}'.trim();
+    final picture = pic.isEmpty ? albumCover.trim() : pic;
     final artistId = '${raw['artistid'] ?? raw['allartistid'] ?? ''}'.trim();
     return audio.MusicTrack(
       id: songId,
@@ -625,7 +635,7 @@ final class KwMusicSource extends LxPlatformSource
       artist: LxPlatformSource.decodeName('${raw['artist'] ?? ''}').trim(),
       album: albumName,
       albumId: albumId.isEmpty ? null : albumId,
-      coverUri: pic.isEmpty ? null : Uri.tryParse(pic),
+      coverUri: picture.isEmpty ? null : Uri.tryParse(picture),
       qualities: [for (final quality in qualities) LxPlatformSource.qualityOf(quality)],
       metadata: {'types': qualities, 'albumId': albumId, if (artistId.isNotEmpty) 'artistId': artistId},
     );
