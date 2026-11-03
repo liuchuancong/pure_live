@@ -43,12 +43,21 @@ final class VodSettingsPane extends ConsumerWidget {
             ),
             // The picture's shape, the bar's hide delay and the screen's wake
             // are the app's own player settings, which this page's player
-            // reads; the row goes to the page carrying them rather than a
-            // second copy of each switch here.
-            const SettingsChildEntry(child: SettingsSection.picture),
+            // reads; the row opens the page carrying them rather than a second
+            // copy of each switch here. It names what this module meets there,
+            // not the live room's full set of rows on that page.
+            SettingsChildEntry(
+              child: SettingsSection.picture,
+              title: t.settings.sharedPictureEntry,
+              description: t.settings.sharedPictureEntryDesc,
+            ),
             // The mute pair, the background switch, the seed volume and the
             // wheel step are the app's own, read by this player's handle.
-            const SettingsChildEntry(child: SettingsSection.quality),
+            SettingsChildEntry(
+              child: SettingsSection.quality,
+              title: t.settings.sharedSoundEntry,
+              description: t.settings.sharedSoundEntryDesc,
+            ),
           ],
         ),
         DsListSection(

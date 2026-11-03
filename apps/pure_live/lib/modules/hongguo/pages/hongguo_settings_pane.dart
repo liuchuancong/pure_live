@@ -48,13 +48,23 @@ final class HongguoSettingsPane extends ConsumerWidget {
               onChanged: (choice) => unawaited(ref.read(hongguoSettingsProvider.notifier).setQuality(choice)),
             ),
             // The picture's shape, the bar's hide delay and the screen's wake
-            // are the app's own player settings — this page reads all three —
-            // so the row goes to the page that carries them rather than a
-            // second copy of each switch here.
-            const SettingsChildEntry(child: SettingsSection.picture),
+            // are the app's own player settings — this player reads all three —
+            // so the row opens the page that carries them rather than a second
+            // copy of each switch here. The row names what this module meets
+            // there: the page is titled for the live room's full set, whose
+            // floating-window rows and rendition choice it never shows.
+            SettingsChildEntry(
+              child: SettingsSection.picture,
+              title: t.settings.sharedPictureEntry,
+              description: t.settings.sharedPictureEntryDesc,
+            ),
             // The mute pair, the background switch and the seed volume are the
             // app's own, read when this player opens a handle.
-            const SettingsChildEntry(child: SettingsSection.quality),
+            SettingsChildEntry(
+              child: SettingsSection.quality,
+              title: t.settings.sharedSoundEntry,
+              description: t.settings.sharedSoundEntryDesc,
+            ),
             DsListRow(
               leading: const DsIcon(DsIcons.circleAlert),
               title: Text(t.hongguo.decoderLessons),

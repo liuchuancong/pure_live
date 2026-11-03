@@ -7090,6 +7090,18 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面比例、悬浮窗与画中画。'
 	String get picturePageDescription => '画面比例、悬浮窗与画中画。';
 
+	/// zh-CN: '播放画面'
+	String get sharedPictureEntry => '播放画面';
+
+	/// zh-CN: '全局静音、默认音量、滚轮与后台播放里，本模块播放器会遵守的那几项。'
+	String get sharedSoundEntryDesc => '全局静音、默认音量、滚轮与后台播放里，本模块播放器会遵守的那几项。';
+
+	/// zh-CN: '声音与后台'
+	String get sharedSoundEntry => '声音与后台';
+
+	/// zh-CN: '画面比例、控制条与屏幕常亮里，本模块播放器会遵守的那几项。'
+	String get sharedPictureEntryDesc => '画面比例、控制条与屏幕常亮里，本模块播放器会遵守的那几项。';
+
 	/// zh-CN: '应用内悬浮窗与系统画中画的大小、位置与置顶。'
 	String get floatingWindowPageDescription => '应用内悬浮窗与系统画中画的大小、位置与置顶。';
 
@@ -15527,6 +15539,10 @@ extension on Translations {
 			'settings.qualityPageDescription' => 'Wi-Fi 与移动网络下的默认清晰度。',
 			'settings.audioPageDescription' => '默认音量、静音与后台音频。',
 			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
+			'settings.sharedPictureEntry' => '播放画面',
+			'settings.sharedSoundEntryDesc' => '全局静音、默认音量、滚轮与后台播放里，本模块播放器会遵守的那几项。',
+			'settings.sharedSoundEntry' => '声音与后台',
+			'settings.sharedPictureEntryDesc' => '画面比例、控制条与屏幕常亮里，本模块播放器会遵守的那几项。',
 			'settings.floatingWindowPageDescription' => '应用内悬浮窗与系统画中画的大小、位置与置顶。',
 			'settings.pictureDisplayGroup' => '画面显示',
 			'settings.floatWindowGroup' => '应用内悬浮窗',
@@ -15657,12 +15673,12 @@ extension on Translations {
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
 			'settings.navNetwork' => '网络',
+			_ => null,
+		} ?? switch (path) {
 			'settings.networkDescription' => '应用代理与传输行为。',
 			'settings.proxy' => '应用代理',
 			'settings.proxyHost' => '主机',
 			'settings.proxyHostDesc' => '代理服务器的主机名或地址。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyPort' => '端口',
 			'settings.proxyPortDesc' => '代理服务器监听的端口。',
 			'settings.proxyUsername' => '用户名',
@@ -16171,12 +16187,12 @@ extension on Translations {
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
 			'settings.playerGuideEntryHardwareSwitchBody' => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryHwdecBody' => '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。',
@@ -16685,12 +16701,12 @@ extension on Translations {
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
 			'settings.twitchLanguage_tr' => '土耳其语',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_pl' => '波兰语',
 			'settings.holdDanmakuOnPress' => '按住冻结',
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
-			_ => null,
-		} ?? switch (path) {
 			'settings.youtubeAllChatDesc' => '关闭用网页默认 Top chat；开启请求全部聊天。',
 			'settings.preferH264' => '虎牙优先 H.264',
 			'settings.preferH264Desc' => '多种编码时优先 H.264，兼容性更好。',
@@ -17199,12 +17215,12 @@ extension on Translations {
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',
 			'vod.commentsEmpty' => '还没有评论。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
-			_ => null,
-		} ?? switch (path) {
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => '从历史中移除',
 			'vod.today' => '今天',

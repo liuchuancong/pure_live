@@ -2506,6 +2506,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get qualityPageDescription => 'Preferred stream quality on Wi-Fi and cellular.';
 	@override String get audioPageDescription => 'Default volume, mute and background audio.';
 	@override String get picturePageDescription => 'Fit, floating window and picture-in-picture.';
+	@override String get sharedPictureEntry => 'Playback picture';
+	@override String get sharedPictureEntryDesc => 'Of the fit, the bar\'s hide delay and keeping the screen awake - the rows this module\'s player obeys.';
+	@override String get sharedSoundEntry => 'Sound and background';
+	@override String get sharedSoundEntryDesc => 'Of the global mute, the starting volume, the wheel step and background playback - the rows this module\'s player obeys.';
 	@override String get floatingWindowPageDescription => 'The in-app floating window and the system picture-in-picture: size, position and pinning.';
 	@override String get pictureDisplayGroup => 'Picture';
 	@override String get floatWindowGroup => 'In-app floating window';
@@ -6990,6 +6994,10 @@ extension on TranslationsEn {
 			'settings.qualityPageDescription' => 'Preferred stream quality on Wi-Fi and cellular.',
 			'settings.audioPageDescription' => 'Default volume, mute and background audio.',
 			'settings.picturePageDescription' => 'Fit, floating window and picture-in-picture.',
+			'settings.sharedPictureEntry' => 'Playback picture',
+			'settings.sharedPictureEntryDesc' => 'Of the fit, the bar\'s hide delay and keeping the screen awake - the rows this module\'s player obeys.',
+			'settings.sharedSoundEntry' => 'Sound and background',
+			'settings.sharedSoundEntryDesc' => 'Of the global mute, the starting volume, the wheel step and background playback - the rows this module\'s player obeys.',
 			'settings.floatingWindowPageDescription' => 'The in-app floating window and the system picture-in-picture: size, position and pinning.',
 			'settings.pictureDisplayGroup' => 'Picture',
 			'settings.floatWindowGroup' => 'In-app floating window',
@@ -7120,12 +7128,12 @@ extension on TranslationsEn {
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
 			'settings.navNetwork' => 'Network',
+			_ => null,
+		} ?? switch (path) {
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyPort' => 'Port',
 			'settings.proxyPortDesc' => 'The port that proxy server listens on.',
 			'settings.proxyUsername' => 'Username',
@@ -7634,12 +7642,12 @@ extension on TranslationsEn {
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryHwdecBody' => 'Which hardware decode path to use. auto tries everything (may glitch on some SoCs); auto-safe only whitelisted paths (recommended); -copy variants decode back into memory, needed by some filters and screenshots.',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'Where mpv draws the picture. libmpv renders into the Flutter texture (embedded, default); gpu/gpu-next/direct3d open a standalone mpv window (outside the app); null renders nothing.',
@@ -8148,12 +8156,12 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
 			'settings.twitchLanguage_tr' => 'Turkish',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_pl' => 'Polish',
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
-			_ => null,
-		} ?? switch (path) {
 			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
 			'settings.preferH264' => 'Huya: prefer H.264',
 			'settings.preferH264Desc' => 'Picks H.264 when the platform offers several.',
@@ -8662,12 +8670,12 @@ extension on TranslationsEn {
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
 			'vod.commentsEmpty' => 'No comments yet.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',
-			_ => null,
-		} ?? switch (path) {
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',
 			'vod.today' => 'Today',

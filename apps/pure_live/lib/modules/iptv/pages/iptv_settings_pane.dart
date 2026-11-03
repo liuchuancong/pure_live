@@ -115,17 +115,25 @@ final class IptvSettingsPane extends ConsumerWidget {
         networkSection,
         DsListSection(
           header: Text(t.settings.iptvSections),
-          children: const [
-            SettingsChildEntry(child: SettingsSection.iptvBrowse),
-            SettingsChildEntry(child: SettingsSection.iptvGroups),
+          children: [
+            const SettingsChildEntry(child: SettingsSection.iptvBrowse),
+            const SettingsChildEntry(child: SettingsSection.iptvGroups),
             // The app's own picture page: this module's player reads the
-            // shared shape and the screen's wake, so the row leads to the
-            // page that carries them. Its room-only rows stay out of sight
-            // there (see PicturePane).
-            SettingsChildEntry(child: SettingsSection.picture),
+            // shared shape and the screen's wake, so the row leads to the page
+            // carrying them — and it is named for what this module meets there,
+            // since the room-only rows are kept out of sight (see PicturePane).
+            SettingsChildEntry(
+              child: SettingsSection.picture,
+              title: t.settings.sharedPictureEntry,
+              description: t.settings.sharedPictureEntryDesc,
+            ),
             // The mute pair, the background switch and the seed volume are the
             // app's own, read by this module's player.
-            SettingsChildEntry(child: SettingsSection.quality),
+            SettingsChildEntry(
+              child: SettingsSection.quality,
+              title: t.settings.sharedSoundEntry,
+              description: t.settings.sharedSoundEntryDesc,
+            ),
           ],
         ),
       ],
