@@ -53,6 +53,14 @@
 - [ ] **N6 窄屏与小窗**：对照关注页的窄窗版式——窄屏只留主 tabbar，排序/筛选/页内搜索进右上角 more（`SettingsPageActionScope` 交给 `DsPaneHeader.actions`）；卡片列数与 `kBrowseCardMinWidth`、`browseCardExtentForWidth` 的取值复核，保证 360/480/600/720 四档无溢出、无半字。
 - [ ] **N7 主题与三档视觉复检**：浅色/深色/自定义主题下逐条比对 chip 底色、`playerInk`、`kRoomCoverScrim`、hover 阴影；播放器页（`hongguo_player_page.dart`）的选集条与浮层与卡片同一套圆角与字号；只在有证据时改。
 
+## 车道分工边界（2026-11-04 用户裁决：红果的版式面归本车道）
+
+下载面车道 `9a2623b2` 已把红果的版式面摘掉，它在红果只剩两处，本车道**不得改**：
+- `pages/hongguo_downloads_page.dart` 与 `controller/hongguo_downloads*.dart`（它的台账 `docs/downloads-ui-ledger.md`）；本文档上文「需要换成同一张卡片的消费者」里的下载页头图一项因此划到边界外，不做。
+- 取流/解析层（`controller/**` 除 `hongguo_card_settings.dart`、`official/**`）——「红果短剧无法播放视频」由它修，本车道遇到播放问题只记录不修。
+
+反过来说，`widgets/**`、`pages/hongguo_page.dart`、`pages/hongguo_settings_pane.dart`、`pages/hongguo_series_page.dart`、`pages/hongguo_player_page.dart`、`controller/hongguo_card_settings.dart` 与 `l10n/messages/hongguo/**` 的版式改动都归本车道独占。
+
 ## 每轮不变式
 
 1. 开工先读本文档取队列最上面未勾项，并 `git status` 只看不动。
