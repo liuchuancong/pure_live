@@ -257,5 +257,8 @@
   "downloadPhaseDone": "已完成",
   "downloadDeleteFile": "删除文件",
   "downloadDeleteFileBody": "视频文件会被一并删除，此操作无法撤销。",
-  "downloadDeleteFailed": "文件未能删除"
+  "downloadDeleteFailed": "文件未能删除",
+  "cardOpenSeries": "打开剧集页",
+  "cardCopyLink": "复制详情页链接",
+  "cardNoEpisodes": "这部剧还没有可下载的剧集"
 }

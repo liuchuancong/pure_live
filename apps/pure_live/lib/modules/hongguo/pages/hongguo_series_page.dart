@@ -18,6 +18,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
     show hongguoRelatedClientProvider, hongguoRelatedProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoCredentials;
 import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedWork;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show HongguoCardMenu;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart'
@@ -428,29 +429,43 @@ final class _RelatedSectionState extends ConsumerState<_RelatedSection> {
           Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
         if (!state.loading && state.items.isEmpty && state.error == null)
           Text(t.hongguo.relatedNone, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        for (final work in state.items)
-          HongguoSeriesRow(
-            series: work.series.copyWith(
-              hot: [
-                work.season,
-                if (work.upcoming) t.hongguo.relatedReserve else t.hongguo.relatedLive,
-              ].where((line) => line.isNotEmpty).join(' · '),
-            ),
-            onOpen: work.upcoming ? null : () => _openRelated(context, work.series),
-            trailing: work.upcoming && account.signedIn
-                ? DsButton(
-                    size: DsSize.sm,
-                    variant: DsButtonVariant.secondary,
-                    onPressed: () {
-                      final credentials = ref.read(hongguoAccountProvider).credentials;
-                      if (credentials == null) return;
-                      unawaited(_reserve(context, credentials, work));
-                    },
-                    child: Text(t.hongguo.relatedReserve),
-                  )
-                : null,
-          ),
+        for (final work in state.items) _relatedWork(context, work, reservable: work.upcoming && account.signedIn),
       ],
+    );
+  }
+
+  /// One related title as the shelf's row, inside the card's menu: the season
+  /// and whether the work runs or is yet to come take the figure line, and an
+  /// upcoming title keeps its reserve button but no open verb — the menu reads
+  /// the same answer, so it offers nothing this row cannot do.
+  Widget _relatedWork(BuildContext context, HongguoRelatedWork work, {required bool reservable}) {
+    final t = context.t;
+    final open = work.upcoming ? null : () => _openRelated(context, work.series);
+    final series = work.series.copyWith(
+      hot: [
+        work.season,
+        if (work.upcoming) t.hongguo.relatedReserve else t.hongguo.relatedLive,
+      ].where((line) => line.isNotEmpty).join(' · '),
+    );
+    return HongguoCardMenu(
+      series: series,
+      onOpen: open,
+      child: HongguoSeriesRow(
+        series: series,
+        onOpen: open,
+        trailing: reservable
+            ? DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.secondary,
+                onPressed: () {
+                  final credentials = ref.read(hongguoAccountProvider).credentials;
+                  if (credentials == null) return;
+                  unawaited(_reserve(context, credentials, work));
+                },
+                child: Text(t.hongguo.relatedReserve),
+              )
+            : null,
+      ),
     );
   }
 }

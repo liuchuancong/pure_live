@@ -257,5 +257,8 @@
   "downloadPhaseDone": "Finished",
   "downloadDeleteFile": "Delete file",
   "downloadDeleteFileBody": "The video file is deleted with it; this cannot be undone.",
-  "downloadDeleteFailed": "Couldn't delete the file"
+  "downloadDeleteFailed": "Couldn't delete the file",
+  "cardOpenSeries": "Open series page",
+  "cardCopyLink": "Copy the series link",
+  "cardNoEpisodes": "This series has no episodes to download yet"
 }

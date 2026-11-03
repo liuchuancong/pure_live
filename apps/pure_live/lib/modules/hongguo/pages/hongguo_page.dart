@@ -13,6 +13,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show hongguoHomeBannerProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show HongguoCardMenu, hongguoSeriesOpenable;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid, avatarInitials;
@@ -421,11 +422,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 child: Text(t.hongguo.shelfChangeBatch),
               ),
             ],
-            cardBuilder: (context, series) => HongguoSeriesCard(
+            cardBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              favoritable: true,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesCard(
+                series: series,
+                favoritable: true,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
           ),
           HongguoShelf(
@@ -463,11 +468,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 child: Text(t.hongguo.refreshShelf),
               ),
             ],
-            cardBuilder: (context, series) => HongguoSeriesCard(
+            cardBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              favoritable: true,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesCard(
+                series: series,
+                favoritable: true,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
           ),
           HongguoShelf(
@@ -501,11 +510,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 child: Text(t.hongguo.refreshShelf),
               ),
             ],
-            cardBuilder: (context, series) => HongguoSeriesCard(
+            cardBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              favoritable: true,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesCard(
+                series: series,
+                favoritable: true,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
           ),
         ],
@@ -692,16 +705,24 @@ final class _FindViewState extends ConsumerState<_FindView> {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: kHongguoSeriesTileAspect,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) => HongguoSeriesCard(
+            itemBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              favoritable: true,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesCard(
+                series: series,
+                favoritable: true,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
-            listItemBuilder: (context, series) => HongguoSeriesRow(
+            listItemBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesRow(
+                series: series,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
             isLoading: state.loading,
             hasMore: state.hasMore,
@@ -915,11 +936,15 @@ final class _RankViewState extends ConsumerState<_RankView> {
                   separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
                   itemBuilder: (context, index) {
                     final series = rows[index];
-                    return HongguoRankRow(
+                    return HongguoCardMenu(
                       series: series,
-                      position: index + 1,
-                      watched: watchedById[series.seriesId],
                       onOpen: () => _open(context, series),
+                      child: HongguoRankRow(
+                        series: series,
+                        position: index + 1,
+                        watched: watchedById[series.seriesId],
+                        onOpen: () => _open(context, series),
+                      ),
                     );
                   },
                 ),
@@ -1326,7 +1351,7 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
                   loading: state.loading,
                   error: state.error,
                   emptyText: _online ? t.hongguo.reservationsOnlineEmpty : t.hongguo.reservationsUpcomingEmpty,
-                  openable: (series) => !series.seriesId.startsWith('reservation:'),
+                  openable: hongguoSeriesOpenable,
                 ),
         ),
       ],
@@ -1736,16 +1761,24 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: kHongguoSeriesTileAspect,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) => HongguoSeriesCard(
+            itemBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              favoritable: true,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesCard(
+                series: series,
+                favoritable: true,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
-            listItemBuilder: (context, series) => HongguoSeriesRow(
+            listItemBuilder: (context, series) => HongguoCardMenu(
               series: series,
-              watched: watchedById[series.seriesId],
               onOpen: () => _open(context, series),
+              child: HongguoSeriesRow(
+                series: series,
+                watched: watchedById[series.seriesId],
+                onOpen: () => _open(context, series),
+              ),
             ),
             isLoading: state.loading,
             hasMore: state.hasMore,
@@ -1814,11 +1847,15 @@ final class _SeriesList extends StatelessWidget {
       itemBuilder: (context, index) {
         final series = rows[index];
         final canOpen = openable == null || openable!(series);
-        return HongguoSeriesRow(
+        return HongguoCardMenu(
           series: series,
           onOpen: canOpen ? () => _open(context, series) : null,
-          trailing: trailingOf?.call(series),
-          totalInHot: totalInHot,
+          child: HongguoSeriesRow(
+            series: series,
+            onOpen: canOpen ? () => _open(context, series) : null,
+            trailing: trailingOf?.call(series),
+            totalInHot: totalInHot,
+          ),
         );
       },
     );
@@ -1874,30 +1911,41 @@ final class _ProgressList extends ConsumerWidget {
               ? t.hongguo.watchedBadge
               : '${row.episodeCount > 0 ? t.hongguo.historyEpisodeProgress(index: row.episodeIndex, total: row.episodeCount) : t.hongguo.episodeLabel(index: row.episodeIndex)} · ${_clock(row.positionMs)}',
         );
+        void remove() {
+          ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
+          showDsToast(context: context, title: t.hongguo.historyRemove);
+        }
+
         return Column(
           spacing: DsSpace.s4,
           children: [
-            HongguoSeriesRow(
+            HongguoCardMenu(
               series: series,
               onOpen: managing ? null : () => _open(context, series),
-              // An unfinished row says its total inside 「12集/80集」, so the
-              // listing line starts there; a watched-through row says only
-              // 「已看过」, and its total has to come from the count.
-              totalInHot: !row.completed,
-              trailing: managing
-                  ? DsCheckbox(
-                      value: selected.contains(row.seriesId),
-                      semanticLabel: row.title,
-                      onChanged: (_) => onToggle?.call(row.seriesId),
-                    )
-                  : _IconAction(
-                      icon: DsIcons.trash2,
-                      semanticLabel: t.hongguo.historyRemove,
-                      onPressed: () {
-                        ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
-                        showDsToast(context: context, title: t.hongguo.historyRemove);
-                      },
-                    ),
+              items: [
+                if (!managing)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.trash2),
+                    label: Text(t.hongguo.historyRemove),
+                    destructive: true,
+                    onPressed: remove,
+                  ),
+              ],
+              child: HongguoSeriesRow(
+                series: series,
+                onOpen: managing ? null : () => _open(context, series),
+                // An unfinished row says its total inside 「12集/80集」, so the
+                // listing line starts there; a watched-through row says only
+                // 「已看过」, and its total has to come from the count.
+                totalInHot: !row.completed,
+                trailing: managing
+                    ? DsCheckbox(
+                        value: selected.contains(row.seriesId),
+                        semanticLabel: row.title,
+                        onChanged: (_) => onToggle?.call(row.seriesId),
+                      )
+                    : _IconAction(icon: DsIcons.trash2, semanticLabel: t.hongguo.historyRemove, onPressed: remove),
+              ),
             ),
             if (!row.completed) HongguoProgressStripe(fraction: row.fraction),
           ],

@@ -846,6 +846,9 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloadDeleteFile => 'Delete file';
 	@override String get downloadDeleteFileBody => 'The video file is deleted with it; this cannot be undone.';
 	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
+	@override String get cardOpenSeries => 'Open series page';
+	@override String get cardCopyLink => 'Copy the series link';
+	@override String get cardNoEpisodes => 'This series has no episodes to download yet';
 }
 
 // Path: iptv
@@ -5419,6 +5422,9 @@ extension on TranslationsEn {
 			'hongguo.downloadDeleteFile' => 'Delete file',
 			'hongguo.downloadDeleteFileBody' => 'The video file is deleted with it; this cannot be undone.',
 			'hongguo.downloadDeleteFailed' => 'Couldn\'t delete the file',
+			'hongguo.cardOpenSeries' => 'Open series page',
+			'hongguo.cardCopyLink' => 'Copy the series link',
+			'hongguo.cardNoEpisodes' => 'This series has no episodes to download yet',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -5584,11 +5590,11 @@ extension on TranslationsEn {
 			'iptv.browseChannelNumberDesc' => 'Prints the dial number beside the channel name.',
 			'iptv.browseReverse' => 'Reverse channel stepping',
 			'iptv.browseReverseDesc' => 'Makes the up key step down the list and the down key step up.',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.browseClock' => 'Show the time',
 			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
 			'iptv.browseProgrammeLine' => 'Show the current programme',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			'iptv.browseReset' => 'Reset to defaults',
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
@@ -6098,11 +6104,11 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignCenter' => 'Center',
 			'music.desktopLyricAlignRight' => 'Right',
 			'music.desktopLyricColorWhite' => 'White',
@@ -6612,11 +6618,11 @@ extension on TranslationsEn {
 			'recorder.combineTitle' => 'Join into one MP4',
 			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
 			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.transcodeBitrateTitle' => 'Transcode bitrate',
 			'recorder.transcodeBitrateDesc' => 'Target video bitrate; higher is clearer and larger.',
 			'recorder.playRecording' => 'Play recording',
@@ -7126,11 +7132,11 @@ extension on TranslationsEn {
 			'settings.liveAlertTagsNone' => 'No tags yet; alerts cover every follow.',
 			'settings.liveAlertTagCount' => ({required Object selected}) => '${selected} selected',
 			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
 			'settings.navNetwork' => 'Network',
-			_ => null,
-		} ?? switch (path) {
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
@@ -7640,11 +7646,11 @@ extension on TranslationsEn {
 			'settings.playerGuideChapterAudio' => 'Audio',
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
@@ -8154,11 +8160,11 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_ru' => 'Russian',
 			'settings.twitchLanguage_it' => 'Italian',
 			'settings.twitchLanguage_th' => 'Thai',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
 			'settings.twitchLanguage_tr' => 'Turkish',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_pl' => 'Polish',
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
@@ -8668,11 +8674,11 @@ extension on TranslationsEn {
 			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
 			'vod.followingEmptyTitle' => 'Nothing followed yet',
 			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.comments' => 'Comments',
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
-			_ => null,
-		} ?? switch (path) {
 			'vod.commentsEmpty' => 'No comments yet.',
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
