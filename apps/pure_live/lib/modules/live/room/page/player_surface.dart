@@ -17,7 +17,6 @@ import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
-import 'package:pure_live/modules/live/room/page/player_stats_overlay.dart';
 import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show takeRoomScreenshot;
 import 'package:pure_live/modules/live/room/page/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
@@ -800,29 +799,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   end: DsSpace.s20,
                   top: 0,
                   bottom: 0,
-                  child: IgnorePointer(
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
-                        decoration: DsBoxDecoration(
-                          color: const Color(0xCC000000),
-                          borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: DsSpace.s4,
-                          children: [
-                            DsIcon(volume <= 0.001 ? DsIcons.volumeX : DsIcons.volume2, size: 24, color: _onVideo),
-                            Text(
-                              '${(volume * 100).round()}%',
-                              style: DsTheme.of(context).typography
-                                  .numeric(DsTheme.of(context).typography.caption.copyWith(color: _onVideo)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: PlayerVolumeHud(value: volume),
                 ),
               if (picture.kind != RoomPictureKind.none)
                 Stack(
@@ -969,7 +946,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               // The stream's own numbers when the viewer asked for them: a small
               // glass panel under the top bar, over the picture and out of the
               // buttons' way.
-              if (handle != null && picture.kind == RoomPictureKind.none && ref.watch(roomStatsVisibleProvider))
+              if (handle != null && picture.kind == RoomPictureKind.none && ref.watch(playerStatsVisibleProvider))
                 PositionedDirectional(
                   // The strip's own height, from the same tier that sizes it:
                   // 8 of padding, the control, 12 below it. A literal here sat

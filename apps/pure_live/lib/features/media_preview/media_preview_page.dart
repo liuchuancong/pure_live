@@ -1,9 +1,10 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show utf8;
 import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, BarrageItem, EmojiAtlas, FlameBarrageWidget;
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouter;
@@ -54,6 +55,8 @@ import 'package:pure_live/shared/shared.dart'
     show
         DanmakuFormat,
         LiveWindow,
+        PlayerStatsOverlay,
+        PlayerVolumeHud,
         applyFullscreenOrientation,
         cachedImage,
         capturePlayerFrame,
@@ -61,7 +64,8 @@ import 'package:pure_live/shared/shared.dart'
         playerBarrageConfig,
         playerInk,
         playerInkMuted,
-        playerInkSubtle;
+        playerInkSubtle,
+        playerStatsVisibleProvider;
 
 /// Opens the media preview over [items], on the entry at [initialIndex].
 ///
@@ -170,6 +174,13 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// (a take is wider than a column beside it leaves room for).
   bool _theater = false;
 
+  /// The volume a drag on the frame or a mouse wheel is setting right now; null
+  /// while no gesture is showing it. The chip fades on its own, as the room's
+  /// does — a number that stayed would read as the picture's own.
+  double? _volumeHud;
+  Timer? _volumeHudTimer;
+  double _dragVolume = 1;
+
   /// Whether the list moves on when a take ends. The page's own switch — it
   /// speaks about this visit, not about the app, so it stays out of the
   /// preferences.
@@ -211,6 +222,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   void dispose() {
     _disposed = true;
     _danmakuToken++;
+    _volumeHudTimer?.cancel();
     // Cancelled here as well as in _detachPlayer so the subscription's owner
     // is the method the analyzer, and a reader, looks for it in.
     unawaited(_transport?.cancel() ?? Future<void>.value());
@@ -348,6 +360,42 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     } on Object {
       // The slider reads back what the next transport event reports.
     }
+  }
+
+  /// Shows [value] on the picture's own volume chip, and lets it settle away
+  /// again a moment after the last move.
+  void _showVolumeHud(double value) {
+    _volumeHudTimer?.cancel();
+    setState(() => _volumeHud = value.clamp(0.0, 1.0));
+    _volumeHudTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _volumeHud = null);
+    });
+  }
+
+  /// A vertical drag takes the volume from where it stands: up is louder, the
+  /// whole picture is the track. The room's gesture, offered here so a viewer
+  /// learns it once and finds it on every surface.
+  void _beginVolumeDrag() {
+    _dragVolume = _volume;
+    _showVolumeHud(_dragVolume);
+  }
+
+  void _dragVolumeBy(double delta) {
+    final next = (_dragVolume - delta / 220).clamp(0.0, 1.0);
+    _dragVolume = next;
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
+  }
+
+  /// A wheel step takes the viewer's own share of the range (the 画质与音频
+  /// setting), so a desktop mouse has a usable granularity without a slider.
+  void _wheelVolume(double delta) {
+    final handle = _handle;
+    if (handle == null) return;
+    final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
+    final next = (_volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
   }
 
   /// Plays at [value]'s multiple. The page keeps the number, so the next entry
@@ -927,7 +975,10 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     // The picture is placed the way the room's is: the viewer's 画面适配 is one
     // rule for every surface in the app, not a choice a preview re-decides.
     final fit = ref.watch(playbackSettingsProvider.select((settings) => settings.fit));
-    return _stageBox(
+    // The same numbers panel the room puts over a stream, on the same session
+    // switch — a viewer who turned it on to read a live bitrate gets it here too.
+    final stats = ref.watch(playerStatsVisibleProvider);
+    final stage = _stageBox(
       WallpaperVideoPlayer(
         key: ValueKey(item.path),
         uri: File(item.path).uri,
@@ -959,6 +1010,38 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           loading: _danmakuLoading,
           immersive: immersive,
         ),
+      ),
+    );
+    // The numbers sit over the picture, not in the bar: they are read against
+    // the frame they describe, and the bar has no room for eight figures. The
+    // volume chip is the picture's own answer to a drag or a wheel.
+    final player = _handle;
+    final layers = <Widget>[
+      stage,
+      if (player != null && stats)
+        Positioned.fill(
+          child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+        ),
+      if (_volumeHud case final value?)
+        PositionedDirectional(
+          end: DsSpace.s20,
+          top: 0,
+          bottom: 0,
+          child: PlayerVolumeHud(value: value),
+        ),
+    ];
+    return Listener(
+      onPointerSignal: (signal) {
+        if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
+      },
+      child: GestureDetector(
+        // Translucent and without a tap handler: the picture keeps its own
+        // tap-to-pause, and the drag claims only a gesture the frame is not
+        // already using.
+        behavior: HitTestBehavior.translucent,
+        onVerticalDragStart: (_) => _beginVolumeDrag(),
+        onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
+        child: Stack(fit: StackFit.expand, children: layers),
       ),
     );
   }
@@ -1066,6 +1149,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           semanticLabel: t.room.fitShort,
           onPressed: controller.toggle,
         ),
+      ),
+      SettingsPreviewCircleButton(
+        icon: DsIcons.activity,
+        semanticLabel: t.room.statsToggle,
+        selected: ref.watch(playerStatsVisibleProvider),
+        onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       ),
       // The theatre is this page's own arrangement, so the page decides where it
       // exists: it needs the list column to float, which a narrow window has no

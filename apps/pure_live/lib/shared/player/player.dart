@@ -13,5 +13,7 @@ export 'media_bar_button.dart';
 export 'player_bar_tier.dart';
 export 'player_overlay.dart';
 export 'player_screenshot.dart';
+export 'player_stats_overlay.dart';
 export 'player_teardown.dart';
+export 'player_volume_hud.dart';
 export 'recording_indicator.dart';

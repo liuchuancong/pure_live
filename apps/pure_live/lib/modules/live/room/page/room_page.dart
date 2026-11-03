@@ -24,7 +24,6 @@ import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
-import 'package:pure_live/modules/live/room/page/player_stats_overlay.dart' show roomStatsVisibleProvider;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
     show PlayerSurface, kPlayerStageColor, toggleRoomPip, toggleRoomRecording;
 import 'package:pure_live/modules/live/room/page/room_details.dart'
@@ -844,7 +843,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       RoomShortcutAction.theater => toggleTheater,
       // The two verbs a viewer reaches for when a stream misbehaves: the
       // numbers behind it, and a frame of it.
-      RoomShortcutAction.stats => () => ref.read(roomStatsVisibleProvider.notifier).toggle(),
+      RoomShortcutAction.stats => () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       RoomShortcutAction.screenshot => () {
         final handle = ref.read(roomProvider).handle;
         if (handle == null || !handle.canCaptureScreenshot) return;
@@ -1439,7 +1438,7 @@ List<Widget> roomMenuItems(
       DsMenuItem(
         leading: const DsIcon(DsIcons.activity),
         label: Text(t.room.statsToggle),
-        onPressed: () => ref.read(roomStatsVisibleProvider.notifier).toggle(),
+        onPressed: () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       ),
     ],
     [
