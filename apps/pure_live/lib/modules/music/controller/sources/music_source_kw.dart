@@ -8,6 +8,7 @@ import 'package:pure_live/modules/music/controller/sources/lx_platform_source.da
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show
         MusicPlaylistInfo,
@@ -1026,7 +1027,8 @@ final class KwMusicSource extends LxPlatformSource
         lyric: base.toString(),
         translation: translation.isEmpty ? null : translation.toString(),
       );
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kw resolveLyric', error, stackTrace);
       return null;
     }
   }

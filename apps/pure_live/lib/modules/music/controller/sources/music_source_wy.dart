@@ -15,6 +15,7 @@ import 'package:pure_live/modules/music/controller/sources/music_browse_source.d
         musicMainArtist;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show
         MusicPlaylistInfo,
@@ -296,7 +297,8 @@ final class WyMusicSource extends LxPlatformSource
         lyric: _fixTimeLabel(lyric),
         translation: translation.trim().isEmpty ? null : _fixTimeLabel(translation),
       );
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('wy resolveLyric', error, stackTrace);
       return null;
     }
   }

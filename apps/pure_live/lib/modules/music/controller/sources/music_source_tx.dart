@@ -18,6 +18,7 @@ import 'package:pure_live/modules/music/controller/sources/music_browse_source.d
         musicMainArtist;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show
         MusicPlaylistInfo,
@@ -263,7 +264,8 @@ final class TxMusicSource extends LxPlatformSource
         translation: decoded.translation,
         romanization: decoded.romanization,
       );
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('tx resolveLyric', error, stackTrace);
       return null;
     }
   }

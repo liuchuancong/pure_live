@@ -9,6 +9,7 @@ import 'package:pure_live/modules/music/controller/sources/music_browse_source.d
     show MusicAlbum, MusicAlbumDetail, MusicAlbumSource;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show
         MusicPlaylistInfo,
@@ -162,7 +163,8 @@ final class MgMusicSource extends LxPlatformSource
       final lyric = await _lyricText(lyricUrl);
       if (lyric.trim().isEmpty) return null;
       return audio.MusicLyricPayload(lyric: lyric, translation: cleanTranslation);
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('mg resolveLyric', error, stackTrace);
       return null;
     }
   }

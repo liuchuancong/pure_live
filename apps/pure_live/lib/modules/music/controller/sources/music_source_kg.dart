@@ -16,6 +16,7 @@ import 'package:pure_live/modules/music/controller/sources/music_browse_source.d
         musicMainArtist;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show
         MusicPlaylistInfo,
@@ -161,7 +162,8 @@ final class KgMusicSource extends LxPlatformSource
         if (payload != null) return payload;
       }
       return null;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kg resolveLyric', error, stackTrace);
       return null;
     }
   }
@@ -765,8 +767,9 @@ final class KgMusicSource extends LxPlatformSource
             }
           }
         }
-      } on Object {
+      } on Object catch (error, stackTrace) {
         // A batch that fails loses its rows, not the playlist.
+        noteMusicSourceSilence('kg playlist batch', error, stackTrace);
       }
     }
     return answers;
