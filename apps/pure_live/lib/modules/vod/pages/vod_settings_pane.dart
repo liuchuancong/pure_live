@@ -41,6 +41,11 @@ final class VodSettingsPane extends ConsumerWidget {
               ],
               onChanged: ref.read(vodQualityProvider.notifier).select,
             ),
+            // The picture's shape, the bar's hide delay and the screen's wake
+            // are the app's own player settings, which this page's player
+            // reads; the row goes to the page carrying them rather than a
+            // second copy of each switch here.
+            const SettingsChildEntry(child: SettingsSection.picture),
           ],
         ),
         DsListSection(

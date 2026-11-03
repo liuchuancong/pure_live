@@ -118,6 +118,11 @@ final class IptvSettingsPane extends ConsumerWidget {
           children: const [
             SettingsChildEntry(child: SettingsSection.iptvBrowse),
             SettingsChildEntry(child: SettingsSection.iptvGroups),
+            // The app's own picture page: this module's player reads the
+            // shared shape and the screen's wake, so the row leads to the
+            // page that carries them. Its room-only rows stay out of sight
+            // there (see PicturePane).
+            SettingsChildEntry(child: SettingsSection.picture),
           ],
         ),
       ],

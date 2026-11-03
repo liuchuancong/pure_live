@@ -32,6 +32,7 @@ import 'package:pure_live/features/settings/surface/settings_sections.dart' show
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/pages/recorder_page.dart' show RecordingSettingsPane;
+import 'package:pure_live/shared/shared.dart' show AppModule;
 
 /// The window page: the window's own shape — title bar, room windows, size
 /// and refresh rate. Closing and exit behaviour is the startup page's task.
@@ -336,6 +337,14 @@ final class PicturePane extends ConsumerWidget {
     final settings = ref.watch(playbackSettingsProvider);
     final portraitLayout = ref.watch(portraitLayoutModeProvider);
     final controller = ref.read(playbackSettingsProvider.notifier);
+    // Three of this page's rows belong to the live room alone — how a portrait
+    // stream shares the room page, the room's habit of opening fullscreen, and
+    // the window a room leaves behind — and the control bar's hide delay is not
+    // read by the IPTV page, which keeps its bars up. The other modules reach
+    // this page from their own settings; a row they never read would be a knob
+    // that turns nothing, the fault the music module's engine page had.
+    final module = ref.watch(selectedModuleProvider);
+    final roomOnly = module == AppModule.live;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -359,42 +368,48 @@ final class PicturePane extends ConsumerWidget {
             // the source's own ratio, so the layout is the only choice left.
             // A select like the fit row above, so the two read as a column of
             // the same control.
-            SettingsChoiceRow<PortraitLayoutMode>(
-              leading: const DsIcon(DsIcons.rectangleVertical),
-              title: t.settings.portraitLayoutMode,
-              description: t.settings.portraitLayoutModeDesc,
-              value: portraitLayout,
-              options: [
-                DsSelectOption(value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
-                DsSelectOption(value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
-                DsSelectOption(value: PortraitLayoutMode.compatibility, label: t.settings.portraitLayoutCompatibility),
-              ],
-              onChanged: (mode) => unawaited(ref.read(portraitLayoutModeProvider.notifier).set(mode)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.fullscreen),
-              title: t.settings.fullscreenDefault,
-              description: t.settings.fullscreenDefaultDesc,
-              control: DsSwitch(
-                value: settings.fullscreenDefault,
-                onChanged: (value) => unawaited(controller.setFullscreenDefault(value: value)),
+            if (roomOnly) ...[
+              SettingsChoiceRow<PortraitLayoutMode>(
+                leading: const DsIcon(DsIcons.rectangleVertical),
+                title: t.settings.portraitLayoutMode,
+                description: t.settings.portraitLayoutModeDesc,
+                value: portraitLayout,
+                options: [
+                  DsSelectOption(value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
+                  DsSelectOption(value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
+                  DsSelectOption(
+                    value: PortraitLayoutMode.compatibility,
+                    label: t.settings.portraitLayoutCompatibility,
+                  ),
+                ],
+                onChanged: (mode) => unawaited(ref.read(portraitLayoutModeProvider.notifier).set(mode)),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.eyeOff),
-              title: t.settings.controlsAutoHide,
-              description: t.settings.controlsAutoHideDesc,
-              detail: Text(t.settings.controlsAutoHideValue(count: settings.controlsAutoHideSeconds)),
-              controlWidth: 220,
-              control: DsSlider(
-                value: settings.controlsAutoHideSeconds.toDouble(),
-                min: kControlsAutoHideSecondsMin.toDouble(),
-                max: kControlsAutoHideSecondsMax.toDouble(),
-                divisions: kControlsAutoHideSecondsMax - kControlsAutoHideSecondsMin,
-                onChanged: (value) => unawaited(controller.setControlsAutoHideSeconds(value.round())),
-                semanticLabel: t.settings.controlsAutoHide,
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.fullscreen),
+                title: t.settings.fullscreenDefault,
+                description: t.settings.fullscreenDefaultDesc,
+                control: DsSwitch(
+                  value: settings.fullscreenDefault,
+                  onChanged: (value) => unawaited(controller.setFullscreenDefault(value: value)),
+                ),
               ),
-            ),
+            ],
+            if (module != AppModule.iptv)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.eyeOff),
+                title: t.settings.controlsAutoHide,
+                description: t.settings.controlsAutoHideDesc,
+                detail: Text(t.settings.controlsAutoHideValue(count: settings.controlsAutoHideSeconds)),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.controlsAutoHideSeconds.toDouble(),
+                  min: kControlsAutoHideSecondsMin.toDouble(),
+                  max: kControlsAutoHideSecondsMax.toDouble(),
+                  divisions: kControlsAutoHideSecondsMax - kControlsAutoHideSecondsMin,
+                  onChanged: (value) => unawaited(controller.setControlsAutoHideSeconds(value.round())),
+                  semanticLabel: t.settings.controlsAutoHide,
+                ),
+              ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.sun),
               title: t.settings.keepScreenOn,
@@ -406,10 +421,11 @@ final class PicturePane extends ConsumerWidget {
             ),
           ],
         ),
-        DsListSection(
-          header: Text(t.settings.settingsMore),
-          children: const [SettingsChildEntry(child: SettingsSection.floatingWindow)],
-        ),
+        if (roomOnly)
+          DsListSection(
+            header: Text(t.settings.settingsMore),
+            children: const [SettingsChildEntry(child: SettingsSection.floatingWindow)],
+          ),
       ],
     );
   }

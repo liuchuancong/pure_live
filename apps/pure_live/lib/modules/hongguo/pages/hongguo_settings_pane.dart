@@ -47,6 +47,11 @@ final class HongguoSettingsPane extends ConsumerWidget {
               ],
               onChanged: (choice) => unawaited(ref.read(hongguoSettingsProvider.notifier).setQuality(choice)),
             ),
+            // The picture's shape, the bar's hide delay and the screen's wake
+            // are the app's own player settings — this page reads all three —
+            // so the row goes to the page that carries them rather than a
+            // second copy of each switch here.
+            const SettingsChildEntry(child: SettingsSection.picture),
             DsListRow(
               leading: const DsIcon(DsIcons.circleAlert),
               title: Text(t.hongguo.decoderLessons),
