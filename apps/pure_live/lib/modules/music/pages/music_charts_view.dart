@@ -14,7 +14,7 @@ import 'package:pure_live/modules/music/controller/music_search.dart'
     show musicCatalogItemsProvider, musicCatalogsProvider;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
 
 /// The charts: the source's own boards, each one answer rather than a feed.
 final class MusicChartsView extends ConsumerWidget {
@@ -26,6 +26,8 @@ final class MusicChartsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final catalogs = ref.watch(musicCatalogsProvider);
     return catalogs.when(
       loading: () => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
@@ -56,7 +58,7 @@ final class MusicChartsView extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+              padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
               child: SizedBox(
                 height: 44,
                 child: DsTabs<String>(
@@ -163,6 +165,8 @@ final class MusicChartBoardHead extends ConsumerWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    // The board's head keeps the page's gutter, the live module's measure.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final player = ref.read(musicPlayerProvider.notifier);
     // A board names no cover of its own, so the head wears its lead track's
     // art — the way the playlist detail page wears its first song's.
@@ -170,7 +174,7 @@ final class MusicChartBoardHead extends ConsumerWidget {
     final total = songs.fold<Duration>(Duration.zero, (sum, song) => sum + (song.duration ?? Duration.zero));
     final description = catalog.description ?? '';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s16,

@@ -35,7 +35,7 @@ import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show op
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart'
     show MusicAlbumCard, MusicArtistCard, musicBrowseSourceLabel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, buildDsRefreshIndicator, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, buildDsRefreshIndicator, cachedImage;
 
 /// 推荐: the module's own home. Nothing here is invented — the strip of
 /// playlists is the plaza's first page, the boards are the source's own, the
@@ -79,6 +79,9 @@ final class MusicRecommendView extends ConsumerWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = theme.colors;
+    // The page's gutter is the window's, the same measure the live module's
+    // pages keep: a narrow window gets the tighter of the two.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final settings = ref.watch(musicPlaybackSettingsProvider);
     final ui = ref.watch(musicUiSettingsProvider);
     final plaza = musicCapabilityOf<OnlinePlaylists>(ref.watch(musicSourceProvider)) != null;
@@ -137,7 +140,7 @@ final class MusicRecommendView extends ConsumerWidget {
     }
 
     Widget head(String title, {Widget? trailing}) => Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -164,7 +167,7 @@ final class MusicRecommendView extends ConsumerWidget {
             if (plaza) ...[
               if (hero != null)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, 0),
+                  padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, 0),
                   child: MusicRecommendHero(info: hero, tag: firstTag, onOpen: () => onOpenPlaylist(hero)),
                 ),
               if (strip.isNotEmpty || waitingForPlaza || plazaFailed) ...[
@@ -183,7 +186,7 @@ final class MusicRecommendView extends ConsumerWidget {
                     height: _cardWidth + kMusicPlaylistInfoHeight,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                      padding: EdgeInsets.symmetric(horizontal: inset),
                       itemCount: strip.length,
                       separatorBuilder: (context, _) => const SizedBox(width: DsSpace.s12),
                       itemBuilder: (context, index) => SizedBox(
@@ -199,7 +202,7 @@ final class MusicRecommendView extends ConsumerWidget {
                   )
                 else
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s4),
+                    padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s4),
                     child: Row(
                       spacing: DsSpace.s8,
                       children: [
@@ -260,7 +263,7 @@ final class MusicRecommendView extends ConsumerWidget {
               head(t.music.recAlbums),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                padding: EdgeInsets.symmetric(horizontal: inset),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: DsSpace.s12,
@@ -278,7 +281,7 @@ final class MusicRecommendView extends ConsumerWidget {
               head(t.music.recArtists),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                padding: EdgeInsets.symmetric(horizontal: inset),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: DsSpace.s12,
@@ -301,7 +304,7 @@ final class MusicRecommendView extends ConsumerWidget {
             if (words.isNotEmpty) ...[
               head(t.music.searchHot),
               Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s4),
+                padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s4),
                 child: Wrap(
                   spacing: DsSpace.s8,
                   runSpacing: DsSpace.s8,
@@ -413,7 +416,10 @@ final class MusicRecommendHero extends ConsumerWidget {
                   Positioned.fill(
                     child: ClipRect(
                       child: ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: kLiveGlassCoverFrostSigma, sigmaY: kLiveGlassCoverFrostSigma),
+                        imageFilter: ImageFilter.blur(
+                          sigmaX: kLiveGlassCoverFrostSigma,
+                          sigmaY: kLiveGlassCoverFrostSigma,
+                        ),
                         child: Opacity(
                           opacity: 0.35,
                           child: Transform.scale(

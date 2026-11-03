@@ -12,7 +12,7 @@ import 'package:pure_live/modules/music/controller/music_library.dart'
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
 
 /// 我的列表: the songs this module collected and played, each section playing
 /// its own list from the chosen row.
@@ -22,6 +22,8 @@ final class MusicMineView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final favourites = ref.watch(musicFavouritesProvider);
     final recent = ref.watch(musicRecentProvider);
     final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
@@ -48,7 +50,7 @@ final class MusicMineView extends ConsumerWidget {
       children: [
         if (caption)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+            padding: EdgeInsets.symmetric(horizontal: inset),
             child: Text(
               '$title · ${t.music.songsCount(count: songs.length)}',
               style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
@@ -156,7 +158,7 @@ final class MusicMineView extends ConsumerWidget {
           if (recent.isNotEmpty) ...[
             section(t.music.mineRecent, recent, remove: recentController.remove),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+              padding: EdgeInsets.symmetric(horizontal: inset),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: DsButton(

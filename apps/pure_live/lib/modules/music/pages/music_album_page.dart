@@ -15,7 +15,7 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart' show showAdd
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicArtist;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show MusicSongTableHeader;
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
 
 /// One album's page: its cover and credits, its songs, and the way into its
 /// artist — the reference's album browse, read from the platform's own album
@@ -137,6 +137,8 @@ final class _AlbumHero extends ConsumerWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    // The hero keeps the page's gutter, the live module's measure.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final sourceName = musicBrowseSourceLabel(ref, t, sourceId);
     final year = album.year;
     final facts = [
@@ -198,7 +200,7 @@ final class _AlbumHero extends ConsumerWidget {
           ],
         );
         return Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s16),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s16),
           child: wide
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

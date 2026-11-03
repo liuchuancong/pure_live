@@ -171,8 +171,10 @@ final class MusicBrowseSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    // The section head keeps the page's gutter, the live module's measure.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s20, DsSpace.s20, DsSpace.s8),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s8),
       child: Text(title, style: theme.typography.heading.copyWith(color: colors.text)),
     );
   }

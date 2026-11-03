@@ -291,6 +291,8 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 768;
+    // The grid keeps the page's gutter, the live module's measure.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     if (!wide) return _grid(widget.items, pagesOnScrollToEnd: false, hasMore: widget.hasMore);
     final end = _page * widget.pageSize;
     final shown = widget.items.length <= end ? widget.items : widget.items.sublist(0, end);
@@ -302,7 +304,7 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
         // A collection that fills one page never grows a pager.
         if (_inHandPages + (widget.hasMore ? 1 : 0) > 1)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
             child: Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,

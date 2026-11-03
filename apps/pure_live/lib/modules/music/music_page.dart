@@ -19,6 +19,7 @@ import 'package:pure_live/modules/music/pages/music_local_view.dart';
 import 'package:pure_live/modules/music/pages/music_mine_view.dart';
 import 'package:pure_live/modules/music/pages/music_recommend_view.dart';
 import 'package:pure_live/modules/music/pages/music_songlists_view.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// The music module's views. The reference's rail — 推荐 / 精选 / 搜索 / 歌单 /
 /// 排行榜 / 我的列表 — is what the module's menu lists, and the app's own
@@ -149,6 +150,8 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
     ref
       ..watch(musicOpenApiProvider)
       ..watch(musicSyncServerProvider);
+    // The module's header keeps the page's gutter, the live module's measure.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return CallbackShortcuts(
       bindings: musicHotkeyBindings(ref),
       child: Focus(
@@ -156,10 +159,7 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-              child: _ModuleHeader(),
-            ),
+            Padding(padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8), child: const _ModuleHeader()),
             Expanded(
               child: switch (_view) {
                 MusicView.recommend => MusicRecommendView(

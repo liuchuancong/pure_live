@@ -19,6 +19,7 @@ import 'package:pure_live/modules/music/controller/sources/online_playlist_model
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// The library: a search, its history and the songs it answers, each row
 /// playing the answer from that song on. Another view can hand it a word to
@@ -159,6 +160,8 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final state = ref.watch(musicSearchProvider);
     final controller = ref.read(musicSearchProvider.notifier);
     final history = ref.watch(musicSearchHistoryProvider);
@@ -212,7 +215,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     Widget resultsHead() {
       final songs = state.songs;
       return Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+        padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
         child: Row(
           spacing: DsSpace.s8,
           children: [
@@ -266,11 +269,11 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
               children: [
                 if (hot.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
                     child: Text(t.music.searchHot, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+                    padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
                     child: Wrap(
                       spacing: DsSpace.s8,
                       runSpacing: DsSpace.s8,
@@ -289,7 +292,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                 ],
                 if (history.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s12, DsSpace.s4),
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, DsSpace.s12, DsSpace.s4),
                     child: Row(
                       children: [
                         Expanded(
@@ -406,7 +409,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
             ),
             if (pageCount > 1)
               Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
+                padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
                 child: Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -431,7 +434,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
           child: Row(
             spacing: DsSpace.s8,
             children: [
@@ -467,7 +470,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
         // that searches them at once. It steers the songs, not the songlists.
         if (!_songlist)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsChoiceChips<String>(
               options: [
                 DsChipOption(
@@ -503,8 +506,9 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
   Widget _tips(String word) {
     final tips = ref.watch(musicSearchSuggestionsProvider(word)).value ?? const <String>[];
     if (tips.isEmpty) return const SizedBox.shrink();
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s16),
       children: [
         DsListSection(
           children: [

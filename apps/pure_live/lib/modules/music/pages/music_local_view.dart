@@ -15,6 +15,7 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_tag_edit.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// 本地音乐: the folders the viewer added, the files they hold, and the way
 /// to add or drop a folder.
@@ -125,6 +126,8 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final state = ref.watch(musicLocalProvider);
     final controller = ref.read(musicLocalProvider.notifier);
     // A root that names the download folder is not listed again: that folder is
@@ -142,7 +145,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
           child: Row(
             spacing: DsSpace.s8,
             children: [
@@ -179,7 +182,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
         ),
         if (_selecting)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             // The selection's verbs wrap, as the playlist detail's do: the
             // window's floor is 300 px and the row's controls never fit it.
             child: Wrap(
@@ -226,7 +229,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
           ),
         if (added.isNotEmpty || state.downloadRoot.trim().isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsListSection(
               header: Text(t.music.localFolders),
               children: [
@@ -287,7 +290,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                   padding: const EdgeInsets.only(bottom: DsSpace.s16),
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+                      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
                       child: Align(
                         alignment: AlignmentDirectional.centerStart,
                         child: DsButton(

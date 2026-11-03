@@ -14,7 +14,7 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart' show showAdd
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicAlbum;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show MusicSongTableHeader;
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
 
 /// One artist's page: who they are, the songs the platform credits to them,
 /// and their albums — each album opening its own page.
@@ -82,6 +82,8 @@ final class _ArtistBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return ref
         .watch(musicArtistProvider(request))
         .when(
@@ -116,7 +118,7 @@ final class _ArtistBody extends ConsumerWidget {
                 if (detail.songs.isEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20, vertical: DsSpace.s8),
+                      padding: EdgeInsets.symmetric(horizontal: inset, vertical: DsSpace.s8),
                       child: Text(
                         t.music.artistSongsEmpty,
                         style: DsTheme.of(context).typography.body.copyWith(color: DsTheme.colorsOf(context).textMuted),
@@ -136,7 +138,7 @@ final class _ArtistBody extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                      padding: EdgeInsets.symmetric(horizontal: inset),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: DsSpace.s12,
@@ -181,6 +183,8 @@ final class _ArtistHero extends ConsumerWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    // The hero keeps the page's gutter, the live module's measure.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final facts = [
       musicBrowseSourceLabel(ref, t, sourceId),
       if (songs.isNotEmpty) t.music.songsCount(count: songs.length),
@@ -188,7 +192,7 @@ final class _ArtistHero extends ConsumerWidget {
     ].join(' · ');
     final player = ref.read(musicPlayerProvider.notifier);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s4),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s20,

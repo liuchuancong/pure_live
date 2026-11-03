@@ -26,7 +26,7 @@ import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show Mus
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
 
 final class MusicSonglistTabs extends ConsumerWidget {
   const MusicSonglistTabs({
@@ -163,6 +163,8 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final hotTags = ref.watch(musicOnlineHotTagsProvider);
     final tree = ref.watch(musicPlaylistTagGroupsProvider);
     final sorts = ref.watch(musicPlaylistSortsProvider);
@@ -249,7 +251,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
         SizedBox(
           height: 44,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s4),
             child: widget.showTabs
                 ? MusicSonglistTabs(
                     online: true,
@@ -277,7 +279,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
         ),
         if (supported && summary.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: Text(
               summary,
               maxLines: 1,
@@ -287,7 +289,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
           ),
         if (!supported)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s16),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s16),
             child: Center(
               child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineUnsupported)),
             ),
@@ -570,6 +572,8 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    // The page's gutter, the same measure the live module's pages keep.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final detail = ref.watch(musicOnlinePlaylistDetailProvider(info.id));
     final player = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
@@ -629,7 +633,7 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
                     child: Row(
                       spacing: DsSpace.s16,
                       children: [
