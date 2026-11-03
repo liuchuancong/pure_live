@@ -9355,8 +9355,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '背景'
 	String get navBackground => '背景';
 
-	/// zh-CN: '用图片或视频铺在应用后面，可上传本地文件或填写地址。'
-	String get backgroundDescription => '用图片或视频铺在应用后面，可上传本地文件或填写地址。';
+	/// zh-CN: '用图片、视频或颜色铺底。'
+	String get backgroundDescription => '用图片、视频或颜色铺底。';
 
 	/// zh-CN: '在线图片'
 	String get backgroundImagesTitle => '在线图片';
@@ -9517,8 +9517,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '界面玻璃'
 	String get backgroundGlass => '界面玻璃';
 
-	/// zh-CN: '卡片、列表、输入框与浮层的玻璃材质：半透明填充加背景模糊，壁纸从中透出。每一级都有可读性下限，调到最低也不会让文字看不清。'
-	String get backgroundGlassDescription => '卡片、列表、输入框与浮层的玻璃材质：半透明填充加背景模糊，壁纸从中透出。每一级都有可读性下限，调到最低也不会让文字看不清。';
+	/// zh-CN: '弹窗与浮层、列表与卡片分别调不透明度。'
+	String get backgroundGlassDescription => '弹窗与浮层、列表与卡片分别调不透明度。';
 
 	/// zh-CN: '玻璃模式'
 	String get backgroundGlassMode => '玻璃模式';
@@ -9535,32 +9535,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭玻璃'
 	String get backgroundGlassModeOff => '关闭玻璃';
 
-	/// zh-CN: '玻璃强度'
-	String get backgroundGlassStrength => '玻璃强度';
+	/// zh-CN: '弹窗与浮层不透明度'
+	String get backgroundGlassFloating => '弹窗与浮层不透明度';
 
-	/// zh-CN: '模糊半径与通透感；越低越接近实体背景。'
-	String get backgroundGlassStrengthDescription => '模糊半径与通透感；越低越接近实体背景。';
+	/// zh-CN: '对话框、菜单、提示与底部导航共用。'
+	String get backgroundGlassFloatingDescription => '对话框、菜单、提示与底部导航共用。';
 
-	/// zh-CN: '背景透明度'
-	String get backgroundGlassOpacity => '背景透明度';
+	/// zh-CN: '列表与卡片不透明度'
+	String get backgroundGlassSurface => '列表与卡片不透明度';
 
-	/// zh-CN: '浮层透到多少；智能会按壁纸复杂度与可读性自动抬升，高/低锁到该级允许的档位。'
-	String get backgroundGlassOpacityDescription => '浮层透到多少；智能会按壁纸复杂度与可读性自动抬升，高/低锁到该级允许的档位。';
-
-	/// zh-CN: '智能适配'
-	String get backgroundGlassOpacitySmart => '智能适配';
-
-	/// zh-CN: '高不透明度'
-	String get backgroundGlassOpacityHigh => '高不透明度';
-
-	/// zh-CN: '低不透明度'
-	String get backgroundGlassOpacityLow => '低不透明度';
-
-	/// zh-CN: '面板填充'
-	String get backgroundGlassFill => '面板填充';
-
-	/// zh-CN: '卡片底色的不透明度；越低壁纸越透，文字越弱。'
-	String get backgroundGlassFillDescription => '卡片底色的不透明度；越低壁纸越透，文字越弱。';
+	/// zh-CN: '卡片、列表与输入框底色。'
+	String get backgroundGlassSurfaceDescription => '卡片、列表与输入框底色。';
 
 	/// zh-CN: '检查更新'
 	String get checkUpdate => '检查更新';
@@ -16211,7 +16196,7 @@ extension on Translations {
 			'settings.autoClash' => '自动避让状态色',
 			'settings.autoClashDesc' => '主题色接近危险或成功色时自动调整，避免选中状态被误读。',
 			'settings.navBackground' => '背景',
-			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
+			'settings.backgroundDescription' => '用图片、视频或颜色铺底。',
 			'settings.backgroundImagesTitle' => '在线图片',
 			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图源，先预览再应用。',
 			'settings.backgroundVideosTitle' => '在线视频',
@@ -16265,21 +16250,16 @@ extension on Translations {
 			'settings.backgroundClearDescription' => '回到主题底色，已保存的媒体仍保留。',
 			'settings.backgroundClear' => '清除背景',
 			'settings.backgroundGlass' => '界面玻璃',
-			'settings.backgroundGlassDescription' => '卡片、列表、输入框与浮层的玻璃材质：半透明填充加背景模糊，壁纸从中透出。每一级都有可读性下限，调到最低也不会让文字看不清。',
+			'settings.backgroundGlassDescription' => '弹窗与浮层、列表与卡片分别调不透明度。',
 			'settings.backgroundGlassMode' => '玻璃模式',
 			'settings.backgroundGlassModeSystem' => '跟随系统',
 			'settings.backgroundGlassModeAlways' => '始终开启',
 			'settings.backgroundGlassModeReduced' => '降低玻璃效果',
 			'settings.backgroundGlassModeOff' => '关闭玻璃',
-			'settings.backgroundGlassStrength' => '玻璃强度',
-			'settings.backgroundGlassStrengthDescription' => '模糊半径与通透感；越低越接近实体背景。',
-			'settings.backgroundGlassOpacity' => '背景透明度',
-			'settings.backgroundGlassOpacityDescription' => '浮层透到多少；智能会按壁纸复杂度与可读性自动抬升，高/低锁到该级允许的档位。',
-			'settings.backgroundGlassOpacitySmart' => '智能适配',
-			'settings.backgroundGlassOpacityHigh' => '高不透明度',
-			'settings.backgroundGlassOpacityLow' => '低不透明度',
-			'settings.backgroundGlassFill' => '面板填充',
-			'settings.backgroundGlassFillDescription' => '卡片底色的不透明度；越低壁纸越透，文字越弱。',
+			'settings.backgroundGlassFloating' => '弹窗与浮层不透明度',
+			'settings.backgroundGlassFloatingDescription' => '对话框、菜单、提示与底部导航共用。',
+			'settings.backgroundGlassSurface' => '列表与卡片不透明度',
+			'settings.backgroundGlassSurfaceDescription' => '卡片、列表与输入框底色。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
 			'settings.checkingUpdate' => '正在检查更新…',
@@ -16614,13 +16594,13 @@ extension on Translations {
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
 			'settings.danmakuShowGifts' => '显示礼物',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
@@ -17128,13 +17108,13 @@ extension on Translations {
 			'vod.downloadPause' => '暂停下载',
 			'vod.downloadQueued' => '已加入下载队列',
 			'vod.downloadDuplicate' => '该分P已在下载队列',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadManagerHint' => '队列按设置的并行数同时下载；地址过期时自动换新地址，从已下载的字节续传。下载完成后到侧边栏的「下载管理」预览、播放或打开所在文件夹。',
 			'vod.downloadSettingsTitle' => '下载设置',
 			'vod.downloadMaxConcurrent' => '同时下载数',
 			'vod.downloadMaxConcurrentDesc' => '同时进行的下载任务数量，改动即时生效。',
 			'vod.downloadQuality' => '默认下载画质',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadQualityDesc' => '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。',
 			'vod.downloadDanmaku' => '同时保存弹幕',
 			'vod.downloadDanmakuDesc' => '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。',

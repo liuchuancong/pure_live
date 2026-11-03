@@ -12,7 +12,7 @@ import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopInvalida
 import 'package:live_uikit_background/live_uikit_background.dart' show AppVisibilityObserver;
 import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/background/glass/app_component_glass.dart' show AppComponentGlass;
-import 'package:pure_live/app/background/glass/live_glass.dart' show liveGlassPanelFill;
+import 'package:pure_live/app/background/glass/live_glass.dart' show liveGlassSurfaceFill;
 import 'package:pure_live/app/background/settings/background_settings.dart'
     show BackgroundGlassMode, backgroundSettingsProvider;
 import 'package:pure_live/app/background/tone/background_tone.dart' show backgroundToneProvider;
@@ -395,7 +395,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       theme: AppComponentGlass.themeOf(
         themeSettings.theme(),
         glass: background.glassMode != BackgroundGlassMode.off,
-        fill: liveGlassPanelFill(settings: background, tone: tone, dark: panelDark),
+        fill: liveGlassSurfaceFill(settings: background, tone: tone, dark: panelDark),
       ),
       builder: (context, child) {
         final core = AppComponentGlass(

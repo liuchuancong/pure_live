@@ -1,5 +1,3 @@
-import 'dart:ui' show Brightness, ImageFilter;
-
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,21 +5,15 @@ import 'package:pure_live/app/background/glass/live_glass.dart';
 import 'package:pure_live/app/background/settings/background_settings.dart';
 import 'package:pure_live/app/background/tone/background_tone.dart';
 
-/// Sorts the official floating layers onto the G0–G4 glass ladder and paints
-/// each with its resolved fill *and* its frost, while the surface and field
-/// tokens go translucent so every card, list, table and text field reads the
-/// wallpaper through it.
+/// Paints the floating family — dialogs, panels, menus, popovers, notices and
+/// the text-selection bar — with the fill and frost the floating opacity
+/// slider resolves, while the surface and field tokens go translucent so every
+/// card, list, table and text field reads the wallpaper through it.
 ///
-/// The fill follows [LiveGlassLevel]: dialogs and the side/bottom panels wear
-/// the strong glass, the menu family — dropdowns, anchored and context menus,
-/// popovers and tooltips — the standard glass, and the toolbars the subtle
-/// one. The phone's floating navigation is the exception: it frosts itself
-/// through LiquidGlassPane, so it is not given a second themed blur here. Each
-/// level keeps its own readability floor, so the wallpaper can show through
-/// without ever making words unreadable; the busy wallpaper only raises that
-/// floor, never lowers it. This is the layer that turns the theme's
-/// translucent fill into actual frosted glass — without a backdrop filter the
-/// fill was only ever see-through, never blurred.
+/// The phone's floating navigation is the exception here: it frosts itself
+/// through LiquidGlassPane (driven by the same floating opacity), so it is not
+/// given a second themed blur. Every fill and its frost come from the same
+/// resolved recipe, so they can never drift apart.
 final class AppComponentGlass extends ConsumerWidget {
   /// Paints the floating layers of [child] as the glass policy resolves them.
   const AppComponentGlass({required this.child, super.key});
@@ -65,46 +57,55 @@ final class AppComponentGlass extends ConsumerWidget {
     final policy = ref
         .watch(liveGlassPolicyProvider)
         .demoted(reduceVisualEffects: media?.disableAnimations == true || media?.highContrast == true);
-    final raise = liveGlassReadabilityRaise(
-      settings: settings,
-      tone: ref.watch(backgroundToneProvider),
-      dark: dark,
-    );
-    final overlay = DsTheme.colorsOf(context).overlay;
+    final raise = liveGlassReadabilityRaise(settings: settings, tone: ref.watch(backgroundToneProvider), dark: dark);
     // The scope stays in the tree either way: switching the glass on must not
     // remount the navigator below it (route state would go with it).
     if (!policy.enabled) return DsComponentThemes(themes: const [], child: child);
-    // One material per level the layers use; the fill and its frost come from
-    // the same resolved recipe so they can never drift apart.
-    Color fill(LiveGlassLevel level) =>
-        overlay.withValues(alpha: policy.materialFor(level, dark: dark, readabilityRaise: raise).fillAlpha);
-    ImageFilter? frost(LiveGlassLevel level) =>
-        policy.materialFor(level, dark: dark, readabilityRaise: raise).backdropFilter;
-    final strong = fill(LiveGlassLevel.strong);
-    final standard = fill(LiveGlassLevel.standard);
+    // One material for the whole floating family — dialogs, panels, menus,
+    // popovers, notices and the selection bar — from the viewer's single
+    // opacity slider. The fill and its frost come from the same resolved
+    // recipe so they can never drift apart.
+    final material = policy.floatingMaterial(opacity: settings.glassFloatingOpacity, readabilityRaise: raise);
+    final colors = DsTheme.colorsOf(context);
+    final typography = DsTheme.of(context).typography;
+    final fill = colors.overlay.withValues(alpha: material.fillAlpha);
+    final frost = material.backdropFilter;
     return DsComponentThemes(
       themes: [
-        // Dialogs and the large sheets: the strong glass, the most opaque of
-        // the frosted tiers, so a form over a busy wallpaper still reads.
-        DsDialogThemeData(style: DsDialogStyle(background: strong, backdropFilter: frost(LiveGlassLevel.strong))),
-        DsPanelThemeData(style: DsPanelStyle(background: strong, backdropFilter: frost(LiveGlassLevel.strong))),
-        // The menu family and popovers: standard glass — small, text-dense,
-        // read for a moment over whatever is behind them.
-        DsPopoverThemeData(style: DsPopoverStyle(background: standard, backdropFilter: frost(LiveGlassLevel.standard))),
-        DsMenuThemeData(style: DsMenuStyle(background: standard, backdropFilter: frost(LiveGlassLevel.standard))),
-        DsTooltipThemeData(style: DsTooltipStyle(background: standard, backdropFilter: frost(LiveGlassLevel.standard))),
-        DsToastThemeData(style: DsToastStyle(background: standard, backdropFilter: frost(LiveGlassLevel.standard))),
-        // Toolbars: subtle glass — a settled chrome bar, light frost.
-        DsToolbarThemeData(
-          style: DsToolbarStyle(background: fill(LiveGlassLevel.subtle), backdropFilter: frost(LiveGlassLevel.subtle)),
+        DsDialogThemeData(
+          style: DsDialogStyle(background: fill, backdropFilter: frost),
+        ),
+        DsPanelThemeData(
+          style: DsPanelStyle(background: fill, backdropFilter: frost),
+        ),
+        DsPopoverThemeData(
+          style: DsPopoverStyle(background: fill, backdropFilter: frost),
+        ),
+        DsMenuThemeData(
+          style: DsMenuStyle(background: fill, backdropFilter: frost),
+        ),
+        // A tooltip's default text is the on-tooltip colour meant for the
+        // opaque dark chip; over a translucent glass fill it has to follow
+        // the layer under it, or it reads white-on-light.
+        DsTooltipThemeData(
+          style: DsTooltipStyle(
+            background: fill,
+            backdropFilter: frost,
+            textStyle: typography.label.copyWith(color: colors.text),
+            shortcutStyle: typography.caption.copyWith(color: colors.textMuted),
+          ),
+        ),
+        DsToastThemeData(
+          style: DsToastStyle(background: fill, backdropFilter: frost),
         ),
         // The bottom navigation is deliberately absent: its only consumer is
-        // the phone's floating bar, which paints its own subtle (G1) glass
-        // through LiquidGlassPane — frosting it here too would blur the page a
-        // second time behind the same capsule (§9.2: one blur per region).
-        // The text-selection bar sits over the very words being selected: it
-        // keeps the opaque overlay so the selection is never blurred out.
-        DsTextSelectionToolbarThemeData(style: DsTextSelectionToolbarStyle(background: overlay)),
+        // the phone's floating bar, which paints its own glass through
+        // LiquidGlassPane — frosting it here too would blur the page a second
+        // time behind the same capsule (§9.2: one blur per region).
+        // The text-selection bar rides the same floating material.
+        DsTextSelectionToolbarThemeData(
+          style: DsTextSelectionToolbarStyle(background: fill, backdropFilter: frost),
+        ),
       ],
       child: child,
     );

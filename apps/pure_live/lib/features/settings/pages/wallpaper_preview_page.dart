@@ -12,7 +12,8 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart';
-import 'package:pure_live/features/settings/panes/background_panes.dart' show backgroundFitLabel;
+import 'package:pure_live/features/settings/panes/background_panes.dart'
+    show BackgroundGlassSection, backgroundFitLabel;
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
@@ -1411,12 +1412,10 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   }
 }
 
-/// A sample of the shell's chrome, worn over the picture: the floating bar, a
-/// card standing in for a dialog, a small popover and the phone's navigation
-/// capsule, each at the tier the real one wears — the subtle glass for settled
-/// chrome, the standard for the menu family, the strong for dialogs. Shapes
-/// carry no words on purpose: a placeholder line shows what the fill and the
-/// frost do to a surface without a string to translate.
+/// One dialog sample worn over the picture, so the floating opacity and its
+/// frost can be judged on the wallpaper itself. The shapes carry no words on
+/// purpose: a placeholder line shows what the fill does to a surface without a
+/// string to translate.
 ///
 /// The sample goes away when the glass is off, because the solid shell the app
 /// already draws is that answer, and a mock in opaque paint would only cover
@@ -1424,9 +1423,8 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
 final class _GlassSample extends ConsumerWidget {
   const _GlassSample({required this.overPlayer});
 
-  /// True when a clip holds the stage: its own transport takes the bottom edge
-  /// so the navigation capsule steps aside, and its frames are a texture, so
-  /// the panes keep their fill and give up the frost.
+  /// True when a clip holds the stage: its frames are a texture, so the
+  /// sample keeps its fill and gives up the frost.
   final bool overPlayer;
 
   @override
@@ -1438,20 +1436,13 @@ final class _GlassSample extends ConsumerWidget {
     if (!policy.enabled) return const SizedBox.shrink();
     final colors = DsTheme.colorsOf(context);
     final dark = DsTheme.of(context).brightness == Brightness.dark;
-    final raise = liveGlassReadabilityRaise(
-      settings: ref.watch(backgroundSettingsProvider),
-      tone: ref.watch(backgroundToneProvider),
-      dark: dark,
-    );
-    // One pane of the shell: the level's resolved fill, its frost behind it,
-    // and the border that keeps the edge visible on a busy wallpaper.
-    Widget pane(
-      LiveGlassLevel level, {
-      required double radius,
-      required EdgeInsetsGeometry padding,
-      required Widget child,
-    }) {
-      final material = policy.materialFor(level, dark: dark, readabilityRaise: raise);
+    final settings = ref.watch(backgroundSettingsProvider);
+    final raise = liveGlassReadabilityRaise(settings: settings, tone: ref.watch(backgroundToneProvider), dark: dark);
+    // One pane of the shell: the shared floating material's fill, its frost
+    // behind it, and the border that keeps the edge visible on a busy
+    // wallpaper.
+    final material = policy.floatingMaterial(opacity: settings.glassFloatingOpacity, readabilityRaise: raise);
+    Widget pane({required double radius, required EdgeInsetsGeometry padding, required Widget child}) {
       final body = DecoratedBox(
         decoration: BoxDecoration(
           color: colors.overlay.withValues(alpha: material.fillAlpha),
@@ -1479,79 +1470,30 @@ final class _GlassSample extends ConsumerWidget {
         borderRadius: BorderRadius.circular(3),
       ),
     );
-    Widget dot() => Container(
-      width: 7,
-      height: 7,
-      decoration: BoxDecoration(color: colors.text.withValues(alpha: 0.4), shape: BoxShape.circle),
-    );
-
     return IgnorePointer(
       child: ExcludeSemantics(
-        child: Padding(
-          // The stage's own chip names the picture's size at its lower-left
-          // corner; the sample leaves that corner to it rather than stacking
-          // the navigation capsule on top.
-          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s16, DsSpace.s16, DsSpace.s40),
-          child: Column(
-            children: [
-              pane(
-                LiveGlassLevel.subtle,
-                radius: 17,
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s8,
-                  children: [
-                    DsIcon(DsIcons.menu, size: 16, color: colors.text),
-                    const SizedBox(width: 96),
-                    dot(),
-                    dot(),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              Row(
+        child: Center(
+          // One dialog standing in for the floating family: the sample's job
+          // is to let the two opacity sliders be judged on the picture, not
+          // to rebuild the shell out of mock chrome.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 280),
+            child: pane(
+              radius: 14,
+              padding: const EdgeInsets.all(DsSpace.s16),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: DsSpace.s12,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s8,
                 children: [
-                  pane(
-                    LiveGlassLevel.strong,
-                    radius: 14,
-                    padding: const EdgeInsets.all(DsSpace.s12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: DsSpace.s8,
-                      children: [
-                        line(84, alpha: 0.55),
-                        line(132, alpha: 0.28),
-                        line(112, alpha: 0.28),
-                        const SizedBox(height: DsSpace.s4),
-                        Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [line(44), line(44)]),
-                      ],
-                    ),
-                  ),
-                  pane(
-                    LiveGlassLevel.standard,
-                    radius: 12,
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: DsSpace.s6,
-                      children: [line(64, alpha: 0.4), line(52, alpha: 0.24), line(60, alpha: 0.24)],
-                    ),
-                  ),
+                  line(84, alpha: 0.55),
+                  line(132, alpha: 0.28),
+                  line(112, alpha: 0.28),
+                  const SizedBox(height: DsSpace.s4),
+                  Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [line(44), line(44)]),
                 ],
               ),
-              const Spacer(),
-              if (!overPlayer)
-                pane(
-                  LiveGlassLevel.subtle,
-                  radius: 20,
-                  padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: 10),
-                  child: Row(mainAxisSize: MainAxisSize.min, spacing: 14, children: [dot(), dot(), dot(), dot()]),
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1602,8 +1544,6 @@ final class _PreviewSettings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(backgroundSettingsProvider);
-    final controller = ref.read(backgroundSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -1615,7 +1555,6 @@ final class _PreviewSettings extends ConsumerWidget {
               SettingsChoiceRow<BoxFit>(
                 leading: const DsIcon(DsIcons.expand),
                 title: t.settings.backgroundFit,
-                description: t.settings.backgroundFitDescription,
                 value: fit,
                 options: [
                   for (final option in kBackgroundFits)
@@ -1626,7 +1565,6 @@ final class _PreviewSettings extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.contrast),
               title: t.settings.backgroundMask,
-              description: t.settings.backgroundMaskDescription,
               detail: Text('${(scrimOpacity * 100).round()}%'),
               control: DsSlider(
                 value: scrimOpacity,
@@ -1639,7 +1577,6 @@ final class _PreviewSettings extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.dropletLines),
               title: t.settings.backgroundOverlayBlur,
-              description: t.settings.backgroundOverlayBlurDescription,
               detail: Text('${backgroundBlur.round()}'),
               control: DsSlider(
                 value: backgroundBlur,
@@ -1649,9 +1586,15 @@ final class _PreviewSettings extends ConsumerWidget {
                 semanticLabel: t.settings.backgroundOverlayBlur,
               ),
             ),
-            // A clip's transport lives on the player under the stage, and its
-            // slideshow would fire behind it: the picture alone gets both rows.
-            if (!paintMode && !videoMode) ...[
+          ],
+        ),
+        // The glass sits above the slideshow rows.
+        const BackgroundGlassSection(showDescriptions: false),
+        // A clip's transport lives on the player under the stage, and its
+        // slideshow would fire behind it: the picture alone gets both rows.
+        if (!paintMode && !videoMode)
+          DsListSection(
+            children: [
               DsListRow(
                 leading: const DsIcon(DsIcons.play),
                 title: Text(t.settings.backgroundAutoPlay),
@@ -1671,68 +1614,7 @@ final class _PreviewSettings extends ConsumerWidget {
                 onChanged: onInterval,
               ),
             ],
-          ],
-        ),
-        DsListSection(
-          header: Text(t.settings.backgroundGlass),
-          children: [
-            SettingsChoiceRow<BackgroundGlassMode>(
-              leading: const DsIcon(DsIcons.layers),
-              title: t.settings.backgroundGlassMode,
-              description: t.settings.backgroundGlassDescription,
-              value: settings.glassMode,
-              options: [
-                DsSelectOption(value: BackgroundGlassMode.system, label: t.settings.backgroundGlassModeSystem),
-                DsSelectOption(value: BackgroundGlassMode.always, label: t.settings.backgroundGlassModeAlways),
-                DsSelectOption(value: BackgroundGlassMode.reduced, label: t.settings.backgroundGlassModeReduced),
-                DsSelectOption(value: BackgroundGlassMode.off, label: t.settings.backgroundGlassModeOff),
-              ],
-              onChanged: controller.setGlassMode,
-            ),
-            // The rest of the glass only exists while the glass does.
-            if (settings.glassMode != BackgroundGlassMode.off) ...[
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.slidersHorizontal),
-                title: t.settings.backgroundGlassStrength,
-                description: t.settings.backgroundGlassStrengthDescription,
-                detail: Text('${settings.glassStrength.round()}%'),
-                control: DsSlider(
-                  value: settings.glassStrength,
-                  max: 100,
-                  divisions: 20,
-                  onChanged: controller.setGlassStrength,
-                  semanticLabel: t.settings.backgroundGlassStrength,
-                ),
-              ),
-              SettingsChoiceRow<BackgroundGlassOpacity>(
-                leading: const DsIcon(DsIcons.contrast),
-                title: t.settings.backgroundGlassOpacity,
-                description: t.settings.backgroundGlassOpacityDescription,
-                value: settings.glassOpacity,
-                options: [
-                  DsSelectOption(value: BackgroundGlassOpacity.smart, label: t.settings.backgroundGlassOpacitySmart),
-                  DsSelectOption(value: BackgroundGlassOpacity.high, label: t.settings.backgroundGlassOpacityHigh),
-                  DsSelectOption(value: BackgroundGlassOpacity.low, label: t.settings.backgroundGlassOpacityLow),
-                ],
-                onChanged: controller.setGlassOpacity,
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.droplet),
-                title: t.settings.backgroundGlassFill,
-                description: t.settings.backgroundGlassFillDescription,
-                detail: Text('${(settings.glassFill * 100).round()}%'),
-                control: DsSlider(
-                  // Floored, exactly as the background page's own slider is.
-                  value: settings.glassFill,
-                  min: kBackgroundGlassFillFloor,
-                  divisions: 10,
-                  onChanged: controller.setGlassFill,
-                  semanticLabel: t.settings.backgroundGlassFill,
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
       ],
     );
   }

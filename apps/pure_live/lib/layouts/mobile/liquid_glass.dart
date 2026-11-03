@@ -1,17 +1,12 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:pure_live/app/app.dart' show LiveGlassLevel;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/app.dart'
+    show backgroundSettingsProvider, backgroundToneProvider, liveGlassPolicyProvider, liveGlassReadabilityRaise;
 
 /// The sizes of the floating glass bar (A01.5), the reference's
 /// `GlassMetrics` for the same bar.
 abstract final class LiquidGlassMetrics {
-  /// The blur's sigma behind the glass: the subtle (G1) navigation tier, so
-  /// the phone's floating bar frosts at the same radius the themed bottom
-  /// navigation does and no magic number lives here.
-  static double get blurSigma => LiveGlassLevel.subtle.blurSigma;
-
   /// The capsule's corners.
   static const double barRadius = 34;
 
@@ -27,29 +22,39 @@ abstract final class LiquidGlassMetrics {
 }
 
 /// A pane of liquid glass for the floating bottom bar (A01.5): tinted,
-/// rim-lit, softly shadowed, and — while [blur] — frosted, so the page
-/// scrolls visibly under it. Without blur (a small-memory Android phone,
-/// A01.5 c4) the same tint sits nearly opaque and nothing frosts, the
-/// reference's plain fallback.
-final class LiquidGlassPane extends StatelessWidget {
+/// rim-lit, softly shadowed, and — while the floating glass is frosted —
+/// blurred, so the page scrolls visibly under it. The capsule wears the same
+/// floating opacity the dialogs and menus do, so the whole floating family
+/// answers one slider; without frost the same tint sits nearly opaque and
+/// nothing blurs, the reference's plain fallback.
+final class LiquidGlassPane extends ConsumerWidget {
   /// Creates the pane around [child].
-  const LiquidGlassPane({required this.child, this.blur = true, this.radius = LiquidGlassMetrics.barRadius, super.key});
+  const LiquidGlassPane({required this.child, this.radius = LiquidGlassMetrics.barRadius, super.key});
 
   /// What sits on the glass.
   final Widget child;
-
-  /// Whether what is behind is blurred.
-  final bool blur;
 
   /// The corners' radius.
   final double radius;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final dark = DsTheme.of(context).brightness == Brightness.dark;
+    final media = MediaQuery.maybeOf(context);
+    final policy = ref
+        .watch(liveGlassPolicyProvider)
+        .demoted(reduceVisualEffects: media?.disableAnimations == true || media?.highContrast == true);
+    final settings = ref.watch(backgroundSettingsProvider);
+    final raise = liveGlassReadabilityRaise(settings: settings, tone: ref.watch(backgroundToneProvider), dark: dark);
+    final material = policy.floatingMaterial(opacity: settings.glassFloatingOpacity, readabilityRaise: raise);
     final shape = BorderRadius.circular(radius);
     final tint = colors.surface;
+    // A device or system that cannot frost keeps the near-opaque tint the bar
+    // always fell back to: a clear tint over an unblurred page would let the
+    // content fight the labels.
+    final top = material.frosted ? material.fillAlpha : 0.92;
+    final bottom = (top + 0.08).clamp(0.0, 1.0);
     final pane = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: shape,
@@ -57,13 +62,18 @@ final class LiquidGlassPane extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: blur
-              ? [tint.withValues(alpha: dark ? 0.50 : 0.58), tint.withValues(alpha: dark ? 0.66 : 0.74)]
-              : [tint.withValues(alpha: 0.92), tint.withValues(alpha: 0.96)],
+          colors: [
+            tint.withValues(alpha: top),
+            tint.withValues(alpha: bottom),
+          ],
         ),
       ),
-      child: CustomPaint(foregroundPainter: _GlassRim(radius: radius, dark: dark), child: child),
+      child: CustomPaint(
+        foregroundPainter: _GlassRim(radius: radius, dark: dark),
+        child: child,
+      ),
     );
+    final filter = material.backdropFilter;
     return DecoratedBox(
       // Only floating layers carry the shadow, soft and close.
       decoration: BoxDecoration(
@@ -78,12 +88,7 @@ final class LiquidGlassPane extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: shape,
-        child: blur
-            ? BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: LiquidGlassMetrics.blurSigma, sigmaY: LiquidGlassMetrics.blurSigma),
-                child: pane,
-              )
-            : pane,
+        child: filter == null ? pane : BackdropFilter(filter: filter, child: pane),
       ),
     );
   }
@@ -122,7 +127,10 @@ final class _GlassRim extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.center,
-        colors: [light.withValues(alpha: dark ? 0.06 : 0.18), light.withValues(alpha: 0)],
+        colors: [
+          light.withValues(alpha: dark ? 0.06 : 0.18),
+          light.withValues(alpha: 0),
+        ],
       ).createShader(rect);
     canvas.drawRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)), sheen);
   }

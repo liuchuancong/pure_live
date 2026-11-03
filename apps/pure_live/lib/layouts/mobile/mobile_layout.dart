@@ -155,12 +155,11 @@ final class MobileLayout extends ConsumerWidget {
     final current = atTab ? selected : tabs.first;
     // The unified glass decides the phone's bottom bar: with the glass on it
     // floats over the page as a frosted capsule the page scrolls visibly
-    // under — the subtle (G1) navigation tier; with it off the bar is the
-    // plain full-width surface. Low-memory Android and a system asking for
-    // fewer effects drop the frost but keep the floating shape.
+    // under — the same floating opacity the dialogs wear; with it off the bar
+    // is the plain full-width surface. Low-memory Android and a system asking
+    // for fewer effects drop the frost but keep the floating shape.
     final glassPolicy = ref.watch(liveGlassPolicyProvider);
     final glass = glassPolicy.enabled;
-    final glassBlur = glassPolicy.frost;
     final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     final navBar = DsBottomNav<NavigationItem>(
       variant: DsBottomNavVariant.bar,
@@ -235,7 +234,6 @@ final class MobileLayout extends ConsumerWidget {
                 safeBottom + LiquidGlassMetrics.barMargin,
               ),
               child: LiquidGlassPane(
-                blur: glassBlur,
                 // The capsule's safe area sits outside it; the bar keeps
                 // the system's gesture strip to itself.
                 child: MediaQuery.removePadding(context: context, removeTop: true, removeBottom: true, child: navBar),

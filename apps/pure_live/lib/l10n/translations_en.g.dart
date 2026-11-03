@@ -3261,7 +3261,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get autoClash => 'Keep status colors apart';
 	@override String get autoClashDesc => 'Shifts nearby danger and success colors automatically, so a selection is not read as an alert.';
 	@override String get navBackground => 'Background';
-	@override String get backgroundDescription => 'An image or video behind the app, uploaded from a file or loaded from a URL.';
+	@override String get backgroundDescription => 'Set a picture, video or colour behind the app.';
 	@override String get backgroundImagesTitle => 'Online images';
 	@override String get backgroundImagesDescription => 'Official, Wallhaven, Bing and deepin sources; preview before applying.';
 	@override String get backgroundVideosTitle => 'Live wallpapers';
@@ -3315,21 +3315,16 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundClearDescription => 'Back to the theme colour; saved media stays.';
 	@override String get backgroundClear => 'Clear background';
 	@override String get backgroundGlass => 'Interface glass';
-	@override String get backgroundGlassDescription => 'The glass material on cards, lists, text fields and floating layers: a translucent fill over a background blur, so the wallpaper shows through. Every tier keeps a readability floor, so no setting can make text unreadable.';
+	@override String get backgroundGlassDescription => 'Separate opacity for floating layers and for lists and cards.';
 	@override String get backgroundGlassMode => 'Glass mode';
 	@override String get backgroundGlassModeSystem => 'Follow system';
 	@override String get backgroundGlassModeAlways => 'Always on';
 	@override String get backgroundGlassModeReduced => 'Reduce glass';
 	@override String get backgroundGlassModeOff => 'Off';
-	@override String get backgroundGlassStrength => 'Glass strength';
-	@override String get backgroundGlassStrengthDescription => 'The frost radius and how clear the glass reads; lower leans toward a solid surface.';
-	@override String get backgroundGlassOpacity => 'Background opacity';
-	@override String get backgroundGlassOpacityDescription => 'How transparent the floating layers aim; smart lifts them with a busy wallpaper and the readability floor, high/low pin each tier\'s range.';
-	@override String get backgroundGlassOpacitySmart => 'Smart';
-	@override String get backgroundGlassOpacityHigh => 'High opacity';
-	@override String get backgroundGlassOpacityLow => 'Low opacity';
-	@override String get backgroundGlassFill => 'Panel fill';
-	@override String get backgroundGlassFillDescription => 'A card fill\'s opacity; lower shows more wallpaper and less contrast.';
+	@override String get backgroundGlassFloating => 'Dialogs and floating layers';
+	@override String get backgroundGlassFloatingDescription => 'Shared by dialogs, menus, notices and the bottom bar.';
+	@override String get backgroundGlassSurface => 'Lists and cards';
+	@override String get backgroundGlassSurfaceDescription => 'Fill for cards, lists and text fields.';
 	@override String get checkUpdate => 'Check for updates';
 	@override String get checkUpdateDesc => 'Reads the newest version from the project’s releases.';
 	@override String get checkingUpdate => 'Checking for updates…';
@@ -7724,7 +7719,7 @@ extension on TranslationsEn {
 			'settings.autoClash' => 'Keep status colors apart',
 			'settings.autoClashDesc' => 'Shifts nearby danger and success colors automatically, so a selection is not read as an alert.',
 			'settings.navBackground' => 'Background',
-			'settings.backgroundDescription' => 'An image or video behind the app, uploaded from a file or loaded from a URL.',
+			'settings.backgroundDescription' => 'Set a picture, video or colour behind the app.',
 			'settings.backgroundImagesTitle' => 'Online images',
 			'settings.backgroundImagesDescription' => 'Official, Wallhaven, Bing and deepin sources; preview before applying.',
 			'settings.backgroundVideosTitle' => 'Live wallpapers',
@@ -7778,21 +7773,16 @@ extension on TranslationsEn {
 			'settings.backgroundClearDescription' => 'Back to the theme colour; saved media stays.',
 			'settings.backgroundClear' => 'Clear background',
 			'settings.backgroundGlass' => 'Interface glass',
-			'settings.backgroundGlassDescription' => 'The glass material on cards, lists, text fields and floating layers: a translucent fill over a background blur, so the wallpaper shows through. Every tier keeps a readability floor, so no setting can make text unreadable.',
+			'settings.backgroundGlassDescription' => 'Separate opacity for floating layers and for lists and cards.',
 			'settings.backgroundGlassMode' => 'Glass mode',
 			'settings.backgroundGlassModeSystem' => 'Follow system',
 			'settings.backgroundGlassModeAlways' => 'Always on',
 			'settings.backgroundGlassModeReduced' => 'Reduce glass',
 			'settings.backgroundGlassModeOff' => 'Off',
-			'settings.backgroundGlassStrength' => 'Glass strength',
-			'settings.backgroundGlassStrengthDescription' => 'The frost radius and how clear the glass reads; lower leans toward a solid surface.',
-			'settings.backgroundGlassOpacity' => 'Background opacity',
-			'settings.backgroundGlassOpacityDescription' => 'How transparent the floating layers aim; smart lifts them with a busy wallpaper and the readability floor, high/low pin each tier\'s range.',
-			'settings.backgroundGlassOpacitySmart' => 'Smart',
-			'settings.backgroundGlassOpacityHigh' => 'High opacity',
-			'settings.backgroundGlassOpacityLow' => 'Low opacity',
-			'settings.backgroundGlassFill' => 'Panel fill',
-			'settings.backgroundGlassFillDescription' => 'A card fill\'s opacity; lower shows more wallpaper and less contrast.',
+			'settings.backgroundGlassFloating' => 'Dialogs and floating layers',
+			'settings.backgroundGlassFloatingDescription' => 'Shared by dialogs, menus, notices and the bottom bar.',
+			'settings.backgroundGlassSurface' => 'Lists and cards',
+			'settings.backgroundGlassSurfaceDescription' => 'Fill for cards, lists and text fields.',
 			'settings.checkUpdate' => 'Check for updates',
 			'settings.checkUpdateDesc' => 'Reads the newest version from the project’s releases.',
 			'settings.checkingUpdate' => 'Checking for updates…',
@@ -8127,13 +8117,13 @@ extension on TranslationsEn {
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
 			'settings.danmakuShowGifts' => 'Show gifts',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
@@ -8641,13 +8631,13 @@ extension on TranslationsEn {
 			'vod.downloadPause' => 'Pause download',
 			'vod.downloadQueued' => 'Added to the download queue',
 			'vod.downloadDuplicate' => 'This part is already in the queue',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadManagerHint' => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',
 			'vod.downloadSettingsTitle' => 'Download settings',
 			'vod.downloadMaxConcurrent' => 'Simultaneous downloads',
 			'vod.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
 			'vod.downloadQuality' => 'Download quality',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
 			'vod.downloadDanmaku' => 'Save danmaku too',
 			'vod.downloadDanmakuDesc' => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.',

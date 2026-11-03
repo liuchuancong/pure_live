@@ -23,6 +23,72 @@ void _openBackgroundChild(BuildContext context, WidgetRef ref, SettingsSection s
   openSettingsChild(context, ref, section);
 }
 
+/// The glass section both the background page and the wallpaper preview show:
+/// the mode and two opacity sliders — the floating layers, and the cards and
+/// lists. Sharing it keeps the two pages from drifting apart.
+final class BackgroundGlassSection extends ConsumerWidget {
+  const BackgroundGlassSection({this.showDescriptions = true, super.key});
+
+  /// Whether each row carries the one-line explanation. The preview page
+  /// turns them off: its sidebar is a control strip beside the stage, not a
+  /// reference page.
+  final bool showDescriptions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final settings = ref.watch(backgroundSettingsProvider);
+    final controller = ref.read(backgroundSettingsProvider.notifier);
+    return DsListSection(
+      header: Text(t.settings.backgroundGlass),
+      children: [
+        SettingsChoiceRow<BackgroundGlassMode>(
+          leading: const DsIcon(DsIcons.layers),
+          title: t.settings.backgroundGlassMode,
+          description: showDescriptions ? t.settings.backgroundGlassDescription : null,
+          value: settings.glassMode,
+          options: [
+            DsSelectOption(value: BackgroundGlassMode.system, label: t.settings.backgroundGlassModeSystem),
+            DsSelectOption(value: BackgroundGlassMode.always, label: t.settings.backgroundGlassModeAlways),
+            DsSelectOption(value: BackgroundGlassMode.reduced, label: t.settings.backgroundGlassModeReduced),
+            DsSelectOption(value: BackgroundGlassMode.off, label: t.settings.backgroundGlassModeOff),
+          ],
+          onChanged: controller.setGlassMode,
+        ),
+        // The two opacity sliders only exist while the glass does.
+        if (settings.glassMode != BackgroundGlassMode.off) ...[
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.appWindow),
+            title: t.settings.backgroundGlassFloating,
+            description: showDescriptions ? t.settings.backgroundGlassFloatingDescription : null,
+            detail: Text('${(settings.glassFloatingOpacity * 100).round()}%'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: settings.glassFloatingOpacity,
+              divisions: 20,
+              onChanged: controller.setGlassFloatingOpacity,
+              semanticLabel: t.settings.backgroundGlassFloating,
+            ),
+          ),
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.layoutGrid),
+            title: t.settings.backgroundGlassSurface,
+            description: showDescriptions ? t.settings.backgroundGlassSurfaceDescription : null,
+            detail: Text('${(settings.glassSurfaceOpacity * 100).round()}%'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: settings.glassSurfaceOpacity,
+              divisions: 20,
+              onChanged: controller.setGlassSurfaceOpacity,
+              semanticLabel: t.settings.backgroundGlassSurface,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// Background settings' landing page: the display controls that apply to
 /// every kind, then the routes to each source.
 final class BackgroundOverviewPane extends ConsumerWidget {
@@ -120,75 +186,9 @@ final class BackgroundOverviewPane extends ConsumerWidget {
             ),
           ],
         ),
-        // The glass: one material decision for the whole app. The mode sets
-        // whether surfaces frost at all, the strength how hard, the opacity
-        // tier how transparent the floating layers aim, and the panel fill how
-        // much of the wallpaper shows through a card. Every tier keeps its own
-        // readability floor, so none of these can make text unreadable.
-        DsListSection(
-          header: Text(t.settings.backgroundGlass),
-          children: [
-            SettingsChoiceRow<BackgroundGlassMode>(
-              leading: const DsIcon(DsIcons.layers),
-              title: t.settings.backgroundGlassMode,
-              description: t.settings.backgroundGlassDescription,
-              value: settings.glassMode,
-              options: [
-                DsSelectOption(value: BackgroundGlassMode.system, label: t.settings.backgroundGlassModeSystem),
-                DsSelectOption(value: BackgroundGlassMode.always, label: t.settings.backgroundGlassModeAlways),
-                DsSelectOption(value: BackgroundGlassMode.reduced, label: t.settings.backgroundGlassModeReduced),
-                DsSelectOption(value: BackgroundGlassMode.off, label: t.settings.backgroundGlassModeOff),
-              ],
-              onChanged: controller.setGlassMode,
-            ),
-            // The strength, opacity tier and fill exist only while the glass
-            // does.
-            if (settings.glassMode != BackgroundGlassMode.off) ...[
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.slidersHorizontal),
-                title: t.settings.backgroundGlassStrength,
-                description: t.settings.backgroundGlassStrengthDescription,
-                detail: Text('${settings.glassStrength.round()}%'),
-                controlWidth: 220,
-                control: DsSlider(
-                  value: settings.glassStrength,
-                  max: 100,
-                  divisions: 20,
-                  onChanged: controller.setGlassStrength,
-                  semanticLabel: t.settings.backgroundGlassStrength,
-                ),
-              ),
-              SettingsChoiceRow<BackgroundGlassOpacity>(
-                leading: const DsIcon(DsIcons.contrast),
-                title: t.settings.backgroundGlassOpacity,
-                description: t.settings.backgroundGlassOpacityDescription,
-                value: settings.glassOpacity,
-                options: [
-                  DsSelectOption(value: BackgroundGlassOpacity.smart, label: t.settings.backgroundGlassOpacitySmart),
-                  DsSelectOption(value: BackgroundGlassOpacity.high, label: t.settings.backgroundGlassOpacityHigh),
-                  DsSelectOption(value: BackgroundGlassOpacity.low, label: t.settings.backgroundGlassOpacityLow),
-                ],
-                onChanged: controller.setGlassOpacity,
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.droplet),
-                title: t.settings.backgroundGlassFill,
-                description: t.settings.backgroundGlassFillDescription,
-                detail: Text('${(settings.glassFill * 100).round()}%'),
-                controlWidth: 220,
-                control: DsSlider(
-                  // Floored: the wallpaper can show through a card, never so
-                  // much that the card loses its own words.
-                  value: settings.glassFill,
-                  min: kBackgroundGlassFillFloor,
-                  divisions: 10,
-                  onChanged: controller.setGlassFill,
-                  semanticLabel: t.settings.backgroundGlassFill,
-                ),
-              ),
-            ],
-          ],
-        ),
+        // The glass, per layer type: the shared section the preview page
+        // shows too, so the two never drift apart.
+        const BackgroundGlassSection(),
         DsListSection(
           header: Text(t.settings.backgroundChange),
           children: [
