@@ -341,45 +341,37 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              // The group tabs and the refresh button share the first line:
-              // the tabs scroll, the button keeps its width.
-              Row(
-                children: [
-                  Expanded(
-                    child: DsTabs<LiveFollowGroup?>(
-                      value: _group,
-                      onChanged: _selectGroup,
-                      tabs: [
-                        // The reference's order: live, replay, offline, all.
-                        DsTab<LiveFollowGroup?>(
-                          value: LiveFollowGroup.live,
-                          label: Text(t.favorites.statusLiveNow),
-                          count: counts[LiveFollowGroup.live],
-                        ),
-                        DsTab<LiveFollowGroup?>(
-                          value: LiveFollowGroup.replay,
-                          label: Text(t.favorites.statusReplay),
-                          count: counts[LiveFollowGroup.replay],
-                        ),
-                        DsTab<LiveFollowGroup?>(
-                          value: LiveFollowGroup.offline,
-                          label: Text(t.favorites.statusOfflineNow),
-                          count: counts[LiveFollowGroup.offline],
-                        ),
-                        DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
-                      ],
-                    ),
+              // The group tabs on their own line; the refresh moves down to
+              // the platform row, where 热门 and 分区 keep theirs.
+              DsTabs<LiveFollowGroup?>(
+                value: _group,
+                onChanged: _selectGroup,
+                tabs: [
+                  // The reference's order: live, replay, offline, all.
+                  DsTab<LiveFollowGroup?>(
+                    value: LiveFollowGroup.live,
+                    label: Text(t.favorites.statusLiveNow),
+                    count: counts[LiveFollowGroup.live],
                   ),
-                  const SizedBox(width: DsSpace.s12),
-                  _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
+                  DsTab<LiveFollowGroup?>(
+                    value: LiveFollowGroup.replay,
+                    label: Text(t.favorites.statusReplay),
+                    count: counts[LiveFollowGroup.replay],
+                  ),
+                  DsTab<LiveFollowGroup?>(
+                    value: LiveFollowGroup.offline,
+                    label: Text(t.favorites.statusOfflineNow),
+                    count: counts[LiveFollowGroup.offline],
+                  ),
+                  DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
                 ],
               ),
-              // The platform tabs, the wall behind the chevron and the grid
-              // switch: one row, exactly as 热门 and 分区 lay them out. Each
-              // name carries how many follows it holds in the shown group,
-              // and the wall repeats that count under the logo. A small
-              // screen keeps the tabs alone and moves the wall and the layout
-              // behind one more icon.
+              // The platform tabs, the wall behind the chevron, the grid
+              // switch and the refresh: one row, exactly as 热门 and 分区 lay
+              // them out. Each name carries how many follows it holds in the
+              // shown group, and the wall repeats that count under the logo.
+              // A small screen keeps the tabs and the refresh and moves the
+              // wall and the layout behind one more icon.
               LayoutBuilder(
                 builder: (context, constraints) {
                   final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
@@ -397,13 +389,23 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                     ),
                     onChanged: _selectPlatform,
                   );
-                  if (!narrow) return tabs;
+                  final refresh = _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh);
+                  if (!narrow) {
+                    return Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(child: tabs),
+                        refresh,
+                      ],
+                    );
+                  }
                   return SizedBox(
                     height: 44,
                     child: Row(
                       spacing: DsSpace.s8,
                       children: [
                         Expanded(child: tabs),
+                        refresh,
                         PlatformToolbarMore(
                           platforms: [kAllPlatforms, ...platformTabs],
                           current: platform,
