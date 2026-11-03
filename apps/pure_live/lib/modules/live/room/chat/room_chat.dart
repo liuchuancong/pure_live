@@ -141,12 +141,12 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
   Widget build(BuildContext context) {
     final t = context.t;
     final chat = ref.watch(roomChatProvider);
+    final standing = ref.watch(roomProvider.select((state) => state.chat));
     final anchorName = ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? ''));
     if (chat.isEmpty) {
       // An empty list is four different facts, and only one of them is the
       // room being quiet: the standing the controller publishes says which, so
       // a refused handshake never reads as "nobody is talking".
-      final standing = ref.watch(roomProvider.select((state) => state.chat));
       return Center(
         child: switch (standing.status) {
           RoomChatStatus.connecting => Column(
@@ -186,7 +186,7 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
     // the 「以下为新消息」 line above it, so what arrived while the viewer
     // read earlier talk is said, not implied.
     final boundary = _boundaryId;
-    return ListView.builder(
+    final list = ListView.builder(
       controller: _scroll,
       reverse: true,
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
@@ -224,6 +224,51 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
           ],
         );
       },
+    );
+    // A list that already holds talk never shows the empty state, so the
+    // socket's own trouble would go unsaid: the column would simply stop
+    // moving, and a viewer cannot tell a quiet room from a dead connection.
+    // One line above the list says which it is, with the retry the empty
+    // state offers.
+    final trouble = switch (standing.status) {
+      RoomChatStatus.connecting => (words: t.room.chatConnecting, busy: true),
+      RoomChatStatus.failed => (words: t.room.danmakuConnectFailed(reason: standing.error ?? ''), busy: false),
+      _ => null,
+    };
+    if (trouble == null) return list;
+    final colors = DsTheme.colorsOf(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, 0),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              if (trouble.busy)
+                const DsSpinner(style: DsSpinnerStyle(size: 14))
+              else
+                DsIcon(DsIcons.cloudOff, size: 14, color: colors.warning.text),
+              Expanded(
+                child: Text(
+                  trouble.words,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTheme.of(context).typography.small.copyWith(color: colors.textMuted),
+                ),
+              ),
+              if (!trouble.busy)
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(ref.read(roomProvider.notifier).retryChat()),
+                  child: Text(t.common.retry),
+                ),
+            ],
+          ),
+        ),
+        Expanded(child: list),
+      ],
     );
   }
 }
@@ -493,8 +538,8 @@ final class _ChatLine extends ConsumerWidget {
                 image: avatarUrl.isEmpty
                     ? null
                     : cachedImage(avatarUrl, width: (avatarSize * 2).round(), height: (avatarSize * 2).round()),
-                initials: _avatarInitials(senderName),
-                toneIndex: _nameTone(senderName),
+                initials: avatarInitials(senderName),
+                toneIndex: DsAvatar.toneFor(senderName),
                 semanticLabel: senderName,
                 style: DsAvatarStyle(diameter: avatarSize),
               ),
@@ -742,27 +787,6 @@ Color _senderNameInk({
   if (_nameInks[key] case final known?) return known;
   if (_nameInks.length >= 512) _nameInks.clear();
   return _nameInks[key] = _readableNameInk(color, ground);
-}
-
-/// What a sender with no picture wears on the disc: one ideograph, or the two
-/// leading letters of a latin name. More than that does not fit a 20-pixel
-/// circle and reads as noise at chat's own speed.
-String _avatarInitials(String name) {
-  final trimmed = name.trim();
-  if (trimmed.isEmpty) return '';
-  final first = trimmed.runes.first;
-  final latin = (first >= 0x41 && first <= 0x5a) || (first >= 0x61 && first <= 0x7a);
-  return latin ? trimmed.characters.take(2).toString().toUpperCase() : trimmed.characters.first;
-}
-
-/// One of the avatar tones, picked from the name so the same speaker keeps the
-/// same disc colour down the column.
-int _nameTone(String name) {
-  var sum = 0;
-  for (final unit in name.codeUnits) {
-    sum += unit;
-  }
-  return sum % 8;
 }
 
 /// [color] kept as it is when it clears 4.5:1 on [background], else moved
@@ -1153,7 +1177,7 @@ final class _SuperChatCard extends StatelessWidget {
           // D07.2 cards), only the buyer's name.
           if (!membership)
             DsAvatar(
-              initials: name,
+              initials: avatarInitials(name),
               image: face.isEmpty ? null : cachedImage(face),
               size: DsSize.sm,
               semanticLabel: name,

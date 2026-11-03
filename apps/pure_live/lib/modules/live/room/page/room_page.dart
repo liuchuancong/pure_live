@@ -1213,7 +1213,7 @@ PreferredSizeWidget _roomAppBar(
       if (wide) ...[
         const AppMark(size: 26),
         const SizedBox(width: DsSpace.s8),
-        Text('Pure Live', style: DsTheme.of(context).typography.bodyStrong.copyWith(color: colors.text)),
+        Text(t.common.appTitle, style: DsTheme.of(context).typography.bodyStrong.copyWith(color: colors.text)),
         const SizedBox(width: DsSpace.s12),
       ],
       DsButton.icon(
@@ -1691,7 +1691,7 @@ final class _RoomHero extends ConsumerWidget {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
                   child: DsAvatar(
-                    initials: name,
+                    initials: avatarInitials(name),
                     image: avatar.isEmpty ? null : cachedImage(avatar),
                     size: DsSize.lg,
                     semanticLabel: name,
@@ -1717,13 +1717,17 @@ final class _RoomHero extends ConsumerWidget {
                           if (live) const _LiveBadge(),
                         ],
                       ),
-                      Row(
-                        spacing: DsSpace.s12,
-                        children: [
-                          if (online != null) metric(DsIcons.eye, online),
-                          if (popularity != null && popularity != online) metric(DsIcons.flame, popularity),
-                        ],
-                      ),
+                      // A platform that sends neither figure gets no row at
+                      // all: an empty one still costs its spacing and reads as
+                      // a hole under the name.
+                      if (online != null || (popularity != null && popularity != online))
+                        Row(
+                          spacing: DsSpace.s12,
+                          children: [
+                            if (online != null) metric(DsIcons.eye, online),
+                            if (popularity != null && popularity != online) metric(DsIcons.flame, popularity),
+                          ],
+                        ),
                     ],
                   ),
                 ),

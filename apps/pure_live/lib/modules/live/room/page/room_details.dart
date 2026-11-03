@@ -124,7 +124,7 @@ final class _Streamer extends ConsumerWidget {
       spacing: DsSpace.s12,
       children: [
         DsAvatar(
-          initials: name,
+          initials: avatarInitials(name),
           image: avatar.isEmpty ? null : cachedImage(avatar),
           size: DsSize.md,
           semanticLabel: name,

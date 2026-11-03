@@ -271,7 +271,7 @@ final class _GridInfo extends StatelessWidget {
         children: [
           if (visibility.shows(RoomCardElement.avatar))
             DsAvatar(
-              initials: anchorName.isEmpty ? title : anchorName,
+              initials: avatarInitials(anchorName.isEmpty ? title : anchorName),
               image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
               size: DsSize.md,
               semanticLabel: anchorName.isEmpty ? title : anchorName,
@@ -364,7 +364,7 @@ final class _ListRow extends StatelessWidget {
             children: [
               if (showsAvatar)
                 DsAvatar(
-                  initials: anchorName.isEmpty ? title : anchorName,
+                  initials: avatarInitials(anchorName.isEmpty ? title : anchorName),
                   image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
                   size: DsSize.lg,
                   semanticLabel: anchorName.isEmpty ? title : anchorName,
