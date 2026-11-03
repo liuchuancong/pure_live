@@ -230,7 +230,9 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
       if (meta.rating > 0) t.hongguo.rating(score: meta.rating.toStringAsFixed(1)),
       if (meta.followedCount > 0) '${t.hongguo.followers} ${AudienceFormat.format(meta.followedCount)}',
       if (meta.likeCount > 0) '${t.hongguo.likes} ${AudienceFormat.format(meta.likeCount)}',
-      if (meta.episodeCount > 0) t.hongguo.episodesCount(count: meta.episodeCount),
+      // The station's own status line says the total in words — 全102集 /
+      // 更新至第6集 — so the bare count only speaks when that line is absent.
+      if (meta.episodeCount > 0 && meta.statusText.isEmpty) t.hongguo.episodesCount(count: meta.episodeCount),
     ];
     final library = ref.watch(hongguoLibraryProvider);
     final account = ref.watch(hongguoAccountProvider);

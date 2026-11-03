@@ -5,7 +5,6 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-
 import 'package:pure_live/app/app.dart' show RouteNames, browseLayoutProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart';
@@ -1000,6 +999,9 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               loading: false,
               error: null,
               emptyText: t.hongguo.favoritesLocalEmpty,
+              // That line already reads 「共 80 集（+3）」; the count is said by
+              // it, not again in front of it.
+              totalInHot: true,
               trailingOf: (series) => _IconAction(
                 icon: DsIcons.heartOff,
                 semanticLabel: t.hongguo.unfavorite,
@@ -1683,6 +1685,7 @@ final class _SeriesList extends StatelessWidget {
     this.emptyText,
     this.trailingOf,
     this.openable,
+    this.totalInHot = false,
   });
 
   final List<HongguoSeries> rows;
@@ -1691,6 +1694,10 @@ final class _SeriesList extends StatelessWidget {
   final String? emptyText;
   final Widget Function(HongguoSeries series)? trailingOf;
   final bool Function(HongguoSeries series)? openable;
+
+  /// Whether the rows' figure line already names the episode total, so the
+  /// listing line must not repeat it.
+  final bool totalInHot;
 
   @override
   Widget build(BuildContext context) {
@@ -1723,6 +1730,7 @@ final class _SeriesList extends StatelessWidget {
           series: series,
           onOpen: canOpen ? () => _open(context, series) : null,
           trailing: trailingOf?.call(series),
+          totalInHot: totalInHot,
         );
       },
     );
@@ -1784,6 +1792,10 @@ final class _ProgressList extends ConsumerWidget {
             HongguoSeriesRow(
               series: series,
               onOpen: managing ? null : () => _open(context, series),
+              // An unfinished row says its total inside 「12集/80集」, so the
+              // listing line starts there; a watched-through row says only
+              // 「已看过」, and its total has to come from the count.
+              totalInHot: !row.completed,
               trailing: managing
                   ? DsCheckbox(
                       value: selected.contains(row.seriesId),

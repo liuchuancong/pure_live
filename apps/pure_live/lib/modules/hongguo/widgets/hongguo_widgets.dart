@@ -32,10 +32,13 @@ const double kHongguoSeriesCardInfoExtent = 82;
 const double kHongguoSeriesTileAspect = 0.62;
 
 /// One series' subtitle line: the episode count, the play figure and the
-/// shelf categories, whichever the listing carries.
-String hongguoSeriesSubtitle(Translations t, HongguoSeries series) {
+/// shelf categories, whichever the listing carries. [totalInHot] says the
+/// figure line already names the series' own total — a history row's
+/// 「12集/80集」, a favorite's 「共 80 集（+3）」 — and then the leading count
+/// is the same number printed twice in one row, which a row does not do.
+String hongguoSeriesSubtitle(Translations t, HongguoSeries series, {bool totalInHot = false}) {
   final parts = <String>[
-    if (series.episodeCount > 0) t.hongguo.episodesCount(count: series.episodeCount),
+    if (!totalInHot && series.episodeCount > 0) t.hongguo.episodesCount(count: series.episodeCount),
     if (series.hot.isNotEmpty)
       series.hot
     else if (series.playCount > 0)
@@ -351,14 +354,19 @@ final class _FavoriteBookmark extends ConsumerWidget {
 /// One series as a full-width row: the poster beside the title and the
 /// listing line — the list layout of the same feed.
 final class HongguoSeriesRow extends StatelessWidget {
-  /// The row for [series]; [onOpen] opens its page.
-  const HongguoSeriesRow({required this.series, this.onOpen, this.trailing, super.key});
+  /// The row for [series]; [onOpen] opens its page. [totalInHot] tells this
+  /// row that [HongguoSeries.hot] already carries the episode total, so the
+  /// listing line must not say it a second time.
+  const HongguoSeriesRow({required this.series, this.onOpen, this.trailing, this.totalInHot = false, super.key});
 
   /// The series shown.
   final HongguoSeries series;
 
   /// Opens the series; null leaves the row inert.
   final VoidCallback? onOpen;
+
+  /// Whether the row's own figure line already names the episode total.
+  final bool totalInHot;
 
   /// The row's own action, drawn at the row's end — the ✕ that drops the
   /// series from the page showing it, the box that picks it for a batch, the
@@ -409,7 +417,7 @@ final class HongguoSeriesRow extends StatelessWidget {
                     style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                   ),
                   Text(
-                    hongguoSeriesSubtitle(context.t, series),
+                    hongguoSeriesSubtitle(context.t, series, totalInHot: totalInHot),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.caption.copyWith(color: colors.textMuted),
