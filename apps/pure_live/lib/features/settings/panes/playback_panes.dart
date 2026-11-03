@@ -171,10 +171,12 @@ final class QualityAudioPane extends ConsumerWidget {
     final network = ref.watch(networkTypeProvider);
     final stored = settings.preferredQuality ?? kPreferredResolutionChoices.first;
     // The rendition a room opens with, the danmaku habit behind it and the
-    // ASMR sleep timer are the live room's own; the IPTV page has no ladder
-    // and no wheel-volume gesture, and the video station and the short-drama
-    // player name their own first tier. What every player here obeys is the
-    // mute pair, the background switch, the seed volume and the wheel step.
+    // ASMR sleep timer are the live room's own: the IPTV page has no quality
+    // ladder, and the video station and the short-drama player name their own
+    // first tier. The audio rows are not all shared either — the room is the
+    // only player that seeds itself from the stored default mute, while every
+    // one of these four pages turns a desktop wheel by the stored step, so
+    // each row is shown where a reader exists and hidden where there is none.
     final module = ref.watch(selectedModuleProvider);
     final roomOnly = module == AppModule.live;
     return Column(
@@ -213,7 +215,7 @@ final class QualityAudioPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.navAudio),
           children: [
-            if (roomOnly || module == AppModule.iptv)
+            if (roomOnly)
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.volumeOff),
                 title: t.settings.defaultMuted,
@@ -318,23 +320,23 @@ final class QualityAudioPane extends ConsumerWidget {
                 semanticLabel: t.settings.defaultVolume,
               ),
             ),
-            // The wheel step is a desktop pointer gesture; the IPTV page has
-            // no wheel-volume handler to size.
-            if (module != AppModule.iptv)
-              SettingsChoiceRow<int>(
-                leading: const DsIcon(DsIcons.volume2),
-                title: t.settings.volumeWheelStep,
-                description: t.settings.volumeWheelStepDesc,
-                value: settings.volumeWheelStepPercent,
-                options: [
-                  for (final percent in kVolumeWheelStepChoices)
-                    DsSelectOption(
-                      value: percent,
-                      label: t.settings.volumeWheelStepValue(percent: percent),
-                    ),
-                ],
-                onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
-              ),
+            // Every player that reaches this page handles a pointer wheel:
+            // the room, the IPTV play page, the station's video page and the
+            // short-drama player all size their step from here.
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.volume2),
+              title: t.settings.volumeWheelStep,
+              description: t.settings.volumeWheelStepDesc,
+              value: settings.volumeWheelStepPercent,
+              options: [
+                for (final percent in kVolumeWheelStepChoices)
+                  DsSelectOption(
+                    value: percent,
+                    label: t.settings.volumeWheelStepValue(percent: percent),
+                  ),
+              ],
+              onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
+            ),
           ],
         ),
       ],
