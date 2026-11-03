@@ -74,6 +74,12 @@ enum _RecorderFilter {
 }
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
+  final TextEditingController _search = TextEditingController();
+
+  /// The toolbar's word: it narrows the task rows in place, like the
+  /// download manager's list — title, streamer, room id or platform name.
+  String _query = '';
+
   _RecorderFilter _filter = _RecorderFilter.all;
 
   @override
@@ -167,6 +173,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 
   @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -217,55 +229,96 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // What the page still owns as a task: a capture running, a room waiting to
     // go live, a session that failed, a join still going — and a saved row whose
     // file is gone, which the library cannot show and is the only way back to
-    // 重新合并 or to dropping the record.
+    // 重新合并 or to dropping the record. The toolbar's word narrows these
+    // rows in place, the search field above.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
+    final wide = MediaQuery.sizeOf(context).width >= 720;
+    final searched = _query.trim().toLowerCase();
+    bool searchedIn(RecordingTask task) {
+      if (searched.isEmpty) return true;
+      if (task.roomTitle.toLowerCase().contains(searched)) return true;
+      if (task.roomId.toLowerCase().contains(searched)) return true;
+      if (task.platform.toLowerCase().contains(searched)) return true;
+      final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
+      return room?.anchor?.name.toLowerCase().contains(searched) ?? false;
+    }
+
     final attention = [
       for (final task in listed)
-        if (_filter.matches(task)) task,
+        if (_filter.matches(task) && searchedIn(task)) task,
     ];
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    final searchField = DsSearchField(
+      controller: _search,
+      placeholder: t.recorder.searchHint,
+      semanticLabel: t.recorder.searchHint,
+      onChanged: (value) => setState(() => _query = value),
+    );
+    final statusFilter = DsSegmentedControl<_RecorderFilter>(
+      value: _filter,
+      semanticLabel: t.recorder.filterLabel,
+      onChanged: (value) => setState(() => _filter = value),
+      segments: [
+        for (final filter in _RecorderFilter.values)
+          DsSegment(value: filter, label: Text('${_filterLabel(t, filter)} ${counts[filter] ?? 0}')),
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, 0),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              Expanded(
-                child: Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
-              ),
-              // Whole-list work belongs beside the title, not inside one card:
-              // a room that ran for a month is a list of takes, and stopping or
-              // clearing them one by one is not what a viewer means by "停掉".
-              _BatchMenu(
-                onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
-                onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
-              ),
-              DsButton(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.settings, size: 16),
-                onPressed: _openSettings,
-                child: Text(t.recorder.settingsOpen),
-              ),
-            ],
-          ),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+          // The file manager's toolbar: the list's word, the states with
+          // their counts, and the whole-list actions — one row on a wide
+          // window, the search on its own line on a narrow one.
+          child: narrow
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: DsSpace.s8,
+                  children: [
+                    searchField,
+                    Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(child: statusFilter),
+                        _BatchMenu(
+                          onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
+                          onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
+                        ),
+                        DsButton.icon(
+                          variant: DsButtonVariant.secondary,
+                          size: DsSize.sm,
+                          semanticLabel: t.recorder.settingsOpen,
+                          onPressed: _openSettings,
+                          icon: const DsIcon(DsIcons.settings, size: 16),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: searchField),
+                    statusFilter,
+                    _BatchMenu(
+                      onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
+                      onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
+                    ),
+                    DsButton.icon(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      semanticLabel: t.recorder.settingsOpen,
+                      onPressed: _openSettings,
+                      icon: const DsIcon(DsIcons.settings, size: 16),
+                    ),
+                  ],
+                ),
         ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
-          child: DsChoiceChips<_RecorderFilter>(
-            value: _filter,
-            onChanged: (value) => setState(() => _filter = value),
-            semanticLabel: t.recorder.filterLabel,
-            options: [
-              for (final filter in _RecorderFilter.values)
-                DsChipOption(value: filter, label: Text('${_filterLabel(t, filter)}  ${counts[filter] ?? 0}')),
-            ],
-          ),
-        ),
-        // With the live check off nothing begins a take on its own, so the banner
-        // covers the scheduled rows too: a stopped task whose window is meant to
-        // re-arm it is just as stranded as a room waiting to go live.
+        // With the live check off nothing begins a take on its own, so the
+        // banner covers the scheduled rows too: a stopped task whose window
+        // is meant to re-arm it is just as stranded as a room waiting to go
+        // live.
         if (!polling && store.tasks.any((task) => task.needsLiveCheck))
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
@@ -289,22 +342,38 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ),
             ),
           ),
+        // A bounded strip, not a second full list: what is running or
+        // waiting is a handful of rows, and the library below needs the
+        // room to be browsed in. A wide window reads it as the file
+        // manager's table — the take, its size and its start, the phase's
+        // own action beside a menu; a narrow one keeps the cards.
         if (attention.isNotEmpty)
-          ConstrainedBox(
-            // A bounded strip, not a second full list: what is running or
-            // waiting is a handful of rows, and the library below needs the
-            // room to be browsed in.
-            constraints: const BoxConstraints(maxHeight: 420),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s8,
-                children: [
-                  Text(t.recorder.runningTitle, style: theme.typography.labelStrong.copyWith(color: colors.textMuted)),
-                  for (final task in attention) ..._taskCards(context, task, rooms),
-                ],
-              ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 420),
+              child: wide
+                  ? DsTable<RecordingTask>(
+                      semanticLabel: t.recorder.runningTitle,
+                      style: const DsTableStyle(rowHeight: 56),
+                      columns: _taskColumns(context, rooms),
+                      rows: attention,
+                      rowKey: (task) => task.id,
+                      emptyView: const SizedBox.shrink(),
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: DsSpace.s8,
+                        children: [
+                          Text(
+                            t.recorder.runningTitle,
+                            style: theme.typography.labelStrong.copyWith(color: colors.textMuted),
+                          ),
+                          for (final task in attention) ..._taskCards(context, task, rooms),
+                        ],
+                      ),
+                    ),
             ),
           ),
         Expanded(
@@ -318,6 +387,202 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           ),
         ),
       ],
+    );
+  }
+
+  /// The task table's columns: the take (its cover, its name and its
+  /// state), what it has written, when it began, and the phase's own
+  /// action beside the menu — the file manager's columns.
+  List<DsTableColumn<RecordingTask>> _taskColumns(BuildContext context, Map<String, LiveRoom> rooms) {
+    final t = context.t;
+    return [
+      DsTableColumn<RecordingTask>(
+        id: 'task',
+        label: t.recorder.columnTask,
+        value: (task) => task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId,
+        cell: (context, task) => _taskNameCell(context, task, rooms),
+        width: const DsTableColumnWidth.flex(3, 200),
+      ),
+      DsTableColumn<RecordingTask>(
+        id: 'size',
+        label: t.recorder.columnSize,
+        value: (task) => task.bytes,
+        text: (task) => task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
+        numeric: true,
+        width: const DsTableColumnWidth.intrinsic(min: 88),
+      ),
+      DsTableColumn<RecordingTask>(
+        id: 'time',
+        label: t.recorder.columnStarted,
+        value: (task) => task.startedAt.millisecondsSinceEpoch,
+        text: (task) => formatRecordingMoment(task.startedAt),
+        width: const DsTableColumnWidth.intrinsic(min: 92),
+      ),
+      DsTableColumn<RecordingTask>(
+        id: 'actions',
+        label: t.recorder.columnActions,
+        alignment: DsTableCellAlignment.end,
+        cell: (context, task) => _taskActionsCell(context, task, rooms),
+        width: const DsTableColumnWidth.fixed(150),
+      ),
+    ];
+  }
+
+  /// The take's row head: its cover (the platform's letter when the room
+  /// snapshot has none), the streamer over the title, the facts line, and
+  /// the state's badge beside the name.
+  Widget _taskNameCell(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
+    final streamer = room?.anchor?.name.trim() ?? '';
+    final storedTitle = task.roomTitle.trim();
+    final roomTitle = room?.content.title.trim() ?? '';
+    final title = storedTitle.isNotEmpty ? storedTitle : (roomTitle.isNotEmpty ? roomTitle : task.roomId);
+    final cover = room?.content.coverUrl.trim() ?? '';
+    final fileDeleted = task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        DsImage(
+          image: cover.isEmpty ? null : cachedImage(cover),
+          width: 48,
+          height: 32,
+          fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 2,
+            children: [
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: Text(
+                      streamer.isEmpty ? title : streamer,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                  ),
+                  DsBadge(
+                    label: Text(
+                      task.postProcessing
+                          ? t.recorder.stateProcessing
+                          : fileDeleted
+                          ? t.recorder.stateFileDeleted
+                          : _TaskCard.stateLabel(t, task.state),
+                    ),
+                    status: task.postProcessing
+                        ? DsStatus.info
+                        : fileDeleted
+                        ? DsStatus.neutral
+                        : _TaskCard.stateStatus(task.state),
+                  ),
+                ],
+              ),
+              Text(
+                [
+                  _platformName(task.platform),
+                  if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
+                  if (task.scheduleEnabled) _scheduleSummary(t, task),
+                  t.recorder.startedAt(time: formatRecordingMoment(task.startedAt)),
+                ].join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The row's one action: the verb this phase asks for — stop a capture,
+  /// cancel a join, start a waiting or failed one now — beside the row's
+  /// menu. A capture another window holds answers nothing here, so its row
+  /// carries the menu alone.
+  Widget _taskActionsCell(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
+    final t = context.t;
+    final engine = ref.read(recorderEngineProvider);
+    final callbacks = _taskCallbacks(task, rooms);
+    final runningHere = engine.isRecording(task.id);
+    Widget? primary;
+    if (task.postProcessing) {
+      primary = DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        leading: const DsIcon(DsIcons.x, size: 14),
+        onPressed: callbacks.onCancelProcessing,
+        child: Text(t.recorder.cancelProcessing),
+      );
+    } else if (runningHere) {
+      primary = DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        leading: const DsIcon(DsIcons.squareStop, size: 14),
+        onPressed: callbacks.onStop,
+        child: Text(t.recorder.stop),
+      );
+    } else if (callbacks.onStartNow != null) {
+      primary = DsButton(
+        variant: DsButtonVariant.primary,
+        size: DsSize.sm,
+        leading: const DsIcon(DsIcons.play, size: 14),
+        onPressed: callbacks.onStartNow,
+        child: Text(t.recorder.startNow),
+      );
+    }
+    return Row(
+      spacing: DsSpace.s4,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ?primary,
+        _TaskMenu(
+          task: task,
+          hasFile: (task.filePath ?? '').trim().isNotEmpty,
+          onOpen: callbacks.onOpen,
+          onStop: callbacks.onStop,
+          onCancelWaiting: callbacks.onCancelWaiting,
+          onDelete: callbacks.onDelete,
+          onSchedule: callbacks.onSchedule,
+          onCancelProcessing: callbacks.onCancelProcessing,
+          onStartNow: callbacks.onStartNow,
+          onRetryJoin: callbacks.onRetryJoin,
+          onPreview: callbacks.onPreview,
+          onPlayExternal: callbacks.onPlayExternal,
+        ),
+      ],
+    );
+  }
+
+  /// The callbacks one task's row needs, shared by the card list and the
+  /// table — the store's answers decide which are present.
+  _TaskCallbacks _taskCallbacks(RecordingTask task, Map<String, LiveRoom> rooms) {
+    final engine = ref.read(recorderEngineProvider);
+    return (
+      onOpen: playableFileAt(task.filePath) == null
+          ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
+          : () => unawaited(_openPreview(task)),
+      onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
+      onCancelWaiting: task.state == RecordingTaskState.waiting
+          ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
+          : null,
+      onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
+      onSchedule: () => unawaited(_editSchedule(task)),
+      onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
+          ? () => unawaited(_startNow(task))
+          : null,
+      onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
+      onRetryJoin:
+          !task.postProcessing && task.state != RecordingTaskState.recording && (task.filePath ?? '').isNotEmpty
+          ? () => unawaited(_retryJoin(task))
+          : null,
+      onPreview: _canPreview(task) ? () => unawaited(_openPreview(task)) : null,
+      onPlayExternal: _canPreview(task) ? () => unawaited(_playExternal(task)) : null,
     );
   }
 
@@ -664,6 +929,21 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 }
 
+/// The callbacks one task row carries, named for the helpers that pass
+/// them between the card list and the table.
+typedef _TaskCallbacks = ({
+  VoidCallback onOpen,
+  VoidCallback? onStop,
+  VoidCallback? onCancelWaiting,
+  VoidCallback onDelete,
+  VoidCallback onSchedule,
+  VoidCallback? onStartNow,
+  VoidCallback? onCancelProcessing,
+  VoidCallback? onRetryJoin,
+  VoidCallback? onPreview,
+  VoidCallback? onPlayExternal,
+});
+
 /// A filter's word, without its count.
 String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
   _RecorderFilter.all => t.recorder.filterAll,
@@ -795,7 +1075,7 @@ final class _TaskCard extends StatelessWidget {
                   width: coverWidth,
                   height: coverHeight,
                   semanticLabel: title,
-                  fallback: _CoverFallback(letter: _platformLetter(task.platform)),
+                  fallback: _CoverFallback(letter: platformLetter(task.platform)),
                 ),
               Expanded(
                 child: Column(
@@ -874,13 +1154,13 @@ final class _TaskCard extends StatelessWidget {
                           ? t.recorder.stateProcessing
                           : _fileDeleted
                           ? t.recorder.stateFileDeleted
-                          : _stateLabel(t, task.state),
+                          : stateLabel(t, task.state),
                     ),
                     status: task.postProcessing
                         ? DsStatus.info
                         : _fileDeleted
                         ? DsStatus.neutral
-                        : _stateStatus(task.state),
+                        : stateStatus(task.state),
                   ),
                   Text(
                     task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
@@ -921,7 +1201,7 @@ final class _TaskCard extends StatelessWidget {
   bool get _fileDeleted => task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
 
   /// The state's badge label.
-  static String _stateLabel(Translations t, RecordingTaskState state) => switch (state) {
+  static String stateLabel(Translations t, RecordingTaskState state) => switch (state) {
     RecordingTaskState.recording => t.recorder.stateRecording,
     RecordingTaskState.waiting => t.recorder.stateWaiting,
     RecordingTaskState.stopped => t.recorder.stateSaved,
@@ -930,7 +1210,7 @@ final class _TaskCard extends StatelessWidget {
 
   /// The state's badge tone: capturing is live information, waiting is a
   /// pending state, a saved session is a success, a failed one is danger.
-  static DsStatus _stateStatus(RecordingTaskState state) => switch (state) {
+  static DsStatus stateStatus(RecordingTaskState state) => switch (state) {
     RecordingTaskState.recording => DsStatus.info,
     RecordingTaskState.waiting => DsStatus.warning,
     RecordingTaskState.stopped => DsStatus.success,
@@ -938,7 +1218,7 @@ final class _TaskCard extends StatelessWidget {
   };
 
   /// The tile's letter: the platform id's first rune, uppercased.
-  static String _platformLetter(String platform) {
+  static String platformLetter(String platform) {
     if (platform.isEmpty) return '?';
     return platform[0].toUpperCase();
   }

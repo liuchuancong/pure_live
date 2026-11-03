@@ -2028,6 +2028,9 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get columnCount => 'Count';
 	@override String get columnDuration => 'Length';
 	@override String get columnSize => 'Size';
+	@override String get columnTask => 'Task';
+	@override String get columnStarted => 'Started';
+	@override String get columnActions => 'Actions';
 	@override String get columnTime => 'Time';
 	@override String get settingsOpen => 'Recording settings';
 	@override String get stop => 'Stop recording';
@@ -2152,7 +2155,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String startNowFailed({required Object error}) => 'Could not start recording: ${error}';
 	@override String get cacheBusy => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.';
 	@override String get cacheOtherRoot => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.';
-	@override String get searchHint => 'Search a room to record';
+	@override String get searchHint => 'Search tasks and rooms';
 	@override String get addTitle => 'Add recording';
 	@override String addBodyLive({required String title}) => '“${title}” is live. Start recording now?';
 	@override String addBodyOffline({required String title}) => '“${title}” is offline. Add it to the waiting list and record once it goes live?';
@@ -6514,6 +6517,9 @@ extension on TranslationsEn {
 			'recorder.columnCount' => 'Count',
 			'recorder.columnDuration' => 'Length',
 			'recorder.columnSize' => 'Size',
+			'recorder.columnTask' => 'Task',
+			'recorder.columnStarted' => 'Started',
+			'recorder.columnActions' => 'Actions',
 			'recorder.columnTime' => 'Time',
 			'recorder.settingsOpen' => 'Recording settings',
 			'recorder.stop' => 'Stop recording',
@@ -6584,11 +6590,11 @@ extension on TranslationsEn {
 			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
 			'recorder.pollingEnable' => 'Turn on',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
 			'recorder.cacheLimitEnabledDesc' => 'Delete the oldest finished takes when the cap is exceeded; active recordings are never deleted.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.cacheLimit' => 'Cache cap',
 			'recorder.cacheLimitDesc' => 'Measured in MB; above it the oldest takes are deleted, never an active recording.',
 			'recorder.cacheSize' => 'Current recording cache',
@@ -6640,7 +6646,7 @@ extension on TranslationsEn {
 			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
 			'recorder.cacheOtherRoot' => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.',
-			'recorder.searchHint' => 'Search a room to record',
+			'recorder.searchHint' => 'Search tasks and rooms',
 			'recorder.addTitle' => 'Add recording',
 			'recorder.addBodyLive' => ({required String title}) => '“${title}” is live. Start recording now?',
 			'recorder.addBodyOffline' => ({required String title}) => '“${title}” is offline. Add it to the waiting list and record once it goes live?',
@@ -7098,11 +7104,11 @@ extension on TranslationsEn {
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
@@ -7612,11 +7618,11 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => 'Bigger buffers and reconnect backoff. Trades memory for fewer stalls.',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => 'Low latency',
 			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => 'How audio and video clocks align. audio is the mpv default; display-resample is smoothest but GPU heavy and pairs with interpolation; vdrop/drop variants drop frames on drift. Desktop only.',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryInterpolationBody' => 'Motion-interpolated rendering. Noticeably smoother pans; requires display-resample sync and real GPU headroom. Desktop only.',
 			'settings.playerGuideEntryScaleTitle' => '--scale',
 			'settings.playerGuideEntryScaleBody' => 'Upscaling kernel. lanczos is the balanced pick; ewa_lanczossharp the sharpest; ewa_lanczos4sharpest is designed for interpolation; bilinear/nearest are fastest but soft or blocky. Mobile only offers lanczos and bilinear.',
@@ -8126,11 +8132,11 @@ extension on TranslationsEn {
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
 			'settings.danmakuShowGifts' => 'Show gifts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
 			'settings.floatWindowLarge' => 'Large',
@@ -8640,11 +8646,11 @@ extension on TranslationsEn {
 			'vod.downloadingUnknown' => 'Downloading…',
 			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
 			'vod.downloadFailed' => 'Download failed',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
 			'vod.downloadPause' => 'Pause download',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadQueued' => 'Added to the download queue',
 			'vod.downloadDuplicate' => 'This part is already in the queue',
 			'vod.downloadManagerHint' => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',

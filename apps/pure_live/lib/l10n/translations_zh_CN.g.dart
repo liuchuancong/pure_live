@@ -5710,6 +5710,15 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '大小'
 	String get columnSize => '大小';
 
+	/// zh-CN: '任务'
+	String get columnTask => '任务';
+
+	/// zh-CN: '开始时间'
+	String get columnStarted => '开始时间';
+
+	/// zh-CN: '操作'
+	String get columnActions => '操作';
+
 	/// zh-CN: '时间'
 	String get columnTime => '时间';
 
@@ -6082,8 +6091,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。'
 	String get cacheOtherRoot => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。';
 
-	/// zh-CN: '搜索直播间添加录制'
-	String get searchHint => '搜索直播间添加录制';
+	/// zh-CN: '搜索任务与直播间'
+	String get searchHint => '搜索任务与直播间';
 
 	/// zh-CN: '添加录制'
 	String get addTitle => '添加录制';
@@ -15005,6 +15014,9 @@ extension on Translations {
 			'recorder.columnCount' => '数量',
 			'recorder.columnDuration' => '时长',
 			'recorder.columnSize' => '大小',
+			'recorder.columnTask' => '任务',
+			'recorder.columnStarted' => '开始时间',
+			'recorder.columnActions' => '操作',
 			'recorder.columnTime' => '时间',
 			'recorder.settingsOpen' => '录制设置',
 			'recorder.stop' => '停止录制',
@@ -15075,11 +15087,11 @@ extension on Translations {
 			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。',
 			'recorder.pollingEnable' => '打开',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
 			'recorder.cacheLimitEnabled' => '限制录制缓存',
 			'recorder.cacheLimitEnabledDesc' => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.cacheLimit' => '缓存上限',
 			'recorder.cacheLimitDesc' => '超过上限从最旧的已完成录像删起；正在录制的不动。',
 			'recorder.cacheSize' => '当前录制缓存',
@@ -15131,7 +15143,7 @@ extension on Translations {
 			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'recorder.cacheOtherRoot' => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。',
-			'recorder.searchHint' => '搜索直播间添加录制',
+			'recorder.searchHint' => '搜索任务与直播间',
 			'recorder.addTitle' => '添加录制',
 			'recorder.addBodyLive' => ({required String title}) => '「${title}」正在直播，立即开始录制？',
 			'recorder.addBodyOffline' => ({required String title}) => '「${title}」未开播，加入等待列表，开播后自动开始录制？',
@@ -15589,11 +15601,11 @@ extension on Translations {
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
 			'settings.proxySystemRecheck' => '重新检测系统代理',
@@ -16103,11 +16115,11 @@ extension on Translations {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => '低延迟',
 			'settings.playerGuideEntryPresetLowLatencyBody' => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryInterpolationBody' => '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。',
 			'settings.playerGuideEntryScaleTitle' => '--scale',
 			'settings.playerGuideEntryScaleBody' => '画面放大算法。lanczos 均衡推荐；ewa_lanczossharp 最锐利；ewa_lanczos4sharpest 专为插帧设计；bilinear/nearest 最快但糊或块状。移动端只提供 lanczos 与 bilinear。',
@@ -16617,11 +16629,11 @@ extension on Translations {
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
 			'settings.danmakuShowGifts' => '显示礼物',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
 			'settings.floatWindowLarge' => '大',
@@ -17131,11 +17143,11 @@ extension on Translations {
 			'vod.downloadingUnknown' => '下载中…',
 			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
 			'vod.downloadFailed' => '下载失败',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadCancel' => '取消下载',
 			'vod.downloadPause' => '暂停下载',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadQueued' => '已加入下载队列',
 			'vod.downloadDuplicate' => '该分P已在下载队列',
 			'vod.downloadManagerHint' => '队列按设置的并行数同时下载；地址过期时自动换新地址，从已下载的字节续传。下载完成后到侧边栏的「下载管理」预览、播放或打开所在文件夹。',
