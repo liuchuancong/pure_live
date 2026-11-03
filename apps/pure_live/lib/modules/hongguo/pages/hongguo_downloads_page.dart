@@ -1102,7 +1102,7 @@ List<_HongguoDownloadGroup> _hongguoDownloadGroups(Iterable<HongguoDownloadItem>
 }
 
 /// The line over one drama's episodes: its poster where the queue has one, its
-/// name once for the block, the size of the drama the block belongs to, and the
+/// name once for the block, how many of the drama this block holds, and the
 /// verbs that act on the whole block. A thirty-episode take whose every action
 /// sits on the row is thirty taps, and a page that counts tasks for the whole
 /// queue and for none of its parts is a flat list wearing group headers.
@@ -1165,6 +1165,18 @@ final class _HongguoSeriesHead extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final phases = _phases();
+    // How far this block reaches into its drama, read three ways: a partial
+    // block counts itself against the whole (「12集/60集」), a whole block keeps
+    // its plain 全60集 — that block *is* the drama, no ratio to read — and a
+    // stored total left behind by a serial that grew since the first task was
+    // queued says only the bare count. A one-episode drama has nothing to be a
+    // part of, and says nothing at all.
+    final scale = switch ((group.tasks.length, group.parts)) {
+      (final _, final total) when total <= 1 => null,
+      (final held, final total) when held == total => t.hongguo.allEpisodesCount(count: total),
+      (final held, final total) when held < total => t.hongguo.downloadHeldOfTotal(held: held, total: total),
+      (final held, final _) => t.hongguo.episodesCount(count: held),
+    };
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
       child: Row(
@@ -1192,14 +1204,10 @@ final class _HongguoSeriesHead extends ConsumerWidget {
               style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
             ),
           ),
-          // The drama's own scale, not the queue's: how many episodes sit here
-          // is the rows under this line, and the page's head already counts the
-          // whole queue. A one-episode take has nothing to be a part of.
-          if (group.parts > 1)
-            Text(
-              t.hongguo.allEpisodesCount(count: group.parts),
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
+          // The block's own reach into its drama, decided above: a head that
+          // names only the drama's scale makes two blocks of one drama look
+          // identical.
+          if (scale case final text?) Text(text, style: theme.typography.caption.copyWith(color: colors.textMuted)),
           // One episode in the block is the row's own business; a verb with a
           // single object does not need a second place to be pressed, and a
           // head that greyed out an inapplicable switch would only say so

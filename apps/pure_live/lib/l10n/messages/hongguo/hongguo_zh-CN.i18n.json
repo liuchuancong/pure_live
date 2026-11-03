@@ -221,6 +221,7 @@
   "downloadDirectoryDefault": "恢复默认目录",
   "downloadDirectoryDefaultDesc": "回到应用默认的视频目录。",
   "downloadTaskCount": "{count: int} 个任务 · {active: int} 个进行中",
+  "downloadHeldOfTotal": "{held}集/{total}集",
   "downloadRetry": "自动重试",
   "downloadRetryDesc": "失败的下载在后台自动再试，已经下到的字节会接着用。",
   "downloadRetryOff": "不重试",

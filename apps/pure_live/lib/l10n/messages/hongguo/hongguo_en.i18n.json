@@ -221,6 +221,7 @@
   "downloadDirectoryDefault": "Restore default folder",
   "downloadDirectoryDefaultDesc": "Back to the app's default Videos folder.",
   "downloadTaskCount": "{count: int} tasks · {active: int} active",
+  "downloadHeldOfTotal": "{held}/{total} eps",
   "downloadRetry": "Retry automatically",
   "downloadRetryDesc": "A failed download tries again in the background, carrying on from the bytes already written.",
   "downloadRetryOff": "No retry",

@@ -808,6 +808,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloadDirectoryDefault => 'Restore default folder';
 	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
 	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
+	@override String downloadHeldOfTotal({required Object held, required Object total}) => '${held}/${total} eps';
 	@override String get downloadRetry => 'Retry automatically';
 	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
 	@override String get downloadRetryOff => 'No retry';
@@ -5356,6 +5357,7 @@ extension on TranslationsEn {
 			'hongguo.downloadDirectoryDefault' => 'Restore default folder',
 			'hongguo.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
 			'hongguo.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
+			'hongguo.downloadHeldOfTotal' => ({required Object held, required Object total}) => '${held}/${total} eps',
 			'hongguo.downloadRetry' => 'Retry automatically',
 			'hongguo.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
 			'hongguo.downloadRetryOff' => 'No retry',
@@ -5561,9 +5563,9 @@ extension on TranslationsEn {
 			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			'iptv.browseReset' => 'Reset to defaults',
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
-			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'iptv.recentTitle' => 'Recently watched',
 			'iptv.recentCount' => ({required Object count}) => '${count} channels',
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
@@ -6075,9 +6077,9 @@ extension on TranslationsEn {
 			'music.desktopLyricColorGray' => 'Gray',
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
-			'music.desktopLyricAlignLeft' => 'Left',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricAlignLeft' => 'Left',
 			'music.desktopLyricAlignCenter' => 'Center',
 			'music.desktopLyricAlignRight' => 'Right',
 			'music.desktopLyricColorWhite' => 'White',
@@ -6589,9 +6591,9 @@ extension on TranslationsEn {
 			'recorder.enablePolling' => 'Enable live detection',
 			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
-			'recorder.pollingEnable' => 'Turn on',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.pollingEnable' => 'Turn on',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
 			'recorder.cacheLimitEnabledDesc' => 'Delete the oldest finished takes when the cap is exceeded; active recordings are never deleted.',
@@ -7103,9 +7105,9 @@ extension on TranslationsEn {
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
-			'settings.proxySystemProbing' => 'Checking the system proxy…',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxySystemProbing' => 'Checking the system proxy…',
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
@@ -7617,9 +7619,9 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => 'Weak-network stable',
 			'settings.playerGuideEntryPresetWeakNetworkBody' => 'Bigger buffers and reconnect backoff. Trades memory for fewer stalls.',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => 'Low latency',
-			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => 'How audio and video clocks align. audio is the mpv default; display-resample is smoothest but GPU heavy and pairs with interpolation; vdrop/drop variants drop frames on drift. Desktop only.',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
@@ -8131,9 +8133,9 @@ extension on TranslationsEn {
 			'settings.chatGiftValueInYuanDesc' => 'Converted at the platform rate; foreign currencies stay.',
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
-			'settings.danmakuShowGifts' => 'Show gifts',
 			_ => null,
 		} ?? switch (path) {
+			'settings.danmakuShowGifts' => 'Show gifts',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
@@ -8645,9 +8647,9 @@ extension on TranslationsEn {
 			'vod.downloading' => ({required int percent}) => 'Downloading ${percent}%',
 			'vod.downloadingUnknown' => 'Downloading…',
 			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
-			'vod.downloadFailed' => 'Download failed',
 			_ => null,
 		} ?? switch (path) {
+			'vod.downloadFailed' => 'Download failed',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
 			'vod.downloadPause' => 'Pause download',
