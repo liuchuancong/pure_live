@@ -45,7 +45,7 @@
 
 ## 队列（一轮一项，从上往下）
 
-- [ ] **N1 信息区密度**：`kHongguoSeriesCardInfoExtent` 82→56，标题 `maxLines` 2→1，内边距改 `fromLTRB(10, 4, 10, 8)`；`_FavoriteBookmark` 从标题行移进右上角（N3 前先留在行尾但不得撑高）；确认 `HongguoShelf`（`:994`）与 `PagedCardGrid`（`aspectRatio`/`listMainAxisExtent` `:690-705`、搜索 `:1737`）在新高度下不撑破、不错行。
+- [x] **N1 信息区密度**：`kHongguoSeriesCardInfoExtent` 82→56（直接取 `kRoomCardInfoExtent`），标题 `maxLines` 2→1 且用 `bodyStrong`，内边距 `fromLTRB(10, 4, 10, 8)`，信息区结构与直播 `_GridInfo` 同构（Row[Expanded(Column 居中：标题+元信息)]，书签在行末）；`_FavoriteBookmark` 30→28、图标 16→14，不再撑高。`HongguoShelf`（`:994`）与 `PagedCardGrid`（`:693`、`:1737`）的瓦片高都由 `kHongguoSeriesTileAspect` 决定，信息区变矮 26 全部还给封面，不会撑破或错行。
 - [ ] **N2 角标结构**：右上竖排 4 枚 → 横排一 Row（一枚状态 pill + 收藏按钮 28px ghost，样式抄 `room_card.dart:461-499`）；底部改 Row 两枚（左分类、右热度 `flame`+`numeric`/`playerInk`，抄 `:199-234`）；左上榜单旗标/来源标签收成 28 高、`0xB3000000`、圆角 8 的一枚（抄 `_PlatformMark` `:503-530`）。被挤掉的 `episodes`/`score` 由 `HongguoCardElement` 开关决定，默认关。
 - [ ] **N3 卡片包壳**：新建 `modules/hongguo/widgets/hongguo_card_menu.dart`（`HongguoCardMenu`），按裁决 5 实现；首页 shelf、找剧墙、搜索、收藏/历史/预约、详情相关推荐全部包上；历史/预约页用 `items` 追加自己的移除项（对应直播 `✕`）。
 - [ ] **N4 列表行同源**：`HongguoSeriesRow`、`HongguoRankRow`、`_SeriesList`、`_ProgressList` 与卡片共用同一套字段与措辞（`hongguoSeriesSubtitle`/`hongguoSeriesMetaLine` 不许再各写一遍），行高按 `kRoomCardListDesignHeight` 量规，密度与直播列表行一致。
@@ -77,3 +77,4 @@
 | 轮次 | 项 | 动作 | analyze | 提交 | 备注 |
 | --- | --- | --- | --- | --- | --- |
 | — | — | — | — | — | 台账建立，队列为空转起点 |
+| 1 | N1 | `hongguo_widgets.dart`：信息区 82→56（取 `kRoomCardInfoExtent`）、标题 1 行 `bodyStrong`、内边距 `fromLTRB(10,4,10,8)`、行末书签 30→28/图标 14 | `dart analyze apps/pure_live/lib` 0 issues | 本轮单个提交（`polish(hongguo)` 代码+本台账；hash 见 `git log -1`） | 封面比例 0.62 未动；`PagedCardGrid`/`HongguoShelf` 的瓦片高与封面高复核通过（高度来自 aspect，不来自信息区）。未做运行时验收，观感由用户自测。下一项 N2 角标结构。 |

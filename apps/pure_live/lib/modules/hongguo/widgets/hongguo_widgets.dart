@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
+import 'package:pure_live/features/settings/room/room_card_settings.dart' show kRoomCardInfoExtent;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
@@ -20,11 +21,12 @@ String hongguoDurationText(Duration duration) {
   return hours > 0 ? '$hours:$minutes:$seconds' : '${duration.inMinutes}:$seconds';
 }
 
-/// The information block under a poster card: room for a two-line title and
-/// the listing line. Held at a fixed height so a row of cards ends at the same
-/// line whatever its column width, and so a poster wall — whose tiles the grid
+/// The information block under a poster card: the name on one line and the
+/// listing line on the next, at the height the room card's information area
+/// keeps. Held at a fixed height so a row of cards ends at the same line
+/// whatever its column width, and so a poster wall — whose tiles the grid
 /// fixes — never pushes the two lines over the card's edge.
-const double kHongguoSeriesCardInfoExtent = 82;
+const double kHongguoSeriesCardInfoExtent = kRoomCardInfoExtent;
 
 /// The poster card's width over height: the one measure both of its homes use,
 /// the card grids' tiles and [HongguoShelf]'s row. The 3:4 cover is a preference
@@ -251,34 +253,36 @@ final class HongguoSeriesCard extends ConsumerWidget {
             SizedBox(
               height: kHongguoSeriesCardInfoExtent,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s6, DsSpace.s8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s4,
+                // The name sits close under the poster and the listing line
+                // under it, both on one line — the room card's information
+                // area, at its height.
+                padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+                child: Row(
+                  spacing: DsSpace.s8,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: DsSpace.s4,
-                      children: [
-                        Expanded(
-                          child: Text(
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s3,
+                        children: [
+                          Text(
                             series.title,
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
                           ),
-                        ),
-                        if (favoritable) _FavoriteBookmark(series: series),
-                      ],
-                    ),
-                    if (metaLine.isNotEmpty)
-                      Text(
-                        metaLine,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          if (metaLine.isNotEmpty)
+                            Text(
+                              metaLine,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                            ),
+                        ],
                       ),
+                    ),
+                    if (favoritable) _FavoriteBookmark(series: series),
                   ],
                 ),
               ),
@@ -525,16 +529,16 @@ final class _FavoriteBookmark extends ConsumerWidget {
           showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
         },
         builder: (context, states, _) => Container(
-          width: 30,
-          height: 30,
+          width: 28,
+          height: 28,
           alignment: Alignment.center,
           decoration: DsBoxDecoration(
             color: (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)) ? colors.hover : null,
-            borderRadius: BorderRadius.circular(theme.radii.control(30)),
+            borderRadius: BorderRadius.circular(theme.radii.control(28)),
           ),
           child: DsIcon(
             favored ? DsIcons.bookmarkCheck : DsIcons.bookmark,
-            size: 16,
+            size: 14,
             color: favored ? colors.accentText : colors.textMuted,
           ),
         ),
