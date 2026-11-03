@@ -210,6 +210,21 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
         icon: const DsIcon(DsIcons.ellipsisVertical),
       ),
     );
+    // The catalogue's reload: the shown platform's areas, asked again — the
+    // popular page's head button, this page's own.
+    final inPlatformView = _view == _AreasView.platform;
+    // The followed view keeps its own empty/loading shapes, so only the
+    // platform view's catalogue load greys this button.
+    final loadingCatalog =
+        inPlatformView && ref.watch(areasCatalogProvider.select((catalog) => catalog[platform]?.loading ?? false));
+    void refreshCatalog() => unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
+    final refreshButton = DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.sm,
+      semanticLabel: t.common.refresh,
+      onPressed: loadingCatalog ? null : refreshCatalog,
+      icon: const DsIcon(DsIcons.refreshCw, size: 16),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -228,6 +243,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                     children: [
                       views,
                       if (tabs != null) Expanded(child: tabs) else const Spacer(),
+                      if (inPlatformView) refreshButton,
                       layoutSwitch,
                     ],
                   ),
@@ -241,6 +257,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                   spacing: DsSpace.s8,
                   children: [
                     Expanded(child: platformTabs(withWall: false) ?? _viewLabel(context)),
+                    if (inPlatformView) refreshButton,
                     moreMenu,
                   ],
                 ),
