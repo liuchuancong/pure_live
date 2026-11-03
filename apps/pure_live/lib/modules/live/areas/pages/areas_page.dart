@@ -131,13 +131,28 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     // name, or the row with the picture beside it. The areas page's own
     // pair of shapes, so the platform row adds no second layout switch.
     final tileLayout = ref.watch(areaLayoutProvider);
-    final layoutSwitch = DsSegmentedControl<AreaCardLayout>(
-      segments: [
-        DsSegment(value: AreaCardLayout.tile, icon: const DsIcon(DsIcons.layoutGrid), semanticLabel: t.areas.iconTop),
-        DsSegment(value: AreaCardLayout.row, icon: const DsIcon(DsIcons.layoutList), semanticLabel: t.areas.iconLeft),
-      ],
-      value: tileLayout,
-      onChanged: (layout) => unawaited(ref.read(areaLayoutProvider.notifier).set(layout)),
+    // The tile layout switch in the feed pages' own shape: 16px glyphs
+    // under a tooltip, the popular page's LayoutToggle look — the areas
+    // pair of layouts bound to the areas preference.
+    final layoutSwitch = DsTooltip(
+      message: t.common.layout,
+      child: DsSegmentedControl<AreaCardLayout>(
+        value: tileLayout,
+        onChanged: (layout) => unawaited(ref.read(areaLayoutProvider.notifier).set(layout)),
+        semanticLabel: t.common.layout,
+        segments: [
+          DsSegment(
+            value: AreaCardLayout.tile,
+            icon: const DsIcon(DsIcons.layoutGrid, size: 16),
+            semanticLabel: t.areas.iconTop,
+          ),
+          DsSegment(
+            value: AreaCardLayout.row,
+            icon: const DsIcon(DsIcons.layoutList, size: 16),
+            semanticLabel: t.areas.iconLeft,
+          ),
+        ],
+      ),
     );
     // The platform tabs; the wide row keeps the platform wall chevron at
     // their end, the narrow toolbar leaves it to the page's menu.
