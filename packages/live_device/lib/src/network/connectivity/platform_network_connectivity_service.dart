@@ -37,18 +37,26 @@ final class PlatformNetworkConnectivityService implements NetworkConnectivitySer
 
     events = StreamController<NetworkConnectivity>(
       onListen: () {
-        try {
-          nativeSubscription = _connectivity.onConnectivityChanged.listen(
-            (results) => events.add(NetworkConnectivity(interfaces: networkInterfacesFromResults(results))),
-            onError: (Object error, StackTrace stackTrace) {
-              events.addError(_normalizeError(error), stackTrace);
-            },
-            onDone: () => unawaited(events.close()),
-          );
-        } on Object catch (error, stackTrace) {
-          events.addError(_normalizeError(error), stackTrace);
-          unawaited(events.close());
-        }
+        // The plugin activates its event channel while the subscription is
+        // being made, and a failure there — Windows after a hot restart,
+        // where the previous run's listener is still registered — surfaces
+        // as an unhandled zone error rather than a stream error. The guarded
+        // zone turns it into a stream error like any other; the last reading
+        // stands until the next explicit read.
+        runZonedGuarded(
+          () {
+            nativeSubscription = _connectivity.onConnectivityChanged.listen(
+              (results) => events.add(NetworkConnectivity(interfaces: networkInterfacesFromResults(results))),
+              onError: (Object error, StackTrace stackTrace) {
+                events.addError(_normalizeError(error), stackTrace);
+              },
+              onDone: () => unawaited(events.close()),
+            );
+          },
+          (error, stackTrace) {
+            events.addError(_normalizeError(error), stackTrace);
+          },
+        );
       },
       onCancel: () async {
         final subscription = nativeSubscription;
