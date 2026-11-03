@@ -75,6 +75,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   danmakuHoldProvider,
   danmakuRepeatProvider,
   chatNamesProvider,
+  chatAvatarsProvider,
   chatShowGiftsProvider,
   chatGiftsAboveTierProvider,
   chatGiftValueInYuanProvider,

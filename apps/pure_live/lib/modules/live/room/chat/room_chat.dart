@@ -193,7 +193,14 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
       itemCount: chat.length,
       itemBuilder: (context, index) {
         final message = chat[chat.length - 1 - index];
-        final line = _ChatLine(message: message, anchorName: anchorName);
+        // The line above is the older one: the list is reversed, so index + 1
+        // is the message the eye reads first, and the pair a run is judged on.
+        final above = index + 1 < chat.length ? chat[chat.length - 2 - index] : null;
+        final line = _ChatLine(
+          message: message,
+          anchorName: anchorName,
+          repeats: above != null && _continuesSpeaker(above, message),
+        );
         if (boundary == null || message.messageId != boundary) return line;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,16 +291,32 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
   }
 }
 
+/// Whether [message] is the same speaker's next plain line after [above] — the
+/// run a chat column stops re-labelling. Anything paid, a notice or a membership
+/// card is not a `chat` line, so the run's own type test already breaks on them
+/// — and so does another sender, because the line that follows has to say what
+/// it is again.
+bool _continuesSpeaker(LiveMessage above, LiveMessage message) {
+  if (message.type != LiveMessageType.chat || above.type != LiveMessageType.chat) return false;
+  final name = message.sender?.userName.trim() ?? '';
+  return name.isNotEmpty && name == above.sender?.userName.trim();
+}
+
 /// One chat line: the sender and the text, the platform's own colour when
 /// it gave one. Its context menu copies the line, blocks the sender, or
 /// blocks a keyword to cut out of the line.
 final class _ChatLine extends ConsumerWidget {
-  const _ChatLine({required this.message, this.anchorName = ''});
+  const _ChatLine({required this.message, this.anchorName = '', this.repeats = false});
 
   final LiveMessage message;
 
   /// The room's streamer: a gift names its receiver only when it differs.
   final String anchorName;
+
+  /// Whether the line above is the same speaker's own talk. A run of messages
+  /// from one person says who it is once: the second line keeps the column's
+  /// indent and drops the face, the badges and the name.
+  final bool repeats;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -304,6 +327,7 @@ final class _ChatLine extends ConsumerWidget {
     var nameStyle = theme.typography.caption;
     final senderName = sender?.userName.trim() ?? '';
     final showNames = ref.watch(chatNamesProvider);
+    final showAvatars = ref.watch(chatAvatarsProvider);
     final fontSize = ref.watch(chatListFontSizeProvider);
     final lineSpacing = ref.watch(chatListLineSpacingProvider);
     final height = switch (lineSpacing) {
@@ -327,20 +351,38 @@ final class _ChatLine extends ConsumerWidget {
     // lands on who is talking before it reads what was said. The ink is the
     // name's own, never the words': most platforms send white, and white
     // names vanish on a pale panel.
+    //
+    // Who speaks is said before what is said: the streamer and the staff wear
+    // the room's own two inks — the same accent and green the role chips carry —
+    // so a moderator's line reads apart in a column of hundreds without the
+    // chip being needed. Everyone else keeps the colour the platform sent.
+    final roleInk = switch (sender?.role) {
+      LiveAnchorRole.anchor => colors.accent,
+      LiveAnchorRole.moderator => colors.success.text,
+      LiveAnchorRole.platform => colors.info.text,
+      _ => null,
+    };
     nameStyle = theme.typography.caption.copyWith(
       fontSize: fontSize > 0 ? fontSize.toDouble() : null,
       height: height,
       fontWeight: FontWeight.w600,
-      color: _senderNameInk(
-        sender: sender,
-        messageColor: message.color,
-        background: colors.surface,
-        fallback: colors.textMuted,
-      ),
+      color:
+          roleInk ??
+          _senderNameInk(
+            sender: sender,
+            messageColor: message.color,
+            background: colors.surface,
+            fallback: colors.textMuted,
+          ),
     );
     // The line's own pixel size, followed from the theme when the viewer
     // hasn't picked one; an emoticon rides a touch larger than its words.
     final fontPx = fontSize > 0 ? fontSize.toDouble() : (theme.typography.caption.fontSize ?? 13);
+    // The face rides the line's own size: a fixed disc beside a 12px line reads
+    // as a plate bolted on, and one that follows the viewer's chat size keeps the
+    // column's left edge in proportion with the rest of it.
+    final avatarSize = (fontPx * 1.55).clamp(18.0, 26.0);
+    final avatarUrl = (sender?.avatarUrl ?? '').trim();
     final gift = _giftOf(message);
     final superChat = message.type == LiveMessageType.superChat && message.payload is LiveSuperChatMessage
         ? message.payload! as LiveSuperChatMessage
@@ -374,6 +416,7 @@ final class _ChatLine extends ConsumerWidget {
     final showBadges =
         showNames &&
         !isSystem &&
+        !repeats &&
         (badgeUrls.isNotEmpty || roleTag != null || fanBadgeName.isNotEmpty || userLevel.isNotEmpty);
     // One height for every tag on the line, tied to the viewer's own chat size:
     // tags of three different heights are what made the column look broken.
@@ -435,6 +478,27 @@ final class _ChatLine extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The face leads, then the money, then the words: a column of text
+          // only is what made the list read as a log. A sender the platform
+          // sent no picture for keeps the disc with their initial on it, so
+          // every line still starts at the same edge.
+          if (showAvatars && senderName.isNotEmpty && repeats)
+            // The run keeps its indent: the words of a repeated line start
+            // under the first one's, not under the face above.
+            SizedBox(width: avatarSize + DsSpace.s6)
+          else if (showAvatars && senderName.isNotEmpty)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(top: 1, end: DsSpace.s6),
+              child: DsAvatar(
+                image: avatarUrl.isEmpty
+                    ? null
+                    : cachedImage(avatarUrl, width: (avatarSize * 2).round(), height: (avatarSize * 2).round()),
+                initials: _avatarInitials(senderName),
+                toneIndex: _nameTone(senderName),
+                semanticLabel: senderName,
+                style: DsAvatarStyle(diameter: avatarSize),
+              ),
+            ),
           if (gift != null)
             Padding(
               padding: const EdgeInsetsDirectional.only(top: 1, end: DsSpace.s6),
@@ -532,7 +596,7 @@ final class _ChatLine extends ConsumerWidget {
                         ),
                       ),
                   ],
-                  if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
+                  if (showNames && senderName.isNotEmpty && !repeats) TextSpan(text: '$senderName: ', style: nameStyle),
                   // The words with the platform's own emoticons in them, cut
                   // out of the flying layer's catalogue and drawn as itself.
                   ..._wordSpans(words, lineStyle, fontPx * 1.2),
@@ -678,6 +742,27 @@ Color _senderNameInk({
   if (_nameInks[key] case final known?) return known;
   if (_nameInks.length >= 512) _nameInks.clear();
   return _nameInks[key] = _readableNameInk(color, ground);
+}
+
+/// What a sender with no picture wears on the disc: one ideograph, or the two
+/// leading letters of a latin name. More than that does not fit a 20-pixel
+/// circle and reads as noise at chat's own speed.
+String _avatarInitials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '';
+  final first = trimmed.runes.first;
+  final latin = (first >= 0x41 && first <= 0x5a) || (first >= 0x61 && first <= 0x7a);
+  return latin ? trimmed.characters.take(2).toString().toUpperCase() : trimmed.characters.first;
+}
+
+/// One of the avatar tones, picked from the name so the same speaker keeps the
+/// same disc colour down the column.
+int _nameTone(String name) {
+  var sum = 0;
+  for (final unit in name.codeUnits) {
+    sum += unit;
+  }
+  return sum % 8;
 }
 
 /// [color] kept as it is when it clears 4.5:1 on [background], else moved

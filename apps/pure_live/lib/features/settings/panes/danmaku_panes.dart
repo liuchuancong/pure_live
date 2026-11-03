@@ -9,6 +9,7 @@ import 'package:media_core_danmaku/media_core_danmaku.dart'
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
     show
+        chatAvatarsProvider,
         chatGiftValueInYuanProvider,
         chatGiftsAboveTierProvider,
         chatListFontSizeProvider,
@@ -951,6 +952,15 @@ final class DanmakuDisplayPane extends ConsumerWidget {
               control: DsSwitch(
                 value: ref.watch(chatNamesProvider),
                 onChanged: (value) => unawaited(ref.read(chatNamesProvider.notifier).set(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.circleUser),
+              title: t.settings.chatShowAvatars,
+              description: t.settings.chatShowAvatarsDesc,
+              control: DsSwitch(
+                value: ref.watch(chatAvatarsProvider),
+                onChanged: (value) => unawaited(ref.read(chatAvatarsProvider.notifier).set(value: value)),
               ),
             ),
             SettingsConfigRow(

@@ -1187,6 +1187,8 @@
   "storageFolderPermissionHint": "The chosen folder is not writable. Grant storage access, or use the default folder.",
   "chatShowNames": "Show names",
   "chatShowNamesDesc": "Off shows the message only.",
+  "chatShowAvatars": "Show avatars",
+  "chatShowAvatarsDesc": "A sender with no picture wears their initial instead.",
   "chatListFontSize": "Text size",
   "chatListFontSizeDesc": "Follow theme keeps it in step.",
   "chatListFollowTheme": "Follow theme",

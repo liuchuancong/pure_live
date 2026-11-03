@@ -223,6 +223,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.pip.autoScale', BackupPrefKind.boolean),
   ('danmaku.pip.scale', BackupPrefKind.floating),
   ('danmaku.chatNames', BackupPrefKind.boolean),
+  ('danmaku.chatAvatars', BackupPrefKind.boolean),
   ('danmaku.showChatGifts', BackupPrefKind.boolean),
   ('danmaku.chatGiftsAboveTier', BackupPrefKind.boolean),
   ('danmaku.giftValueInYuan', BackupPrefKind.boolean),

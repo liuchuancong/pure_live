@@ -3633,6 +3633,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFolderPermissionHint => 'The chosen folder is not writable. Grant storage access, or use the default folder.';
 	@override String get chatShowNames => 'Show names';
 	@override String get chatShowNamesDesc => 'Off shows the message only.';
+	@override String get chatShowAvatars => 'Show avatars';
+	@override String get chatShowAvatarsDesc => 'A sender with no picture wears their initial instead.';
 	@override String get chatListFontSize => 'Text size';
 	@override String get chatListFontSizeDesc => 'Follow theme keeps it in step.';
 	@override String get chatListFollowTheme => 'Follow theme';
@@ -8124,6 +8126,8 @@ extension on TranslationsEn {
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
+			'settings.chatShowAvatars' => 'Show avatars',
+			'settings.chatShowAvatarsDesc' => 'A sender with no picture wears their initial instead.',
 			'settings.chatListFontSize' => 'Text size',
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
 			'settings.chatListFollowTheme' => 'Follow theme',
@@ -8153,10 +8157,10 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_th' => 'Thai',
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
-			'settings.twitchLanguage_tr' => 'Turkish',
-			'settings.twitchLanguage_pl' => 'Polish',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_tr' => 'Turkish',
+			'settings.twitchLanguage_pl' => 'Polish',
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
@@ -8667,10 +8671,10 @@ extension on TranslationsEn {
 			'vod.comments' => 'Comments',
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
-			'vod.commentsEmpty' => 'No comments yet.',
-			'vod.commentsFailed' => 'The comments did not load',
 			_ => null,
 		} ?? switch (path) {
+			'vod.commentsEmpty' => 'No comments yet.',
+			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',

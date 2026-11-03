@@ -33,6 +33,37 @@ final class ChatNamesController extends Notifier<bool> {
 /// The room chat's sender-name switch.
 final chatNamesProvider = NotifierProvider<ChatNamesController, bool>(ChatNamesController.new);
 
+/// Whether each chat line leads with its sender's face (the reference's
+/// `showChatAvatars`). Platforms differ in what they send: a line whose
+/// sender has no picture falls back to the initial disc rather than leaving
+/// a hole, so the column keeps one left edge either way.
+const String kChatAvatarsKey = 'danmaku.chatAvatars';
+
+/// Owns the avatar switch.
+final class ChatAvatarsController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(kChatAvatarsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  /// Shows or hides the sender faces and writes through.
+  Future<void> set({required bool value}) async {
+    state = value;
+    try {
+      await StoragePrefs.setBool(kChatAvatarsKey, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The room chat's sender-avatar switch.
+final chatAvatarsProvider = NotifierProvider<ChatAvatarsController, bool>(ChatAvatarsController.new);
+
 /// The room chat's font size; 0 follows the theme.
 const String kChatListFontSizeKey = 'danmaku.list.fontSize';
 

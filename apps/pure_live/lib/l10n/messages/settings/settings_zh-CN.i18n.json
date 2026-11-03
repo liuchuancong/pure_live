@@ -1187,6 +1187,8 @@
   "storageFolderPermissionHint": "所选目录无法写入：请授予存储权限，或改用默认目录。",
   "chatShowNames": "显示用户名",
   "chatShowNamesDesc": "关闭后只显示内容。",
+  "chatShowAvatars": "显示头像",
+  "chatShowAvatarsDesc": "平台没给头像时用名字首字占位。",
   "chatListFontSize": "文字大小",
   "chatListFontSizeDesc": "跟随主题时与界面一致。",
   "chatListFollowTheme": "跟随主题",

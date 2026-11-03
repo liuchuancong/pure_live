@@ -10471,6 +10471,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭后只显示内容。'
 	String get chatShowNamesDesc => '关闭后只显示内容。';
 
+	/// zh-CN: '显示头像'
+	String get chatShowAvatars => '显示头像';
+
+	/// zh-CN: '平台没给头像时用名字首字占位。'
+	String get chatShowAvatarsDesc => '平台没给头像时用名字首字占位。';
+
 	/// zh-CN: '文字大小'
 	String get chatListFontSize => '文字大小';
 
@@ -16667,6 +16673,8 @@ extension on Translations {
 			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
+			'settings.chatShowAvatars' => '显示头像',
+			'settings.chatShowAvatarsDesc' => '平台没给头像时用名字首字占位。',
 			'settings.chatListFontSize' => '文字大小',
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
@@ -16696,10 +16704,10 @@ extension on Translations {
 			'settings.twitchLanguage_th' => '泰语',
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
-			'settings.twitchLanguage_tr' => '土耳其语',
-			'settings.twitchLanguage_pl' => '波兰语',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_tr' => '土耳其语',
+			'settings.twitchLanguage_pl' => '波兰语',
 			'settings.holdDanmakuOnPress' => '按住冻结',
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
@@ -17210,10 +17218,10 @@ extension on Translations {
 			'vod.comments' => '评论',
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',
-			'vod.commentsEmpty' => '还没有评论。',
-			'vod.commentsFailed' => '评论没有加载出来',
 			_ => null,
 		} ?? switch (path) {
+			'vod.commentsEmpty' => '还没有评论。',
+			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
