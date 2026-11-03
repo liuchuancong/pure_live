@@ -77,17 +77,11 @@ enum _RecorderFilter {
 }
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
-  final TextEditingController _search = TextEditingController();
-
   /// The centre's own page: the tasks being managed, or the files they
   /// produced. Two businesses, two pages (the spec's rule: a task is not a
   /// file and a file list is not a task history tab) — the centre carries
   /// both, under the top switch.
   _CenterTab _tab = _CenterTab.tasks;
-
-  /// The toolbar's word: it narrows the task rows in place, like the
-  /// download manager's list — title, streamer, room id or platform name.
-  String _query = '';
 
   _RecorderFilter _filter = _RecorderFilter.all;
 
@@ -182,12 +176,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 
   @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -243,26 +231,10 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
     final wide = MediaQuery.sizeOf(context).width >= 720;
-    final searched = _query.trim().toLowerCase();
-    bool searchedIn(RecordingTask task) {
-      if (searched.isEmpty) return true;
-      if (task.roomTitle.toLowerCase().contains(searched)) return true;
-      if (task.roomId.toLowerCase().contains(searched)) return true;
-      if (task.platform.toLowerCase().contains(searched)) return true;
-      final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
-      return room?.anchor?.name.toLowerCase().contains(searched) ?? false;
-    }
-
     final attention = [
       for (final task in listed)
-        if (_filter.matches(task) && searchedIn(task)) task,
+        if (_filter.matches(task)) task,
     ];
-    final searchField = DsSearchField(
-      controller: _search,
-      placeholder: t.recorder.searchHint,
-      semanticLabel: t.recorder.searchHint,
-      onChanged: (value) => setState(() => _query = value),
-    );
     final statusFilter = DsSegmentedControl<_RecorderFilter>(
       value: _filter,
       semanticLabel: t.recorder.filterLabel,
@@ -335,7 +307,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               inset: inset,
               narrow: narrow,
               wide: wide,
-              searchField: searchField,
               statusFilter: statusFilter,
               attention: attention,
               onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
@@ -367,7 +338,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required double inset,
     required bool narrow,
     required bool wide,
-    required Widget searchField,
     required Widget statusFilter,
     required List<RecordingTask> attention,
     required VoidCallback? onStopAll,
@@ -383,31 +353,16 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-          // The states with their counts lead, the search follows, the
-          // whole-list actions end; the settings live in the page's head.
-          child: narrow
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: DsSpace.s8,
-                  children: [
-                    Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        Expanded(child: statusFilter),
-                        _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
-                      ],
-                    ),
-                    searchField,
-                  ],
-                )
-              : Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    statusFilter,
-                    Expanded(child: searchField),
-                    _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
-                  ],
-                ),
+          // The states with their counts lead, the whole-list actions end.
+          // Adding a task is the shell's own search above — it opens the
+          // room picker — so the toolbar carries no second field.
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(child: statusFilter),
+              _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
+            ],
+          ),
         ),
         // With the live check off nothing begins a take on its own, so the
         // banner covers the scheduled rows too: a stopped task whose window
