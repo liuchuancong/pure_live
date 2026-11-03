@@ -58,6 +58,13 @@ import 'package:pure_live/modules/music/controller/sources/music_source_cache.da
     show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
 
+/// The speeds the player offers — the same ladder its own menu walks.
+const List<double> _kPlaybackRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+/// A rate as the player spells it: whole numbers without decimals, so 1 reads
+/// `1x` and 1.25 reads `1.25x`.
+String _playbackRateLabel(double rate) => '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 2)}x';
+
 /// Which half of the module's own settings page is showing: what a song is
 /// asked for and how the list behaves, or the sound's own equaliser.
 enum MusicSettingsTab { playback, effects }
@@ -149,6 +156,29 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
                 for (final quality in MusicQuality.values) DsSelectOption(value: quality, label: quality.label(t)),
               ],
               onChanged: (quality) => unawaited(controller.setQuality(quality)),
+            ),
+            // The two the engine is driven by but this page never showed: the
+            // player's own menu sets the rate and persists it, and the pitch
+            // compensation is what that rate does to the song's key. Both are
+            // restored before a queue loads, so the choice outlives the run.
+            SettingsChoiceRow<double>(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.music.playbackRate,
+              value: settings.playbackRate,
+              options: [
+                for (final rate in _kPlaybackRates) DsSelectOption(value: rate, label: _playbackRateLabel(rate)),
+                if (!_kPlaybackRates.contains(settings.playbackRate))
+                  DsSelectOption(value: settings.playbackRate, label: _playbackRateLabel(settings.playbackRate)),
+              ],
+              onChanged: (rate) => unawaited(controller.setPlaybackRate(rate)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.music),
+              title: t.music.preservesPitch,
+              control: DsSwitch(
+                value: settings.preservesPitch,
+                onChanged: (value) => unawaited(controller.setPreservesPitch(value: value)),
+              ),
             ),
             Builder(
               builder: (context) {
