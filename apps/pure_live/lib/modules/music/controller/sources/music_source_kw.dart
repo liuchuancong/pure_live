@@ -622,7 +622,8 @@ final class KwMusicSource extends LxPlatformSource
       if (name.isEmpty) return null;
       final avatar = '${json['hts_pic'] ?? json['pic'] ?? ''}'.trim();
       return (name: name, avatar: avatar.isEmpty ? null : Uri.tryParse(avatar));
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kw artist profile', error, stackTrace);
       return null;
     }
   }
@@ -701,8 +702,9 @@ final class KwMusicSource extends LxPlatformSource
     if (source == '4' || source == '5') {
       try {
         info = source == '4' ? await _bodianListInfo(listId, reqId) : await _bodianUserInfo(uid ?? listId, reqId);
-      } on Object {
+      } on Object catch (error, stackTrace) {
         // The reference keeps the list even when the info page fails.
+        noteMusicSourceSilence('kw playlist info page', error, stackTrace);
       }
     }
     final rows = <Map<String, Object?>>[];
@@ -993,7 +995,8 @@ final class KwMusicSource extends LxPlatformSource
       });
       final body = (await getText(uri)).trim();
       return body.startsWith('http') ? body : null;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kw fallback url', error, stackTrace);
       return null;
     }
   }

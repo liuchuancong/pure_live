@@ -280,7 +280,8 @@ final class TxMusicSource extends LxPlatformSource
         for (final match in RegExp(r'data-id="(\w+)">(.+?)</a>').allMatches(html))
           if (match[2] != null && match[2]!.trim().isNotEmpty) match[2]!.trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('tx hotTags', error, stackTrace);
       return const <String>[];
     }
   }
@@ -813,7 +814,8 @@ final class TxMusicSource extends LxPlatformSource
           if (entry is Map && entry['query'] is String && (entry['query'] as String).trim().isNotEmpty)
             (entry['query'] as String).trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('tx hotSearches', error, stackTrace);
       return const [];
     }
   }
@@ -1012,7 +1014,8 @@ final class TxMusicSource extends LxPlatformSource
         for (final entry in itemlist)
           if (entry is Map && entry['name'] is String) '${entry['name']} - ${entry['singer'] ?? ''}'.trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('tx suggestions', error, stackTrace);
       return const [];
     }
   }

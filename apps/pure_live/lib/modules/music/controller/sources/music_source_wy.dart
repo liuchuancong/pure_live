@@ -508,7 +508,8 @@ final class WyMusicSource extends LxPlatformSource
           if (entry is Map && entry['searchWord'] is String && (entry['searchWord'] as String).trim().isNotEmpty)
             (entry['searchWord'] as String).trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('wy hotSearches', error, stackTrace);
       return const [];
     }
   }
@@ -526,7 +527,8 @@ final class WyMusicSource extends LxPlatformSource
         for (final song in songs)
           if (song is Map && song['name'] is String) '${song['name']} - ${_singersOf(song['artists'])}'.trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('wy suggestions', error, stackTrace);
       return const [];
     }
   }

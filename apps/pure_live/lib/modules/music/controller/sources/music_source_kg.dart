@@ -221,7 +221,8 @@ final class KgMusicSource extends LxPlatformSource
         }
       }
       return tags;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kg hotTags', error, stackTrace);
       return const <String>[];
     }
   }
@@ -968,7 +969,8 @@ final class KgMusicSource extends LxPlatformSource
         }
       }
       return words;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kg hotSearches', error, stackTrace);
       return const [];
     }
   }
@@ -997,7 +999,8 @@ final class KgMusicSource extends LxPlatformSource
           if (entry is Map && entry['HintInfo'] is String)
             if ((entry['HintInfo'] as String).trim().isNotEmpty) (entry['HintInfo'] as String).trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('kg suggestions', error, stackTrace);
       return const [];
     }
   }

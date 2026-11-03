@@ -180,7 +180,8 @@ final class MgMusicSource extends LxPlatformSource
   Future<String> _lyricText(String url) async {
     try {
       return await getText(Uri.parse(url), headers: _lyricHeaders);
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('mg lyric text', error, stackTrace);
       return '';
     }
   }
@@ -235,7 +236,8 @@ final class MgMusicSource extends LxPlatformSource
             if (entry is Map && entry['texts'] is List && (entry['texts'] as List).length >= 2)
               '${(entry['texts'] as List)[1]}',
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('mg hotTags', error, stackTrace);
       return const <String>[];
     }
   }
@@ -445,8 +447,9 @@ final class MgMusicSource extends LxPlatformSource
           trackCount: opNum is Map ? (opNum['playNum'] as num?)?.toInt() ?? tracks.length : tracks.length,
         );
       }
-    } on Object {
+    } on Object catch (error, stackTrace) {
       // The tracks still stand without their cover sheet.
+      noteMusicSourceSilence('mg playlist cover', error, stackTrace);
     }
     return (info, tracks);
   }
@@ -688,7 +691,8 @@ final class MgMusicSource extends LxPlatformSource
           if (entry is Map && entry['resourceType'] == 'song' && entry['word'] is String)
             if ((entry['word'] as String).trim().isNotEmpty) (entry['word'] as String).trim(),
       ];
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('mg hotSearches', error, stackTrace);
       return const [];
     }
   }
@@ -718,7 +722,8 @@ final class MgMusicSource extends LxPlatformSource
         }
       }
       return tips;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      noteMusicSourceSilence('mg suggestions', error, stackTrace);
       return const [];
     }
   }
