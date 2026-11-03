@@ -244,37 +244,57 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                   );
                   Widget lead() => Row(
                     children: [
-                      DsPressable(
-                        semanticLabel: t.music.openPlayer,
-                        onPressed: () => unawaited(context.push(RouteNames.musicPlayer)),
-                        builder: (context, states, _) => MusicArtwork(track: track),
-                      ),
-                      const SizedBox(width: DsSpace.s8),
+                      // One pressable over the cover and its two lines. They
+                      // were two doors side by side opening the same page, and
+                      // neither answered the pointer — DsPressable draws no
+                      // feedback of its own, so the tint here is the same one
+                      // every other pressable in the app paints.
                       Expanded(
                         child: DsPressable(
                           semanticLabel: t.music.openPlayer,
                           onPressed: () => unawaited(context.push(RouteNames.musicPlayer)),
-                          builder: (context, states, _) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: DsSpace.s3,
-                            children: [
-                              Text(
-                                track.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+                          builder: (context, states, _) {
+                            final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed);
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: lit ? colors.hover : null,
+                                borderRadius: BorderRadius.circular(theme.radii.control(44)),
                               ),
-                              // Who sang it and off which record — the same
-                              // line the list rows above the bar use. A song
-                              // with neither says where it is, not nothing.
-                              Text(
-                                musicTrackCredits(track) ?? t.music.nowPlaying,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                              child: Row(
+                                children: [
+                                  MusicArtwork(track: track),
+                                  const SizedBox(width: DsSpace.s8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      spacing: DsSpace.s3,
+                                      children: [
+                                        Text(
+                                          track.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.body.copyWith(
+                                            color: colors.text,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        // Who sang it and off which record — the
+                                        // same line the list rows above the bar
+                                        // use. A song with neither says where it
+                                        // is, not nothing.
+                                        Text(
+                                          musicTrackCredits(track) ?? t.music.nowPlaying,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: DsSpace.s4),
