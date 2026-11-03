@@ -258,7 +258,27 @@ final class MgMusicSource extends LxPlatformSource
     final data = json['data'];
     if (data is! Map) return const MusicPlaylistPage(items: [], total: 0);
     final items = <MusicPlaylistInfo>[];
-    if (tag.isEmpty) {
+    final contents = data['contents'];
+    if (contents is List) {
+      // Both the recommend feed and the tag pages now nest their lists inside
+      // columns, so the same walk serves either; the feed used to answer a
+      // flat `contentItemList` instead, which is the branch below.
+      final rows = <Map<String, Object?>>[];
+      _collectPlaylists(contents, rows);
+      for (final row in rows) {
+        items.add(
+          MusicPlaylistInfo(
+            id: '${row['resId'] ?? ''}',
+            name: '${row['txt'] ?? ''}',
+            cover: '${row['img'] ?? ''}',
+            author: '',
+            trackCount: 0,
+          ),
+        );
+      }
+    } else {
+      // The tag pages answer this older, flat shape: two columns, the lists in
+      // the second one — the same branch the recommend feed falls back to.
       final columns = data['contentItemList'];
       final column = columns is List && columns.length >= 2 ? columns[1] : null;
       final raw = column is Map ? column['itemList'] : null;
@@ -278,20 +298,6 @@ final class MgMusicSource extends LxPlatformSource
             ),
           );
         }
-      }
-    } else {
-      final rows = <Map<String, Object?>>[];
-      _collectPlaylists(data['contents'], rows);
-      for (final row in rows) {
-        items.add(
-          MusicPlaylistInfo(
-            id: '${row['resId'] ?? ''}',
-            name: '${row['txt'] ?? ''}',
-            cover: '${row['img'] ?? ''}',
-            author: '',
-            trackCount: 0,
-          ),
-        );
       }
     }
     return MusicPlaylistPage(items: items, total: 0);
