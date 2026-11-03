@@ -1222,7 +1222,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get playbackReset => 'Restore defaults';
 	@override String get playbackResetDesc => 'Automatic source, 320K, skip failures, new songs at the end.';
 	@override String get sourcesSection => 'Custom sources';
-	@override String get sourcesHint => 'lx-music custom sources are JavaScript scripts run by the fjs (QuickJS) runtime; importing initializes them and hands play-URL resolution to them.';
 	@override String get sourcesImportText => 'Paste a script';
 	@override String get sourcesImportTextDesc => 'Paste the full text of an lx-music custom-source script.';
 	@override String get sourcesImportUrl => 'Import from a link';
@@ -1409,7 +1408,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadDuplicate => 'This song is already in the download queue';
 	@override String get downloadUnsupported => 'This song has no downloadable source (a local file, or not covered by the current source)';
 	@override String downloadFailed({required Object error}) => 'Download failed: ${error}';
-	@override String get downloadHint => 'Files land in the shared download folder; the queue supports pause, resume and retry.';
 	@override String get downloadDirectory => 'Download folder';
 	@override String get downloadBehaviour => 'Download behaviour';
 	@override String get downloadNaming => 'Files & naming';
@@ -1518,12 +1516,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get lyricDragSeek => 'Seek by dragging the lyrics';
 	@override String get lyricDragSeekDesc => 'Drag the lyric panel to pick a line; it returns to the song three seconds after you stop.';
 	@override String get lyricScrubPlay => 'Play from this line';
-	@override String get lyricHint => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.';
 	@override String get desktopLyrics => 'Desktop lyrics';
 	@override String get desktopLyricsOn => 'Desktop lyrics shown';
 	@override String get desktopLyricsOff => 'Desktop lyrics hidden';
 	@override String get desktopLyricsUnavailable => 'This platform has no desktop lyric window, or the permission was refused';
-	@override String get desktopLyricHint => 'Desktop lyrics are a floating window you can drag, lock and control; Android needs the overlay permission.';
 	@override String get desktopLyricPreviewHint => 'A sample of how the overlay will look.';
 	@override String get desktopLyricEnableDesc => 'Float the current lyric over the desktop; turning it off keeps the style below.';
 	@override String get desktopLyricLock => 'Lock the lyrics';
@@ -1776,7 +1772,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncModeOverwriteLocalRemoteFull => 'Local only';
 	@override String get syncModeOverwriteRemoteLocalFull => 'Remote only';
 	@override String get catalogSection => 'Built-in sources';
-	@override String get catalogHint => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script over the GitHub-acceleration setting.';
 	@override String get catalogImport => 'Import';
 	@override String get catalogImported => 'Imported';
 	@override String get catalogFetchFailed => 'Downloading the source script failed: every mirror was unreachable';
@@ -5770,7 +5765,6 @@ extension on TranslationsEn {
 			'music.playbackReset' => 'Restore defaults',
 			'music.playbackResetDesc' => 'Automatic source, 320K, skip failures, new songs at the end.',
 			'music.sourcesSection' => 'Custom sources',
-			'music.sourcesHint' => 'lx-music custom sources are JavaScript scripts run by the fjs (QuickJS) runtime; importing initializes them and hands play-URL resolution to them.',
 			'music.sourcesImportText' => 'Paste a script',
 			'music.sourcesImportTextDesc' => 'Paste the full text of an lx-music custom-source script.',
 			'music.sourcesImportUrl' => 'Import from a link',
@@ -5957,7 +5951,6 @@ extension on TranslationsEn {
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
 			'music.downloadFailed' => ({required Object error}) => 'Download failed: ${error}',
-			'music.downloadHint' => 'Files land in the shared download folder; the queue supports pause, resume and retry.',
 			'music.downloadDirectory' => 'Download folder',
 			'music.downloadBehaviour' => 'Download behaviour',
 			'music.downloadNaming' => 'Files & naming',
@@ -6066,12 +6059,10 @@ extension on TranslationsEn {
 			'music.lyricDragSeek' => 'Seek by dragging the lyrics',
 			'music.lyricDragSeekDesc' => 'Drag the lyric panel to pick a line; it returns to the song three seconds after you stop.',
 			'music.lyricScrubPlay' => 'Play from this line',
-			'music.lyricHint' => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.',
 			'music.desktopLyrics' => 'Desktop lyrics',
 			'music.desktopLyricsOn' => 'Desktop lyrics shown',
 			'music.desktopLyricsOff' => 'Desktop lyrics hidden',
 			'music.desktopLyricsUnavailable' => 'This platform has no desktop lyric window, or the permission was refused',
-			'music.desktopLyricHint' => 'Desktop lyrics are a floating window you can drag, lock and control; Android needs the overlay permission.',
 			'music.desktopLyricPreviewHint' => 'A sample of how the overlay will look.',
 			'music.desktopLyricEnableDesc' => 'Float the current lyric over the desktop; turning it off keeps the style below.',
 			'music.desktopLyricLock' => 'Lock the lyrics',
@@ -6101,12 +6092,12 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
 			'music.desktopLyricAlignCenter' => 'Center',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignRight' => 'Right',
 			'music.desktopLyricColorWhite' => 'White',
 			'music.desktopLyricColorYellow' => 'Yellow',
@@ -6326,7 +6317,6 @@ extension on TranslationsEn {
 			'music.syncModeOverwriteLocalRemoteFull' => 'Local only',
 			'music.syncModeOverwriteRemoteLocalFull' => 'Remote only',
 			'music.catalogSection' => 'Built-in sources',
-			'music.catalogHint' => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script over the GitHub-acceleration setting.',
 			'music.catalogImport' => 'Import',
 			'music.catalogImported' => 'Imported',
 			'music.catalogFetchFailed' => 'Downloading the source script failed: every mirror was unreachable',
@@ -6615,13 +6605,13 @@ extension on TranslationsEn {
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
 			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
 			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
 			'recorder.transcodeBitrateTitle' => 'Transcode bitrate',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.transcodeBitrateDesc' => 'Target video bitrate; higher is clearer and larger.',
 			'recorder.playRecording' => 'Play recording',
 			'recorder.previewRecording' => 'Preview in built-in player',
@@ -7129,13 +7119,13 @@ extension on TranslationsEn {
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
 			'settings.navNetwork' => 'Network',
-			_ => null,
-		} ?? switch (path) {
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
 			'settings.proxyPort' => 'Port',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyPortDesc' => 'The port that proxy server listens on.',
 			'settings.proxyUsername' => 'Username',
 			'settings.proxyUsernameDesc' => 'Fill this in when the proxy asks for credentials; empty treats it as an open proxy.',
@@ -7643,13 +7633,13 @@ extension on TranslationsEn {
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryHwdecBody' => 'Which hardware decode path to use. auto tries everything (may glitch on some SoCs); auto-safe only whitelisted paths (recommended); -copy variants decode back into memory, needed by some filters and screenshots.',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'Where mpv draws the picture. libmpv renders into the Flutter texture (embedded, default); gpu/gpu-next/direct3d open a standalone mpv window (outside the app); null renders nothing.',
@@ -8157,13 +8147,13 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_th' => 'Thai',
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_tr' => 'Turkish',
 			'settings.twitchLanguage_pl' => 'Polish',
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
+			_ => null,
+		} ?? switch (path) {
 			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
 			'settings.preferH264' => 'Huya: prefer H.264',
 			'settings.preferH264Desc' => 'Picks H.264 when the platform offers several.',
@@ -8671,13 +8661,13 @@ extension on TranslationsEn {
 			'vod.comments' => 'Comments',
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
-			_ => null,
-		} ?? switch (path) {
 			'vod.commentsEmpty' => 'No comments yet.',
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',
+			_ => null,
+		} ?? switch (path) {
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',
 			'vod.today' => 'Today',

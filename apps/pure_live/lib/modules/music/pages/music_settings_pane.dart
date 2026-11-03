@@ -600,7 +600,6 @@ final class MusicSourcesPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsHint(t.music.sourcesHint),
         DsListSection(
           header: Text(t.music.sourcesSection),
           children: [
@@ -763,7 +762,6 @@ final class _MusicSourceCatalogSectionState extends ConsumerState<MusicSourceCat
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        SettingsHint(t.music.catalogHint),
         DsListSection(
           header: Text(t.music.catalogSection),
           children: [
@@ -866,7 +864,6 @@ final class MusicDownloadPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsHint(t.music.downloadHint),
         DsListSection(
           header: Text(t.music.downloadDirectory),
           children: [
@@ -1031,7 +1028,6 @@ final class MusicLyricPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsHint(t.music.lyricHint),
         // The sample the switches below repaint: a lyric setting is
         // seen here rather than only in the player.
         const MusicLyricPreview(),
@@ -1206,7 +1202,6 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsHint(t.music.desktopLyricHint),
         // What the floating window will look like: it lives in its own
         // window, so the page shows the sample.
         const MusicDesktopLyricPreview(),

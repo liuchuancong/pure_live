@@ -3364,9 +3364,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '自定义源'
 	String get sourcesSection => '自定义源';
 
-	/// zh-CN: '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。'
-	String get sourcesHint => '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。';
-
 	/// zh-CN: '粘贴脚本导入'
 	String get sourcesImportText => '粘贴脚本导入';
 
@@ -3925,9 +3922,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '下载失败：{error}'
 	String downloadFailed({required Object error}) => '下载失败：${error}';
 
-	/// zh-CN: '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。'
-	String get downloadHint => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。';
-
 	/// zh-CN: '下载目录'
 	String get downloadDirectory => '下载目录';
 
@@ -4252,9 +4246,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '从此句播放'
 	String get lyricScrubPlay => '从此句播放';
 
-	/// zh-CN: '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。'
-	String get lyricHint => '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。';
-
 	/// zh-CN: '桌面歌词'
 	String get desktopLyrics => '桌面歌词';
 
@@ -4266,9 +4257,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '当前平台没有桌面歌词窗口或未授权'
 	String get desktopLyricsUnavailable => '当前平台没有桌面歌词窗口或未授权';
-
-	/// zh-CN: '桌面歌词是可拖动、可锁定的悬浮窗；Android 需悬浮窗权限。'
-	String get desktopLyricHint => '桌面歌词是可拖动、可锁定的悬浮窗；Android 需悬浮窗权限。';
 
 	/// zh-CN: '示例：桌面歌词会按下面的样式显示。'
 	String get desktopLyricPreviewHint => '示例：桌面歌词会按下面的样式显示。';
@@ -5025,9 +5013,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '内置音源库'
 	String get catalogSection => '内置音源库';
-
-	/// zh-CN: '来自社区合集 pdone/lx-music-source，一键拉取最新脚本，走设置的 GitHub 加速。'
-	String get catalogHint => '来自社区合集 pdone/lx-music-source，一键拉取最新脚本，走设置的 GitHub 加速。';
 
 	/// zh-CN: '导入'
 	String get catalogImport => '导入';
@@ -14317,7 +14302,6 @@ extension on Translations {
 			'music.playbackReset' => '恢复默认',
 			'music.playbackResetDesc' => '自动选源、320K、出错跳过、新歌排在末尾。',
 			'music.sourcesSection' => '自定义源',
-			'music.sourcesHint' => '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。',
 			'music.sourcesImportText' => '粘贴脚本导入',
 			'music.sourcesImportTextDesc' => '把 lx-music 自定义源脚本的全文粘贴进来。',
 			'music.sourcesImportUrl' => '从链接导入',
@@ -14504,7 +14488,6 @@ extension on Translations {
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
 			'music.downloadFailed' => ({required Object error}) => '下载失败：${error}',
-			'music.downloadHint' => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。',
 			'music.downloadDirectory' => '下载目录',
 			'music.downloadBehaviour' => '下载行为',
 			'music.downloadNaming' => '文件与命名',
@@ -14613,12 +14596,10 @@ extension on Translations {
 			'music.lyricDragSeek' => '拖拽歌词调整进度',
 			'music.lyricDragSeekDesc' => '拖动歌词面板选句，三秒无操作回到当前句。',
 			'music.lyricScrubPlay' => '从此句播放',
-			'music.lyricHint' => '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。',
 			'music.desktopLyrics' => '桌面歌词',
 			'music.desktopLyricsOn' => '桌面歌词已开启',
 			'music.desktopLyricsOff' => '桌面歌词已关闭',
 			'music.desktopLyricsUnavailable' => '当前平台没有桌面歌词窗口或未授权',
-			'music.desktopLyricHint' => '桌面歌词是可拖动、可锁定的悬浮窗；Android 需悬浮窗权限。',
 			'music.desktopLyricPreviewHint' => '示例：桌面歌词会按下面的样式显示。',
 			'music.desktopLyricEnableDesc' => '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。',
 			'music.desktopLyricLock' => '锁定歌词',
@@ -14648,12 +14629,12 @@ extension on Translations {
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
 			'music.desktopLyricAlignCenter' => '居中',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignRight' => '右对齐',
 			'music.desktopLyricColorWhite' => '白色',
 			'music.desktopLyricColorYellow' => '黄色',
@@ -14873,7 +14854,6 @@ extension on Translations {
 			'music.syncModeOverwriteLocalRemoteFull' => '仅保留本地',
 			'music.syncModeOverwriteRemoteLocalFull' => '仅保留远端',
 			'music.catalogSection' => '内置音源库',
-			'music.catalogHint' => '来自社区合集 pdone/lx-music-source，一键拉取最新脚本，走设置的 GitHub 加速。',
 			'music.catalogImport' => '导入',
 			'music.catalogImported' => '已导入',
 			'music.catalogFetchFailed' => '音源脚本下载失败：raw 源与镜像都不可达',
@@ -15162,13 +15142,13 @@ extension on Translations {
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
 			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
 			'recorder.transcodeDesc' => '把合并后的 MP4 重新编码为 H.264；耗时随录像长度增加，会降低源画质。',
 			'recorder.transcodeBitrateTitle' => '转码码率',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.transcodeBitrateDesc' => '目标视频码率；越高越清晰，文件越大。',
 			'recorder.playRecording' => '播放录像',
 			'recorder.previewRecording' => '内置播放器预览',
@@ -15676,13 +15656,13 @@ extension on Translations {
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
 			'settings.navNetwork' => '网络',
-			_ => null,
-		} ?? switch (path) {
 			'settings.networkDescription' => '应用代理与传输行为。',
 			'settings.proxy' => '应用代理',
 			'settings.proxyHost' => '主机',
 			'settings.proxyHostDesc' => '代理服务器的主机名或地址。',
 			'settings.proxyPort' => '端口',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyPortDesc' => '代理服务器监听的端口。',
 			'settings.proxyUsername' => '用户名',
 			'settings.proxyUsernameDesc' => '代理要求认证时填写；留空即按开放代理处理。',
@@ -16190,13 +16170,13 @@ extension on Translations {
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
 			'settings.playerGuideEntryHardwareSwitchBody' => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryHwdecBody' => '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。',
@@ -16704,13 +16684,13 @@ extension on Translations {
 			'settings.twitchLanguage_th' => '泰语',
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_tr' => '土耳其语',
 			'settings.twitchLanguage_pl' => '波兰语',
 			'settings.holdDanmakuOnPress' => '按住冻结',
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
+			_ => null,
+		} ?? switch (path) {
 			'settings.youtubeAllChatDesc' => '关闭用网页默认 Top chat；开启请求全部聊天。',
 			'settings.preferH264' => '虎牙优先 H.264',
 			'settings.preferH264Desc' => '多种编码时优先 H.264，兼容性更好。',
@@ -17218,13 +17198,13 @@ extension on Translations {
 			'vod.comments' => '评论',
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',
-			_ => null,
-		} ?? switch (path) {
 			'vod.commentsEmpty' => '还没有评论。',
 			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
+			_ => null,
+		} ?? switch (path) {
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => '从历史中移除',
 			'vod.today' => '今天',
