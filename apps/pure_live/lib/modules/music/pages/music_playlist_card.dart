@@ -167,7 +167,7 @@ final class MusicPlaylistGrid<T> extends StatefulWidget {
     this.onLoadMore,
     this.onRefresh,
     this.pageSize = 30,
-    this.padding = const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s16),
+    this.padding,
     super.key,
   });
 
@@ -192,8 +192,8 @@ final class MusicPlaylistGrid<T> extends StatefulWidget {
   /// How many cards one display page holds on a wide window.
   final int pageSize;
 
-  /// The grid's outer padding.
-  final EdgeInsetsGeometry padding;
+  /// The grid's outer padding; null keeps the window's gutter.
+  final EdgeInsetsGeometry? padding;
 
   @override
   State<MusicPlaylistGrid<T>> createState() => _MusicPlaylistGridState<T>();
@@ -255,7 +255,7 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final padding = widget.padding.resolve(Directionality.of(context));
+          final padding = feedGutter(context, custom: widget.padding, top: DsSpace.s8, bottom: DsSpace.s16);
           final content = (constraints.maxWidth - padding.horizontal).clamp(0.0, double.infinity);
           // The fewest columns that keep a card within the wide measure,
           // less one when that would leave a card narrower than the narrow
@@ -268,7 +268,7 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
           if (columns > 1 && width(columns) < kMusicPlaylistCardMinWidth) columns--;
           final extent = width(columns) + 0.01;
           return GridView.builder(
-            padding: widget.padding,
+            padding: padding,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: extent,
               mainAxisSpacing: DsSpace.s12,

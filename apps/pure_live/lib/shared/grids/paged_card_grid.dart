@@ -191,7 +191,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       children: [
         Expanded(child: _pagedGrid()),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
+          padding: feedGutter(context, custom: widget.padding, top: DsSpace.s12, bottom: DsSpace.s12),
           child: Center(
             // The pager keeps its normal ink while a page loads — the ask is
             // dropped inside [_goToPage], the control is not greyed out.
@@ -224,7 +224,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       cardExtent: widget.cardExtent,
       crossSpacing: widget.crossSpacing,
       mainSpacing: widget.mainSpacing,
-      padding: widget.padding ?? const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: widget.padding,
       isLoading: widget.isLoading,
       hasMore: hasMore,
       pagesOnScrollToEnd: pages,

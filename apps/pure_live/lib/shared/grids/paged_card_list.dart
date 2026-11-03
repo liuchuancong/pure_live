@@ -23,7 +23,7 @@ final class PagedCardList<T> extends StatefulWidget {
     this.onRefresh,
     this.pageSize = 30,
     this.gap = DsSpace.s12,
-    this.padding = const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+    this.padding,
     this.skeletonBuilder,
     this.scrollController,
     super.key,
@@ -53,8 +53,8 @@ final class PagedCardList<T> extends StatefulWidget {
   /// The rows' spacing.
   final double gap;
 
-  /// The list's outer padding.
-  final EdgeInsetsGeometry padding;
+  /// The list's outer padding; null keeps the window's gutter — see [feedGutter].
+  final EdgeInsetsGeometry? padding;
 
   /// Builds a skeleton row while a page loads.
   final WidgetBuilder? skeletonBuilder;
@@ -139,7 +139,7 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
         // page, the pager under them is the way on.
         Expanded(child: _list(items: shown, hasMore: false, onLoadMore: null)),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
+          padding: feedGutter(context, custom: widget.padding, top: DsSpace.s12, bottom: DsSpace.s12),
           child: Center(
             child: DsPagination(
               page: _page,

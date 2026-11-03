@@ -11,7 +11,26 @@ import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardCoverRatio, kRoomCardInfoExtent, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
+import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 import 'package:pure_live/shared/widgets/pull_to_refresh.dart' show buildDsRefreshIndicator;
+
+/// The gutter a feed keeps at the window's edge.
+///
+/// A page's header takes [LiveWindow.pageInset] — tighter under the compact
+/// breakpoint — so a grid that hardcoded the wide value let its cards start
+/// four points inside the heading above them on a narrow window, and worked
+/// the card widths out of the same wrong measure. A caller that names its own
+/// [custom] padding keeps it; the fallback is the window's, not a constant.
+EdgeInsets feedGutter(
+  BuildContext context, {
+  EdgeInsetsGeometry? custom,
+  double top = DsSpace.s4,
+  double bottom = DsSpace.s24,
+}) {
+  if (custom != null) return custom.resolve(Directionality.of(context));
+  final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+  return EdgeInsets.fromLTRB(inset, top, inset, bottom);
+}
 
 /// The widest a feed card gets before the grid takes another column, and the
 /// narrowest one may get: the measure every card grid holds itself. A pinned
@@ -115,7 +134,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.emptyIcon = DsIcons.tv,
     this.emptyTitle,
     this.emptyDescription,
-    this.padding = const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+    this.padding,
     this.skeletonCount = 12,
     this.scrollController,
     this.layout = CardLayout.grid,
@@ -207,8 +226,8 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   final String? emptyTitle;
   final String? emptyDescription;
 
-  /// The grid's outer padding.
-  final EdgeInsetsGeometry padding;
+  /// The grid's outer padding; null keeps the window's gutter — see [feedGutter].
+  final EdgeInsetsGeometry? padding;
 
   /// How many skeletons the first load shows.
   final int skeletonCount;
@@ -223,6 +242,9 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
 }
 
 final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
+  /// The gutter the cards sit in, and the measure their widths come out of.
+  EdgeInsets get _gutter => feedGutter(context, custom: widget.padding);
+
   /// How close to the end the next page may be asked for.
   static const double _loadMoreThreshold = 600;
 
@@ -274,7 +296,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   /// A viewer's column cap lowers the count when the window is too narrow
   /// to hold that many cards at [kBrowseCardMinWidth].
   double _extentFor(double width, BrowseSettings browse) {
-    final padding = widget.padding.resolve(Directionality.of(context));
+    final padding = _gutter;
     final content = math.max(0, width - padding.horizontal).toDouble();
     final capped = cappedColumnsForWidth(
       content,
@@ -290,7 +312,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   /// The columns a width gets from [SliverGridDelegateWithMaxCrossAxisExtent].
   int _columnsFor(double width, BrowseSettings browse) {
-    final padding = widget.padding.resolve(Directionality.of(context));
+    final padding = _gutter;
     final extent = math.max(0, width - padding.horizontal);
     return math.max(1, (extent / (_extentFor(width, browse) + widget.crossSpacing)).ceil());
   }
@@ -301,7 +323,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   /// design keeps [kListCardMinWidth]. Either way the row keeps its fixed
   /// height, so its design does not stretch with the column.
   SliverGridDelegateWithMaxCrossAxisExtent _listDelegate(double width, BrowseSettings browse, double tileAspect) {
-    final padding = widget.padding.resolve(Directionality.of(context));
+    final padding = _gutter;
     final content = math.max(0, width - padding.horizontal).toDouble();
     final capped = cappedColumnsForWidth(
       content,
@@ -456,7 +478,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if (!controller.hasClients) return;
     final position = controller.position;
     if (!position.hasViewportDimension) return;
-    final padding = widget.padding.resolve(Directionality.of(context));
+    final padding = _gutter;
     final double start;
     final double extent;
     if (_gridWidth <= 0) return;
@@ -521,7 +543,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         listMatchesGridWidth: widget.listMatchesGridWidth,
         columns: browse.gridColumns,
         count: widget.skeletonCount,
-        padding: widget.padding,
+        padding: _gutter,
       );
     }
     if (widget.items.isEmpty && widget.error != null) {
@@ -557,14 +579,14 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             // The rows keep a grid card's width and columns, so switching
             // the layout never resizes the cards; a wide window shows the
             // same number of rows side by side as it would cards.
-            final padding = widget.padding.resolve(Directionality.of(context));
+            final padding = _gutter;
             final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
             final delegate = _listDelegate(constraints.maxWidth, browse, tileAspect);
             _gridWidth = constraints.maxWidth;
             _columns = math.max(1, (content / (delegate.maxCrossAxisExtent + widget.crossSpacing)).ceil());
             return GridView.builder(
               controller: _scroll,
-              padding: widget.padding,
+              padding: _gutter,
               physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
               gridDelegate: delegate,
               itemCount: widget.items.length + (loadingRow ? 1 : 0),
@@ -594,7 +616,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             // its tile's height comes from the column width: a ratio would
             // grow that block along with wide tiles. A caller's own ratio
             // still speaks for its design.
-            final padding = widget.padding.resolve(Directionality.of(context));
+            final padding = _gutter;
             final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
             final tileWidth = (content - widget.crossSpacing * (_columns - 1)) / _columns;
             final roomExtent = widget.aspectRatio == null && content > 0
@@ -603,7 +625,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             _gridItemExtent = roomExtent;
             return GridView.builder(
               controller: _scroll,
-              padding: widget.padding,
+              padding: _gutter,
               // With the gesture on, a short grid still scrolls far enough
               // to pull (the reference's always-scrollable feeds).
               physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
@@ -923,7 +945,7 @@ final class CardList<T> extends StatelessWidget {
     this.hasMore = false,
     this.onLoadMore,
     this.gap = DsSpace.s12,
-    this.padding = const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+    this.padding,
     this.skeletonCount = 8,
     this.skeletonBuilder,
     this.scrollController,
@@ -954,8 +976,8 @@ final class CardList<T> extends StatelessWidget {
   /// The rows' spacing.
   final double gap;
 
-  /// The list's outer padding.
-  final EdgeInsetsGeometry padding;
+  /// The list's outer padding; null keeps the window's gutter — see [feedGutter].
+  final EdgeInsetsGeometry? padding;
 
   /// How many skeletons the first load shows.
   final int skeletonCount;
@@ -968,10 +990,11 @@ final class CardList<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gutter = feedGutter(context, custom: padding);
     if (items.isEmpty && isLoading) {
       final skeleton = skeletonBuilder ?? (context) => const DsSkeleton(width: double.infinity, height: 64);
       return ListView.builder(
-        padding: padding,
+        padding: gutter,
         itemCount: skeletonCount,
         itemBuilder: (context, index) => Padding(
           padding: EdgeInsets.only(bottom: gap),
@@ -985,7 +1008,7 @@ final class CardList<T> extends StatelessWidget {
       onNotification: _endReached,
       child: ListView.separated(
         controller: scrollController,
-        padding: padding,
+        padding: gutter,
         // With the gesture on, a short list still scrolls far enough to
         // pull (the grid's rule).
         physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
