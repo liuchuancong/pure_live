@@ -13,8 +13,9 @@ import 'package:pure_live/modules/vod/controller/vod_settings.dart';
 
 /// The Bilibili station's own settings: the Bilibili account the station
 /// reads (and only that account — the live platforms' sign-ins stay in the
-/// live module), the quality a video opens with, and the playback page
-/// beside them.
+/// live module) and the app's own player pages this station's video page
+/// obeys. What a video opens at, and what the player does with it, is the
+/// playback group's business — see [VodPlaybackPane].
 final class VodSettingsPane extends ConsumerWidget {
   /// The pane shown under Settings → Bilibili video.
   const VodSettingsPane({super.key});
@@ -22,7 +23,6 @@ final class VodSettingsPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final quality = ref.watch(vodQualityProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -31,16 +31,6 @@ final class VodSettingsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.vodPlayback),
           children: [
-            SettingsChoiceRow<VodQualityChoice>(
-              leading: const DsIcon(DsIcons.gauge),
-              title: t.settings.vodQuality,
-              description: t.settings.vodQualityDesc,
-              value: quality,
-              options: [
-                for (final choice in VodQualityChoice.values) DsSelectOption(value: choice, label: choice.label(t)),
-              ],
-              onChanged: ref.read(vodQualityProvider.notifier).select,
-            ),
             // The picture's shape, the bar's hide delay and the screen's wake
             // are the app's own player settings, which this page's player
             // reads; the row opens the page carrying them rather than a second
@@ -63,7 +53,6 @@ final class VodSettingsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.vodPages),
           children: const [
-            SettingsChildEntry(child: SettingsSection.vodPlayback),
             SettingsChildEntry(child: SettingsSection.vodDownload),
             SettingsChildEntry(child: SettingsSection.vodInterface),
           ],
@@ -73,10 +62,12 @@ final class VodSettingsPane extends ConsumerWidget {
   }
 }
 
-/// The newBV reference's playback page: the rate a video opens with and what
-/// a finished part leads to. The video page reads both where it plays.
+/// The newBV reference's playback page: the quality a video opens at, the
+/// rate it opens with and what a finished part leads to. The video page
+/// reads all three where it plays, so they sit together in the playback
+/// group beside the kernel rather than split across the module's own page.
 final class VodPlaybackPane extends ConsumerWidget {
-  /// The pane shown under Settings → Bilibili video → 播放行为.
+  /// The pane shown under Settings → 播放 → 播放行为.
   const VodPlaybackPane({super.key});
 
   @override
@@ -84,6 +75,7 @@ final class VodPlaybackPane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(vodPlaybackSettingsProvider);
     final controller = ref.read(vodPlaybackSettingsProvider.notifier);
+    final quality = ref.watch(vodQualityProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -91,6 +83,16 @@ final class VodPlaybackPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.navVodPlayback),
           children: [
+            SettingsChoiceRow<VodQualityChoice>(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.settings.vodQuality,
+              description: t.settings.vodQualityDesc,
+              value: quality,
+              options: [
+                for (final choice in VodQualityChoice.values) DsSelectOption(value: choice, label: choice.label(t)),
+              ],
+              onChanged: ref.read(vodQualityProvider.notifier).select,
+            ),
             SettingsChoiceRow<VodSpeedChoice>(
               leading: const DsIcon(DsIcons.timer),
               title: t.vod.openingSpeed,

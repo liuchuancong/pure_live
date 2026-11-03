@@ -165,13 +165,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
       [NavigationItem.vodSearch, NavigationItem.vodPersonal, NavigationItem.vodDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.vod,
-    // The video station's own page: its Bilibili account, the quality a
-    // video opens with and its playback behaviour. Live's sources and
-    // danmaku stay out of it.
+    // The video station's own page: its Bilibili account and the app's player
+    // pages it obeys. What the player does with a video — the quality it
+    // opens at, the rate, what a finished part leads to — sits in the
+    // playback group beside the kernel, the way live's own rail groups them.
     settingsGroups: [
       _sharedAppearanceGroup,
       (labelKey: 'groupVod', sections: [SettingsSection.vod]),
-      _sharedPlaybackGroup,
+      (labelKey: 'groupPlayback', sections: [SettingsSection.kernel, SettingsSection.vodPlayback]),
       _systemGroup,
       _aboutGroup,
     ],

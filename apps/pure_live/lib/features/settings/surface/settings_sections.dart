@@ -309,7 +309,7 @@ enum SettingsSection {
     // deep, never three).
     SettingsSection.playerGuide => SettingsSection.kernel,
     SettingsSection.iptvBrowse || SettingsSection.iptvGroups => SettingsSection.iptv,
-    SettingsSection.vodPlayback || SettingsSection.vodDownload || SettingsSection.vodInterface => SettingsSection.vod,
+    SettingsSection.vodDownload || SettingsSection.vodInterface => SettingsSection.vod,
     // The help is a page beside the WebDAV one, not under it: the menu
     // lists the backup, so all three children hang from that row.
     SettingsSection.localBackup ||
@@ -403,7 +403,6 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.vod => const [
     SettingsSection.picture,
     SettingsSection.quality,
-    SettingsSection.vodPlayback,
     SettingsSection.vodDownload,
     SettingsSection.vodInterface,
   ],
