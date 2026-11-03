@@ -94,11 +94,15 @@ String? _linesOf(List<dynamic>? lines) {
 }
 
 Uint8List _inflateKrc(Uint8List encrypted) {
-  final key = [0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47, 0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e, 0x69];
-  for (var i = 0; i < encrypted.length; i++) {
-    encrypted[i] ^= key[i % 16];
+  // Four bytes of the decoded body are a header the player skips before it
+  // touches the key: inflating from byte zero keeps them in front of the zlib
+  // stream and the decoder reports bad data.
+  final payload = encrypted.length > 4 ? encrypted.sublist(4) : encrypted;
+  const key = [0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47, 0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e, 0x69];
+  for (var i = 0; i < payload.length; i++) {
+    payload[i] ^= key[i % 16];
   }
-  return const ZLibDecoder().decodeBytes(encrypted);
+  return const ZLibDecoder().decodeBytes(payload);
 }
 
 // ---------------------------------------------------------------------------
