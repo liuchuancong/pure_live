@@ -10,10 +10,10 @@ import 'package:pure_live/app/providers/boot/environment_providers.dart' show de
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
-import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupsListed;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
-    show IptvProgrammeTimes, catchupAvailabilityOf, iptvStartOfDay;
+    show IptvProgrammeTimes, catchupAvailabilityOf, iptvStartOfDay, toggleIptvReminder;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo;
 
 /// The height of one row in any of the panel's three columns; the keyboard
@@ -567,7 +567,6 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
   /// replays where the playlist allows it, a future one toggles its reminder.
   Future<void> _act(IptvChannel channel, EpgProgramme programme) async {
     final now = DateTime.now();
-    final t = context.t;
     switch (classifyIptvProgramme(start: programme.start, stop: programme.stop, now: now)) {
       case IptvProgrammePhase.live:
         widget.onPlayChannel(channel);
@@ -575,17 +574,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
         if (catchupAvailabilityOf(channel, programme, now: now) != IptvCatchupAvailability.available) return;
         await widget.onCatchup(channel, programme);
       case IptvProgrammePhase.scheduled:
-        final added = await ref
-            .read(iptvRemindersProvider.notifier)
-            .toggle(
-              IptvReminder(channelId: channel.id, title: programme.title, start: programme.start, stop: programme.stop),
-            );
-        if (!mounted) return;
-        showDsToast(
-          context: context,
-          title: added ? t.iptv.reminderSet(title: programme.title) : t.iptv.reminderRemoved,
-          status: added ? DsStatus.success : DsStatus.neutral,
-        );
+        await toggleIptvReminder(context, ref, channel, programme);
     }
   }
 

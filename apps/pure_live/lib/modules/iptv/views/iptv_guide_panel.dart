@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
 
 /// Opens the channel's guide: one day of programmes, the one on air marked
 /// with its progress, the past ones replayable where the playlist offers
@@ -222,8 +223,14 @@ final class IptvProgrammeTimes extends StatelessWidget {
 }
 
 /// One programme: its clock, its name (and subtitle), the on-air progress,
-/// and the replay button where the provider allows one.
-final class IptvGuideRow extends StatelessWidget {
+/// and the action its phase offers — the replay button where the provider
+/// allows one, the reminder toggle for one that has not started yet.
+///
+/// The guide is where a reminder is set, which is also how the reference does
+/// it; the button says which way it stands (预约 / 取消预约) so the row answers
+/// 「have I already booked this」 without the viewer having to open the 换台
+/// panel over the picture to find out.
+final class IptvGuideRow extends ConsumerWidget {
   const IptvGuideRow({
     required this.channel,
     required this.programme,
@@ -240,7 +247,7 @@ final class IptvGuideRow extends StatelessWidget {
   final Future<void> Function(EpgProgramme programme) onCatchup;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -250,6 +257,9 @@ final class IptvGuideRow extends StatelessWidget {
     final available =
         phase == IptvProgrammePhase.catchup &&
         catchupAvailabilityOf(channel, programme, now: now) == IptvCatchupAvailability.available;
+    final booked =
+        phase == IptvProgrammePhase.scheduled &&
+        ref.watch(iptvRemindersProvider).any((reminder) => reminder.isFor(channel.id, programme.start));
     final subtitle = programme.subtitle?.trim() ?? '';
     final total = programme.stop.difference(programme.start);
     final progress = live && total > Duration.zero
@@ -300,12 +310,45 @@ final class IptvGuideRow extends StatelessWidget {
               onPressed: () => unawaited(onCatchup(programme)),
               child: Text(t.iptv.catchup),
             ),
+          if (phase == IptvProgrammePhase.scheduled)
+            DsButton(
+              // The same press that books the reminder clears it, and the
+              // button's own fill says which of the two it is about to do.
+              variant: booked ? DsButtonVariant.primary : DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(toggleIptvReminder(context, ref, channel, programme)),
+              child: Text(booked ? t.iptv.reminderCancelAction : t.iptv.reminderAction),
+            ),
           if (phase == IptvProgrammePhase.catchup && !available)
             Text(t.iptv.catchupUnavailable, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
         ],
       ),
     );
   }
+}
+
+/// Books or clears the reminder for [programme], then says which happened. The
+/// day's row and the 换台 panel's programme column are the module's two places
+/// that offer this one action, so both go through here and answer in the same
+/// words.
+Future<void> toggleIptvReminder(
+  BuildContext context,
+  WidgetRef ref,
+  IptvChannel channel,
+  EpgProgramme programme,
+) async {
+  final t = context.t;
+  final added = await ref
+      .read(iptvRemindersProvider.notifier)
+      .toggle(
+        IptvReminder(channelId: channel.id, title: programme.title, start: programme.start, stop: programme.stop),
+      );
+  if (!context.mounted) return;
+  showDsToast(
+    context: context,
+    title: added ? t.iptv.reminderSet(title: programme.title) : t.iptv.reminderRemoved,
+    status: added ? DsStatus.success : DsStatus.neutral,
+  );
 }
 
 /// The instant [time]'s day begins, in the device's own calendar.
