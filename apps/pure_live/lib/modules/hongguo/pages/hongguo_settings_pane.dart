@@ -126,11 +126,12 @@ final class HongguoInterfacePane extends ConsumerWidget {
         ),
         for (final (element, icon, label) in <(HongguoCardElement, DsIconData, String)>[
           (HongguoCardElement.rank, DsIcons.trophy, t.settings.hongguoCardRank),
-          (HongguoCardElement.coverTags, DsIcons.tag, t.settings.hongguoCardTags),
+          (HongguoCardElement.coverTags, DsIcons.badge, t.settings.hongguoCardTags),
           (HongguoCardElement.episodes, DsIcons.listMusic, t.settings.hongguoCardEpisodes),
           (HongguoCardElement.today, DsIcons.calendar, t.settings.hongguoCardToday),
           (HongguoCardElement.score, DsIcons.star, t.settings.hongguoCardScore),
           (HongguoCardElement.hot, DsIcons.flame, t.settings.hongguoCardHot),
+          (HongguoCardElement.category, DsIcons.tag, t.settings.hongguoCardCategory),
           (HongguoCardElement.meta, DsIcons.info, t.settings.hongguoCardMeta),
         ])
           SettingsConfigRow(

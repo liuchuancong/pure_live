@@ -20,6 +20,8 @@
 
 ## 现状：红果系列卡的量规（证据）
 
+> 下表是开工前（N1 之前）的形态，保留作对照。N1 已把信息区收到 56、标题压成一行；N2 已把右上收成「一枚状态 pill + 收藏红心」的横排、底部改成「分类 + 热度」两枚、左上收成 28 高的一枚 `_CoverMark`，信息区末尾的书签也随之删除。
+
 | 项 | 现状 | 出处 |
 | --- | --- | --- |
 | 海报比例 | `kHongguoSeriesTileAspect = 0.62`（竖海报），封面 `3/4` 走 `Expanded` 吃掉剩余高度 | `modules/hongguo/widgets/hongguo_widgets.dart:32,169-181` |
@@ -42,11 +44,12 @@
 5. **`HongguoCardMenu` 包壳，语义对齐 `RoomCardMenu`**：`DsTooltip`（标题全名 + 元信息）+ `DsContextMenuRegion`（打开 / 立即播放 / 收藏或取消 / 下载 / 复制详情页链接 / 页面自己的项在分割线后）。收藏走 `hongguoLibraryProvider`，链接走 `https://hongguoduanju.com/detail?series_id=`。
 6. **不改直播模块**（`modules/live/**`）；需要复用件只往 `shared/` 里提，且必须直播侧同步改到不回归。
 7. 封面仍是 HEIC + 签名 URL，一律走 `hongguoCoverImage`（`modules/hongguo/controller/hongguo_covers.dart:100`）；不得为了套直播卡片直接喂 `cachedImage(series.cover)`。
+8. **N2 落地补充（2026-11-04）**：热度枚的 `maxWidth` 取 `width * 0.55`，不抄直播的 `0.3`——那一档是给纯观众数留的，红果的 `hot` 是「1.2万人在看」这类句子。收藏按裁决 3「未收藏=空角标」，信息区末尾的 `_FavoriteBookmark` 随之删除，所以 **N3 的 `HongguoCardMenu` 必须补上「收藏 / 取消收藏」**，否则卡片上没有收藏入口（只有取消）。新增 `HongguoCardElement.category`（封面底部左枚，设置面已给一行开关），并把 `episodes`/`score` 写进 `HongguoCardVisibility.standard` 的默认隐藏集。
 
 ## 队列（一轮一项，从上往下）
 
 - [x] **N1 信息区密度**：`kHongguoSeriesCardInfoExtent` 82→56（直接取 `kRoomCardInfoExtent`），标题 `maxLines` 2→1 且用 `bodyStrong`，内边距 `fromLTRB(10, 4, 10, 8)`，信息区结构与直播 `_GridInfo` 同构（Row[Expanded(Column 居中：标题+元信息)]，书签在行末）；`_FavoriteBookmark` 30→28、图标 16→14，不再撑高。`HongguoShelf`（`:994`）与 `PagedCardGrid`（`:693`、`:1737`）的瓦片高都由 `kHongguoSeriesTileAspect` 决定，信息区变矮 26 全部还给封面，不会撑破或错行。
-- [ ] **N2 角标结构**：右上竖排 4 枚 → 横排一 Row（一枚状态 pill + 收藏按钮 28px ghost，样式抄 `room_card.dart:461-499`）；底部改 Row 两枚（左分类、右热度 `flame`+`numeric`/`playerInk`，抄 `:199-234`）；左上榜单旗标/来源标签收成 28 高、`0xB3000000`、圆角 8 的一枚（抄 `_PlatformMark` `:503-530`）。被挤掉的 `episodes`/`score` 由 `HongguoCardElement` 开关决定，默认关。
+- [x] **N2 角标结构**：右上竖排 4 枚 → 横排一 Row（一枚状态 pill + 收藏按钮 28px ghost，样式抄 `room_card.dart:461-499`）；底部改 Row 两枚（左分类、右热度 `flame`+`numeric`/`playerInk`，抄 `:199-234`）；左上榜单旗标/来源标签收成 28 高、`0xB3000000`、圆角 8 的一枚（抄 `_PlatformMark` `:503-530`）。被挤掉的 `episodes`/`score` 由 `HongguoCardElement` 开关决定，默认关。
 - [ ] **N3 卡片包壳**：新建 `modules/hongguo/widgets/hongguo_card_menu.dart`（`HongguoCardMenu`），按裁决 5 实现；首页 shelf、找剧墙、搜索、收藏/历史/预约、详情相关推荐全部包上；历史/预约页用 `items` 追加自己的移除项（对应直播 `✕`）。
 - [ ] **N4 列表行同源**：`HongguoSeriesRow`、`HongguoRankRow`、`_SeriesList`、`_ProgressList` 与卡片共用同一套字段与措辞（`hongguoSeriesSubtitle`/`hongguoSeriesMetaLine` 不许再各写一遍），行高按 `kRoomCardListDesignHeight` 量规，密度与直播列表行一致。
 - [ ] **N5 设置面同步**：按 N1–N3 的最终元素集合增删 `HongguoCardElement`（含新增 `favorite`、`category`），同步 `hongguo_settings_pane.dart:127-134` 的行名与图标、`interface.hongguoCard` 旧值兼容、`hongguo_*` l10n 串（`cd apps/pure_live && dart run slang`）；每枚开关在卡片上真生效，逐条自查「关掉后封面不空、不跳行」。
@@ -78,3 +81,4 @@
 | --- | --- | --- | --- | --- | --- |
 | — | — | — | — | — | 台账建立，队列为空转起点 |
 | 1 | N1 | `hongguo_widgets.dart`：信息区 82→56（取 `kRoomCardInfoExtent`）、标题 1 行 `bodyStrong`、内边距 `fromLTRB(10,4,10,8)`、行末书签 30→28/图标 14 | `dart analyze apps/pure_live/lib` 0 issues | 本轮单个提交（`polish(hongguo)` 代码+本台账；hash 见 `git log -1`） | 封面比例 0.62 未动；`PagedCardGrid`/`HongguoShelf` 的瓦片高与封面高复核通过（高度来自 aspect，不来自信息区）。未做运行时验收，观感由用户自测。下一项 N2 角标结构。 |
+| 2 | N2 | `widgets/hongguo_widgets.dart`：右上竖排 4 枚 → 一 Row（状态 pill 按 续播>今日>评分>集数 只出一枚 + 28px ghost 红心，抄 `_CornerButton`）；底部 → Row 两枚（左分类 `Expanded`/`0.55w`，右热度 `flame`+`numeric`/`playerInk`，`0.55w`）；左上 `_RankFlag`/`_CoverTag` 合成一枚 28 高 `0xB3000000`/圆角 8 的 `_CoverMark`（前 3 名保留 accent 底）；`_FavoriteBookmark` 删除，卡片包上 `LayoutBuilder` 取宽；`hongguoSeriesMetaLine` 增 `withCategory`，分类/热度上封面后信息行不再重复。`controller/hongguo_card_settings.dart`：新增 `category`，`standard` 默认隐藏 `episodes`/`score`。`pages/hongguo_settings_pane.dart`：加一行分类开关（`DsIcons.tag`，`coverTags` 图标改 `badge`）。l10n `settings/{zh-CN,en}` 加 `hongguoCardCategory` + `dart run slang` | `dart analyze apps/pure_live/lib` 0 issues | 本轮单个提交（`polish(hongguo)`；hash 见 `git log -1`） | 封面比例 0.62 未动；未构建、未起 app、未截图——观感由用户自测。已知缺口：卡片上只能取消收藏，加收藏要等 N3 的右键菜单（见裁决 8）。下一项 N3 卡片包壳。 |

@@ -93,31 +93,30 @@ String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoS
   return parts.join(' · ');
 }
 
-/// What a poster card prints under its name: the categories, plus the heat or
-/// play figure only when [withFigure] asks for it — the cover's foot already
-/// carries the heat when its own switch is on, and a card says a figure once.
-String hongguoSeriesMetaLine(HongguoSeries series, {required bool withFigure}) {
+/// What a poster card prints under its name: whichever of the heat and the
+/// categories its own switches leave off the cover — a card says a figure or
+/// a category once, and the cover's foot holds them when it can.
+String hongguoSeriesMetaLine(HongguoSeries series, {required bool withFigure, bool withCategory = true}) {
   final parts = <String>[
     if (withFigure && series.hot.isNotEmpty)
       series.hot
     else if (withFigure && series.playCount > 0)
       AudienceFormat.format(series.playCount),
-    if (series.category.isNotEmpty) series.category,
+    if (withCategory && series.category.isNotEmpty) series.category,
   ];
   return parts.join(' · ');
 }
 
-/// One series as a poster card, drawn in the room card's manner: the cover
-/// carries a soft scrim with its badges as translucent chips — the board
-/// position, the source tags, the episode count, the 今日 marker, the score,
-/// the heat along the foot, and where the viewer's own shelf stands on this
-/// title — then the title and the listing line, and, on a shelf that asks for
-/// it, the local bookmark. Which of the station's pieces appear is the card
+/// One series as a poster card, in the room card's corner structure: the
+/// cover carries the scrim with one mark in each corner — the board place or
+/// the source's tag at its start, one state pill and the kept heart at its
+/// end, the category and the heat along its foot — then the title and the
+/// listing line under it. Which of the station's pieces appear is the card
 /// visibility setting's to say; the viewer's own progress is not one of them,
 /// the way it is not on the board's row.
 final class HongguoSeriesCard extends ConsumerWidget {
   /// The card for [series]; [onOpen] opens its page. [watched] is the local
-  /// shelf's row for the same series, drawn as the first of the cover's marks.
+  /// shelf's row for the same series, drawn as the cover's state.
   const HongguoSeriesCard({required this.series, this.onOpen, this.favoritable = false, this.watched, super.key});
 
   /// The series shown.
@@ -126,7 +125,8 @@ final class HongguoSeriesCard extends ConsumerWidget {
   /// Opens the series; null leaves the card inert.
   final VoidCallback? onOpen;
 
-  /// Whether the card carries the local-shelf bookmark under its title.
+  /// Whether the card offers the local shelf: the title kept is the red heart
+  /// at the cover's end, the way a followed room is.
   final bool favoritable;
 
   /// Where this device left the series; null when it never opened it.
@@ -141,14 +141,28 @@ final class HongguoSeriesCard extends ConsumerWidget {
     final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
     final rank = series.rank;
     final showsRank = visibility.shows(HongguoCardElement.rank) && rank != null;
-    final showsTags = visibility.shows(HongguoCardElement.coverTags) && rank == null && series.coverTags.isNotEmpty;
+    final firstTag = series.coverTags.isEmpty ? '' : series.coverTags.first;
+    final showsTag = visibility.shows(HongguoCardElement.coverTags) && rank == null && firstTag.isNotEmpty;
     final showsEpisodes = visibility.shows(HongguoCardElement.episodes) && series.episodeCount > 0;
     final showsToday = visibility.shows(HongguoCardElement.today) && series.today;
     final showsScore = visibility.shows(HongguoCardElement.score) && series.score.isNotEmpty;
     final showsHot = visibility.shows(HongguoCardElement.hot) && series.hot.isNotEmpty;
+    final showsCategory = visibility.shows(HongguoCardElement.category) && series.category.isNotEmpty;
+    // The corner holds the one state a wall of posters cannot show: where this
+    // device stopped, else the newest marker, else the listing's own reading.
+    final stateText = watched != null
+        ? hongguoWatchedLabel(t, watched!)
+        : showsToday
+        ? t.hongguo.todayTag
+        : showsScore
+        ? series.score
+        : showsEpisodes
+        ? t.hongguo.allEpisodesCount(count: series.episodeCount)
+        : null;
     final metaLine = visibility.shows(HongguoCardElement.meta)
-        ? hongguoSeriesMetaLine(series, withFigure: !showsHot)
+        ? hongguoSeriesMetaLine(series, withFigure: !showsHot, withCategory: !showsCategory)
         : '';
+    final favored = favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -161,133 +175,131 @@ final class HongguoSeriesCard extends ConsumerWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(theme.radii.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Both of the card's homes bound its height — a poster wall's
-            // tile, the shelf's own measure — so the cover takes the height
-            // the fixed name block leaves instead of asking for a 3:4 a
-            // narrow column cannot pay for.
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (series.cover.isEmpty)
-                    fallback
-                  else
-                    DsImage(
-                      image: hongguoCoverImage(series.cover),
-                      aspectRatio: 3 / 4,
-                      semanticLabel: series.title,
-                      fallback: fallback,
-                    ),
-                  // Darkens the cover's edges so the chips keep their contrast
-                  // over a bright picture — the room cover's scrim.
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
-                    ),
-                  ),
-                  if (showsRank)
-                    PositionedDirectional(
-                      top: DsSpace.s8,
-                      start: DsSpace.s8,
-                      child: _RankFlag(rank: rank),
-                    )
-                  else if (showsTags)
-                    // The source's own corner tags (爆剧 / 新剧 / 独播), where
-                    // the app stamps them; a ranked card keeps the place for
-                    // its flag instead.
-                    PositionedDirectional(
-                      top: DsSpace.s8,
-                      start: DsSpace.s8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s4,
-                        children: [for (final tag in series.coverTags.take(2)) _CoverTag(label: tag)],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 320.0;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Both of the card's homes bound its height — a poster wall's
+                // tile, the shelf's own measure — so the cover takes the height
+                // the fixed name block leaves instead of asking for a 3:4 a
+                // narrow column cannot pay for.
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (series.cover.isEmpty)
+                        fallback
+                      else
+                        DsImage(
+                          image: hongguoCoverImage(series.cover),
+                          aspectRatio: 3 / 4,
+                          semanticLabel: series.title,
+                          fallback: fallback,
+                        ),
+                      // Darkens the cover's edges so the chips keep their
+                      // contrast over a bright picture — the room cover's scrim.
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                        ),
                       ),
-                    ),
-                  // The viewer's own progress leads the cover's marks at its
-                  // end: the shelf's state is what decides whether to open a
-                  // title again, and the station's chips follow it — the same
-                  // order the board's row keeps.
-                  if (watched != null || showsEpisodes || showsToday || showsScore)
-                    PositionedDirectional(
-                      top: DsSpace.s8,
-                      end: DsSpace.s8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        spacing: DsSpace.s4,
-                        children: [
-                          if (watched case final seen?)
-                            RoomCoverChip(compact: true, text: hongguoWatchedLabel(t, seen)),
-                          if (showsEpisodes)
-                            RoomCoverChip(compact: true, text: t.hongguo.allEpisodesCount(count: series.episodeCount)),
-                          if (showsToday) DsBadge(label: Text(t.hongguo.todayTag), status: DsStatus.success),
-                          if (showsScore)
-                            RoomCoverChip(
-                              text: series.score,
-                              style: theme.typography.numeric(
-                                theme.typography.caption.copyWith(
-                                  color: const Color(0xFFFFFFFF),
-                                  fontWeight: FontWeight.w600,
+                      if (showsRank || showsTag)
+                        PositionedDirectional(
+                          top: DsSpace.s8,
+                          start: DsSpace.s8,
+                          // One mark, not a column of them: the board place
+                          // where the listing ranks, the source's own tag
+                          // where it does not.
+                          child: _CoverMark(rank: showsRank ? rank : null, label: showsTag ? firstTag : null),
+                        ),
+                      PositionedDirectional(
+                        top: DsSpace.s8,
+                        end: DsSpace.s8,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s6,
+                          children: [
+                            if (stateText != null) RoomCoverChip(compact: true, text: stateText, maxWidth: width * 0.6),
+                            // The heart is the kept state, not an offer: an
+                            // unkept title leaves the corner to the state, the
+                            // way an unfollowed room leaves it to nothing.
+                            if (favored) _FavoriteHeartButton(series: series),
+                          ],
+                        ),
+                      ),
+                      if (showsCategory || showsHot)
+                        PositionedDirectional(
+                          start: DsSpace.s8,
+                          end: DsSpace.s8,
+                          bottom: DsSpace.s8,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // The category holds the corner it starts in and
+                              // the figure the opposite one, as the room card
+                              // does — the spacer takes what is left over.
+                              Expanded(
+                                child: Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: showsCategory
+                                      ? RoomCoverChip(text: series.category, maxWidth: width * 0.55)
+                                      : const SizedBox.shrink(),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  if (showsHot)
-                    PositionedDirectional(
-                      bottom: DsSpace.s8,
-                      start: DsSpace.s8,
-                      end: DsSpace.s8,
-                      child: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: RoomCoverChip(text: series.hot),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            SizedBox(
-              height: kHongguoSeriesCardInfoExtent,
-              child: Padding(
-                // The name sits close under the poster and the listing line
-                // under it, both on one line — the room card's information
-                // area, at its height.
-                padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s3,
-                        children: [
+                              if (showsCategory && showsHot) const SizedBox(width: DsSpace.s8),
+                              if (showsHot)
+                                RoomCoverChip(
+                                  text: series.hot,
+                                  icon: DsIcons.flame,
+                                  // The station's heat line is a phrase
+                                  // ("1.2万人在看"), not the bare figure the
+                                  // room card's corner carries, so it takes
+                                  // the wider of the foot's two shares.
+                                  maxWidth: width * 0.55,
+                                  style: theme.typography.numeric(
+                                    theme.typography.caption.copyWith(color: playerInk, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: kHongguoSeriesCardInfoExtent,
+                  child: Padding(
+                    // The name sits close under the poster and the listing line
+                    // under it, both on one line — the room card's information
+                    // area, at its height.
+                    padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s3,
+                      children: [
+                        Text(
+                          series.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                        ),
+                        if (metaLine.isNotEmpty)
                           Text(
-                            series.title,
+                            metaLine,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
                           ),
-                          if (metaLine.isNotEmpty)
-                            Text(
-                              metaLine,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textMuted),
-                            ),
-                        ],
-                      ),
+                      ],
                     ),
-                    if (favoritable) _FavoriteBookmark(series: series),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -450,98 +462,71 @@ final class HongguoFeedHero extends StatelessWidget {
   }
 }
 
-/// The board position on a cover: the top three carry the station's accent.
-final class _RankFlag extends StatelessWidget {
-  const _RankFlag({required this.rank});
+/// The one mark the cover's top-left corner carries: the board place, or the
+/// source's own tag where the listing ranks nothing — at the size the room
+/// card's platform mark keeps.
+final class _CoverMark extends StatelessWidget {
+  const _CoverMark({this.rank, this.label});
 
-  final int rank;
+  final int? rank;
+
+  /// The source's corner label (爆剧 / 新剧 / 独播); null when [rank] is the mark.
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final leading = rank <= 3;
-    return Container(
-      constraints: const BoxConstraints(minWidth: 24),
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s3),
-      alignment: Alignment.center,
-      decoration: DsBoxDecoration(
-        color: leading ? colors.accent : const Color(0xB3000000),
-        borderRadius: BorderRadius.circular(theme.radii.control(24)),
-      ),
-      child: Text(
-        '$rank',
-        style: theme.typography.numeric(
-          theme.typography.caption.copyWith(
-            color: leading ? colors.onAccent : const Color(0xFFFFFFFF),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+    final leading = rank != null && rank! <= 3;
+    final text = label ?? '$rank';
+    return DsBadge(
+      label: Text(text),
+      dot: false,
+      icon: rank == null ? null : const DsIcon(DsIcons.trophy),
+      style: DsBadgeStyle(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+        background: leading ? colors.accent : const Color(0xB3000000),
+        foreground: leading ? colors.onAccent : playerInk,
+        borderRadius: BorderRadius.circular(8),
+        textStyle: theme.typography.labelStrong,
+        iconSize: 14,
+        gap: DsSpace.s6,
       ),
     );
   }
 }
 
-/// A short label laid over the cover's corner.
-final class _CoverTag extends StatelessWidget {
-  const _CoverTag({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s3),
-      decoration: DsBoxDecoration(
-        color: const Color(0xB3000000),
-        borderRadius: BorderRadius.circular(theme.radii.control(22)),
-      ),
-      child: Text(
-        label,
-        style: theme.typography.numeric(
-          theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), fontSize: 11),
-        ),
-      ),
-    );
-  }
-}
-
-/// The card's way onto the local shelf — the bookmark beside its title.
-final class _FavoriteBookmark extends ConsumerWidget {
-  const _FavoriteBookmark({required this.series});
+/// The card's kept state at the cover's corner: the red heart the room card's
+/// follow button is, and the press takes the title off the shelf.
+final class _FavoriteHeartButton extends ConsumerWidget {
+  const _FavoriteHeartButton({required this.series});
 
   final HongguoSeries series;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final favored = ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
-    final label = favored ? t.hongguo.unfavorite : t.hongguo.favorite;
-    return DsTooltip(
-      message: label,
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: () {
-          final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
-          showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
-        },
-        builder: (context, states, _) => Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: DsBoxDecoration(
-            color: (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)) ? colors.hover : null,
-            borderRadius: BorderRadius.circular(theme.radii.control(28)),
-          ),
-          child: DsIcon(
-            favored ? DsIcons.bookmarkCheck : DsIcons.bookmark,
-            size: 14,
-            color: favored ? colors.accentText : colors.textMuted,
-          ),
-        ),
+    return DsButton.icon(
+      onPressed: () {
+        final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
+        showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
+      },
+      semanticLabel: t.hongguo.unfavorite,
+      size: DsSize.xs,
+      variant: DsButtonVariant.ghost,
+      icon: const DsIcon(DsIcons.heart),
+      style: DsButtonStyle(
+        height: 28,
+        padding: EdgeInsets.zero,
+        background: const Color(0x00000000),
+        foreground: DsTheme.colorsOf(context).danger.fill,
+        borderWidth: 0,
+        borderRadius: BorderRadius.circular(DsRadii.pill),
+        iconSize: 14,
+        shadows: const [],
+        hovered: const DsButtonStyle(background: Color(0x00000000)),
+        pressed: const DsButtonStyle(background: Color(0x00000000)),
       ),
     );
   }

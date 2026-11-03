@@ -3725,6 +3725,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoCardToday => '“Today” marker';
 	@override String get hongguoCardScore => 'Score';
 	@override String get hongguoCardHot => 'Cover heat';
+	@override String get hongguoCardCategory => 'Cover category';
 	@override String get hongguoCardMeta => 'Listing line';
 	@override String get hongguoQualityBest => 'Best';
 	@override String get hongguoQuality1080 => '1080P';
@@ -8219,6 +8220,7 @@ extension on TranslationsEn {
 			'settings.hongguoCardToday' => '“Today” marker',
 			'settings.hongguoCardScore' => 'Score',
 			'settings.hongguoCardHot' => 'Cover heat',
+			'settings.hongguoCardCategory' => 'Cover category',
 			'settings.hongguoCardMeta' => 'Listing line',
 			'settings.hongguoQualityBest' => 'Best',
 			'settings.hongguoQuality1080' => '1080P',
@@ -8669,9 +8671,9 @@ extension on TranslationsEn {
 			'vod.comments' => 'Comments',
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
-			'vod.commentsEmpty' => 'No comments yet.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.commentsEmpty' => 'No comments yet.',
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',

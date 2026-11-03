@@ -10747,6 +10747,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '封面热度'
 	String get hongguoCardHot => '封面热度';
 
+	/// zh-CN: '封面分类'
+	String get hongguoCardCategory => '封面分类';
+
 	/// zh-CN: '列表信息'
 	String get hongguoCardMeta => '列表信息';
 
@@ -16764,6 +16767,7 @@ extension on Translations {
 			'settings.hongguoCardToday' => '今日标记',
 			'settings.hongguoCardScore' => '评分',
 			'settings.hongguoCardHot' => '封面热度',
+			'settings.hongguoCardCategory' => '封面分类',
 			'settings.hongguoCardMeta' => '列表信息',
 			'settings.hongguoQualityBest' => '最高',
 			'settings.hongguoQuality1080' => '1080P',
@@ -17214,9 +17218,9 @@ extension on Translations {
 			'vod.comments' => '评论',
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',
-			'vod.commentsEmpty' => '还没有评论。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.commentsEmpty' => '还没有评论。',
 			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',

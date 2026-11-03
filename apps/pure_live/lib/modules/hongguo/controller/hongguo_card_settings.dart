@@ -13,20 +13,23 @@ enum HongguoCardElement {
   /// The source's own corner tags (爆剧 / 新剧 / 独播).
   coverTags,
 
-  /// The episode-count chip on the cover's top edge.
+  /// The episode count, as one of the cover's state candidates.
   episodes,
 
-  /// The 今日 marker on the cover's top edge.
+  /// The 今日 marker, as one of the cover's state candidates.
   today,
 
-  /// The score chip on the cover's top edge.
+  /// The score, as one of the cover's state candidates.
   score,
 
   /// The heat text along the cover's foot.
   hot,
 
-  /// The listing line under the title (the categories, and the heat when the
-  /// cover's own foot does not carry it).
+  /// The categories chip along the cover's foot.
+  category,
+
+  /// The listing line under the title (whatever the cover's own corners
+  /// leave out — the heat or the categories, whichever their switch closed).
   meta,
 }
 
@@ -58,8 +61,13 @@ final class HongguoCardVisibility {
     return HongguoCardVisibility.hiding(elements);
   }
 
-  /// The designed default: every piece drawn.
-  static const HongguoCardVisibility standard = HongguoCardVisibility({});
+  /// The designed default. The episode count and the score are off: the cover
+  /// carries one state pill, and where a poster wall has to choose, the
+  /// viewer's own progress and the station's newest marker read before them.
+  static const HongguoCardVisibility standard = HongguoCardVisibility({
+    HongguoCardElement.episodes,
+    HongguoCardElement.score,
+  });
 
   /// The pieces not drawn.
   final Set<HongguoCardElement> hidden;
