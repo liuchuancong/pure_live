@@ -2,6 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -152,6 +153,16 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   bool _globalMute = false;
   double _volume = 1;
 
+  /// The volume a drag on the picture or a wheel is setting right now; null
+  /// while no gesture shows it. The chip fades on its own, as the room's does.
+  double? _volumeHud;
+  Timer? _volumeHudTimer;
+  double _dragVolume = 1;
+
+  /// Sound only: the channel keeps playing and the picture is put away — a
+  /// radio-shaped way to listen to a station while the desk work continues.
+  bool _audioOnly = false;
+
   /// The Android background-playback gate and the channel it paused.
   BackgroundPlaybackGate? _backgroundGate;
   String? _backgroundPausedChannel;
@@ -251,6 +262,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     _tick?.cancel();
     _digitTimer?.cancel();
     _infoTimer?.cancel();
+    _volumeHudTimer?.cancel();
     _pageFocus.dispose();
     unawaited(_reminders?.cancel() ?? Future<void>.value());
     unawaited(_screenAwake.disable().catchError((Object _) {}));
@@ -726,6 +738,69 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     await _applyAudio(handle);
   }
 
+  /// Shows [value] on the picture's own volume chip, and lets it settle away a
+  /// moment after the last move — the room's gesture, so a viewer learns it
+  /// once and finds it on every player in the app.
+  void _showVolumeHud(double value) {
+    _volumeHudTimer?.cancel();
+    setState(() => _volumeHud = value.clamp(0.0, 1.0));
+    _volumeHudTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _volumeHud = null);
+    });
+  }
+
+  void _beginVolumeDrag() {
+    _dragVolume = _volume;
+    _showVolumeHud(_dragVolume);
+  }
+
+  void _dragVolumeBy(double delta) {
+    final next = (_dragVolume - delta / 220).clamp(0.0, 1.0);
+    _dragVolume = next;
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
+  }
+
+  /// A wheel step takes the viewer's own share of the range (the 画质与音频
+  /// setting), so a desktop mouse has a usable granularity without the slider.
+  void _wheelVolume(double delta) {
+    if (_handle == null) return;
+    final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
+    final next = (_volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
+  }
+
+  /// 音频模式: keep the station's sound and put the picture away. A live TV
+  /// stream has no seek, so this is the "listen while I work" mode rather than
+  /// a battery saving.
+  Future<void> _toggleAudioOnly() async {
+    final handle = _handle;
+    setState(() => _audioOnly = !_audioOnly);
+    if (handle == null) return;
+    try {
+      await handle.setAudioOnly(audioOnly: _audioOnly);
+    } on Object {
+      // A kernel without the mode keeps the picture; the switch says what was
+      // asked and the next channel gets the same try.
+    }
+  }
+
+  /// Writes the frame the channel is showing into the viewer's screenshot
+  /// folder, and says how it went.
+  Future<void> _screenshot() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final file = await capturePlayerFrame(handle, ref.read(appPathsProvider).screenshots, prefix: 'pure_live_iptv');
+    if (!mounted) return;
+    final t = context.t;
+    showDsToast(
+      context: context,
+      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      status: file == null ? DsStatus.danger : DsStatus.success,
+    );
+  }
+
   /// Holds the display awake exactly while the channel plays and the
   /// preference allows it.
   void _syncScreenWake(bool hold) {
@@ -1056,21 +1131,69 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                         fit: StackFit.expand,
                         children: [
                           if (handle != null)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _showInfo,
-                              child: switch (_aspect) {
-                                IptvAspectMode.ratio16x9 => Center(
-                                  child: AspectRatio(aspectRatio: 16 / 9, child: video()),
-                                ),
-                                IptvAspectMode.ratio4x3 => Center(
-                                  child: AspectRatio(aspectRatio: 4 / 3, child: video()),
-                                ),
-                                _ => video(),
+                            Listener(
+                              onPointerSignal: (signal) {
+                                if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
                               },
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _showInfo,
+                                // A vertical drag is the volume, the room's
+                                // rule; the tap keeps naming the channel's info.
+                                onVerticalDragStart: (_) => _beginVolumeDrag(),
+                                onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
+                                child: switch (_aspect) {
+                                  IptvAspectMode.ratio16x9 => Center(
+                                    child: AspectRatio(aspectRatio: 16 / 9, child: video()),
+                                  ),
+                                  IptvAspectMode.ratio4x3 => Center(
+                                    child: AspectRatio(aspectRatio: 4 / 3, child: video()),
+                                  ),
+                                  _ => video(),
+                                },
+                              ),
                             )
                           else
                             const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
+                          // 音频模式 puts a quiet card over the station: the
+                          // sound keeps running, the picture is deliberately
+                          // gone, and the channel's name says what is playing.
+                          if (_audioOnly && handle != null)
+                            Positioned.fill(
+                              child: ColoredBox(
+                                color: colors.overlay,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    spacing: DsSpace.s8,
+                                    children: [
+                                      const DsIcon(DsIcons.headphones, size: 32, color: playerInkSubtle),
+                                      Text(
+                                        channel?.entry.name ?? '',
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.typography.title.copyWith(color: playerInk),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          // The stream's own numbers, on the room's session
+                          // switch: a viewer who turned them on to read a live
+                          // bitrate gets them on a channel too.
+                          if (handle case final player? when ref.watch(playerStatsVisibleProvider))
+                            Positioned.fill(
+                              child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                            ),
+                          if (_volumeHud case final value?)
+                            PositionedDirectional(
+                              end: DsSpace.s20,
+                              top: 0,
+                              bottom: 0,
+                              child: PlayerVolumeHud(value: value),
+                            ),
                           if (_error != null)
                             ColoredBox(
                               color: const Color(0xB3000000),
@@ -1219,6 +1342,27 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           icon: DsIcons.aspectRatio,
                           onPressed: controller.toggle,
                         ),
+                      ),
+                      // The three verbs the room's bar has and this one did not:
+                      // listen without the picture, keep the frame, read the
+                      // numbers behind it.
+                      _IconButton(
+                        semanticLabel: t.room.audioOnlyMode,
+                        icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
+                        selected: _audioOnly,
+                        onPressed: handle == null ? null : () => unawaited(_toggleAudioOnly()),
+                      ),
+                      if (handle?.canCaptureScreenshot ?? false)
+                        _IconButton(
+                          semanticLabel: t.room.screenshot,
+                          icon: DsIcons.camera,
+                          onPressed: () => unawaited(_screenshot()),
+                        ),
+                      _IconButton(
+                        semanticLabel: t.room.statsToggle,
+                        icon: DsIcons.activity,
+                        selected: ref.watch(playerStatsVisibleProvider),
+                        onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
                       ),
                       if (handle != null && presentationController.pipAvailable)
                         _IconButton(
