@@ -68,11 +68,14 @@ final class HttpProxyRoute extends ProxyRoute {
 
   /// The string dart:io's `findProxy` must be handed to authenticate a route.
   ///
-  /// `user:pass@host:port` — and deliberately **without** a scheme:
-  /// `_ProxyConfiguration` cuts the userinfo at the last `@` and then at the
-  /// *first* colon, so `PROXY http://user:pass@host:port` reaches the proxy with
-  /// a username of `http://user`.
-  String get ioRoute => isAuthenticationRequired ? 'PROXY $username:$password@$host:$port' : key;
+  /// `PROXY host:port`, or `PROXY user:pass@host:port` — and deliberately
+  /// **without** a scheme: `_ProxyConfiguration` cuts the userinfo at the
+  /// last `@` and then at the *first* colon, so
+  /// `PROXY http://user:pass@host:port` reaches the proxy with a username of
+  /// `http://user`. A bare `host:port` (what [key] is) is not a directive
+  /// dart:io parses at all: it answers every request with
+  /// `Invalid proxy configuration`.
+  String get ioRoute => isAuthenticationRequired ? 'PROXY $username:$password@$host:$port' : 'PROXY $host:$port';
 
   /// The `http://host:port` form FFmpeg's `-http_proxy` and mpv's `http-proxy`
   /// take.

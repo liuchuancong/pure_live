@@ -36,7 +36,9 @@ void main() {
     const authenticated = HttpProxyRoute(host: '127.0.0.1', port: 7897, username: 'user', password: 'sekret');
     expect(authenticated.ioRoute, 'PROXY user:sekret@127.0.0.1:7897');
     const open = HttpProxyRoute(host: '127.0.0.1', port: 7897);
-    expect(open.ioRoute, open.key);
+    // dart:io parses directives, not URLs: an open endpoint is a bare
+    // PROXY host:port, never the pooled http:// key.
+    expect(open.ioRoute, 'PROXY 127.0.0.1:7897');
   });
 
   test('mpv gets the userinfo URL, FFmpeg gets a bare one', () {
@@ -54,7 +56,7 @@ void main() {
     expect(noPassword.isAuthenticationRequired, isFalse);
     expect(noUser.isAuthenticationRequired, isFalse);
     expect(noPassword.proxyAuthorizationHeader, isNull);
-    expect(noPassword.ioRoute, noPassword.key);
+    expect(noPassword.ioRoute, 'PROXY h:1');
   });
 
   test('the resolved route carries the credential to its own endpoint only', () {
