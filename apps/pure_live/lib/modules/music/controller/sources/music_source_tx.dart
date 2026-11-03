@@ -7,6 +7,15 @@ import 'package:pure_live/modules/music/controller/music_comments.dart' show Mus
 import 'package:pure_live/modules/music/controller/sources/comment_emojis.dart' show kTxCommentEmojis;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show decodeQrc, parseQrc;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
+    show
+        MusicAlbum,
+        MusicAlbumDetail,
+        MusicAlbumSource,
+        MusicArtistDetail,
+        MusicArtistSource,
+        musicArtistPageFromSearch,
+        musicMainArtist;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
@@ -76,10 +85,11 @@ String zzcSign(String text) {
 }
 
 /// The QQ music platform: search and boards ride the signed android gateway;
-/// play URLs come from the lx scripts (the open gateway serves no URLs).
+/// play URLs come from the lx scripts (the open gateway serves no URLs). The
+/// artist and album pages ride the unsigned gateway the reference does.
 final class TxMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
-    implements MusicHotWords, MusicCommentsSource {
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource, MusicArtistSource {
   /// A QQ music source over the lx runtime.
   TxMusicSource(super.runtime, super.http);
 
@@ -105,6 +115,16 @@ final class TxMusicSource extends LxPlatformSource
     }, body);
     if (answer is! Map<String, Object?>) throw StateError('tx answered a non-object');
     return answer;
+  }
+
+  /// One list out of a `musicu` answer: the request's own slot, its `data`,
+  /// then the rows under [key]. A slot the gateway refused simply yields no
+  /// rows, which is what the pages read as "the platform never said".
+  static List<Object?> _musicuList(Map<String, Object?> json, String slot, String key) {
+    final part = json[slot];
+    final data = part is Map ? part['data'] : null;
+    final raw = data is Map ? data[key] : null;
+    return raw is List ? raw : const <Object?>[];
   }
 
   @override
@@ -536,6 +556,179 @@ final class TxMusicSource extends LxPlatformSource
     );
   }
 
+  /// The artist's own page — the reference's tx `singer.js`, whose two lists
+  /// one unsigned `musicu.fcg` POST answers: the songs by play count and the
+  /// discography with each album's own count. Only the biography call is
+  /// gated (a visitor gets code 104400 and an empty list), so the portrait
+  /// comes from the picture CDN instead: `T001R500x500M000<mid>.jpg` is the
+  /// singer's own photo and answers 404 for a mid never issued.
+  ///
+  /// A caller who only knows a name gets the mid out of the platform's own
+  /// search; when even that finds nothing the page falls back to what the
+  /// search alone can say, which is the shape the other platforms here use.
+  @override
+  Future<MusicArtistDetail> artist(String name, {String? artistId}) async {
+    final subject = musicMainArtist(name);
+    final given = (artistId ?? '').trim();
+    final mid = given.isEmpty ? await _singerMidOf(subject) : given;
+    if (mid == null || mid.isEmpty) {
+      return await musicArtistPageFromSearch(search, name, artistId: artistId);
+    }
+    final json = await _musicu({
+      'songs': {
+        'module': 'musichall.song_list_server',
+        'method': 'GetSingerSongList',
+        'param': {'singerMid': mid, 'order': 1, 'begin': 0, 'num': 100},
+      },
+      'albums': {
+        'module': 'music.musichallAlbum.AlbumListServer',
+        'method': 'GetAlbumList',
+        'param': {'singerMid': mid, 'order': 0, 'begin': 0, 'num': 50, 'songNumTag': 1, 'singerID': 0},
+      },
+    });
+    final songs = <audio.MusicTrack>[
+      for (final entry in _musicuList(json, 'songs', 'songList')) ?_trackOf(entry is Map ? entry['songInfo'] : null),
+    ];
+    final albums = <MusicAlbum>[
+      for (final row in _musicuList(json, 'albums', 'albumList'))
+        if (row is Map) _albumOfCard(row.cast<String, Object?>(), mid),
+    ];
+    return (name: subject, artistId: mid, avatarUri: Uri.tryParse(_singerPhoto(mid)), songs: songs, albums: albums);
+  }
+
+  /// The mid of the artist a search row headlines. The singer endpoints ask
+  /// for a mid by name and will not take the numeric ids the rows also carry.
+  Future<String?> _singerMidOf(String subject) async {
+    final page = await search(subject, pageSize: 20);
+    for (final track in page.items) {
+      if (musicMainArtist(track.artist) != subject) continue;
+      final mid = '${track.metadata['artistMid'] ?? ''}'.trim();
+      if (mid.isNotEmpty) return mid;
+    }
+    return null;
+  }
+
+  /// The album's own page — one GET on the v8 album gateway, which answers the
+  /// card and every song of it in the same body. `song_size` is ignored: the
+  /// rows run from `song_begin` to the end, so a single read is the whole
+  /// album. The rows are the v8 shape, not the search's, so they get their own
+  /// mapper rather than being dressed up as search rows.
+  @override
+  Future<MusicAlbumDetail> album(String albumId) async {
+    final mid = albumId.trim();
+    if (mid.isEmpty) return (album: const MusicAlbum(id: '', name: '', artist: ''), tracks: const <audio.MusicTrack>[]);
+    final json = jsonDecode(
+      await getText(
+        Uri.https('c.y.qq.com', '/v8/fcg-bin/fcg_v8_album_info_cp.fcg', {'albummid': mid, 'format': 'json'}),
+        headers: const {'Referer': 'https://y.qq.com/'},
+      ),
+    ) as Map<String, Object?>;
+    final data = json['code'] == 0 ? json['data'] : null;
+    if (data is! Map) return (album: MusicAlbum(id: mid, name: '', artist: ''), tracks: const <audio.MusicTrack>[]);
+    final card = data.cast<String, Object?>();
+    final albumName = '${card['name'] ?? ''}'.trim();
+    final artist = '${card['singername'] ?? ''}'.trim();
+    final singerMid = '${card['singermid'] ?? ''}'.trim();
+    final published = '${card['aDate'] ?? ''}'.trim();
+    final raw = card['list'];
+    final tracks = <audio.MusicTrack>[
+      if (raw is List)
+        for (final entry in raw)
+          if (entry is Map) ?_albumTrackOf(entry.cast<String, Object?>(), mid, albumName, artist),
+    ];
+    final declared = (card['total_song_num'] as num?)?.toInt() ?? 0;
+    return (
+      album: MusicAlbum(
+        id: mid,
+        name: albumName,
+        artist: artist,
+        artistId: singerMid.isEmpty ? null : singerMid,
+        coverUri: Uri.tryParse(_albumPhoto(mid)),
+        trackCount: declared > 0 ? declared : tracks.length,
+        year: published.length >= 4 ? int.tryParse(published.substring(0, 4)) : null,
+      ),
+      tracks: tracks,
+    );
+  }
+
+  /// One row of a singer's discography as the album card the page lists.
+  /// `songNumTag: 1` is what makes the gateway answer a count at all — without
+  /// it every album reports zero songs.
+  MusicAlbum _albumOfCard(Map<String, Object?> row, String artistId) {
+    final mid = '${row['albumMid'] ?? ''}'.trim();
+    final published = '${row['publishDate'] ?? ''}'.trim();
+    return MusicAlbum(
+      id: mid,
+      name: '${row['albumName'] ?? ''}'.trim(),
+      artist: '${row['singerName'] ?? ''}'.trim(),
+      artistId: artistId.isEmpty ? null : artistId,
+      coverUri: mid.isEmpty ? null : Uri.tryParse(_albumPhoto(mid)),
+      trackCount: (row['totalNum'] as num?)?.toInt() ?? 0,
+      year: published.length >= 4 ? int.tryParse(published.substring(0, 4)) : null,
+    );
+  }
+
+  /// One song as the album page names it. The row says `songmid`/`songname`/
+  /// `strMediaMid` where the search says `mid`/`title`/`file.media_mid`, and
+  /// the sizes are flat (`size128`, `size320`, `sizeflac`) rather than under
+  /// `file`; the hi-res tier is not on these rows, so the track does not
+  /// advertise it. A row without a media mid cannot be resolved for play, and
+  /// the search mapper drops those too.
+  audio.MusicTrack? _albumTrackOf(Map<String, Object?> row, String albumMid, String albumName, String artist) {
+    final id = '${row['songmid'] ?? ''}'.trim();
+    final title = '${row['songname'] ?? ''}'.trim();
+    final mediaMid = '${row['strMediaMid'] ?? ''}'.trim();
+    if (id.isEmpty || title.isEmpty || mediaMid.isEmpty) return null;
+    final qualityIds = [
+      if ((row['size128'] as num? ?? 0) != 0) '128k',
+      if ((row['size320'] as num? ?? 0) != 0) '320k',
+      if ((row['sizeflac'] as num? ?? 0) != 0) 'flac',
+    ];
+    final mid = '${row['albummid'] ?? albumMid}'.trim();
+    final pic = mid.isEmpty ? '' : _albumPhoto(mid);
+    final rowAlbum = '${row['albumname'] ?? ''}'.trim();
+    final singers = _singersOf(row['singer']);
+    final leadMid = _leadSingerMid(row['singer']);
+    final seconds = row['interval'];
+    return audio.MusicTrack(
+      id: id,
+      sourceId: 'tx',
+      title: title,
+      artist: singers.isEmpty ? artist : singers,
+      album: rowAlbum.isEmpty ? albumName : rowAlbum,
+      albumId: mid.isEmpty ? null : mid,
+      duration: seconds is num ? Duration(seconds: seconds.toInt()) : null,
+      coverUri: pic.isEmpty ? null : Uri.tryParse(pic),
+      qualities: [for (final quality in qualityIds) LxPlatformSource.qualityOf(quality)],
+      metadata: {
+        'types': qualityIds,
+        'albumId': mid,
+        'songId': '${row['songid'] ?? ''}',
+        'mediaMid': mediaMid,
+        if (pic.isNotEmpty) 'pic': pic,
+        'artistMid': ?leadMid,
+        'artistPic': ?(leadMid == null ? null : _singerPhoto(leadMid)),
+      },
+    );
+  }
+
+  /// The singer's own portrait, by mid.
+  static String _singerPhoto(String mid) => 'https://y.gtimg.cn/music/photo_new/T001R500x500M000$mid.jpg';
+
+  /// An album's cover, by mid — the address the search mapper already builds.
+  static String _albumPhoto(String mid) => 'https://y.gtimg.cn/music/photo_new/T002R500x500M000$mid.jpg';
+
+  /// The mid of the singer a credit line leads with.
+  static String? _leadSingerMid(Object? singers) {
+    if (singers is! List) return null;
+    for (final singer in singers) {
+      if (singer is! Map) continue;
+      final mid = '${singer['mid'] ?? ''}'.trim();
+      if (mid.isNotEmpty) return mid;
+    }
+    return null;
+  }
+
   static audio.MusicTrack? _trackOf(Object? entry) {
     if (entry is! Map) return null;
     final file = entry['file'];
@@ -554,6 +747,7 @@ final class TxMusicSource extends LxPlatformSource
     final albumName = album is Map ? '${album['name'] ?? ''}' : '';
     final albumMid = album is Map ? '${album['mid'] ?? ''}' : '';
     final seconds = entry['interval'];
+    final leadMid = _leadSingerMid(entry['singer']);
     final picUrl = albumMid.isEmpty || albumName == '空'
         ? ''
         : 'https://y.gtimg.cn/music/photo_new/T002R500x500M000$albumMid.jpg';
@@ -573,6 +767,8 @@ final class TxMusicSource extends LxPlatformSource
         'songId': '${entry['id'] ?? ''}',
         'mediaMid': '${file['media_mid'] ?? ''}',
         if (picUrl.isNotEmpty) 'pic': picUrl,
+        'artistMid': ?leadMid,
+        'artistPic': ?(leadMid == null ? null : _singerPhoto(leadMid)),
       },
     );
   }
