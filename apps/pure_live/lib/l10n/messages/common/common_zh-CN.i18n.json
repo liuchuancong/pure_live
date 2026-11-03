@@ -21,6 +21,7 @@
   "switchModule": "切换内容类型",
   "openNavigation": "打开导航",
   "refreshFailed": "刷新失败",
+  "refresh": "刷新",
   "layout": "切换排版",
   "layoutGrid": "卡片排版",
   "layoutList": "列表排版",

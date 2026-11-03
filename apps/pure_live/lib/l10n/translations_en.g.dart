@@ -422,6 +422,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get switchModule => 'Switch content type';
 	@override String get openNavigation => 'Open navigation';
 	@override String get refreshFailed => 'Refresh failed';
+	@override String get refresh => 'Refresh';
 	@override String get layout => 'Switch layout';
 	@override String get layoutGrid => 'Card layout';
 	@override String get layoutList => 'List layout';
@@ -4991,6 +4992,7 @@ extension on TranslationsEn {
 			'common.switchModule' => 'Switch content type',
 			'common.openNavigation' => 'Open navigation',
 			'common.refreshFailed' => 'Refresh failed',
+			'common.refresh' => 'Refresh',
 			'common.layout' => 'Switch layout',
 			'common.layoutGrid' => 'Card layout',
 			'common.layoutList' => 'List layout',
@@ -5043,9 +5045,9 @@ extension on TranslationsEn {
 			'common.previewDeleteFailed' => 'The file could not be deleted',
 			'common.rename' => 'Rename',
 			'favorites.emptyTitle' => 'No followed rooms yet',
-			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			_ => null,
 		} ?? switch (path) {
+			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
 			'favorites.statusAll' => 'All',
 			'favorites.statusLive' => 'Live',
@@ -5557,9 +5559,9 @@ extension on TranslationsEn {
 			'iptv.browseReset' => 'Reset to defaults',
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
-			'iptv.recentTitle' => 'Recently watched',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.recentTitle' => 'Recently watched',
 			'iptv.recentCount' => ({required Object count}) => '${count} channels',
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
 			'iptv.recentRemove' => 'Remove from recent',
@@ -6071,9 +6073,9 @@ extension on TranslationsEn {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
-			'music.desktopLyricAlignCenter' => 'Center',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricAlignCenter' => 'Center',
 			'music.desktopLyricAlignRight' => 'Right',
 			'music.desktopLyricColorWhite' => 'White',
 			'music.desktopLyricColorYellow' => 'Yellow',
@@ -6585,9 +6587,9 @@ extension on TranslationsEn {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
 			'recorder.cacheLimitEnabledDesc' => 'Delete the oldest finished takes when the cap is exceeded; active recordings are never deleted.',
-			'recorder.cacheLimit' => 'Cache cap',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.cacheLimit' => 'Cache cap',
 			'recorder.cacheLimitDesc' => 'Measured in MB; above it the oldest takes are deleted, never an active recording.',
 			'recorder.cacheSize' => 'Current recording cache',
 			'recorder.cacheSizeDesc' => 'Total bytes of finished and active files in the managed folder.',
@@ -7099,9 +7101,9 @@ extension on TranslationsEn {
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
-			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'No restart after the proxy app changes.',
@@ -7613,9 +7615,9 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => 'How audio and video clocks align. audio is the mpv default; display-resample is smoothest but GPU heavy and pairs with interpolation; vdrop/drop variants drop frames on drift. Desktop only.',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
-			'settings.playerGuideEntryInterpolationBody' => 'Motion-interpolated rendering. Noticeably smoother pans; requires display-resample sync and real GPU headroom. Desktop only.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntryInterpolationBody' => 'Motion-interpolated rendering. Noticeably smoother pans; requires display-resample sync and real GPU headroom. Desktop only.',
 			'settings.playerGuideEntryScaleTitle' => '--scale',
 			'settings.playerGuideEntryScaleBody' => 'Upscaling kernel. lanczos is the balanced pick; ewa_lanczossharp the sharpest; ewa_lanczos4sharpest is designed for interpolation; bilinear/nearest are fastest but soft or blocky. Mobile only offers lanczos and bilinear.',
 			'settings.playerGuideEntryDeinterlaceTitle' => '--deinterlace',
@@ -8127,9 +8129,9 @@ extension on TranslationsEn {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
-			'settings.floatWindowSmall' => 'Small',
 			_ => null,
 		} ?? switch (path) {
+			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
@@ -8641,9 +8643,9 @@ extension on TranslationsEn {
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
 			'vod.downloadPause' => 'Pause download',
-			'vod.downloadQueued' => 'Added to the download queue',
 			_ => null,
 		} ?? switch (path) {
+			'vod.downloadQueued' => 'Added to the download queue',
 			'vod.downloadDuplicate' => 'This part is already in the queue',
 			'vod.downloadManagerHint' => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',
 			'vod.downloadSettingsTitle' => 'Download settings',

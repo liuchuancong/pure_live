@@ -156,6 +156,9 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
 
     void managePlatforms() =>
         unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location));
+    // The feed's own reload: the shown platform's first page, asked again.
+    final loadingFeed = ref.watch(popularCatalogProvider.select((catalog) => catalog[platform]?.loading ?? false));
+    void refreshFeed() => unawaited(ref.read(popularCatalogProvider.notifier).refresh(platform));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -176,13 +179,29 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                 onManagePlatforms: managePlatforms,
                 onChanged: choosePlatform,
               );
-              if (!narrow) return tabs;
+              final refresh = DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.common.refresh,
+                onPressed: loadingFeed ? null : refreshFeed,
+                icon: const DsIcon(DsIcons.refreshCw, size: 16),
+              );
+              if (!narrow) {
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    refresh,
+                  ],
+                );
+              }
               return SizedBox(
                 height: 44,
                 child: Row(
                   spacing: DsSpace.s8,
                   children: [
                     Expanded(child: tabs),
+                    refresh,
                     PlatformToolbarMore(
                       platforms: ids,
                       current: platform,

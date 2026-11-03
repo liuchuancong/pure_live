@@ -21,6 +21,7 @@
   "switchModule": "Switch content type",
   "openNavigation": "Open navigation",
   "refreshFailed": "Refresh failed",
+  "refresh": "Refresh",
   "layout": "Switch layout",
   "layoutGrid": "Card layout",
   "layoutList": "List layout",

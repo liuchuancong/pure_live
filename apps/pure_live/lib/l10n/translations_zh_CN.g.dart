@@ -1072,6 +1072,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '刷新失败'
 	String get refreshFailed => '刷新失败';
 
+	/// zh-CN: '刷新'
+	String get refresh => '刷新';
+
 	/// zh-CN: '切换排版'
 	String get layout => '切换排版';
 
@@ -13480,6 +13483,7 @@ extension on Translations {
 			'common.switchModule' => '切换内容类型',
 			'common.openNavigation' => '打开导航',
 			'common.refreshFailed' => '刷新失败',
+			'common.refresh' => '刷新',
 			'common.layout' => '切换排版',
 			'common.layoutGrid' => '卡片排版',
 			'common.layoutList' => '列表排版',
@@ -13532,9 +13536,9 @@ extension on Translations {
 			'common.previewDeleteFailed' => '文件未能删除',
 			'common.rename' => '重命名',
 			'favorites.emptyTitle' => '还没有关注的房间',
-			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			_ => null,
 		} ?? switch (path) {
+			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
 			'favorites.statusAll' => '全部',
 			'favorites.statusLive' => '直播中',
@@ -14046,9 +14050,9 @@ extension on Translations {
 			'iptv.browseReset' => '恢复默认',
 			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
-			'iptv.recentTitle' => '最近观看',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.recentTitle' => '最近观看',
 			'iptv.recentCount' => ({required Object count}) => '共 ${count} 个频道',
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
 			'iptv.recentRemove' => '从最近观看中移除',
@@ -14560,9 +14564,9 @@ extension on Translations {
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
-			'music.desktopLyricAlignCenter' => '居中',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricAlignCenter' => '居中',
 			'music.desktopLyricAlignRight' => '右对齐',
 			'music.desktopLyricColorWhite' => '白色',
 			'music.desktopLyricColorYellow' => '黄色',
@@ -15074,9 +15078,9 @@ extension on Translations {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
 			'recorder.cacheLimitEnabled' => '限制录制缓存',
 			'recorder.cacheLimitEnabledDesc' => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。',
-			'recorder.cacheLimit' => '缓存上限',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.cacheLimit' => '缓存上限',
 			'recorder.cacheLimitDesc' => '超过上限从最旧的已完成录像删起；正在录制的不动。',
 			'recorder.cacheSize' => '当前录制缓存',
 			'recorder.cacheSizeDesc' => '录制目录中已完成与正在录制的文件总大小。',
@@ -15588,9 +15592,9 @@ extension on Translations {
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
-			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理开关变化后无需重启应用。',
@@ -16102,9 +16106,9 @@ extension on Translations {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
-			'settings.playerGuideEntryInterpolationBody' => '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntryInterpolationBody' => '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。',
 			'settings.playerGuideEntryScaleTitle' => '--scale',
 			'settings.playerGuideEntryScaleBody' => '画面放大算法。lanczos 均衡推荐；ewa_lanczossharp 最锐利；ewa_lanczos4sharpest 专为插帧设计；bilinear/nearest 最快但糊或块状。移动端只提供 lanczos 与 bilinear。',
 			'settings.playerGuideEntryDeinterlaceTitle' => '--deinterlace',
@@ -16616,9 +16620,9 @@ extension on Translations {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
-			'settings.floatWindowSmall' => '小',
 			_ => null,
 		} ?? switch (path) {
+			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
@@ -17130,9 +17134,9 @@ extension on Translations {
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadCancel' => '取消下载',
 			'vod.downloadPause' => '暂停下载',
-			'vod.downloadQueued' => '已加入下载队列',
 			_ => null,
 		} ?? switch (path) {
+			'vod.downloadQueued' => '已加入下载队列',
 			'vod.downloadDuplicate' => '该分P已在下载队列',
 			'vod.downloadManagerHint' => '队列按设置的并行数同时下载；地址过期时自动换新地址，从已下载的字节续传。下载完成后到侧边栏的「下载管理」预览、播放或打开所在文件夹。',
 			'vod.downloadSettingsTitle' => '下载设置',
