@@ -3,6 +3,7 @@
 /// settings pane.
 library;
 
+export 'controller/vod_card_settings.dart';
 export 'controller/vod_controller.dart';
 export 'controller/vod_downloads.dart';
 export 'controller/vod_library.dart';

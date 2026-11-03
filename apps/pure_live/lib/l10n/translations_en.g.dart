@@ -4159,6 +4159,11 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get showDetailsDesc => 'Off hides the uploader, stats and description.';
 	@override String get showFeedBanner => 'Home head picture';
 	@override String get showFeedBannerDesc => 'The first pick of Recommended and Popular drawn at head size above the feed.';
+	@override String get cardElements => 'Card information';
+	@override String get cardPlays => 'Play count';
+	@override String get cardDanmaku => 'Danmaku count';
+	@override String get cardDuration => 'Duration';
+	@override String get cardUploader => 'Uploader';
 	@override String get playbackReset => 'Restore default playback';
 	@override String get playbackResetDesc => 'Normal speed, the next part when one ends, details shown.';
 	@override String get personalTitle => 'My videos';
@@ -8584,6 +8589,11 @@ extension on TranslationsEn {
 			'vod.showDetailsDesc' => 'Off hides the uploader, stats and description.',
 			'vod.showFeedBanner' => 'Home head picture',
 			'vod.showFeedBannerDesc' => 'The first pick of Recommended and Popular drawn at head size above the feed.',
+			'vod.cardElements' => 'Card information',
+			'vod.cardPlays' => 'Play count',
+			'vod.cardDanmaku' => 'Danmaku count',
+			'vod.cardDuration' => 'Duration',
+			'vod.cardUploader' => 'Uploader',
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'vod.personalTitle' => 'My videos',
@@ -8632,13 +8642,13 @@ extension on TranslationsEn {
 			'vod.downloadCancel' => 'Cancel download',
 			'vod.downloadPause' => 'Pause download',
 			'vod.downloadQueued' => 'Added to the download queue',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadDuplicate' => 'This part is already in the queue',
 			'vod.downloadManagerHint' => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',
 			'vod.downloadSettingsTitle' => 'Download settings',
 			'vod.downloadMaxConcurrent' => 'Simultaneous downloads',
 			'vod.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadQuality' => 'Download quality',
 			'vod.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
 			'vod.downloadDanmaku' => 'Save danmaku too',

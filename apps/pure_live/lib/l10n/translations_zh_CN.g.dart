@@ -11977,6 +11977,21 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '把推荐与热门的第一条铺成片单上方的头图。'
 	String get showFeedBannerDesc => '把推荐与热门的第一条铺成片单上方的头图。';
 
+	/// zh-CN: '卡片显示项'
+	String get cardElements => '卡片显示项';
+
+	/// zh-CN: '播放量'
+	String get cardPlays => '播放量';
+
+	/// zh-CN: '弹幕数'
+	String get cardDanmaku => '弹幕数';
+
+	/// zh-CN: '时长'
+	String get cardDuration => '时长';
+
+	/// zh-CN: 'UP 主'
+	String get cardUploader => 'UP 主';
+
 	/// zh-CN: '恢复默认播放行为'
 	String get playbackReset => '恢复默认播放行为';
 
@@ -17063,6 +17078,11 @@ extension on Translations {
 			'vod.showDetailsDesc' => '关闭后隐藏 UP 主、数据和简介。',
 			'vod.showFeedBanner' => '首页头图',
 			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
+			'vod.cardElements' => '卡片显示项',
+			'vod.cardPlays' => '播放量',
+			'vod.cardDanmaku' => '弹幕数',
+			'vod.cardDuration' => '时长',
+			'vod.cardUploader' => 'UP 主',
 			'vod.playbackReset' => '恢复默认播放行为',
 			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'vod.personalTitle' => '我的视频',
@@ -17111,13 +17131,13 @@ extension on Translations {
 			'vod.downloadCancel' => '取消下载',
 			'vod.downloadPause' => '暂停下载',
 			'vod.downloadQueued' => '已加入下载队列',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadDuplicate' => '该分P已在下载队列',
 			'vod.downloadManagerHint' => '队列按设置的并行数同时下载；地址过期时自动换新地址，从已下载的字节续传。下载完成后到侧边栏的「下载管理」预览、播放或打开所在文件夹。',
 			'vod.downloadSettingsTitle' => '下载设置',
 			'vod.downloadMaxConcurrent' => '同时下载数',
 			'vod.downloadMaxConcurrentDesc' => '同时进行的下载任务数量，改动即时生效。',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadQuality' => '默认下载画质',
 			'vod.downloadQualityDesc' => '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。',
 			'vod.downloadDanmaku' => '同时保存弹幕',

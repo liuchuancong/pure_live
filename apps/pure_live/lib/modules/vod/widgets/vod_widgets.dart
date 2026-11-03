@@ -1,7 +1,9 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_card_settings.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// "12:34" or "1:02:03" for a video's length.
@@ -47,8 +49,9 @@ const double kVodSeasonTileAspect = 0.62;
 /// the station's own home lays them out: the counts sit on the cover as
 /// white ink with a soft shadow — plays and danmaku at its foot's start,
 /// the length at its foot's end — and beneath it the title and the uploader.
-/// The whole card is one press target.
-final class VodVideoCard extends StatelessWidget {
+/// The whole card is one press target. Which of those four pieces appears is
+/// the card visibility setting's to say; the title is not one of them.
+final class VodVideoCard extends ConsumerWidget {
   /// The card for [video]; [onOpen] opens its page.
   const VodVideoCard({required this.video, this.onOpen, this.rank, super.key});
 
@@ -62,16 +65,20 @@ final class VodVideoCard extends StatelessWidget {
   final int? rank;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final visibility = ref.watch(vodCardSettingsProvider);
     final count = video.playCount;
-    final plays = count == null || count <= 0 ? '' : AudienceFormat.format(count);
-    final uploader = (video.uploader ?? '').trim();
+    final plays = !visibility.shows(VodCardElement.plays) || count == null || count <= 0
+        ? ''
+        : AudienceFormat.format(count);
+    final uploader = visibility.shows(VodCardElement.uploader) ? (video.uploader ?? '').trim() : '';
     final danmaku = switch (video.danmakuCount) {
-      final value? when value > 0 => AudienceFormat.format(value),
+      final value? when value > 0 && visibility.shows(VodCardElement.danmaku) => AudienceFormat.format(value),
       _ => '',
     };
+    final showsDuration = visibility.shows(VodCardElement.duration) && video.duration != null;
     return DsCard(
       onPressed: onOpen,
       semanticLabel: video.title,
@@ -120,40 +127,41 @@ final class VodVideoCard extends StatelessWidget {
                     ),
                   // The station's own cover ink: the play and danmaku figures
                   // at the foot's start, the length at its end, each plain
-                  // white with a soft shadow instead of a capsule.
-                  PositionedDirectional(
-                    start: DsSpace.s8,
-                    end: DsSpace.s8,
-                    bottom: DsSpace.s6,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Wrap(
-                            spacing: DsSpace.s8,
-                            runSpacing: DsSpace.s3,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              if (plays.isNotEmpty)
-                                _CoverInk(icon: DsIcons.play, label: plays),
-                              if (danmaku.isNotEmpty)
-                                _CoverInk(icon: DsIcons.captions, label: danmaku),
-                            ],
-                          ),
-                        ),
-                        if (video.duration != null)
-                          Text(
-                            vodDurationText(video.duration!),
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(
-                                color: const Color(0xFFFFFFFF),
-                                fontWeight: FontWeight.w600,
-                              ),
+                  // white with a soft shadow instead of a capsule. Hidden
+                  // pieces leave their slot, and with all three hidden the row
+                  // is not drawn at all.
+                  if (plays.isNotEmpty || danmaku.isNotEmpty || showsDuration)
+                    PositionedDirectional(
+                      start: DsSpace.s8,
+                      end: DsSpace.s8,
+                      bottom: DsSpace.s6,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: DsSpace.s8,
+                              runSpacing: DsSpace.s3,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                if (plays.isNotEmpty) _CoverInk(icon: DsIcons.play, label: plays),
+                                if (danmaku.isNotEmpty) _CoverInk(icon: DsIcons.captions, label: danmaku),
+                              ],
                             ),
                           ),
-                      ],
+                          if (showsDuration)
+                            Text(
+                              vodDurationText(video.duration!),
+                              style: theme.typography.numeric(
+                                theme.typography.caption.copyWith(
+                                  color: const Color(0xFFFFFFFF),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -812,7 +820,7 @@ final class VodUserRow extends StatelessWidget {
 /// in a feed, the position for one the player stopped on. [stamp] sits at the
 /// end of the title line and says when the row's record happened, for the
 /// lists that are read by time rather than by what they hold.
-final class VodVideoRow extends StatelessWidget {
+final class VodVideoRow extends ConsumerWidget {
   /// The row for [video]; [onOpen] opens its page and [trailing] is the row's
   /// own action.
   const VodVideoRow({
@@ -848,16 +856,22 @@ final class VodVideoRow extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final visibility = ref.watch(vodCardSettingsProvider);
     final count = video.playCount;
-    final plays = count == null || count <= 0 ? '' : AudienceFormat.format(count);
+    final plays = !visibility.shows(VodCardElement.plays) || count == null || count <= 0
+        ? ''
+        : AudienceFormat.format(count);
     final danmaku = switch (video.danmakuCount) {
-      final value? when value > 0 => AudienceFormat.format(value),
+      final value? when value > 0 && visibility.shows(VodCardElement.danmaku) => AudienceFormat.format(value),
       _ => '',
     };
-    final note = (subtitle ?? video.uploader ?? '').trim();
+    // A page's own line under the title is what that list is read for, so it
+    // stays; only the uploader this row falls back to answers to the switch.
+    final note = (subtitle ?? (visibility.shows(VodCardElement.uploader) ? video.uploader ?? '' : '')).trim();
+    final length = visibility.shows(VodCardElement.duration) ? video.duration : null;
     return DsCard(
       onPressed: onOpen,
       semanticLabel: video.title,
@@ -894,13 +908,13 @@ final class VodVideoRow extends StatelessWidget {
                         end: 0,
                         child: DsProgressBar(value: value, animate: false, style: const DsProgressBarStyle(height: 3)),
                       )
-                    else if (video.duration != null)
+                    else if (length case final value?)
                       PositionedDirectional(
                         bottom: DsSpace.s4,
                         end: DsSpace.s4,
                         child: RoomCoverChip(
                           compact: true,
-                          text: vodDurationText(video.duration!),
+                          text: vodDurationText(value),
                           style: theme.typography.numeric(
                             theme.typography.caption.copyWith(
                               fontSize: 10,

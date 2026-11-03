@@ -7,6 +7,7 @@ import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_card_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart';
 
@@ -110,7 +111,8 @@ final class VodPlaybackPane extends ConsumerWidget {
 }
 
 /// The reference's interface page: whether the archive's details sit under
-/// the picture. The video page reads it where it paints.
+/// the picture, and which pieces an archive card draws. The video page and
+/// the three browse grids read these where they paint.
 final class VodInterfacePane extends ConsumerWidget {
   /// The pane shown under Settings → Bilibili video → 界面设置.
   const VodInterfacePane({super.key});
@@ -120,26 +122,53 @@ final class VodInterfacePane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(vodPlaybackSettingsProvider);
     final controller = ref.read(vodPlaybackSettingsProvider.notifier);
-    return DsListSection(
-      header: Text(t.settings.navVodInterface),
+    final card = ref.watch(vodCardSettingsProvider);
+    final cardController = ref.read(vodCardSettingsProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.image),
-          title: t.vod.showFeedBanner,
-          description: t.vod.showFeedBannerDesc,
-          control: DsSwitch(
-            value: ref.watch(vodFeedBannerProvider),
-            onChanged: (value) => unawaited(ref.read(vodFeedBannerProvider.notifier).setShown(value: value)),
-          ),
+        DsListSection(
+          header: Text(t.settings.navVodInterface),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.image),
+              title: t.vod.showFeedBanner,
+              description: t.vod.showFeedBannerDesc,
+              control: DsSwitch(
+                value: ref.watch(vodFeedBannerProvider),
+                onChanged: (value) => unawaited(ref.read(vodFeedBannerProvider.notifier).setShown(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.info),
+              title: t.vod.showDetails,
+              description: t.vod.showDetailsDesc,
+              control: DsSwitch(
+                value: settings.showDetails,
+                onChanged: (value) => unawaited(controller.setShowDetails(value: value)),
+              ),
+            ),
+          ],
         ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.info),
-          title: t.vod.showDetails,
-          description: t.vod.showDetailsDesc,
-          control: DsSwitch(
-            value: settings.showDetails,
-            onChanged: (value) => unawaited(controller.setShowDetails(value: value)),
-          ),
+        DsListSection(
+          header: Text(t.vod.cardElements),
+          children: [
+            for (final (element, icon, label) in <(VodCardElement, DsIconData, String)>[
+              (VodCardElement.plays, DsIcons.play, t.vod.cardPlays),
+              (VodCardElement.danmaku, DsIcons.captions, t.vod.cardDanmaku),
+              (VodCardElement.duration, DsIcons.clock, t.vod.cardDuration),
+              (VodCardElement.uploader, DsIcons.user, t.vod.cardUploader),
+            ])
+              SettingsConfigRow(
+                leading: DsIcon(icon),
+                title: label,
+                control: DsSwitch(
+                  value: card.shows(element),
+                  onChanged: (value) => unawaited(cardController.setElement(element, visible: value)),
+                ),
+              ),
+          ],
         ),
       ],
     );
