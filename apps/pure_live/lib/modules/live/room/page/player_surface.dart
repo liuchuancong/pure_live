@@ -8,6 +8,8 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_device/live_device.dart'
+    show PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveRoom, LiveStreamCodec, LiveStreamFormat;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
@@ -209,6 +211,21 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   Timer? _volumeHudTimer;
   double _dragVolume = 0;
 
+  /// Which figure the chip is showing: the volume, or the screen brightness the
+  /// picture's left half adjusts.
+  bool _hudIsBrightness = false;
+  bool _dragIsBrightness = false;
+
+  /// The screen brightness the left half adjusts, and whether this platform will
+  /// take the write at all. Asked once: a desktop with no DDC-capable monitor
+  /// answers `unsupported`, and there the whole picture stays the volume rather
+  /// than offering a gesture that does nothing.
+  final ScreenBrightnessService _screenBrightness = const PlatformScreenBrightnessService();
+  bool? _brightnessWritable;
+  ScreenBrightnessScope _brightnessScope = ScreenBrightnessScope.application;
+  int _brightness = 100;
+  double _dragBrightness = 100;
+
   /// A vertical drag in the portrait full screen's middle third that may
   /// switch rooms instead of changing the volume.
   double _portraitSwipeDy = 0;
@@ -240,6 +257,27 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     super.initState();
     _controlsFocus.addListener(_onControlsFocus);
     _scheduleHide();
+    unawaited(_syncBrightness());
+  }
+
+  /// Asks the display what it can do, and where the brightness stands now.
+  Future<void> _syncBrightness() async {
+    try {
+      final capabilities = await _screenBrightness.getCapabilities();
+      final scope = capabilities.supportsScope(ScreenBrightnessScope.application)
+          ? ScreenBrightnessScope.application
+          : ScreenBrightnessScope.system;
+      final value = capabilities.canRead ? await _screenBrightness.getBrightness(scope: scope) : null;
+      if (!mounted) return;
+      setState(() {
+        _brightnessWritable = capabilities.canOfferBrightnessControl;
+        _brightnessScope = scope;
+        if (value != null) _brightness = value.clamp(0, 100);
+      });
+    } on Object {
+      // A display that will not answer simply has no brightness half.
+      if (mounted) setState(() => _brightnessWritable = false);
+    }
   }
 
   @override
@@ -560,11 +598,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     widget.barrage?.resumeAllPaused();
   }
 
-  /// Shows the volume the viewer is setting and lets the bar go after a
-  /// moment on its own.
-  void _showVolume(double value) {
+  /// Shows the figure the picture's gesture is setting; [brightness] says which
+  /// one it is, so the glyph and the number always agree.
+  void _showAdjust(double value, {bool brightness = false}) {
     _volumeHudTimer?.cancel();
-    setState(() => _volumeHud = value.clamp(0.0, 1.0));
+    setState(() {
+      _volumeHud = value.clamp(0.0, 1.0);
+      _hudIsBrightness = brightness;
+    });
     _volumeHudTimer = Timer(const Duration(milliseconds: 900), () {
       if (mounted) setState(() => _volumeHud = null);
     });
@@ -572,15 +613,41 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   /// A vertical drag takes the volume from where it is: up is louder, the
   /// whole picture is the track (no brightness half to confuse the pinch).
-  void _beginVolumeDrag() {
+  /// A vertical drag on the picture: the right half is the volume, the left half
+  /// the screen's brightness — the arrangement every video surface the viewer
+  /// already knows uses. The brightness half exists only where the display will
+  /// take the write; elsewhere the whole picture is the volume, so no half is
+  /// ever a gesture that does nothing.
+  void _beginPictureDrag(double dx, double width) {
+    _dragIsBrightness = _brightnessWritable == true && dx < width / 2;
+    if (_dragIsBrightness) {
+      _dragBrightness = _brightness.toDouble();
+      _showAdjust(_brightness / 100, brightness: true);
+      return;
+    }
     _dragVolume = ref.read(roomProvider.notifier).volume;
-    _showVolume(_dragVolume);
+    _showAdjust(_dragVolume);
   }
 
-  void _dragVolumeBy(double delta) {
+  void _dragPictureBy(double delta) {
+    if (_dragIsBrightness) {
+      // The same travel as the volume: a full-height drag crosses the range.
+      final next = (_dragBrightness - delta / 2.2).clamp(0.0, 100.0);
+      _dragBrightness = next;
+      _showAdjust(next / 100, brightness: true);
+      // A native write only when the whole percent actually moved — a drag
+      // reports a delta per frame, and the display takes one value per percent.
+      if (next.round() != _brightness) {
+        _brightness = next.round();
+        unawaited(
+          _screenBrightness.setBrightness(_brightness, scope: _brightnessScope).catchError((Object _) => _brightness),
+        );
+      }
+      return;
+    }
     final next = (_dragVolume - delta / 220).clamp(0.0, 1.0);
     _dragVolume = next;
-    _showVolume(next);
+    _showAdjust(next);
     unawaited(ref.read(roomProvider.notifier).setVolume(next));
   }
 
@@ -590,7 +657,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   void _wheelVolume(double delta) {
     final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
     final next = (ref.read(roomProvider.notifier).volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
-    _showVolume(next);
+    _showAdjust(next);
     unawaited(ref.read(roomProvider.notifier).setVolume(next));
   }
 
@@ -644,11 +711,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // on a touch screen — the picture would be paused and silent of controls.
     final barOverPicture = picture.kind == RoomPictureKind.none || picture.kind == RoomPictureKind.paused;
     final showBar = handle != null && barOverPicture && (_controlsVisible || !playing);
-    // A pointer drag over the picture moves the window: desktop only, and only
-    // while the room is an ordinary window — a fullscreen or compact surface
-    // has its own rules. The volume swipe is a phone gesture and gives the
-    // drag the whole picture here (the wheel still sets the volume).
-    final desktopDrag = _desktop && presentation == PresentationMode.normal;
     _watchTransport(handle);
     ref.listen(roomProvider.select((state) => state.playback.playing), (previous, next) {
       if (next) {
@@ -750,20 +812,21 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       }
                       unawaited(ref.read(roomProvider.notifier).togglePlayPause());
                     },
+                    // The compact window is dragged by its picture: it has no
+                    // caption of its own to grab. The main window is not — its
+                    // title band is the handle (see _roomAppBar), which frees the
+                    // whole picture for the two adjustment halves below.
                     onPanStart: mini
                         ? (_) {
                             final window = ref.read(windowsPipWindowProvider);
                             if (window != null) unawaited(window.startDragging());
                           }
-                        : desktopDrag
-                        ? (_) =>
-                              unawaited(ref.read(desktopWindowHostProvider).startDragging().catchError((Object _) {}))
                         : null,
-                    onVerticalDragStart: mini || desktopDrag
+                    onVerticalDragStart: mini
                         ? null
                         : (details) {
                             _releaseDanmaku();
-                            final width = MediaQuery.sizeOf(context).width;
+                            final width = context.size?.width ?? MediaQuery.sizeOf(context).width;
                             final swipe = widget.onPortraitSwipe;
                             if (widget.portraitFullscreen &&
                                 swipe != null &&
@@ -773,18 +836,18 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                               _portraitSwipeDy = 0;
                               return;
                             }
-                            _beginVolumeDrag();
+                            _beginPictureDrag(details.localPosition.dx, width);
                           },
-                    onVerticalDragUpdate: mini || desktopDrag
+                    onVerticalDragUpdate: mini
                         ? null
                         : (details) {
                             if (_swipingPortrait) {
                               _portraitSwipeDy += details.delta.dy;
                               return;
                             }
-                            _dragVolumeBy(details.delta.dy);
+                            _dragPictureBy(details.delta.dy);
                           },
-                    onVerticalDragEnd: mini || desktopDrag
+                    onVerticalDragEnd: mini
                         ? null
                         : (details) {
                             if (!_swipingPortrait) return;
@@ -794,7 +857,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             if (dy.abs() < 80) return;
                             widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
                           },
-                    onVerticalDragCancel: mini || desktopDrag
+                    onVerticalDragCancel: mini
                         ? null
                         : () {
                             _swipingPortrait = false;
@@ -808,7 +871,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   end: DsSpace.s20,
                   top: 0,
                   bottom: 0,
-                  child: PlayerVolumeHud(value: volume),
+                  // The glyph names the figure, so a drag on the left half never
+                  // reads as the volume it is not.
+                  child: PlayerVolumeHud(value: volume, icon: _hudIsBrightness ? DsIcons.sun : null),
                 ),
               if (picture.kind != RoomPictureKind.none)
                 Stack(

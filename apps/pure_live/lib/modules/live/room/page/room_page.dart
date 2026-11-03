@@ -1236,7 +1236,18 @@ PreferredSizeWidget _roomAppBar(
       child: leading,
     ),
     titleSpacing: DsSpace.s8,
-    title: ownChrome ? const WindowDragArea(child: _RoomHeader()) : const _RoomHeader(),
+    // The whole middle band is the window's handle, not just the two lines of
+    // text: a Column sized to its own words leaves the space beside them inert,
+    // and a viewer reaching for "the title bar" grabs that space. The buttons
+    // keep their own taps — the band only claims a drag.
+    title: ownChrome
+        ? const SizedBox(
+            width: double.infinity,
+            child: WindowDragArea(
+              child: Align(alignment: AlignmentDirectional.centerStart, child: _RoomHeader()),
+            ),
+          )
+        : const _RoomHeader(),
     actions: [
       const _FollowPill(),
       _RoomMenu(onClose: leave, shortcuts: shortcuts),
