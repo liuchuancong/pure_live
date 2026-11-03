@@ -45,6 +45,46 @@ const double kHongguoSeriesRowExtent = kRoomCardListDesignHeight;
 /// gives it, and the two layouts of one feed cannot disagree by a few pixels.
 const double kHongguoSeriesRowPosterHeight = kHongguoSeriesRowExtent - 2 * DsSpace.s8;
 
+/// The widest a poster tile gets: the app's own poster measure — what the area
+/// catalogue keeps — rather than the room feed's card width. A 16:9 cover can
+/// spend 340 pixels of width because it asks for 191 of height; the station's
+/// 0.62 tile asks for 548 at that same width, so a wall measured by the room
+/// feed shows one poster the height of a phone screen instead of a wall.
+const double kHongguoPosterCardWidth = 176;
+
+/// The narrowest a poster tile may get: the share a row of [kHongguoPosterCardWidth]
+/// tiles leaves when the window cannot pay for another whole one. Below it the
+/// row takes a column back rather than thinning the posters into slivers.
+const double kHongguoPosterMinWidth = 140;
+
+/// Below this tile width the cover stops carrying two sayings: the viewer's own
+/// place in the title and the category phrase join the listing line, which says
+/// both wherever a row draws the title. At a phone's width the corner's mark,
+/// its pill and its heart cannot all fit between the cover's edges — they meet
+/// in the middle of the picture — while the station's short markers (今日, its
+/// score) still have room to stay on the cover.
+const double kHongguoCoverChipFloor = 190;
+
+/// The columns a poster wall of [content] pixels takes: as many tiles of
+/// [kHongguoPosterCardWidth] as the row holds, less one when that would thin
+/// them past [kHongguoPosterMinWidth], the viewer's [ceiling] lowering the
+/// count further when it asks for fewer. 0 — no ceiling — leaves the width to say.
+int hongguoPosterColumns(double content, {double spacing = DsSpace.s16, int ceiling = 0}) {
+  if (content <= 0) return 1;
+  double width(int columns) => (content - spacing * (columns - 1)) / columns;
+  var columns = math.max(1, ((content + spacing) / (kHongguoPosterCardWidth + spacing)).ceil());
+  if (columns > 1 && width(columns) < kHongguoPosterMinWidth) columns--;
+  if (ceiling > 0 && columns > ceiling) columns = ceiling;
+  return math.max(1, columns);
+}
+
+/// The card width a poster wall of [content] pixels gives itself: one even
+/// share of the row at the columns [hongguoPosterColumns] counts — the number
+/// a card grid hands its delegate as its own measure.
+double hongguoPosterExtentForWidth(double content, {double spacing = DsSpace.s16, int ceiling = 0}) => content <= 0
+    ? kHongguoPosterCardWidth
+    : columnExtentForWidth(content, hongguoPosterColumns(content, spacing: spacing, ceiling: ceiling), spacing);
+
 /// Where the head's 续播 puts the viewer, in seconds — null when the shelf has
 /// no place to go back to: an unfinished title, stopped partway inside, on an
 /// episode it can name. The head's verb reads the same answer, so the word on
@@ -175,18 +215,6 @@ final class HongguoSeriesCard extends ConsumerWidget {
         : showsEpisodes
         ? t.hongguo.allEpisodesCount(count: series.episodeCount)
         : null;
-    // The card's own line is the listing line with whatever its corners already
-    // carry taken out of it, and without the total: the cover's foot and the
-    // state pill say the readings, this line says what they left.
-    final metaLine = visibility.shows(HongguoCardElement.meta)
-        ? hongguoSeriesListingLine(
-            t,
-            series,
-            withEpisodeCount: false,
-            withFigure: !showsHot,
-            withCategory: !showsCategory,
-          )
-        : '';
     final favored =
         visibility.shows(HongguoCardElement.favorite) &&
         favoritable &&
@@ -206,6 +234,27 @@ final class HongguoSeriesCard extends ConsumerWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 320.0;
+            // A tile at a phone's width carries one saying per corner, not two:
+            // the reading that belongs to the viewer — where this device stopped
+            // — joins the listing line, which says it wherever a row draws the
+            // title, and the category phrase does the same. What stays on the
+            // cover is the board place and the station's heat.
+            final wideCover = width >= kHongguoCoverChipFloor;
+            final onCoverState = wideCover || watched == null;
+            final onCoverCategory = showsCategory && wideCover;
+            // The card's own line is the listing line with whatever its corners
+            // carry taken out of it, and without the total: the cover's foot and
+            // the state pill say the readings, this line says what they left.
+            final metaLine = visibility.shows(HongguoCardElement.meta)
+                ? hongguoSeriesListingLine(
+                    t,
+                    series,
+                    withEpisodeCount: false,
+                    watched: onCoverState ? null : watched,
+                    withFigure: !showsHot,
+                    withCategory: !onCoverCategory,
+                  )
+                : '';
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -242,7 +291,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
                           // wherever the corner is left free.
                           child: _CoverMark(rank: showsRank ? rank : null, label: showsTag ? firstTag : null),
                         ),
-                      if (stateText != null || favored)
+                      if ((stateText != null && onCoverState) || favored)
                         PositionedDirectional(
                           top: DsSpace.s8,
                           end: DsSpace.s8,
@@ -250,8 +299,12 @@ final class HongguoSeriesCard extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             spacing: DsSpace.s6,
                             children: [
-                              if (stateText != null)
-                                RoomCoverChip(compact: true, text: stateText, maxWidth: width * 0.6),
+                              if (stateText != null && onCoverState)
+                                // Half the tile, not six-tenths: the mark holds
+                                // the corner this row faces, and at a phone's
+                                // width the two readings would otherwise meet
+                                // in the middle of the cover.
+                                RoomCoverChip(compact: true, text: stateText, maxWidth: width * 0.5),
                               // The heart is the kept state, not an offer: an
                               // unkept title leaves the corner to the state, the
                               // way an unfollowed room leaves it to nothing.
@@ -259,7 +312,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
                             ],
                           ),
                         ),
-                      if (showsCategory || showsHot)
+                      if (onCoverCategory || showsHot)
                         PositionedDirectional(
                           start: DsSpace.s8,
                           end: DsSpace.s8,
@@ -273,12 +326,12 @@ final class HongguoSeriesCard extends ConsumerWidget {
                               Expanded(
                                 child: Align(
                                   alignment: AlignmentDirectional.centerStart,
-                                  child: showsCategory
+                                  child: onCoverCategory
                                       ? RoomCoverChip(text: series.category, maxWidth: width * 0.55)
                                       : const SizedBox.shrink(),
                                 ),
                               ),
-                              if (showsCategory && showsHot) const SizedBox(width: DsSpace.s8),
+                              if (onCoverCategory && showsHot) const SizedBox(width: DsSpace.s8),
                               if (showsHot)
                                 RoomCoverChip(
                                   text: series.hot,
@@ -934,6 +987,35 @@ final class HongguoProgressStripe extends StatelessWidget {
   }
 }
 
+/// The one control a narrow shelf bar keeps after its tabs: the page's own
+/// actions — the condition entry and the reload a wide row draws as named
+/// buttons — folded into a menu at the row's end, the way the live feeds fold
+/// their layout switch and platform wall. A page that has nothing to fold
+/// draws its tabs alone rather than a button that opens an empty menu.
+final class HongguoToolbarMore extends StatelessWidget {
+  const HongguoToolbarMore({required this.items, super.key});
+
+  /// The page's actions, in the order they stand at the wide row's end.
+  final List<Widget> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsMenuAnchor(
+      semanticLabel: t.common.more,
+      align: DsAlign.end,
+      items: items,
+      builder: (context, controller, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.sm,
+        semanticLabel: t.common.more,
+        onPressed: controller.open,
+        icon: const DsIcon(DsIcons.ellipsisVertical),
+      ),
+    );
+  }
+}
+
 /// One shelf of the station's home: its name with the way to the whole list
 /// beside it, and as many posters as a single row holds. The station's own
 /// page is built this way — a row per subject, the rest one click away.
@@ -1010,15 +1092,7 @@ final class HongguoShelf extends ConsumerWidget {
             final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
             if (content <= 0) return const SizedBox.shrink();
             final spacing = browse.crossSpacing;
-            final extent = browseCardExtentForWidth(content, crossSpacing: spacing);
-            var columns = math.max(1, (content / (extent + spacing)).ceil());
-            final ceiling = cappedColumnsForWidth(
-              content,
-              spacing: spacing,
-              ceiling: browse.gridColumns,
-              minWidth: kBrowseCardMinWidth,
-            );
-            if (ceiling > 0 && columns > ceiling) columns = ceiling;
+            final columns = hongguoPosterColumns(content, spacing: spacing, ceiling: browse.gridColumns);
             final cardWidth = columnExtentForWidth(content, columns, spacing) - .01;
             // The shelf's posters take the poster walls' measure, so the same
             // card never draws two shapes; the height is stated because the

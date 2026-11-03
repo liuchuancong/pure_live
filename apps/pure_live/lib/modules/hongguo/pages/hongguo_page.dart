@@ -5,7 +5,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:pure_live/app/app.dart' show RouteNames, browseLayoutProvider;
+import 'package:pure_live/app/app.dart' show RouteNames, browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
@@ -16,7 +16,7 @@ import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show H
 import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show HongguoCardMenu, hongguoSeriesOpenable;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid, avatarInitials;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid, avatarInitials, feedGutter;
 
 /// The page's own left and right margin, asked rather than written again:
 /// `LiveWindow.pageInset` is one number for the whole app (16 while the window
@@ -364,31 +364,55 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
           // already is.
           SizedBox(
             height: 44,
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                Expanded(
-                  child: DsTabs<String>(
-                    value: genre?.name ?? '',
-                    onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
-                    style: _kShelfTabsStyle,
-                    tabs: [
-                      DsTab(value: '', label: Text(t.hongguo.homeTabAll)),
-                      for (final value in HongguoGenre.values) DsTab(value: value.name, label: Text(value.label(t))),
-                    ],
-                  ),
-                ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final tabs = DsTabs<String>(
+                  value: genre?.name ?? '',
+                  onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
+                  style: _kShelfTabsStyle,
+                  tabs: [
+                    DsTab(value: '', label: Text(t.hongguo.homeTabAll)),
+                    for (final value in HongguoGenre.values) DsTab(value: value.name, label: Text(value.label(t))),
+                  ],
+                );
                 // A genre is the only shelf that carries topics; 推荐 has no
                 // condition to set, so it gets no entry that cannot answer.
-                if (genre != null)
-                  DsButton(
-                    size: DsSize.sm,
-                    variant: DsButtonVariant.secondary,
-                    leading: const DsIcon(DsIcons.listFilter, size: 14),
-                    onPressed: themeRow == null ? null : () => _openThemes(genre, themeRow),
-                    child: Text(t.hongguo.filter),
-                  ),
-              ],
+                final openTopics = genre == null || themeRow == null ? null : () => _openThemes(genre, themeRow);
+                // A small screen keeps the genre bar alone and puts the one
+                // condition behind a more icon, as the live feeds do theirs.
+                if (LiveWindow.stacksToolbar(constraints.maxWidth)) {
+                  return Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(child: tabs),
+                      if (genre != null)
+                        HongguoToolbarMore(
+                          items: [
+                            DsMenuItem(
+                              leading: const DsIcon(DsIcons.listFilter),
+                              label: Text(t.hongguo.filter),
+                              onPressed: openTopics,
+                            ),
+                          ],
+                        ),
+                    ],
+                  );
+                }
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    if (genre != null)
+                      DsButton(
+                        size: DsSize.sm,
+                        variant: DsButtonVariant.secondary,
+                        leading: const DsIcon(DsIcons.listFilter, size: 14),
+                        onPressed: openTopics,
+                        child: Text(t.hongguo.filter),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
           if (hero case final title?)
@@ -621,6 +645,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final browse = ref.watch(browseSettingsProvider);
     final feed = ref.watch(hongguoBrowseProvider.select((feeds) => feeds[_genre.name]));
     final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
     final state =
@@ -663,31 +688,52 @@ final class _FindViewState extends ConsumerState<_FindView> {
               // replaced left a new shelf an empty pane.
               SizedBox(
                 height: 44,
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(
-                      child: DsTabs<HongguoGenre>(
-                        value: _genre,
-                        onChanged: (genre) {
-                          if (genre == _genre) return;
-                          setState(() => _genre = genre);
-                          unawaited(controller.open(genre));
-                        },
-                        style: _kShelfTabsStyle,
-                        tabs: [
-                          for (final genre in HongguoGenre.values) DsTab(value: genre, label: Text(genre.label(t))),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final tabs = DsTabs<HongguoGenre>(
+                      value: _genre,
+                      onChanged: (genre) {
+                        if (genre == _genre) return;
+                        setState(() => _genre = genre);
+                        unawaited(controller.open(genre));
+                      },
+                      style: _kShelfTabsStyle,
+                      tabs: [for (final genre in HongguoGenre.values) DsTab(value: genre, label: Text(genre.label(t)))],
+                    );
+                    final openFilters = groups.isEmpty ? null : () => unawaited(_openFilters(groups));
+                    // The shelf bar is the narrow screen's one line: the
+                    // conditions go behind a more icon with the rest.
+                    if (LiveWindow.stacksToolbar(constraints.maxWidth)) {
+                      return Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          Expanded(child: tabs),
+                          HongguoToolbarMore(
+                            items: [
+                              DsMenuItem(
+                                leading: const DsIcon(DsIcons.listFilter),
+                                label: Text(t.hongguo.filter),
+                                onPressed: openFilters,
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ),
-                    DsButton(
-                      size: DsSize.sm,
-                      variant: DsButtonVariant.secondary,
-                      leading: const DsIcon(DsIcons.listFilter, size: 14),
-                      onPressed: groups.isEmpty ? null : () => unawaited(_openFilters(groups)),
-                      child: Text(t.hongguo.filter),
-                    ),
-                  ],
+                      );
+                    }
+                    return Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(child: tabs),
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.secondary,
+                          leading: const DsIcon(DsIcons.listFilter, size: 14),
+                          onPressed: openFilters,
+                          child: Text(t.hongguo.filter),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               Text(
@@ -700,40 +746,56 @@ final class _FindViewState extends ConsumerState<_FindView> {
           ),
         ),
         Expanded(
-          child: PagedCardGrid<HongguoSeries>(
-            items: state.items,
-            layout: ref.watch(browseLayoutProvider),
-            aspectRatio: kHongguoSeriesTileAspect,
-            listMainAxisExtent: kHongguoSeriesRowExtent,
-            itemBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesCard(
-                series: series,
-                favoritable: true,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
-            listItemBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesRow(
-                series: series,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
-            isLoading: state.loading,
-            hasMore: state.hasMore,
-            onLoadMore: () => controller.loadMore(_genre),
-            error: state.error,
-            onRetry: () => controller.retry(_genre),
-            onRefresh: () => controller.retry(_genre),
-            refreshError: state.error,
-            emptyIcon: HongguoView.find.icon,
-            emptyTitle: t.common.empty,
-            emptyDescription: t.hongguo.noResultsDescription,
+          // The wall measures itself as a poster wall: the room feed's card
+          // width would make one 0.62 tile the height of the pane it is drawn
+          // in. The gutter the grid keeps is the window's, so the count of
+          // posters is worked out of the width they are actually given.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final content = constraints.maxWidth - feedGutter(context).horizontal;
+              return PagedCardGrid<HongguoSeries>(
+                items: state.items,
+                layout: ref.watch(browseLayoutProvider),
+                cardExtent: hongguoPosterExtentForWidth(
+                  content,
+                  spacing: browse.crossSpacing,
+                  ceiling: browse.gridColumns,
+                ),
+                crossSpacing: browse.crossSpacing,
+                mainSpacing: browse.mainSpacing,
+                aspectRatio: kHongguoSeriesTileAspect,
+                listMainAxisExtent: kHongguoSeriesRowExtent,
+                itemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesCard(
+                    series: series,
+                    favoritable: true,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                listItemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesRow(
+                    series: series,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                isLoading: state.loading,
+                hasMore: state.hasMore,
+                onLoadMore: () => controller.loadMore(_genre),
+                error: state.error,
+                onRetry: () => controller.retry(_genre),
+                onRefresh: () => controller.retry(_genre),
+                refreshError: state.error,
+                emptyIcon: HongguoView.find.icon,
+                emptyTitle: t.common.empty,
+                emptyDescription: t.hongguo.noResultsDescription,
+              );
+            },
           ),
         ),
       ],
@@ -851,42 +913,76 @@ final class _RankViewState extends ConsumerState<_RankView> {
               // has not read yet is opened on the pick, as the shelf bars do.
               SizedBox(
                 height: 44,
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(
-                      child: DsTabs<HongguoWebsiteBoard>(
-                        value: _board,
-                        onChanged: (board) {
-                          if (board == _board) return;
-                          setState(() {
-                            _board = board;
-                            _topic = '';
-                          });
-                          unawaited(controller.open(board));
-                        },
-                        style: _kShelfTabsStyle,
-                        tabs: [
-                          for (final board in HongguoWebsiteBoard.values)
-                            DsTab(value: board, label: Text(_boardLabel(t, board))),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final tabs = DsTabs<HongguoWebsiteBoard>(
+                      value: _board,
+                      onChanged: (board) {
+                        if (board == _board) return;
+                        setState(() {
+                          _board = board;
+                          _topic = '';
+                        });
+                        unawaited(controller.open(board));
+                      },
+                      style: _kShelfTabsStyle,
+                      tabs: [
+                        for (final board in HongguoWebsiteBoard.values)
+                          DsTab(value: board, label: Text(_boardLabel(t, board))),
+                      ],
+                    );
+                    final openTopicsEntry = topics.isEmpty ? null : () => unawaited(_openTopics(_board, topics));
+                    final reading = held.loading || held.renewing;
+                    void readAgain() => unawaited(controller.refresh(_board));
+                    // A small screen keeps the boards' bar and the reload it
+                    // answers with; the topic the board is thinned to goes
+                    // behind the more icon, as the live feeds' wall does.
+                    if (LiveWindow.stacksToolbar(constraints.maxWidth)) {
+                      return Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          Expanded(child: tabs),
+                          DsButton.icon(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            semanticLabel: reading ? t.hongguo.rankReading : t.hongguo.refresh,
+                            loading: reading,
+                            onPressed: reading ? null : readAgain,
+                            icon: const DsIcon(DsIcons.refreshCw, size: 16),
+                          ),
+                          HongguoToolbarMore(
+                            items: [
+                              DsMenuItem(
+                                leading: const DsIcon(DsIcons.listFilter),
+                                label: Text(t.hongguo.filter),
+                                onPressed: openTopicsEntry,
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    ),
-                    DsButton(
-                      size: DsSize.sm,
-                      variant: DsButtonVariant.secondary,
-                      leading: const DsIcon(DsIcons.listFilter, size: 14),
-                      onPressed: topics.isEmpty ? null : () => unawaited(_openTopics(_board, topics)),
-                      child: Text(t.hongguo.filter),
-                    ),
-                    DsButton(
-                      size: DsSize.sm,
-                      variant: DsButtonVariant.secondary,
-                      leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                      onPressed: held.loading || held.renewing ? null : () => unawaited(controller.refresh(_board)),
-                      child: Text(held.loading || held.renewing ? t.hongguo.rankReading : t.hongguo.refresh),
-                    ),
-                  ],
+                      );
+                    }
+                    return Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(child: tabs),
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.secondary,
+                          leading: const DsIcon(DsIcons.listFilter, size: 14),
+                          onPressed: openTopicsEntry,
+                          child: Text(t.hongguo.filter),
+                        ),
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.secondary,
+                          leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                          onPressed: reading ? null : readAgain,
+                          child: Text(reading ? t.hongguo.rankReading : t.hongguo.refresh),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               // The one condition this board keeps, and how many of its hundred
@@ -1658,6 +1754,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final browse = ref.watch(browseSettingsProvider);
     final state = ref.watch(hongguoSearchProvider);
     final controller = ref.read(hongguoSearchProvider.notifier);
     final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
@@ -1756,40 +1853,56 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
           ),
         ),
         Expanded(
-          child: PagedCardGrid<HongguoSeries>(
-            items: state.items,
-            layout: ref.watch(browseLayoutProvider),
-            aspectRatio: kHongguoSeriesTileAspect,
-            listMainAxisExtent: kHongguoSeriesRowExtent,
-            itemBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesCard(
-                series: series,
-                favoritable: true,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
-            listItemBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesRow(
-                series: series,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
-            isLoading: state.loading,
-            hasMore: state.hasMore,
-            onLoadMore: controller.loadMore,
-            error: state.error,
-            onRetry: controller.retry,
-            onRefresh: controller.retry,
-            refreshError: state.error,
-            emptyIcon: HongguoView.search.icon,
-            emptyTitle: state.query.isEmpty ? t.hongguo.searchIdleTitle : t.common.empty,
-            emptyDescription: state.query.isEmpty ? t.hongguo.searchIdleDescription : t.hongguo.noResultsDescription,
+          // The hits are the same posters as the find wall, at the same
+          // measure: one query seen through two pages cannot be two grids.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final content = constraints.maxWidth - feedGutter(context).horizontal;
+              return PagedCardGrid<HongguoSeries>(
+                items: state.items,
+                layout: ref.watch(browseLayoutProvider),
+                cardExtent: hongguoPosterExtentForWidth(
+                  content,
+                  spacing: browse.crossSpacing,
+                  ceiling: browse.gridColumns,
+                ),
+                crossSpacing: browse.crossSpacing,
+                mainSpacing: browse.mainSpacing,
+                aspectRatio: kHongguoSeriesTileAspect,
+                listMainAxisExtent: kHongguoSeriesRowExtent,
+                itemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesCard(
+                    series: series,
+                    favoritable: true,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                listItemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesRow(
+                    series: series,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                isLoading: state.loading,
+                hasMore: state.hasMore,
+                onLoadMore: controller.loadMore,
+                error: state.error,
+                onRetry: controller.retry,
+                onRefresh: controller.retry,
+                refreshError: state.error,
+                emptyIcon: HongguoView.search.icon,
+                emptyTitle: state.query.isEmpty ? t.hongguo.searchIdleTitle : t.common.empty,
+                emptyDescription: state.query.isEmpty
+                    ? t.hongguo.searchIdleDescription
+                    : t.hongguo.noResultsDescription,
+              );
+            },
           ),
         ),
       ],
