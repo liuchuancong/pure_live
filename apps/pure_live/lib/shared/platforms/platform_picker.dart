@@ -137,16 +137,16 @@ final class PlatformTabRow extends ConsumerWidget {
         id == kAllPlatforms ? null : localizedSiteIcon(sites.getById(id), size: size);
     final children = <Widget>[
       Expanded(
-        child: DsTopNav<String>(
+        child: DsChoiceChips<String>(
           semanticLabel: semanticLabel,
           value: current,
           onChanged: onChanged,
-          items: [
+          options: [
             for (final id in platforms)
-              DsTopNavItem(
+              DsChipOption(
                 value: id,
                 label: _TabLabel(name: nameOf(id), count: countOf?.call(id)),
-                icon: iconOf(id),
+                leading: iconOf(id),
               ),
           ],
         ),

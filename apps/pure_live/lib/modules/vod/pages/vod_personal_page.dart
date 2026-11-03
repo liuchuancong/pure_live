@@ -9,7 +9,7 @@ import 'package:pure_live/features/account/account.dart' show showBilibiliWebLog
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
-import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar;
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
     show VodSeasonCard, VodVideoRow, kVodSeasonTileAspect, vodDurationText, vodWatchStamp;
 import 'package:pure_live/shared/shared.dart';
@@ -259,14 +259,12 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
           // scope reads from this head instead of adding a second tab row that
           // pushes the list down.
           child: VodFeedToolbar(
-            tabs: DsTopNav<VodPersonalTab>(
+            tabs: DsTabs<VodPersonalTab>(
               value: _tab,
               onChanged: (tab) => setState(() => _tab = tab),
               semanticLabel: t.vod.personalTitle,
-              items: [
-                for (final tab in VodPersonalTab.values)
-                  DsTopNavItem(value: tab, label: Text(tab.label(t)), icon: DsIcon(tab.icon)),
-              ],
+              style: kVodFeedTabsStyle,
+              tabs: [for (final tab in VodPersonalTab.values) DsTab(value: tab, label: Text(tab.label(t)))],
             ),
             showLayout: false,
             actions: actions,

@@ -119,13 +119,14 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     if (ids.isNotEmpty && !ids.contains(platform)) _schedulePlatformFallback();
     final query = ref.watch(areasInlineSearchProvider);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final views = DsSegmentedControl<_AreasView>(
-      segments: [
-        DsSegment(value: _AreasView.platform, label: Text(t.areas.viewPlatform)),
-        DsSegment(value: _AreasView.followed, label: Text(t.areas.viewFollowed)),
+    final views = DsTabs<_AreasView>(
+      tabs: [
+        DsTab(value: _AreasView.platform, label: Text(t.areas.viewPlatform)),
+        DsTab(value: _AreasView.followed, label: Text(t.areas.viewFollowed)),
       ],
       value: _view,
       onChanged: (view) => setState(() => _view = view),
+      style: const DsTabsStyle(padding: EdgeInsets.zero),
     );
     // The catalogue's tile form: the poster with the picture above its
     // name, or the row with the picture beside it. The areas page's own

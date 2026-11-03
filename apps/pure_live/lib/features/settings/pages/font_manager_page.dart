@@ -507,14 +507,14 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     );
     final chips = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DsSegmentedControl<String>(
+      child: DsChoiceChips<String>(
         value: _category,
         semanticLabel: t.settings.fontManagerFilterLabel,
         onChanged: (value) => _refilter(() => _category = value),
-        segments: [
-          DsSegment(value: '', label: Text('${t.settings.fontManagerFilterAll} ($allCount)')),
+        options: [
+          DsChipOption(value: '', label: Text('${t.settings.fontManagerFilterAll} ($allCount)')),
           for (final category in chinese ? _kCategories : kGoogleFontCategories)
-            DsSegment(value: category, label: Text(fontCategoryLabel(t, category))),
+            DsChipOption(value: category, label: Text(fontCategoryLabel(t, category))),
         ],
       ),
     );

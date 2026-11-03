@@ -301,15 +301,15 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
           ),
           SizedBox(
             height: 44,
-            child: DsTopNav<String>(
+            child: DsChoiceChips<String>(
               value: _source,
               onChanged: (id) => setState(() {
                 _source = id;
                 _picked = null;
               }),
-              items: [
+              options: [
                 for (final entry in _answers.entries)
-                  DsTopNavItem(value: entry.key, label: Text(sourceNames[entry.key] ?? entry.key)),
+                  DsChipOption(value: entry.key, label: Text(sourceNames[entry.key] ?? entry.key)),
               ],
             ),
           ),

@@ -10,7 +10,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar;
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
     show VodSeasonCard, VodUserRow, VodVideoCard, kVodCardInfoExtent, kVodSeasonTileAspect;
 import 'package:pure_live/shared/shared.dart';
@@ -80,7 +80,10 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   void _takePending() {
     final word = ref.read(vodPendingSearchProvider.notifier).take();
     if (word == null || word.isEmpty || !mounted) return;
-    _search.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+    _search.value = TextEditingValue(
+      text: word,
+      selection: TextSelection.collapsed(offset: word.length),
+    );
     _run();
   }
 
@@ -169,12 +172,12 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
           // the result kinds at its start, the condition entry and the reload
           // at its end — and on a narrow window one more icon for both.
           child: VodFeedToolbar(
-            tabs: DsTopNav<VodSearchKind>(
+            tabs: DsTabs<VodSearchKind>(
               value: _kind,
               onChanged: _selectKind,
-              items: [
-                for (final kind in VodSearchKind.values)
-                  DsTopNavItem(value: kind, label: Text(vodSearchKindLabel(t, kind))),
+              style: kVodFeedTabsStyle,
+              tabs: [
+                for (final kind in VodSearchKind.values) DsTab(value: kind, label: Text(vodSearchKindLabel(t, kind))),
               ],
             ),
             showLayout: false,

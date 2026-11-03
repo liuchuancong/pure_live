@@ -797,17 +797,15 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
         DsSegment(value: _KindFilter.video, label: Text(t.settings.backgroundVideo)),
       ],
     );
-    final status = SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DsSegmentedControl<_DownloadFilter>(
-        value: _filter,
-        semanticLabel: t.settings.downloadManagerTitle,
-        onChanged: (value) => _refilter(() => _filter = value),
-        segments: [
-          for (final filter in _DownloadFilter.values)
-            DsSegment(value: filter, label: Text('${filter.label(t)} ${counts[filter] ?? 0}')),
-        ],
-      ),
+    final status = DsTabs<_DownloadFilter>(
+      value: _filter,
+      semanticLabel: t.settings.downloadManagerTitle,
+      style: const DsTabsStyle(padding: EdgeInsets.zero),
+      onChanged: (value) => _refilter(() => _filter = value),
+      tabs: [
+        for (final filter in _DownloadFilter.values)
+          DsTab(value: filter, label: Text(filter.label(t)), count: counts[filter] ?? 0),
+      ],
     );
     final count = Text(
       t.settings.downloadSummary(total: '$shown'),

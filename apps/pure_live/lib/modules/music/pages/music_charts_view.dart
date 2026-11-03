@@ -59,10 +59,11 @@ final class MusicChartsView extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
               child: SizedBox(
                 height: 44,
-                child: DsTopNav<String>(
+                child: DsTabs<String>(
                   value: selected.id,
                   onChanged: onCatalog,
-                  items: [for (final board in boards) DsTopNavItem(value: board.id, label: Text(board.name))],
+                  style: const DsTabsStyle(height: 44, padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
+                  tabs: [for (final board in boards) DsTab(value: board.id, label: Text(board.name))],
                 ),
               ),
             ),

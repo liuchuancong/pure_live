@@ -12,7 +12,7 @@ import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart' show VodSavedVideo, vodFavouritesProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodFeedBannerProvider;
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
-import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
     show VodDynamicRow, VodFeedHero, VodVideoCard, VodVideoRow, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
@@ -146,13 +146,11 @@ final class _VodPageState extends ConsumerState<VodPage> {
           // reload alone; the two feeds that switch between cards and rows
           // offer the switch where the viewer is looking at them.
           child: VodFeedToolbar(
-            tabs: DsTopNav<VodTab>(
+            tabs: DsTabs<VodTab>(
               value: _tab,
               onChanged: _selectTab,
-              items: [
-                for (final tab in VodTab.values)
-                  DsTopNavItem(value: tab, label: Text(tab.label(t)), icon: DsIcon(tab.icon)),
-              ],
+              style: kVodFeedTabsStyle,
+              tabs: [for (final tab in VodTab.values) DsTab(value: tab, label: Text(tab.label(t)))],
             ),
             showLayout: _tab != VodTab.dynamics,
             onRefresh: _refreshCurrent,

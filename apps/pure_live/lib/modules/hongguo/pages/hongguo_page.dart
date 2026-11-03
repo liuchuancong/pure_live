@@ -24,6 +24,10 @@ import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid;
 /// a phone, and pays a gutter the narrow window does not have to spare.
 double _hongguoPageInset(BuildContext context) => LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
 
+/// The shelf bars' content tabs: one 44-tall row, aligned with the page's own
+/// inset, without the bar's hairline cutting across the controls beside them.
+const DsTabsStyle _kShelfTabsStyle = DsTabsStyle(height: 44, padding: EdgeInsets.zero, dividerColor: Color(0x00000000));
+
 /// The local shelf's progress, keyed by series: the browse surfaces read it one
 /// pass per build, so a hundred tiles do not each scan the history for
 /// themselves — and every face of one list says the same thing about a title
@@ -363,13 +367,13 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
               spacing: DsSpace.s8,
               children: [
                 Expanded(
-                  child: DsTopNav<String>(
+                  child: DsTabs<String>(
                     value: genre?.name ?? '',
                     onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
-                    items: [
-                      DsTopNavItem(value: '', label: Text(t.hongguo.homeTabAll)),
-                      for (final value in HongguoGenre.values)
-                        DsTopNavItem(value: value.name, label: Text(value.label(t))),
+                    style: _kShelfTabsStyle,
+                    tabs: [
+                      DsTab(value: '', label: Text(t.hongguo.homeTabAll)),
+                      for (final value in HongguoGenre.values) DsTab(value: value.name, label: Text(value.label(t))),
                     ],
                   ),
                 ),
@@ -650,16 +654,16 @@ final class _FindViewState extends ConsumerState<_FindView> {
                   spacing: DsSpace.s8,
                   children: [
                     Expanded(
-                      child: DsTopNav<HongguoGenre>(
+                      child: DsTabs<HongguoGenre>(
                         value: _genre,
                         onChanged: (genre) {
                           if (genre == _genre) return;
                           setState(() => _genre = genre);
                           unawaited(controller.open(genre));
                         },
-                        items: [
-                          for (final genre in HongguoGenre.values)
-                            DsTopNavItem(value: genre, label: Text(genre.label(t))),
+                        style: _kShelfTabsStyle,
+                        tabs: [
+                          for (final genre in HongguoGenre.values) DsTab(value: genre, label: Text(genre.label(t))),
                         ],
                       ),
                     ),
@@ -830,7 +834,7 @@ final class _RankViewState extends ConsumerState<_RankView> {
                   spacing: DsSpace.s8,
                   children: [
                     Expanded(
-                      child: DsTopNav<HongguoWebsiteBoard>(
+                      child: DsTabs<HongguoWebsiteBoard>(
                         value: _board,
                         onChanged: (board) {
                           if (board == _board) return;
@@ -840,9 +844,10 @@ final class _RankViewState extends ConsumerState<_RankView> {
                           });
                           unawaited(controller.open(board));
                         },
-                        items: [
+                        style: _kShelfTabsStyle,
+                        tabs: [
                           for (final board in HongguoWebsiteBoard.values)
-                            DsTopNavItem(value: board, label: Text(_boardLabel(t, board))),
+                            DsTab(value: board, label: Text(_boardLabel(t, board))),
                         ],
                       ),
                     ),
@@ -1643,16 +1648,15 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
             children: [
               SizedBox(
                 height: 44,
-                child: DsTopNav<HongguoGenre>(
+                child: DsTabs<HongguoGenre>(
                   value: _genre,
                   onChanged: (genre) {
                     if (genre == _genre) return;
                     setState(() => _genre = genre);
                     if (state.query.isNotEmpty) unawaited(controller.search(state.query, genre: genre));
                   },
-                  items: [
-                    for (final genre in HongguoGenre.values) DsTopNavItem(value: genre, label: Text(genre.label(t))),
-                  ],
+                  style: _kShelfTabsStyle,
+                  tabs: [for (final genre in HongguoGenre.values) DsTab(value: genre, label: Text(genre.label(t)))],
                 ),
               ),
               Row(

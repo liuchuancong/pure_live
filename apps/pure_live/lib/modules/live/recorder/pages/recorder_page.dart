@@ -226,19 +226,15 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       for (final task in listed)
         if (_filter.matches(task)) task,
     ];
-    final statusFilter = DsTabs<String>(
-      value: _filter.name,
+    final statusFilter = DsTabs<_RecorderFilter>(
+      value: _filter,
       semanticLabel: t.recorder.filterLabel,
-      onChanged: (value) => setState(() => _filter = _RecorderFilter.values.byName(value)),
+      // The first tab lines up with the rows under it.
+      style: const DsTabsStyle(padding: EdgeInsets.zero),
+      onChanged: (value) => setState(() => _filter = value),
       tabs: [
-        DsTab(value: 'all', label: Text(t.recorder.filterAll), count: counts[_RecorderFilter.all] ?? 0),
-        DsTab(
-          value: 'recording',
-          label: Text(t.recorder.filterRecording),
-          count: counts[_RecorderFilter.recording] ?? 0,
-        ),
-        DsTab(value: 'waiting', label: Text(t.recorder.filterWaiting), count: counts[_RecorderFilter.waiting] ?? 0),
-        DsTab(value: 'failed', label: Text(t.recorder.filterFailed), count: counts[_RecorderFilter.failed] ?? 0),
+        for (final filter in _RecorderFilter.values)
+          DsTab(value: filter, label: Text(_filterLabel(t, filter)), count: counts[filter] ?? 0),
       ],
     );
     return Column(
@@ -288,12 +284,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: DsSegmentedControl<RecorderCenterTab>(
+            child: DsTopNav<RecorderCenterTab>(
               value: ref.watch(recorderCenterTabProvider),
               onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
-              segments: [
-                DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
-                DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
+              items: [
+                DsTopNavItem(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
+                DsTopNavItem(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             ),
           ),
@@ -346,8 +342,10 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }) {
     final t = context.t;
     // The tasks page reads as a worklist, not a band across the window: one
-    // centred measure holds the toolbar and the rows together.
-    return Center(
+    // 860-wide measure holds the toolbar and the rows together, lined up with
+    // the page's left edge so the filters start under the tasks/files switch.
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 860),
         child: Column(
@@ -981,6 +979,12 @@ typedef _TaskCallbacks = ({
 });
 
 /// A filter's word, without its count.
+String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
+  _RecorderFilter.all => t.recorder.filterAll,
+  _RecorderFilter.recording => t.recorder.filterRecording,
+  _RecorderFilter.waiting => t.recorder.filterWaiting,
+  _RecorderFilter.failed => t.recorder.filterFailed,
+};
 
 /// One recording task as a list card: the room's cover (the platform's
 /// letter when it has none), the streamer and room title, the platform and
@@ -1737,35 +1741,17 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
         // instead of squeezing its own segments.
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DsSegmentedControl<RecordingTab>(
-              value: _tab,
-              semanticLabel: t.recorder.settingsTitle,
-              segments: [
-                DsSegment(
-                  value: RecordingTab.files,
-                  label: Text(t.recorder.settingsTabFiles),
-                  icon: const DsIcon(DsIcons.folderVideo, size: 16),
-                ),
-                DsSegment(
-                  value: RecordingTab.capture,
-                  label: Text(t.recorder.settingsTabCapture),
-                  icon: const DsIcon(DsIcons.refreshCw, size: 16),
-                ),
-                DsSegment(
-                  value: RecordingTab.runtime,
-                  label: Text(t.recorder.settingsTabRuntime),
-                  icon: const DsIcon(DsIcons.activity, size: 16),
-                ),
-                DsSegment(
-                  value: RecordingTab.polling,
-                  label: Text(t.recorder.settingsTabPolling),
-                  icon: const DsIcon(DsIcons.clock, size: 16),
-                ),
-              ],
-              onChanged: (value) => setState(() => _tab = value),
-            ),
+          child: DsTabs<RecordingTab>(
+            value: _tab,
+            semanticLabel: t.recorder.settingsTitle,
+            style: const DsTabsStyle(padding: EdgeInsets.zero),
+            onChanged: (value) => setState(() => _tab = value),
+            tabs: [
+              DsTab(value: RecordingTab.files, label: Text(t.recorder.settingsTabFiles)),
+              DsTab(value: RecordingTab.capture, label: Text(t.recorder.settingsTabCapture)),
+              DsTab(value: RecordingTab.runtime, label: Text(t.recorder.settingsTabRuntime)),
+              DsTab(value: RecordingTab.polling, label: Text(t.recorder.settingsTabPolling)),
+            ],
           ),
         ),
         switch (_tab) {

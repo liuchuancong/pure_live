@@ -8,7 +8,7 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoCard, VodVideoRow, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
 
@@ -129,12 +129,12 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: VodFeedToolbar(
-            tabs: DsTopNav<VodRegionChannel>(
+            tabs: DsTabs<VodRegionChannel>(
               value: _channel,
               onChanged: _select,
-              items: [
-                for (final channel in VodRegionChannel.values)
-                  DsTopNavItem(value: channel, label: Text(channel.label(t))),
+              style: kVodFeedTabsStyle,
+              tabs: [
+                for (final channel in VodRegionChannel.values) DsTab(value: channel, label: Text(channel.label(t))),
               ],
             ),
             onRefresh: () => ref.read(vodFeedProvider.notifier).refresh(_key),

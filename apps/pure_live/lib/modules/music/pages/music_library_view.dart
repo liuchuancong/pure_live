@@ -468,9 +468,9 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
         if (!_songlist)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-            child: DsTopNav<String>(
-              items: [
-                DsTopNavItem(
+            child: DsChoiceChips<String>(
+              options: [
+                DsChipOption(
                   value: kMusicSearchAllSourceId,
                   label: Text(
                     settings.sourceNameType == MusicSourceNameType.alias
@@ -478,7 +478,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                         : t.music.searchSourceAll,
                   ),
                 ),
-                for (final entry in sourceNames.entries) DsTopNavItem(value: entry.key, label: Text(entry.value)),
+                for (final entry in sourceNames.entries) DsChipOption(value: entry.key, label: Text(entry.value)),
               ],
               value: sourceId,
               onChanged: (id) {

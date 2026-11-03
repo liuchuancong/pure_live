@@ -7,6 +7,15 @@ import 'package:pure_live/app/app.dart' show browseLayoutProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show CardLayout, ChromeIconButton, LayoutToggle, LiveWindow;
 
+/// The content tabs a feed page wears in [VodFeedToolbar]: the toolbar's row
+/// is 44 tall, the bar starts at the page's own inset, and the hairline would
+/// cut across only the tabs while the actions beside them sit on none.
+const DsTabsStyle kVodFeedTabsStyle = DsTabsStyle(
+  height: 44,
+  padding: EdgeInsets.zero,
+  dividerColor: Color(0x00000000),
+);
+
 /// One head-end action a feed page offers beside the reload: the same icon
 /// button at the head's end on a wide window, the same item in the more menu
 /// on a narrow one — a page's action is one thing with two renderings.
