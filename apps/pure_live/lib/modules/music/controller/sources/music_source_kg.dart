@@ -824,6 +824,10 @@ final class KgMusicSource extends LxPlatformSource
     final duration = seconds is num ? Duration(seconds: seconds.toInt()) : null;
     final qualityIds = ['128k', '320k', 'flac', 'flac24bit'].where(hashes.containsKey).toList();
     final album = LxPlatformSource.decodeName(albumName).trim();
+    // The row's own cover: `AlbumImage` when the platform filled it, the song's
+    // stdmusic image otherwise — both are the album art with a `{size}`
+    // placeholder, and without them every row in a list wears initials.
+    final cover = _pictureOf(raw['AlbumImage']) ?? _pictureOf(raw['Image']);
     return audio.MusicTrack(
       id: songmid,
       sourceId: 'kg',
@@ -832,6 +836,7 @@ final class KgMusicSource extends LxPlatformSource
       album: album,
       albumId: albumId.isEmpty ? null : albumId,
       duration: duration,
+      coverUri: cover,
       qualities: [for (final quality in qualityIds) LxPlatformSource.qualityOf(quality)],
       metadata: {
         'types': qualityIds,

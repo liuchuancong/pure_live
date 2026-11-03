@@ -995,6 +995,12 @@ final class KwMusicSource extends LxPlatformSource
     final artistId = '${raw['ARTISTID'] ?? raw['artistid'] ?? ''}'.trim();
     final seconds = int.tryParse('${raw['DURATION'] ?? raw['song_duration'] ?? raw['duration'] ?? ''}');
     final qualities = _qualitysOf(raw, scriptQualities);
+    // The search row names its cover as a CDN-relative path (`web_albumpic_short`),
+    // the digest rows hand over a full URL; either way the list would otherwise
+    // wear initials.
+    final pic = '${raw['albumPic'] ?? raw['pic'] ?? ''}'.trim();
+    final short = '${raw['web_albumpic_short'] ?? ''}'.trim();
+    final cover = pic.isNotEmpty ? pic : (short.isEmpty ? '' : 'https://img2.kuwo.cn/star/albumcover/$short');
     return audio.MusicTrack(
       id: songId,
       sourceId: 'kw',
@@ -1003,6 +1009,7 @@ final class KwMusicSource extends LxPlatformSource
       album: album,
       albumId: albumId.isEmpty ? null : albumId,
       duration: seconds == null ? null : Duration(seconds: seconds),
+      coverUri: cover.isEmpty ? null : Uri.tryParse(cover),
       qualities: [for (final quality in qualities) LxPlatformSource.qualityOf(quality)],
       metadata: {'types': qualities, 'albumId': albumId, if (artistId.isNotEmpty) 'artistId': artistId},
     );
