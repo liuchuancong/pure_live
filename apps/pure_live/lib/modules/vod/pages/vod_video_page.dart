@@ -2206,14 +2206,16 @@ final class _PartsSectionState extends State<_PartsSection> {
           children: [
             Expanded(
               child: Text(
-                '${t.vod.parts} · ${parts.length}',
+                t.vod.parts,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.title.copyWith(color: colors.text),
               ),
             ),
+            // The shelf says which slice it is showing, not how many the
+            // archive holds: the viewer asked for no episode count here.
             if (groups > 1) ...[
-              Text('$first–$last / ${parts.length}', style: muted),
+              Text('$first–$last', style: muted),
               DsButton.icon(
                 icon: const DsIcon(DsIcons.chevronLeft),
                 semanticLabel: t.vod.partsPrevious,
