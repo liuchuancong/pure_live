@@ -5,6 +5,8 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show decryptMrc, parseMrc;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
+    show MusicAlbum, MusicAlbumDetail, MusicAlbumSource;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
@@ -48,7 +50,7 @@ const String _mgUserAgent =
 /// the open app endpoints; play URLs come from the lx scripts.
 final class MgMusicSource extends LxPlatformSource
     with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
-    implements MusicHotWords, MusicCommentsSource {
+    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource {
   /// A Migu source over the lx runtime.
   MgMusicSource(super.runtime, super.http);
 
@@ -441,6 +443,136 @@ final class MgMusicSource extends LxPlatformSource
     return (info, tracks);
   }
 
+  /// The album's own page — the reference's mg `album.js`, which reads the
+  /// songs and the cover sheet apart: MIGUM2.0 answers the list, MIGUM3.0 the
+  /// album's facts. Neither wants the signature the search gateway asks for.
+  @override
+  Future<MusicAlbumDetail> album(String albumId) async {
+    final id = albumId.trim();
+    if (id.isEmpty) return (album: const MusicAlbum(id: '', name: '', artist: ''), tracks: const <audio.MusicTrack>[]);
+    final card = await _albumCard(id);
+    final tracks = <audio.MusicTrack>[];
+    final seen = <String>{};
+    for (final row in await _albumSongs(id)) {
+      final track = _albumTrackOf(row, id, card);
+      if (track == null || !seen.add(track.id)) continue;
+      tracks.add(track);
+    }
+    return (
+      album: MusicAlbum(
+        id: id,
+        name: card.name,
+        artist: card.artist,
+        artistId: card.artistId.isEmpty ? null : card.artistId,
+        coverUri: card.cover,
+        trackCount: card.trackCount > 0 ? card.trackCount : tracks.length,
+        year: card.year,
+      ),
+      tracks: tracks,
+    );
+  }
+
+  Future<({String name, String artist, String artistId, Uri? cover, int trackCount, int? year})> _albumCard(
+    String id,
+  ) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('app.c.nf.migu.cn', '/MIGUM3.0/resource/album/v2.0', {'albumId': id}),
+        headers: _plazaHeaders,
+      ),
+    ) as Map<String, Object?>;
+    final data = json['code'] == '000000' ? json['data'] : null;
+    if (data is! Map) return (name: '', artist: '', artistId: '', cover: null, trackCount: 0, year: null);
+    final card = data.cast<String, Object?>();
+    // The release stamp arrives as `publishTime` on some albums and
+    // `publishDate` on others; both are ISO, either gives the page its year.
+    final published = '${card['publishTime'] ?? card['publishDate'] ?? ''}'.trim();
+    return (
+      name: '${card['title'] ?? ''}'.trim(),
+      artist: '${card['singer'] ?? ''}'.trim(),
+      artistId: '${card['singerId'] ?? ''}'.trim(),
+      cover: _mgImage(card['imgItems']),
+      trackCount: int.tryParse('${card['totalCount'] ?? ''}') ?? 0,
+      year: published.length >= 4 ? int.tryParse(published.substring(0, 4)) : null,
+    );
+  }
+
+  /// The album's songs. The endpoint answers ten at a time and ignores any
+  /// page size it is handed, so the pages are walked until the album runs out.
+  Future<List<Map<String, Object?>>> _albumSongs(String id) async {
+    final rows = <Map<String, Object?>>[];
+    while (rows.length < 200) {
+      final json = jsonDecode(
+        await getText(
+          Uri.https('app.c.nf.migu.cn', '/MIGUM2.0/v1.0/content/queryAlbumSong', {
+            'albumId': id,
+            'pageNo': '${rows.length ~/ 10 + 1}',
+          }),
+          headers: _plazaHeaders,
+        ),
+      ) as Map<String, Object?>;
+      if (json['code'] != '000000') break;
+      final data = json['data'];
+      final raw = data is Map ? data['songList'] : null;
+      if (raw is! List) break;
+      final before = rows.length;
+      for (final entry in raw) {
+        if (entry is Map) rows.add(entry.cast<String, Object?>());
+      }
+      if (raw.length < 10 || rows.length == before) break;
+    }
+    return rows;
+  }
+
+  /// One album row as a song. The row credits its singers under `artists`
+  /// rather than `singerList`, stamps length as a clock instead of seconds,
+  /// and wears the album's `albumImgs` instead of the search's `img` fields,
+  /// so the three are put where the shared mapper reads them; the card's cover
+  /// stands in when a row carries none.
+  audio.MusicTrack? _albumTrackOf(
+    Map<String, Object?> row,
+    String albumId,
+    ({String name, String artist, String artistId, Uri? cover, int trackCount, int? year}) card,
+  ) {
+    final pic = _mgImage(row['albumImgs']) ?? card.cover;
+    final normalized = <String, Object?>{
+      ...row,
+      'singerList': row['artists'] ?? row['singerList'],
+      'duration': row['duration'] ?? _mgSeconds(row['length']),
+      if (pic != null) 'img3': '$pic',
+    };
+    final track = _trackOf(normalized, row['copyrightId'], row['songId']);
+    if (track == null) return null;
+    if (track.artist.isNotEmpty) return track;
+    return card.artist.isEmpty ? track : track.copyWith(artist: card.artist);
+  }
+
+  /// The first picture of a `[{img}]` list — the shape every migu album,
+  /// singer and cover field arrives as, size-tagged and ordered big to small.
+  static Uri? _mgImage(Object? items) {
+    if (items is! List) return null;
+    for (final entry in items) {
+      if (entry is! Map) continue;
+      final url = '${entry['img'] ?? ''}'.trim();
+      if (url.isEmpty) continue;
+      final full = url.startsWith('http') ? url : 'http://d.musicapp.migu.cn$url';
+      final uri = Uri.tryParse(full);
+      if (uri != null) return uri;
+    }
+    return null;
+  }
+
+  /// A `hh:mm:ss` / `mm:ss` length as seconds — what the album rows carry
+  /// where the search rows carry a plain number.
+  static int? _mgSeconds(Object? raw) {
+    final parts = '${raw ?? ''}'.split(':');
+    if (parts.length < 2) return null;
+    final seconds = int.tryParse(parts.last);
+    final minutes = int.tryParse(parts[parts.length - 2]);
+    if (seconds == null || minutes == null) return null;
+    return minutes * 60 + seconds;
+  }
+
   static audio.MusicTrack? _trackOf(Map<String, Object?> raw, Object? copyrightId, Object? songId) {
     final id = '$songId';
     final title = '${raw['name'] ?? raw['songName'] ?? ''}'.trim();
@@ -468,6 +600,7 @@ final class MgMusicSource extends LxPlatformSource
     final picUrl = pic.isEmpty || pic.startsWith('http') ? pic : 'http://d.musicapp.migu.cn$pic';
     final copyright = '$copyrightId';
     final singers = raw['singerList'];
+    final artistPic = _firstSingerImage(singers);
     return audio.MusicTrack(
       id: id,
       sourceId: 'mg',
@@ -485,8 +618,23 @@ final class MgMusicSource extends LxPlatformSource
         'mrc': '${raw['mrcurl'] ?? raw['mrcUrl'] ?? ''}',
         'trc': '${raw['trcUrl'] ?? ''}',
         if (picUrl.isNotEmpty) 'pic': picUrl,
+        'artistPic': ?artistPic,
       },
     );
+  }
+
+  /// The lead singer's own picture, when the row carried one. Migu ships it on
+  /// the very singers it credits, so the artist page can wear the photo
+  /// instead of initials.
+  static String? _firstSingerImage(Object? singers) {
+    if (singers is! List) return null;
+    for (final singer in singers) {
+      if (singer is! Map) continue;
+      final url = '${singer['img'] ?? ''}'.trim();
+      if (url.isEmpty) continue;
+      return url.startsWith('http') ? url : 'http://d.musicapp.migu.cn$url';
+    }
+    return null;
   }
 
   static String _singersOf(Object? singers) {
