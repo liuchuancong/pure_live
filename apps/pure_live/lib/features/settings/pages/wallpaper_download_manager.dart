@@ -133,7 +133,7 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
     final t = context.t;
     final confirmed = await showDsConfirm(
       context: context,
-      title: t.settings.downloadRemove,
+      title: t.settings.downloadDelete,
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.settings.downloadDelete,
       cancelLabel: t.common.cancel,
@@ -1103,7 +1103,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
       const DsMenuDivider(),
       DsMenuItem(
         leading: const DsIcon(DsIcons.trash2),
-        label: Text(t.settings.downloadRemove),
+        label: Text(t.settings.downloadDelete),
         destructive: true,
         onPressed: () => unawaited(_remove(task)),
       ),
