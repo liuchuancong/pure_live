@@ -128,6 +128,11 @@ final class AppPaths {
   /// under [imageCache] so one folder holds every cached picture.
   Directory get covers => Directory(p.join(imageCache.path, 'covers'));
 
+  /// The frames cut from the recordings on disk, so a library row shows its own
+  /// take instead of a generic glyph; regenerable from the files, so it is
+  /// cache and not data.
+  Directory get recordingCovers => Directory(p.join(imageCache.path, 'recording_covers'));
+
   /// The backup files the viewer exports and imports.
   Directory get backups => Directory(p.join(areas.exports?.path ?? p.join(areas.data.path, 'exports'), 'backups'));
 }

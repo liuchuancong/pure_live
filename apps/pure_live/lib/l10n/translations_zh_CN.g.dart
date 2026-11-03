@@ -5392,12 +5392,6 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '全选'
 	String get selectAll => '全选';
 
-	/// zh-CN: '列表'
-	String get listView => '列表';
-
-	/// zh-CN: '网格'
-	String get gridView => '网格';
-
 	/// zh-CN: '{count} 个文件 · {size}'
 	String groupSummary({required Object count, required Object size}) => '${count} 个文件 · ${size}';
 
@@ -5713,8 +5707,11 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '只看可播放'
 	String get filterPlayable => '只看可播放';
 
-	/// zh-CN: '列表形式'
-	String get viewLabel => '列表形式';
+	/// zh-CN: '平台'
+	String get filterPlatformGroup => '平台';
+
+	/// zh-CN: '清除筛选'
+	String get filterClear => '清除筛选';
 
 	/// zh-CN: '文件夹'
 	String get folderView => '文件夹';
@@ -5778,6 +5775,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '大小'
 	String get columnSize => '大小';
+
+	/// zh-CN: '码率'
+	String get columnBitrate => '码率';
 
 	/// zh-CN: '任务'
 	String get columnTask => '任务';
@@ -14980,8 +14980,6 @@ extension on Translations {
 			'recorder.sortSize' => '文件大小',
 			'recorder.sortDuration' => '文件时长',
 			'recorder.selectAll' => '全选',
-			'recorder.listView' => '列表',
-			'recorder.gridView' => '网格',
 			'recorder.groupSummary' => ({required Object count, required Object size}) => '${count} 个文件 · ${size}',
 			'recorder.emptyFinishedTitle' => '已完成的录制会出现在这里',
 			'recorder.emptyDescription' => '在直播间点击录制，任务会出现在这里。',
@@ -15087,7 +15085,8 @@ extension on Translations {
 			'recorder.emptySearchDescription' => '换个关键词，或把筛选清掉。',
 			'recorder.filterTitle' => '筛选录像',
 			'recorder.filterPlayable' => '只看可播放',
-			'recorder.viewLabel' => '列表形式',
+			'recorder.filterPlatformGroup' => '平台',
+			'recorder.filterClear' => '清除筛选',
 			'recorder.folderView' => '文件夹',
 			'recorder.allView' => '全部',
 			'recorder.refresh' => '刷新',
@@ -15109,6 +15108,7 @@ extension on Translations {
 			'recorder.columnCount' => '数量',
 			'recorder.columnDuration' => '时长',
 			'recorder.columnSize' => '大小',
+			'recorder.columnBitrate' => '码率',
 			'recorder.columnTask' => '任务',
 			'recorder.columnStarted' => '开始时间',
 			'recorder.columnActions' => '操作',

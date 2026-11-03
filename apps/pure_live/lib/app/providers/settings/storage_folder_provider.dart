@@ -287,6 +287,11 @@ final class AppFolders {
   /// every cached picture and the cap prunes them together.
   Directory get covers => Directory(p.join(imageCache.path, 'covers'));
 
+  /// The frames cut from the recordings on disk; see
+  /// [AppPaths.recordingCovers]. Not a viewer folder — it is cache, and the
+  /// recording library refills it from its own files.
+  Directory get recordingCovers => paths.recordingCovers;
+
   /// The backup files the viewer exports and imports.
   Directory get backups => paths.backups;
 }

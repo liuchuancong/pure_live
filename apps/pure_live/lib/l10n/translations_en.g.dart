@@ -1922,8 +1922,6 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get sortSize => 'Size';
 	@override String get sortDuration => 'Duration';
 	@override String get selectAll => 'Select all';
-	@override String get listView => 'List';
-	@override String get gridView => 'Grid';
 	@override String groupSummary({required Object count, required Object size}) => '${count} files · ${size}';
 	@override String get emptyFinishedTitle => 'Finished recordings will show up here';
 	@override String get emptyDescription => 'Record from a live room; its task appears here.';
@@ -2029,7 +2027,8 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get emptySearchDescription => 'Try another word, or clear the filters.';
 	@override String get filterTitle => 'Filter recordings';
 	@override String get filterPlayable => 'Playable only';
-	@override String get viewLabel => 'List style';
+	@override String get filterPlatformGroup => 'Platform';
+	@override String get filterClear => 'Clear filters';
 	@override String get folderView => 'Folders';
 	@override String get allView => 'All';
 	@override String get refresh => 'Refresh';
@@ -2051,6 +2050,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get columnCount => 'Count';
 	@override String get columnDuration => 'Length';
 	@override String get columnSize => 'Size';
+	@override String get columnBitrate => 'Bitrate';
 	@override String get columnTask => 'Task';
 	@override String get columnStarted => 'Started';
 	@override String get columnActions => 'Actions';
@@ -6435,8 +6435,6 @@ extension on TranslationsEn {
 			'recorder.sortSize' => 'Size',
 			'recorder.sortDuration' => 'Duration',
 			'recorder.selectAll' => 'Select all',
-			'recorder.listView' => 'List',
-			'recorder.gridView' => 'Grid',
 			'recorder.groupSummary' => ({required Object count, required Object size}) => '${count} files · ${size}',
 			'recorder.emptyFinishedTitle' => 'Finished recordings will show up here',
 			'recorder.emptyDescription' => 'Record from a live room; its task appears here.',
@@ -6542,7 +6540,8 @@ extension on TranslationsEn {
 			'recorder.emptySearchDescription' => 'Try another word, or clear the filters.',
 			'recorder.filterTitle' => 'Filter recordings',
 			'recorder.filterPlayable' => 'Playable only',
-			'recorder.viewLabel' => 'List style',
+			'recorder.filterPlatformGroup' => 'Platform',
+			'recorder.filterClear' => 'Clear filters',
 			'recorder.folderView' => 'Folders',
 			'recorder.allView' => 'All',
 			'recorder.refresh' => 'Refresh',
@@ -6564,6 +6563,7 @@ extension on TranslationsEn {
 			'recorder.columnCount' => 'Count',
 			'recorder.columnDuration' => 'Length',
 			'recorder.columnSize' => 'Size',
+			'recorder.columnBitrate' => 'Bitrate',
 			'recorder.columnTask' => 'Task',
 			'recorder.columnStarted' => 'Started',
 			'recorder.columnActions' => 'Actions',

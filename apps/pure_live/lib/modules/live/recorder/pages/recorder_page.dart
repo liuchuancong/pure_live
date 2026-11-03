@@ -16,6 +16,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/data/recorder_library_filter.dart' show scopeLibraryTakes;
 import 'package:pure_live/modules/live/recorder/data/recorder_search_handoff.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart';
@@ -238,6 +239,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           DsTab(value: filter, label: Text(_filterLabel(t, filter)), count: counts[filter] ?? 0),
       ],
     );
+    // The files page's toolbar answers for this module's half of the shared
+    // tree, so the takes it counts and filters are the same cut the pane under
+    // it lists.
+    final libraryTakes = scopeLibraryTakes(
+      ref.watch(recordingLibraryProvider).value ?? const <RecordingTake>[],
+      excluded: const {kIptvRecordingPlatform},
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -283,16 +291,25 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: DsSegmentedControl<RecorderCenterTab>(
-              value: ref.watch(recorderCenterTabProvider),
-              onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
-              segments: [
-                DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
-                DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
-              ],
-            ),
+          // The centre's two pages on the left, the files page's own verbs on
+          // the same line: the filter and the refresh narrow what is under
+          // them, so they belong to the page switch rather than to a second
+          // band below it.
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsSegmentedControl<RecorderCenterTab>(
+                value: ref.watch(recorderCenterTabProvider),
+                onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
+                segments: [
+                  DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
+                  DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
+                ],
+              ),
+              const Spacer(),
+              if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.files)
+                RecorderLibraryToolbar(takes: libraryTakes, platformName: _platformName),
+            ],
           ),
         ),
         if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
@@ -314,6 +331,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           Expanded(
             child: RecorderLibraryPane(
               showHeading: false,
+              // Its verbs ride the page switch's own line, above.
+              showToolbar: false,
               // Channels are the IPTV module's own list.
               excludedPlatforms: const {kIptvRecordingPlatform},
               onPlay: (around, take) => unawaited(_playLibraryTake(around, take)),
@@ -450,6 +469,27 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         numeric: true,
         width: const DsTableColumnWidth.intrinsic(min: 88),
       ),
+      // What the take captured and how fast it went in: the two figures a
+      // recording can answer with from its own bytes and media time.
+      DsTableColumn<RecordingTask>(
+        id: 'duration',
+        label: t.recorder.columnDuration,
+        value: (task) => task.durationMs,
+        text: (task) => task.durationMs > 0 ? formatRecordingDuration(Duration(milliseconds: task.durationMs)) : '—',
+        numeric: true,
+        width: const DsTableColumnWidth.intrinsic(min: 76),
+      ),
+      DsTableColumn<RecordingTask>(
+        id: 'bitrate',
+        label: t.recorder.columnBitrate,
+        value: (task) => task.durationMs > 0 ? (task.bytes * 8 / (task.durationMs / 1000)).round() : 0,
+        text: (task) {
+          final rate = formatRecordingBitrate(task.bytes, Duration(milliseconds: task.durationMs));
+          return rate.isEmpty ? '—' : rate;
+        },
+        numeric: true,
+        width: const DsTableColumnWidth.intrinsic(min: 84),
+      ),
       DsTableColumn<RecordingTask>(
         id: 'time',
         label: t.recorder.columnStarted,
@@ -527,7 +567,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   _platformName(task.platform),
                   if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
                   if (task.scheduleEnabled) _scheduleSummary(t, task),
-                  t.recorder.startedAt(time: formatRecordingMoment(task.startedAt)),
                 ].join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1082,7 +1121,10 @@ final class _TaskCard extends StatelessWidget {
     final progress = [
       if (elapsed > Duration.zero) formatRecordingDuration(elapsed),
       if (speed > 0) '${formatRecordingBytes(speed.round())}/s',
-    ].join(' · ');
+      // A settled take says what it went in at; a running one already shows
+      // the rate it is writing at now.
+      if (!task.isRunning) formatRecordingBitrate(task.bytes, recorded),
+    ].where((part) => part.isNotEmpty).join(' · ');
     return DsCard(
       onPressed: onOpen,
       semanticLabel: title,

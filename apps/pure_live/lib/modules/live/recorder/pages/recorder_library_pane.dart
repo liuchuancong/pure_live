@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -10,21 +11,27 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/media_preview/media_preview_page.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/recorder/data/recorder_library_filter.dart'
+    show RecorderLibraryFilter, RecorderLibrarySort, recorderLibraryFilterProvider, scopeLibraryTakes;
+import 'package:pure_live/modules/live/recorder/data/recording_covers.dart' show recordingCoversProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
     show formatRecordingBytes, formatRecordingDuration, formatRecordingMoment;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, PlatformTabRow, kAllPlatforms;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, kAllPlatforms;
 
 /// The recording library: the takes on disk, browsed the way the recorder
-/// filed them — a day, the platforms recorded that day, the rooms behind a
-/// platform, and the takes of one room.
+/// filed them — one day after another, the way a drive client reads a folder.
 ///
 /// It walks the folder tree rather than the task store because the store keys a
 /// row by `platform:roomId`: a room recorded twice keeps one row and hides its
 /// other take, though the file sits on disk. So pressing a row plays the
 /// recording it names, and the room it came from is one menu step away.
+///
+/// The library's conditions — the site, whether a row must play, the order —
+/// are the page's view state rather than this widget's: [RecorderLibraryToolbar]
+/// edits them wherever the host page places it, and this pane obeys them.
 final class RecorderLibraryPane extends ConsumerStatefulWidget {
   const RecorderLibraryPane({
     required this.onPlay,
@@ -34,6 +41,7 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
     this.excludedPlatforms = const {},
     this.openRoomLabel,
     this.showHeading = true,
+    this.showToolbar = true,
     super.key,
   });
 
@@ -68,31 +76,18 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
   /// — the heading would say the same thing twice, and only the toolbar shows.
   final bool showHeading;
 
+  /// Whether the pane carries the library's own toolbar. A page that puts the
+  /// toolbar on its header line — the recording centre, beside the tasks/files
+  /// switch — passes false and renders [RecorderLibraryToolbar] itself, so the
+  /// conditions sit one row above the list instead of forming a second band
+  /// under it.
+  final bool showToolbar;
+
   @override
   ConsumerState<RecorderLibraryPane> createState() => _RecorderLibraryPaneState();
 }
 
 final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane> {
-  /// Only the sites ticked in the panel; empty means every site.
-  /// The platform the tabs row has picked; 'all' shows everything.
-  String _platform = kAllPlatforms;
-
-  /// Whether a row must hold something playable.
-  bool _playableOnly = false;
-
-  /// The platforms actually present in the library, in tab order.
-  List<String> _platformTabs(List<RecordingTake> takes) {
-    final ids = {for (final take in takes) take.platformId}.toList()
-      ..sort((a, b) => widget.platformName(a).compareTo(widget.platformName(b)));
-    return [kAllPlatforms, ...ids];
-  }
-
-  /// The list's order; newest first, the way a file manager opens.
-  _LibrarySort _sort = _LibrarySort.newest;
-
-  /// List rows, or a grid of covers.
-  bool _grid = false;
-
   /// The days the viewer folded away; a day key, not a title.
   final Set<String> _collapsed = {};
 
@@ -107,21 +102,11 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   }
 
   /// The tree this pane owns: every take, cut down to the module's platforms.
-  List<RecordingTake> get _all => _scope(ref.read(recordingLibraryProvider).value ?? const []);
-
-  /// Cuts the library down to this module's takes. [RecordingTake.platformId]
-  /// falls back to the folder's name for a take whose row is gone, which is the
-  /// same string for both sides — so an orphaned channel take still lands on the
-  /// IPTV side of the cut.
-  List<RecordingTake> _scope(List<RecordingTake> takes) {
-    final only = widget.platforms;
-    final out = widget.excludedPlatforms;
-    if (only.isEmpty && out.isEmpty) return takes;
-    return [
-      for (final take in takes)
-        if ((only.isEmpty || only.contains(take.platformId)) && !out.contains(take.platformId)) take,
-    ];
-  }
+  List<RecordingTake> get _all => scopeLibraryTakes(
+    ref.read(recordingLibraryProvider).value ?? const [],
+    platforms: widget.platforms,
+    excluded: widget.excludedPlatforms,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -129,12 +114,15 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     final library = ref.watch(recordingLibraryProvider);
-    final takes = _scope(library.value ?? const <RecordingTake>[]);
-    final platformTabs = _platformTabs(takes);
-    final filtered = _sort.sorted(_filter(takes));
+    final takes = scopeLibraryTakes(
+      library.value ?? const <RecordingTake>[],
+      platforms: widget.platforms,
+      excluded: widget.excludedPlatforms,
+    );
+    final filter = ref.watch(recorderLibraryFilterProvider);
+    final filtered = filter.sort.sorted(narrowLibraryTakes(takes, filter));
     final width = MediaQuery.sizeOf(context).width;
     final inset = LiveWindow.pageInset(width);
-    final compact = LiveWindow.isCompact(width);
     final root = ref.watch(appPathsProvider).recordings.path;
     final controller = ref.read(recordingLibraryProvider.notifier);
     // The days in the shown order; the grouping never reorders, it follows
@@ -147,85 +135,16 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              // Adding a task is the shell's own search above; this page
-              // narrows with the filter, not a second field.
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  DsButton.icon(
-                    variant: _playableOnly ? DsButtonVariant.tinted : DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: () => setState(() {
-                      _playableOnly = !_playableOnly;
-                      _selected.clear();
-                    }),
-                    icon: const DsIcon(DsIcons.play, size: 16),
-                    semanticLabel: t.recorder.filterPlayable,
-                  ),
-                  _SortMenu(sort: _sort, onChanged: (value) => setState(() => _sort = value)),
-                  DsSegmentedControl<bool>(
-                    value: _grid,
-                    semanticLabel: t.recorder.viewLabel,
-                    segments: [
-                      DsSegment(
-                        value: false,
-                        icon: const DsIcon(DsIcons.layoutList, size: 16),
-                        semanticLabel: t.recorder.listView,
-                      ),
-                      DsSegment(
-                        value: true,
-                        icon: const DsIcon(DsIcons.layoutGrid, size: 16),
-                        semanticLabel: t.recorder.gridView,
-                      ),
-                    ],
-                    onChanged: (value) => setState(() {
-                      _grid = value;
-                      _selected.clear();
-                    }),
-                  ),
-                  if (!compact)
-                    DsButton.icon(
-                      variant: DsButtonVariant.secondary,
-                      size: DsSize.sm,
-                      onPressed: () => unawaited(openDownloadedPath(context, root)),
-                      icon: const DsIcon(DsIcons.folderOpen, size: 16),
-                      semanticLabel: t.recorder.openFolder,
-                    ),
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: library.isLoading ? null : () => unawaited(controller.refresh()),
-                    icon: const DsIcon(DsIcons.refresh, size: 16),
-                    semanticLabel: t.recorder.refresh,
-                  ),
-                ],
-              ),
-              // One platform has nothing to choose between: the row would
-              // only repeat its name beside an "all" that means the same.
-              if (platformTabs.length > 2)
-                PlatformTabRow(
-                  platforms: platformTabs,
-                  current: _platform,
-                  nameOf: widget.platformName,
-                  semanticLabel: t.recorder.libraryTitle,
-                  countOf: (id) =>
-                      id == kAllPlatforms ? takes.length : takes.where((take) => take.platformId == id).length,
-                  showPlatformWall: false,
-                  showLayoutToggle: false,
-                  onChanged: (value) => setState(() {
-                    _platform = value;
-                    _selected.clear();
-                  }),
-                ),
-            ],
+        // Adding a task is the shell's own search above; this page narrows with
+        // the filter, and the filter is one entry, not a band of controls.
+        if (widget.showToolbar)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, 0),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: RecorderLibraryToolbar(takes: takes, platformName: widget.platformName),
+            ),
           ),
-        ),
         Expanded(
           child: switch ((library.isLoading && takes.isEmpty, library.hasError)) {
             (true, _) => Center(child: DsSpinner(semanticLabel: t.recorder.libraryTitle)),
@@ -257,10 +176,18 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                       onPressed: () => unawaited(openDownloadedPath(context, root)),
                       child: Text(t.recorder.openFolder),
                     ),
+                  // Narrowed to nothing is not an empty library: the one verb
+                  // that answers is the one that widens it again.
+                  if (takes.isNotEmpty && filter.narrowed)
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      onPressed: () => ref.read(recorderLibraryFilterProvider.notifier).reset(),
+                      child: Text(t.recorder.filterClear),
+                    ),
                 ],
               ),
             ),
-            (false, false) => _grid ? _gridBody(filtered, inset) : _listBody(filtered, days, inset),
+            (false, false) => _dayGroups(filtered, days, inset),
           },
         ),
         if (_selected.isNotEmpty)
@@ -302,89 +229,53 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     );
   }
 
-  /// The file list: one collapsible day group after another, each take a
-  /// row like a file manager's — cover, name, facts, state, actions.
-  Widget _listBody(List<RecordingTake> filtered, List<String> days, double inset) {
+  /// The file list: one day after another, each day's header pinned while its
+  /// own takes scroll past — the way a drive client holds the date you are
+  /// reading, and the reason the grid it also offered never earned its keep.
+  Widget _dayGroups(List<RecordingTake> filtered, List<String> days, double inset) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return ListView.builder(
-      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
-      itemCount: days.length,
-      itemBuilder: (context, index) {
-        final day = days[index];
-        final dayTakes = [
-          for (final take in filtered)
-            if (take.day == day) take,
-        ];
-        final dayBytes = dayTakes.fold<int>(0, (total, take) => total + take.bytes);
-        final collapsed = _collapsed.contains(day);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: DsSpace.s8),
-              child: DsPressable(
-                onPressed: () => setState(() {
-                  if (collapsed) {
-                    _collapsed.remove(day);
-                  } else {
-                    _collapsed.add(day);
-                  }
-                }),
-                builder: (context, states, _) => Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    DsIcon(collapsed ? DsIcons.chevronRight : DsIcons.chevronDown, size: 16, color: colors.textMuted),
-                    Text(_dayTitle(day), style: theme.typography.bodyStrong.copyWith(color: colors.text)),
-                    Text(
-                      t.recorder.groupSummary(count: dayTakes.length, size: formatRecordingBytes(dayBytes)),
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (!collapsed)
-              for (final take in dayTakes)
-                _TakeRow(
-                  take: take,
-                  selected: _selected,
-                  onSelect: _toggle,
-                  onPlay: () => _play(take),
-                  menu: _takeMenu(take),
-                  platformName: widget.platformName,
-                ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// The cover grid: the same takes as cards, two or more across by width.
-  Widget _gridBody(List<RecordingTake> filtered, double inset) {
-    final width = MediaQuery.sizeOf(context).width;
-    final columns = width >= 1200 ? 4 : (width >= 800 ? 3 : 2);
-    return GridView.builder(
+    return Padding(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s12),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        mainAxisSpacing: DsSpace.s12,
-        crossAxisSpacing: DsSpace.s12,
-        childAspectRatio: 0.82,
+      child: CustomScrollView(
+        slivers: [
+          for (final day in days)
+            SliverMainAxisGroup(
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _DayHeaderDelegate(
+                    title: _dayTitle(day),
+                    summary: t.recorder.groupSummary(
+                      count: filtered.where((take) => take.day == day).length,
+                      size: formatRecordingBytes(
+                        filtered.where((take) => take.day == day).fold<int>(0, (total, take) => total + take.bytes),
+                      ),
+                    ),
+                    collapsed: _collapsed.contains(day),
+                    onToggle: () => setState(() {
+                      if (!_collapsed.remove(day)) _collapsed.add(day);
+                    }),
+                  ),
+                ),
+                if (!_collapsed.contains(day))
+                  SliverList(
+                    delegate: SliverChildListDelegate([
+                      for (final take in filtered)
+                        if (take.day == day)
+                          _TakeRow(
+                            take: take,
+                            selected: _selected,
+                            onSelect: _toggle,
+                            onPlay: () => _play(take),
+                            menu: _takeMenu(take),
+                            platformName: widget.platformName,
+                          ),
+                    ]),
+                  ),
+              ],
+            ),
+        ],
       ),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) {
-        final take = filtered[index];
-        return _TakeCard(
-          take: take,
-          selected: _selected.contains(take.filePath ?? take.folder),
-          onSelect: () => _toggle(take),
-          onPlay: () => _play(take),
-          menu: _takeMenu(take),
-          platformName: widget.platformName,
-        );
-      },
     );
   }
 
@@ -400,7 +291,8 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     }
     // The run is everything on screen, ordered as the viewer sees it, so the
     // player's next and previous walk the library in its own order.
-    widget.onPlay(_sort.sorted(_filter(_all)), take);
+    final filter = ref.read(recorderLibraryFilterProvider);
+    widget.onPlay(filter.sort.sorted(narrowLibraryTakes(_all, filter)), take);
   }
 
   /// The row menu: play, the room, the folder, the path, the delete.
@@ -438,19 +330,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
         destructive: true,
         onPressed: () => unawaited(_confirmDeleteTake(take)),
       ),
-    ];
-  }
-
-  // -- state helpers --------------------------------------------------------
-
-  /// The takes on screen: platform and playability filtered. A platform
-  /// choice only exists while the row is shown; with one platform the stored
-  /// choice is ignored rather than hiding every take behind a hidden tab.
-  List<RecordingTake> _filter(List<RecordingTake> takes) {
-    final platform = _platformTabs(_all).length > 2 ? _platform : kAllPlatforms;
-    return [
-      for (final take in takes)
-        if ((platform == kAllPlatforms || take.platformId == platform) && (!_playableOnly || take.playable)) take,
     ];
   }
 
@@ -585,68 +464,238 @@ Future<void> playRecordingTake(
   );
 }
 
-/// The list's orders; the file manager's sort menu.
-enum _LibrarySort {
-  newest,
-  oldest,
-  name,
-  size,
-  duration;
+/// The library's conditions applied: one site (while that choice has anything
+/// to choose between) and, when asked, only the rows a player can open.
+///
+/// A platform choice only exists while the tree holds more than one site; with
+/// one site the stored choice is ignored rather than hiding every take behind a
+/// row nobody can see.
+List<RecordingTake> narrowLibraryTakes(List<RecordingTake> takes, RecorderLibraryFilter filter) {
+  final platforms = {for (final take in takes) take.platformId};
+  final platform = platforms.length > 1 ? filter.platform : kAllPlatforms;
+  return [
+    for (final take in takes)
+      if ((platform == kAllPlatforms || take.platformId == platform) && (!filter.playableOnly || take.playable)) take,
+  ];
+}
 
-  /// The takes in this order. A take without a stamp sorts as the oldest
-  /// thing on disk, a file-name order reads case-blind.
-  List<RecordingTake> sorted(List<RecordingTake> takes) {
-    int byName(RecordingTake a, RecordingTake b) => a.name.toLowerCase().compareTo(b.name.toLowerCase());
-    return switch (this) {
-      _LibrarySort.newest => takes..sort((a, b) => b.takenAt.compareTo(a.takenAt)),
-      _LibrarySort.oldest => takes..sort((a, b) => a.takenAt.compareTo(b.takenAt)),
-      _LibrarySort.name => takes..sort(byName),
-      _LibrarySort.size => takes..sort((a, b) => b.bytes.compareTo(a.bytes)),
-      _LibrarySort.duration =>
-        takes..sort((a, b) => (b.duration?.inMilliseconds ?? 0).compareTo(a.duration?.inMilliseconds ?? 0)),
-    };
+/// The library's own controls: one entry to its conditions, the folder the
+/// takes sit in, and the refresh that walks the tree again.
+///
+/// A wide window says what each verb does; a small one keeps the two it needs
+/// most — the filter and the refresh — as glyphs, the same fold every other
+/// page makes when its header line runs out of room.
+final class RecorderLibraryToolbar extends ConsumerWidget {
+  /// The toolbar over the module's [takes], sites named by [platformName].
+  const RecorderLibraryToolbar({required this.takes, required this.platformName, super.key});
+
+  /// The takes this library holds, before its own conditions cut them.
+  final List<RecordingTake> takes;
+
+  /// The viewer's name for a site id.
+  final String Function(String platformId) platformName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final library = ref.watch(recordingLibraryProvider);
+    final filter = ref.watch(recorderLibraryFilterProvider);
+    final root = ref.watch(appPathsProvider).recordings.path;
+    final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s8,
+      children: [
+        DsButton(
+          variant: filter.narrowed ? DsButtonVariant.tinted : DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: const DsIcon(DsIcons.filter, size: 14),
+          onPressed: () =>
+              unawaited(showRecordingLibraryFilter(context, ref, takes: takes, platformName: platformName)),
+          child: compact ? const SizedBox.shrink() : Text(t.recorder.filterLabel),
+        ),
+        if (!compact)
+          DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: () => unawaited(openDownloadedPath(context, root)),
+            icon: const DsIcon(DsIcons.folderOpen, size: 16),
+            semanticLabel: t.recorder.openFolder,
+          ),
+        DsButton.icon(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          onPressed: library.isLoading
+              ? null
+              : () {
+                  // Walking the tree again is also the moment a take that could
+                  // not be read last time gets asked again — a file that has
+                  // since been joined or finished writing answers now.
+                  ref.read(recordingCoversProvider.notifier).resetAttempts();
+                  unawaited(ref.read(recordingLibraryProvider.notifier).refresh());
+                },
+          icon: const DsIcon(DsIcons.refresh, size: 16),
+          semanticLabel: t.recorder.refresh,
+        ),
+      ],
+    );
   }
 }
 
-/// The sort menu: one checked order, the label carrying the active one.
-final class _SortMenu extends StatelessWidget {
-  const _SortMenu({required this.sort, required this.onChanged});
+/// The library's conditions, behind the toolbar's one entry: which site's takes
+/// show, whether a row must hold something playable, and the order the days are
+/// read in.
+///
+/// The panel edits the provider rather than a local copy, so the list under it
+/// answers while the panel is still open — the conditions are few enough that a
+/// separate 应用 step would only hide what each one just did.
+Future<void> showRecordingLibraryFilter(
+  BuildContext context,
+  WidgetRef ref, {
+  required List<RecordingTake> takes,
+  required String Function(String platformId) platformName,
+}) => showDsPanel<void>(
+  context: context,
+  builder: (panelContext) => _LibraryFilterPanel(takes: takes, platformName: platformName),
+);
 
-  final _LibrarySort sort;
-  final ValueChanged<_LibrarySort> onChanged;
+final class _LibraryFilterPanel extends ConsumerWidget {
+  const _LibraryFilterPanel({required this.takes, required this.platformName});
+
+  final List<RecordingTake> takes;
+  final String Function(String platformId) platformName;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    return DsMenuAnchor(
-      align: DsAlign.end,
-      semanticLabel: t.recorder.sortLabel,
-      items: [
-        for (final order in _LibrarySort.values)
-          DsMenuItem(
-            label: Text(switch (order) {
-              _LibrarySort.newest => t.recorder.sortNewest,
-              _LibrarySort.oldest => t.recorder.sortOldest,
-              _LibrarySort.name => t.recorder.sortName,
-              _LibrarySort.size => t.recorder.sortSize,
-              _LibrarySort.duration => t.recorder.sortDuration,
-            }),
-            checked: order == sort,
-            onPressed: () => onChanged(order),
+    final filter = ref.watch(recorderLibraryFilterProvider);
+    final controller = ref.read(recorderLibraryFilterProvider.notifier);
+    final ids = {for (final take in takes) take.platformId}.toList()
+      ..sort((a, b) => platformName(a).compareTo(platformName(b)));
+    return DsPanel(
+      title: Text(t.recorder.filterTitle),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s12,
+        children: [
+          DsListSection(
+            header: Text(t.recorder.filterPlatformGroup),
+            children: [
+              for (final id in [kAllPlatforms, ...ids])
+                DsListRow(
+                  title: Text(id == kAllPlatforms ? t.recorder.filterAll : platformName(id)),
+                  detail: Text(
+                    '${id == kAllPlatforms ? takes.length : takes.where((take) => take.platformId == id).length}',
+                  ),
+                  trailing: filter.platform == id ? const DsIcon(DsIcons.check, size: 16) : null,
+                  onPressed: () => controller.setPlatform(id),
+                ),
+            ],
           ),
-      ],
-      builder: (context, controller, _) => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        trailing: const DsIcon(DsIcons.chevronDown, size: 14),
-        onPressed: controller.toggle,
-        child: Text(switch (sort) {
-          _LibrarySort.newest => t.recorder.sortNewest,
-          _LibrarySort.oldest => t.recorder.sortOldest,
-          _LibrarySort.name => t.recorder.sortName,
-          _LibrarySort.size => t.recorder.sortSize,
-          _LibrarySort.duration => t.recorder.sortDuration,
-        }),
+          DsListSection(
+            children: [
+              DsListRow(
+                title: Text(t.recorder.filterPlayable),
+                trailing: DsSwitch(
+                  value: filter.playableOnly,
+                  onChanged: (value) => controller.setPlayableOnly(value: value),
+                ),
+              ),
+            ],
+          ),
+          DsListSection(
+            header: Text(t.recorder.sortLabel),
+            children: [
+              for (final order in RecorderLibrarySort.values)
+                DsListRow(
+                  title: Text(recorderLibrarySortLabel(t, order)),
+                  trailing: filter.sort == order ? const DsIcon(DsIcons.check, size: 16) : null,
+                  onPressed: () => controller.setSort(order),
+                ),
+            ],
+          ),
+          DsListSection(
+            children: [DsListRow(title: Text(t.recorder.filterClear), onPressed: controller.reset)],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The order's own word, said the same way in the panel and in the list.
+String recorderLibrarySortLabel(Translations t, RecorderLibrarySort order) => switch (order) {
+  RecorderLibrarySort.newest => t.recorder.sortNewest,
+  RecorderLibrarySort.oldest => t.recorder.sortOldest,
+  RecorderLibrarySort.name => t.recorder.sortName,
+  RecorderLibrarySort.size => t.recorder.sortSize,
+  RecorderLibrarySort.duration => t.recorder.sortDuration,
+};
+
+/// The day's pinned header: what it folds away, how many takes it holds and
+/// how big they are together.
+///
+/// It paints its own background because a pinned header floats over the rows
+/// sliding under it; a transparent one would print the date through the take
+/// it is passing.
+final class _DayHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _DayHeaderDelegate({
+    required this.title,
+    required this.summary,
+    required this.collapsed,
+    required this.onToggle,
+  });
+
+  final String title;
+  final String summary;
+  final bool collapsed;
+  final VoidCallback onToggle;
+
+  /// The header's own height: one label line with its breathing room.
+  static const double _height = 36;
+
+  @override
+  double get minExtent => _height;
+
+  @override
+  double get maxExtent => _height;
+
+  @override
+  bool shouldRebuild(covariant _DayHeaderDelegate oldDelegate) =>
+      oldDelegate.collapsed != collapsed || oldDelegate.title != title || oldDelegate.summary != summary;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    return ColoredBox(
+      color: colors.surface,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colors.border)),
+        ),
+        child: DsPressable(
+          onPressed: onToggle,
+          builder: (context, states, _) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s6),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                DsIcon(collapsed ? DsIcons.chevronRight : DsIcons.chevronDown, size: 16, color: colors.textMuted),
+                Text(title, style: theme.typography.labelStrong.copyWith(color: colors.text)),
+                Expanded(
+                  child: Text(
+                    summary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -679,229 +728,199 @@ final class _TakeRow extends StatelessWidget {
     final colors = theme.colors;
     final key = take.filePath ?? take.folder;
     final name = take.roomTitle.trim().isNotEmpty ? take.roomTitle.trim() : take.name;
-    final duration = take.duration;
     final ok = take.playable;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
-      child: DsCard(
-        onPressed: onPlay,
-        style: DsCardStyle(
-          padding: const EdgeInsets.all(DsSpace.s8),
-          borderRadius: BorderRadius.circular(theme.radii.card),
-        ),
-        child: Row(
-          spacing: DsSpace.s12,
-          children: [
-            DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
-            SizedBox(
-              width: 96,
-              height: 54,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
-                child: Stack(
-                  children: [
-                    Center(child: DsIcon(DsIcons.video, size: 20, color: colors.accentText)),
-                    if (duration != null)
-                      Positioned(
-                        right: 4,
-                        bottom: 4,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: const Color(0xB3000000),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            child: Text(
-                              formatRecordingDuration(duration),
-                              style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
-                            ),
-                          ),
-                        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The checkbox, the badge, the verbs and the menu are the fixed part,
+          // so the row gives way in the order a viewer reads it: the words on
+          // the buttons first (the glyphs say the same thing), then the state
+          // badge — which stays only when it is the bad news — then the cover,
+          // so the name keeps a readable line at the window's floor.
+          final width = constraints.maxWidth;
+          final roomy = width >= 620;
+          final (coverWidth, coverHeight) = width >= 520
+              ? (96.0, 54.0)
+              : width >= 400
+              ? (72.0, 40.0)
+              : (0.0, 0.0);
+          return DsCard(
+            onPressed: onPlay,
+            style: DsCardStyle(
+              padding: const EdgeInsets.all(DsSpace.s8),
+              borderRadius: BorderRadius.circular(theme.radii.card),
+            ),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
+                if (coverWidth > 0) _TakeCover(take: take, width: coverWidth, height: coverHeight),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 2,
+                    children: [
+                      Text(
+                        '${platformName(take.platformId)} · $name',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                       ),
-                  ],
+                      Text(
+                        [
+                          formatRecordingMoment(take.takenAt),
+                          if (take.duration case final length?) formatRecordingDuration(length),
+                          if (take.bytes > 0) formatRecordingBytes(take.bytes),
+                          if (take.duration case final length?) formatRecordingBitrate(take.bytes, length),
+                        ].where((part) => part.isNotEmpty).join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 2,
-                children: [
-                  Text(
-                    '${platformName(take.platformId)} · $name',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                if (roomy || !ok)
+                  DsBadge(
+                    label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
+                    status: ok ? DsStatus.success : DsStatus.neutral,
                   ),
-                  Text(
-                    [
-                      formatRecordingMoment(take.takenAt),
-                      if (take.bytes > 0) formatRecordingBytes(take.bytes),
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                if (roomy)
+                  DsButton(
+                    variant: DsButtonVariant.primary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.play, size: 14),
+                    onPressed: ok ? onPlay : null,
+                    child: Text(t.recorder.playRecording),
+                  )
+                else
+                  DsButton.icon(
+                    variant: DsButtonVariant.primary,
+                    size: DsSize.sm,
+                    onPressed: ok ? onPlay : null,
+                    icon: const DsIcon(DsIcons.play, size: 16),
+                    semanticLabel: t.recorder.playRecording,
                   ),
-                ],
-              ),
+                if (roomy)
+                  DsButton.icon(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
+                    icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                    semanticLabel: t.recorder.openFolder,
+                  ),
+                DsMenuAnchor(
+                  align: DsAlign.end,
+                  semanticLabel: t.recorder.menuMore,
+                  items: menu,
+                  builder: (context, controller, _) => DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    onPressed: controller.toggle,
+                    icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+                    semanticLabel: t.recorder.menuMore,
+                  ),
+                ),
+              ],
             ),
-            DsBadge(
-              label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
-              status: ok ? DsStatus.success : DsStatus.neutral,
-            ),
-            DsButton(
-              variant: DsButtonVariant.primary,
-              size: DsSize.sm,
-              leading: const DsIcon(DsIcons.play, size: 14),
-              onPressed: ok ? onPlay : null,
-              child: Text(t.recorder.playRecording),
-            ),
-            DsButton.icon(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
-              icon: const DsIcon(DsIcons.folderOpen, size: 16),
-              semanticLabel: t.recorder.openFolder,
-            ),
-            DsMenuAnchor(
-              align: DsAlign.end,
-              semanticLabel: t.recorder.menuMore,
-              items: menu,
-              builder: (context, controller, _) => DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                onPressed: controller.toggle,
-                icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
-                semanticLabel: t.recorder.menuMore,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
-/// One take as a cover card for the grid: the tile over the name, the
-/// facts under it, and the same actions as the row.
-final class _TakeCard extends StatelessWidget {
-  const _TakeCard({
-    required this.take,
-    required this.selected,
-    required this.onSelect,
-    required this.onPlay,
-    required this.menu,
-    required this.platformName,
-  });
+/// The take's own frame, cut from the file by the recording backend's FFmpeg.
+///
+/// A take with nothing playable, or one FFmpeg could not open, keeps the tile
+/// the library always drew: the picture is what a row gains, never what it
+/// depends on.
+final class _TakeCover extends ConsumerStatefulWidget {
+  const _TakeCover({required this.take, required this.width, required this.height});
 
   final RecordingTake take;
-  final bool selected;
-  final VoidCallback onSelect;
-  final VoidCallback onPlay;
-  final List<Widget> menu;
-  final String Function(String platformId) platformName;
+  final double width;
+  final double height;
+
+  @override
+  ConsumerState<_TakeCover> createState() => _TakeCoverState();
+}
+
+final class _TakeCoverState extends ConsumerState<_TakeCover> {
+  @override
+  void initState() {
+    super.initState();
+    _request();
+  }
+
+  @override
+  void didUpdateWidget(_TakeCover old) {
+    super.didUpdateWidget(old);
+    if (old.take.filePath != widget.take.filePath) _request();
+  }
+
+  /// Asks for this take's frame after the frame is painted, so a page of rows
+  /// queues its covers instead of starting FFmpeg inside a build.
+  void _request() {
+    final file = widget.take.filePath;
+    if (file == null || file.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(recordingCoversProvider.notifier).request(file);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    final name = take.roomTitle.trim().isNotEmpty ? take.roomTitle.trim() : take.name;
-    final duration = take.duration;
-    final ok = take.playable;
-    return DsCard(
-      onPressed: onPlay,
-      style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final colors = DsTheme.colorsOf(context);
+    final cover = ref.watch(recordingCoversProvider)[widget.take.filePath ?? ''];
+    final duration = widget.take.duration;
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: Stack(
         children: [
-          Stack(
-            children: [
-              SizedBox(
-                height: 96,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: colors.accentTint,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(theme.radii.card),
-                      topRight: Radius.circular(theme.radii.card),
-                    ),
-                  ),
-                  child: Center(child: DsIcon(DsIcons.video, size: 28, color: colors.accentText)),
-                ),
+          Positioned.fill(
+            child: DsImage(
+              image: cover == null ? null : FileImage(File(cover)),
+              width: widget.width,
+              height: widget.height,
+              semanticLabel: widget.take.roomTitle,
+              fallback: DecoratedBox(
+                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
+                child: Center(child: DsIcon(DsIcons.video, size: 20, color: colors.accentText)),
               ),
-              Positioned(
-                left: 8,
-                top: 8,
-                child: DsCheckbox(value: selected, semanticLabel: name, onChanged: (_) => onSelect()),
-              ),
-              if (duration != null)
-                Positioned(
-                  right: 8,
-                  bottom: 8,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(4)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      child: Text(
-                        formatRecordingDuration(duration),
-                        style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(DsSpace.s8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 2,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                ),
-                Text(
-                  [
-                    platformName(take.platformId),
-                    formatRecordingMoment(take.takenAt),
-                    if (take.bytes > 0) formatRecordingBytes(take.bytes),
-                  ].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-                Row(
-                  spacing: DsSpace.s4,
-                  children: [
-                    DsBadge(
-                      label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
-                      status: ok ? DsStatus.success : DsStatus.neutral,
-                    ),
-                    const Spacer(),
-                    DsMenuAnchor(
-                      align: DsAlign.end,
-                      semanticLabel: t.recorder.menuMore,
-                      items: menu,
-                      builder: (context, controller, _) => DsButton.icon(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        onPressed: controller.toggle,
-                        icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
-                        semanticLabel: t.recorder.menuMore,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
           ),
+          if (duration != null)
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(4)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  child: Text(
+                    formatRecordingDuration(duration),
+                    style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
+}
+
+/// A take's average write rate, in the units a player's info line uses.
+///
+/// The store keeps bytes and media time and no live bitrate, so this is the
+/// take's own average rather than the stream's instantaneous one — which is all
+/// a finished recording can honestly answer with.
+String formatRecordingBitrate(int bytes, Duration duration) {
+  if (bytes <= 0 || duration.inSeconds <= 0) return '';
+  final kbps = bytes * 8 / duration.inSeconds;
+  return kbps >= 1000 ? '${(kbps / 1000).toStringAsFixed(1)} Mbps' : '${kbps.round()} kbps';
 }
