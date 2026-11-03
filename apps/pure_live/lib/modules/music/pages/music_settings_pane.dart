@@ -1004,11 +1004,28 @@ final class MusicDownloadPane extends ConsumerWidget {
   }
 }
 
+/// Which half of the lyric page is showing: the line the player draws, and
+/// the window that draws it on the desktop.
+enum MusicLyricTab { player, desktop }
+
 /// The lyric page: which secondary tracks a line shows, and the viewer's
-/// delay — lx-music's 歌词设置.
-final class MusicLyricPane extends ConsumerWidget {
-  /// The pane shown under Settings → Music → 歌词.
-  const MusicLyricPane({super.key});
+/// delay — lx-music's 歌词设置 — with the floating desktop window's own half
+/// behind a second segment, the way the live module's danmaku page carries
+/// its four.
+final class MusicLyricPane extends ConsumerStatefulWidget {
+  /// The pane shown under Settings → Music → 歌词. [initialTab] is how a
+  /// search hit or a stored deep link opens the page on its other half.
+  const MusicLyricPane({this.initialTab = MusicLyricTab.player, super.key});
+
+  /// The half the page opens on.
+  final MusicLyricTab initialTab;
+
+  @override
+  ConsumerState<MusicLyricPane> createState() => _MusicLyricPaneState();
+}
+
+final class _MusicLyricPaneState extends ConsumerState<MusicLyricPane> {
+  late MusicLyricTab _tab = widget.initialTab;
 
   static const List<int> _offsets = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
   static const List<int> _fontScales = [100, 120, 140, 160, 180, 200];
@@ -1020,7 +1037,35 @@ final class MusicLyricPane extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        // Two names do not always fit a narrow pane: the control scrolls
+        // sideways instead of squeezing its own segments.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DsSegmentedControl<MusicLyricTab>(
+              value: _tab,
+              semanticLabel: t.settings.navMusicLyric,
+              segments: [
+                DsSegment(value: MusicLyricTab.player, label: Text(t.settings.navMusicLyric)),
+                DsSegment(value: MusicLyricTab.desktop, label: Text(t.settings.navMusicDesktopLyric)),
+              ],
+              onChanged: (value) => setState(() => _tab = value),
+            ),
+          ),
+        ),
+        if (_tab == MusicLyricTab.desktop) const _DesktopLyricSection() else _playerSection(context, ref),
+      ],
+    );
+  }
+
+  Widget _playerSection(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(musicLyricsSettingsProvider);
     final controller = ref.read(musicLyricsSettingsProvider.notifier);
@@ -1152,11 +1197,13 @@ final class MusicLyricPane extends ConsumerWidget {
   }
 }
 
-/// The desktop lyric page: show/lock the native overlay and its type — the
-/// reference's 桌面歌词 settings.
-final class MusicDesktopLyricPane extends ConsumerWidget {
-  /// The pane shown under Settings → Music → 桌面歌词.
-  const MusicDesktopLyricPane({super.key});
+/// The lyric page's desktop half: show/lock the native overlay and its type —
+/// the reference's 桌面歌词 settings. It is a segment of one page rather than a
+/// page of its own, because the two halves are the same question asked of two
+/// windows.
+final class _DesktopLyricSection extends ConsumerWidget {
+  /// The desktop half of the lyric page.
+  const _DesktopLyricSection();
 
   static const List<double> _sizes = [24, 32, 40, 48, 56, 64];
   static const List<double> _opacities = [1, 0.9, 0.8, 0.7, 0.6, 0.5];

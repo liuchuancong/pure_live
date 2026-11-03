@@ -216,7 +216,6 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
           SettingsSection.music,
           SettingsSection.musicEq,
           SettingsSection.musicLyric,
-          SettingsSection.musicDesktopLyric,
           SettingsSection.musicSources,
           SettingsSection.musicDownload,
           SettingsSection.musicSync,

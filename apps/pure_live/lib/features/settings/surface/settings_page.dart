@@ -534,7 +534,9 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.musicSources => const MusicSourcesPane(),
       SettingsSection.musicDownload => const MusicDownloadPane(),
       SettingsSection.musicLyric => const MusicLyricPane(),
-      SettingsSection.musicDesktopLyric => const MusicDesktopLyricPane(),
+      // The desktop window is a segment of that page now; a search hit or a
+      // stored deep link still opens it on the right half.
+      SettingsSection.musicDesktopLyric => const MusicLyricPane(initialTab: MusicLyricTab.desktop),
       SettingsSection.musicHotkeys => const MusicHotkeysPane(),
       SettingsSection.musicSync => const MusicSyncPane(),
       SettingsSection.musicEq => const MusicEqPane(),
