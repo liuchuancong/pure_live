@@ -25,9 +25,7 @@ final recorderSearchHandoffProvider = NotifierProvider<RecorderSearchHandoffCont
 );
 
 /// The centre's page on screen: the tasks being managed, or the files they
-/// produced. The shell's toolbar search reads it to change its hint and
-/// where the word goes — a task search opens the room picker, a file search
-/// filters the library in place.
+/// produced.
 enum RecorderCenterTab { tasks, files }
 
 /// The centre's own page, published for the shell's toolbar.
@@ -43,30 +41,3 @@ final class RecorderCenterTabController extends Notifier<RecorderCenterTab> {
   // ignore: use_setters_to_change_properties
   void set(RecorderCenterTab value) => state = value;
 }
-
-/// The word the toolbar's search hands the library: it becomes the file
-/// list's own query, filtering the takes in place. Taken once on arrival.
-final recorderLibrarySearchHandoffProvider = NotifierProvider<RecorderLibrarySearchHandoffController, String?>(
-  RecorderLibrarySearchHandoffController.new,
-);
-
-final class RecorderLibrarySearchHandoffController extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  /// Hands [word] to the library (taken once on arrival).
-  // ignore: use_setters_to_change_properties
-  void hand(String word) => state = word;
-
-  /// Takes the word (null when none was handed).
-  String? take() {
-    final word = state;
-    state = null;
-    return word;
-  }
-}
-
-/// The centre's page on screen: the tasks being managed, or the files they
-/// produced. The shell's toolbar search reads it to change its hint and
-/// where the word goes — a task search opens the room picker, a file search
-/// filters the library in place.

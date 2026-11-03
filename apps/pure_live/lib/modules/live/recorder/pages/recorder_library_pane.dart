@@ -10,8 +10,6 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/media_preview/media_preview_page.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/live/recorder/data/recorder_search_handoff.dart'
-    show recorderLibrarySearchHandoffProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
     show formatRecordingBytes, formatRecordingDuration, formatRecordingMoment;
@@ -75,9 +73,6 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
 }
 
 final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane> {
-  /// What the search box holds; matched against room, platform, day and file.
-  String _query = '';
-
   /// Only the sites ticked in the panel; empty means every site.
   final Set<String> _platforms = {};
 
@@ -121,23 +116,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   }
 
   @override
-  void initState() {
-    super.initState();
-    // The toolbar's word becomes the list's query, after the first frame:
-    // a state write in initState is a modification during build.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final word = ref.read(recorderLibrarySearchHandoffProvider.notifier).take();
-      if (word != null && word.isNotEmpty && mounted) setState(() => _query = word);
-    });
-    ref.listenManual(recorderLibrarySearchHandoffProvider, (_, _) {
-      if (!mounted) return;
-      final word = ref.read(recorderLibrarySearchHandoffProvider.notifier).take();
-      if (word != null && word.isNotEmpty && mounted) setState(() => _query = word);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -166,20 +144,11 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
+              // Adding a task is the shell's own search above; this page
+              // narrows with the filter, not a second field.
               Row(
                 spacing: DsSpace.s8,
                 children: [
-                  Expanded(
-                    child: DsSearchField(
-                      initialValue: _query,
-                      onChanged: (value) => setState(() {
-                        _query = value;
-                        _selected.clear();
-                      }),
-                      placeholder: t.recorder.librarySearchHint,
-                      semanticLabel: t.recorder.librarySearchHint,
-                    ),
-                  ),
                   DsButton.icon(
                     variant: _platforms.isNotEmpty || _playableOnly
                         ? DsButtonVariant.tinted
@@ -447,21 +416,11 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
 
   // -- state helpers --------------------------------------------------------
 
-  /// The takes on screen: searched, filtered.
+  /// The takes on screen: platform and playability filtered.
   List<RecordingTake> _filter(List<RecordingTake> takes) {
-    final query = _query.trim().toLowerCase();
-    final platformName = widget.platformName;
     return [
       for (final take in takes)
-        if ((_platforms.isEmpty || _platforms.contains(take.platformId)) &&
-            (!_playableOnly || take.playable) &&
-            (query.isEmpty ||
-                take.roomTitle.toLowerCase().contains(query) ||
-                take.name.toLowerCase().contains(query) ||
-                _dayTitle(take.day).contains(query) ||
-                take.day.contains(query) ||
-                platformName(take.platformId).toLowerCase().contains(query)))
-          take,
+        if ((_platforms.isEmpty || _platforms.contains(take.platformId)) && (!_playableOnly || take.playable)) take,
     ];
   }
 
