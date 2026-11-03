@@ -214,7 +214,6 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         labelKey: 'groupMusic',
         sections: [
           SettingsSection.music,
-          SettingsSection.musicEq,
           SettingsSection.musicLyric,
           SettingsSection.musicSources,
           SettingsSection.musicDownload,

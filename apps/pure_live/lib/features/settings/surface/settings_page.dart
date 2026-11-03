@@ -539,7 +539,9 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.musicDesktopLyric => const MusicLyricPane(initialTab: MusicLyricTab.desktop),
       SettingsSection.musicHotkeys => const MusicHotkeysPane(),
       SettingsSection.musicSync => const MusicSyncPane(),
-      SettingsSection.musicEq => const MusicEqPane(),
+      // The equaliser is a segment of the module's own page now; a search hit
+      // or a stored deep link still opens that page on the right half.
+      SettingsSection.musicEq => const MusicSettingsPane(initialTab: MusicSettingsTab.effects),
     };
     final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     final padding = EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24);

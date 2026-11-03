@@ -71,16 +71,61 @@ import 'package:pure_live/modules/music/controller/sources/music_source_cache.da
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
 
+/// Which half of the module's own settings page is showing: what a song is
+/// asked for and how the list behaves, or the sound's own equaliser.
+enum MusicSettingsTab { playback, effects }
+
 /// The music module's own settings, the way lx-music lays its rail out:
 /// the source a song is asked from, the rendition asked of it, the list
-/// behaviours and the reset; the other pages (sources, download, lyrics…)
-/// sit beside it as their own rows.
-final class MusicSettingsPane extends ConsumerWidget {
-  /// The pane shown under Settings → Music.
-  const MusicSettingsPane({super.key});
+/// behaviours and the reset — with the equaliser behind a second segment
+/// rather than a row of its own, the way the live module's pages carry
+/// their sections. The other pages (sources, download, lyrics…) still sit
+/// beside it as their own rows.
+final class MusicSettingsPane extends ConsumerStatefulWidget {
+  /// The pane shown under Settings → Music. [initialTab] is how a search hit
+  /// or a stored deep link opens the page on the equaliser half.
+  const MusicSettingsPane({this.initialTab = MusicSettingsTab.playback, super.key});
+
+  /// The half the page opens on.
+  final MusicSettingsTab initialTab;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MusicSettingsPane> createState() => _MusicSettingsPaneState();
+}
+
+final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
+  late MusicSettingsTab _tab = widget.initialTab;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        // The two names are short, but a narrow sidebar still squeezes them:
+        // the control scrolls sideways instead of squeezing its own segments.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DsSegmentedControl<MusicSettingsTab>(
+              value: _tab,
+              semanticLabel: t.settings.navMusic,
+              segments: [
+                DsSegment(value: MusicSettingsTab.playback, label: Text(t.settings.navMusicPlay)),
+                DsSegment(value: MusicSettingsTab.effects, label: Text(t.settings.navMusicEq)),
+              ],
+              onChanged: (value) => setState(() => _tab = value),
+            ),
+          ),
+        ),
+        if (_tab == MusicSettingsTab.effects) const MusicEqPane() else _playbackSection(context, ref),
+      ],
+    );
+  }
+
+  Widget _playbackSection(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(musicPlaybackSettingsProvider);
     final controller = ref.read(musicPlaybackSettingsProvider.notifier);
