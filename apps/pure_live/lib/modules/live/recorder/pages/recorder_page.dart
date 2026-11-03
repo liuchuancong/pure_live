@@ -285,12 +285,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: DsTopNav<RecorderCenterTab>(
+            child: DsSegmentedControl<RecorderCenterTab>(
               value: ref.watch(recorderCenterTabProvider),
               onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
-              items: [
-                DsTopNavItem(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
-                DsTopNavItem(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
+              segments: [
+                DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
+                DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             ),
           ),
