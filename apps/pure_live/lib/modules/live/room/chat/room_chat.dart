@@ -1007,15 +1007,19 @@ final class _SuperChatTab extends ConsumerWidget {
     }
     final error = board.error;
     if (error != null && board.messages.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.badgeDollarSign),
-        title: Text(t.room.superChatFailed),
-        description: Text(error),
-        actions: [DsButton(onPressed: retry, child: Text(t.common.retry))],
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.badgeDollarSign),
+          title: Text(t.room.superChatFailed),
+          description: Text(error),
+          actions: [DsButton(onPressed: retry, child: Text(t.common.retry))],
+        ),
       );
     }
     if (board.messages.isEmpty) {
-      return DsEmptyState(icon: const DsIcon(DsIcons.badgeDollarSign), title: Text(t.room.superChatEmpty));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.badgeDollarSign), title: Text(t.room.superChatEmpty)),
+      );
     }
     final messages = board.messages;
     return ListView.separated(

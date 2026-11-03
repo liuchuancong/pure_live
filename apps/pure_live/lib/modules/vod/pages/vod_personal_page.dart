@@ -297,18 +297,22 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                   ),
                   VodPersonalTab.history =>
                     history.isEmpty
-                        ? DsEmptyState(
-                            icon: const DsIcon(DsIcons.history),
-                            title: Text(t.vod.historyEmptyTitle),
-                            description: Text(t.vod.historyEmptyDescription),
+                        ? Center(
+                            child: DsEmptyState(
+                              icon: const DsIcon(DsIcons.history),
+                              title: Text(t.vod.historyEmptyTitle),
+                              description: Text(t.vod.historyEmptyDescription),
+                            ),
                           )
                         : _historyList(history, inset),
                   VodPersonalTab.favourites =>
                     favourites.isEmpty
-                        ? DsEmptyState(
-                            icon: const DsIcon(DsIcons.heart),
-                            title: Text(t.vod.favouritesEmptyTitle),
-                            description: Text(t.vod.favouritesEmptyDescription),
+                        ? Center(
+                            child: DsEmptyState(
+                              icon: const DsIcon(DsIcons.heart),
+                              title: Text(t.vod.favouritesEmptyTitle),
+                              description: Text(t.vod.favouritesEmptyDescription),
+                            ),
                           )
                         : ListView.builder(
                             padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),

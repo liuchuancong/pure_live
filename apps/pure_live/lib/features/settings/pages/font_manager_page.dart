@@ -399,9 +399,11 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                           onRowPressed: (entry) => unawaited(_openDetails(entry, family: family)),
                           showRowMenuButton: true,
                           rowMenuBuilder: (context, entry) => _rowMenu(context, entry, family: family),
-                          emptyView: DsEmptyState(
-                            icon: const DsIcon(DsIcons.search),
-                            title: Text(t.settings.fontManagerNoResults),
+                          emptyView: Center(
+                            child: DsEmptyState(
+                              icon: const DsIcon(DsIcons.search),
+                              title: Text(t.settings.fontManagerNoResults),
+                            ),
                           ),
                         ),
                       ),

@@ -75,10 +75,12 @@ final class _CastDialog extends ConsumerWidget {
                     ),
                   ),
                 if (devices.isEmpty)
-                  DsEmptyState(
-                    icon: const DsIcon(DsIcons.cast),
-                    title: Text(t.room.castSearching),
-                    description: Text(t.room.castSearchingHint),
+                  Center(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.cast),
+                      title: Text(t.room.castSearching),
+                      description: Text(t.room.castSearchingHint),
+                    ),
                   )
                 else
                   ConstrainedBox(

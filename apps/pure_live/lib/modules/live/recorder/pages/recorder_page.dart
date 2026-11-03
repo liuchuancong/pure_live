@@ -229,8 +229,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final statusFilter = DsTabs<_RecorderFilter>(
       value: _filter,
       semanticLabel: t.recorder.filterLabel,
-      // The first tab lines up with the rows under it.
-      style: const DsTabsStyle(padding: EdgeInsets.zero),
+      // The first tab lines up with the rows under it, and the bar's hairline
+      // stops with the tabs instead of running to the window's right edge.
+      style: const DsTabsStyle(padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
       onChanged: (value) => setState(() => _filter = value),
       tabs: [
         for (final filter in _RecorderFilter.values)
@@ -396,7 +397,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             // tasks page now — the library below became its own page.
             Expanded(
               child: attention.isEmpty
-                  ? DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.recorder.emptyTitle))
+                  ? Center(
+                      child: DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.recorder.emptyTitle)),
+                    )
                   : Padding(
                       padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
                       child: wide

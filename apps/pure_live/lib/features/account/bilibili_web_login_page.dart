@@ -254,17 +254,19 @@ final class _BilibiliWebLoginPageState extends ConsumerState<BilibiliWebLoginPag
 
   Widget _body(Translations t) {
     if (!bilibiliWebLoginAvailable) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.globe),
-        title: Text(t.account.webLoginUnavailable),
-        description: Text(t.account.webLoginUnavailableDesc),
-        actions: [
-          DsButton(
-            onPressed: () => unawaited(_openCookiePage()),
-            leading: const DsIcon(DsIcons.clipboardPaste),
-            child: Text(t.account.pasteCookieEntry),
-          ),
-        ],
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.globe),
+          title: Text(t.account.webLoginUnavailable),
+          description: Text(t.account.webLoginUnavailableDesc),
+          actions: [
+            DsButton(
+              onPressed: () => unawaited(_openCookiePage()),
+              leading: const DsIcon(DsIcons.clipboardPaste),
+              child: Text(t.account.pasteCookieEntry),
+            ),
+          ],
+        ),
       );
     }
     if (_clearing) {
@@ -272,7 +274,9 @@ final class _BilibiliWebLoginPageState extends ConsumerState<BilibiliWebLoginPag
     }
     final controller = _controller;
     if (controller == null) {
-      return DsEmptyState(icon: const DsIcon(DsIcons.globe), title: Text(t.account.webLoginUnavailable));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.globe), title: Text(t.account.webLoginUnavailable)),
+      );
     }
     return Stack(
       fit: StackFit.expand,

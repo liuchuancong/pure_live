@@ -155,7 +155,9 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final task = ref.watch(wallpaperDownloadsProvider).where((task) => task.id == taskId).firstOrNull;
     if (task == null) {
-      return DsEmptyState(icon: const DsIcon(DsIcons.download), title: Text(t.settings.downloadFilterEmpty));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.download), title: Text(t.settings.downloadFilterEmpty)),
+      );
     }
     final controller = ref.read(wallpaperDownloadsProvider.notifier);
     final moving = task.isRunning || task.phase == WallpaperDownloadPhase.paused;
@@ -736,12 +738,14 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
                                 }),
                           onRowPressed: _openPreview,
                           rowMenuBuilder: _rowMenu,
-                          emptyView: DsEmptyState(
-                            icon: DsIcon(_filter.emptyIcon),
-                            title: Text(
-                              tasks.isEmpty ? t.settings.downloadManagerEmpty : t.settings.downloadFilterEmpty,
+                          emptyView: Center(
+                            child: DsEmptyState(
+                              icon: DsIcon(_filter.emptyIcon),
+                              title: Text(
+                                tasks.isEmpty ? t.settings.downloadManagerEmpty : t.settings.downloadFilterEmpty,
+                              ),
+                              description: tasks.isEmpty ? Text(t.settings.downloadManagerEmptyDesc) : null,
                             ),
-                            description: tasks.isEmpty ? Text(t.settings.downloadManagerEmptyDesc) : null,
                           ),
                         ),
                       ),

@@ -214,7 +214,9 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
             if (_loading) DsProgressBar(value: _progress / 100, semanticLabel: t.search.webSearchTitle),
             Expanded(
               child: switch (request) {
-                null => DsEmptyState(icon: const DsIcon(DsIcons.globe), title: Text(t.search.webSearchUnavailable)),
+                null => Center(
+                  child: DsEmptyState(icon: const DsIcon(DsIcons.globe), title: Text(t.search.webSearchUnavailable)),
+                ),
                 _ when !_supported => _unsupported(context, t),
                 _ => Stack(
                   fit: StackFit.expand,
@@ -261,27 +263,31 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   }
 
   Widget _unsupported(BuildContext context, Translations t) {
-    return DsEmptyState(
-      icon: const DsIcon(DsIcons.globe),
-      title: Text(t.search.webSearchUnsupportedTitle),
-      description: Text(t.search.webSearchUnsupportedDescription),
-      actions: [
-        DsButton(
-          onPressed: () => unawaited(_openExternal()),
-          leading: const DsIcon(DsIcons.externalLink),
-          child: Text(t.search.webSearchOpenExternal),
-        ),
-      ],
+    return Center(
+      child: DsEmptyState(
+        icon: const DsIcon(DsIcons.globe),
+        title: Text(t.search.webSearchUnsupportedTitle),
+        description: Text(t.search.webSearchUnsupportedDescription),
+        actions: [
+          DsButton(
+            onPressed: () => unawaited(_openExternal()),
+            leading: const DsIcon(DsIcons.externalLink),
+            child: Text(t.search.webSearchOpenExternal),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _failure(BuildContext context, Translations t) {
     final error = _error;
-    return DsEmptyState(
-      icon: const DsIcon(DsIcons.cloudOff),
-      title: Text(t.search.webSearchFailed),
-      description: error == null ? null : Text(error, textAlign: TextAlign.center),
-      actions: [DsButton(onPressed: () => unawaited(_reload()), child: Text(t.common.retry))],
+    return Center(
+      child: DsEmptyState(
+        icon: const DsIcon(DsIcons.cloudOff),
+        title: Text(t.search.webSearchFailed),
+        description: error == null ? null : Text(error, textAlign: TextAlign.center),
+        actions: [DsButton(onPressed: () => unawaited(_reload()), child: Text(t.common.retry))],
+      ),
     );
   }
 }

@@ -561,26 +561,28 @@ final class _EmptySlice extends StatelessWidget {
       LiveFollowGroup.offline => t.favorites.emptyOfflineTitle,
       null => t.favorites.emptyTitle,
     };
-    return DsEmptyState(
-      icon: DsIcon(group == LiveFollowGroup.offline ? DsIcons.eyeOff : DsIcons.heart),
-      title: Text(title),
-      description: Text(canShowOffline ? t.favorites.emptyOfflineHint : t.favorites.emptyGroupHint),
-      actions: [
-        if (canShowOffline)
+    return Center(
+      child: DsEmptyState(
+        icon: DsIcon(group == LiveFollowGroup.offline ? DsIcons.eyeOff : DsIcons.heart),
+        title: Text(title),
+        description: Text(canShowOffline ? t.favorites.emptyOfflineHint : t.favorites.emptyGroupHint),
+        actions: [
+          if (canShowOffline)
+            DsButton(
+              variant: DsButtonVariant.primary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.eyeOff, size: 16),
+              onPressed: onShowOffline,
+              child: Text(t.favorites.showOffline),
+            ),
           DsButton(
-            variant: DsButtonVariant.primary,
+            variant: canShowOffline ? DsButtonVariant.secondary : DsButtonVariant.primary,
             size: DsSize.sm,
-            leading: const DsIcon(DsIcons.eyeOff, size: 16),
-            onPressed: onShowOffline,
-            child: Text(t.favorites.showOffline),
+            onPressed: refreshing ? null : onRefresh,
+            child: Text(t.favorites.refresh),
           ),
-        DsButton(
-          variant: canShowOffline ? DsButtonVariant.secondary : DsButtonVariant.primary,
-          size: DsSize.sm,
-          onPressed: refreshing ? null : onRefresh,
-          child: Text(t.favorites.refresh),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

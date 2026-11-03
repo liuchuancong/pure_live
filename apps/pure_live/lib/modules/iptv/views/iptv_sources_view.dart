@@ -373,7 +373,9 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
             if (_draft.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(DsSpace.s24),
-                child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.noSourcesTitle)),
+                child: Center(
+                  child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.noSourcesTitle)),
+                ),
               )
             else
               DsReorderableList(
@@ -457,60 +459,70 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   Widget _emptyView(BuildContext context, IptvSourcesState sources, IptvEpgState epg) {
     final t = context.t;
     if (_query.trim().isNotEmpty) {
-      return DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noSourceMatch));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noSourceMatch)),
+      );
     }
     if (_filter == _SourceFilter.playlists && sources.playlists.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.list),
-        title: Text(t.iptv.noPlaylistsTitle),
-        description: Text(t.iptv.noPlaylistsDescription),
-        actions: [
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(runIptvPlaylistImport(context)),
-            child: Text(t.iptv.importPlaylist),
-          ),
-        ],
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.list),
+          title: Text(t.iptv.noPlaylistsTitle),
+          description: Text(t.iptv.noPlaylistsDescription),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(runIptvPlaylistImport(context)),
+              child: Text(t.iptv.importPlaylist),
+            ),
+          ],
+        ),
       );
     }
     if (_filter == _SourceFilter.guides && epg.sources.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.calendarClock),
-        title: Text(t.iptv.noGuidesTitle),
-        description: Text(t.iptv.epgEmpty),
-        actions: [
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(runIptvGuideImport(context)),
-            child: Text(t.iptv.importGuide),
-          ),
-        ],
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.calendarClock),
+          title: Text(t.iptv.noGuidesTitle),
+          description: Text(t.iptv.epgEmpty),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(runIptvGuideImport(context)),
+              child: Text(t.iptv.importGuide),
+            ),
+          ],
+        ),
       );
     }
     if (sources.playlists.isEmpty && epg.sources.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.list),
-        title: Text(t.iptv.noSourcesTitle),
-        description: Text(t.iptv.noSourcesDescription),
-        actions: [
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(runIptvPlaylistImport(context)),
-            child: Text(t.iptv.importPlaylist),
-          ),
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(runIptvGuideImport(context)),
-            child: Text(t.iptv.importGuide),
-          ),
-        ],
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.list),
+          title: Text(t.iptv.noSourcesTitle),
+          description: Text(t.iptv.noSourcesDescription),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(runIptvPlaylistImport(context)),
+              child: Text(t.iptv.importPlaylist),
+            ),
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(runIptvGuideImport(context)),
+              child: Text(t.iptv.importGuide),
+            ),
+          ],
+        ),
       );
     }
-    return DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noSourceMatch));
+    return Center(
+      child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noSourceMatch)),
+    );
   }
 
   static EpgSource? _activeOf(IptvEpgState epg) {

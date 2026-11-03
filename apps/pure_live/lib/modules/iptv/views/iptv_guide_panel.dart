@@ -144,9 +144,13 @@ final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
             child: Text(t.iptv.backToLive),
           ),
         if (library != null && library.guideKeyFor(widget.channel) == null)
-          DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.noGuide))
+          Center(
+            child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.noGuide)),
+          )
         else if (schedule.isEmpty)
-          DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.guideEmpty))
+          Center(
+            child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.guideEmpty)),
+          )
         else
           DsListSection(
             children: [

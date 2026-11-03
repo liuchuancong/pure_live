@@ -98,7 +98,10 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
   void _takeHandoff() {
     final word = ref.read(iptvSearchHandoffProvider.notifier).take();
     if (word == null || word.isEmpty || !mounted) return;
-    _search.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+    _search.value = TextEditingValue(
+      text: word,
+      selection: TextSelection.collapsed(offset: word.length),
+    );
     setState(() {});
   }
 
@@ -480,16 +483,18 @@ final class _ChannelPickerState extends ConsumerState<_ChannelPicker> {
             child: channels.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(DsSpace.s16),
-                    child: DsEmptyState(
-                      icon: DsIcon(
-                        query.isNotEmpty ? DsIcons.searchX : (group == null ? DsIcons.antenna : DsIcons.folder),
-                      ),
-                      title: Text(
-                        query.isNotEmpty
-                            ? t.iptv.noChannelMatch
-                            : group != null
-                            ? t.iptv.zapperEmptyGroup
-                            : t.iptv.emptyTitle,
+                    child: Center(
+                      child: DsEmptyState(
+                        icon: DsIcon(
+                          query.isNotEmpty ? DsIcons.searchX : (group == null ? DsIcons.antenna : DsIcons.folder),
+                        ),
+                        title: Text(
+                          query.isNotEmpty
+                              ? t.iptv.noChannelMatch
+                              : group != null
+                              ? t.iptv.zapperEmptyGroup
+                              : t.iptv.emptyTitle,
+                        ),
                       ),
                     ),
                   )
@@ -596,10 +601,12 @@ final class _SchedulePanel extends ConsumerWidget {
     if (open == null) {
       return DsCard(
         style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s16)),
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.calendarClock),
-          title: Text(emptyNote ?? t.iptv.emptyTitle),
-          description: emptyNote == null ? Text(t.iptv.emptyDescription) : null,
+        child: Center(
+          child: DsEmptyState(
+            icon: const DsIcon(DsIcons.calendarClock),
+            title: Text(emptyNote ?? t.iptv.emptyTitle),
+            description: emptyNote == null ? Text(t.iptv.emptyDescription) : null,
+          ),
         ),
       );
     }

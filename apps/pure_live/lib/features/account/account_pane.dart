@@ -481,7 +481,9 @@ final class _QrLoginDialogState extends ConsumerState<_QrLoginDialog> {
     final content = _qrContent;
     if (content == null) {
       return _expired
-          ? DsEmptyState(icon: const DsIcon(DsIcons.qrCode), title: Text(context.t.account.qrExpired))
+          ? Center(
+              child: DsEmptyState(icon: const DsIcon(DsIcons.qrCode), title: Text(context.t.account.qrExpired)),
+            )
           : const SizedBox(width: 28, height: 28, child: DsSpinner());
     }
     return PrettyQrView.data(data: content);

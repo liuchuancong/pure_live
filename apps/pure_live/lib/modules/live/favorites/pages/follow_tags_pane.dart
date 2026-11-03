@@ -105,11 +105,13 @@ final class _FollowTagsPaneState extends ConsumerState<FollowTagsPane> {
         ),
         if (_busy) const Center(child: DsSpinner(style: DsSpinnerStyle(size: 18))),
         if (tags.isEmpty)
-          DsEmptyState(
-            icon: const DsIcon(DsIcons.tag),
-            title: Text(t.settings.tagEmptyTitle),
-            description: Text(t.settings.tagEmptyHint),
-            actions: [DsButton(onPressed: _busy ? null : () => unawaited(_edit()), child: Text(t.settings.tagAdd))],
+          Center(
+            child: DsEmptyState(
+              icon: const DsIcon(DsIcons.tag),
+              title: Text(t.settings.tagEmptyTitle),
+              description: Text(t.settings.tagEmptyHint),
+              actions: [DsButton(onPressed: _busy ? null : () => unawaited(_edit()), child: Text(t.settings.tagAdd))],
+            ),
           )
         else ...[
           Text(t.settings.tagSortTip, style: theme.typography.caption.copyWith(color: colors.textMuted)),

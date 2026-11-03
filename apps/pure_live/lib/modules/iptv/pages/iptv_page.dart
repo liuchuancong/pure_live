@@ -606,13 +606,17 @@ final class _ChannelsTable extends ConsumerWidget {
 Widget _channelsEmptyView(BuildContext context, IptvChannelsState channels) {
   final t = context.t;
   if (channels.query.isNotEmpty) {
-    return DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noChannelMatch));
+    return Center(
+      child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noChannelMatch)),
+    );
   }
   if (channels.scope == IptvChannelScope.favourites) {
-    return DsEmptyState(
-      icon: const DsIcon(DsIcons.heart),
-      title: Text(t.iptv.noFavoritesTitle),
-      description: Text(t.iptv.noFavoritesDescription),
+    return Center(
+      child: DsEmptyState(
+        icon: const DsIcon(DsIcons.heart),
+        title: Text(t.iptv.noFavoritesTitle),
+        description: Text(t.iptv.noFavoritesDescription),
+      ),
     );
   }
   return Center(

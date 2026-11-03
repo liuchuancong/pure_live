@@ -119,7 +119,9 @@ final class _DirectLinkDialogState extends ConsumerState<DirectLinkDialog> {
             else if (_error != null)
               DsAlert(status: DsStatus.danger, title: Text(t.toolbox.linkDirectFailed), description: Text(_error!))
             else if (_lines.isEmpty)
-              DsEmptyState(icon: const DsIcon(DsIcons.link2), title: Text(t.toolbox.linkDirectEmpty))
+              Center(
+                child: DsEmptyState(icon: const DsIcon(DsIcons.link2), title: Text(t.toolbox.linkDirectEmpty)),
+              )
             else
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 320),

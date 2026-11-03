@@ -252,7 +252,12 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                       final channelsColumn = channels.isEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(DsSpace.s8),
-                              child: DsEmptyState(icon: const DsIcon(DsIcons.tv), title: Text(t.iptv.zapperEmptyGroup)),
+                              child: Center(
+                                child: DsEmptyState(
+                                  icon: const DsIcon(DsIcons.tv),
+                                  title: Text(t.iptv.zapperEmptyGroup),
+                                ),
+                              ),
                             )
                           : ListView.builder(
                               controller: _channelScroll,
@@ -290,7 +295,9 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                       final programmesColumn = schedule.isEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(DsSpace.s8),
-                              child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.guideEmpty)),
+                              child: Center(
+                                child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.guideEmpty)),
+                              ),
                             )
                           : ListView.builder(
                               controller: _programmeScroll,

@@ -1350,10 +1350,12 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
             child: loading
                 ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 22)))
                 : rooms.isEmpty
-                ? DsEmptyState(
-                    icon: const DsIcon(DsIcons.heart),
-                    title: Text(t.multiview.pickerEmptyTitle),
-                    description: Text(t.multiview.pickerEmptyHint),
+                ? Center(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.heart),
+                      title: Text(t.multiview.pickerEmptyTitle),
+                      description: Text(t.multiview.pickerEmptyHint),
+                    ),
                   )
                 : visible.isEmpty
                 ? Center(child: Text(t.multiview.pickerNoMatch, style: theme.typography.caption))

@@ -191,7 +191,9 @@ final class _ReleaseDownloadsPageState extends ConsumerState<ReleaseDownloadsPag
                   }
                   final builds = snapshot.data ?? const <ReleaseBuild>[];
                   if (builds.isEmpty) {
-                    return DsEmptyState(icon: const DsIcon(DsIcons.package), title: Text(t.settings.downloadEmpty));
+                    return Center(
+                      child: DsEmptyState(icon: const DsIcon(DsIcons.package), title: Text(t.settings.downloadEmpty)),
+                    );
                   }
                   final recommended = recommendedBuild(builds);
                   // This platform's packages first, then everything else in
@@ -322,7 +324,12 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
                   }
                   final releases = snapshot.data ?? const <ReleaseInfo>[];
                   if (releases.isEmpty) {
-                    return DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.settings.releaseHistoryEmpty));
+                    return Center(
+                      child: DsEmptyState(
+                        icon: const DsIcon(DsIcons.list),
+                        title: Text(t.settings.releaseHistoryEmpty),
+                      ),
+                    );
                   }
                   return ListView(
                     padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s24),

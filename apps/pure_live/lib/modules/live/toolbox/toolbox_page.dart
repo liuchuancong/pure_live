@@ -408,7 +408,9 @@ final class PlatformNodesPane extends ConsumerWidget {
     final t = context.t;
     final sites = probeSites(ref.watch(sitesProvider).all);
     if (sites.isEmpty) {
-      return DsEmptyState(icon: const DsIcon(DsIcons.cloudOff), title: Text(t.toolbox.nodeNoSites));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.cloudOff), title: Text(t.toolbox.nodeNoSites)),
+      );
     }
     final probe = ref.watch(platformProbeProvider);
     final controller = ref.read(platformProbeProvider.notifier);

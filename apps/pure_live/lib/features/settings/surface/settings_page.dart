@@ -439,7 +439,9 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
       blocks.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
-          child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.settings.searchNoResults)),
+          child: Center(
+            child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.settings.searchNoResults)),
+          ),
         ),
       );
     }
