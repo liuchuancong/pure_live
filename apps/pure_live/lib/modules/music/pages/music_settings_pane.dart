@@ -1,5 +1,4 @@
-import 'dart:async' show StreamSubscription, unawaited;
-import 'dart:math' as math;
+import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
@@ -7,6 +6,7 @@ import 'package:flutter/services.dart'
     show Clipboard, ClipboardData, HardwareKeyboard, KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/boot/storage_providers.dart'
@@ -14,23 +14,11 @@ import 'package:pure_live/app/providers/boot/storage_providers.dart'
 import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
+import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
-    show
-        MusicEqConfig,
-        MusicEqController,
-        MusicEqNode,
-        MusicEqPreset,
-        kMusicEqMaxGain,
-        kMusicEqMaxNodes,
-        kMusicEqMinGain,
-        kMusicEqNodeMinQ,
-        kMusicEqPresets,
-        kMusicFxOrder,
-        kMusicFxSpatialOrder,
-        musicEqApplyFailedProvider,
-        musicEqProvider;
+    show MusicEqConfig, MusicEqController, MusicEqPreset, kMusicEqPresets, musicEqApplyFailedProvider, musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show kMusicFxCosts;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
 import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
@@ -46,7 +34,7 @@ import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
 import 'package:pure_live/modules/music/controller/music_open_api.dart'
     show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart'
-    show MusicPlayerController, musicAudioDevicesProvider, musicPlayerProvider;
+    show musicAudioDevicesProvider, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
     show MusicQuality, MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
@@ -68,7 +56,6 @@ import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
     show MusicPlayerMode, MusicSpectrumStyle, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
     show CachedLyricSource, musicLyricCacheCountProvider;
-import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
 
 /// Which half of the module's own settings page is showing: what a song is
@@ -1528,68 +1515,22 @@ final class MusicEqPane extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, 0),
             child: Text(t.music.eqApplyFailed, style: theme.typography.caption.copyWith(color: colors.danger.fill)),
           ),
+        // The work itself — the bands, the enhancement chain, the nodes, the
+        // loudness meter and the curve editor — lives on the module's own
+        // 音效中心 page, which the transport bar opens too. Saying it twice in
+        // settings was the second door the viewer reads as a mess; this row is
+        // the way in, and the switch and preset above stay because they are the
+        // two things worth setting without leaving the settings surface.
         DsListSection(
-          header: Text(t.music.eqFxSection),
           children: [
-            for (final id in kMusicFxOrder) MusicFxRow(id: id, eq: eq, controller: controller),
-            for (final id in kMusicFxSpatialOrder) MusicFxRow(id: id, eq: eq, controller: controller),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.music.eqCompareTitle),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s12),
-              child: _CompareButton(player: ref.read(musicPlayerProvider.notifier)),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.music.eqNodesTitle),
-          children: [
-            for (final node in eq.nodes) _EqNodeRow(node: node, eq: eq, controller: controller),
             DsListRow(
-              leading: const DsIcon(DsIcons.plus),
-              title: Text(t.music.eqNodesAdd),
-              description: Text('${eq.nodes.length} / $kMusicEqMaxNodes'),
-              onPressed: eq.nodes.length >= kMusicEqMaxNodes ? null : () => unawaited(controller.addNode()),
+              leading: const DsIcon(DsIcons.audioLines),
+              title: Text(t.music.eqCenter),
+              description: Text(t.music.eqCenterSubtitle),
+              showChevron: true,
+              onPressed: () => unawaited(context.push(RouteNames.musicEffects)),
             ),
           ],
-        ),
-        DsListSection(
-          header: Text(t.music.eqMeterTitle),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.activity),
-              title: t.music.eqAnalysis,
-              description: t.music.eqAnalysisDesc,
-              control: DsSwitch(
-                value: eq.analysis,
-                onChanged: (value) => unawaited(controller.setAnalysis(value: value)),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-              child: _LoudnessMeter(active: eq.analysis),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
-              child: Text(t.music.eqMeterNote, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.music.eqEditorTitle),
-          children: const [
-            Padding(
-              padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-              child: MusicEqEditor(),
-            ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-          child: Text(t.music.eqChainNote, style: theme.typography.caption.copyWith(color: colors.textMuted)),
         ),
       ],
     );
@@ -1730,280 +1671,6 @@ final class MusicFxRow extends ConsumerWidget {
     if (cost.contains('latency')) parts.add(t.music.eqFxCostLatency);
     if (cost.contains('stereoOnly')) parts.add(t.music.eqFxCostStereo);
     return parts.join(' · ');
-  }
-}
-
-/// The loudness meter fed by the engine's analysis branch.
-///
-/// Two bars — momentary (400 ms) and short-term (3 s) — scaled over the
-/// meter's -60…0 LUFS window. When the probe is off, the bars rest and
-/// the caption says why: this is a loudness meter, not a spectrum.
-final class _LoudnessMeter extends ConsumerStatefulWidget {
-  /// Creates the meter.
-  const _LoudnessMeter({required this.active});
-
-  /// Whether the probe filter is in the chain right now.
-  final bool active;
-
-  @override
-  ConsumerState<_LoudnessMeter> createState() => _LoudnessMeterState();
-}
-
-final class _LoudnessMeterState extends ConsumerState<_LoudnessMeter> {
-  StreamSubscription<audio.AudioLoudness>? _sub;
-  audio.AudioLoudness? _levels;
-
-  @override
-  void initState() {
-    super.initState();
-    _listen();
-  }
-
-  @override
-  void didUpdateWidget(_LoudnessMeter old) {
-    super.didUpdateWidget(old);
-    if (old.active != widget.active) _listen();
-  }
-
-  void _listen() {
-    unawaited(_sub?.cancel());
-    _sub = null;
-    if (!widget.active) {
-      if (mounted) setState(() => _levels = null);
-      return;
-    }
-    _sub = ref.read(musicPlayerProvider.notifier).audioEngine.loudnessStream.listen((levels) {
-      if (mounted) setState(() => _levels = levels);
-    });
-  }
-
-  @override
-  void dispose() {
-    unawaited(_sub?.cancel());
-    super.dispose();
-  }
-
-  /// -60…0 LUFS on the bar; quieter than -60 paints as empty.
-  double _fraction(double lufs) => ((lufs + 60) / 60).clamp(0.0, 1.0);
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final momentary = _levels == null ? 0.0 : _fraction(_levels!.momentary);
-    final shortTerm = _levels == null ? 0.0 : _fraction(_levels!.shortTerm);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
-      children: [
-        _LoudnessBar(label: 'M', fraction: momentary, accent: colors.accent, track: colors.border),
-        _LoudnessBar(label: 'S', fraction: shortTerm, accent: colors.accent, track: colors.border),
-      ],
-    );
-  }
-}
-
-final class _LoudnessBar extends StatelessWidget {
-  const _LoudnessBar({required this.label, required this.fraction, required this.accent, required this.track});
-
-  final String label;
-  final double fraction;
-  final Color accent;
-  final Color track;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        SizedBox(
-          width: 16,
-          child: Text(label, style: theme.typography.caption.copyWith(color: theme.colors.textMuted)),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: SizedBox(
-              height: 6,
-              child: Stack(
-                children: [
-                  ColoredBox(color: track),
-                  FractionallySizedBox(
-                    widthFactor: fraction,
-                    child: ColoredBox(color: accent),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 56,
-          child: Text(
-            '${(fraction * 60 - 60).round()} LUFS',
-            style: theme.typography.caption.copyWith(color: theme.colors.textMuted),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// One parametric node's editor: switch and delete on the header row,
-/// then frequency, Q and gain sliders — log-scaled where the ear is.
-final class _EqNodeRow extends ConsumerWidget {
-  const _EqNodeRow({required this.node, required this.eq, required this.controller});
-
-  final MusicEqNode node;
-  final MusicEqConfig eq;
-  final MusicEqController controller;
-
-  static String _frequencyLabel(double frequency) =>
-      frequency >= 1000 ? '${(frequency / 1000).toStringAsFixed(1)} kHz' : '${frequency.round()} Hz';
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              DsSwitch(
-                value: node.enabled,
-                onChanged: (value) => unawaited(controller.updateNode(node.id, enabled: value)),
-              ),
-              Expanded(
-                child: Text(
-                  _frequencyLabel(node.frequency),
-                  style: theme.typography.body.copyWith(color: node.enabled ? colors.text : colors.textMuted),
-                ),
-              ),
-              DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: t.music.eqRemoveNode,
-                onPressed: () => unawaited(controller.removeNode(node.id)),
-                icon: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
-              ),
-            ],
-          ),
-          DsSlider(
-            value: ((math.log(node.frequency / 20) / math.ln10) / 3).clamp(0.0, 1.0),
-            semanticLabel: t.music.eqNodeFrequency,
-            onChanged: (value) {
-              final frequency = 20 * math.pow(10, value * 3).toDouble();
-              unawaited(controller.updateNode(node.id, frequency: frequency));
-            },
-          ),
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: DsSlider(
-                  value: ((math.log(node.q / kMusicEqNodeMinQ) / math.ln10) / 2).clamp(0.0, 1.0),
-                  semanticLabel: t.music.eqNodeQ,
-                  onChanged: (value) {
-                    final q = kMusicEqNodeMinQ * math.pow(10, value * 2).toDouble();
-                    unawaited(controller.updateNode(node.id, q: q));
-                  },
-                ),
-              ),
-              SizedBox(
-                width: 64,
-                child: Text(
-                  'Q ${node.q.toStringAsFixed(1)}',
-                  textAlign: TextAlign.end,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: DsSlider(
-                  min: kMusicEqMinGain,
-                  max: kMusicEqMaxGain,
-                  value: node.gainDb,
-                  semanticLabel: t.music.eqNodeGain,
-                  onChanged: (value) => unawaited(controller.updateNode(node.id, gainDb: value)),
-                ),
-              ),
-              SizedBox(
-                width: 64,
-                child: Text(
-                  '${node.gainDb >= 0 ? '+' : ''}${node.gainDb.toStringAsFixed(1)} dB',
-                  textAlign: TextAlign.end,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The A/B compare button: hold it and the whole chain steps aside, so the
-/// ear hears the untouched mix; release restores the configuration at once.
-/// The instant switch-back is the whole point — a toggle with a delay
-/// cannot be compared reliably.
-final class _CompareButton extends ConsumerStatefulWidget {
-  /// Creates the button.
-  const _CompareButton({required this.player});
-
-  final MusicPlayerController player;
-
-  @override
-  ConsumerState<_CompareButton> createState() => _CompareButtonState();
-}
-
-final class _CompareButtonState extends ConsumerState<_CompareButton> {
-  bool _held = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return GestureDetector(
-      onTapDown: (_) {
-        setState(() => _held = true);
-        widget.player.setCompareBypass(bypass: true);
-      },
-      onTapUp: (_) {
-        if (!_held) return;
-        setState(() => _held = false);
-        widget.player.setCompareBypass(bypass: false);
-      },
-      onTapCancel: () {
-        if (!_held) return;
-        setState(() => _held = false);
-        widget.player.setCompareBypass(bypass: false);
-      },
-      child: Container(
-        height: 44,
-        decoration: BoxDecoration(
-          color: _held ? colors.accent : colors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colors.border),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          _held ? t.music.eqCompareHeld : t.music.eqCompare,
-          style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
-        ),
-      ),
-    );
   }
 }
 

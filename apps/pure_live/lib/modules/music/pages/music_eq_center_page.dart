@@ -1,16 +1,18 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassCoverFrostSigma;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart';
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseHeader;
@@ -172,6 +174,78 @@ final class MusicEqCenterPage extends ConsumerWidget {
               ],
             ),
           ),
+
+          // A/B compare: hold the button and the song plays as the source is,
+          // so the chain built here can be heard against the song without
+          // leaving the page for the settings.
+          _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s4,
+              children: [
+                Text(t.music.eqCompareTitle, style: theme.typography.heading),
+                _CompareButton(player: ref.read(musicPlayerProvider.notifier)),
+              ],
+            ),
+          ),
+
+          // The nodes the chain rides on, listed with the room left to add one
+          // and the count saying how much of that room is used.
+          _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s4,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text(t.music.eqNodesTitle, style: theme.typography.heading)),
+                    Text(
+                      '${eq.nodes.length} / $kMusicEqMaxNodes',
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ],
+                ),
+                for (final node in eq.nodes) _EqNodeRow(node: node, eq: eq, controller: controller),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.plus, size: 16),
+                    onPressed: eq.nodes.length >= kMusicEqMaxNodes ? null : () => unawaited(controller.addNode()),
+                    child: Text(t.music.eqNodesAdd),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // The loudness meter: the engine's own analysis branch, off until
+          // asked for, with the caption that says what the two bars are.
+          _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s4,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text(t.music.eqMeterTitle, style: theme.typography.heading)),
+                    DsSwitch(
+                      value: eq.analysis,
+                      semanticLabel: t.music.eqAnalysis,
+                      onChanged: (value) => unawaited(controller.setAnalysis(value: value)),
+                    ),
+                  ],
+                ),
+                _LoudnessMeter(active: eq.analysis),
+                Text(t.music.eqMeterNote, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+              ],
+            ),
+          ),
+
+          // What the switches above add up to, in the engine's own words: the
+          // honesty line belongs where the chain is built.
+          Text(t.music.eqChainNote, style: theme.typography.caption.copyWith(color: colors.textMuted)),
         ],
       ),
     );
@@ -683,6 +757,280 @@ final class MusicEffectsPage extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The loudness meter fed by the engine's analysis branch.
+///
+/// Two bars — momentary (400 ms) and short-term (3 s) — scaled over the
+/// meter's -60…0 LUFS window. When the probe is off, the bars rest and
+/// the caption says why: this is a loudness meter, not a spectrum.
+final class _LoudnessMeter extends ConsumerStatefulWidget {
+  /// Creates the meter.
+  const _LoudnessMeter({required this.active});
+
+  /// Whether the probe filter is in the chain right now.
+  final bool active;
+
+  @override
+  ConsumerState<_LoudnessMeter> createState() => _LoudnessMeterState();
+}
+
+final class _LoudnessMeterState extends ConsumerState<_LoudnessMeter> {
+  StreamSubscription<audio.AudioLoudness>? _sub;
+  audio.AudioLoudness? _levels;
+
+  @override
+  void initState() {
+    super.initState();
+    _listen();
+  }
+
+  @override
+  void didUpdateWidget(_LoudnessMeter old) {
+    super.didUpdateWidget(old);
+    if (old.active != widget.active) _listen();
+  }
+
+  void _listen() {
+    unawaited(_sub?.cancel());
+    _sub = null;
+    if (!widget.active) {
+      if (mounted) setState(() => _levels = null);
+      return;
+    }
+    _sub = ref.read(musicPlayerProvider.notifier).audioEngine.loudnessStream.listen((levels) {
+      if (mounted) setState(() => _levels = levels);
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_sub?.cancel());
+    super.dispose();
+  }
+
+  /// -60…0 LUFS on the bar; quieter than -60 paints as empty.
+  double _fraction(double lufs) => ((lufs + 60) / 60).clamp(0.0, 1.0);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final momentary = _levels == null ? 0.0 : _fraction(_levels!.momentary);
+    final shortTerm = _levels == null ? 0.0 : _fraction(_levels!.shortTerm);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        _LoudnessBar(label: 'M', fraction: momentary, accent: colors.accent, track: colors.border),
+        _LoudnessBar(label: 'S', fraction: shortTerm, accent: colors.accent, track: colors.border),
+      ],
+    );
+  }
+}
+
+final class _LoudnessBar extends StatelessWidget {
+  const _LoudnessBar({required this.label, required this.fraction, required this.accent, required this.track});
+
+  final String label;
+  final double fraction;
+  final Color accent;
+  final Color track;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        SizedBox(
+          width: 16,
+          child: Text(label, style: theme.typography.caption.copyWith(color: theme.colors.textMuted)),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              height: 6,
+              child: Stack(
+                children: [
+                  ColoredBox(color: track),
+                  FractionallySizedBox(
+                    widthFactor: fraction,
+                    child: ColoredBox(color: accent),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(
+            '${(fraction * 60 - 60).round()} LUFS',
+            style: theme.typography.caption.copyWith(color: theme.colors.textMuted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One parametric node's editor: switch and delete on the header row,
+/// then frequency, Q and gain sliders — log-scaled where the ear is.
+final class _EqNodeRow extends ConsumerWidget {
+  const _EqNodeRow({required this.node, required this.eq, required this.controller});
+
+  final MusicEqNode node;
+  final MusicEqConfig eq;
+  final MusicEqController controller;
+
+  static String _frequencyLabel(double frequency) =>
+      frequency >= 1000 ? '${(frequency / 1000).toStringAsFixed(1)} kHz' : '${frequency.round()} Hz';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsSwitch(
+                value: node.enabled,
+                onChanged: (value) => unawaited(controller.updateNode(node.id, enabled: value)),
+              ),
+              Expanded(
+                child: Text(
+                  _frequencyLabel(node.frequency),
+                  style: theme.typography.body.copyWith(color: node.enabled ? colors.text : colors.textMuted),
+                ),
+              ),
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.music.eqRemoveNode,
+                onPressed: () => unawaited(controller.removeNode(node.id)),
+                icon: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
+              ),
+            ],
+          ),
+          DsSlider(
+            value: ((math.log(node.frequency / 20) / math.ln10) / 3).clamp(0.0, 1.0),
+            semanticLabel: t.music.eqNodeFrequency,
+            onChanged: (value) {
+              final frequency = 20 * math.pow(10, value * 3).toDouble();
+              unawaited(controller.updateNode(node.id, frequency: frequency));
+            },
+          ),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsSlider(
+                  value: ((math.log(node.q / kMusicEqNodeMinQ) / math.ln10) / 2).clamp(0.0, 1.0),
+                  semanticLabel: t.music.eqNodeQ,
+                  onChanged: (value) {
+                    final q = kMusicEqNodeMinQ * math.pow(10, value * 2).toDouble();
+                    unawaited(controller.updateNode(node.id, q: q));
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 64,
+                child: Text(
+                  'Q ${node.q.toStringAsFixed(1)}',
+                  textAlign: TextAlign.end,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsSlider(
+                  min: kMusicEqMinGain,
+                  max: kMusicEqMaxGain,
+                  value: node.gainDb,
+                  semanticLabel: t.music.eqNodeGain,
+                  onChanged: (value) => unawaited(controller.updateNode(node.id, gainDb: value)),
+                ),
+              ),
+              SizedBox(
+                width: 64,
+                child: Text(
+                  '${node.gainDb >= 0 ? '+' : ''}${node.gainDb.toStringAsFixed(1)} dB',
+                  textAlign: TextAlign.end,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The A/B compare button: hold it and the whole chain steps aside, so the
+/// ear hears the untouched mix; release restores the configuration at once.
+/// The instant switch-back is the whole point — a toggle with a delay
+/// cannot be compared reliably.
+final class _CompareButton extends ConsumerStatefulWidget {
+  /// Creates the button.
+  const _CompareButton({required this.player});
+
+  final MusicPlayerController player;
+
+  @override
+  ConsumerState<_CompareButton> createState() => _CompareButtonState();
+}
+
+final class _CompareButtonState extends ConsumerState<_CompareButton> {
+  bool _held = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return GestureDetector(
+      onTapDown: (_) {
+        setState(() => _held = true);
+        widget.player.setCompareBypass(bypass: true);
+      },
+      onTapUp: (_) {
+        if (!_held) return;
+        setState(() => _held = false);
+        widget.player.setCompareBypass(bypass: false);
+      },
+      onTapCancel: () {
+        if (!_held) return;
+        setState(() => _held = false);
+        widget.player.setCompareBypass(bypass: false);
+      },
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: _held ? colors.accent : colors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.border),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          _held ? t.music.eqCompareHeld : t.music.eqCompare,
+          style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
         ),
       ),
     );
