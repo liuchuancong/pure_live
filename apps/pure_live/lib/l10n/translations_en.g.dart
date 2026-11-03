@@ -2965,7 +2965,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get vodPlaybackDescription => 'The opening rate, what a finished part leads to, and the details under the picture.';
 	@override String get groupMusic => 'Music';
 	@override String get navMusic => 'Music';
-	@override String get groupMusicTools => 'Sound & tools';
 	@override String get musicSettingsDescription => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.';
 	@override String get navMusicPlay => 'Playback';
 	@override String get musicPlaybackDescription => 'Sources, quality and how playback and lists behave.';
@@ -7451,7 +7450,6 @@ extension on TranslationsEn {
 			'settings.vodPlaybackDescription' => 'The opening rate, what a finished part leads to, and the details under the picture.',
 			'settings.groupMusic' => 'Music',
 			'settings.navMusic' => 'Music',
-			'settings.groupMusicTools' => 'Sound & tools',
 			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
 			'settings.navMusicPlay' => 'Playback',
 			'settings.musicPlaybackDescription' => 'Sources, quality and how playback and lists behave.',
@@ -7638,9 +7636,9 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
+			'settings.playerGuideEntryHwdecBody' => 'Which hardware decode path to use. auto tries everything (may glitch on some SoCs); auto-safe only whitelisted paths (recommended); -copy variants decode back into memory, needed by some filters and screenshots.',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuideEntryHwdecBody' => 'Which hardware decode path to use. auto tries everything (may glitch on some SoCs); auto-safe only whitelisted paths (recommended); -copy variants decode back into memory, needed by some filters and screenshots.',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'Where mpv draws the picture. libmpv renders into the Flutter texture (embedded, default); gpu/gpu-next/direct3d open a standalone mpv window (outside the app); null renders nothing.',
 			'settings.playerGuideEntryAoTitle' => '--ao',
@@ -8152,9 +8150,9 @@ extension on TranslationsEn {
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
+			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
 			_ => null,
 		} ?? switch (path) {
-			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
 			'settings.preferH264' => 'Huya: prefer H.264',
 			'settings.preferH264Desc' => 'Picks H.264 when the platform offers several.',
 			'settings.clipboardRoomTitle' => 'Open the room from the clipboard?',
@@ -8666,9 +8664,9 @@ extension on TranslationsEn {
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',
+			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			_ => null,
 		} ?? switch (path) {
-			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',
 			'vod.today' => 'Today',
 			'vod.yesterday' => 'Yesterday',

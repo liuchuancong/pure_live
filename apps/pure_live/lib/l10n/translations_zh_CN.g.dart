@@ -8467,9 +8467,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '音乐'
 	String get navMusic => '音乐';
 
-	/// zh-CN: '音效与工具'
-	String get groupMusicTools => '音效与工具';
-
 	/// zh-CN: '播放、歌词、桌面歌词、下载、音源、快捷键与同步。'
 	String get musicSettingsDescription => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。';
 
@@ -15988,7 +15985,6 @@ extension on Translations {
 			'settings.vodPlaybackDescription' => '默认倍速、一集播完后的动作，以及播放器下方显示的详情。',
 			'settings.groupMusic' => '音乐',
 			'settings.navMusic' => '音乐',
-			'settings.groupMusicTools' => '音效与工具',
 			'settings.musicSettingsDescription' => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。',
 			'settings.navMusicPlay' => '播放',
 			'settings.musicPlaybackDescription' => '音源、音质与播放、列表行为。',
@@ -16175,9 +16171,9 @@ extension on Translations {
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
 			'settings.playerGuideEntryHardwareSwitchBody' => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
+			'settings.playerGuideEntryHwdecBody' => '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuideEntryHwdecBody' => '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。',
 			'settings.playerGuideEntryAoTitle' => '--ao',
@@ -16689,9 +16685,9 @@ extension on Translations {
 			'settings.holdDanmakuOnPress' => '按住冻结',
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
+			'settings.youtubeAllChatDesc' => '关闭用网页默认 Top chat；开启请求全部聊天。',
 			_ => null,
 		} ?? switch (path) {
-			'settings.youtubeAllChatDesc' => '关闭用网页默认 Top chat；开启请求全部聊天。',
 			'settings.preferH264' => '虎牙优先 H.264',
 			'settings.preferH264Desc' => '多种编码时优先 H.264，兼容性更好。',
 			'settings.clipboardRoomTitle' => '打开剪贴板中的直播间？',
@@ -17203,9 +17199,9 @@ extension on Translations {
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
+			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			_ => null,
 		} ?? switch (path) {
-			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => '从历史中移除',
 			'vod.today' => '今天',
 			'vod.yesterday' => '昨天',

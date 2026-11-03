@@ -446,7 +446,6 @@ String settingsGroupLabel(Translations t, String key) => switch (key) {
   'groupIptv' => t.settings.navIptv,
   'groupVod' => t.settings.navVod,
   'groupMusic' => t.settings.navMusic,
-  'groupMusicTools' => t.settings.groupMusicTools,
   'groupHongguo' => t.settings.navHongguo,
   'groupData' => t.settings.groupData,
   'groupAbout' => t.settings.groupAbout,
