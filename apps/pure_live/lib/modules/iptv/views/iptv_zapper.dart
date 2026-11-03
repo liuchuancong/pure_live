@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/providers/boot/environment_providers.dart' show deviceProfileProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupsListed;
@@ -151,6 +152,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
     final theme = DsTheme.of(context);
     final library = ref.watch(iptvLibraryProvider).value;
     final reminders = ref.watch(iptvRemindersProvider);
+    final browse = ref.watch(iptvBrowseSettingsProvider);
     if (library == null) return const SizedBox.shrink();
     final now = DateTime.now();
     final groups = _groupsOf(library);
@@ -261,7 +263,13 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                 return DsListRow(
                                   leading: IptvChannelLogo(channel: entry, size: DsSize.xs),
                                   title: Text(
-                                    [if (entry.number != null) '${entry.number}', entry.entry.name].join('  '),
+                                    // The same switch every other channel row
+                                    // answers to; this rail used to print the
+                                    // number whatever the viewer had set.
+                                    [
+                                      if (browse.showChannelNumber && entry.number != null) '${entry.number}',
+                                      entry.entry.name,
+                                    ].join('  '),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.typography.body.copyWith(color: colors.text),

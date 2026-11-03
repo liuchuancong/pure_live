@@ -380,8 +380,9 @@ final class _DayStepper extends StatelessWidget {
 /// The channels the guide can open: the open group (as a column beside the
 /// picker, or as one entry over it where the window has no room for a column),
 /// the name search, and a one-row-per-channel list with the open channel
-/// marked.
-final class _ChannelPicker extends StatefulWidget {
+/// marked — the channel page's own row shape, so the logo, the name and the
+/// dial number read the same way in both lists.
+final class _ChannelPicker extends ConsumerStatefulWidget {
   const _ChannelPicker({
     required this.channels,
     required this.selectedId,
@@ -408,10 +409,10 @@ final class _ChannelPicker extends StatefulWidget {
   final ValueChanged<String?> onSelectGroup;
 
   @override
-  State<_ChannelPicker> createState() => _ChannelPickerState();
+  ConsumerState<_ChannelPicker> createState() => _ChannelPickerState();
 }
 
-final class _ChannelPickerState extends State<_ChannelPicker> {
+final class _ChannelPickerState extends ConsumerState<_ChannelPicker> {
   /// The selected row's mark, so the list can bring it into view — the page
   /// may open on a channel buried deep in the list.
   final GlobalKey _selectedKey = GlobalKey();
@@ -452,6 +453,7 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
     // repeats it says nothing: the group line per row is what the whole
     // library's list needs, not one group's.
     final showRowGroup = group == null;
+    final browse = ref.watch(iptvBrowseSettingsProvider);
     return DsCard(
       style: const DsCardStyle(padding: EdgeInsets.zero),
       child: Column(
@@ -495,17 +497,32 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
                     itemCount: channels.length,
                     itemBuilder: (context, index) {
                       final channel = channels[index];
+                      // The same row the channel page's list and the remote's
+                      // zapping draw: the dial number beside the name, under
+                      // the same 显示频道号 switch. A list that walks the very
+                      // sequence those two read cannot be the one place the
+                      // number goes missing.
+                      final number = browse.showChannelNumber ? channel.number : null;
                       return KeyedSubtree(
                         key: channel.id == selectedId ? _selectedKey : null,
                         child: DsListRow(
                           selected: channel.id == selectedId,
+                          semanticLabel: channel.entry.name,
                           leading: IptvChannelLogo(channel: channel),
                           title: Text(
                             channel.entry.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(color: colors.text),
+                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                           ),
+                          detail: number == null
+                              ? null
+                              : Text(
+                                  '$number',
+                                  style: theme.typography.numeric(
+                                    theme.typography.caption.copyWith(color: colors.textSubtle),
+                                  ),
+                                ),
                           description: showRowGroup
                               ? Text(
                                   iptvGroupLabel(t, iptvGroupKeyOf(channel)),
