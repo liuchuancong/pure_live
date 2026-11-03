@@ -209,15 +209,30 @@ final class KgMusicSource extends LxPlatformSource
         ),
       ) as Map<String, Object?>;
       final data = json['data'];
+      if (data is! Map) return const <String>[];
       final tags = <String>[];
-      if (data is Map) {
-        for (final value in data.values) {
-          if (value is! List) continue;
-          for (final tag in value) {
-            if (tag is Map) {
-              final name = '${tag['special_name'] ?? ''}'.trim();
-              if (name.isNotEmpty) tags.add(name);
-            }
+      // `hotTag` is the platform's own short list, and it is a map of index →
+      // row (`{"0":{special_name:"经典"…},"1":…}`), not a list — reading every
+      // `data` value as a list is what made this answer nothing.
+      final hot = data['hotTag'];
+      if (hot is Map) {
+        for (final row in hot.values) {
+          if (row is! Map) continue;
+          final name = '${row['special_name'] ?? ''}'.trim();
+          if (name.isNotEmpty && !tags.contains(name)) tags.add(name);
+        }
+      }
+      final tagids = data['tagids'];
+      if (tags.isEmpty && tagids is Map) {
+        // The category tree carries the same names; use it when the short
+        // list says nothing.
+        for (final bucket in tagids.values) {
+          final raw = bucket is Map ? bucket['data'] : null;
+          if (raw is! List) continue;
+          for (final tag in raw) {
+            if (tag is! Map) continue;
+            final name = '${tag['name'] ?? ''}'.trim();
+            if (name.isNotEmpty && !tags.contains(name)) tags.add(name);
           }
         }
       }
@@ -367,7 +382,18 @@ final class KgMusicSource extends LxPlatformSource
     final MusicPlaylistInfo info;
     final List<Map<String, Object?>> rows;
     if (RegExp(r'^\d+$').hasMatch(globalId)) {
-      (info, rows) = await _specialPage(globalId);
+      final (pageCard, songs) = await _specialPage(globalId);
+      // The page prints no play figure, so the card is asked of info_v2 — the
+      // signed read that answers a numeric id without throttling. Its answer
+      // wins only when it names the list: a refused read must not close a
+      // page the share file opened fine.
+      MusicPlaylistInfo? card;
+      try {
+        card = await _specialInfo(globalId);
+      } on Object catch (error, stackTrace) {
+        noteMusicSourceSilence('kg playlist card', error, stackTrace);
+      }
+      (info, rows) = (card == null || card.name.isEmpty ? pageCard : card, songs);
     } else {
       final songs = await _specialSongs(globalId);
       (info, rows) = (await _specialInfo(globalId), songs);
