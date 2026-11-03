@@ -222,13 +222,9 @@ final class HongguoSeriesCard extends ConsumerWidget {
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
-      style: DsCardStyle(
-        padding: EdgeInsets.zero,
-        hovered: DsCardStyle(
-          background: colors.hover,
-          shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
-        ),
-      ),
+      // The room card lifts on hover and tints nothing; a fill here would recolour
+      // only the name block, and `colors.overlay` is an opaque surface, not a shadow.
+      style: const DsCardStyle(padding: EdgeInsets.zero),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(theme.radii.card),
         child: LayoutBuilder(
@@ -451,13 +447,7 @@ final class HongguoFeedHero extends StatelessWidget {
         return DsCard(
           onPressed: onOpen,
           semanticLabel: series.title,
-          style: DsCardStyle(
-            padding: EdgeInsets.zero,
-            hovered: DsCardStyle(
-              background: colors.hover,
-              shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
-            ),
-          ),
+          style: const DsCardStyle(padding: EdgeInsets.zero),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(theme.radii.card),
             child: Row(
