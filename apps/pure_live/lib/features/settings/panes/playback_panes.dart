@@ -170,50 +170,59 @@ final class QualityAudioPane extends ConsumerWidget {
     final controller = ref.read(playbackSettingsProvider.notifier);
     final network = ref.watch(networkTypeProvider);
     final stored = settings.preferredQuality ?? kPreferredResolutionChoices.first;
+    // The rendition a room opens with, the danmaku habit behind it and the
+    // ASMR sleep timer are the live room's own; the IPTV page has no ladder
+    // and no wheel-volume gesture, and the video station and the short-drama
+    // player name their own first tier. What every player here obeys is the
+    // mute pair, the background switch, the seed volume and the wheel step.
+    final module = ref.watch(selectedModuleProvider);
+    final roomOnly = module == AppModule.live;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        DsListSection(
-          header: Text(t.settings.navQuality),
-          children: [
-            SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.gauge),
-              title: t.settings.preferredQuality,
-              description: t.settings.preferredQualityDesc,
-              value: stored,
-              options: [
-                for (final quality in kPreferredResolutionChoices)
-                  DsSelectOption(value: quality, label: preferredQualityLabel(t, quality)),
-              ],
-              onChanged: (value) => unawaited(controller.setPreferredQuality(value)),
-            ),
-            if (network.reportsCellular)
+        if (roomOnly)
+          DsListSection(
+            header: Text(t.settings.navQuality),
+            children: [
               SettingsChoiceRow<String>(
-                leading: const DsIcon(DsIcons.smartphone),
-                title: t.settings.preferredQualityCellular,
-                description: t.settings.preferredQualityCellularDesc,
-                value: settings.preferredQualityCellular ?? kPreferredResolutionChoices.first,
+                leading: const DsIcon(DsIcons.gauge),
+                title: t.settings.preferredQuality,
+                description: t.settings.preferredQualityDesc,
+                value: stored,
                 options: [
                   for (final quality in kPreferredResolutionChoices)
                     DsSelectOption(value: quality, label: preferredQualityLabel(t, quality)),
                 ],
-                onChanged: (value) => unawaited(controller.setPreferredQualityCellular(value)),
+                onChanged: (value) => unawaited(controller.setPreferredQuality(value)),
               ),
-          ],
-        ),
+              if (network.reportsCellular)
+                SettingsChoiceRow<String>(
+                  leading: const DsIcon(DsIcons.smartphone),
+                  title: t.settings.preferredQualityCellular,
+                  description: t.settings.preferredQualityCellularDesc,
+                  value: settings.preferredQualityCellular ?? kPreferredResolutionChoices.first,
+                  options: [
+                    for (final quality in kPreferredResolutionChoices)
+                      DsSelectOption(value: quality, label: preferredQualityLabel(t, quality)),
+                  ],
+                  onChanged: (value) => unawaited(controller.setPreferredQualityCellular(value)),
+                ),
+            ],
+          ),
         DsListSection(
           header: Text(t.settings.navAudio),
           children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.volumeOff),
-              title: t.settings.defaultMuted,
-              description: t.settings.defaultMutedDesc,
-              control: DsSwitch(
-                value: settings.muted,
-                onChanged: (value) => unawaited(controller.setMuted(value: value)),
+            if (roomOnly || module == AppModule.iptv)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.volumeOff),
+                title: t.settings.defaultMuted,
+                description: t.settings.defaultMutedDesc,
+                control: DsSwitch(
+                  value: settings.muted,
+                  onChanged: (value) => unawaited(controller.setMuted(value: value)),
+                ),
               ),
-            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.volumeX),
               title: t.settings.globalMute,
@@ -233,56 +242,61 @@ final class QualityAudioPane extends ConsumerWidget {
                   onChanged: (value) => unawaited(controller.setBackgroundPlay(value: value)),
                 ),
               ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.captions),
-                title: t.settings.backgroundPauseDanmaku,
-                description: t.settings.backgroundPauseDanmakuDesc,
-                control: DsSwitch(
-                  value: settings.backgroundPauseDanmaku,
-                  onChanged: (value) => unawaited(controller.setBackgroundPauseDanmaku(value: value)),
+              // The room's own background habits: the danmaku that stops when
+              // the app does, the audio-only continuation, the PiP close that
+              // pauses, and the ASMR timer. No other module reads them.
+              if (roomOnly) ...[
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.captions),
+                  title: t.settings.backgroundPauseDanmaku,
+                  description: t.settings.backgroundPauseDanmakuDesc,
+                  control: DsSwitch(
+                    value: settings.backgroundPauseDanmaku,
+                    onChanged: (value) => unawaited(controller.setBackgroundPauseDanmaku(value: value)),
+                  ),
                 ),
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.headphones),
-                title: t.settings.backgroundAudioOnly,
-                description: t.settings.backgroundAudioOnlyDesc,
-                control: DsSwitch(
-                  value: settings.backgroundAudioOnly,
-                  onChanged: (value) => unawaited(controller.setBackgroundAudioOnly(value: value)),
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.headphones),
+                  title: t.settings.backgroundAudioOnly,
+                  description: t.settings.backgroundAudioOnlyDesc,
+                  control: DsSwitch(
+                    value: settings.backgroundAudioOnly,
+                    onChanged: (value) => unawaited(controller.setBackgroundAudioOnly(value: value)),
+                  ),
                 ),
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.pictureInPicture),
-                title: t.settings.pauseOnPipClose,
-                description: t.settings.pauseOnPipCloseDesc,
-                control: DsSwitch(
-                  value: settings.pauseOnPipClose,
-                  onChanged: (value) => unawaited(controller.setPauseOnPipClose(value: value)),
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.pictureInPicture),
+                  title: t.settings.pauseOnPipClose,
+                  description: t.settings.pauseOnPipCloseDesc,
+                  control: DsSwitch(
+                    value: settings.pauseOnPipClose,
+                    onChanged: (value) => unawaited(controller.setPauseOnPipClose(value: value)),
+                  ),
                 ),
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.moon),
-                title: t.settings.asmrSleepMode,
-                description: t.settings.asmrSleepModeDesc,
-                control: DsSwitch(
-                  value: settings.asmrSleepMode,
-                  onChanged: (value) => unawaited(controller.setAsmrSleepMode(value: value)),
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.moon),
+                  title: t.settings.asmrSleepMode,
+                  description: t.settings.asmrSleepModeDesc,
+                  control: DsSwitch(
+                    value: settings.asmrSleepMode,
+                    onChanged: (value) => unawaited(controller.setAsmrSleepMode(value: value)),
+                  ),
                 ),
-              ),
-              if (settings.asmrSleepMode)
-                DsListRow(
-                  leading: const DsIcon(DsIcons.timer),
-                  title: Text(t.settings.asmrSleepTimer),
-                  description: Text(t.settings.asmrSleepTimerDesc),
-                  trailing: Text(asmrSleepDurationLabel(settings.asmrSleepMinutes)),
-                  onPressed: () => unawaited(showAsmrSleepMinutesDialog(context, ref)),
-                ),
+                if (settings.asmrSleepMode)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.timer),
+                    title: Text(t.settings.asmrSleepTimer),
+                    description: Text(t.settings.asmrSleepTimerDesc),
+                    trailing: Text(asmrSleepDurationLabel(settings.asmrSleepMinutes)),
+                    onPressed: () => unawaited(showAsmrSleepMinutesDialog(context, ref)),
+                  ),
+              ],
             ],
             // The iOS system picture-in-picture window can also be closed by
             // the viewer, so the same choice is offered there; the Android
             // block above keeps the switch next to its background playback
             // row.
-            if (ref.watch(platformRuntimeProvider).environment.runtime.kind == PlatformKind.ios)
+            if (roomOnly && ref.watch(platformRuntimeProvider).environment.runtime.kind == PlatformKind.ios)
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.pictureInPicture),
                 title: t.settings.pauseOnPipClose,
@@ -304,20 +318,23 @@ final class QualityAudioPane extends ConsumerWidget {
                 semanticLabel: t.settings.defaultVolume,
               ),
             ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.volume2),
-              title: t.settings.volumeWheelStep,
-              description: t.settings.volumeWheelStepDesc,
-              value: settings.volumeWheelStepPercent,
-              options: [
-                for (final percent in kVolumeWheelStepChoices)
-                  DsSelectOption(
-                    value: percent,
-                    label: t.settings.volumeWheelStepValue(percent: percent),
-                  ),
-              ],
-              onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
-            ),
+            // The wheel step is a desktop pointer gesture; the IPTV page has
+            // no wheel-volume handler to size.
+            if (module != AppModule.iptv)
+              SettingsChoiceRow<int>(
+                leading: const DsIcon(DsIcons.volume2),
+                title: t.settings.volumeWheelStep,
+                description: t.settings.volumeWheelStepDesc,
+                value: settings.volumeWheelStepPercent,
+                options: [
+                  for (final percent in kVolumeWheelStepChoices)
+                    DsSelectOption(
+                      value: percent,
+                      label: t.settings.volumeWheelStepValue(percent: percent),
+                    ),
+                ],
+                onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
+              ),
           ],
         ),
       ],

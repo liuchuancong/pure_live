@@ -52,6 +52,9 @@ final class HongguoSettingsPane extends ConsumerWidget {
             // so the row goes to the page that carries them rather than a
             // second copy of each switch here.
             const SettingsChildEntry(child: SettingsSection.picture),
+            // The mute pair, the background switch and the seed volume are the
+            // app's own, read when this player opens a handle.
+            const SettingsChildEntry(child: SettingsSection.quality),
             DsListRow(
               leading: const DsIcon(DsIcons.circleAlert),
               title: Text(t.hongguo.decoderLessons),

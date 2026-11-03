@@ -46,6 +46,9 @@ final class VodSettingsPane extends ConsumerWidget {
             // reads; the row goes to the page carrying them rather than a
             // second copy of each switch here.
             const SettingsChildEntry(child: SettingsSection.picture),
+            // The mute pair, the background switch, the seed volume and the
+            // wheel step are the app's own, read by this player's handle.
+            const SettingsChildEntry(child: SettingsSection.quality),
           ],
         ),
         DsListSection(

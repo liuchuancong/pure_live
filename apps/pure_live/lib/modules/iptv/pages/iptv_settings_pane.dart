@@ -123,6 +123,9 @@ final class IptvSettingsPane extends ConsumerWidget {
             // page that carries them. Its room-only rows stay out of sight
             // there (see PicturePane).
             SettingsChildEntry(child: SettingsSection.picture),
+            // The mute pair, the background switch and the seed volume are the
+            // app's own, read by this module's player.
+            SettingsChildEntry(child: SettingsSection.quality),
           ],
         ),
       ],
