@@ -10,19 +10,18 @@ import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_auto_update.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart' show iptvUserAgentProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupLabel, iptvGroupsListed;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show syncAllIptvSources;
 
 /// The IPTV module's own settings: the guide-update interval, the bulk
-/// automatic-update switch and the manual sync round, with the two subpages
-/// the reference keeps beside them — how a channel is shown and zapped, and
-/// which groups the module leaves out. The source manager (playlists,
-/// guides, their order) lives on the IPTV page itself; this pane carries the
-/// schedule those pages read.
+/// automatic-update switch and the two subpages the reference keeps beside
+/// them — how a channel is shown and zapped, and which groups the module
+/// leaves out. The source manager (playlists, guides, their order, and the
+/// "update everything now" command) lives on the IPTV page itself; this pane
+/// carries only the schedule those pages read, and no control here is painted
+/// a second time over there.
 final class IptvSettingsPane extends ConsumerWidget {
   /// The pane shown under Settings → IPTV.
   const IptvSettingsPane({super.key});
@@ -44,14 +43,6 @@ final class IptvSettingsPane extends ConsumerWidget {
     final ready = epg.ready && sources.ready;
     final round = sources.syncAll;
     final blocked = !ready || sources.importing || epg.importing || round != null || epg.busy.isNotEmpty;
-    final canSync =
-        ready &&
-        round == null &&
-        !sources.importing &&
-        !epg.importing &&
-        sources.busy.isEmpty &&
-        epg.busy.isEmpty &&
-        (sources.playlists.any(iptvPlaylistIsRemote) || epg.sources.any((source) => source.isRemote));
     final status = !ready
         ? null
         : remoteGuides.isEmpty
@@ -94,14 +85,6 @@ final class IptvSettingsPane extends ConsumerWidget {
                   : (value) => unawaited(ref.read(iptvEpgProvider.notifier).setAllAutoUpdate(value: value)),
             ),
           ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.cloudUpload),
-          title: Text(t.iptv.syncAll),
-          description: Text(
-            round == null ? t.settings.iptvSyncDesc : t.iptv.syncAllRunning(done: round.done, total: round.total),
-          ),
-          onPressed: canSync ? () => unawaited(syncAllIptvSources(context, ref)) : null,
-        ),
       ],
     );
     // The user agent travels with every remote fetch the module makes —

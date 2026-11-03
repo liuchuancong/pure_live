@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_auto_update.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
@@ -26,9 +25,13 @@ enum _SourceFilter { all, playlists, guides }
 const String _sourceOrderPref = 'iptv.sources.order';
 
 /// The IPTV source manager, in the reference's resource-panel shape: the
-/// active guide and the update schedule as two settings cards, then one
-/// table over the playlists and guides with a kind filter, a search, the
-/// shared sync-all action, per-row sync/delete and the guide switches.
+/// guide in use, then one table over the playlists and guides with a kind
+/// filter, a search, the shared sync-all action, per-row sync/delete and the
+/// guide switches.
+///
+/// The update *schedule* — the interval, the bulk switch, how many guides it
+/// covers — is not here. It is one setting with one home, Settings → IPTV;
+/// this page only carries the commands that act on the sources it lists.
 ///
 /// The order of the table is the viewer's own: "edit order" swaps it for a
 /// reorder card with a drag grip and arrow controls, keeps the result as a
@@ -46,7 +49,6 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   final TextEditingController _search = TextEditingController();
   _SourceFilter _filter = _SourceFilter.all;
   String _query = '';
-  bool _bulkBusy = false;
   List<String> _savedOrder = const [];
   List<Object> _draft = const [];
   List<String> _draftStart = const [];
@@ -183,16 +185,6 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   Future<void> _setAutoUpdate(EpgSource source, bool value) =>
       ref.read(iptvEpgProvider.notifier).setAutoUpdate(source, value: value);
 
-  Future<void> _setAllAutoUpdate(bool value) async {
-    if (_bulkBusy) return;
-    setState(() => _bulkBusy = true);
-    try {
-      await ref.read(iptvEpgProvider.notifier).setAllAutoUpdate(value: value);
-    } finally {
-      if (mounted) setState(() => _bulkBusy = false);
-    }
-  }
-
   // -- Order ---------------------------------------------------------------
 
   static String _keyOf(Object item) => item is IptvPlaylist ? 'p:${item.id}' : 'g:${(item as EpgSource).id}';
@@ -283,19 +275,12 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (!sources.ready || !epg.ready) {
       return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
     }
-    final interval = ref.watch(iptvUpdateIntervalProvider);
     final active = _activeOf(epg);
     final round = sources.syncAll;
     final blocked = sources.importing || epg.importing || round != null;
-    final settingsBlocked = blocked || epg.busy.isNotEmpty || sources.busy.isNotEmpty || _bulkBusy;
+    final settingsBlocked = blocked || epg.busy.isNotEmpty || sources.busy.isNotEmpty;
     final hasRemote = sources.playlists.any(iptvPlaylistIsRemote) || epg.sources.any((source) => source.isRemote);
     final canSync = hasRemote && !blocked && epg.busy.isEmpty && sources.busy.isEmpty;
-    final remoteGuides = [
-      for (final source in epg.sources)
-        if (source.isRemote) source,
-    ];
-    final autoOn = remoteGuides.where((source) => source.autoUpdate).length;
-    final allOn = remoteGuides.isNotEmpty && autoOn == remoteGuides.length;
     final all = _ordered(<Object>[...sources.playlists, ...epg.sources]);
     if (_sorting) {
       return _buildSorting(context);
@@ -310,17 +295,10 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
         children: [
-          _SettingsRow(
+          _ActiveGuideCard(
             active: active,
             canChoose: epg.sources.isNotEmpty && !settingsBlocked,
             onChoose: () => unawaited(_chooseGuide()),
-            allOn: allOn,
-            canToggleAll: remoteGuides.isNotEmpty && !settingsBlocked,
-            onToggleAll: (value) => unawaited(_setAllAutoUpdate(value)),
-            interval: interval,
-            onInterval: ref.read(iptvUpdateIntervalProvider.notifier).select,
-            autoOn: autoOn,
-            remoteCount: remoteGuides.length,
           ),
           if (round case final progress?) _SyncStrip(done: progress.done, total: progress.total),
           IptvTablePanel(
@@ -543,124 +521,54 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   }
 }
 
-/// The two settings cards: the guide in use, and the update schedule with
-/// its bulk switch, intervals and current-state line.
-final class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.active,
-    required this.canChoose,
-    required this.onChoose,
-    required this.allOn,
-    required this.canToggleAll,
-    required this.onToggleAll,
-    required this.interval,
-    required this.onInterval,
-    required this.autoOn,
-    required this.remoteCount,
-  });
+/// The guide in use, with the picker that changes it. This is the one thing
+/// on the page that reads as a settings card, and it is a management action
+/// over the source list rather than a schedule — so it stays here.
+final class _ActiveGuideCard extends StatelessWidget {
+  const _ActiveGuideCard({required this.active, required this.canChoose, required this.onChoose});
 
   final EpgSource? active;
   final bool canChoose;
   final VoidCallback onChoose;
-  final bool allOn;
-  final bool canToggleAll;
-  final ValueChanged<bool> onToggleAll;
-  final IptvUpdateInterval interval;
-  final ValueChanged<IptvUpdateInterval> onInterval;
-  final int autoOn;
-  final int remoteCount;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final activeCard = _SettingCard(
+    return _SettingCard(
       title: t.iptv.activeGuideTitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         spacing: DsSpace.s8,
         children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
-                  children: [
-                    Text(
-                      active?.name ?? t.iptv.activeGuideNone,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DsTheme.of(context).typography.body
-                          .copyWith(fontWeight: FontWeight.w600, color: DsTheme.colorsOf(context).text),
-                    ),
-                    if (active != null)
-                      Text(
-                        active!.source,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: DsTheme.of(context).typography.caption
-                            .copyWith(color: DsTheme.colorsOf(context).textSubtle),
-                      ),
-                  ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(
+                  active?.name ?? t.iptv.activeGuideNone,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTheme.of(context).typography.body
+                      .copyWith(fontWeight: FontWeight.w600, color: DsTheme.colorsOf(context).text),
                 ),
-              ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: canChoose ? onChoose : null,
-                child: Text(t.iptv.select),
-              ),
-            ],
+                if (active != null)
+                  Text(
+                    active!.source,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+                  ),
+              ],
+            ),
+          ),
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: canChoose ? onChoose : null,
+            child: Text(t.iptv.select),
           ),
         ],
       ),
-    );
-    final updateCard = _SettingCard(
-      title: t.iptv.autoUpdate,
-      trailing: DsSwitch(value: allOn, onChanged: canToggleAll ? onToggleAll : null, semanticLabel: t.iptv.autoUpdate),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          Text(
-            t.iptv.updateInterval,
-            style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
-          ),
-          // Six choices no longer fit a segmented rail: the interval is a
-          // dropdown under its own label.
-          DsSelect<IptvUpdateInterval>(
-            value: interval,
-            semanticLabel: t.iptv.updateInterval,
-            options: [
-              for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t)),
-            ],
-            onChanged: (value) {
-              if (value != null) onInterval(value);
-            },
-          ),
-          _UpdateStatus(autoOn: autoOn, remoteCount: remoteCount),
-        ],
-      ),
-    );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (LiveWindow.isExpanded(constraints.maxWidth)) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 5, child: activeCard),
-              const SizedBox(width: DsSpace.s16),
-              Expanded(flex: 7, child: updateCard),
-            ],
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s12,
-          children: [activeCard, updateCard],
-        );
-      },
     );
   }
 }
@@ -668,11 +576,10 @@ final class _SettingsRow extends StatelessWidget {
 /// The reference's setting card: a title row over a hairline, then the
 /// card's controls.
 final class _SettingCard extends StatelessWidget {
-  const _SettingCard({required this.title, required this.child, this.trailing});
+  const _SettingCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -684,16 +591,9 @@ final class _SettingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                ),
-              ),
-              ?trailing,
-            ],
+          Text(
+            title,
+            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
           ),
           const DsDivider(),
           child,
@@ -703,42 +603,7 @@ final class _SettingCard extends StatelessWidget {
   }
 }
 
-/// The update card's state line: how many guides the schedule covers, or
-/// what to do when none does.
-final class _UpdateStatus extends StatelessWidget {
-  const _UpdateStatus({required this.autoOn, required this.remoteCount});
-
-  final int autoOn;
-  final int remoteCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final on = autoOn > 0;
-    final text = remoteCount == 0
-        ? t.iptv.autoUpdateNoRemote
-        : on
-        ? t.iptv.autoUpdateStatusOn(count: autoOn)
-        : t.iptv.autoUpdateStatusNone;
-    return Row(
-      spacing: DsSpace.s6,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: on ? colors.success.fill : colors.textSubtle),
-        ),
-        Flexible(
-          child: Text(text, style: theme.typography.small.copyWith(color: colors.textMuted)),
-        ),
-      ],
-    );
-  }
-}
-
-/// The sync round's progress under the cards, while one runs.
+/// The sync round's progress under the guide card, while one runs.
 final class _SyncStrip extends StatelessWidget {
   const _SyncStrip({required this.done, required this.total});
 
