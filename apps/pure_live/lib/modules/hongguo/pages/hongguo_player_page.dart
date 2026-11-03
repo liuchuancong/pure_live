@@ -1,6 +1,7 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
@@ -141,6 +142,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   bool _globalMute = false;
   double _volume = 1;
   double _speed = 1;
+
+  /// The volume a wheel is setting right now; null while no gesture shows it.
+  /// A vertical drag belongs to the episodes here, so this surface answers the
+  /// wheel only — the chip and the fade are the room's.
+  double? _volumeHud;
+  Timer? _volumeHudTimer;
+
+  /// Sound only: the episode keeps playing and the picture is put away.
+  bool _audioOnly = false;
 
   /// The speed a press-and-hold fast-forward runs at, and the speed it
   /// restores on release — or the speed a locked hold unlocks to.
@@ -328,6 +338,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _saveProgress(force: true);
     _hideTimer?.cancel();
     _hideTimer = null;
+    _volumeHudTimer?.cancel();
+    _volumeHudTimer = null;
     _hoverTimer?.cancel();
     _hoverTimer = null;
     _leaveTimer?.cancel();
@@ -490,6 +502,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       await handle.setVolume(_volume);
       await handle.setMute(muted: _effectivelyMuted);
       await handle.setRate(_speed);
+      if (_audioOnly) await _applyAudioOnly(handle);
       final seekTo = resume ?? _resumeSeconds;
       _resumeSeconds = null;
       if (seekTo != null && seekTo > 5) {
@@ -857,6 +870,71 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     } on Object catch (_) {
       // Same as mute.
     }
+  }
+
+  /// Shows [value] on the picture's own volume chip and lets it settle away a
+  /// moment after the last step — the same chip and timing the room and the
+  /// preview use, so one gesture is learned once.
+  void _showVolumeHud(double value) {
+    _volumeHudTimer?.cancel();
+    setState(() => _volumeHud = value.clamp(0.0, 1.0));
+    _volumeHudTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _volumeHud = null);
+    });
+  }
+
+  /// A wheel step takes the viewer's own share of the range (the 画质与音频
+  /// setting). The drag on this picture belongs to the episodes, so the wheel is
+  /// the gesture offered here.
+  void _wheelVolume(double delta) {
+    if (_handle == null) return;
+    final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
+    final next = (_volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
+    _showVolumeHud(next);
+    unawaited(_setVolume(next));
+  }
+
+  /// 音频模式: keep the episode's sound, put the picture away.
+  Future<void> _toggleAudioOnly() async {
+    setState(() => _audioOnly = !_audioOnly);
+    final handle = _handle;
+    if (handle == null) return;
+    await _applyAudioOnly(handle);
+  }
+
+  /// Writes the mode to [handle]; a kernel that has none keeps the picture
+  /// rather than failing the episode switch it was applied on.
+  Future<void> _applyAudioOnly(PlayerHandle handle) async {
+    try {
+      await handle.setAudioOnly(audioOnly: _audioOnly);
+    } on Object {
+      // The switch says what was asked; the next episode gets the same try.
+    }
+  }
+
+  /// Keeps the frame the episode is showing in the viewer's screenshot folder,
+  /// and says how it went.
+  Future<void> _screenshot() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final file = await capturePlayerFrame(handle, ref.read(appPathsProvider).screenshots, prefix: 'pure_live_hongguo');
+    if (!mounted) return;
+    final t = context.t;
+    showDsToast(
+      context: context,
+      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      status: file == null ? DsStatus.danger : DsStatus.success,
+    );
+  }
+
+  /// The compact window the desktop offers (the phone's system picture-in-
+  /// picture on iOS). This page had no way into it at all.
+  Future<void> _togglePip() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final accepted = await _presentationNotifier.togglePip(handle.id);
+    if (accepted || !mounted) return;
+    showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
   Future<void> _setSpeed(double speed) async {
@@ -1564,25 +1642,68 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       settings: danmaku,
                     ),
                   ),
+                // 音频模式 covers the frame rather than replacing the surface:
+                // the episode keeps playing, and its name says what is running.
+                if (_audioOnly && handle != null)
+                  Positioned.fill(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s8,
+                        children: [
+                          const DsIcon(DsIcons.headphones, size: 32, color: playerInkSubtle),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: Text(
+                              _episode?.title ?? _detail?.meta.title ?? '',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.title.copyWith(color: playerInk),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // The stream's own numbers, on the same session switch the room,
+                // the IPTV page and the preview use.
+                if (handle case final player? when ref.watch(playerStatsVisibleProvider))
+                  Positioned.fill(
+                    child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                  ),
+                if (_volumeHud case final value?)
+                  PositionedDirectional(
+                    end: DsSpace.s20,
+                    top: 0,
+                    bottom: 0,
+                    child: PlayerVolumeHud(value: value),
+                  ),
                 // The picture itself is the bar's switch: a press toggles it,
                 // a double press plays or pauses, a held press fast-forwards,
-                // and a vertical swipe walks the episodes.
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _toggleControls,
-                  onDoubleTap: handle == null
-                      ? null
-                      : () {
-                          _wake();
-                          unawaited(_togglePlay());
-                        },
-                  onLongPressStart: handle == null ? null : (_) => _beginHold(),
-                  onLongPressMoveUpdate: handle == null ? null : (details) => _holdMoved(details.offsetFromOrigin.dy),
-                  onLongPressEnd: handle == null ? null : (_) => _endHold(),
-                  onLongPressCancel: handle == null ? null : _endHold,
-                  onVerticalDragStart: handle == null ? null : (_) => _swipeDy = 0,
-                  onVerticalDragUpdate: handle == null ? null : (details) => _swipeDy += details.delta.dy,
-                  onVerticalDragEnd: handle == null ? null : (details) => _endSwipe(details.primaryVelocity ?? 0),
+                // and a vertical swipe walks the episodes. The wheel is the
+                // volume — the drag is already spoken for.
+                Listener(
+                  onPointerSignal: (signal) {
+                    if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
+                  },
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggleControls,
+                    onDoubleTap: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_togglePlay());
+                          },
+                    onLongPressStart: handle == null ? null : (_) => _beginHold(),
+                    onLongPressMoveUpdate: handle == null ? null : (details) => _holdMoved(details.offsetFromOrigin.dy),
+                    onLongPressEnd: handle == null ? null : (_) => _endHold(),
+                    onLongPressCancel: handle == null ? null : _endHold,
+                    onVerticalDragStart: handle == null ? null : (_) => _swipeDy = 0,
+                    onVerticalDragUpdate: handle == null ? null : (details) => _swipeDy += details.delta.dy,
+                    onVerticalDragEnd: handle == null ? null : (details) => _endSwipe(details.primaryVelocity ?? 0),
+                  ),
                 ),
                 if (immersive && showBar) PositionedDirectional(top: 0, start: 0, end: 0, child: _topStrip(t, detail)),
                 // A held press says what it is doing; the lock itself is
@@ -1811,6 +1932,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         ? Duration(milliseconds: (_dragSeconds! * 1000).round())
         : transport?.position ?? Duration.zero;
     final fit = ref.watch(playbackSettingsProvider).fit;
+    final presentation = ref.watch(roomPresentationProvider);
+    final pipIn = handle != null && _presentationNotifier.pipAvailable;
     final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
     final next = _nextEpisode();
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
@@ -1968,6 +2091,44 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   semanticLabel: t.hongguo.speed,
                   compact: compact,
                 ),
+                // The verbs this page had no way to reach: listen without the
+                // picture, keep the frame, read the numbers behind it, and put
+                // the episode in the desktop's compact window.
+                PlayerBarButton(
+                  icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
+                  label: t.room.audioOnlyMode,
+                  selected: _audioOnly,
+                  onPressed: handle == null
+                      ? null
+                      : () {
+                          _wake();
+                          unawaited(_toggleAudioOnly());
+                        },
+                ),
+                if (handle?.canCaptureScreenshot ?? false)
+                  PlayerBarButton(
+                    icon: DsIcons.camera,
+                    label: t.room.screenshot,
+                    onPressed: () {
+                      _wake();
+                      unawaited(_screenshot());
+                    },
+                  ),
+                PlayerBarButton(
+                  icon: DsIcons.activity,
+                  label: t.room.statsToggle,
+                  selected: ref.watch(playerStatsVisibleProvider),
+                  onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+                ),
+                if (pipIn)
+                  PlayerBarButton(
+                    icon: presentation == PresentationMode.pip
+                        ? DsIcons.pictureInPictureExit
+                        : DsIcons.pictureInPicture,
+                    label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
+                    selected: presentation == PresentationMode.pip,
+                    onPressed: () => unawaited(_togglePip()),
+                  ),
                 PlayerBarButton(
                   icon: DsIcons.fullscreen,
                   label: t.hongguo.fullscreen,
