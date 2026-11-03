@@ -226,13 +226,18 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       for (final task in listed)
         if (_filter.matches(task)) task,
     ];
-    final statusFilter = DsSegmentedControl<_RecorderFilter>(
-      value: _filter,
+    final statusFilter = DsTabs<String>(
+      value: _filter.name,
       semanticLabel: t.recorder.filterLabel,
-      onChanged: (value) => setState(() => _filter = value),
-      segments: [
-        for (final filter in _RecorderFilter.values)
-          DsSegment(value: filter, label: Text('${_filterLabel(t, filter)} ${counts[filter] ?? 0}')),
+      onChanged: (value) => setState(() => _filter = _RecorderFilter.values.byName(value)),
+      tabs: const [
+        DsTab(value: 'all', label: Text('${t.recorder.filterAll} ${counts[_RecorderFilter.all] ?? 0}')),
+        DsTab(
+          value: 'recording',
+          label: Text('${t.recorder.filterRecording} ${counts[_RecorderFilter.recording] ?? 0}'),
+        ),
+        DsTab(value: 'waiting', label: Text('${t.recorder.filterWaiting} ${counts[_RecorderFilter.waiting] ?? 0}')),
+        DsTab(value: 'failed', label: Text('${t.recorder.filterFailed} ${counts[_RecorderFilter.failed] ?? 0}')),
       ],
     );
     return Column(
@@ -975,12 +980,7 @@ typedef _TaskCallbacks = ({
 });
 
 /// A filter's word, without its count.
-String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
-  _RecorderFilter.all => t.recorder.filterAll,
-  _RecorderFilter.recording => t.recorder.filterRecording,
-  _RecorderFilter.waiting => t.recorder.filterWaiting,
-  _RecorderFilter.failed => t.recorder.filterFailed,
-};
+
 
 /// One recording task as a list card: the room's cover (the platform's
 /// letter when it has none), the streamer and room title, the platform and
