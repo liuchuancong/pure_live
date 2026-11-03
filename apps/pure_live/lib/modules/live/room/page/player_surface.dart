@@ -638,7 +638,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final liveCapture = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
     final recording = liveCapture?.state == RecordingTaskState.recording;
     // A paused or failed stream keeps the bar up; a playing one lets it go.
-    final showBar = handle != null && picture.kind == RoomPictureKind.none && (_controlsVisible || !playing);
+    //
+    // The pause's own card counts as one: it carries no verb of its own, so a
+    // bar that disappeared with the play button left the viewer with no way back
+    // on a touch screen — the picture would be paused and silent of controls.
+    final barOverPicture = picture.kind == RoomPictureKind.none || picture.kind == RoomPictureKind.paused;
+    final showBar = handle != null && barOverPicture && (_controlsVisible || !playing);
     // A pointer drag over the picture moves the window: desktop only, and only
     // while the room is an ordinary window — a fullscreen or compact surface
     // has its own rules. The volume swipe is a phone gesture and gives the
@@ -714,7 +719,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               // The compact window keeps only the window verbs: dragging the
               // picture moves the small window (its native caption is hidden) and
               // a double press brings it back.
-              if (picture.kind == RoomPictureKind.none)
+              //
+              // A paused picture keeps this too: the double tap is how the viewer
+              // comes back, and a stream that answers no gesture while it is
+              // stopped reads as a frozen player.
+              if (barOverPicture)
                 Listener(
                   onPointerSignal: (event) {
                     if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
@@ -809,8 +818,15 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     // that is not there: an offline room reads as *that room*, not
                     // as a black screen with a sentence on it.
                     if (picture.dim == RoomPictureDim.cover && roomInfo != null) _RoomCoverBackdrop(room: roomInfo),
-                    ColoredBox(
-                      color: _veilOf(picture.dim, withCover: picture.dim == RoomPictureDim.cover && roomInfo != null),
+                    // A card that offers no verb must not eat the pointer: the
+                    // pause's own word is not a control, and the tap or double
+                    // tap that ends the pause has to reach the gesture layer
+                    // under it. A card that does carry buttons keeps its scrim.
+                    IgnorePointer(
+                      ignoring: picture.actions.isEmpty,
+                      child: ColoredBox(
+                        color: _veilOf(picture.dim, withCover: picture.dim == RoomPictureDim.cover && roomInfo != null),
+                      ),
                     ),
                     Center(
                       child: Column(

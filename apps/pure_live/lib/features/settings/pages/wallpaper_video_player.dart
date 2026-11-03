@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:ui' as ui;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -34,6 +34,7 @@ final class WallpaperVideoPlayer extends StatefulWidget {
     this.onHandle,
     this.barLeading = const [],
     this.barActions = const [],
+    this.barHideAfter,
     super.key,
   });
 
@@ -71,6 +72,15 @@ final class WallpaperVideoPlayer extends StatefulWidget {
   /// shows the sigma the applied background will wear.
   final double blurSigma;
 
+  /// How long the transport bar waits before settling away while the clip
+  /// plays; null keeps it up.
+  ///
+  /// A settings preview the viewer is adjusting wants its controls on screen,
+  /// so it passes nothing. A full-page player hands the app's own 画面与浮窗
+  /// delay: a bar that never leaves covers the picture the viewer came to look
+  /// at, and every other surface in the app already hides on this clock.
+  final Duration? barHideAfter;
+
   @override
   State<WallpaperVideoPlayer> createState() => _WallpaperVideoPlayerState();
 }
@@ -90,15 +100,38 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   /// decoder, until the touch lets go.
   double? _dragValue;
 
+  /// Whether the transport bar is up. A pointer over the picture or the bar
+  /// holds it; a playing clip lets it settle away on the host's own clock, and
+  /// a paused one keeps it — the rule every other player in the app follows.
+  bool _barVisible = true;
+  Timer? _hideTimer;
+
   @override
   void initState() {
     super.initState();
     unawaited(_start());
   }
 
+  /// Puts the bar back up and restarts its countdown.
+  void _wakeBar() {
+    if (widget.barHideAfter == null) return;
+    if (!_barVisible) setState(() => _barVisible = true);
+    _scheduleHideBar();
+  }
+
+  void _scheduleHideBar() {
+    _hideTimer?.cancel();
+    final after = widget.barHideAfter;
+    if (after == null || !_playing) return;
+    _hideTimer = Timer(after, () {
+      if (mounted && _playing) setState(() => _barVisible = false);
+    });
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    _hideTimer?.cancel();
     unawaited(_states?.cancel() ?? Future<void>.value());
     final kernel = _kernel;
     final handle = _handle;
@@ -171,6 +204,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
       widget.onHandle?.call(handle);
       _states = handle.stateChanges.listen((state) {
         if (!mounted) return;
+        final wasPlaying = _playing;
         setState(() {
           _playing = state.isPlaying;
           _buffering = state.buffering;
@@ -181,6 +215,10 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
             _duration = state.duration;
           }
         });
+        // A clip that starts playing earns its hiding; one that stopped keeps
+        // the bar, so the play button is where the viewer left it.
+        if (_playing && !wasPlaying) _scheduleHideBar();
+        if (!_playing) _hideTimer?.cancel();
       });
     } on Object {
       // The kernel never got a handle, so dispose's own teardown skips it —
@@ -196,6 +234,9 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   }
 
   Future<void> _toggle() async {
+    // A press always puts the bar back up: on a touch screen there is no hover
+    // to do it, and the viewer just asked the picture to change state.
+    _wakeBar();
     final handle = _handle;
     if (handle == null) return;
     await (_playing ? handle.pause() : handle.play());
@@ -283,10 +324,14 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
         // Tap the picture itself to toggle, the way every clip player does;
         // the menu region above the stage keeps its own right click.
         Positioned.fill(
-          child: DsPressable(
-            semanticLabel: _playing ? t.room.pause : t.room.play,
-            onPressed: () => unawaited(_toggle()),
-            builder: (context, states, _) => const SizedBox.expand(),
+          child: MouseRegion(
+            onHover: (_) => _wakeBar(),
+            onExit: (_) => _scheduleHideBar(),
+            child: DsPressable(
+              semanticLabel: _playing ? t.room.pause : t.room.play,
+              onPressed: () => unawaited(_toggle()),
+              builder: (context, states, _) => const SizedBox.expand(),
+            ),
           ),
         ),
         if (!_playing && !_buffering) const Center(child: DsIcon(DsIcons.play, size: 44, color: Color(0xCCFFFFFF))),
@@ -294,57 +339,64 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
           const Center(
             child: DsSpinner(style: DsSpinnerStyle(size: 32, color: Color(0xFFFFFFFF))),
           ),
-        PositionedDirectional(
-          start: 0,
-          end: 0,
-          bottom: 0,
-          child: SettingsPreviewBar(
-            children: [
-              ...widget.barLeading,
-              SettingsPreviewCircleButton(
-                icon: _playing ? DsIcons.pause : DsIcons.play,
-                semanticLabel: _playing ? t.room.pause : t.room.play,
-                onPressed: () => unawaited(_toggle()),
+        if (_barVisible || !_playing)
+          PositionedDirectional(
+            start: 0,
+            end: 0,
+            bottom: 0,
+            child: MouseRegion(
+              // Resting on the bar keeps it up; leaving settles it the way an
+              // idle pointer does.
+              onEnter: (_) => _hideTimer?.cancel(),
+              onExit: (_) => _scheduleHideBar(),
+              child: SettingsPreviewBar(
+                children: [
+                  ...widget.barLeading,
+                  SettingsPreviewCircleButton(
+                    icon: _playing ? DsIcons.pause : DsIcons.play,
+                    semanticLabel: _playing ? t.room.pause : t.room.play,
+                    onPressed: () => unawaited(_toggle()),
+                  ),
+                  SettingsPreviewCircleButton(
+                    icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
+                    semanticLabel: _muted ? t.room.unmute : t.room.mute,
+                    onPressed: () => unawaited(_toggleMute()),
+                  ),
+                  const SizedBox(width: DsSpace.s4),
+                  SizedBox(
+                    width: 44,
+                    child: Text(
+                      _clock(_dragValue == null ? _position : total * _barValue),
+                      style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
+                    ),
+                  ),
+                  Expanded(
+                    child: DsSlider(
+                      value: _barValue,
+                      semanticLabel: t.settings.backgroundVideo,
+                      onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
+                      onChangeEnd: total <= Duration.zero
+                          ? null
+                          : (value) {
+                              setState(() => _dragValue = null);
+                              unawaited(_seekTo(value));
+                            },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 44,
+                    child: Text(
+                      _clock(total),
+                      textAlign: TextAlign.end,
+                      style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
+                    ),
+                  ),
+                  const SizedBox(width: DsSpace.s4),
+                  ...widget.barActions,
+                ],
               ),
-              SettingsPreviewCircleButton(
-                icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
-                semanticLabel: _muted ? t.room.unmute : t.room.mute,
-                onPressed: () => unawaited(_toggleMute()),
-              ),
-              const SizedBox(width: DsSpace.s4),
-              SizedBox(
-                width: 44,
-                child: Text(
-                  _clock(_dragValue == null ? _position : total * _barValue),
-                  style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
-                ),
-              ),
-              Expanded(
-                child: DsSlider(
-                  value: _barValue,
-                  semanticLabel: t.settings.backgroundVideo,
-                  onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
-                  onChangeEnd: total <= Duration.zero
-                      ? null
-                      : (value) {
-                          setState(() => _dragValue = null);
-                          unawaited(_seekTo(value));
-                        },
-                ),
-              ),
-              SizedBox(
-                width: 44,
-                child: Text(
-                  _clock(total),
-                  textAlign: TextAlign.end,
-                  style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
-                ),
-              ),
-              const SizedBox(width: DsSpace.s4),
-              ...widget.barActions,
-            ],
+            ),
           ),
-        ),
       ],
     );
   }

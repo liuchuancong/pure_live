@@ -987,6 +987,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         // A preview of one take stops on its last frame; looping would put the
         // comment clock back to the start without the picture.
         loop: false,
+        // The bar settles away on the app's own clock while a take plays, and
+        // stays up when it does not — the same delay every player here reads
+        // from 画面与浮窗.
+        barHideAfter: Duration(
+          seconds: ref.watch(playbackSettingsProvider.select((settings) => settings.controlsAutoHideSeconds)),
+        ),
         onHandle: _onHandle,
         overlay: _audioOnly
             // 音频模式 covers the picture rather than replacing the stage: the
