@@ -258,8 +258,10 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                     children: [
                       views,
                       if (tabs != null) Expanded(child: tabs) else const Spacer(),
-                      if (inPlatformView) refreshButton,
                       layoutSwitch,
+                      // The row's last control, as the popular page keeps
+                      // its refresh at the end.
+                      if (inPlatformView) refreshButton,
                     ],
                   ),
                 );
