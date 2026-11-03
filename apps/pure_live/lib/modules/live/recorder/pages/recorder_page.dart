@@ -48,6 +48,121 @@ final class RecorderPage extends ConsumerStatefulWidget {
 
 /// The status a task is filtered by; `saved` is the model's `stopped`
 /// state (its file was kept), under the word the page uses.
+/// One compact figure: the icon on its tint, the number, and what it
+/// counts — the reference's stat strip, small enough to sit over a list.
+final class _StatTile extends StatelessWidget {
+  const _StatTile({required this.icon, required this.label, required this.value, required this.tone});
+
+  final DsIconData icon;
+  final String label;
+  final String value;
+  final DsStatus tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final (Color tint, Color ink) = switch (tone) {
+      DsStatus.info => (colors.info.tint, colors.info.text),
+      DsStatus.success => (colors.success.tint, colors.success.text),
+      DsStatus.warning => (colors.warning.tint, colors.warning.text),
+      DsStatus.danger => (colors.danger.tint, colors.danger.text),
+      _ => (colors.accentTint, colors.accentText),
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        border: Border.all(color: colors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(color: tint, borderRadius: BorderRadius.circular(theme.radii.card)),
+              child: Padding(
+                padding: const EdgeInsets.all(DsSpace.s6),
+                child: DsIcon(icon, size: 18, color: ink),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: theme.typography.title.copyWith(color: colors.text)),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The files page's figures, read off the library: how many takes exist,
+/// what they occupy, how many landed today and when the last one did.
+/// In-progress captures are not here — a task is not a file yet.
+final class _FilesStats extends ConsumerWidget {
+  const _FilesStats({required this.inset});
+
+  final double inset;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final library = ref.watch(recordingLibraryProvider).value ?? const <RecordingTake>[];
+    final live = [
+      for (final take in library)
+        if (take.task?.platform != kIptvRecordingPlatform) take,
+    ];
+    final bytes = live.fold<int>(0, (total, take) => total + take.bytes);
+    final now = DateTime.now();
+    final todayCount = live.where((take) => _sameDay(take.takenAt, now)).length;
+    final latest = live.isEmpty ? null : live.map((take) => take.takenAt).reduce((a, b) => a.isAfter(b) ? a : b);
+    final tiles = <Widget>[
+      _StatTile(
+        icon: DsIcons.video,
+        label: t.recorder.statFiles(count: live.length),
+        value: formatRecordingBytes(bytes),
+        tone: DsStatus.info,
+      ),
+      _StatTile(
+        icon: DsIcons.calendarClock,
+        label: t.recorder.statTodayFiles,
+        value: '$todayCount',
+        tone: DsStatus.success,
+      ),
+      _StatTile(
+        icon: DsIcons.clock,
+        label: t.recorder.statLatest,
+        value: latest == null ? '—' : formatRecordingMoment(latest),
+        tone: DsStatus.neutral,
+      ),
+    ];
+    return Padding(
+      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+      child: Row(
+        spacing: DsSpace.s12,
+        children: [for (final tile in tiles) Expanded(child: tile)],
+      ),
+    );
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+/// The centre's top switch: the work being managed, the work's output.
+enum _CenterTab { tasks, files }
+
 /// The task filter. It stops at 失败 on purpose: a saved recording is no
 /// longer a row in a task list but a file in the library below, where every
 /// take of a room shows rather than only the last one the store kept a row for.
@@ -75,6 +190,12 @@ enum _RecorderFilter {
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
   final TextEditingController _search = TextEditingController();
+
+  /// The centre's own page: the tasks being managed, or the files they
+  /// produced. Two businesses, two pages (the spec's rule: a task is not a
+  /// file and a file list is not a task history tab) — the centre carries
+  /// both, under the top switch.
+  _CenterTab _tab = _CenterTab.tasks;
 
   /// The toolbar's word: it narrows the task rows in place, like the
   /// download manager's list — title, streamer, room id or platform name.
@@ -267,7 +388,206 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s12),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.accentTint,
+                  borderRadius: BorderRadius.circular(theme.radii.card),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(DsSpace.s12),
+                  child: DsIcon(DsIcons.video, size: 28, color: colors.accentText),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
+                    Text(
+                      t.recorder.centerSubtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.settings, size: 16),
+                onPressed: _openSettings,
+                child: Text(t.recorder.settingsOpen),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: DsSegmentedControl<_CenterTab>(
+              value: _tab,
+              onChanged: (value) => setState(() => _tab = value),
+              segments: [
+                DsSegment(value: _CenterTab.tasks, label: Text(t.recorder.tabTasks)),
+                DsSegment(value: _CenterTab.files, label: Text(t.recorder.tabFiles)),
+              ],
+            ),
+          ),
+        ),
+        if (_tab == _CenterTab.tasks)
+          Expanded(
+            child: _tasksBody(
+              inset: inset,
+              narrow: narrow,
+              wide: wide,
+              searchField: searchField,
+              statusFilter: statusFilter,
+              attention: attention,
+              recordingCount: recording.length,
+              waitingCount: liveTasks.where((task) => task.state == RecordingTaskState.waiting).length,
+              todayDoneCount: liveTasks
+                  .where(
+                    (task) =>
+                        task.state == RecordingTaskState.stopped &&
+                        !task.postProcessing &&
+                        task.endedAt != null &&
+                        _isToday(task.endedAt!),
+                  )
+                  .length,
+              failedCount: counts[_RecorderFilter.failed] ?? 0,
+              onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
+              onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
+              polling: polling,
+              pollingBannerTasks: store.tasks.any((task) => task.needsLiveCheck),
+              rooms: rooms,
+            ),
+          )
+        else ...[
+          _FilesStats(inset: inset),
+          Expanded(
+            child: RecorderLibraryPane(
+              showHeading: false,
+              // Channels are the IPTV module's own list.
+              excludedPlatforms: const {kIptvRecordingPlatform},
+              onPlay: (around, take) => unawaited(_playLibraryTake(around, take)),
+              onOpenRoom: (take) => unawaited(_openRoomOf(take)),
+              platformName: _platformName,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Whether [time] falls on this local calendar day.
+  bool _isToday(DateTime time) {
+    final now = DateTime.now();
+    return time.year == now.year && time.month == now.month && time.day == now.day;
+  }
+
+  /// The tasks page's own body: the four figures, the toolbar, the banner
+  /// and the task rows — the operation centre, not a file list.
+  Widget _tasksBody({
+    required double inset,
+    required bool narrow,
+    required bool wide,
+    required Widget searchField,
+    required Widget statusFilter,
+    required List<RecordingTask> attention,
+    required VoidCallback? onStopAll,
+    required VoidCallback? onClearFinished,
+    required int recordingCount,
+    required int waitingCount,
+    required int todayDoneCount,
+    required int failedCount,
+    required bool polling,
+    required bool pollingBannerTasks,
+    required Map<String, LiveRoom> rooms,
+  }) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+          child: narrow
+              ? Wrap(
+                  spacing: DsSpace.s8,
+                  runSpacing: DsSpace.s8,
+                  children: [
+                    _StatTile(
+                      icon: DsIcons.circleDot,
+                      label: t.recorder.statRecording,
+                      value: '$recordingCount',
+                      tone: DsStatus.info,
+                    ),
+                    _StatTile(
+                      icon: DsIcons.clock,
+                      label: t.recorder.statWaiting,
+                      value: '$waitingCount',
+                      tone: DsStatus.warning,
+                    ),
+                    _StatTile(
+                      icon: DsIcons.circleCheck,
+                      label: t.recorder.statTodayDone,
+                      value: '$todayDoneCount',
+                      tone: DsStatus.success,
+                    ),
+                    _StatTile(
+                      icon: DsIcons.triangleAlert,
+                      label: t.recorder.statFailed,
+                      value: '$failedCount',
+                      tone: DsStatus.danger,
+                    ),
+                  ],
+                )
+              : Row(
+                  spacing: DsSpace.s12,
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        icon: DsIcons.circleDot,
+                        label: t.recorder.statRecording,
+                        value: '$recordingCount',
+                        tone: DsStatus.info,
+                      ),
+                    ),
+                    Expanded(
+                      child: _StatTile(
+                        icon: DsIcons.clock,
+                        label: t.recorder.statWaiting,
+                        value: '$waitingCount',
+                        tone: DsStatus.warning,
+                      ),
+                    ),
+                    Expanded(
+                      child: _StatTile(
+                        icon: DsIcons.circleCheck,
+                        label: t.recorder.statTodayDone,
+                        value: '$todayDoneCount',
+                        tone: DsStatus.success,
+                      ),
+                    ),
+                    Expanded(
+                      child: _StatTile(
+                        icon: DsIcons.triangleAlert,
+                        label: t.recorder.statFailed,
+                        value: '$failedCount',
+                        tone: DsStatus.danger,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
           // The file manager's toolbar: the list's word, the states with
           // their counts, and the whole-list actions — one row on a wide
           // window, the search on its own line on a narrow one.
@@ -281,10 +601,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                       spacing: DsSpace.s8,
                       children: [
                         Expanded(child: statusFilter),
-                        _BatchMenu(
-                          onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
-                          onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
-                        ),
+                        _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
                         DsButton.icon(
                           variant: DsButtonVariant.secondary,
                           size: DsSize.sm,
@@ -301,10 +618,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   children: [
                     Expanded(child: searchField),
                     statusFilter,
-                    _BatchMenu(
-                      onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
-                      onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
-                    ),
+                    _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
                     DsButton.icon(
                       variant: DsButtonVariant.secondary,
                       size: DsSize.sm,
@@ -319,7 +633,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         // banner covers the scheduled rows too: a stopped task whose window
         // is meant to re-arm it is just as stranded as a room waiting to go
         // live.
-        if (!polling && store.tasks.any((task) => task.needsLiveCheck))
+        if (!polling && pollingBannerTasks)
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsAlert(
@@ -342,49 +656,32 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ),
             ),
           ),
-        // A bounded strip, not a second full list: what is running or
-        // waiting is a handful of rows, and the library below needs the
-        // room to be browsed in. A wide window reads it as the file
-        // manager's table — the take, its size and its start, the phase's
-        // own action beside a menu; a narrow one keeps the cards.
-        if (attention.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 420),
-              child: wide
-                  ? DsTable<RecordingTask>(
-                      semanticLabel: t.recorder.runningTitle,
-                      style: const DsTableStyle(rowHeight: 56),
-                      columns: _taskColumns(context, rooms),
-                      rows: attention,
-                      rowKey: (task) => task.id,
-                      emptyView: const SizedBox.shrink(),
-                    )
-                  : SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        spacing: DsSpace.s8,
-                        children: [
-                          Text(
-                            t.recorder.runningTitle,
-                            style: theme.typography.labelStrong.copyWith(color: colors.textMuted),
-                          ),
-                          for (final task in attention) ..._taskCards(context, task, rooms),
-                        ],
-                      ),
-                    ),
-            ),
-          ),
+        // The rows this page still owns, as the file manager's table on a
+        // wide window and the cards on a narrow one. This is the whole
+        // tasks page now — the library below became its own page.
         Expanded(
-          child: RecorderLibraryPane(
-            showHeading: false,
-            // Channels are the IPTV module's own list.
-            excludedPlatforms: const {kIptvRecordingPlatform},
-            onPlay: (around, take) => unawaited(_playLibraryTake(around, take)),
-            onOpenRoom: (take) => unawaited(_openRoomOf(take)),
-            platformName: _platformName,
-          ),
+          child: attention.isEmpty
+              ? DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.recorder.emptyTitle))
+              : Padding(
+                  padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+                  child: wide
+                      ? DsTable<RecordingTask>(
+                          semanticLabel: t.recorder.runningTitle,
+                          style: const DsTableStyle(rowHeight: 56),
+                          columns: _taskColumns(context, rooms),
+                          rows: attention,
+                          rowKey: (task) => task.id,
+                          emptyView: const SizedBox.shrink(),
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: DsSpace.s8,
+                            children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                          ),
+                        ),
+                ),
         ),
       ],
     );

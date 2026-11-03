@@ -1903,6 +1903,16 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get clearFinished => 'Clear finished';
 	@override String get removeTask => 'Remove this task';
 	@override String get emptyTitle => 'No recording tasks yet';
+	@override String get centerSubtitle => 'Manage recording tasks and files, with preview and playback';
+	@override String get tabTasks => 'Tasks';
+	@override String get tabFiles => 'Files';
+	@override String get statRecording => 'Recording';
+	@override String get statWaiting => 'Waiting';
+	@override String get statTodayDone => 'Done today';
+	@override String get statFailed => 'Failed';
+	@override String get statTodayFiles => 'Today';
+	@override String get statLatest => 'Latest';
+	@override String statFiles({required Object count}) => '${count} files';
 	@override String get emptyFinishedTitle => 'Finished recordings will show up here';
 	@override String get emptyDescription => 'Record from a live room; its task appears here.';
 	@override String get qualityBest => 'Best quality';
@@ -6393,6 +6403,16 @@ extension on TranslationsEn {
 			'recorder.clearFinished' => 'Clear finished',
 			'recorder.removeTask' => 'Remove this task',
 			'recorder.emptyTitle' => 'No recording tasks yet',
+			'recorder.centerSubtitle' => 'Manage recording tasks and files, with preview and playback',
+			'recorder.tabTasks' => 'Tasks',
+			'recorder.tabFiles' => 'Files',
+			'recorder.statRecording' => 'Recording',
+			'recorder.statWaiting' => 'Waiting',
+			'recorder.statTodayDone' => 'Done today',
+			'recorder.statFailed' => 'Failed',
+			'recorder.statTodayFiles' => 'Today',
+			'recorder.statLatest' => 'Latest',
+			'recorder.statFiles' => ({required Object count}) => '${count} files',
 			'recorder.emptyFinishedTitle' => 'Finished recordings will show up here',
 			'recorder.emptyDescription' => 'Record from a live room; its task appears here.',
 			'recorder.qualityBest' => 'Best quality',
@@ -6581,6 +6601,8 @@ extension on TranslationsEn {
 			'recorder.previewTitle' => 'Recording preview',
 			'recorder.previewUnavailable' => 'This task holds no file a player can open',
 			'recorder.recordChatGiftsTitle' => 'Record gift messages',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.recordChatGiftsDesc' => 'Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.',
 			'recorder.recordChatTitle' => 'Record chat',
 			'recorder.recordChatDescription' => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku save formats; needs a platform with remote chat',
@@ -6591,8 +6613,6 @@ extension on TranslationsEn {
 			'recorder.enablePolling' => 'Enable live detection',
 			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.pollingEnable' => 'Turn on',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
@@ -7095,6 +7115,8 @@ extension on TranslationsEn {
 			'settings.proxyPassword' => 'Password',
 			'settings.proxyPasswordDesc' => 'Kept in the system keychain — never in the preferences, never in a backup export. App requests, the player and recordings all present it; SOCKS and PAC cannot be expressed.',
 			'settings.proxyPasswordSaved' => 'Saved',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyPasswordNone' => 'Not set',
 			'settings.proxyPasswordReplace' => 'Type a new password to replace it',
 			'settings.proxyPasswordClear' => 'Clear the saved password',
@@ -7105,8 +7127,6 @@ extension on TranslationsEn {
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
@@ -7609,6 +7629,8 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'Which system channel carries the sound. Windows: wasapi; Android: audiotrack/aaudio/opensles; null mutes.',
 			'settings.playerGuideEntryPresetDefaultTitle' => 'Balanced (recommended)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultBody' => 'Clears custom output and decoder picks and leaves the choice to mpv. The first choice on most devices.',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android hardware-decode compat',
 			'settings.playerGuideEntryPresetAndroidCompatBody' => 'mediacodec_embed surface + forced mediacodec decode, for glitch/green-screen/AV-desync devices. Android only.',
@@ -7619,8 +7641,6 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => 'Weak-network stable',
 			'settings.playerGuideEntryPresetWeakNetworkBody' => 'Bigger buffers and reconnect backoff. Trades memory for fewer stalls.',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => 'Low latency',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => 'How audio and video clocks align. audio is the mpv default; display-resample is smoothest but GPU heavy and pairs with interpolation; vdrop/drop variants drop frames on drift. Desktop only.',
@@ -8123,6 +8143,8 @@ extension on TranslationsEn {
 			'settings.clipboardRoomOpen' => 'Open room',
 			'settings.backgroundAudioOnly' => 'Audio only in background',
 			'settings.backgroundAudioOnlyDesc' => 'Stop video decoding while in the background and keep the sound; the picture returns when the app comes back.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.pauseOnPipClose' => 'Pause when picture-in-picture closes',
 			'settings.pauseOnPipCloseDesc' => 'Closing the mini window pauses; returning resumes.',
 			'settings.chatShowGifts' => 'Show gifts',
@@ -8133,8 +8155,6 @@ extension on TranslationsEn {
 			'settings.chatGiftValueInYuanDesc' => 'Converted at the platform rate; foreign currencies stay.',
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGifts' => 'Show gifts',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
@@ -8637,6 +8657,8 @@ extension on TranslationsEn {
 			'vod.clearHistoryTitle' => 'Clear the watch history?',
 			'vod.clearHistoryDesc' => 'Only this device\'s records are deleted; progress on Bilibili stays.',
 			'vod.favouritesEmptyTitle' => 'No favourites yet',
+			_ => null,
+		} ?? switch (path) {
 			'vod.favouritesEmptyDescription' => 'Tap the heart on a video and it appears here.',
 			'vod.favouriteRemove' => 'Remove from favourites',
 			'vod.saveVideo' => 'Favourite',
@@ -8647,8 +8669,6 @@ extension on TranslationsEn {
 			'vod.downloading' => ({required int percent}) => 'Downloading ${percent}%',
 			'vod.downloadingUnknown' => 'Downloading…',
 			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadFailed' => 'Download failed',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',

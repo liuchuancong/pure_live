@@ -5335,6 +5335,36 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '还没有录制任务'
 	String get emptyTitle => '还没有录制任务';
 
+	/// zh-CN: '管理直播间录制任务与录制文件，支持预览与播放'
+	String get centerSubtitle => '管理直播间录制任务与录制文件，支持预览与播放';
+
+	/// zh-CN: '录制任务'
+	String get tabTasks => '录制任务';
+
+	/// zh-CN: '录制文件'
+	String get tabFiles => '录制文件';
+
+	/// zh-CN: '正在录制'
+	String get statRecording => '正在录制';
+
+	/// zh-CN: '等待中'
+	String get statWaiting => '等待中';
+
+	/// zh-CN: '今日完成'
+	String get statTodayDone => '今日完成';
+
+	/// zh-CN: '异常任务'
+	String get statFailed => '异常任务';
+
+	/// zh-CN: '今日录制'
+	String get statTodayFiles => '今日录制';
+
+	/// zh-CN: '最近录制'
+	String get statLatest => '最近录制';
+
+	/// zh-CN: '{count} 个文件'
+	String statFiles({required Object count}) => '${count} 个文件';
+
 	/// zh-CN: '已完成的录制会出现在这里'
 	String get emptyFinishedTitle => '已完成的录制会出现在这里';
 
@@ -14892,6 +14922,16 @@ extension on Translations {
 			'recorder.clearFinished' => '清空已完成',
 			'recorder.removeTask' => '删除这条任务',
 			'recorder.emptyTitle' => '还没有录制任务',
+			'recorder.centerSubtitle' => '管理直播间录制任务与录制文件，支持预览与播放',
+			'recorder.tabTasks' => '录制任务',
+			'recorder.tabFiles' => '录制文件',
+			'recorder.statRecording' => '正在录制',
+			'recorder.statWaiting' => '等待中',
+			'recorder.statTodayDone' => '今日完成',
+			'recorder.statFailed' => '异常任务',
+			'recorder.statTodayFiles' => '今日录制',
+			'recorder.statLatest' => '最近录制',
+			'recorder.statFiles' => ({required Object count}) => '${count} 个文件',
 			'recorder.emptyFinishedTitle' => '已完成的录制会出现在这里',
 			'recorder.emptyDescription' => '在直播间点击录制，任务会出现在这里。',
 			'recorder.qualityBest' => '最佳画质',
@@ -15080,6 +15120,8 @@ extension on Translations {
 			'recorder.previewTitle' => '录像预览',
 			'recorder.previewUnavailable' => '这个任务还没有可播放的文件',
 			'recorder.recordChatGiftsTitle' => '录下礼物消息',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.recordChatGiftsDesc' => '把礼物消息按平台给出的文字写进同一条弹幕文件；默认只记聊天。',
 			'recorder.recordChatTitle' => '同时录制弹幕',
 			'recorder.recordChatDescription' => '在录像旁存同名弹幕文件，格式见「弹幕 → 弹幕保存格式」；平台需已接入弹幕',
@@ -15090,8 +15132,6 @@ extension on Translations {
 			'recorder.enablePolling' => '启用开播检测',
 			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.pollingEnable' => '打开',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
 			'recorder.cacheLimitEnabled' => '限制录制缓存',
@@ -15594,6 +15634,8 @@ extension on Translations {
 			'settings.proxyPassword' => '密码',
 			'settings.proxyPasswordDesc' => '保存在系统钥匙串里，不写进偏好设置，也不会被备份导出。应用内请求、播放器与录制都会带上它；SOCKS 与 PAC 无法表达。',
 			'settings.proxyPasswordSaved' => '已保存',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyPasswordNone' => '未设置',
 			'settings.proxyPasswordReplace' => '输入新密码以替换',
 			'settings.proxyPasswordClear' => '清除已保存的密码',
@@ -15604,8 +15646,6 @@ extension on Translations {
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemProbing' => '正在检测系统代理…',
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
@@ -16108,6 +16148,8 @@ extension on Translations {
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'mpv 把声音送到哪个系统通道。Windows 用 wasapi，Android 用 audiotrack/aaudio/opensles；null 表示静音。',
 			'settings.playerGuideEntryPresetDefaultTitle' => '均衡（推荐起点）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultBody' => '清除自定义输出与解码器选择，交给 mpv 自动决定。大多数设备和网络的首选。',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android 硬解兼容',
 			'settings.playerGuideEntryPresetAndroidCompatBody' => '改用 mediacodec_embed 直通表面并强制 mediacodec 硬解，花屏、绿屏或音画不同步时使用。仅 Android 显示。',
@@ -16118,8 +16160,6 @@ extension on Translations {
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => '弱网稳定',
 			'settings.playerGuideEntryPresetWeakNetworkBody' => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => '低延迟',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetLowLatencyBody' => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。',
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。',
@@ -16622,6 +16662,8 @@ extension on Translations {
 			'settings.clipboardRoomOpen' => '打开直播间',
 			'settings.backgroundAudioOnly' => '后台仅音频',
 			'settings.backgroundAudioOnlyDesc' => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.pauseOnPipClose' => '关闭画中画时暂停',
 			'settings.pauseOnPipCloseDesc' => '关小窗即暂停，回应用继续。',
 			'settings.chatShowGifts' => '显示礼物',
@@ -16632,8 +16674,6 @@ extension on Translations {
 			'settings.chatGiftValueInYuanDesc' => '按平台比例折算，外币不换算。',
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGifts' => '显示礼物',
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
@@ -17136,6 +17176,8 @@ extension on Translations {
 			'vod.clearHistoryTitle' => '清空观看历史？',
 			'vod.clearHistoryDesc' => '只删除本机的观看记录，不影响 Bilibili 上的进度。',
 			'vod.favouritesEmptyTitle' => '还没有收藏的视频',
+			_ => null,
+		} ?? switch (path) {
 			'vod.favouritesEmptyDescription' => '在视频页点收藏，视频会出现在这里。',
 			'vod.favouriteRemove' => '取消收藏',
 			'vod.saveVideo' => '收藏',
@@ -17146,8 +17188,6 @@ extension on Translations {
 			'vod.downloading' => ({required int percent}) => '下载中 ${percent}%',
 			'vod.downloadingUnknown' => '下载中…',
 			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadFailed' => '下载失败',
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadCancel' => '取消下载',
