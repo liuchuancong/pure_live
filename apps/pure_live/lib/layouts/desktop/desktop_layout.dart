@@ -18,7 +18,12 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview.dart' show multiviewSearchHandoffProvider;
 import 'package:pure_live/modules/live/popular/popular.dart';
-import 'package:pure_live/modules/live/recorder/recorder.dart' show recorderSearchHandoffProvider;
+import 'package:pure_live/modules/live/recorder/recorder.dart'
+    show
+        RecorderCenterTab,
+        recorderCenterTabProvider,
+        recorderLibrarySearchHandoffProvider,
+        recorderSearchHandoffProvider;
 import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
 import 'package:pure_live/modules/music/controller/music_search.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
@@ -276,10 +281,16 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
             hint: t.common.searchHint,
             take: (word) => ref.read(historySearchHandoffProvider.notifier).hand(word),
           ),
-          NavigationItem.record => (
-            hint: t.recorder.searchHint,
-            take: (word) => ref.read(recorderSearchHandoffProvider.notifier).hand(word),
-          ),
+          NavigationItem.record => switch (ref.watch(recorderCenterTabProvider)) {
+            RecorderCenterTab.tasks => (
+              hint: t.recorder.searchHint,
+              take: (word) => ref.read(recorderSearchHandoffProvider.notifier).hand(word),
+            ),
+            RecorderCenterTab.files => (
+              hint: t.recorder.librarySearchHint,
+              take: (word) => ref.read(recorderLibrarySearchHandoffProvider.notifier).hand(word),
+            ),
+          },
           NavigationItem.multiview => (
             hint: t.multiview.searchHint,
             take: (word) => ref.read(multiviewSearchHandoffProvider.notifier).hand(word),

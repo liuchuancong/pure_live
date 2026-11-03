@@ -48,9 +48,6 @@ final class RecorderPage extends ConsumerStatefulWidget {
 
 /// The status a task is filtered by; `saved` is the model's `stopped`
 /// state (its file was kept), under the word the page uses.
-/// The centre's top switch: the work being managed, the work's output.
-enum _CenterTab { tasks, files }
-
 /// The task filter. It stops at 失败 on purpose: a saved recording is no
 /// longer a row in a task list but a file in the library below, where every
 /// take of a room shows rather than only the last one the store kept a row for.
@@ -77,12 +74,6 @@ enum _RecorderFilter {
 }
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
-  /// The centre's own page: the tasks being managed, or the files they
-  /// produced. Two businesses, two pages (the spec's rule: a task is not a
-  /// file and a file list is not a task history tab) — the centre carries
-  /// both, under the top switch.
-  _CenterTab _tab = _CenterTab.tasks;
-
   _RecorderFilter _filter = _RecorderFilter.all;
 
   @override
@@ -291,17 +282,17 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: DsSegmentedControl<_CenterTab>(
-              value: _tab,
-              onChanged: (value) => setState(() => _tab = value),
+            child: DsSegmentedControl<RecorderCenterTab>(
+              value: ref.watch(recorderCenterTabProvider),
+              onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
               segments: [
-                DsSegment(value: _CenterTab.tasks, label: Text(t.recorder.tabTasks)),
-                DsSegment(value: _CenterTab.files, label: Text(t.recorder.tabFiles)),
+                DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
+                DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             ),
           ),
         ),
-        if (_tab == _CenterTab.tasks)
+        if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
           Expanded(
             child: _tasksBody(
               inset: inset,

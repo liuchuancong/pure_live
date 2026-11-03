@@ -10,6 +10,8 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/media_preview/media_preview_page.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/recorder/data/recorder_search_handoff.dart'
+    show recorderLibrarySearchHandoffProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
     show formatRecordingBytes, formatRecordingDuration, formatRecordingMoment;
@@ -116,6 +118,23 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       for (final take in takes)
         if ((only.isEmpty || only.contains(take.platformId)) && !out.contains(take.platformId)) take,
     ];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // The toolbar's word becomes the list's query, after the first frame:
+    // a state write in initState is a modification during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final word = ref.read(recorderLibrarySearchHandoffProvider.notifier).take();
+      if (word != null && word.isNotEmpty && mounted) setState(() => _query = word);
+    });
+    ref.listenManual(recorderLibrarySearchHandoffProvider, (_, _) {
+      if (!mounted) return;
+      final word = ref.read(recorderLibrarySearchHandoffProvider.notifier).take();
+      if (word != null && word.isNotEmpty && mounted) setState(() => _query = word);
+    });
   }
 
   @override
