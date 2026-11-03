@@ -345,10 +345,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // The tasks page reads as a worklist, not a band across the window: one
     // 860-wide measure holds the toolbar and the rows together, lined up with
     // the page's left edge so the filters start under the tasks/files switch.
+    // An empty page lets the measure take the whole width instead: the empty
+    // state's Center then lands on the page's centre, not the measure's.
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 860),
+        constraints: BoxConstraints(maxWidth: attention.isEmpty ? double.infinity : 860),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
