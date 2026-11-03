@@ -4,6 +4,15 @@ import 'package:pure_live/modules/music/controller/music_comments.dart' show Mus
 import 'package:pure_live/modules/music/controller/sources/comment_emojis.dart' show kWyCommentEmojis;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show parseYrc;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
+    show
+        MusicAlbum,
+        MusicAlbumDetail,
+        MusicAlbumSource,
+        MusicArtistDetail,
+        MusicArtistSource,
+        musicArtistPageFromSearch,
+        musicMainArtist;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
@@ -36,10 +45,11 @@ const String _neteaseUserAgent =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36';
 
 /// The Netease platform: search, boards and lyrics ride the eapi/weapi
-/// encrypted channels; play URLs come from the lx scripts.
+/// encrypted channels; play URLs come from the lx scripts. The album and
+/// artist pages ride the same two channels.
 final class WyMusicSource extends LxPlatformSource
-    with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
-    implements MusicHotWords, MusicCommentsSource {
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource, MusicArtistSource {
   /// A Netease source over the lx runtime.
   WyMusicSource(super.runtime, super.http);
 
@@ -295,6 +305,122 @@ final class WyMusicSource extends LxPlatformSource
   static String _fixTimeLabel(String lyric) =>
       lyric.replaceAllMapped(RegExp(r'\[(\d{2}:\d{2}):(\d{2})]'), (match) => '[${match[1]}.${match[2]}]');
 
+  /// The album's page — the classic `weapi/v1/album/<id>` read, which answers
+  /// the card and its songs in one body. The rows are the search's own shape
+  /// (`ar`/`al`/`dt` with a `privilege` of their own), so the shared mapper
+  /// takes them as they stand.
+  @override
+  Future<MusicAlbumDetail> album(String albumId) async {
+    final id = albumId.trim();
+    if (id.isEmpty) return (album: const MusicAlbum(id: '', name: '', artist: ''), tracks: const <audio.MusicTrack>[]);
+    final json = await _weapi('/weapi/v1/album/$id', {});
+    final raw = json['songs'];
+    final tracks = <audio.MusicTrack>[
+      if (raw is List)
+        for (final entry in raw) ?_trackOf(entry),
+    ];
+    final card = json['album'];
+    if (card is! Map) return (album: MusicAlbum(id: id, name: '', artist: ''), tracks: tracks);
+    return (album: _albumOf(card.cast<String, Object?>()), tracks: tracks);
+  }
+
+  /// The artist's page — the reference's wy `singer.js`, three signed reads:
+  /// the head info for the name and portrait, the hot songs, the albums.
+  ///
+  /// The song rows are the artist shape, which names the same facts
+  /// differently from the search rows (`artists`/`album`/`duration` where
+  /// search says `ar`/`al`/`dt`), so they are put where the shared mapper
+  /// reads them before it runs.
+  ///
+  /// Every one of these endpoints asks for the numeric artist id, and the
+  /// pages only ever have a name to start from; when the search cannot hand
+  /// one over the page falls back to what the search alone can say.
+  @override
+  Future<MusicArtistDetail> artist(String name, {String? artistId}) async {
+    final subject = musicMainArtist(name);
+    final given = (artistId ?? '').trim();
+    final id = given.isEmpty ? await _artistIdOf(subject) : given;
+    if (id == null || id.isEmpty) {
+      return await musicArtistPageFromSearch(search, name, artistId: artistId);
+    }
+    final info = await _eapi('/api/artist/head/info/get', {'id': id});
+    final songPage = await _eapi('/api/v2/artist/songs', {
+      'id': id,
+      'ordering': 'hot',
+      'offset': 0,
+      'limit': 100,
+      'total': true,
+    });
+    final albumPage = await _eapi('/api/artist/albums/$id', {'offset': 0, 'limit': 50, 'total': true});
+    final profile = info['data'];
+    final artist = profile is Map ? profile['artist'] : null;
+    final picture = artist is Map ? '${artist['avatar'] ?? ''}'.trim() : '';
+    final songRows = songPage['songs'];
+    final albumRows = albumPage['hotAlbums'];
+    return (
+      name: artist is Map && '${artist['name'] ?? ''}'.trim().isNotEmpty ? '${artist['name']}'.trim() : subject,
+      artistId: id,
+      avatarUri: picture.isEmpty ? null : Uri.tryParse(picture),
+      songs: [
+        if (songRows is List)
+          for (final entry in songRows)
+            if (entry is Map) ?_trackOf(_artistSongOf(entry.cast<String, Object?>())),
+      ],
+      albums: [
+        if (albumRows is List)
+          for (final entry in albumRows)
+            if (entry is Map) _albumOf(entry.cast<String, Object?>()),
+      ],
+    );
+  }
+
+  /// The id of the artist a search row credits first — the only way from a
+  /// name to the endpoints, which take nothing else.
+  Future<String?> _artistIdOf(String subject) async {
+    final page = await search(subject, pageSize: 20);
+    for (final track in page.items) {
+      if (musicMainArtist(track.artist) != subject) continue;
+      final id = '${track.metadata['artistId'] ?? ''}'.trim();
+      if (id.isNotEmpty) return id;
+    }
+    return null;
+  }
+
+  /// An artist song row dressed as a search row: the two channels carry the
+  /// same facts under three different names.
+  static Map<String, Object?> _artistSongOf(Map<String, Object?> row) => {
+    ...row,
+    'ar': row['artists'],
+    'al': row['album'],
+    'dt': row['duration'],
+  };
+
+  /// One album as either endpoint describes it: the card's own artist line
+  /// wins over the credit list, `size` is the platform's song count and the
+  /// release stamp is epoch milliseconds.
+  MusicAlbum _albumOf(Map<String, Object?> card) {
+    final id = '${card['id'] ?? ''}';
+    final artist = card['artist'];
+    final artists = card['artists'];
+    final name = artist is Map ? '${artist['name'] ?? ''}'.trim() : '';
+    final artistId = artist is Map ? '${artist['id'] ?? ''}'.trim() : '';
+    final picture = '${card['picUrl'] ?? ''}'.trim();
+    final published = (card['publishTime'] as num?)?.toInt() ?? 0;
+    return MusicAlbum(
+      id: id,
+      name: '${card['name'] ?? ''}'.trim(),
+      artist: name.isNotEmpty
+          ? name
+          : artists is List
+          ? _singersOf(artists)
+          : '',
+      artistId: artistId.isEmpty || artistId == '0' ? null : artistId,
+      coverUri: picture.isEmpty ? null : Uri.tryParse(picture),
+      trackCount: (card['size'] as num?)?.toInt() ?? 0,
+      year: published > 0 ? DateTime.fromMillisecondsSinceEpoch(published).year : null,
+    );
+  }
+
   static audio.MusicTrack? _trackOf(Object? entry, {Map<String, Object?>? privilege}) {
     if (entry is! Map) return null;
     final row = entry.cast<String, Object?>();
@@ -331,7 +457,12 @@ final class WyMusicSource extends LxPlatformSource
       duration: durationMs is num ? Duration(milliseconds: durationMs.toInt()) : null,
       coverUri: picUrl.isEmpty ? null : Uri.tryParse(picUrl),
       qualities: [for (final quality in qualityIds) LxPlatformSource.qualityOf(quality)],
-      metadata: {'types': qualityIds, 'albumId': albumId, if (picUrl.isNotEmpty) 'pic': picUrl},
+      metadata: {
+        'types': qualityIds,
+        'albumId': albumId,
+        if (picUrl.isNotEmpty) 'pic': picUrl,
+        'artistId': ?_leadSingerId(song['ar']),
+      },
     );
   }
 
@@ -341,6 +472,18 @@ final class WyMusicSource extends LxPlatformSource
       for (final singer in singers)
         if (singer is Map && singer['name'] is String) singer['name'] as String,
     ].join('、');
+  }
+
+  /// The id of the singer a credit line leads with, which is what the artist
+  /// endpoints ask for.
+  static String? _leadSingerId(Object? singers) {
+    if (singers is! List) return null;
+    for (final singer in singers) {
+      if (singer is! Map) continue;
+      final id = '${singer['id'] ?? ''}'.trim();
+      if (id.isNotEmpty && id != '0') return id;
+    }
+    return null;
   }
 
   /// The hot-search chart lx-music's wy `hotSearch.js` rides; the request is
