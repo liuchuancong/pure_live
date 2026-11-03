@@ -503,7 +503,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.iptvBrowse, t.iptv.browseProgrammeLine, 'programme epg line 节目 当前 提示'),
     _hit(SettingsSection.iptvGroups, t.settings.navIptvGroups, 'group hide show category 分组 隐藏 显示 频道'),
     // VOD.
-    _hit(SettingsSection.vod, s.vodQuality, 'bilibili quality 视频 清晰度'),
+    _hit(SettingsSection.vodPlayback, s.vodQuality, 'bilibili quality 视频 清晰度'),
     _hit(SettingsSection.vodPlayback, t.vod.openingSpeed, 'speed rate opening 倍速 播放 速度'),
     _hit(SettingsSection.vodPlayback, t.vod.finishAction, 'finish end next part exit related 播完 结束 下一集 退出 推荐'),
     _hit(
