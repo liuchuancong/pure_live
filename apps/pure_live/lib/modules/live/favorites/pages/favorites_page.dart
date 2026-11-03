@@ -357,6 +357,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       );
     }
 
+    final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -366,10 +367,12 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              // The categories and their reload share the first line: the
-              // tabs scroll, the refresh keeps its width at the end.
+              // One toolbar line level with the categories: the group
+              // tabs, then the platform row's controls — the wall chevron
+              // and the grid switch (a small screen folds those two into
+              // its 更多) — and the refresh at the end.
               Row(
-                spacing: DsSpace.s12,
+                spacing: DsSpace.s8,
                 children: [
                   Expanded(
                     child: DsTabs<LiveFollowGroup?>(
@@ -396,54 +399,50 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       ],
                     ),
                   ),
+                  if (!narrow)
+                    PlatformWallButton(
+                      platforms: [kAllPlatforms, ...platformTabs],
+                      current: platform,
+                      nameOf: _platformName,
+                      iconOf: (id) => id == kAllPlatforms
+                          ? null
+                          : localizedSiteIcon(ref.watch(sitesProvider).getById(id), size: 32),
+                      onChanged: _selectPlatform,
+                      onManagePlatforms: () => unawaited(
+                        context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                      ),
+                      countOf: (id) =>
+                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                    ),
+                  if (!narrow) const LayoutToggle(),
+                  if (narrow)
+                    PlatformToolbarMore(
+                      platforms: [kAllPlatforms, ...platformTabs],
+                      current: platform,
+                      nameOf: _platformName,
+                      countOf: (id) =>
+                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                      onChanged: _selectPlatform,
+                      onManagePlatforms: () => unawaited(
+                        context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                      ),
+                    ),
                   _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
-              // The platform tabs, the wall behind the chevron and the grid
-              // switch: the next line, exactly as 热门 and 分区 lay them out.
-              // Each name carries how many follows it holds in the shown
-              // group, and the wall repeats that count under the logo. A
-              // small screen keeps the tabs alone and moves the wall and the
-              // layout behind one more icon.
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
-                  final tabs = PlatformTabRow(
-                    platforms: [kAllPlatforms, ...platformTabs],
-                    current: platform,
-                    nameOf: _platformName,
-                    semanticLabel: t.navigation.favorites,
-                    countOf: (id) =>
-                        followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
-                    showPlatformWall: !narrow,
-                    showLayoutToggle: !narrow,
-                    onManagePlatforms: () => unawaited(
-                      context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-                    ),
-                    onChanged: _selectPlatform,
-                  );
-                  if (!narrow) return tabs;
-                  return SizedBox(
-                    height: 44,
-                    child: Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        Expanded(child: tabs),
-                        PlatformToolbarMore(
-                          platforms: [kAllPlatforms, ...platformTabs],
-                          current: platform,
-                          nameOf: _platformName,
-                          countOf: (id) =>
-                              followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
-                          onChanged: _selectPlatform,
-                          onManagePlatforms: () => unawaited(
-                            context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              // The platform tabs, the row under them: names and counts
+              // alone, the controls living on the line above.
+              PlatformTabRow(
+                platforms: [kAllPlatforms, ...platformTabs],
+                current: platform,
+                nameOf: _platformName,
+                semanticLabel: t.navigation.favorites,
+                countOf: (id) => followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                showPlatformWall: false,
+                showLayoutToggle: false,
+                onManagePlatforms: () =>
+                    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
+                onChanged: _selectPlatform,
               ),
               if (tags.isNotEmpty)
                 DsChoiceChips<String?>(
