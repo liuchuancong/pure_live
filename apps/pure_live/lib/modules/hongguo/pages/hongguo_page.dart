@@ -741,6 +741,12 @@ final class _RankViewState extends ConsumerState<_RankView> {
     final held = feed ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
     final topics = controller.topicsOf(_board);
     final rows = controller.rowsOf(_board, _topic);
+    // Where this device left each title, so a hundred-place board reads as
+    // 「which of these have I not opened」. One pass over the shelf's history
+    // rather than a linear lookup per row.
+    final watchedById = {
+      for (final entry in ref.watch(hongguoLibraryProvider.select((library) => library.history))) entry.seriesId: entry,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -839,7 +845,12 @@ final class _RankViewState extends ConsumerState<_RankView> {
                   separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
                   itemBuilder: (context, index) {
                     final series = rows[index];
-                    return HongguoRankRow(series: series, position: index + 1, onOpen: () => _open(context, series));
+                    return HongguoRankRow(
+                      series: series,
+                      position: index + 1,
+                      watched: watchedById[series.seriesId],
+                      onOpen: () => _open(context, series),
+                    );
                   },
                 ),
         ),

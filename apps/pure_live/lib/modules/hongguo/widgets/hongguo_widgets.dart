@@ -443,17 +443,23 @@ final class HongguoSeriesRow extends StatelessWidget {
 /// One board as the station's app lists it: the place, the poster, the name
 /// with its heat, the tags, the blurb and the listing's badges — a
 /// full-width row rather than a poster, so the board's readings stay beside
-/// each title.
+/// each title. The viewer's own progress joins those badges when the library
+/// has one, so a hundred-title board can be scanned for what is still unseen.
 final class HongguoRankRow extends StatelessWidget {
   /// The row for [series] at [position], used when the listing carries no
-  /// place of its own.
-  const HongguoRankRow({required this.series, this.position = 1, this.onOpen, super.key});
+  /// place of its own. [watched] is the local shelf's row for the same
+  /// series, when there is one.
+  const HongguoRankRow({required this.series, this.position = 1, this.watched, this.onOpen, super.key});
 
   /// The series shown.
   final HongguoSeries series;
 
   /// The fallback place.
   final int position;
+
+  /// Where this device left the series: the mark says 已看完 or the episode it
+  /// stopped at. Null when nothing of it has been watched.
+  final HongguoWatchProgress? watched;
 
   /// Opens the series; null leaves the row inert.
   final VoidCallback? onOpen;
@@ -564,11 +570,23 @@ final class HongguoRankRow extends StatelessWidget {
                       if (series.likeText.isNotEmpty) _RankFigure(icon: DsIcons.thumbsUp, label: series.likeText),
                     ],
                   ),
-                if (statusTags.isNotEmpty || series.score.isNotEmpty || series.today)
+                if (statusTags.isNotEmpty || series.score.isNotEmpty || series.today || watched != null)
                   Wrap(
                     spacing: DsSpace.s4,
                     runSpacing: DsSpace.s4,
                     children: [
+                      // The viewer's own state leads the marks: what the board
+                      // says about a title matters less here than whether this
+                      // device has already opened it.
+                      if (watched case final seen?)
+                        DsBadge(
+                          label: Text(
+                            seen.completed
+                                ? t.hongguo.watchedBadge
+                                : t.hongguo.favoriteWatchedTo(index: seen.episodeIndex),
+                          ),
+                          icon: const DsIcon(DsIcons.check),
+                        ),
                       for (final tag in statusTags) DsBadge(label: Text(tag), status: DsStatus.info),
                       if (series.score.isNotEmpty) DsBadge(label: Text(series.score)),
                       if (series.today) DsBadge(label: Text(t.hongguo.todayTag)),
