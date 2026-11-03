@@ -339,77 +339,84 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required Map<String, LiveRoom> rooms,
   }) {
     final t = context.t;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-          // The states with their counts lead, the whole-list actions end.
-          // Adding a task is the shell's own search above — it opens the
-          // room picker — so the toolbar carries no second field.
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(child: statusFilter),
-              _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
-            ],
-          ),
-        ),
-        // With the live check off nothing begins a take on its own, so the
-        // banner covers the scheduled rows too: a stopped task whose window
-        // is meant to re-arm it is just as stranded as a room waiting to go
-        // live.
-        if (!polling && pollingBannerTasks)
-          Padding(
-            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-            child: DsAlert(
-              title: Text(t.recorder.pollingOff),
-              status: DsStatus.warning,
-              action: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () {
-                  ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
-                  showDsToast(
-                    context: context,
-                    title: t.recorder.pollingEnabledToast(
-                      seconds: ref.read(recordingSettingsProvider).schedule.liveCheckSeconds,
-                    ),
-                    status: DsStatus.success,
-                  );
-                },
-                child: Text(t.recorder.pollingEnable),
+    // The tasks page reads as a worklist, not a band across the window: one
+    // centred measure holds the toolbar and the rows together.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 860),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+              // The states with their counts lead, the whole-list actions end.
+              // Adding a task is the shell's own search above — it opens the
+              // room picker — so the toolbar carries no second field.
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(child: statusFilter),
+                  _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
+                ],
               ),
             ),
-          ),
-        // The rows this page still owns, as the file manager's table on a
-        // wide window and the cards on a narrow one. This is the whole
-        // tasks page now — the library below became its own page.
-        Expanded(
-          child: attention.isEmpty
-              ? DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.recorder.emptyTitle))
-              : Padding(
-                  padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-                  child: wide
-                      ? DsTable<RecordingTask>(
-                          semanticLabel: t.recorder.runningTitle,
-                          style: const DsTableStyle(rowHeight: 56),
-                          columns: _taskColumns(context, rooms),
-                          rows: attention,
-                          rowKey: (task) => task.id,
-                          emptyView: const SizedBox.shrink(),
-                        )
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            spacing: DsSpace.s8,
-                            children: [for (final task in attention) ..._taskCards(context, task, rooms)],
-                          ),
+            // With the live check off nothing begins a take on its own, so the
+            // banner covers the scheduled rows too: a stopped task whose window
+            // is meant to re-arm it is just as stranded as a room waiting to go
+            // live.
+            if (!polling && pollingBannerTasks)
+              Padding(
+                padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+                child: DsAlert(
+                  title: Text(t.recorder.pollingOff),
+                  status: DsStatus.warning,
+                  action: DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () {
+                      ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
+                      showDsToast(
+                        context: context,
+                        title: t.recorder.pollingEnabledToast(
+                          seconds: ref.read(recordingSettingsProvider).schedule.liveCheckSeconds,
                         ),
+                        status: DsStatus.success,
+                      );
+                    },
+                    child: Text(t.recorder.pollingEnable),
+                  ),
                 ),
+              ),
+            // The rows this page still owns, as the file manager's table on a
+            // wide window and the cards on a narrow one. This is the whole
+            // tasks page now — the library below became its own page.
+            Expanded(
+              child: attention.isEmpty
+                  ? DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.recorder.emptyTitle))
+                  : Padding(
+                      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+                      child: wide
+                          ? DsTable<RecordingTask>(
+                              semanticLabel: t.recorder.runningTitle,
+                              style: const DsTableStyle(rowHeight: 56),
+                              columns: _taskColumns(context, rooms),
+                              rows: attention,
+                              rowKey: (task) => task.id,
+                              emptyView: const SizedBox.shrink(),
+                            )
+                          : SingleChildScrollView(
+                              padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                spacing: DsSpace.s8,
+                                children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                              ),
+                            ),
+                    ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
