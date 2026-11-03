@@ -31,13 +31,28 @@ const double kHongguoSeriesCardInfoExtent = 82;
 /// under it and takes the height the name block leaves.
 const double kHongguoSeriesTileAspect = 0.62;
 
-/// One series' subtitle line: the episode count, the play figure and the
-/// shelf categories, whichever the listing carries. [totalInHot] says the
+/// What the local shelf says about a title: 已看完 once this device finished it,
+/// the episode it stopped at otherwise. One wording for the board's row, the
+/// poster card and the list row — the viewer's own state is said the same way
+/// wherever it appears.
+String hongguoWatchedLabel(Translations t, HongguoWatchProgress watched) =>
+    watched.completed ? t.hongguo.watchedBadge : t.hongguo.favoriteWatchedTo(index: watched.episodeIndex);
+
+/// One series' subtitle line: the viewer's own progress where the listing knows
+/// it, then the episode count, the play figure and the shelf categories,
+/// whichever the listing carries. [totalInHot] says the
 /// figure line already names the series' own total — a history row's
 /// 「12集/80集」, a favorite's 「共 80 集（+3）」 — and then the leading count
 /// is the same number printed twice in one row, which a row does not do.
-String hongguoSeriesSubtitle(Translations t, HongguoSeries series, {bool totalInHot = false}) {
+String hongguoSeriesSubtitle(
+  Translations t,
+  HongguoSeries series, {
+  bool totalInHot = false,
+  HongguoWatchProgress? watched,
+}) {
   final parts = <String>[
+    // The viewer's own state leads the line, as it leads the board row's marks.
+    if (watched case final seen?) hongguoWatchedLabel(t, seen),
     if (!totalInHot && series.episodeCount > 0) t.hongguo.episodesCount(count: series.episodeCount),
     if (series.hot.isNotEmpty)
       series.hot
@@ -84,12 +99,15 @@ String hongguoSeriesMetaLine(HongguoSeries series, {required bool withFigure}) {
 /// One series as a poster card, drawn in the room card's manner: the cover
 /// carries a soft scrim with its badges as translucent chips — the board
 /// position, the source tags, the episode count, the 今日 marker, the score,
-/// the heat along the foot — then the title and the listing line, and, on a
-/// shelf that asks for it, the local bookmark. Which pieces appear is the
-/// card visibility setting's to say.
+/// the heat along the foot, and where the viewer's own shelf stands on this
+/// title — then the title and the listing line, and, on a shelf that asks for
+/// it, the local bookmark. Which of the station's pieces appear is the card
+/// visibility setting's to say; the viewer's own progress is not one of them,
+/// the way it is not on the board's row.
 final class HongguoSeriesCard extends ConsumerWidget {
-  /// The card for [series]; [onOpen] opens its page.
-  const HongguoSeriesCard({required this.series, this.onOpen, this.favoritable = false, super.key});
+  /// The card for [series]; [onOpen] opens its page. [watched] is the local
+  /// shelf's row for the same series, drawn as the first of the cover's marks.
+  const HongguoSeriesCard({required this.series, this.onOpen, this.favoritable = false, this.watched, super.key});
 
   /// The series shown.
   final HongguoSeries series;
@@ -99,6 +117,9 @@ final class HongguoSeriesCard extends ConsumerWidget {
 
   /// Whether the card carries the local-shelf bookmark under its title.
   final bool favoritable;
+
+  /// Where this device left the series; null when it never opened it.
+  final HongguoWatchProgress? watched;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -175,7 +196,11 @@ final class HongguoSeriesCard extends ConsumerWidget {
                         children: [for (final tag in series.coverTags.take(2)) _CoverTag(label: tag)],
                       ),
                     ),
-                  if (showsEpisodes || showsToday || showsScore)
+                  // The viewer's own progress leads the cover's marks at its
+                  // end: the shelf's state is what decides whether to open a
+                  // title again, and the station's chips follow it — the same
+                  // order the board's row keeps.
+                  if (watched != null || showsEpisodes || showsToday || showsScore)
                     PositionedDirectional(
                       top: DsSpace.s8,
                       end: DsSpace.s8,
@@ -183,6 +208,8 @@ final class HongguoSeriesCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         spacing: DsSpace.s4,
                         children: [
+                          if (watched case final seen?)
+                            RoomCoverChip(compact: true, text: hongguoWatchedLabel(t, seen)),
                           if (showsEpisodes)
                             RoomCoverChip(compact: true, text: t.hongguo.allEpisodesCount(count: series.episodeCount)),
                           if (showsToday) DsBadge(label: Text(t.hongguo.todayTag), status: DsStatus.success),
@@ -356,8 +383,17 @@ final class _FavoriteBookmark extends ConsumerWidget {
 final class HongguoSeriesRow extends StatelessWidget {
   /// The row for [series]; [onOpen] opens its page. [totalInHot] tells this
   /// row that [HongguoSeries.hot] already carries the episode total, so the
-  /// listing line must not say it a second time.
-  const HongguoSeriesRow({required this.series, this.onOpen, this.trailing, this.totalInHot = false, super.key});
+  /// listing line must not say it a second time. [watched] is the local
+  /// shelf's row for the same series, where the listing is one the viewer
+  /// browses rather than one read by progress (收藏 and 历史 say it themselves).
+  const HongguoSeriesRow({
+    required this.series,
+    this.onOpen,
+    this.trailing,
+    this.totalInHot = false,
+    this.watched,
+    super.key,
+  });
 
   /// The series shown.
   final HongguoSeries series;
@@ -367,6 +403,9 @@ final class HongguoSeriesRow extends StatelessWidget {
 
   /// Whether the row's own figure line already names the episode total.
   final bool totalInHot;
+
+  /// Where this device left the series; null when it never opened it.
+  final HongguoWatchProgress? watched;
 
   /// The row's own action, drawn at the row's end — the ✕ that drops the
   /// series from the page showing it, the box that picks it for a batch, the
@@ -417,7 +456,7 @@ final class HongguoSeriesRow extends StatelessWidget {
                     style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                   ),
                   Text(
-                    hongguoSeriesSubtitle(context.t, series, totalInHot: totalInHot),
+                    hongguoSeriesSubtitle(context.t, series, totalInHot: totalInHot, watched: watched),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.caption.copyWith(color: colors.textMuted),
@@ -579,14 +618,7 @@ final class HongguoRankRow extends StatelessWidget {
                       // says about a title matters less here than whether this
                       // device has already opened it.
                       if (watched case final seen?)
-                        DsBadge(
-                          label: Text(
-                            seen.completed
-                                ? t.hongguo.watchedBadge
-                                : t.hongguo.favoriteWatchedTo(index: seen.episodeIndex),
-                          ),
-                          icon: const DsIcon(DsIcons.check),
-                        ),
+                        DsBadge(label: Text(hongguoWatchedLabel(t, seen)), icon: const DsIcon(DsIcons.check)),
                       for (final tag in statusTags) DsBadge(label: Text(tag), status: DsStatus.info),
                       if (series.score.isNotEmpty) DsBadge(label: Text(series.score)),
                       if (series.today) DsBadge(label: Text(t.hongguo.todayTag)),

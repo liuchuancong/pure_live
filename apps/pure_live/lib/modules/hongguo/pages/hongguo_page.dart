@@ -23,6 +23,14 @@ import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid;
 /// a phone, and pays a gutter the narrow window does not have to spare.
 double _hongguoPageInset(BuildContext context) => LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
 
+/// The local shelf's progress, keyed by series: the browse surfaces read it one
+/// pass per build, so a hundred tiles do not each scan the history for
+/// themselves — and every face of one list says the same thing about a title
+/// this device has already opened.
+Map<String, HongguoWatchProgress> _hongguoWatchedById(List<HongguoWatchProgress> history) => {
+  for (final entry in history) entry.seriesId: entry,
+};
+
 /// The station's views, the reference's top row plus the account surfaces:
 /// the home feed, find-drama, the boards, the two shelves, the reservations,
 /// the account and the search.
@@ -301,6 +309,9 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
     final latestController = ref.read(hongguoLatestProvider.notifier);
     final browse = ref.watch(hongguoBrowseProvider.select((feeds) => genre == null ? null : feeds[genre.name]));
     final browseController = ref.read(hongguoBrowseProvider.notifier);
+    // Where this device stands on each title the shelves below recommend: a
+    // shelf's card has to say 已看完 / 看到第 N 集 rather than look untouched.
+    final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
     final themes = [
       for (final row in browse?.groups ?? const <HongguoFilterRow>[])
         if (row.type == 'category_dim_theme') row,
@@ -370,8 +381,12 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 child: Text(t.hongguo.shelfChangeBatch),
               ),
             ],
-            cardBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+            cardBuilder: (context, series) => HongguoSeriesCard(
+              series: series,
+              favoritable: true,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
           ),
           HongguoShelf(
             title: theme.isEmpty ? t.hongguo.shelfHot : _themeLabel(themeRow, theme),
@@ -408,8 +423,12 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 child: Text(t.hongguo.refreshShelf),
               ),
             ],
-            cardBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+            cardBuilder: (context, series) => HongguoSeriesCard(
+              series: series,
+              favoritable: true,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
           ),
           HongguoShelf(
             title: t.hongguo.shelfNew,
@@ -442,8 +461,12 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 child: Text(t.hongguo.refreshShelf),
               ),
             ],
-            cardBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+            cardBuilder: (context, series) => HongguoSeriesCard(
+              series: series,
+              favoritable: true,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
           ),
         ],
       ),
@@ -546,6 +569,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
   Widget build(BuildContext context) {
     final t = context.t;
     final feed = ref.watch(hongguoBrowseProvider.select((feeds) => feeds[_genre.name]));
+    final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
     final state =
         feed ??
         (
@@ -628,10 +652,17 @@ final class _FindViewState extends ConsumerState<_FindView> {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: kHongguoSeriesTileAspect,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) =>
-                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
+            itemBuilder: (context, series) => HongguoSeriesCard(
+              series: series,
+              favoritable: true,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
+            listItemBuilder: (context, series) => HongguoSeriesRow(
+              series: series,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
             isLoading: state.loading,
             hasMore: state.hasMore,
             onLoadMore: () => controller.loadMore(_genre),
@@ -744,9 +775,7 @@ final class _RankViewState extends ConsumerState<_RankView> {
     // Where this device left each title, so a hundred-place board reads as
     // 「which of these have I not opened」. One pass over the shelf's history
     // rather than a linear lookup per row.
-    final watchedById = {
-      for (final entry in ref.watch(hongguoLibraryProvider.select((library) => library.history))) entry.seriesId: entry,
-    };
+    final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1565,6 +1594,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
     final t = context.t;
     final state = ref.watch(hongguoSearchProvider);
     final controller = ref.read(hongguoSearchProvider.notifier);
+    final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1666,10 +1696,17 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: kHongguoSeriesTileAspect,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) =>
-                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
+            itemBuilder: (context, series) => HongguoSeriesCard(
+              series: series,
+              favoritable: true,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
+            listItemBuilder: (context, series) => HongguoSeriesRow(
+              series: series,
+              watched: watchedById[series.seriesId],
+              onOpen: () => _open(context, series),
+            ),
             isLoading: state.loading,
             hasMore: state.hasMore,
             onLoadMore: controller.loadMore,
