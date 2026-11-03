@@ -23,6 +23,11 @@ import 'package:pure_live/shared/shared.dart';
 /// stretched across the window. The network probe and image-cache clear that
 /// used to sit behind the same entry are settings utilities now, under
 /// System; the log console has its own rail entry beside this one.
+/// Below this window width the log console's foot drops its buttons' labels
+/// for their icons alone: the three labelled verbs together leave the line
+/// no room beside the auto-scroll notice on a narrow window.
+const double kLogsFootTextWidth = 480;
+
 final class ToolboxPage extends StatelessWidget {
   /// The link parser page.
   const ToolboxPage({super.key});
@@ -828,27 +833,55 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
                         t.toolbox.logsLines(count: shown.length),
                         style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
                       ),
-                      DsButton(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        leading: const DsIcon(DsIcons.copy, size: 14),
-                        onPressed: () => unawaited(_copy()),
-                        child: Text(t.toolbox.logsExport),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        leading: const DsIcon(DsIcons.fileDown, size: 14),
-                        onPressed: () => unawaited(_save()),
-                        child: Text(t.toolbox.logsSave),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        leading: const DsIcon(DsIcons.arrowDown, size: 14),
-                        onPressed: _toBottom,
-                        child: Text(t.toolbox.logsScrollBottom),
-                      ),
+                      // The foot's three verbs: labelled buttons on a wide
+                      // console, their icons alone where the width would
+                      // otherwise overflow — the labels stay for the screen
+                      // reader either way.
+                      if (MediaQuery.sizeOf(context).width >= kLogsFootTextWidth) ...[
+                        DsButton(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          leading: const DsIcon(DsIcons.copy, size: 14),
+                          onPressed: () => unawaited(_copy()),
+                          child: Text(t.toolbox.logsExport),
+                        ),
+                        DsButton(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          leading: const DsIcon(DsIcons.fileDown, size: 14),
+                          onPressed: () => unawaited(_save()),
+                          child: Text(t.toolbox.logsSave),
+                        ),
+                        DsButton(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          leading: const DsIcon(DsIcons.arrowDown, size: 14),
+                          onPressed: _toBottom,
+                          child: Text(t.toolbox.logsScrollBottom),
+                        ),
+                      ] else ...[
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.toolbox.logsExport,
+                          onPressed: () => unawaited(_copy()),
+                          icon: const DsIcon(DsIcons.copy, size: 16),
+                        ),
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.toolbox.logsSave,
+                          onPressed: () => unawaited(_save()),
+                          icon: const DsIcon(DsIcons.fileDown, size: 16),
+                        ),
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.toolbox.logsScrollBottom,
+                          onPressed: _toBottom,
+                          icon: const DsIcon(DsIcons.arrowDown, size: 16),
+                        ),
+                      ],
                     ],
                   ),
                 ),
