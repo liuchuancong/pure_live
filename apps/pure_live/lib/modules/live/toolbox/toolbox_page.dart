@@ -28,7 +28,7 @@ import 'package:pure_live/shared/shared.dart';
 /// no room beside the auto-scroll notice on a narrow window.
 const double kLogsFootTextWidth = 480;
 
-final class ToolboxPage extends StatelessWidget {
+final class ToolboxPage extends ConsumerWidget {
   /// The link parser page.
   const ToolboxPage({super.key});
 
@@ -38,15 +38,28 @@ final class ToolboxPage extends StatelessWidget {
   static const double formWidth = LiveWindow.form;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    final resolvable = [
+      for (final site in ref.watch(sitesProvider).all)
+        if (site.capability<LiveLinkResolver>() != null) site,
+    ];
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: formWidth),
-          child: const _LinkPane(),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s20,
+        children: [
+          // The form stays a form's width; the supported platforms beneath
+          // it are the page's own full width, laid flat.
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: formWidth),
+              child: const _LinkPane(),
+            ),
+          ),
+          _SupportPlatforms(sites: resolvable),
+        ],
       ),
     );
   }
@@ -122,22 +135,6 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
       return;
     }
     unawaited(context.push(RoomRoute(platform: room.platform, roomId: room.roomId).location));
-  }
-
-  /// Resolves the field's text; on a room, copies the canonical room link.
-  Future<void> _copy() async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    await ref.read(linkToolProvider.notifier).resolve(_field.text);
-    if (!mounted) return;
-    final link = ref.read(linkToolProvider);
-    final room = link.resolved;
-    if (room == null) {
-      _toastFailure(link.failure, retry: _copy);
-      return;
-    }
-    await Clipboard.setData(ClipboardData(text: '$room.url'));
-    if (!mounted) return;
-    showDsToast(context: context, title: context.t.toolbox.linkCopyDone);
   }
 
   /// Resolves the field's text, then lists the room's direct stream links:
@@ -228,10 +225,6 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     final colors = DsTheme.colorsOf(context);
     final link = ref.watch(linkToolProvider);
     final resolving = link.resolving;
-    final resolvable = [
-      for (final site in ref.watch(sitesProvider).all)
-        if (site.capability<LiveLinkResolver>() != null) site,
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s20,
@@ -284,8 +277,9 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                     ),
                 ],
               ),
-              // The two actions share one line: the form is an errand, not
-              // a page of buttons.
+              // The action and the direct-link way share one line, level
+              // with each other: the form is an errand, not a page of
+              // buttons.
               Row(
                 spacing: DsSpace.s12,
                 children: [
@@ -297,22 +291,14 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                       child: Text(t.toolbox.linkOpen),
                     ),
                   ),
-                  Expanded(
-                    child: DsButton(
-                      variant: DsButtonVariant.secondary,
-                      loading: resolving,
-                      onPressed: resolving ? null : () => unawaited(_copy()),
-                      child: Text(t.toolbox.linkCopy),
+                  Center(
+                    child: DsLink(
+                      label: t.toolbox.linkDirect,
+                      onPressed: resolving ? null : () => unawaited(_direct()),
+                      style: DsLinkStyle(textStyle: DsTheme.of(context).typography.small),
                     ),
                   ),
                 ],
-              ),
-              Center(
-                child: DsLink(
-                  label: t.toolbox.linkDirect,
-                  onPressed: resolving ? null : () => unawaited(_direct()),
-                  style: DsLinkStyle(textStyle: DsTheme.of(context).typography.small),
-                ),
               ),
               // The same errand, run by itself: reading the clipboard for a
               // room link belongs with the paste button above, not at the
@@ -322,19 +308,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                 spacing: DsSpace.s12,
                 children: [
                   const DsIcon(DsIcons.clipboard),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 2,
-                      children: [
-                        Text(t.toolbox.linkClipboardRooms, style: theme.typography.body),
-                        Text(
-                          t.toolbox.linkClipboardRoomsDesc,
-                          style: theme.typography.caption.copyWith(color: colors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
+                  Expanded(child: Text(t.toolbox.linkClipboardRooms, style: theme.typography.body)),
                   DsSwitch(
                     value: ref.watch(detectClipboardRoomsProvider),
                     semanticLabel: t.toolbox.linkClipboardRooms,
@@ -357,15 +331,13 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
               DsListRow(leading: const DsIcon(DsIcons.tv), title: Text(t.toolbox.linkRoom), detail: Text(room.roomId)),
             ],
           ),
-        _SupportPlatforms(sites: resolvable),
       ],
     );
   }
 }
 
-/// The platforms whose links resolve: a labelled wrap of the kit's badges,
-/// one per platform with its own mark, so the catalogue reads at a glance
-/// instead of one full-width row each.
+/// The platforms whose links resolve: a full-width card, the badges laid
+/// flat — no accordion to open, the catalogue reads at a glance.
 final class _SupportPlatforms extends StatelessWidget {
   const _SupportPlatforms({required this.sites});
 
@@ -387,39 +359,31 @@ final class _SupportPlatforms extends StatelessWidget {
       iconSize: 16,
       gap: DsSpace.s6,
     );
-    return DsAccordion<String>(
-      semanticLabel: t.toolbox.linkSupportTitle,
-      items: [
-        DsAccordionItem<String>(
-          value: 'support',
-          title: Row(
+    return DsCard(
+      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s12,
+        children: [
+          Row(
             spacing: DsSpace.s8,
             children: [
               const DsIcon(DsIcons.antenna, size: 16),
-              Expanded(child: Text(t.toolbox.linkSupportTitle)),
+              Expanded(child: Text(t.toolbox.linkSupportTitle, style: theme.typography.body)),
               Text('${sites.length}', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s12,
-              children: [
-                Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
-                Wrap(
-                  spacing: DsSpace.s8,
-                  runSpacing: DsSpace.s8,
-                  children: [
-                    for (final site in sites)
-                      DsBadge(dot: false, icon: localizedSiteIcon(site), label: Text(_siteName(site)), style: badge),
-                  ],
-                ),
-              ],
-            ),
+          Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
+          Wrap(
+            spacing: DsSpace.s8,
+            runSpacing: DsSpace.s8,
+            children: [
+              for (final site in sites)
+                DsBadge(dot: false, icon: localizedSiteIcon(site), label: Text(_siteName(site)), style: badge),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
