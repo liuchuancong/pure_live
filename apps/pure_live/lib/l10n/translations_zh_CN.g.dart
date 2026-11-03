@@ -9688,6 +9688,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '移除记录'
 	String get downloadRemove => '移除记录';
 
+	/// zh-CN: '删除'
+	String get downloadDelete => '删除';
+
 	/// zh-CN: '只移除这条记录，不会删除已保存的文件。'
 	String get downloadRemoveBody => '只移除这条记录，不会删除已保存的文件。';
 
@@ -16307,6 +16310,7 @@ extension on Translations {
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
+			'settings.downloadDelete' => '删除',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
 			'settings.downloadClearFinished' => '清除已完成',
 			'settings.downloadDuplicateRunning' => '这个文件正在下载',
@@ -16598,9 +16602,9 @@ extension on Translations {
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
 			'settings.floatWindowSmall' => '小',
-			'settings.floatWindowMedium' => '中',
 			_ => null,
 		} ?? switch (path) {
+			'settings.floatWindowMedium' => '中',
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
@@ -17112,9 +17116,9 @@ extension on Translations {
 			'vod.downloadSettingsTitle' => '下载设置',
 			'vod.downloadMaxConcurrent' => '同时下载数',
 			'vod.downloadMaxConcurrentDesc' => '同时进行的下载任务数量，改动即时生效。',
-			'vod.downloadQuality' => '默认下载画质',
 			_ => null,
 		} ?? switch (path) {
+			'vod.downloadQuality' => '默认下载画质',
 			'vod.downloadQualityDesc' => '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。',
 			'vod.downloadDanmaku' => '同时保存弹幕',
 			'vod.downloadDanmakuDesc' => '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。',

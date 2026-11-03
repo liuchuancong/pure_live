@@ -135,7 +135,7 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
       context: context,
       title: t.settings.downloadRemove,
       description: t.settings.downloadRemoveBody,
-      confirmLabel: t.settings.downloadRemove,
+      confirmLabel: t.settings.downloadDelete,
       cancelLabel: t.common.cancel,
       destructive: true,
       icon: const DsIcon(DsIcons.trash2),
@@ -301,7 +301,7 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
                   variant: DsButtonVariant.dangerSoft,
                   leading: const DsIcon(DsIcons.trash2),
                   onPressed: () => unawaited(_remove(context, ref, task)),
-                  child: Text(t.settings.downloadRemove),
+                  child: Text(t.settings.downloadDelete),
                 ),
               ),
             ],
@@ -735,7 +735,6 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
                                     ]);
                                 }),
                           onRowPressed: _openPreview,
-                          showRowMenuButton: true,
                           rowMenuBuilder: _rowMenu,
                           emptyView: DsEmptyState(
                             icon: DsIcon(_filter.emptyIcon),
@@ -939,8 +938,15 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
         id: 'actions',
         label: t.settings.downloadColumnActions,
         alignment: DsTableCellAlignment.end,
-        cell: (context, task) => _actionButton(context, task, compact: narrow),
-        width: DsTableColumnWidth.fixed(narrow ? 48 : 120),
+        cell: (context, task) => Row(
+          spacing: DsSpace.s8,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _actionButton(context, task, compact: narrow),
+            _moreButton(context, task, compact: narrow),
+          ],
+        ),
+        width: DsTableColumnWidth.fixed(narrow ? 88 : 176),
       ),
     ];
   }
@@ -978,7 +984,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
   }
 
   /// The row's one button: stop or continue a transfer, fetch a failed one
-  /// again, or open the file that landed.
+  /// again, or preview the file that landed.
   Widget _actionButton(BuildContext context, WallpaperDownloadTask task, {required bool compact}) {
     final t = context.t;
     final controller = ref.read(wallpaperDownloadsProvider.notifier);
@@ -1000,9 +1006,9 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
         task.isRetriable ? () => unawaited(controller.retry(task.id)) : null,
       ),
       WallpaperDownloadPhase.done => (
-        DsIcons.externalLink,
-        t.settings.downloadOpenFile,
-        saved == null ? null : () => unawaited(openDownloadedPath(context, saved)),
+        DsIcons.eye,
+        t.settings.backgroundPreviewMedia,
+        saved == null ? null : () => _openPreview(task),
       ),
     };
     final quiet = task.phase == WallpaperDownloadPhase.running || task.phase == WallpaperDownloadPhase.done;
@@ -1024,19 +1030,40 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
     );
   }
 
-  /// The row's context menu: the preview it opens on a tap, the phase's verbs,
-  /// its folder and address, the full detail, and its removal.
+  /// The row's labelled 更多 button: the same menu a right click opens,
+  /// visible so pointer users can find it too.
+  Widget _moreButton(BuildContext context, WallpaperDownloadTask task, {required bool compact}) {
+    final t = context.t;
+    return DsMenuAnchor(
+      align: DsAlign.end,
+      semanticLabel: t.common.more,
+      items: _rowMenu(context, task),
+      builder: (context, controller, _) => compact
+          ? DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              icon: const DsIcon(DsIcons.ellipsis, size: 16),
+              semanticLabel: t.common.more,
+              onPressed: controller.toggle,
+            )
+          : DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.xs,
+              leading: const DsIcon(DsIcons.ellipsis, size: 14),
+              onPressed: controller.toggle,
+              child: Text(t.common.more),
+            ),
+    );
+  }
+
+  /// The row's context menu: the phase's verbs, its folder and address,
+  /// the full detail, and its removal. The preview and the opened file live
+  /// on the row's buttons, not here.
   List<Widget> _rowMenu(BuildContext context, WallpaperDownloadTask task) {
     final t = context.t;
     final controller = ref.read(wallpaperDownloadsProvider.notifier);
-    final saved = task.filePath;
     final moving = task.isRunning || task.phase == WallpaperDownloadPhase.paused;
     return [
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.eye),
-        label: Text(t.settings.backgroundPreviewMedia),
-        onPressed: () => _openPreview(task),
-      ),
       if (moving)
         DsMenuItem(
           leading: DsIcon(task.isRunning ? DsIcons.pause : DsIcons.play),
@@ -1052,12 +1079,6 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
           leading: const DsIcon(DsIcons.rotateCw),
           label: Text(t.common.retry),
           onPressed: () => unawaited(controller.retry(task.id)),
-        ),
-      if (task.phase == WallpaperDownloadPhase.done && saved != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.settings.downloadOpenFile),
-          onPressed: () => unawaited(openDownloadedPath(context, saved)),
         ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.folderOpen),

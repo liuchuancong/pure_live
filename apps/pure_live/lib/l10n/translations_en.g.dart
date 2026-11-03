@@ -3372,6 +3372,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String downloadStartedAt({required Object time}) => 'Started ${time}';
 	@override String downloadFinishedAt({required Object time}) => 'Finished ${time}';
 	@override String get downloadRemove => 'Remove record';
+	@override String get downloadDelete => 'Delete';
 	@override String get downloadRemoveBody => 'Removes the record only; the saved file stays.';
 	@override String get downloadClearFinished => 'Clear finished';
 	@override String get downloadDuplicateRunning => 'That file is already downloading';
@@ -7830,6 +7831,7 @@ extension on TranslationsEn {
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
+			'settings.downloadDelete' => 'Delete',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
 			'settings.downloadClearFinished' => 'Clear finished',
 			'settings.downloadDuplicateRunning' => 'That file is already downloading',
@@ -8121,9 +8123,9 @@ extension on TranslationsEn {
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
 			'settings.floatWindowSmall' => 'Small',
-			'settings.floatWindowMedium' => 'Medium',
 			_ => null,
 		} ?? switch (path) {
+			'settings.floatWindowMedium' => 'Medium',
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
@@ -8635,9 +8637,9 @@ extension on TranslationsEn {
 			'vod.downloadSettingsTitle' => 'Download settings',
 			'vod.downloadMaxConcurrent' => 'Simultaneous downloads',
 			'vod.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
-			'vod.downloadQuality' => 'Download quality',
 			_ => null,
 		} ?? switch (path) {
+			'vod.downloadQuality' => 'Download quality',
 			'vod.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
 			'vod.downloadDanmaku' => 'Save danmaku too',
 			'vod.downloadDanmakuDesc' => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.',

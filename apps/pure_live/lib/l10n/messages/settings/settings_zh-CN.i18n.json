@@ -952,6 +952,7 @@
   "downloadStartedAt": "开始于 {time}",
   "downloadFinishedAt": "完成于 {time}",
   "downloadRemove": "移除记录",
+  "downloadDelete": "删除",
   "downloadRemoveBody": "只移除这条记录，不会删除已保存的文件。",
   "downloadClearFinished": "清除已完成",
   "downloadDuplicateRunning": "这个文件正在下载",

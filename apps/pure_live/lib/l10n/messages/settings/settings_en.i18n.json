@@ -952,6 +952,7 @@
   "downloadStartedAt": "Started {time}",
   "downloadFinishedAt": "Finished {time}",
   "downloadRemove": "Remove record",
+  "downloadDelete": "Delete",
   "downloadRemoveBody": "Removes the record only; the saved file stays.",
   "downloadClearFinished": "Clear finished",
   "downloadDuplicateRunning": "That file is already downloading",
