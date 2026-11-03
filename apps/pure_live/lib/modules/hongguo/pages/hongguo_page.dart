@@ -704,7 +704,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
             items: state.items,
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: kHongguoSeriesTileAspect,
-            listMainAxisExtent: 124,
+            listMainAxisExtent: kHongguoSeriesRowExtent,
             itemBuilder: (context, series) => HongguoCardMenu(
               series: series,
               onOpen: () => _open(context, series),
@@ -1107,7 +1107,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               emptyText: t.hongguo.favoritesLocalEmpty,
               // That line already reads 「共 80 集（+3）」; the count is said by
               // it, not again in front of it.
-              totalInHot: true,
+              withEpisodeCount: false,
               trailingOf: (series) => _IconAction(
                 icon: DsIcons.heartOff,
                 semanticLabel: t.hongguo.unfavorite,
@@ -1760,7 +1760,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
             items: state.items,
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: kHongguoSeriesTileAspect,
-            listMainAxisExtent: 124,
+            listMainAxisExtent: kHongguoSeriesRowExtent,
             itemBuilder: (context, series) => HongguoCardMenu(
               series: series,
               onOpen: () => _open(context, series),
@@ -1806,7 +1806,7 @@ final class _SeriesList extends StatelessWidget {
     this.emptyText,
     this.trailingOf,
     this.openable,
-    this.totalInHot = false,
+    this.withEpisodeCount = true,
   });
 
   final List<HongguoSeries> rows;
@@ -1816,9 +1816,9 @@ final class _SeriesList extends StatelessWidget {
   final Widget Function(HongguoSeries series)? trailingOf;
   final bool Function(HongguoSeries series)? openable;
 
-  /// Whether the rows' figure line already names the episode total, so the
-  /// listing line must not repeat it.
-  final bool totalInHot;
+  /// False where the rows' own figure line already names the episode total, so
+  /// the listing line must not repeat it.
+  final bool withEpisodeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1854,7 +1854,7 @@ final class _SeriesList extends StatelessWidget {
             series: series,
             onOpen: canOpen ? () => _open(context, series) : null,
             trailing: trailingOf?.call(series),
-            totalInHot: totalInHot,
+            withEpisodeCount: withEpisodeCount,
           ),
         );
       },
@@ -1907,9 +1907,6 @@ final class _ProgressList extends ConsumerWidget {
           title: row.title,
           cover: row.cover,
           episodeCount: row.episodeCount,
-          hot: row.completed
-              ? t.hongguo.watchedBadge
-              : '${row.episodeCount > 0 ? t.hongguo.historyEpisodeProgress(index: row.episodeIndex, total: row.episodeCount) : t.hongguo.episodeLabel(index: row.episodeIndex)} · ${_clock(row.positionMs)}',
         );
         void remove() {
           ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
@@ -1934,10 +1931,11 @@ final class _ProgressList extends ConsumerWidget {
               child: HongguoSeriesRow(
                 series: series,
                 onOpen: managing ? null : () => _open(context, series),
-                // An unfinished row says its total inside 「12集/80集」, so the
-                // listing line starts there; a watched-through row says only
-                // 「已看过」, and its total has to come from the count.
-                totalInHot: !row.completed,
+                // The shelf's own row says where this device stands, in the
+                // words every other face of the title uses, and the page adds
+                // only the clock playback stood on.
+                watched: row,
+                note: row.completed ? null : _clock(row.positionMs),
                 trailing: managing
                     ? DsCheckbox(
                         value: selected.contains(row.seriesId),

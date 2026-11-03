@@ -5,7 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
-import 'package:pure_live/features/settings/room/room_card_settings.dart' show kRoomCardInfoExtent;
+import 'package:pure_live/features/settings/room/room_card_settings.dart'
+    show kRoomCardInfoExtent, kRoomCardListDesignHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
@@ -33,6 +34,17 @@ const double kHongguoSeriesCardInfoExtent = kRoomCardInfoExtent;
 /// under it and takes the height the name block leaves.
 const double kHongguoSeriesTileAspect = 0.62;
 
+/// The list layout's row height: the room card's own list measure, which this
+/// module's rows keep and the grids that host them hand them. A row built by
+/// hand — the shelf's, the board's — lands on it through [kHongguoSeriesRowPosterHeight]
+/// rather than by being told, so one change moves every list of titles.
+const double kHongguoSeriesRowExtent = kRoomCardListDesignHeight;
+
+/// The poster a list row leads with: as tall as that measure keeps once the
+/// row's own s8 band is off, so an intrinsic row is exactly the tile a grid
+/// gives it, and the two layouts of one feed cannot disagree by a few pixels.
+const double kHongguoSeriesRowPosterHeight = kHongguoSeriesRowExtent - 2 * DsSpace.s8;
+
 /// Where the head's 续播 puts the viewer, in seconds — null when the shelf has
 /// no place to go back to: an unfinished title, stopped partway inside, on an
 /// episode it can name. The head's verb reads the same answer, so the word on
@@ -49,27 +61,42 @@ double? hongguoResumeSeconds(HongguoWatchProgress? seen) =>
 String hongguoWatchedLabel(Translations t, HongguoWatchProgress watched) =>
     watched.completed ? t.hongguo.watchedBadge : t.hongguo.favoriteWatchedTo(index: watched.episodeIndex);
 
-/// One series' subtitle line: the viewer's own progress where the listing knows
-/// it, then the episode count, the play figure and the shelf categories,
-/// whichever the listing carries. [totalInHot] says the
-/// figure line already names the series' own total — a history row's
-/// 「12集/80集」, a favorite's 「共 80 集（+3）」 — and then the leading count
-/// is the same number printed twice in one row, which a row does not do.
-String hongguoSeriesSubtitle(
+/// The one listing line a title gets, wherever it is listed: the poster card's
+/// line under its name, a list row's, a board row's, the shelf head's and the
+/// card menu's hover label. It joins the viewer's own progress — where the
+/// shelf knows it — with the episode total, the heat and the category, and the
+/// caller says which of those it has already drawn somewhere else.
+///
+/// [withEpisodeCount] is false where a figure the line would sit beside already
+/// names the series' own total — a favorite's 「共 80 集（+3）」 — and on the
+/// poster card, whose cover corners carry the reading and whose line is kept to
+/// one. Printing the count again in front of the number that is the count says
+/// one thing twice in a line, which a line does not do. [withFigure] and
+/// [withCategory] are false where the cover's foot holds the heat or the
+/// categories chip. [note] is the page's own reading of this title — the clock
+/// playback stood on — said once, at the line's end, the way the room card's row
+/// ends its meta line with the watch time.
+String hongguoSeriesListingLine(
   Translations t,
   HongguoSeries series, {
-  bool totalInHot = false,
+  bool withEpisodeCount = true,
   HongguoWatchProgress? watched,
+  bool withFigure = true,
+  bool withCategory = true,
+  String? note,
 }) {
+  final figure = series.hot.isNotEmpty
+      ? series.hot
+      : series.playCount > 0
+      ? '${t.hongguo.plays} ${AudienceFormat.format(series.playCount)}'
+      : '';
   final parts = <String>[
     // The viewer's own state leads the line, as it leads the board row's marks.
     if (watched case final seen?) hongguoWatchedLabel(t, seen),
-    if (!totalInHot && series.episodeCount > 0) t.hongguo.episodesCount(count: series.episodeCount),
-    if (series.hot.isNotEmpty)
-      series.hot
-    else if (series.playCount > 0)
-      '${t.hongguo.plays} ${AudienceFormat.format(series.playCount)}',
-    if (series.category.isNotEmpty) series.category,
+    if (withEpisodeCount && series.episodeCount > 0) t.hongguo.episodesCount(count: series.episodeCount),
+    if (withFigure && figure.isNotEmpty) figure,
+    if (withCategory && series.category.isNotEmpty) series.category,
+    if (note != null && note.isNotEmpty) note,
   ];
   return parts.join(' · ');
 }
@@ -89,20 +116,6 @@ String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoS
     else
       t.hongguo.favoriteTotalPending,
     if (progress != null) t.hongguo.favoriteWatchedTo(index: progress.episodeIndex),
-  ];
-  return parts.join(' · ');
-}
-
-/// What a poster card prints under its name: whichever of the heat and the
-/// categories its own switches leave off the cover — a card says a figure or
-/// a category once, and the cover's foot holds them when it can.
-String hongguoSeriesMetaLine(HongguoSeries series, {required bool withFigure, bool withCategory = true}) {
-  final parts = <String>[
-    if (withFigure && series.hot.isNotEmpty)
-      series.hot
-    else if (withFigure && series.playCount > 0)
-      AudienceFormat.format(series.playCount),
-    if (withCategory && series.category.isNotEmpty) series.category,
   ];
   return parts.join(' · ');
 }
@@ -159,8 +172,17 @@ final class HongguoSeriesCard extends ConsumerWidget {
         : showsEpisodes
         ? t.hongguo.allEpisodesCount(count: series.episodeCount)
         : null;
+    // The card's own line is the listing line with whatever its corners already
+    // carry taken out of it, and without the total: the cover's foot and the
+    // state pill say the readings, this line says what they left.
     final metaLine = visibility.shows(HongguoCardElement.meta)
-        ? hongguoSeriesMetaLine(series, withFigure: !showsHot, withCategory: !showsCategory)
+        ? hongguoSeriesListingLine(
+            t,
+            series,
+            withEpisodeCount: false,
+            withFigure: !showsHot,
+            withCategory: !showsCategory,
+          )
         : '';
     final favored = favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
     return DsCard(
@@ -357,7 +379,7 @@ final class HongguoFeedHero extends StatelessWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final line = hongguoSeriesSubtitle(t, series, watched: watched);
+    final line = hongguoSeriesListingLine(t, series, watched: watched);
     final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
     // A title this device stopped inside is offered where it stopped, the way
     // the reference separates 继续观看 from 播放.
@@ -532,20 +554,62 @@ final class _FavoriteHeartButton extends ConsumerWidget {
   }
 }
 
-/// One series as a full-width row: the poster beside the title and the
-/// listing line — the list layout of the same feed.
+/// The poster both list rows lead with: the series' own picture at the row's
+/// measure, read through [hongguoCoverImage] like every other face of it — the
+/// station's covers are HEIC behind a path-bound URL, and a row that asked for
+/// the bare link would show a blank.
+final class _RowPoster extends StatelessWidget {
+  const _RowPoster({required this.series});
+
+  final HongguoSeries series;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    const width = kHongguoSeriesRowPosterHeight * 3 / 4;
+    final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s4));
+    return SizedBox(
+      height: kHongguoSeriesRowPosterHeight,
+      child: AspectRatio(
+        aspectRatio: 3 / 4,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(theme.radii.control(width)),
+          child: series.cover.isEmpty
+              ? fallback
+              : DsImage(
+                  image: hongguoCoverImage(series.cover),
+                  aspectRatio: 3 / 4,
+                  semanticLabel: series.title,
+                  fallback: fallback,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One series as the list layout's row: the poster at the row's measure, then
+/// the title and the listing line beside it — the same two lines, and the same
+/// words, as [HongguoSeriesCard] — with the listing's own synopsis on a third
+/// line under them. The row is that card with its cover taken down to a poster
+/// and its corners folded into the listing line; the poster's fixed height never
+/// had room for the synopsis, so only the row reads it, the way only the room
+/// card's row reads a room's follow tags.
 final class HongguoSeriesRow extends StatelessWidget {
-  /// The row for [series]; [onOpen] opens its page. [totalInHot] tells this
-  /// row that [HongguoSeries.hot] already carries the episode total, so the
-  /// listing line must not say it a second time. [watched] is the local
-  /// shelf's row for the same series, where the listing is one the viewer
-  /// browses rather than one read by progress (收藏 and 历史 say it themselves).
+  /// The row for [series]; [onOpen] opens its page. [withEpisodeCount] is false
+  /// where the row's own figure line already names the series' total, so the
+  /// listing line must not say it a second time. [watched] is the local shelf's
+  /// row for the same series, where the listing is one the viewer browses rather
+  /// than one read by progress (收藏 and 历史 say it themselves). [note] is this
+  /// page's own reading of the title — the history's clock — said once at the
+  /// listing line's end.
   const HongguoSeriesRow({
     required this.series,
     this.onOpen,
     this.trailing,
-    this.totalInHot = false,
+    this.withEpisodeCount = true,
     this.watched,
+    this.note,
     super.key,
   });
 
@@ -556,10 +620,13 @@ final class HongguoSeriesRow extends StatelessWidget {
   final VoidCallback? onOpen;
 
   /// Whether the row's own figure line already names the episode total.
-  final bool totalInHot;
+  final bool withEpisodeCount;
 
   /// Where this device left the series; null when it never opened it.
   final HongguoWatchProgress? watched;
+
+  /// The page's own reading, at the listing line's end; null when it has none.
+  final String? note;
 
   /// The row's own action, drawn at the row's end — the ✕ that drops the
   /// series from the page showing it, the box that picks it for a batch, the
@@ -570,78 +637,77 @@ final class HongguoSeriesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
+    final line = hongguoSeriesListingLine(
+      context.t,
+      series,
+      withEpisodeCount: withEpisodeCount,
+      watched: watched,
+      note: note,
+    );
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
-      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s8)),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s12,
-        children: [
-          SizedBox(
-            width: 104,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(theme.radii.control(84)),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: series.cover.isEmpty
-                    ? fallback
-                    : DsImage(
-                        image: hongguoCoverImage(series.cover),
-                        aspectRatio: 3 / 4,
-                        semanticLabel: series.title,
-                        fallback: fallback,
-                      ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(top: DsSpace.s3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s4,
-                children: [
-                  Text(
-                    series.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                  ),
-                  Text(
-                    hongguoSeriesSubtitle(context.t, series, totalInHot: totalInHot, watched: watched),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                  if (series.intro.isNotEmpty)
+      style: const DsCardStyle(padding: EdgeInsets.zero),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              _RowPoster(series: series),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
                     Text(
-                      series.intro,
-                      maxLines: 2,
+                      series.title,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      style: theme.typography.bodyStrong.copyWith(color: colors.text),
                     ),
-                ],
+                    if (line.isNotEmpty)
+                      Text(
+                        line,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    // The row's own third line, the way the room card's row
+                    // keeps a line for the follow tags: the listing's synopsis,
+                    // which a poster's fixed height never had room for.
+                    if (series.intro.isNotEmpty)
+                      Text(
+                        series.intro,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      ),
+                  ],
+                ),
               ),
-            ),
+              ?trailing,
+            ],
           ),
-          ?trailing,
-        ],
+        ),
       ),
     );
   }
 }
 
-/// One board as the station's app lists it: the place, the poster, the name
-/// with its heat, the tags, the blurb and the listing's badges — a
-/// full-width row rather than a poster, so the board's readings stay beside
-/// each title. The viewer's own progress joins those badges when the library
-/// has one, so a hundred-title board can be scanned for what is still unseen.
+/// One board title as the station's app lists it: the place, the poster, the
+/// name with its heat beside it, then the listing line the poster card and the
+/// list row use, and under it the board's own marks — the tags, the score, the
+/// newest marker and the social figures. The board reads as rows because a
+/// hundred titles have to be scanned, not admired; its lines, its measure and
+/// its words are [HongguoSeriesRow]'s, so one feed in either layout is one
+/// design.
 final class HongguoRankRow extends StatelessWidget {
   /// The row for [series] at [position], used when the listing carries no
   /// place of its own. [watched] is the local shelf's row for the same
-  /// series, when there is one.
+  /// series, when there is one: it joins the listing line, not the marks.
   const HongguoRankRow({required this.series, this.position = 1, this.watched, this.onOpen, super.key});
 
   /// The series shown.
@@ -650,7 +716,7 @@ final class HongguoRankRow extends StatelessWidget {
   /// The fallback place.
   final int position;
 
-  /// Where this device left the series: the mark says 已看完 or the episode it
+  /// Where this device left the series: the line says 已看完 or the episode it
   /// stopped at. Null when nothing of it has been watched.
   final HongguoWatchProgress? watched;
 
@@ -664,136 +730,96 @@ final class HongguoRankRow extends StatelessWidget {
     final t = context.t;
     final rank = series.rank ?? position;
     final leading = rank <= 3;
-    final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s6));
-    // The board's own tags lead, as the station prints them beside the score,
-    // and they carry their own tone rather than the score badge's.
-    final statusTags = series.coverTags.take(2).toList();
+    // The heat keeps the place the board gives it — beside the name — so the
+    // listing line is built without the figure it would print a second time.
+    final listing = hongguoSeriesListingLine(t, series, watched: watched, withFigure: false);
+    final marks = <Widget>[
+      if (series.favoriteText.isNotEmpty) _RankFigure(icon: DsIcons.heart, label: series.favoriteText),
+      if (series.likeText.isNotEmpty) _RankFigure(icon: DsIcons.thumbsUp, label: series.likeText),
+      // The station's own tags lead the marks, as the board prints them beside
+      // the score, and carry their own tone rather than the score badge's.
+      for (final tag in series.coverTags.take(2)) DsBadge(label: Text(tag), status: DsStatus.info),
+      if (series.score.isNotEmpty) DsBadge(label: Text(series.score)),
+      if (series.today) DsBadge(label: Text(t.hongguo.todayTag)),
+    ];
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
-      style: DsCardStyle(
-        padding: const EdgeInsets.all(DsSpace.s12),
-        hovered: DsCardStyle(background: colors.hover),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s12,
-        children: [
-          SizedBox(
-            width: 36,
-            child: Padding(
-              padding: const EdgeInsets.only(top: DsSpace.s4),
-              child: Text(
-                '$rank',
-                textAlign: TextAlign.center,
-                style: theme.typography.numeric(
-                  theme.typography.title.copyWith(
-                    color: leading ? colors.accentText : colors.textSubtle,
-                    fontWeight: FontWeight.w700,
+      style: const DsCardStyle(padding: EdgeInsets.zero),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              SizedBox(
+                width: 36,
+                child: Text(
+                  '$rank',
+                  textAlign: TextAlign.center,
+                  style: theme.typography.numeric(
+                    theme.typography.title.copyWith(
+                      color: leading ? colors.accentText : colors.textSubtle,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(
-            width: 88,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(theme.radii.control(72)),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: series.cover.isEmpty
-                    ? fallback
-                    : DsImage(
-                        image: hongguoCoverImage(series.cover),
-                        aspectRatio: 3 / 4,
-                        semanticLabel: series.title,
-                        fallback: fallback,
-                      ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                Row(
-                  spacing: DsSpace.s8,
+              _RowPoster(series: series),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
                   children: [
-                    Expanded(
-                      child: Text(
-                        series.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                      ),
-                    ),
-                    if (series.hot.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: DsSpace.s3,
-                        children: [
-                          DsIcon(DsIcons.flame, size: theme.sizes.iconXs, color: colors.accentText),
-                          Text(
-                            series.hot,
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.accentText),
-                            ),
+                    Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            series.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
                           ),
-                        ],
+                        ),
+                        if (series.hot.isNotEmpty)
+                          _RankFigure(icon: DsIcons.flame, label: series.hot, color: colors.accentText),
+                      ],
+                    ),
+                    if (listing.isNotEmpty)
+                      Text(
+                        listing,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
+                    if (marks.isNotEmpty) Wrap(spacing: DsSpace.s8, runSpacing: DsSpace.s4, children: marks),
                   ],
                 ),
-                if (series.category.isNotEmpty || series.episodeCount > 0)
-                  Text(
-                    [
-                      if (series.category.isNotEmpty) series.category,
-                      if (series.episodeCount > 0) t.hongguo.allEpisodesCount(count: series.episodeCount),
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                if (series.favoriteText.isNotEmpty || series.likeText.isNotEmpty)
-                  Wrap(
-                    spacing: DsSpace.s12,
-                    runSpacing: DsSpace.s4,
-                    children: [
-                      if (series.favoriteText.isNotEmpty) _RankFigure(icon: DsIcons.heart, label: series.favoriteText),
-                      if (series.likeText.isNotEmpty) _RankFigure(icon: DsIcons.thumbsUp, label: series.likeText),
-                    ],
-                  ),
-                if (statusTags.isNotEmpty || series.score.isNotEmpty || series.today || watched != null)
-                  Wrap(
-                    spacing: DsSpace.s4,
-                    runSpacing: DsSpace.s4,
-                    children: [
-                      // The viewer's own state leads the marks: what the board
-                      // says about a title matters less here than whether this
-                      // device has already opened it.
-                      if (watched case final seen?)
-                        DsBadge(label: Text(hongguoWatchedLabel(t, seen)), icon: const DsIcon(DsIcons.check)),
-                      for (final tag in statusTags) DsBadge(label: Text(tag), status: DsStatus.info),
-                      if (series.score.isNotEmpty) DsBadge(label: Text(series.score)),
-                      if (series.today) DsBadge(label: Text(t.hongguo.todayTag)),
-                    ],
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// One social figure of a board row: the glyph and the source's own count.
+/// One figure of a board row: the glyph and the source's own count.
 final class _RankFigure extends StatelessWidget {
-  const _RankFigure({required this.icon, required this.label});
+  /// The figure for [label]; [color] is the caller's when the row reads the
+  /// number in its own tone — the board's heat, which the poster card stamps
+  /// on its cover.
+  const _RankFigure({required this.icon, required this.label, this.color});
 
   final DsIconData icon;
 
   final String label;
+
+  /// The row's own tone for the figure; null keeps the muted ink of a count.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -803,8 +829,11 @@ final class _RankFigure extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s3,
       children: [
-        DsIcon(icon, size: theme.sizes.iconXs, color: colors.textSubtle),
-        Text(label, style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted))),
+        DsIcon(icon, size: theme.sizes.iconXs, color: color ?? colors.textSubtle),
+        Text(
+          label,
+          style: theme.typography.numeric(theme.typography.caption.copyWith(color: color ?? colors.textMuted)),
+        ),
       ],
     );
   }

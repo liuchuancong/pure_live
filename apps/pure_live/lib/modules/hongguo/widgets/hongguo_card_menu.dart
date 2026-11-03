@@ -16,7 +16,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart' show HongguoSeries, HongguoSeriesDetail;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show kHongguoSite;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart'
-    show hongguoResumeSeconds, hongguoSeriesSubtitle;
+    show hongguoResumeSeconds, hongguoSeriesListingLine;
 
 /// Whether a listing's row opens at all: the reservation shelf carries titles
 /// the station has not published yet, whose id is the reservation's own.
@@ -64,7 +64,7 @@ final class HongguoCardMenu extends ConsumerWidget {
     final library = openable ? ref.watch(hongguoLibraryProvider) : null;
     final seen = library?.progressOf(series.seriesId);
     final favored = library?.isFavorite(series.seriesId) ?? false;
-    final details = hongguoSeriesSubtitle(t, series, watched: seen);
+    final details = hongguoSeriesListingLine(t, series, watched: seen);
     final actions = <Widget>[
       if (onOpen != null)
         DsMenuItem(leading: const DsIcon(DsIcons.listVideo), label: Text(t.hongguo.cardOpenSeries), onPressed: onOpen),
