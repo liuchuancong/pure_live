@@ -130,6 +130,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     final colors = theme.colors;
     final library = ref.watch(recordingLibraryProvider);
     final takes = _scope(library.value ?? const <RecordingTake>[]);
+    final platformTabs = _platformTabs(takes);
     final filtered = _sort.sorted(_filter(takes));
     final width = MediaQuery.sizeOf(context).width;
     final inset = LiveWindow.pageInset(width);
@@ -205,20 +206,23 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                   ),
                 ],
               ),
-              PlatformTabRow(
-                platforms: _platformTabs(takes),
-                current: _platform,
-                nameOf: widget.platformName,
-                semanticLabel: t.recorder.libraryTitle,
-                countOf: (id) =>
-                    id == kAllPlatforms ? takes.length : takes.where((take) => take.platformId == id).length,
-                showPlatformWall: false,
-                showLayoutToggle: false,
-                onChanged: (value) => setState(() {
-                  _platform = value;
-                  _selected.clear();
-                }),
-              ),
+              // One platform has nothing to choose between: the row would
+              // only repeat its name beside an "all" that means the same.
+              if (platformTabs.length > 2)
+                PlatformTabRow(
+                  platforms: platformTabs,
+                  current: _platform,
+                  nameOf: widget.platformName,
+                  semanticLabel: t.recorder.libraryTitle,
+                  countOf: (id) =>
+                      id == kAllPlatforms ? takes.length : takes.where((take) => take.platformId == id).length,
+                  showPlatformWall: false,
+                  showLayoutToggle: false,
+                  onChanged: (value) => setState(() {
+                    _platform = value;
+                    _selected.clear();
+                  }),
+                ),
             ],
           ),
         ),
@@ -439,11 +443,14 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
 
   // -- state helpers --------------------------------------------------------
 
-  /// The takes on screen: platform and playability filtered.
+  /// The takes on screen: platform and playability filtered. A platform
+  /// choice only exists while the row is shown; with one platform the stored
+  /// choice is ignored rather than hiding every take behind a hidden tab.
   List<RecordingTake> _filter(List<RecordingTake> takes) {
+    final platform = _platformTabs(_all).length > 2 ? _platform : kAllPlatforms;
     return [
       for (final take in takes)
-        if ((_platform == kAllPlatforms || take.platformId == _platform) && (!_playableOnly || take.playable)) take,
+        if ((platform == kAllPlatforms || take.platformId == platform) && (!_playableOnly || take.playable)) take,
     ];
   }
 
