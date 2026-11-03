@@ -79,6 +79,7 @@ final class HongguoDownloadItem {
     this.total = 0,
     this.speed = 0,
     this.attempts = 0,
+    this.servedHeight = 0,
     this.error,
   });
 
@@ -102,6 +103,7 @@ final class HongguoDownloadItem {
       total: json['total'] as int? ?? 0,
       speed: json['speed'] as int? ?? 0,
       attempts: json['attempts'] as int? ?? 0,
+      servedHeight: json['servedHeight'] as int? ?? 0,
       error: json['error'] as String?,
     );
   }
@@ -156,6 +158,14 @@ final class HongguoDownloadItem {
   /// (or retried it by hand, which starts the budget again).
   final int attempts;
 
+  /// The height the picked rendition carries, once the run has picked one;
+  /// zero before that, or when the platform named no height.
+  ///
+  /// [maxHeight] is only what the viewer asked for as a ceiling: an anonymous
+  /// session is served the website's own copy at 360, and a row that kept
+  /// printing the ceiling would claim a picture it never downloaded.
+  final int servedHeight;
+
   /// The failure's words, on a failed task.
   final String? error;
 
@@ -175,6 +185,7 @@ final class HongguoDownloadItem {
     int? total,
     int? speed,
     int? attempts,
+    int? servedHeight,
     HongguoDownloadPhase? phase,
     String? error,
     String? filePath,
@@ -201,6 +212,7 @@ final class HongguoDownloadItem {
       total: total ?? this.total,
       speed: speed ?? this.speed,
       attempts: attempts ?? this.attempts,
+      servedHeight: servedHeight ?? this.servedHeight,
       error: error,
     );
   }
@@ -222,6 +234,7 @@ final class HongguoDownloadItem {
     'total': total,
     'speed': speed,
     'attempts': attempts,
+    if (servedHeight > 0) 'servedHeight': servedHeight,
     if (error != null) 'error': error,
   };
 }
@@ -692,6 +705,13 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
         item.maxHeight,
         learnedFailures: ref.read(hongguoDecoderLessonsProvider),
       );
+      // From here the row names the height that actually came down: the cap is
+      // what the viewer asked for, and an anonymous session is served the
+      // website's own 360 copy under a 1080 cap.
+      if (rendition.quality > 0 && rendition.quality != item.servedHeight) {
+        item = item.copyWith(servedHeight: rendition.quality);
+        _replace(item);
+      }
       proxyUrl = await ref.read(hongguoDownloadProxyProvider).register(rendition);
       // A row kept from the last session can outlive its folder; the run
       // makes room for itself again.

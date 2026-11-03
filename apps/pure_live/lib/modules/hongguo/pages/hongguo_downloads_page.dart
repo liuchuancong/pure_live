@@ -1042,7 +1042,7 @@ List<MediaPreviewItem> _hongguoPreviewItems(List<HongguoDownloadItem> tasks) {
         title: task.part.isEmpty ? task.title : '${task.title} · ${task.part}',
         path: task.filePath,
         subtitle: [
-          '${task.maxHeight}P',
+          task.qualityLabel,
           if (task.total > 0) formatDownloadBytes(task.total),
           downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp)),
         ].join(' · '),
@@ -1359,7 +1359,7 @@ final class _HongguoTaskRow extends ConsumerWidget {
         spacing: DsSpace.s4,
         children: [
           Text(
-            '${task.maxHeight}P',
+            task.qualityLabel,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.typography.caption.copyWith(color: colors.textMuted),
@@ -1399,4 +1399,15 @@ final class _HongguoTaskRow extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The tier a row names: the height that actually came down once the run
+/// picked one, the requested ceiling until then.
+///
+/// The two are not the same thing — an anonymous session is served the
+/// website's own 360 copy no matter which ceiling the viewer chose, and a
+/// finished row that kept printing the ceiling would claim a picture it never
+/// downloaded.
+extension on HongguoDownloadItem {
+  String get qualityLabel => '${servedHeight > 0 ? servedHeight : maxHeight}P';
 }
