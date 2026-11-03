@@ -21,7 +21,10 @@ final BigInt _rsaModulus = BigInt.parse(
 final BigInt _rsaExponent = BigInt.from(65537);
 
 Uint8List _aesCbc(List<int> data, List<int> key) {
-  final cipher = PaddedBlockCipher('PKCS7/AES/CBC')
+  // The registry reads the algorithm name first and the padding last; with the
+  // two swapped the lookup asks pointycastle for a padding called `CBC`, which
+  // it has never registered, and every call throws before a request is made.
+  final cipher = PaddedBlockCipher('AES/CBC/PKCS7')
     ..init(
       true,
       PaddedBlockCipherParameters(
@@ -33,7 +36,7 @@ Uint8List _aesCbc(List<int> data, List<int> key) {
 }
 
 Uint8List _aesEcb(List<int> data, List<int> key) {
-  final cipher = PaddedBlockCipher('PKCS7/AES/ECB')
+  final cipher = PaddedBlockCipher('AES/ECB/PKCS7')
     ..init(true, PaddedBlockCipherParameters(KeyParameter(Uint8List.fromList(key)), null));
   return cipher.process(Uint8List.fromList(data));
 }
