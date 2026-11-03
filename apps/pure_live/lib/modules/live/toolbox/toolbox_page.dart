@@ -277,9 +277,8 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                     ),
                 ],
               ),
-              // The action and the direct-link way share one line, level
-              // with each other: the form is an errand, not a page of
-              // buttons.
+              // The two actions share one line and one width: the form is
+              // an errand, not a page of buttons.
               Row(
                 spacing: DsSpace.s12,
                 children: [
@@ -291,11 +290,12 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                       child: Text(t.toolbox.linkOpen),
                     ),
                   ),
-                  Center(
-                    child: DsLink(
-                      label: t.toolbox.linkDirect,
+                  Expanded(
+                    child: DsButton(
+                      variant: DsButtonVariant.secondary,
+                      loading: resolving,
                       onPressed: resolving ? null : () => unawaited(_direct()),
-                      style: DsLinkStyle(textStyle: DsTheme.of(context).typography.small),
+                      child: Text(t.toolbox.linkDirect),
                     ),
                   ),
                 ],
