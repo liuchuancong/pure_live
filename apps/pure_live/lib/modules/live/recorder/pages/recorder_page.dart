@@ -230,14 +230,15 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       value: _filter.name,
       semanticLabel: t.recorder.filterLabel,
       onChanged: (value) => setState(() => _filter = _RecorderFilter.values.byName(value)),
-      tabs: const [
-        DsTab(value: 'all', label: Text('${t.recorder.filterAll} ${counts[_RecorderFilter.all] ?? 0}')),
+      tabs: [
+        DsTab(value: 'all', label: Text(t.recorder.filterAll), count: counts[_RecorderFilter.all] ?? 0),
         DsTab(
           value: 'recording',
-          label: Text('${t.recorder.filterRecording} ${counts[_RecorderFilter.recording] ?? 0}'),
+          label: Text(t.recorder.filterRecording),
+          count: counts[_RecorderFilter.recording] ?? 0,
         ),
-        DsTab(value: 'waiting', label: Text('${t.recorder.filterWaiting} ${counts[_RecorderFilter.waiting] ?? 0}')),
-        DsTab(value: 'failed', label: Text('${t.recorder.filterFailed} ${counts[_RecorderFilter.failed] ?? 0}')),
+        DsTab(value: 'waiting', label: Text(t.recorder.filterWaiting), count: counts[_RecorderFilter.waiting] ?? 0),
+        DsTab(value: 'failed', label: Text(t.recorder.filterFailed), count: counts[_RecorderFilter.failed] ?? 0),
       ],
     );
     return Column(
@@ -980,7 +981,6 @@ typedef _TaskCallbacks = ({
 });
 
 /// A filter's word, without its count.
-
 
 /// One recording task as a list card: the room's cover (the platform's
 /// letter when it has none), the streamer and room title, the platform and
