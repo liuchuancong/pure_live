@@ -64,8 +64,12 @@ final class _UpdateDialog extends StatelessWidget {
               ),
             ],
           ),
+          // The dialog's description sits in a scroll view, so its height
+          // is unbounded and a flex child cannot live here; the notes
+          // bound themselves instead and scroll within their own box.
           if (notes.isNotEmpty)
-            Flexible(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 280),
               child: SingleChildScrollView(
                 child: Text(notes, style: theme.typography.body.copyWith(color: colors.textMuted)),
               ),
