@@ -8,7 +8,8 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter, Logical
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
+import 'package:live_device/live_device.dart'
+    show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
@@ -88,6 +89,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   /// Whether the overlay bars are up; a playing stream lets them settle away.
   bool _controlsVisible = true;
+
+  /// The display's wake lock: held while a part plays and the app's own
+  /// 屏幕常亮 allows it, the same rule the live room and the IPTV page keep.
+  final ScreenAwakeService _screenAwake = const PlatformScreenAwakeService();
+  bool _screenHeld = false;
 
   /// Whether the blurb shows in full rather than its first six lines.
   bool _introExpanded = false;
@@ -211,9 +217,18 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
+  /// Holds the display awake exactly while the part plays and the preference
+  /// allows it.
+  void _syncScreenWake(bool hold) {
+    if (hold == _screenHeld) return;
+    _screenHeld = hold;
+    unawaited((hold ? _screenAwake.enable() : _screenAwake.disable()).catchError((Object _) {}));
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    unawaited(_screenAwake.disable().catchError((Object _) {}));
     // The player goes quiet before anything else: the route's leave animation
     // runs while the release's queue drains, and the video must not be heard
     // over the page the viewer returned to.
@@ -958,6 +973,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final handle = _handle;
     final transport = _transport;
     final playing = transport?.isPlaying ?? false;
+    _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
     final detail = _detail;
     final playback = ref.watch(playbackSettingsProvider);
     final danmakuStyle = ref.watch(danmakuStyleProvider);

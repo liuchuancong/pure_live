@@ -6,7 +6,8 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKey
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
+import 'package:live_device/live_device.dart'
+    show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
@@ -98,6 +99,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
 
   /// Whether the overlay bar is up; a playing picture lets it settle away.
   bool _controlsVisible = true;
+
+  /// The display's wake lock: held while an episode plays and the app's own
+  /// 屏幕常亮 allows it, the same rule the live room and the IPTV page keep.
+  final ScreenAwakeService _screenAwake = const PlatformScreenAwakeService();
+  bool _screenHeld = false;
 
   /// The overlay's timers: the bar's hide, and a picker's open and close.
   Timer? _hideTimer;
@@ -253,9 +259,18 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     }
   }
 
+  /// Holds the display awake exactly while the episode plays and the
+  /// preference allows it.
+  void _syncScreenWake(bool hold) {
+    if (hold == _screenHeld) return;
+    _screenHeld = hold;
+    unawaited((hold ? _screenAwake.enable() : _screenAwake.disable()).catchError((Object _) {}));
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    unawaited(_screenAwake.disable().catchError((Object _) {}));
     // The player goes quiet before anything else: the route's leave animation
     // runs while the release's queue drains, and the episode must not be
     // heard over the page the viewer returned to.
@@ -1476,6 +1491,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
     final danmakuItems = ref.watch(hongguoDanmakuProvider).items;
     final playing = transport?.isPlaying ?? false;
+    _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
     final showBar = _controlsVisible || !playing || _error != null;
     final ladder = _lastLadder;
     final attempted = _attempted;
