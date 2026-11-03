@@ -28,7 +28,7 @@
   "webdavAccountNameHint": "留空则使用服务器主机名",
   "webdavCurrent": "当前",
   "webdavNoAccounts": "还没有 WebDAV 账号",
-  "webdavNoAccountsDesc": "添加一个服务器后才能上传备份或从这里恢复。",
+  "webdavNoAccountsDesc": "添加服务器后即可上传备份或恢复。",
   "webdavAccountDeleteTitle": "删除“{name}”账号？",
   "webdavAccountDeleteDesc": "只删除本机保存的地址与密码，服务器上的文件不受影响。",
   "webdavAccountDeleted": "账号已删除",

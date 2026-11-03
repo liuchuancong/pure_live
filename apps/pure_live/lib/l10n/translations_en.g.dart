@@ -251,7 +251,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get webdavAccountNameHint => 'Left blank, the server\'s host names it';
 	@override String get webdavCurrent => 'Current';
 	@override String get webdavNoAccounts => 'No WebDAV account yet';
-	@override String get webdavNoAccountsDesc => 'Add a server before uploading a backup or restoring from one.';
+	@override String get webdavNoAccountsDesc => 'Add a server to upload or restore backups.';
 	@override String webdavAccountDeleteTitle({required Object name}) => 'Delete the "${name}" account?';
 	@override String get webdavAccountDeleteDesc => 'Removes the saved address and password on this device only; the server\'s files stay as they are.';
 	@override String get webdavAccountDeleted => 'Account deleted';
@@ -4690,7 +4690,7 @@ extension on TranslationsEn {
 			'backup.webdavAccountNameHint' => 'Left blank, the server\'s host names it',
 			'backup.webdavCurrent' => 'Current',
 			'backup.webdavNoAccounts' => 'No WebDAV account yet',
-			'backup.webdavNoAccountsDesc' => 'Add a server before uploading a backup or restoring from one.',
+			'backup.webdavNoAccountsDesc' => 'Add a server to upload or restore backups.',
 			'backup.webdavAccountDeleteTitle' => ({required Object name}) => 'Delete the "${name}" account?',
 			'backup.webdavAccountDeleteDesc' => 'Removes the saved address and password on this device only; the server\'s files stay as they are.',
 			'backup.webdavAccountDeleted' => 'Account deleted',

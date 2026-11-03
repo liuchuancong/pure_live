@@ -580,8 +580,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '还没有 WebDAV 账号'
 	String get webdavNoAccounts => '还没有 WebDAV 账号';
 
-	/// zh-CN: '添加一个服务器后才能上传备份或从这里恢复。'
-	String get webdavNoAccountsDesc => '添加一个服务器后才能上传备份或从这里恢复。';
+	/// zh-CN: '添加服务器后即可上传备份或恢复。'
+	String get webdavNoAccountsDesc => '添加服务器后即可上传备份或恢复。';
 
 	/// zh-CN: '删除“{name}”账号？'
 	String webdavAccountDeleteTitle({required Object name}) => '删除“${name}”账号？';
@@ -13169,7 +13169,7 @@ extension on Translations {
 			'backup.webdavAccountNameHint' => '留空则使用服务器主机名',
 			'backup.webdavCurrent' => '当前',
 			'backup.webdavNoAccounts' => '还没有 WebDAV 账号',
-			'backup.webdavNoAccountsDesc' => '添加一个服务器后才能上传备份或从这里恢复。',
+			'backup.webdavNoAccountsDesc' => '添加服务器后即可上传备份或恢复。',
 			'backup.webdavAccountDeleteTitle' => ({required Object name}) => '删除“${name}”账号？',
 			'backup.webdavAccountDeleteDesc' => '只删除本机保存的地址与密码，服务器上的文件不受影响。',
 			'backup.webdavAccountDeleted' => '账号已删除',

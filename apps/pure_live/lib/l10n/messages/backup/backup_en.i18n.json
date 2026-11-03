@@ -28,7 +28,7 @@
   "webdavAccountNameHint": "Left blank, the server's host names it",
   "webdavCurrent": "Current",
   "webdavNoAccounts": "No WebDAV account yet",
-  "webdavNoAccountsDesc": "Add a server before uploading a backup or restoring from one.",
+  "webdavNoAccountsDesc": "Add a server to upload or restore backups.",
   "webdavAccountDeleteTitle": "Delete the \"{name}\" account?",
   "webdavAccountDeleteDesc": "Removes the saved address and password on this device only; the server's files stay as they are.",
   "webdavAccountDeleted": "Account deleted",
