@@ -100,32 +100,21 @@ const SettingsGroup _systemGroup = (
 
 const SettingsGroup _aboutGroup = (labelKey: 'groupAbout', sections: [SettingsSection.about]);
 
-/// What a non-live module shares: the appearance, the player's engine, the
-/// system pages and About — never the live page's own rows (the navigation
-/// menu, the card layout, the picture options). Live's own catalogue is
-/// left exactly as it was.
+/// What a non-live module shares with the live one: the appearance, the
+/// player's engine, the system pages and About — never the live page's own
+/// rows (the navigation menu, the card layout, the picture options). Live's
+/// own catalogue is left exactly as it was.
+///
+/// The four are written out per module rather than spliced as one list
+/// because the registry is `const`: the rail a module shows is the list its
+/// own row spells, in the live module's order — appearance, the module's
+/// business, the engine, the system, About.
 const SettingsGroup _sharedAppearanceGroup = (
   labelKey: 'groupPersonalization',
   sections: [SettingsSection.theme, SettingsSection.background],
 );
 
 const SettingsGroup _sharedPlaybackGroup = (labelKey: 'groupPlayback', sections: [SettingsSection.kernel]);
-
-const List<SettingsGroup> _sharedGroups = [_sharedAppearanceGroup, _sharedPlaybackGroup, _systemGroup, _aboutGroup];
-
-/// The same tail for a module the video kernel does not play for.
-///
-/// The 播放内核 page writes the engine choice (`player.backend`: mpv, ijk,
-/// better_player), the hardware decoder and the kernel's advanced switches, and
-/// every one of them is read when a **room-shaped** player opens — the live
-/// room and its multi-view, the IPTV play page, the hongguo player, the station
-/// video page. Music plays through `media_core_audio`'s own mpv audio stack and
-/// reads none of it: nothing under `modules/music` names
-/// `playerKernelBackendProvider` at all. Left in, that group is a wall of knobs
-/// that turn nothing, and the viewer who moves the decoder there and hears no
-/// difference stops trusting the settings that do work — the module's own 音效
-/// 中心, its output device and its quality tier.
-const List<SettingsGroup> _sharedGroupsWithoutKernel = [_sharedAppearanceGroup, _systemGroup, _aboutGroup];
 
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
@@ -157,11 +146,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
     landing: NavigationItem.channels,
     // IPTV's own surface is guide updates and source syncing; the app-wide
-    // groups follow unchanged. Nothing from the live room (danmaku,
-    // recording, platforms) or the Bilibili station belongs here.
+    // groups sit around it in the live module's order. Nothing from the live
+    // room (danmaku, recording, platforms) or the Bilibili station belongs here.
     settingsGroups: [
+      _sharedAppearanceGroup,
       (labelKey: 'groupIptv', sections: [SettingsSection.iptv]),
-      ..._sharedGroups,
+      _sharedPlaybackGroup,
+      _systemGroup,
+      _aboutGroup,
     ],
   ),
   AppModule.vod: ModuleNavigation(
@@ -177,8 +169,11 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // video opens with and its playback behaviour. Live's sources and
     // danmaku stay out of it.
     settingsGroups: [
+      _sharedAppearanceGroup,
       (labelKey: 'groupVod', sections: [SettingsSection.vod]),
-      ..._sharedGroups,
+      _sharedPlaybackGroup,
+      _systemGroup,
+      _aboutGroup,
     ],
   ),
   AppModule.music: ModuleNavigation(
@@ -201,28 +196,35 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
       ],
     ],
     landing: NavigationItem.music,
-    // The music module's settings rail, entry for entry the way lx-music
-    // lays its own out — playback, lyrics, desktop lyrics, download,
-    // sources, hotkeys, sync and the EQ — with the shared pages after.
-    // Two headings instead of one wall of eight: what the player and its
-    // files decide, then the effects and the ways out (hotkeys, sync/API).
+    // The music module's settings rail: one own heading, as every other module
+    // and the live rail have — the second heading this row used to carry
+    // (音效与工具) split eight pages by taste, not by kind, and read as a mess.
+    // No 播放内核 group: that page writes `player.backend` (mpv, ijk,
+    // better_player), the hardware decoder and the kernel's advanced switches,
+    // and every one of them is read when a **room-shaped** player opens — the
+    // live room and its multi-view, the IPTV play page, the hongguo player, the
+    // station video page. Music plays through `media_core_audio`'s own mpv
+    // audio stack and reads none of it; nothing under `modules/music` names
+    // `playerKernelBackendProvider`. Left in, it is a wall of knobs that turn
+    // nothing, and the viewer who moves the decoder there and hears no
+    // difference stops trusting the settings that do work.
     settingsGroups: [
+      _sharedAppearanceGroup,
       (
         labelKey: 'groupMusic',
         sections: [
           SettingsSection.music,
-          SettingsSection.musicSources,
-          SettingsSection.musicDownload,
+          SettingsSection.musicEq,
           SettingsSection.musicLyric,
           SettingsSection.musicDesktopLyric,
+          SettingsSection.musicSources,
+          SettingsSection.musicDownload,
+          SettingsSection.musicSync,
+          SettingsSection.musicHotkeys,
         ],
       ),
-      (
-        labelKey: 'groupMusicTools',
-        sections: [SettingsSection.musicEq, SettingsSection.musicHotkeys, SettingsSection.musicSync],
-      ),
-      // No 播放内核 group: see [_sharedGroupsWithoutKernel].
-      ..._sharedGroupsWithoutKernel,
+      _systemGroup,
+      _aboutGroup,
     ],
   ),
   AppModule.hongguo: ModuleNavigation(
@@ -244,8 +246,11 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // rendition an episode opens with. Nothing from the live room or the
     // Bilibili station belongs here.
     settingsGroups: [
+      _sharedAppearanceGroup,
       (labelKey: 'groupHongguo', sections: [SettingsSection.hongguo]),
-      ..._sharedGroups,
+      _sharedPlaybackGroup,
+      _systemGroup,
+      _aboutGroup,
     ],
   ),
 };
