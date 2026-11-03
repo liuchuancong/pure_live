@@ -601,6 +601,7 @@ final class MgMusicSource extends LxPlatformSource
     final copyright = '$copyrightId';
     final singers = raw['singerList'];
     final artistPic = _firstSingerImage(singers);
+    final artistId = _leadSingerId(singers);
     return audio.MusicTrack(
       id: id,
       sourceId: 'mg',
@@ -618,9 +619,23 @@ final class MgMusicSource extends LxPlatformSource
         'mrc': '${raw['mrcurl'] ?? raw['mrcUrl'] ?? ''}',
         'trc': '${raw['trcUrl'] ?? ''}',
         if (picUrl.isNotEmpty) 'pic': picUrl,
+        'artistId': ?artistId,
         'artistPic': ?artistPic,
       },
     );
+  }
+
+  /// The id of the singer a credit line leads with — the key every platform
+  /// writes under `artistId`, which is how a tapped artist line reaches the
+  /// page with the id already in hand.
+  static String? _leadSingerId(Object? singers) {
+    if (singers is! List) return null;
+    for (final singer in singers) {
+      if (singer is! Map) continue;
+      final id = '${singer['id'] ?? ''}'.trim();
+      if (id.isNotEmpty && id != '0') return id;
+    }
+    return null;
   }
 
   /// The lead singer's own picture, when the row carried one. Migu ships it on

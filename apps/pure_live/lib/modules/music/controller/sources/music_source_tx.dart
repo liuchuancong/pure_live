@@ -602,7 +602,7 @@ final class TxMusicSource extends LxPlatformSource
     final page = await search(subject, pageSize: 20);
     for (final track in page.items) {
       if (musicMainArtist(track.artist) != subject) continue;
-      final mid = '${track.metadata['artistMid'] ?? ''}'.trim();
+      final mid = '${track.metadata['artistId'] ?? ''}'.trim();
       if (mid.isNotEmpty) return mid;
     }
     return null;
@@ -706,7 +706,7 @@ final class TxMusicSource extends LxPlatformSource
         'songId': '${row['songid'] ?? ''}',
         'mediaMid': mediaMid,
         if (pic.isNotEmpty) 'pic': pic,
-        'artistMid': ?leadMid,
+        'artistId': ?leadMid,
         'artistPic': ?(leadMid == null ? null : _singerPhoto(leadMid)),
       },
     );
@@ -767,7 +767,7 @@ final class TxMusicSource extends LxPlatformSource
         'songId': '${entry['id'] ?? ''}',
         'mediaMid': '${file['media_mid'] ?? ''}',
         if (picUrl.isNotEmpty) 'pic': picUrl,
-        'artistMid': ?leadMid,
+        'artistId': ?leadMid,
         'artistPic': ?(leadMid == null ? null : _singerPhoto(leadMid)),
       },
     );
