@@ -779,6 +779,12 @@ final class HongguoOfficialClient {
   /// same round trip and wait for the handoff, as the reference's
   /// `metadataAhead` does. The model endpoint needs no signature — the
   /// registered device identity is the ticket.
+  ///
+  /// That ticket only reaches so far: an anonymous session is answered a 200
+  /// with no bytes at all (`播放信息为空`), and the episode then falls to the
+  /// website's own copy — [publicVideoUrl], the file the site hands its own
+  /// video element. Without that the viewer gets an error card over a drama
+  /// the site plays in the open.
   Future<List<HongguoRendition>> playbackLadder(String vid, {List<String> ahead = const []}) async {
     final pattern = RegExp(r'^[0-9]{1,30}$');
     if (!pattern.hasMatch(vid)) {
@@ -794,6 +800,25 @@ final class HongguoOfficialClient {
     final cached = _takeAhead(vid);
     if (cached != null) return cached;
     final ids = [vid, ...wanted];
+    List<HongguoRendition> ladder;
+    try {
+      ladder = await _modelLadder(ids, vid);
+    } on HongguoOfficialFailure {
+      // The model call refused this session; the public copy still plays. A
+      // transport breakdown is not caught here — no route works without it.
+      ladder = const [];
+      // A session refused for this episode is refused for the two queued
+      // behind it too, and each of those would pay the same three reads; hand
+      // them their public copy now so the next episode starts from the cache.
+      for (final next in ids) {
+        _rememberAhead(next, [_publicRendition(next)]);
+      }
+    }
+    return ladder.isNotEmpty ? ladder : [_publicRendition(vid)];
+  }
+
+  /// The app's own ladder for [ids], read from the row named [vid].
+  Future<List<HongguoRendition>> _modelLadder(List<String> ids, String vid) async {
     final models = await _playbackModels(ids);
     Map<String, Object?>? entry;
     final named = models[vid];
@@ -829,6 +854,18 @@ final class HongguoOfficialClient {
     if (inline.isNotEmpty) return inline;
     return await _fallbackLadder(model);
   }
+
+  /// The website's own copy of one episode: a plain 360p MP4, no key and no
+  /// signature.
+  ///
+  /// The site's bundle builds it as `/video/public/<episode vid>/360p.mp4` and
+  /// gives it to a `video` element, so the file answers a bare ranged GET like
+  /// any other mp4 — measured: 206, `video/mp4`, and the first bytes are
+  /// `ftypisom`.
+  String publicVideoUrl(String vid) => '$kHongguoSite/video/public/$vid/360p.mp4';
+
+  HongguoRendition _publicRendition(String vid) =>
+      HongguoRendition(quality: 360, codec: 'h264', url: publicVideoUrl(vid));
 
   /// The `data` map of the player-model call for [ids] — the current vid plus
   /// at most two ahead, in one request.

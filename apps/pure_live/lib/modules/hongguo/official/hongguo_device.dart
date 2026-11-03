@@ -312,15 +312,20 @@ final class HongguoDeviceSession {
 
   static void _writeStored(_Identity identity) {
     try {
-      unawaited(StoragePrefs.setString(
-        _kStoreKey,
-        jsonEncode({
-          'deviceId': identity.deviceId,
-          'installId': identity.installId,
-          'cdid': identity.cdid,
-          'cookies': identity.cookies,
-        }),
-      ));
+      unawaited(
+        StoragePrefs.setString(
+          _kStoreKey,
+          jsonEncode({
+            'deviceId': identity.deviceId,
+            'installId': identity.installId,
+            'cdid': identity.cdid,
+            'cookies': identity.cookies,
+          }),
+          // The write rejects when the store is not open; the clause above
+          // only catches the synchronous half, so an unhandled error would
+          // escape with the identity already in hand.
+        ).catchError((Object _) => false),
+      );
     } on Object {
       // A closed store loses the identity; the next start registers again.
     }
