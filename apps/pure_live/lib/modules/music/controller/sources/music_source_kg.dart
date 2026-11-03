@@ -5,6 +5,8 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show decodeKrc;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
+    show MusicAlbum, MusicAlbumDetail, MusicAlbumSource;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
@@ -45,7 +47,7 @@ const Map<String, String> _krcHeaders = {
 /// by the per-quality file hashes the search response carries.
 final class KgMusicSource extends LxPlatformSource
     with OnlinePlaylists, PlaylistTagTree, SonglistSearch, LxArtistPageFromSearch
-    implements MusicHotWords, MusicCommentsSource {
+    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource {
   /// A KuGou source over the lx runtime.
   KgMusicSource(super.runtime, super.http);
 
@@ -357,6 +359,116 @@ final class KgMusicSource extends LxPlatformSource
       tracks.add(track);
     }
     return (info, tracks);
+  }
+
+  /// The album's own page. The platform answers it as two reads: the card
+  /// (name, singer, cover, release date) and the song rows, which carry no
+  /// album fields of their own and name song and singer in one `歌手 - 曲名`
+  /// line. Neither call needs the signature the share links carry.
+  @override
+  Future<MusicAlbumDetail> album(String albumId) async {
+    final id = albumId.trim();
+    if (id.isEmpty) return (album: const MusicAlbum(id: '', name: '', artist: ''), tracks: const <audio.MusicTrack>[]);
+    final card = await _albumCard(id);
+    final tracks = <audio.MusicTrack>[];
+    final seen = <String>{};
+    for (final row in await _albumSongs(id)) {
+      final track = _albumTrackOf(row, id, card);
+      if (track == null || !seen.add(track.id)) continue;
+      tracks.add(track);
+    }
+    return (
+      album: MusicAlbum(
+        id: id,
+        name: card.name,
+        artist: card.artist,
+        artistId: card.artistId.isEmpty ? null : card.artistId,
+        coverUri: card.cover,
+        // The card's own count answers 0 for a visitor who is not buying, so
+        // the figure the page prints is the list that came through.
+        trackCount: tracks.length,
+        year: card.year,
+      ),
+      tracks: tracks,
+    );
+  }
+
+  Future<({String name, String artist, String artistId, Uri? cover, int? year})> _albumCard(String id) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('mobiles.kugou.com', '/api/v3/album/info', {
+          'albumid': id,
+          'version': '9108',
+          'plat': '0',
+          'area_code': '0',
+          'with_res_tag': '0',
+        }),
+        headers: _mobileHeaders,
+      ),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (data is! Map) return (name: '', artist: '', artistId: '', cover: null, year: null);
+    final card = data.cast<String, Object?>();
+    final picture = '${card['imgurl'] ?? ''}'.replaceFirst('{size}', '240').trim();
+    final published = '${card['publishtime'] ?? ''}'.trim();
+    return (
+      name: LxPlatformSource.decodeName('${card['albumname'] ?? ''}').trim(),
+      artist: LxPlatformSource.decodeName('${card['singername'] ?? ''}').trim(),
+      artistId: '${card['singerid'] ?? ''}'.trim(),
+      cover: picture.isEmpty ? null : Uri.tryParse(picture),
+      year: published.length >= 4 ? int.tryParse(published.substring(0, 4)) : null,
+    );
+  }
+
+  Future<List<Map<String, Object?>>> _albumSongs(String id) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('mobiles.kugou.com', '/api/v3/album/song', {
+          'version': '9108',
+          'albumid': id,
+          'plat': '0',
+          'pagesize': '200',
+          'area_code': '0',
+          'page': '1',
+          'with_res_tag': '0',
+        }),
+        headers: _mobileHeaders,
+      ),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    final raw = data is Map ? data['info'] : null;
+    return [
+      if (raw is List)
+        for (final entry in raw)
+          if (entry is Map) entry.cast<String, Object?>(),
+    ];
+  }
+
+  /// One album row as a track. The quality sizes and hashes are the lowercase
+  /// set the playlist rows carry, so the shared mapper reads them as they
+  /// stand; the singer and the cover are not on the row, so the card's own
+  /// supply them.
+  audio.MusicTrack? _albumTrackOf(
+    Map<String, Object?> row,
+    String albumId,
+    ({String name, String artist, String artistId, Uri? cover, int? year}) card,
+  ) {
+    final line = LxPlatformSource.decodeName('${row['filename'] ?? ''}').trim();
+    final split = line.indexOf(' - ');
+    final singer = split < 0 ? '' : line.substring(0, split).trim();
+    final title = split < 0 ? line : line.substring(split + 3).trim();
+    final track = _trackOf(
+      row,
+      songmid: '${row['audio_id'] ?? row['album_audio_id'] ?? ''}'.trim(),
+      title: title,
+      suffix: '',
+      singers: null,
+      albumName: card.name,
+      albumId: albumId,
+    );
+    if (track == null) return null;
+    final artist = singer.isEmpty ? card.artist : singer;
+    return track.copyWith(artist: artist.isEmpty ? null : artist, coverUri: card.cover);
   }
 
   Future<MusicPlaylistInfo> _specialInfo(String globalId) async {
