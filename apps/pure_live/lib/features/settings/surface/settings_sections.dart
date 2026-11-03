@@ -392,8 +392,21 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.danmaku => const [SettingsSection.danmakuDisplay, SettingsSection.shield],
   SettingsSection.picture => const [SettingsSection.floatingWindow],
   SettingsSection.kernel => const [SettingsSection.kernelAdvanced, SettingsSection.playerGuide],
-  SettingsSection.iptv => const [SettingsSection.iptvBrowse, SettingsSection.iptvGroups],
-  SettingsSection.vod => const [SettingsSection.vodPlayback, SettingsSection.vodDownload, SettingsSection.vodInterface],
+  SettingsSection.iptv => const [
+    SettingsSection.iptvBrowse,
+    SettingsSection.iptvGroups,
+    // The app's own picture and sound pages, which this module's player
+    // reads; the entries are in the module's pane, so the table names them.
+    SettingsSection.picture,
+    SettingsSection.quality,
+  ],
+  SettingsSection.vod => const [
+    SettingsSection.picture,
+    SettingsSection.quality,
+    SettingsSection.vodPlayback,
+    SettingsSection.vodDownload,
+    SettingsSection.vodInterface,
+  ],
   SettingsSection.backup => const [
     SettingsSection.localBackup,
     SettingsSection.cloudBackup,
@@ -404,6 +417,8 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   ],
   SettingsSection.dataCache => const [SettingsSection.storageFolders],
   SettingsSection.hongguo => const [
+    SettingsSection.picture,
+    SettingsSection.quality,
     SettingsSection.hongguoInterface,
     SettingsSection.hongguoDownload,
     SettingsSection.hongguoDanmaku,
