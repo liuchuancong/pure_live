@@ -220,19 +220,23 @@ final hongguoLoginSessionProvider =
 /// One account shelf's state: its rows and the ask's shape.
 typedef HongguoAccountListState<T> = ({List<T> items, bool loading, String? error});
 
-const HongguoAccountListState<Object?> _idleList = (items: [], loading: false, error: null);
+// One constant per shelf, not one shared `Object?` row: a record of
+// `List<Object?>` is not a subtype of a record of `List<HongguoCloudFavorite>`,
+// so a shared constant had to be cast at every read and the cast threw.
+const HongguoAccountListState<HongguoCloudFavorite> _idleFavorites = (items: [], loading: false, error: null);
+const HongguoAccountListState<HongguoCloudProgress> _idleHistory = (items: [], loading: false, error: null);
 
 /// The account favorites shelf.
 final class HongguoAccountFavoritesController extends Notifier<HongguoAccountListState<HongguoCloudFavorite>> {
   @override
-  HongguoAccountListState<HongguoCloudFavorite> build() => _idleList as HongguoAccountListState<HongguoCloudFavorite>;
+  HongguoAccountListState<HongguoCloudFavorite> build() => _idleFavorites;
 
   /// Reads the shelf again.
   Future<void> refresh() async {
     final account = ref.read(hongguoAccountProvider);
     final credentials = account.credentials;
     if (credentials == null) {
-      state = _idleList as HongguoAccountListState<HongguoCloudFavorite>;
+      state = _idleFavorites;
       return;
     }
     state = (items: state.items, loading: true, error: null);
@@ -266,13 +270,13 @@ final hongguoAccountFavoritesProvider =
 /// The cloud watch history.
 final class HongguoAccountHistoryController extends Notifier<HongguoAccountListState<HongguoCloudProgress>> {
   @override
-  HongguoAccountListState<HongguoCloudProgress> build() => _idleList as HongguoAccountListState<HongguoCloudProgress>;
+  HongguoAccountListState<HongguoCloudProgress> build() => _idleHistory;
 
   /// Reads the history again.
   Future<void> refresh() async {
     final credentials = ref.read(hongguoAccountProvider).credentials;
     if (credentials == null) {
-      state = _idleList as HongguoAccountListState<HongguoCloudProgress>;
+      state = _idleHistory;
       return;
     }
     state = (items: state.items, loading: true, error: null);
