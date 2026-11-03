@@ -118,7 +118,11 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
       key: ValueKey('account-${platform.id}'),
       leading: snapshot.credential?.avatar == null
           ? (localizedSiteIcon(site, size: 32) ?? const DsIcon(DsIcons.user))
-          : DsAvatar(image: cachedImage(snapshot.credential!.avatar!), initials: name, semanticLabel: name),
+          : DsAvatar(
+              image: cachedImage(snapshot.credential!.avatar!),
+              initials: avatarInitials(name),
+              semanticLabel: name,
+            ),
       title: Text(name),
       description: Text(
         status.text,

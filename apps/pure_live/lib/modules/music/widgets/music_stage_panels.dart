@@ -12,7 +12,7 @@ import 'package:pure_live/modules/music/controller/music_playback.dart' show mus
 import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
 
 /// The player's side panels: lyrics, the current song's comments, the queue
 /// and the recent list, behind one row of tabs. The wide player keeps them
@@ -359,7 +359,7 @@ final class _CommentTile extends StatelessWidget {
         spacing: DsSpace.s8,
         children: [
           DsAvatar(
-            initials: comment.userName,
+            initials: avatarInitials(comment.userName),
             image: avatar == null ? null : cachedImage(avatar),
             size: DsSize.md,
             semanticLabel: comment.userName,

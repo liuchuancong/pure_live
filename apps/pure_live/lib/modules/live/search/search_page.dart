@@ -836,7 +836,7 @@ final class _AnchorCard extends StatelessWidget {
         spacing: DsSpace.s12,
         children: [
           DsAvatar(
-            initials: anchor.name,
+            initials: avatarInitials(anchor.name),
             image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
             size: DsSize.md,
             toneIndex: DsAvatar.toneFor(anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId),

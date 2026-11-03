@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/images.dart' show cachedImage;
+import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 
 /// One download task as its own detail sheet shows it.
 ///
@@ -106,7 +107,7 @@ final class DownloadDetailsBody extends StatelessWidget {
           spacing: DsSpace.s12,
           children: [
             DsAvatar(
-              initials: details.title,
+              initials: avatarInitials(details.title),
               image: cover.isEmpty ? null : cachedImage(cover),
               size: DsSize.lg,
               semanticLabel: details.title,

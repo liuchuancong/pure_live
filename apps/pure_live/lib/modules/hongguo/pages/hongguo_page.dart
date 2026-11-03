@@ -15,7 +15,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid, avatarInitials;
 
 /// The page's own left and right margin, asked rather than written again:
 /// `LiveWindow.pageInset` is one number for the whole app (16 while the window
@@ -1411,7 +1411,7 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
                 spacing: DsSpace.s12,
                 children: [
                   DsAvatar(
-                    initials: profile?.nickname ?? 'HG',
+                    initials: profile == null ? 'HG' : avatarInitials(profile.nickname),
                     size: DsSize.lg,
                     toneIndex: DsAvatar.toneFor(profile?.id ?? ''),
                   ),

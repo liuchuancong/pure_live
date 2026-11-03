@@ -26,6 +26,7 @@ import 'package:pure_live/shared/shared.dart'
         DownloadQueueHeader,
         LiveWindow,
         NavigationItem,
+        avatarInitials,
         cachedImage,
         downloadFilePresent,
         formatDownloadBytes,
@@ -459,7 +460,7 @@ final class _VodTaskRow extends ConsumerWidget {
       leading: inBlock
           ? null
           : DsAvatar(
-              initials: task.title,
+              initials: avatarInitials(task.title),
               image: task.cover.isEmpty ? null : cachedImage(task.cover),
               size: DsSize.md,
               toneIndex: DsAvatar.toneFor(task.id),

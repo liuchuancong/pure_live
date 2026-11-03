@@ -8,6 +8,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
     show hongguoCommentsProvider, hongguoPublicReviewsProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_public_reviews.dart' show HongguoPublicReview;
+import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 
 /// One episode's comments and the series' reviews, behind the reference's two
 /// tabs: the list reads the next page as the viewer reaches its bottom, and
@@ -172,7 +173,7 @@ final class _CommentsListState extends ConsumerState<_CommentsList> {
               spacing: DsSpace.s8,
               children: [
                 DsAvatar(
-                  initials: comment.author.isEmpty ? 'HG' : comment.author,
+                  initials: comment.author.isEmpty ? 'HG' : avatarInitials(comment.author),
                   size: DsSize.xs,
                   toneIndex: DsAvatar.toneFor(comment.id),
                 ),
@@ -286,7 +287,7 @@ final class _ReviewsListState extends ConsumerState<_ReviewsList> {
               spacing: DsSpace.s12,
               children: [
                 DsAvatar(
-                  initials: review.author.isEmpty ? 'HG' : review.author,
+                  initials: review.author.isEmpty ? 'HG' : avatarInitials(review.author),
                   size: DsSize.sm,
                   toneIndex: DsAvatar.toneFor(review.id),
                 ),

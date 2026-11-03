@@ -1800,7 +1800,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               spacing: DsSpace.s12,
               children: [
                 DsAvatar(
-                  initials: uploader,
+                  initials: avatarInitials(uploader),
                   image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
                   size: DsSize.sm,
                   toneIndex: DsAvatar.toneFor(uploader),
@@ -2179,7 +2179,7 @@ final class _CommentRow extends StatelessWidget {
         spacing: DsSpace.s8,
         children: [
           DsAvatar(
-            initials: comment.author,
+            initials: avatarInitials(comment.author),
             image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
             size: DsSize.sm,
             toneIndex: DsAvatar.toneFor(comment.author),

@@ -24,7 +24,7 @@ import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douy
 import 'package:pure_live/features/account/douyu_login_store.dart' show accountSnapshotWithDouyu, douyuRenewalProvider;
 import 'package:pure_live/features/settings/settings.dart' show douyuForceRenewProvider;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart' show cachedImage, localizedSiteIcon, localizedSiteName;
+import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage, localizedSiteIcon, localizedSiteName;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The widest the cookie page's column gets on a big window; below that it
@@ -323,7 +323,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
         child: Row(
           children: [
             if (avatar != null && avatar.isNotEmpty)
-              DsAvatar(image: cachedImage(avatar), initials: name, semanticLabel: name)
+              DsAvatar(image: cachedImage(avatar), initials: avatarInitials(name), semanticLabel: name)
             else
               localizedSiteIcon(_site, size: 36) ?? const DsIcon(DsIcons.userRound, size: 36),
             const SizedBox(width: DsSpace.s12),

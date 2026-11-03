@@ -6,7 +6,7 @@ import 'package:pure_live/features/account/account_providers.dart';
 import 'package:pure_live/features/account/account_repository.dart' show AccountRepository, BilibiliAccount;
 import 'package:pure_live/features/account/account_state.dart' show accountCookieLine;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
 
 /// The sign-ins bilibili remembers on this device (the reference's
 /// `BilibiliAccountsGroup`, docs/K-账号和登录/K01.2): what the vault holds, how
@@ -115,7 +115,7 @@ final class BilibiliAccountsGroup extends StatelessWidget {
       key: ValueKey(key),
       leading: avatar == null || avatar.isEmpty
           ? const DsIcon(DsIcons.userRound)
-          : DsAvatar(image: cachedImage(avatar), initials: name, semanticLabel: name),
+          : DsAvatar(image: cachedImage(avatar), initials: avatarInitials(name), semanticLabel: name),
       title: Text(name),
       description: Text(current ? '$uid · ${t.account.accountCurrent}' : uid),
       trailing: current

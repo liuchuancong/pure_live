@@ -15,6 +15,7 @@ import 'package:pure_live/modules/music/controller/music_local.dart' show musicL
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_tag_writer.dart';
 import 'package:pure_live/modules/music/controller/sources/music_source_match.dart' show findSameSong;
+import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 
 /// Edits a local song's tags in place — the reference's 编辑歌曲标签.
 ///
@@ -342,7 +343,7 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
                     spacing: DsSpace.s8,
                     children: [
                       DsAvatar(
-                        initials: widget.track.title,
+                        initials: avatarInitials(widget.track.title),
                         image: picture == null ? null : MemoryImage(picture),
                         size: DsSize.md,
                         semanticLabel: t.music.tagEditPic,

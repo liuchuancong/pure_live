@@ -16,7 +16,7 @@ import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
     show musicTrackArtistId, openMusicAlbum, openMusicArtist;
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
 
 /// The song's own tier marker, the reference's 无损 / Hi-Res tag beside a title.
 ///
@@ -71,7 +71,7 @@ final class MusicArtwork extends ConsumerWidget {
     final local = track.isLocal ? ref.watch(musicLocalCoverProvider(track)).value : null;
 
     return DsAvatar(
-      initials: track.title,
+      initials: avatarInitials(track.title),
       image: local != null
           ? MemoryImage(local)
           : track.coverUri == null
