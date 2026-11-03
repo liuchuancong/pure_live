@@ -750,7 +750,12 @@ const List<int> _keyCompression = [
 
 int _u32(int value) => value & 0xFFFFFFFF;
 
-int _bitnum(Uint8List a, int b, int c) => _u32((a[(b ~/ 32) * 4 + 3 - ((b % 32) ~/ 8)] >> (7 - (b % 8))) & 1 << c);
+/// One bit of the input word, moved to position [c].
+///
+/// The `& 1` is parenthesised on purpose: Dart's shift binds tighter than the
+/// mask, so `x & 1 << c` would keep bit [c] of the byte instead of broadcasting
+/// the low bit, and every permutation built on it would come out wrong.
+int _bitnum(Uint8List a, int b, int c) => _u32(_u32(a[(b ~/ 32) * 4 + 3 - ((b % 32) ~/ 8)] >> (7 - (b % 8))) & 1) << c;
 
 int _bitnumIntr(int a, int b, int c) => _u32(((a >> (31 - b)) & 1) << c);
 
