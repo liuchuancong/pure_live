@@ -1,4 +1,4 @@
-import 'dart:convert' show base64Encode, jsonDecode, jsonEncode;
+import 'dart:convert' show base64Encode, jsonDecode, jsonEncode, utf8;
 
 import 'package:crypto/crypto.dart' show sha1;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
@@ -73,14 +73,23 @@ const List<int> _scrambleValues = [
 ];
 
 /// The `zzc` signature QQ music's android gateway expects on the search URL.
+///
+/// Two details are the reference's, not ours: the hash runs over the body's
+/// UTF-8 bytes (a query is usually Chinese, and UTF-16 code units would sign
+/// a different document), and one of the pick indexes falls past the end of
+/// the 40-character digest — in JavaScript that reads as nothing and joins to
+/// an empty string, so the port has to drop it rather than index the string.
 String zzcSign(String text) {
-  final hash = sha1.convert(text.codeUnits).toString();
-  String pick(List<int> indexes) => [for (final index in indexes) hash[index]].join();
+  final hash = sha1.convert(utf8.encode(text)).toString();
+  String pick(List<int> indexes) => [
+    for (final index in indexes)
+      if (index < hash.length) hash[index],
+  ].join();
   final scrambled = [
     for (var i = 0; i < _scrambleValues.length; i++)
       _scrambleValues[i] ^ int.parse(hash.substring(i * 2, i * 2 + 2), radix: 16),
   ];
-  final encoded = base64Encode(scrambled).replaceAll(RegExp(r'[\\/+.=]'), '');
+  final encoded = base64Encode(scrambled).replaceAll(RegExp(r'[\\/=+]'), '');
   return 'zzc${pick(_part1Indexes)}$encoded${pick(_part2Indexes)}'.toLowerCase();
 }
 
