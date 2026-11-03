@@ -126,7 +126,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
       ],
       value: _view,
       onChanged: (view) => setState(() => _view = view),
-      style: const DsTabsStyle(padding: EdgeInsets.zero),
+      style: const DsTabsStyle(height: 44, padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
     );
     // The catalogue's tile form: the poster with the picture above its
     // name, or the row with the picture beside it. The areas page's own
