@@ -717,7 +717,7 @@ final class _Header extends ConsumerWidget {
                 ] else ...[
                   const LayoutToggle(),
                   DsButton.icon(
-                    variant: DsButtonVariant.ghost,
+                    variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
                     semanticLabel: t.history.refresh,
                     onPressed: busy || total == 0 ? null : onRefresh,
