@@ -3727,6 +3727,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoCardEpisodes => 'Episode count';
 	@override String get hongguoCardToday => '“Today” marker';
 	@override String get hongguoCardScore => 'Score';
+	@override String get hongguoCardFavorite => 'Favorite mark';
 	@override String get hongguoCardHot => 'Cover heat';
 	@override String get hongguoCardCategory => 'Cover category';
 	@override String get hongguoCardMeta => 'Listing line';
@@ -8225,6 +8226,7 @@ extension on TranslationsEn {
 			'settings.hongguoCardEpisodes' => 'Episode count',
 			'settings.hongguoCardToday' => '“Today” marker',
 			'settings.hongguoCardScore' => 'Score',
+			'settings.hongguoCardFavorite' => 'Favorite mark',
 			'settings.hongguoCardHot' => 'Cover heat',
 			'settings.hongguoCardCategory' => 'Cover category',
 			'settings.hongguoCardMeta' => 'Listing line',
@@ -8673,9 +8675,9 @@ extension on TranslationsEn {
 			'vod.toViewEmptyTitle' => 'Watch later is empty',
 			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
 			'vod.followingEmptyTitle' => 'Nothing followed yet',
-			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			'vod.comments' => 'Comments',
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',

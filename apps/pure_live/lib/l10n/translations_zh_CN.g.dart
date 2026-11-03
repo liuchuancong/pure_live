@@ -10753,14 +10753,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '评分'
 	String get hongguoCardScore => '评分';
 
+	/// zh-CN: '收藏标记'
+	String get hongguoCardFavorite => '收藏标记';
+
 	/// zh-CN: '封面热度'
 	String get hongguoCardHot => '封面热度';
 
 	/// zh-CN: '封面分类'
 	String get hongguoCardCategory => '封面分类';
 
-	/// zh-CN: '列表信息'
-	String get hongguoCardMeta => '列表信息';
+	/// zh-CN: '信息行'
+	String get hongguoCardMeta => '信息行';
 
 	/// zh-CN: '最高'
 	String get hongguoQualityBest => '最高';
@@ -16778,9 +16781,10 @@ extension on Translations {
 			'settings.hongguoCardEpisodes' => '集数',
 			'settings.hongguoCardToday' => '今日标记',
 			'settings.hongguoCardScore' => '评分',
+			'settings.hongguoCardFavorite' => '收藏标记',
 			'settings.hongguoCardHot' => '封面热度',
 			'settings.hongguoCardCategory' => '封面分类',
-			'settings.hongguoCardMeta' => '列表信息',
+			'settings.hongguoCardMeta' => '信息行',
 			'settings.hongguoQualityBest' => '最高',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
@@ -17226,9 +17230,9 @@ extension on Translations {
 			'vod.toViewEmptyTitle' => '稍后再看是空的',
 			'vod.toViewEmptyDescription' => '在 Bilibili 上标记「稍后再看」的视频会出现在这里。',
 			'vod.followingEmptyTitle' => '还没有追番',
-			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			'vod.comments' => '评论',
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',

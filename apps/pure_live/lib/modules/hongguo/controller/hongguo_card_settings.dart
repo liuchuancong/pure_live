@@ -13,14 +13,20 @@ enum HongguoCardElement {
   /// The source's own corner tags (爆剧 / 新剧 / 独播).
   coverTags,
 
-  /// The episode count, as one of the cover's state candidates.
-  episodes,
-
   /// The 今日 marker, as one of the cover's state candidates.
   today,
 
   /// The score, as one of the cover's state candidates.
   score,
+
+  /// The episode count, as one of the cover's state candidates. The corner
+  /// holds one state, and the listing's own reading is the last of them.
+  episodes,
+
+  /// The red heart naming a title this device keeps, at the cover's end —
+  /// what a followed room's heart is on the room card. Off, the corner keeps
+  /// the state alone and the shelf is tended from the card's menu.
+  favorite,
 
   /// The heat text along the cover's foot.
   hot,
@@ -44,6 +50,11 @@ final class HongguoCardVisibility {
       HongguoCardVisibility(Set.unmodifiable(hidden));
 
   /// Reads stored visibility; anything unreadable falls back to the default.
+  ///
+  /// An element's name is its stored identity and none has ever changed, so a
+  /// set written before a piece existed leaves that piece to the designed
+  /// default rather than losing the choices it did record: an absent name means
+  /// drawn and an unknown one is skipped.
   factory HongguoCardVisibility.fromJson(Object? value) {
     if (value is! Map) return standard;
     final hidden = value['hidden'];

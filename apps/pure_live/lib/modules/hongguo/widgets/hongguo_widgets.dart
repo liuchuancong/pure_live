@@ -155,10 +155,13 @@ final class HongguoSeriesCard extends ConsumerWidget {
     final rank = series.rank;
     final showsRank = visibility.shows(HongguoCardElement.rank) && rank != null;
     final firstTag = series.coverTags.isEmpty ? '' : series.coverTags.first;
-    final showsTag = visibility.shows(HongguoCardElement.coverTags) && rank == null && firstTag.isNotEmpty;
-    final showsEpisodes = visibility.shows(HongguoCardElement.episodes) && series.episodeCount > 0;
+    // The corner's one mark: the board place where it is drawn and ranked,
+    // the source's tag wherever the corner is free — including where the
+    // board place is switched off.
+    final showsTag = visibility.shows(HongguoCardElement.coverTags) && !showsRank && firstTag.isNotEmpty;
     final showsToday = visibility.shows(HongguoCardElement.today) && series.today;
     final showsScore = visibility.shows(HongguoCardElement.score) && series.score.isNotEmpty;
+    final showsEpisodes = visibility.shows(HongguoCardElement.episodes) && series.episodeCount > 0;
     final showsHot = visibility.shows(HongguoCardElement.hot) && series.hot.isNotEmpty;
     final showsCategory = visibility.shows(HongguoCardElement.category) && series.category.isNotEmpty;
     // The corner holds the one state a wall of posters cannot show: where this
@@ -184,7 +187,10 @@ final class HongguoSeriesCard extends ConsumerWidget {
             withCategory: !showsCategory,
           )
         : '';
-    final favored = favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
+    final favored =
+        visibility.shows(HongguoCardElement.favorite) &&
+        favoritable &&
+        ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -232,25 +238,27 @@ final class HongguoSeriesCard extends ConsumerWidget {
                           top: DsSpace.s8,
                           start: DsSpace.s8,
                           // One mark, not a column of them: the board place
-                          // where the listing ranks, the source's own tag
-                          // where it does not.
+                          // where it is drawn and ranked, the source's own tag
+                          // wherever the corner is left free.
                           child: _CoverMark(rank: showsRank ? rank : null, label: showsTag ? firstTag : null),
                         ),
-                      PositionedDirectional(
-                        top: DsSpace.s8,
-                        end: DsSpace.s8,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: DsSpace.s6,
-                          children: [
-                            if (stateText != null) RoomCoverChip(compact: true, text: stateText, maxWidth: width * 0.6),
-                            // The heart is the kept state, not an offer: an
-                            // unkept title leaves the corner to the state, the
-                            // way an unfollowed room leaves it to nothing.
-                            if (favored) _FavoriteHeartButton(series: series),
-                          ],
+                      if (stateText != null || favored)
+                        PositionedDirectional(
+                          top: DsSpace.s8,
+                          end: DsSpace.s8,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: DsSpace.s6,
+                            children: [
+                              if (stateText != null)
+                                RoomCoverChip(compact: true, text: stateText, maxWidth: width * 0.6),
+                              // The heart is the kept state, not an offer: an
+                              // unkept title leaves the corner to the state, the
+                              // way an unfollowed room leaves it to nothing.
+                              if (favored) _FavoriteHeartButton(series: series),
+                            ],
+                          ),
                         ),
-                      ),
                       if (showsCategory || showsHot)
                         PositionedDirectional(
                           start: DsSpace.s8,
@@ -595,7 +603,13 @@ final class _RowPoster extends StatelessWidget {
 /// and its corners folded into the listing line; the poster's fixed height never
 /// had room for the synopsis, so only the row reads it, the way only the room
 /// card's row reads a room's follow tags.
-final class HongguoSeriesRow extends StatelessWidget {
+///
+/// The row is the other shape of the same feed — a wall and its rows are one
+/// listing seen through [PagedCardGrid]'s layout switch — so the card's
+/// 「信息行」 switch closes this line as it closes the card's, and the pieces the
+/// row folds into it stay folded: the switches that choose a cover corner have
+/// no corner to choose here.
+final class HongguoSeriesRow extends ConsumerWidget {
   /// The row for [series]; [onOpen] opens its page. [withEpisodeCount] is false
   /// where the row's own figure line already names the series' total, so the
   /// listing line must not say it a second time. [watched] is the local shelf's
@@ -634,16 +648,12 @@ final class HongguoSeriesRow extends StatelessWidget {
   final Widget? trailing;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final line = hongguoSeriesListingLine(
-      context.t,
-      series,
-      withEpisodeCount: withEpisodeCount,
-      watched: watched,
-      note: note,
-    );
+    final line = ref.watch(hongguoCardSettingsProvider).shows(HongguoCardElement.meta)
+        ? hongguoSeriesListingLine(context.t, series, withEpisodeCount: withEpisodeCount, watched: watched, note: note)
+        : '';
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -704,7 +714,7 @@ final class HongguoSeriesRow extends StatelessWidget {
 /// hundred titles have to be scanned, not admired; its lines, its measure and
 /// its words are [HongguoSeriesRow]'s, so one feed in either layout is one
 /// design.
-final class HongguoRankRow extends StatelessWidget {
+final class HongguoRankRow extends ConsumerWidget {
   /// The row for [series] at [position], used when the listing carries no
   /// place of its own. [watched] is the local shelf's row for the same
   /// series, when there is one: it joins the listing line, not the marks.
@@ -724,7 +734,7 @@ final class HongguoRankRow extends StatelessWidget {
   final VoidCallback? onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final t = context.t;
@@ -732,7 +742,11 @@ final class HongguoRankRow extends StatelessWidget {
     final leading = rank <= 3;
     // The heat keeps the place the board gives it — beside the name — so the
     // listing line is built without the figure it would print a second time.
-    final listing = hongguoSeriesListingLine(t, series, watched: watched, withFigure: false);
+    // That line is the card's 「信息行」 switch's; the board's own marks — its
+    // place, its tags, its score — are the page's subject, not a cover corner.
+    final listing = ref.watch(hongguoCardSettingsProvider).shows(HongguoCardElement.meta)
+        ? hongguoSeriesListingLine(t, series, watched: watched, withFigure: false)
+        : '';
     final marks = <Widget>[
       if (series.favoriteText.isNotEmpty) _RankFigure(icon: DsIcons.heart, label: series.favoriteText),
       if (series.likeText.isNotEmpty) _RankFigure(icon: DsIcons.thumbsUp, label: series.likeText),
