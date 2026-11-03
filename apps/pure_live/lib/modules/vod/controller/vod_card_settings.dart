@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 
-/// One piece a Bilibili archive card draws. The card's layout is fixed — the
-/// station's own cover ink, counts at the foot's start and the length at its
-/// end, the uploader under the title — and a choice here only says whether a
-/// piece appears at all.
+/// One piece a Bilibili card draws. The cards' layout is fixed — the station's
+/// own cover ink, counts at the foot's start and the length at its end, the
+/// uploader under the title, the poster's state and score in its corners — and
+/// a choice here only says whether a piece appears at all.
 enum VodCardElement {
   /// The play figure at the cover's foot, its start.
   plays,
@@ -20,9 +20,17 @@ enum VodCardElement {
 
   /// The uploader's name under the title.
   uploader,
+
+  /// The poster card's corner mark: where the season stands
+  /// (更新至第 12 话 / 全 26 集 / 上映日).
+  seasonState,
+
+  /// The poster card's score at the foot of its cover.
+  seasonScore,
 }
 
-/// Which pieces an archive card draws.
+/// Which pieces a card draws — the archive card and the poster card read the
+/// same set, each taking the pieces it has.
 @immutable
 final class VodCardVisibility {
   /// Creates a visibility set.
@@ -84,7 +92,7 @@ final class VodCardVisibility {
 /// The key the card visibility lives under; one set for every device.
 const String kVodCardPrefsKey = 'interface.vodCard';
 
-/// Owns the archive card's visibility under `interface.vodCard`.
+/// Owns the browse cards' visibility under `interface.vodCard`.
 final class VodCardSettingsController extends Notifier<VodCardVisibility> {
   @override
   VodCardVisibility build() {

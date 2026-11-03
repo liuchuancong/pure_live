@@ -12067,6 +12067,9 @@ class Translations$vod$zh_CN {
 	/// zh-CN: 'UP 主'
 	String get cardUploader => 'UP 主';
 
+	/// zh-CN: '更新状态'
+	String get cardSeasonState => '更新状态';
+
 	/// zh-CN: '恢复默认播放行为'
 	String get playbackReset => '恢复默认播放行为';
 
@@ -17183,6 +17186,7 @@ extension on Translations {
 			'vod.cardDanmaku' => '弹幕数',
 			'vod.cardDuration' => '时长',
 			'vod.cardUploader' => 'UP 主',
+			'vod.cardSeasonState' => '更新状态',
 			'vod.playbackReset' => '恢复默认播放行为',
 			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'vod.personalTitle' => '我的视频',
@@ -17205,9 +17209,9 @@ extension on Translations {
 			'vod.commentsEmpty' => '还没有评论。',
 			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
-			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => '从历史中移除',

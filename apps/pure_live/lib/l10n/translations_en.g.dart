@@ -4189,6 +4189,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get cardDanmaku => 'Danmaku count';
 	@override String get cardDuration => 'Duration';
 	@override String get cardUploader => 'Uploader';
+	@override String get cardSeasonState => 'Update state';
 	@override String get playbackReset => 'Restore default playback';
 	@override String get playbackResetDesc => 'Normal speed, the next part when one ends, details shown.';
 	@override String get personalTitle => 'My videos';
@@ -8644,6 +8645,7 @@ extension on TranslationsEn {
 			'vod.cardDanmaku' => 'Danmaku count',
 			'vod.cardDuration' => 'Duration',
 			'vod.cardUploader' => 'Uploader',
+			'vod.cardSeasonState' => 'Update state',
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'vod.personalTitle' => 'My videos',
@@ -8666,9 +8668,9 @@ extension on TranslationsEn {
 			'vod.commentsEmpty' => 'No comments yet.',
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
-			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',

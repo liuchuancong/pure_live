@@ -124,6 +124,7 @@
   "cardDanmaku": "弹幕数",
   "cardDuration": "时长",
   "cardUploader": "UP 主",
+  "cardSeasonState": "更新状态",
   "playbackReset": "恢复默认播放行为",
   "playbackResetDesc": "默认倍速、播完下一分P、显示详情。",
   "personalTitle": "我的视频",

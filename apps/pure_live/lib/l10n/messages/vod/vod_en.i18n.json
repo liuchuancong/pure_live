@@ -124,6 +124,7 @@
   "cardDanmaku": "Danmaku count",
   "cardDuration": "Duration",
   "cardUploader": "Uploader",
+  "cardSeasonState": "Update state",
   "playbackReset": "Restore default playback",
   "playbackResetDesc": "Normal speed, the next part when one ends, details shown.",
   "personalTitle": "My videos",

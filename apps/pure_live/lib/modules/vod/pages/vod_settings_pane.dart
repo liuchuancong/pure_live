@@ -159,6 +159,8 @@ final class VodInterfacePane extends ConsumerWidget {
               (VodCardElement.danmaku, DsIcons.captions, t.vod.cardDanmaku),
               (VodCardElement.duration, DsIcons.clock, t.vod.cardDuration),
               (VodCardElement.uploader, DsIcons.user, t.vod.cardUploader),
+              (VodCardElement.seasonState, DsIcons.info, t.vod.cardSeasonState),
+              (VodCardElement.seasonScore, DsIcons.star, t.vod.score),
             ])
               SettingsConfigRow(
                 leading: DsIcon(icon),

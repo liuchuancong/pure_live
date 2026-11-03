@@ -370,8 +370,10 @@ final class VodFeedHero extends StatelessWidget {
 }
 
 /// One cinema title as a card: the poster carrying its update state and score,
-/// the name on a fixed line block beneath it.
-final class VodSeasonCard extends StatelessWidget {
+/// the name on a fixed line block beneath it. Which of the two corner marks
+/// appear is the card visibility setting's to say, the same table the archive
+/// card reads — a title's name is not one of the pieces it can take away.
+final class VodSeasonCard extends ConsumerWidget {
   /// The card for [season]; [onOpen] opens its page.
   const VodSeasonCard({required this.season, this.onOpen, super.key});
 
@@ -382,10 +384,12 @@ final class VodSeasonCard extends StatelessWidget {
   final VoidCallback? onOpen;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final rating = season.rating;
+    final visibility = ref.watch(vodCardSettingsProvider);
+    final rating = visibility.shows(VodCardElement.seasonScore) ? season.rating : null;
+    final stateMark = visibility.shows(VodCardElement.seasonState) ? season.subtitle : '';
     final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
     final cover = season.coverUrl;
     return DsCard(
@@ -427,11 +431,11 @@ final class VodSeasonCard extends StatelessWidget {
                   ),
                   // The poster's own corners carry a title's state, so the
                   // block under it keeps to the name.
-                  if (season.subtitle.isNotEmpty)
+                  if (stateMark.isNotEmpty)
                     PositionedDirectional(
                       top: DsSpace.s8,
                       end: DsSpace.s8,
-                      child: RoomCoverChip(compact: true, text: season.subtitle),
+                      child: RoomCoverChip(compact: true, text: stateMark),
                     ),
                   if (rating != null && rating.isNotEmpty)
                     PositionedDirectional(
