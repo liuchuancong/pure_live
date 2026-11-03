@@ -4061,6 +4061,21 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get dynamicsEmptyDescription => 'Posts from the uploaders you follow appear here.';
 	@override String get loadMore => 'Load more';
 	@override String get regions => 'Regions';
+	@override String get regionAnimation => 'Animation';
+	@override String get regionGames => 'Gaming';
+	@override String get regionGuichu => 'Guichu';
+	@override String get regionMusic => 'Music';
+	@override String get regionDance => 'Dance';
+	@override String get regionFilm => 'Film & TV';
+	@override String get regionEntertainment => 'Entertainment';
+	@override String get regionKnowledge => 'Knowledge';
+	@override String get regionTech => 'Technology';
+	@override String get regionNews => 'News';
+	@override String get regionFood => 'Food';
+	@override String get regionAutomotive => 'Automotive';
+	@override String get regionFashion => 'Fashion & Beauty';
+	@override String get regionSports => 'Sports';
+	@override String get regionAnimals => 'Animals';
 	@override String get search => 'Search';
 	@override String get home => 'Home';
 	@override String get personal => 'Personal';
@@ -8475,6 +8490,21 @@ extension on TranslationsEn {
 			'vod.dynamicsEmptyDescription' => 'Posts from the uploaders you follow appear here.',
 			'vod.loadMore' => 'Load more',
 			'vod.regions' => 'Regions',
+			'vod.regionAnimation' => 'Animation',
+			'vod.regionGames' => 'Gaming',
+			'vod.regionGuichu' => 'Guichu',
+			'vod.regionMusic' => 'Music',
+			'vod.regionDance' => 'Dance',
+			'vod.regionFilm' => 'Film & TV',
+			'vod.regionEntertainment' => 'Entertainment',
+			'vod.regionKnowledge' => 'Knowledge',
+			'vod.regionTech' => 'Technology',
+			'vod.regionNews' => 'News',
+			'vod.regionFood' => 'Food',
+			'vod.regionAutomotive' => 'Automotive',
+			'vod.regionFashion' => 'Fashion & Beauty',
+			'vod.regionSports' => 'Sports',
+			'vod.regionAnimals' => 'Animals',
 			'vod.search' => 'Search',
 			'vod.home' => 'Home',
 			'vod.personal' => 'Personal',
@@ -8611,6 +8641,8 @@ extension on TranslationsEn {
 			'vod.downloadPause' => 'Pause download',
 			'vod.downloadQueued' => 'Added to the download queue',
 			'vod.downloadDuplicate' => 'This part is already in the queue',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadManagerHint' => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',
 			'vod.downloadSettingsTitle' => 'Download settings',
 			'vod.downloadMaxConcurrent' => 'Simultaneous downloads',
@@ -8626,8 +8658,6 @@ extension on TranslationsEn {
 			'vod.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
 			'vod.downloadRetry' => 'Retry automatically',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
 			'vod.downloadRetryOff' => 'No retry',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',

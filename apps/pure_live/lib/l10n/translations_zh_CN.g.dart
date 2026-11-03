@@ -11683,6 +11683,51 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '分区'
 	String get regions => '分区';
 
+	/// zh-CN: '动画'
+	String get regionAnimation => '动画';
+
+	/// zh-CN: '游戏'
+	String get regionGames => '游戏';
+
+	/// zh-CN: '鬼畜'
+	String get regionGuichu => '鬼畜';
+
+	/// zh-CN: '音乐'
+	String get regionMusic => '音乐';
+
+	/// zh-CN: '舞蹈'
+	String get regionDance => '舞蹈';
+
+	/// zh-CN: '影视'
+	String get regionFilm => '影视';
+
+	/// zh-CN: '娱乐'
+	String get regionEntertainment => '娱乐';
+
+	/// zh-CN: '知识'
+	String get regionKnowledge => '知识';
+
+	/// zh-CN: '科技数码'
+	String get regionTech => '科技数码';
+
+	/// zh-CN: '资讯'
+	String get regionNews => '资讯';
+
+	/// zh-CN: '美食'
+	String get regionFood => '美食';
+
+	/// zh-CN: '汽车'
+	String get regionAutomotive => '汽车';
+
+	/// zh-CN: '时尚美妆'
+	String get regionFashion => '时尚美妆';
+
+	/// zh-CN: '体育运动'
+	String get regionSports => '体育运动';
+
+	/// zh-CN: '动物'
+	String get regionAnimals => '动物';
+
 	/// zh-CN: '搜索'
 	String get search => '搜索';
 
@@ -16932,6 +16977,21 @@ extension on Translations {
 			'vod.dynamicsEmptyDescription' => '关注的 UP 主更新后会出现在这里。',
 			'vod.loadMore' => '加载更多',
 			'vod.regions' => '分区',
+			'vod.regionAnimation' => '动画',
+			'vod.regionGames' => '游戏',
+			'vod.regionGuichu' => '鬼畜',
+			'vod.regionMusic' => '音乐',
+			'vod.regionDance' => '舞蹈',
+			'vod.regionFilm' => '影视',
+			'vod.regionEntertainment' => '娱乐',
+			'vod.regionKnowledge' => '知识',
+			'vod.regionTech' => '科技数码',
+			'vod.regionNews' => '资讯',
+			'vod.regionFood' => '美食',
+			'vod.regionAutomotive' => '汽车',
+			'vod.regionFashion' => '时尚美妆',
+			'vod.regionSports' => '体育运动',
+			'vod.regionAnimals' => '动物',
 			'vod.search' => '搜索',
 			'vod.home' => '主页',
 			'vod.personal' => '个人',
@@ -17068,6 +17128,8 @@ extension on Translations {
 			'vod.downloadPause' => '暂停下载',
 			'vod.downloadQueued' => '已加入下载队列',
 			'vod.downloadDuplicate' => '该分P已在下载队列',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadManagerHint' => '队列按设置的并行数同时下载；地址过期时自动换新地址，从已下载的字节续传。下载完成后到侧边栏的「下载管理」预览、播放或打开所在文件夹。',
 			'vod.downloadSettingsTitle' => '下载设置',
 			'vod.downloadMaxConcurrent' => '同时下载数',
@@ -17083,8 +17145,6 @@ extension on Translations {
 			'vod.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
 			'vod.downloadRetry' => '自动重试',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
 			'vod.downloadRetryOff' => '不重试',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',

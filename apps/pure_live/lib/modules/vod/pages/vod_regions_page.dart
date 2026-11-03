@@ -13,44 +13,70 @@ import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoCar
 import 'package:pure_live/shared/shared.dart';
 
 /// The regions the 分区 page offers: the channel ids (1xxx) the region feed
-/// takes, with the platform's own names. These are not the classic partition
-/// ids — the feed refuses those.
-const List<(int, String)> kVodRegionChannels = [
-  (1005, '动画'),
-  (1008, '游戏'),
-  (1007, '鬼畜'),
-  (1003, '音乐'),
-  (1004, '舞蹈'),
-  (1001, '影视'),
-  (1002, '娱乐'),
-  (1010, '知识'),
-  (1012, '科技数码'),
-  (1009, '资讯'),
-  (1020, '美食'),
-  (1013, '汽车'),
-  (1014, '时尚美妆'),
-  (1018, '体育运动'),
-  (1024, '动物'),
-];
+/// takes. These are not the classic partition ids — the feed refuses those.
+/// The names are the app's own words, not the platform's Chinese labels
+/// pasted into a const table: every other label this row draws comes from
+/// Slang, and a viewer reading the app in English had a Chinese tab strip.
+enum VodRegionChannel {
+  animation(1005),
+  games(1008),
+  guichu(1007),
+  music(1003),
+  dance(1004),
+  film(1001),
+  entertainment(1002),
+  knowledge(1010),
+  tech(1012),
+  news(1009),
+  food(1020),
+  automotive(1013),
+  fashion(1014),
+  sports(1018),
+  animals(1024);
+
+  VodRegionChannel(this.id);
+
+  /// The channel id the region feed takes.
+  final int id;
+
+  /// The channel's name in the viewer's language.
+  String label(Translations t) => switch (this) {
+    VodRegionChannel.animation => t.vod.regionAnimation,
+    VodRegionChannel.games => t.vod.regionGames,
+    VodRegionChannel.guichu => t.vod.regionGuichu,
+    VodRegionChannel.music => t.vod.regionMusic,
+    VodRegionChannel.dance => t.vod.regionDance,
+    VodRegionChannel.film => t.vod.regionFilm,
+    VodRegionChannel.entertainment => t.vod.regionEntertainment,
+    VodRegionChannel.knowledge => t.vod.regionKnowledge,
+    VodRegionChannel.tech => t.vod.regionTech,
+    VodRegionChannel.news => t.vod.regionNews,
+    VodRegionChannel.food => t.vod.regionFood,
+    VodRegionChannel.automotive => t.vod.regionAutomotive,
+    VodRegionChannel.fashion => t.vod.regionFashion,
+    VodRegionChannel.sports => t.vod.regionSports,
+    VodRegionChannel.animals => t.vod.regionAnimals,
+  };
+}
 
 /// The station's 分区 page: one channel at a time, its recommendation feed
 /// paged by scroll.
 final class VodRegionsPage extends ConsumerStatefulWidget {
   /// The regions page, opening on [channel].
-  const VodRegionsPage({this.channel = 1005, super.key});
+  const VodRegionsPage({this.channel = VodRegionChannel.animation, super.key});
 
   /// The channel the page opens on.
-  final int channel;
+  final VodRegionChannel channel;
 
   @override
   ConsumerState<VodRegionsPage> createState() => _VodRegionsPageState();
 }
 
 final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
-  late int _channel = widget.channel;
+  late VodRegionChannel _channel = widget.channel;
   final Map<String, ScrollController> _scrolls = {};
 
-  String get _key => vodFeedKey(VodFeedKind.region, id: _channel);
+  String get _key => vodFeedKey(VodFeedKind.region, id: _channel.id);
 
   @override
   void initState() {
@@ -81,7 +107,7 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
     });
   }
 
-  void _select(int channel) {
+  void _select(VodRegionChannel channel) {
     if (channel == _channel) return;
     setState(() => _channel = channel);
     _ensureFeed(_key);
@@ -103,10 +129,13 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: VodFeedToolbar(
-            tabs: DsTopNav<int>(
+            tabs: DsTopNav<VodRegionChannel>(
               value: _channel,
               onChanged: _select,
-              items: [for (final (id, name) in kVodRegionChannels) DsTopNavItem(value: id, label: Text(name))],
+              items: [
+                for (final channel in VodRegionChannel.values)
+                  DsTopNavItem(value: channel, label: Text(channel.label(t))),
+              ],
             ),
             onRefresh: () => ref.read(vodFeedProvider.notifier).refresh(_key),
           ),
