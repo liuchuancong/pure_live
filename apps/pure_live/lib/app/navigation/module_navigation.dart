@@ -193,12 +193,11 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         NavigationItem.musicLocal,
         NavigationItem.musicDownloads,
         NavigationItem.musicEffects,
-        // The shared tree's console sits with the module's own tools, ahead
-        // of the settings row that stays last.
+        // The shared tree's console sits with the module's own tools. Settings
+        // is not a menu row here — it is not one in any other module either, and
+        // the shell's own settings entry already opens inside this module's
+        // groups (see app_layout's ensureWithin).
         NavigationItem.logs,
-        // The music settings' own rail row: one click onto the surface, on
-        // the music group, instead of the settings landing's category list.
-        NavigationItem.musicSettings,
       ],
     ],
     landing: NavigationItem.music,

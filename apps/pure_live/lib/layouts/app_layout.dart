@@ -181,15 +181,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     }
 
     void handleSelected(NavigationItem item) {
-      // The music settings' rail row opens the settings surface straight on
-      // the music group. The trail records the surface itself, so back and
-      // forward treat the visit like any other settings visit.
-      final musicSettings = item == NavigationItem.musicSettings;
-      if (musicSettings) {
-        ref.read(settingsCategoryProvider.notifier).categoryKey = 'groupMusic';
-        ref.read(settingsSectionOpenProvider.notifier).open = false;
-      }
-      final target = visibleHomeItem(musicSettings ? NavigationItem.settings : item);
+      final target = visibleHomeItem(item);
       if (module == AppModule.live) {
         if (_branchIndexOf(target) == null) {
           return; // the page has not arrived yet.

@@ -1857,7 +1857,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get musicLibrary => 'My lists';
 	@override String get musicLocal => 'Local music';
 	@override String get musicDownloads => 'Downloads';
-	@override String get musicSettings => 'Music settings';
 	@override String get hongguoDownloads => 'Downloads';
 }
 
@@ -6397,7 +6396,6 @@ extension on TranslationsEn {
 			'navigation.musicLibrary' => 'My lists',
 			'navigation.musicLocal' => 'Local music',
 			'navigation.musicDownloads' => 'Downloads',
-			'navigation.musicSettings' => 'Music settings',
 			'navigation.hongguoDownloads' => 'Downloads',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
@@ -6614,9 +6612,9 @@ extension on TranslationsEn {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
+			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
@@ -7128,9 +7126,9 @@ extension on TranslationsEn {
 			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
+			'settings.navNetwork' => 'Network',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navNetwork' => 'Network',
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
@@ -7642,9 +7640,9 @@ extension on TranslationsEn {
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
+			'settings.playerGuideBadgeAo' => 'ao',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
@@ -8156,9 +8154,9 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
 			'settings.twitchLanguage_tr' => 'Turkish',
+			'settings.twitchLanguage_pl' => 'Polish',
 			_ => null,
 		} ?? switch (path) {
-			'settings.twitchLanguage_pl' => 'Polish',
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
@@ -8670,9 +8668,9 @@ extension on TranslationsEn {
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
 			'vod.commentsEmpty' => 'No comments yet.',
+			'vod.commentsFailed' => 'The comments did not load',
 			_ => null,
 		} ?? switch (path) {
-			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',

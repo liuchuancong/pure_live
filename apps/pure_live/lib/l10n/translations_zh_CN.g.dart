@@ -5251,9 +5251,6 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '下载管理'
 	String get musicDownloads => '下载管理';
 
-	/// zh-CN: '音乐设置'
-	String get musicSettings => '音乐设置';
-
 	/// zh-CN: '下载管理'
 	String get hongguoDownloads => '下载管理';
 }
@@ -14942,7 +14939,6 @@ extension on Translations {
 			'navigation.musicLibrary' => '我的列表',
 			'navigation.musicLocal' => '本地音乐',
 			'navigation.musicDownloads' => '下载管理',
-			'navigation.musicSettings' => '音乐设置',
 			'navigation.hongguoDownloads' => '下载管理',
 			'player.title' => '播放',
 			'player.back' => '返回',
@@ -15159,9 +15155,9 @@ extension on Translations {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
+			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
@@ -15673,9 +15669,9 @@ extension on Translations {
 			'settings.liveAlertFallbackTitle' => ({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
+			'settings.navNetwork' => '网络',
 			_ => null,
 		} ?? switch (path) {
-			'settings.navNetwork' => '网络',
 			'settings.networkDescription' => '应用代理与传输行为。',
 			'settings.proxy' => '应用代理',
 			'settings.proxyHost' => '主机',
@@ -16187,9 +16183,9 @@ extension on Translations {
 			'settings.playerGuideChapterSymptoms' => '症状对照',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
+			'settings.playerGuideBadgeAo' => 'ao',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
@@ -16701,9 +16697,9 @@ extension on Translations {
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
 			'settings.twitchLanguage_tr' => '土耳其语',
+			'settings.twitchLanguage_pl' => '波兰语',
 			_ => null,
 		} ?? switch (path) {
-			'settings.twitchLanguage_pl' => '波兰语',
 			'settings.holdDanmakuOnPress' => '按住冻结',
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
@@ -17215,9 +17211,9 @@ extension on Translations {
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',
 			'vod.commentsEmpty' => '还没有评论。',
+			'vod.commentsFailed' => '评论没有加载出来',
 			_ => null,
 		} ?? switch (path) {
-			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
