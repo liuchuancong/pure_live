@@ -468,6 +468,7 @@ final class TxMusicSource extends LxPlatformSource
                   _ => '',
                 },
                 trackCount: (entry['song_count'] as num?)?.toInt() ?? 0,
+                playCount: (entry['listennum'] as num?)?.toInt() ?? 0,
               ),
       ],
       total: total,
@@ -530,6 +531,7 @@ final class TxMusicSource extends LxPlatformSource
       cover: dirinfo is Map ? '${dirinfo['picurl'] ?? ''}' : '',
       author: dirinfo is Map ? '${dirinfo['host_nick'] ?? ''}' : '',
       trackCount: (data['total_song_num'] as num?)?.toInt() ?? 0,
+      playCount: dirinfo is Map ? (dirinfo['listennum'] as num?)?.toInt() ?? 0 : 0,
     );
     final tracks = <audio.MusicTrack>[
       if (raw is List)
@@ -550,6 +552,7 @@ final class TxMusicSource extends LxPlatformSource
         _ => '',
       },
       trackCount: (basic['song_cnt'] as num?)?.toInt() ?? 0,
+      playCount: (basic['play_cnt'] as num?)?.toInt() ?? 0,
     );
   }
 

@@ -19,7 +19,8 @@ import 'package:pure_live/modules/music/controller/sources/online_playlist_model
         MusicPlazaSort,
         OnlinePlaylists,
         PlaylistTagTree,
-        SonglistSearch;
+        SonglistSearch,
+        playsFromFormattedCount;
 
 /// The mg-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kMgBoards = [
@@ -290,14 +291,19 @@ final class MgMusicSource extends LxPlatformSource
         for (final entry in raw) {
           if (entry is! Map) continue;
           final barList = entry['barList'];
+          // The first bar is this list's play figure, already formatted in
+          // the platform's units (`507.0万`) — it is not a creator, and this
+          // page's cards would otherwise read a play count as a nickname.
+          final bar = barList is List && barList.isNotEmpty && barList.first is Map
+              ? '${(barList.first as Map)['title'] ?? ''}'
+              : '';
           items.add(
             MusicPlaylistInfo(
               id: entry['logEvent'] is Map ? '${(entry['logEvent'] as Map)['contentId'] ?? ''}' : '',
               name: '${entry['title'] ?? ''}',
               cover: '${entry['imageUrl'] ?? ''}',
-              author: barList is List && barList.isNotEmpty && barList.first is Map
-                  ? '${(barList.first as Map)['title'] ?? ''}'
-                  : '',
+              author: '',
+              playCount: playsFromFormattedCount(bar) ?? 0,
               trackCount: 0,
             ),
           );
@@ -444,7 +450,12 @@ final class MgMusicSource extends LxPlatformSource
           name: '${infoData['title'] ?? ''}',
           cover: img is Map ? '${img['img'] ?? ''}' : '',
           author: '${infoData['ownerName'] ?? ''}',
-          trackCount: opNum is Map ? (opNum['playNum'] as num?)?.toInt() ?? tracks.length : tracks.length,
+          // `opNumItem.playNum` counts how many times the list was played —
+          // the reference files it under `play_count`, not the list's size.
+          // The size is `musicNum`; until it speaks, the rows already read
+          // are the honest count.
+          trackCount: (infoData['musicNum'] as num?)?.toInt() ?? tracks.length,
+          playCount: opNum is Map ? (opNum['playNum'] as num?)?.toInt() ?? 0 : 0,
         );
       }
     } on Object catch (error, stackTrace) {

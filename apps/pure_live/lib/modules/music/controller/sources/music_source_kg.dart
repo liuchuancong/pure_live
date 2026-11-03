@@ -26,7 +26,8 @@ import 'package:pure_live/modules/music/controller/sources/online_playlist_model
         MusicPlazaSort,
         OnlinePlaylists,
         PlaylistTagTree,
-        SonglistSearch;
+        SonglistSearch,
+        playsFromFormattedCount;
 
 /// The lx-music leaderboard view's KuGou boards, in its own order.
 const List<(String, String)> _kKgBoards = [
@@ -285,6 +286,7 @@ final class KgMusicSource extends LxPlatformSource
                 name: '${entry['specialname'] ?? ''}',
                 cover: '${entry['imgurl'] ?? entry['img'] ?? ''}'.replaceFirst('{size}', '240'),
                 author: '${entry['nickname'] ?? ''}',
+                playCount: (entry['playcount'] as num?)?.toInt() ?? 0,
                 trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
               ),
       ],
@@ -337,6 +339,10 @@ final class KgMusicSource extends LxPlatformSource
               name: '${entry['specialname'] ?? ''}',
               cover: '${entry['img'] ?? entry['imgurl'] ?? ''}'.replaceFirst('{size}', '240'),
               author: '${entry['nickname'] ?? ''}',
+              // The board row's figure arrives already formatted — `1718.4万`
+              // — while the search rows and the list's own page give a plain
+              // number; both land in the same field.
+              playCount: playsFromFormattedCount('${entry['total_play_count'] ?? ''}') ?? 0,
               trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
             ),
       ],
@@ -657,6 +663,7 @@ final class KgMusicSource extends LxPlatformSource
       name: '${data['specialname'] ?? data['name'] ?? ''}',
       cover: '${data['imgurl'] ?? data['img'] ?? ''}'.replaceFirst('{size}', '240'),
       author: '${data['nickname'] ?? data['list_create_username'] ?? ''}',
+      playCount: (data['playcount'] as num?)?.toInt() ?? 0,
       trackCount: ((data['songcount'] ?? data['count']) as num?)?.toInt() ?? 0,
     );
   }

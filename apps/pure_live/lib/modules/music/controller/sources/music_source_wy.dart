@@ -642,6 +642,7 @@ MusicPlaylistInfo _playlistOf(Map<String, Object?> raw) => MusicPlaylistInfo(
     _ => '',
   },
   trackCount: (raw['trackCount'] as num?)?.toInt() ?? 0,
+  playCount: (raw['playCount'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, Map<String, Object?>> _privilegeMap(Map<String, Object?> json) {

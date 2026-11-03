@@ -143,6 +143,7 @@
   "noResultsDescription": "换个关键词试试。",
   "searchFailed": "搜索失败",
   "songsCount": "{count} 首",
+  "playsCount": "{count}次播放",
   "play": "播放",
   "pause": "暂停",
   "next": "下一首",

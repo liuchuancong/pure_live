@@ -143,6 +143,7 @@
   "noResultsDescription": "Try another keyword.",
   "searchFailed": "The search failed",
   "songsCount": "{count} songs",
+  "playsCount": "{count} plays",
   "play": "Play",
   "pause": "Pause",
   "next": "Next",

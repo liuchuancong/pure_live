@@ -26,7 +26,7 @@ import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show Mus
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/shared.dart' show AudienceFormat, CoverFallback, LiveWindow, cachedImage;
 
 final class MusicSonglistTabs extends ConsumerWidget {
   const MusicSonglistTabs({
@@ -665,9 +665,16 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
                                 style: theme.typography.heading.copyWith(color: colors.text),
                               ),
                               Text(
-                                total > Duration.zero
-                                    ? '${info.author} · ${t.music.songsCount(count: tracks.length)} · ${musicDurationText(total)}'
-                                    : '${info.author} · ${t.music.songsCount(count: tracks.length)}',
+                                // Creator, plays, size, length — each part only
+                                // when the platform said it, so the line never
+                                // opens with a bare separator.
+                                [
+                                  if (info.author.isNotEmpty) info.author,
+                                  if (info.playCount > 0)
+                                    t.music.playsCount(count: AudienceFormat.format(info.playCount)),
+                                  t.music.songsCount(count: tracks.length),
+                                  if (total > Duration.zero) musicDurationText(total),
+                                ].join(' · '),
                                 style: theme.typography.caption.copyWith(color: colors.textSubtle),
                               ),
                               Row(

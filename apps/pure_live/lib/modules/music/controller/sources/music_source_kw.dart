@@ -124,6 +124,7 @@ final class KwMusicSource extends LxPlatformSource
               cover: '${entry['pic'] ?? ''}',
               author: LxPlatformSource.decodeName('${entry['nickname'] ?? ''}').trim(),
               trackCount: int.tryParse('${entry['songnum'] ?? ''}') ?? 0,
+              playCount: int.tryParse('${entry['playcnt'] ?? ''}') ?? 0,
             ),
       ],
       total: total,
@@ -330,6 +331,7 @@ final class KwMusicSource extends LxPlatformSource
             cover: '${entry['img'] ?? ''}',
             author: LxPlatformSource.decodeName('${entry['uname'] ?? ''}').trim(),
             trackCount: _intOf(entry['total']) ?? 0,
+            playCount: _intOf(entry['listencnt']) ?? 0,
           ),
     ];
   }
@@ -426,6 +428,7 @@ final class KwMusicSource extends LxPlatformSource
         cover: '${json['pic'] ?? ''}',
         author: LxPlatformSource.decodeName('${json['uname'] ?? ''}').trim(),
         trackCount: total,
+        playCount: int.tryParse('${json['playnum'] ?? ''}') ?? 0,
       );
     }
     if (info == null) throw StateError('kuwo playlist detail empty: $pid');

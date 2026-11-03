@@ -3481,6 +3481,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '{count} 首'
 	String songsCount({required Object count}) => '${count} 首';
 
+	/// zh-CN: '{count}次播放'
+	String playsCount({required Object count}) => '${count}次播放';
+
 	/// zh-CN: '播放'
 	String get play => '播放';
 
@@ -14368,6 +14371,7 @@ extension on Translations {
 			'music.noResultsDescription' => '换个关键词试试。',
 			'music.searchFailed' => '搜索失败',
 			'music.songsCount' => ({required Object count}) => '${count} 首',
+			'music.playsCount' => ({required Object count}) => '${count}次播放',
 			'music.play' => '播放',
 			'music.pause' => '暂停',
 			'music.next' => '下一首',
@@ -14659,9 +14663,9 @@ extension on Translations {
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
-			'music.desktopLyricColorGray' => '灰色',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricColorGray' => '灰色',
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
@@ -15173,9 +15177,9 @@ extension on Translations {
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
 			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
-			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
 			'recorder.transcodeDesc' => '把合并后的 MP4 重新编码为 H.264；耗时随录像长度增加，会降低源画质。',
@@ -15687,9 +15691,9 @@ extension on Translations {
 			'settings.liveAlertTagsAll' => '全部关注',
 			'settings.liveAlertTagsNone' => '还没有标签；提醒将覆盖全部关注。',
 			'settings.liveAlertTagCount' => ({required Object selected}) => '已选 ${selected} 个',
-			'settings.liveAlertFallbackTitle' => ({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.liveAlertFallbackTitle' => ({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
 			'settings.navNetwork' => '网络',
@@ -16201,9 +16205,9 @@ extension on Translations {
 			'settings.playerGuideChapterQuality' => '画质增强',
 			'settings.playerGuideChapterAudio' => '声音',
 			'settings.playerGuideChapterSymptoms' => '症状对照',
-			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
@@ -16715,9 +16719,9 @@ extension on Translations {
 			'settings.twitchLanguage_fr' => '法语',
 			'settings.twitchLanguage_ru' => '俄语',
 			'settings.twitchLanguage_it' => '意大利语',
-			'settings.twitchLanguage_th' => '泰语',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_th' => '泰语',
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
 			'settings.twitchLanguage_tr' => '土耳其语',
@@ -17229,9 +17233,9 @@ extension on Translations {
 			'vod.signInNeededDescription' => '这个列表在你登录的 Bilibili 账号上。',
 			'vod.toViewEmptyTitle' => '稍后再看是空的',
 			'vod.toViewEmptyDescription' => '在 Bilibili 上标记「稍后再看」的视频会出现在这里。',
-			'vod.followingEmptyTitle' => '还没有追番',
 			_ => null,
 		} ?? switch (path) {
+			'vod.followingEmptyTitle' => '还没有追番',
 			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			'vod.comments' => '评论',
 			'vod.commentsHot' => '最热',

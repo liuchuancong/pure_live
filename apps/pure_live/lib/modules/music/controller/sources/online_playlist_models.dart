@@ -9,6 +9,7 @@ final class MusicPlaylistInfo {
     required this.cover,
     required this.author,
     required this.trackCount,
+    this.playCount = 0,
   });
 
   /// The playlist id the detail call takes.
@@ -25,6 +26,30 @@ final class MusicPlaylistInfo {
 
   /// How many tracks it holds.
   final int trackCount;
+
+  /// How many times the list has been played, when the platform says; zero
+  /// when it does not.
+  ///
+  /// Some tag rows only carry the figure already formatted in the platform's
+  /// own units, which the sources read back into this number so every list
+  /// renders it the same way.
+  final int playCount;
+}
+
+/// Reads a play figure a platform handed already formatted — `2153.4万`,
+/// `1.2亿` — back into a number; null when the text is not a figure at all.
+///
+/// The sources' imports name this explicitly: it is a top-level helper, and
+/// those import lists show the model types only.
+int? playsFromFormattedCount(String text) {
+  final match = RegExp(r'^\s*([0-9]+(?:\.[0-9]+)?)\s*([万亿]?)\s*$').firstMatch(text);
+  final value = double.tryParse(match?.group(1) ?? '');
+  if (match == null || value == null) return null;
+  return switch (match.group(2)) {
+    '万' => (value * 10000).round(),
+    '亿' => (value * 100000000).round(),
+    _ => value.round(),
+  };
 }
 
 /// One page of the online playlist lists.

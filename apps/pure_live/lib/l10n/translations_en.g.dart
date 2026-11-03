@@ -1261,6 +1261,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get noResultsDescription => 'Try another keyword.';
 	@override String get searchFailed => 'The search failed';
 	@override String songsCount({required Object count}) => '${count} songs';
+	@override String playsCount({required Object count}) => '${count} plays';
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get next => 'Next';
@@ -5813,6 +5814,7 @@ extension on TranslationsEn {
 			'music.noResultsDescription' => 'Try another keyword.',
 			'music.searchFailed' => 'The search failed',
 			'music.songsCount' => ({required Object count}) => '${count} songs',
+			'music.playsCount' => ({required Object count}) => '${count} plays',
 			'music.play' => 'Play',
 			'music.pause' => 'Pause',
 			'music.next' => 'Next',
@@ -6104,9 +6106,9 @@ extension on TranslationsEn {
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
-			'music.desktopLyricColorGray' => 'Gray',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricColorGray' => 'Gray',
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
@@ -6618,9 +6620,9 @@ extension on TranslationsEn {
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
 			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
-			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
 			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
@@ -7132,9 +7134,9 @@ extension on TranslationsEn {
 			'settings.liveAlertTagsAll' => 'All follows',
 			'settings.liveAlertTagsNone' => 'No tags yet; alerts cover every follow.',
 			'settings.liveAlertTagCount' => ({required Object selected}) => '${selected} selected',
-			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
 			'settings.navNetwork' => 'Network',
@@ -7646,9 +7648,9 @@ extension on TranslationsEn {
 			'settings.playerGuideChapterQuality' => 'Quality enhancement',
 			'settings.playerGuideChapterAudio' => 'Audio',
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
-			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
 			'settings.playerGuidePlatformAndroid' => 'Android',
@@ -8160,9 +8162,9 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_fr' => 'French',
 			'settings.twitchLanguage_ru' => 'Russian',
 			'settings.twitchLanguage_it' => 'Italian',
-			'settings.twitchLanguage_th' => 'Thai',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_th' => 'Thai',
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
 			'settings.twitchLanguage_tr' => 'Turkish',
@@ -8674,9 +8676,9 @@ extension on TranslationsEn {
 			'vod.signInNeededDescription' => 'This list lives on your Bilibili account.',
 			'vod.toViewEmptyTitle' => 'Watch later is empty',
 			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
-			'vod.followingEmptyTitle' => 'Nothing followed yet',
 			_ => null,
 		} ?? switch (path) {
+			'vod.followingEmptyTitle' => 'Nothing followed yet',
 			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			'vod.comments' => 'Comments',
 			'vod.commentsHot' => 'Top',

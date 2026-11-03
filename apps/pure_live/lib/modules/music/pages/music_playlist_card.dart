@@ -31,6 +31,7 @@ final class MusicPlaylistCard extends StatelessWidget {
     : title = playlist.name,
       coverUrl = null,
       creator = '',
+      plays = 0,
       trackCount = playlist.tracks.length;
 
   /// A card for a playlist browsed from the source.
@@ -40,6 +41,7 @@ final class MusicPlaylistCard extends StatelessWidget {
     : title = info.name,
       coverUrl = info.cover,
       creator = info.author,
+      plays = info.playCount,
       trackCount = info.trackCount;
 
   /// The playlist's display name.
@@ -50,6 +52,9 @@ final class MusicPlaylistCard extends StatelessWidget {
 
   /// The creator's name; empty on the viewer's own lists.
   final String creator;
+
+  /// How many times the list has been played; zero when the platform says no.
+  final int plays;
 
   /// How many tracks the playlist holds; the chip over the cover.
   final int trackCount;
@@ -136,9 +141,12 @@ final class MusicPlaylistCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                     ),
-                    if (creator.isNotEmpty)
+                    // One listing line under the name: who made the list, and
+                    // where the platform names no creator — migu's tag rows
+                    // give only a play figure — how often it has been played.
+                    if (creator.isNotEmpty || plays > 0)
                       Text(
-                        creator,
+                        creator.isNotEmpty ? creator : t.music.playsCount(count: AudienceFormat.format(plays)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
