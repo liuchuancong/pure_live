@@ -11,6 +11,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show hongguoHomeBannerProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
@@ -295,6 +296,20 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
     );
   }
 
+  /// Puts the head's picture on screen: where this device stopped when it
+  /// stopped inside this title, its first episode otherwise. The shelf's card
+  /// opens the series' page; the head's verb is the one the reference puts on
+  /// its banner, so it has to reach the picture itself.
+  void _playHero(HongguoSeries series, HongguoWatchProgress? seen) {
+    final vid = seen?.episodeVid ?? '';
+    final resume = seen != null && !seen.completed && seen.positionMs > 0 && vid.isNotEmpty
+        ? seen.positionMs / 1000
+        : null;
+    unawaited(
+      context.push(RouteNames.hongguoPlayerFor(series.seriesId, vid: vid.isEmpty ? null : vid, resumeSeconds: resume)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -322,6 +337,14 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
     final themeRow = themes.isEmpty ? _topics : themes.first;
     final theme = browse?.selection['category_dim_theme'] ?? '';
     final hot = theme.isEmpty ? null : browse;
+    // The page's first visual focus: the shelf's own first pick drawn at head
+    // size, taken out of the row rather than shown a second time under it. One
+    // title alone in the batch stays a card — a head over an empty row is not
+    // a shelf.
+    final batch = home.items.skip(_batch * _batchSize).toList();
+    final hero = ref.watch(hongguoHomeBannerProvider) && batch.length > 1 ? batch.first : null;
+    final forYou = (hero == null ? batch : batch.skip(1)).take(_batchSize).toList();
+    final heroProgress = hero == null ? null : watchedById[hero.seriesId];
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
       child: Column(
@@ -363,9 +386,22 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
               ],
             ),
           ),
+          if (hero case final title?)
+            HongguoFeedHero(
+              series: title,
+              eyebrow: t.hongguo.shelfForYou,
+              watched: heroProgress,
+              saved: ref.watch(hongguoLibraryProvider.select((library) => library.isFavorite(title.seriesId))),
+              onOpen: () => _open(context, title),
+              onPlay: () => _playHero(title, heroProgress),
+              onSave: () {
+                final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(title);
+                showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
+              },
+            ),
           HongguoShelf(
             title: t.hongguo.shelfForYou,
-            items: home.items.skip(_batch * _batchSize).take(_batchSize).toList(),
+            items: forYou,
             loading: home.loading && home.items.length <= _batch * _batchSize,
             error: home.error,
             onRetry: () => unawaited(homeController.retry()),

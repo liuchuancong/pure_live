@@ -98,3 +98,35 @@ final class HongguoSettingsController extends Notifier<HongguoSettings> {
 final hongguoSettingsProvider = NotifierProvider<HongguoSettingsController, HongguoSettings>(
   HongguoSettingsController.new,
 );
+
+/// The preference the home's head picture is kept under.
+const String _homeBannerPref = 'hongguo.home.banner';
+
+/// Whether 首页 draws its first pick at head size above the shelves. One
+/// element of a fixed layout, so it carries one switch — the same shape the
+/// video station's home head picture has.
+final class HongguoHomeBannerController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(_homeBannerPref) ?? true;
+    } on Object {
+      // A closed store keeps the head on.
+      return true;
+    }
+  }
+
+  /// Shows or hides the head picture.
+  Future<void> setShown({required bool value}) async {
+    if (value == state) return;
+    state = value;
+    try {
+      await StoragePrefs.setBool(_homeBannerPref, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The station's home head picture.
+final hongguoHomeBannerProvider = NotifierProvider<HongguoHomeBannerController, bool>(HongguoHomeBannerController.new);

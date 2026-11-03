@@ -134,6 +134,8 @@
   "accountPhoneToggle": "Use a phone number",
   "accountQrToggle": "Scan a code",
   "commentsFailed": "Comments did not load",
+  "showHomeBanner": "Home head picture",
+  "showHomeBannerDesc": "The shelf's first pick drawn at head size above the three rows, and taken out of the row itself.",
   "shelfForYou": "Picked for you",
   "shelfChangeBatch": "Another batch",
   "shelfHot": "Now playing",

@@ -1915,6 +1915,12 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '评论没有加载出来'
 	String get commentsFailed => '评论没有加载出来';
 
+	/// zh-CN: '首页头图'
+	String get showHomeBanner => '首页头图';
+
+	/// zh-CN: '把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。'
+	String get showHomeBannerDesc => '把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。';
+
 	/// zh-CN: '为你推荐'
 	String get shelfForYou => '为你推荐';
 
@@ -13832,6 +13838,8 @@ extension on Translations {
 			'hongguo.accountPhoneToggle' => '用手机号登录',
 			'hongguo.accountQrToggle' => '扫码登录',
 			'hongguo.commentsFailed' => '评论没有加载出来',
+			'hongguo.showHomeBanner' => '首页头图',
+			'hongguo.showHomeBannerDesc' => '把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。',
 			'hongguo.shelfForYou' => '为你推荐',
 			'hongguo.shelfChangeBatch' => '换一批',
 			'hongguo.shelfHot' => '正在热播',
@@ -14123,10 +14131,10 @@ extension on Translations {
 			'iptv.browseClockDesc' => '播放时在标题旁显示当前时间。',
 			'iptv.browseProgrammeLine' => '显示当前节目',
 			'iptv.browseProgrammeLineDesc' => '频道名下方显示当前或下一档节目。',
-			'iptv.browseReset' => '恢复默认',
-			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.browseReset' => '恢复默认',
+			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
 			'iptv.recentTitle' => '最近观看',
 			'iptv.recentCount' => ({required Object count}) => '共 ${count} 个频道',
@@ -14637,10 +14645,10 @@ extension on Translations {
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
-			'music.desktopLyricAlignment' => '对齐方式',
-			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricAlignment' => '对齐方式',
+			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
 			'music.desktopLyricAlignCenter' => '居中',
 			'music.desktopLyricAlignRight' => '右对齐',
@@ -15151,10 +15159,10 @@ extension on Translations {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
-			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
-			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
+			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
 			'recorder.transcodeDesc' => '把合并后的 MP4 重新编码为 H.264；耗时随录像长度增加，会降低源画质。',
@@ -15665,10 +15673,10 @@ extension on Translations {
 			'settings.liveAlertFallbackTitle' => ({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
-			'settings.navNetwork' => '网络',
-			'settings.networkDescription' => '应用代理与传输行为。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navNetwork' => '网络',
+			'settings.networkDescription' => '应用代理与传输行为。',
 			'settings.proxy' => '应用代理',
 			'settings.proxyHost' => '主机',
 			'settings.proxyHostDesc' => '代理服务器的主机名或地址。',
@@ -16179,10 +16187,10 @@ extension on Translations {
 			'settings.playerGuideChapterSymptoms' => '症状对照',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
-			'settings.playerGuideBadgeAo' => 'ao',
-			'settings.playerGuidePlatformAndroid' => 'Android',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideBadgeAo' => 'ao',
+			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
 			'settings.playerGuideEntryHardwareSwitchBody' => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。',
@@ -16693,10 +16701,10 @@ extension on Translations {
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
 			'settings.twitchLanguage_tr' => '土耳其语',
-			'settings.twitchLanguage_pl' => '波兰语',
-			'settings.holdDanmakuOnPress' => '按住冻结',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_pl' => '波兰语',
+			'settings.holdDanmakuOnPress' => '按住冻结',
 			'settings.holdDanmakuOnPressDesc' => '按住时暂停，松手继续。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
 			'settings.youtubeAllChatDesc' => '关闭用网页默认 Top chat；开启请求全部聊天。',
@@ -17207,10 +17215,10 @@ extension on Translations {
 			'vod.commentsHot' => '最热',
 			'vod.commentsNew' => '最新',
 			'vod.commentsEmpty' => '还没有评论。',
-			'vod.commentsFailed' => '评论没有加载出来',
-			'vod.historyEmptyTitle' => '还没有观看记录',
 			_ => null,
 		} ?? switch (path) {
+			'vod.commentsFailed' => '评论没有加载出来',
+			'vod.historyEmptyTitle' => '还没有观看记录',
 			'vod.historyEmptyDescription' => '看过的视频会出现在这里，并保留上次的播放位置。',
 			'vod.historyCompleted' => '已看完',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',

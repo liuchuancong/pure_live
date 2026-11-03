@@ -134,6 +134,8 @@
   "accountPhoneToggle": "用手机号登录",
   "accountQrToggle": "扫码登录",
   "commentsFailed": "评论没有加载出来",
+  "showHomeBanner": "首页头图",
+  "showHomeBannerDesc": "把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。",
   "shelfForYou": "为你推荐",
   "shelfChangeBatch": "换一批",
   "shelfHot": "正在热播",

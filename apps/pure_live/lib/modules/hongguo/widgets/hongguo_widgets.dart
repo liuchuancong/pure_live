@@ -31,6 +31,15 @@ const double kHongguoSeriesCardInfoExtent = 82;
 /// under it and takes the height the name block leaves.
 const double kHongguoSeriesTileAspect = 0.62;
 
+/// Where the head's 续播 puts the viewer, in seconds — null when the shelf has
+/// no place to go back to: an unfinished title, stopped partway inside, on an
+/// episode it can name. The head's verb reads the same answer, so the word on
+/// the button and the position it opens at cannot disagree.
+double? hongguoResumeSeconds(HongguoWatchProgress? seen) =>
+    seen != null && !seen.completed && seen.positionMs > 0 && seen.episodeVid.isNotEmpty
+    ? seen.positionMs / 1000
+    : null;
+
 /// What the local shelf says about a title: 已看完 once this device finished it,
 /// the episode it stopped at otherwise. One wording for the board's row, the
 /// poster card and the list row — the viewer's own state is said the same way
@@ -277,6 +286,162 @@ final class HongguoSeriesCard extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The station's home opens with one title drawn at head size — the shelf's
+/// first pick, its poster at the head's start and its name, where this device
+/// stands on it, its intro and the way in at its end — instead of starting
+/// mid-row like every shelf under it.
+///
+/// The head says its figures in words rather than as ink over the poster: the
+/// wall's card stamps chips on a cover because it has nowhere else to put
+/// them, and this has the column beside it. The poster keeps the station's own
+/// 3:4, so a head never crops a picture that was drawn for four thirds of its
+/// height, and that width is what sets the head's height.
+final class HongguoFeedHero extends StatelessWidget {
+  /// The head for [series]; [onOpen] opens its page, [onPlay] puts the picture
+  /// on screen, [onSave] keeps it on the device's shelf or takes it off, and
+  /// [eyebrow] is the shelf it was read from rather than an invented caption.
+  const HongguoFeedHero({
+    required this.series,
+    required this.eyebrow,
+    required this.onOpen,
+    required this.onPlay,
+    required this.saved,
+    required this.onSave,
+    this.watched,
+    super.key,
+  });
+
+  /// The title the shelf puts first.
+  final HongguoSeries series;
+
+  /// The shelf this head belongs to, in the app's own words.
+  final String eyebrow;
+
+  /// Opens the series' page, as the card under it does.
+  final VoidCallback onOpen;
+
+  /// Starts the picture — where this device stopped, when it stopped inside.
+  final VoidCallback onPlay;
+
+  /// Whether the series already sits on this device's shelf.
+  final bool saved;
+
+  /// Keeps the series, or drops it when it is kept.
+  final VoidCallback onSave;
+
+  /// Where this device left the series; null when it never opened it.
+  final HongguoWatchProgress? watched;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final line = hongguoSeriesSubtitle(t, series, watched: watched);
+    final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
+    // A title this device stopped inside is offered where it stopped, the way
+    // the reference separates 继续观看 from 播放.
+    final resume = hongguoResumeSeconds(watched) != null;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final coverWidth = (constraints.maxWidth * .3).clamp(112.0, 180.0);
+        return DsCard(
+          onPressed: onOpen,
+          semanticLabel: series.title,
+          style: DsCardStyle(
+            padding: EdgeInsets.zero,
+            hovered: DsCardStyle(
+              background: colors.hover,
+              shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: coverWidth,
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: series.cover.isEmpty
+                        ? fallback
+                        : DsImage(
+                            image: hongguoCoverImage(series.cover),
+                            aspectRatio: 3 / 4,
+                            semanticLabel: series.title,
+                            fallback: fallback,
+                          ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s4,
+                      children: [
+                        Text(eyebrow, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+                        Text(
+                          series.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.title.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                        ),
+                        if (line.isNotEmpty)
+                          Text(
+                            line,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        if (series.intro.isNotEmpty)
+                          Text(
+                            series.intro,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: DsSpace.s4),
+                          child: Wrap(
+                            spacing: DsSpace.s8,
+                            runSpacing: DsSpace.s8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              DsButton(
+                                variant: DsButtonVariant.primary,
+                                size: DsSize.sm,
+                                leading: const DsIcon(DsIcons.play, size: 16),
+                                onPressed: onPlay,
+                                child: Text(resume ? t.hongguo.continueWatching : t.hongguo.play),
+                              ),
+                              DsButton(
+                                // The same two verbs the series' own head uses,
+                                // and the same fill once the title is kept: one
+                                // action, one shape, wherever it is offered.
+                                variant: saved ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                                size: DsSize.sm,
+                                leading: DsIcon(saved ? DsIcons.heart : DsIcons.heartOff, size: 16),
+                                onPressed: onSave,
+                                child: Text(saved ? t.hongguo.favorited : t.hongguo.favorite),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -721,6 +721,8 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get accountPhoneToggle => 'Use a phone number';
 	@override String get accountQrToggle => 'Scan a code';
 	@override String get commentsFailed => 'Comments did not load';
+	@override String get showHomeBanner => 'Home head picture';
+	@override String get showHomeBannerDesc => 'The shelf\'s first pick drawn at head size above the three rows, and taken out of the row itself.';
 	@override String get shelfForYou => 'Picked for you';
 	@override String get shelfChangeBatch => 'Another batch';
 	@override String get shelfHot => 'Now playing';
@@ -5291,6 +5293,8 @@ extension on TranslationsEn {
 			'hongguo.accountPhoneToggle' => 'Use a phone number',
 			'hongguo.accountQrToggle' => 'Scan a code',
 			'hongguo.commentsFailed' => 'Comments did not load',
+			'hongguo.showHomeBanner' => 'Home head picture',
+			'hongguo.showHomeBannerDesc' => 'The shelf\'s first pick drawn at head size above the three rows, and taken out of the row itself.',
 			'hongguo.shelfForYou' => 'Picked for you',
 			'hongguo.shelfChangeBatch' => 'Another batch',
 			'hongguo.shelfHot' => 'Now playing',
@@ -5582,10 +5586,10 @@ extension on TranslationsEn {
 			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
 			'iptv.browseProgrammeLine' => 'Show the current programme',
 			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
-			'iptv.browseReset' => 'Reset to defaults',
-			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.browseReset' => 'Reset to defaults',
+			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'iptv.recentTitle' => 'Recently watched',
 			'iptv.recentCount' => ({required Object count}) => '${count} channels',
@@ -6096,10 +6100,10 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
-			'music.desktopLyricAlignment' => 'Alignment',
-			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricAlignment' => 'Alignment',
+			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
 			'music.desktopLyricAlignCenter' => 'Center',
 			'music.desktopLyricAlignRight' => 'Right',
@@ -6610,10 +6614,10 @@ extension on TranslationsEn {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
-			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
-			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
+			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
 			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
@@ -7124,10 +7128,10 @@ extension on TranslationsEn {
 			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
-			'settings.navNetwork' => 'Network',
-			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navNetwork' => 'Network',
+			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
@@ -7638,10 +7642,10 @@ extension on TranslationsEn {
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
-			'settings.playerGuideBadgeAo' => 'ao',
-			'settings.playerGuidePlatformAndroid' => 'Android',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideBadgeAo' => 'ao',
+			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
@@ -8152,10 +8156,10 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
 			'settings.twitchLanguage_tr' => 'Turkish',
-			'settings.twitchLanguage_pl' => 'Polish',
-			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_pl' => 'Polish',
+			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
 			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
@@ -8666,10 +8670,10 @@ extension on TranslationsEn {
 			'vod.commentsHot' => 'Top',
 			'vod.commentsNew' => 'Newest',
 			'vod.commentsEmpty' => 'No comments yet.',
-			'vod.commentsFailed' => 'The comments did not load',
-			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			_ => null,
 		} ?? switch (path) {
+			'vod.commentsFailed' => 'The comments did not load',
+			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',

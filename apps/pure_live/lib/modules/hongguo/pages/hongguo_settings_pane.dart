@@ -95,6 +95,17 @@ final class HongguoInterfacePane extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.hongguoInterface),
       children: [
+        // The page's own layer, above the pieces a card draws: one switch for
+        // one element of a fixed layout.
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.image),
+          title: t.hongguo.showHomeBanner,
+          description: t.hongguo.showHomeBannerDesc,
+          control: DsSwitch(
+            value: ref.watch(hongguoHomeBannerProvider),
+            onChanged: (value) => unawaited(ref.read(hongguoHomeBannerProvider.notifier).setShown(value: value)),
+          ),
+        ),
         for (final (element, icon, label) in <(HongguoCardElement, DsIconData, String)>[
           (HongguoCardElement.rank, DsIcons.trophy, t.settings.hongguoCardRank),
           (HongguoCardElement.coverTags, DsIcons.tag, t.settings.hongguoCardTags),
