@@ -139,7 +139,7 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
         // page, the pager under them is the way on.
         Expanded(child: _list(items: shown, hasMore: false, onLoadMore: null)),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
           child: Center(
             child: DsPagination(
               page: _page,

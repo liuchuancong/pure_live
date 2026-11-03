@@ -176,7 +176,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
             child: Center(
               child: DsPagination(
                 page: state.page,

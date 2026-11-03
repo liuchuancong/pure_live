@@ -312,7 +312,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       children: [
         Expanded(child: records),
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
           child: Center(
             child: DsPagination(
               page: page,

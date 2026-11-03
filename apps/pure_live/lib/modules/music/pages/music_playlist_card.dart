@@ -302,7 +302,7 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
         // A collection that fills one page never grows a pager.
         if (_inHandPages + (widget.hasMore ? 1 : 0) > 1)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
             child: Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,

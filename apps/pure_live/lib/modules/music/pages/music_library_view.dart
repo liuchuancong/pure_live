@@ -406,7 +406,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
             ),
             if (pageCount > 1)
               Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+                padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
                 child: Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

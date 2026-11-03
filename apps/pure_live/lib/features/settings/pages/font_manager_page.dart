@@ -377,7 +377,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                       : rows.take(_shown).toList();
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s8,
+                    spacing: DsSpace.s12,
                     children: [
                       Expanded(
                         child: DsTable<FontEntry>(

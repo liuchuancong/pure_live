@@ -374,7 +374,7 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
       children: [
         Expanded(child: feedView),
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
           child: Center(
             child: DsPagination(
               page: shownPage,
@@ -563,7 +563,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       children: [
         Expanded(child: grid),
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
           child: Center(
             child: DsPagination(
               page: shown,

@@ -710,7 +710,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
                       : visible.take(_shown).toList();
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s8,
+                    spacing: DsSpace.s12,
                     children: [
                       Expanded(
                         child: DsTable<WallpaperDownloadTask>(
