@@ -61,6 +61,7 @@
   "previewFileMissingDescription": "It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.",
   "previewEmpty": "Nothing to preview",
   "previewEmptyDescription": "Finished recordings and downloads appear here.",
+  "previewSpeed": "Speed",
   "previewDanmaku": "Danmaku",
   "previewDanmakuOff": "This entry has no danmaku file",
   "previewDanmakuSettings": "Danmaku settings",

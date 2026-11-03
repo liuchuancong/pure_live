@@ -462,6 +462,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewFileMissingDescription => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.';
 	@override String get previewEmpty => 'Nothing to preview';
 	@override String get previewEmptyDescription => 'Finished recordings and downloads appear here.';
+	@override String get previewSpeed => 'Speed';
 	@override String get previewDanmaku => 'Danmaku';
 	@override String get previewDanmakuOff => 'This entry has no danmaku file';
 	@override String get previewDanmakuSettings => 'Danmaku settings';
@@ -5054,6 +5055,7 @@ extension on TranslationsEn {
 			'common.previewFileMissingDescription' => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.',
 			'common.previewEmpty' => 'Nothing to preview',
 			'common.previewEmptyDescription' => 'Finished recordings and downloads appear here.',
+			'common.previewSpeed' => 'Speed',
 			'common.previewDanmaku' => 'Danmaku',
 			'common.previewDanmakuOff' => 'This entry has no danmaku file',
 			'common.previewDanmakuSettings' => 'Danmaku settings',
@@ -5066,9 +5068,9 @@ extension on TranslationsEn {
 			'common.previewDeleteBody' => ({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.',
 			'common.previewDeleteFailed' => 'The file could not be deleted',
 			'common.rename' => 'Rename',
-			'favorites.emptyTitle' => 'No followed rooms yet',
 			_ => null,
 		} ?? switch (path) {
+			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
 			'favorites.statusAll' => 'All',
@@ -5580,9 +5582,9 @@ extension on TranslationsEn {
 			'iptv.browseClock' => 'Show the time',
 			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
 			'iptv.browseProgrammeLine' => 'Show the current programme',
-			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			'iptv.browseReset' => 'Reset to defaults',
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
@@ -6094,9 +6096,9 @@ extension on TranslationsEn {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
-			'music.desktopLyricAlignCenter' => 'Center',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricAlignCenter' => 'Center',
 			'music.desktopLyricAlignRight' => 'Right',
 			'music.desktopLyricColorWhite' => 'White',
 			'music.desktopLyricColorYellow' => 'Yellow',
@@ -6608,9 +6610,9 @@ extension on TranslationsEn {
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
 			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
-			'recorder.transcodeBitrateTitle' => 'Transcode bitrate',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.transcodeBitrateTitle' => 'Transcode bitrate',
 			'recorder.transcodeBitrateDesc' => 'Target video bitrate; higher is clearer and larger.',
 			'recorder.playRecording' => 'Play recording',
 			'recorder.previewRecording' => 'Preview in built-in player',
@@ -7122,9 +7124,9 @@ extension on TranslationsEn {
 			'settings.proxy' => 'App proxy',
 			'settings.proxyHost' => 'Host',
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
-			'settings.proxyPort' => 'Port',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxyPort' => 'Port',
 			'settings.proxyPortDesc' => 'The port that proxy server listens on.',
 			'settings.proxyUsername' => 'Username',
 			'settings.proxyUsernameDesc' => 'Fill this in when the proxy asks for credentials; empty treats it as an open proxy.',
@@ -7636,9 +7638,9 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
 			'settings.playerGuideEntryHardwareSwitchBody' => 'Let the GPU decode video instead of the CPU. Lower usage and heat when on; software decoding is the most compatible fallback and can be faster on old devices.',
 			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
-			'settings.playerGuideEntryHwdecBody' => 'Which hardware decode path to use. auto tries everything (may glitch on some SoCs); auto-safe only whitelisted paths (recommended); -copy variants decode back into memory, needed by some filters and screenshots.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntryHwdecBody' => 'Which hardware decode path to use. auto tries everything (may glitch on some SoCs); auto-safe only whitelisted paths (recommended); -copy variants decode back into memory, needed by some filters and screenshots.',
 			'settings.playerGuideEntryVoTitle' => '--vo',
 			'settings.playerGuideEntryVoBody' => 'Where mpv draws the picture. libmpv renders into the Flutter texture (embedded, default); gpu/gpu-next/direct3d open a standalone mpv window (outside the app); null renders nothing.',
 			'settings.playerGuideEntryAoTitle' => '--ao',
@@ -8150,9 +8152,9 @@ extension on TranslationsEn {
 			'settings.holdDanmakuOnPress' => 'Freeze on hold',
 			'settings.holdDanmakuOnPressDesc' => 'Pauses while held, resumes on release.',
 			'settings.youtubeAllChat' => 'YouTube: show all chat',
-			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.youtubeAllChatDesc' => 'Off uses web Top chat; on requests every live message.',
 			'settings.preferH264' => 'Huya: prefer H.264',
 			'settings.preferH264Desc' => 'Picks H.264 when the platform offers several.',
 			'settings.clipboardRoomTitle' => 'Open the room from the clipboard?',
@@ -8664,9 +8666,9 @@ extension on TranslationsEn {
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
 			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
 			'vod.historyCompleted' => 'Finished',
-			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			_ => null,
 		} ?? switch (path) {
+			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',
 			'vod.today' => 'Today',
 			'vod.yesterday' => 'Yesterday',

@@ -61,6 +61,7 @@
   "previewFileMissingDescription": "它可能被移动、改名或删除了；打开文件夹看看，或回到列表选另一项。",
   "previewEmpty": "没有可预览的条目",
   "previewEmptyDescription": "完成的录像与下载会出现在这里。",
+  "previewSpeed": "倍速",
   "previewDanmaku": "弹幕",
   "previewDanmakuOff": "这条没有弹幕文件",
   "previewDanmakuSettings": "弹幕设置",

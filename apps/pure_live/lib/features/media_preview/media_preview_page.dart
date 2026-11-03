@@ -14,7 +14,9 @@ import 'package:media_core/media_core.dart'
         PlayerAdapterCompleted,
         PlayerAdapterEvent,
         PlayerHandle,
+        PlayerHandleLifecycle,
         PlayerHandlePlayback,
+        PlayerHandleRecovery,
         PlayerId,
         PlayerTransportState,
         PresentationMode;
@@ -27,6 +29,7 @@ import 'package:pure_live/app/app.dart'
         RoomPresentationController,
         RouteCaptionTail,
         SettingsSectionRoute,
+        appPathsProvider,
         fullscreenDriverProvider,
         pipDriverProvider,
         resolvedFontFamily,
@@ -38,10 +41,12 @@ import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dar
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart' show WallpaperVideoPlayer;
 import 'package:pure_live/features/settings/settings.dart'
     show
+        PlaybackFit,
         SettingsPreviewCircleButton,
         SettingsSection,
         danmakuEffectiveFpsProvider,
         danmakuStyleProvider,
+        fitLabels,
         openSettingsSection,
         playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
@@ -51,10 +56,10 @@ import 'package:pure_live/shared/shared.dart'
         LiveWindow,
         applyFullscreenOrientation,
         cachedImage,
+        capturePlayerFrame,
         danmakuFileFor,
         playerBarrageConfig,
         playerInk,
-        playerInkHover,
         playerInkMuted,
         playerInkSubtle;
 
@@ -84,6 +89,16 @@ Future<void> openMediaPreview(
     ),
   );
 }
+
+/// The speeds a preview offers: the steps a viewer actually reaches for on a
+/// long take, not a continuous dial. The same six the vod player's own
+/// catalogue carries, written out here because this page is what the modules
+/// open and must not reach back into one of them for a list.
+const List<double> kPreviewRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+/// The rate as the menu says it: `1×`, `1.5×`, `0.75×` — the number, never the
+/// category's name beside a panel already titled 倍速.
+String _rateLabel(double value) => '${value.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '')}×';
 
 /// The preview page: one file playing, the rest of the list beside it, and
 /// the entry's danmaku over the picture when it has a sidecar.
@@ -143,6 +158,17 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   PlayerHandle? _handle;
   StreamSubscription<PlayerAdapterEvent>? _events;
   double _volume = 1;
+
+  /// The speed and the sound-only mode the page promises the next entry: a
+  /// viewer who chose 1.5× or 音频模式 does not choose it again for every file
+  /// in the list. Both are this visit's, like the volume, not preferences.
+  double _rate = 1;
+  bool _audioOnly = false;
+
+  /// The theatre: the picture owns the body and the list floats over its end
+  /// edge — the room's own arrangement, for the same reason a preview wants it
+  /// (a take is wider than a column beside it leaves room for).
+  bool _theater = false;
 
   /// Whether the list moves on when a take ends. The page's own switch — it
   /// speaks about this visit, not about the app, so it stays out of the
@@ -244,8 +270,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       ref.read(pipDriverProvider).onVideoSize(size.width, size.height);
     });
     // The number the slider shows is the page's promise: a new entry opens at
-    // the volume it was set to, not back at full.
+    // the volume it was set to, not back at full. The speed and the sound-only
+    // mode are promised the same way.
     if (_volume != 1) unawaited(_applyVolume(handle, _volume));
+    if (_rate != 1) unawaited(_applyRate(handle, _rate));
+    if (_audioOnly) unawaited(_applyAudioOnly(handle, true));
     _scheduleTimeline();
   }
 
@@ -291,6 +320,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       setState(() => _panelOpen = false);
       return;
     }
+    // The arrangement gives way before the page does: a viewer pressing back in
+    // the theatre wants the list column back, not the preview closed.
+    if (_theater) {
+      setState(() => _theater = false);
+      return;
+    }
     if (narrow && _listOpen) {
       setState(() => _listOpen = false);
       return;
@@ -313,6 +348,59 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     } on Object {
       // The slider reads back what the next transport event reports.
     }
+  }
+
+  /// Plays at [value]'s multiple. The page keeps the number, so the next entry
+  /// opens at the speed the viewer chose rather than back at 1×.
+  Future<void> _setRate(double value) async {
+    final handle = _handle;
+    setState(() => _rate = value);
+    if (handle == null) return;
+    await _applyRate(handle, value);
+  }
+
+  Future<void> _applyRate(PlayerHandle handle, double value) async {
+    try {
+      await handle.setRate(value);
+    } on Object {
+      // A kernel that refuses the rate keeps playing at its own; the menu still
+      // shows what was asked, because that is what the next entry will try.
+    }
+  }
+
+  /// Drops the picture and keeps the sound: the room's own 音频模式, for a take
+  /// the viewer is only listening to (an overnight recording, a music video at
+  /// a desk).
+  Future<void> _setAudioOnly(bool value) async {
+    final handle = _handle;
+    setState(() => _audioOnly = value);
+    if (handle == null) return;
+    await _applyAudioOnly(handle, value);
+  }
+
+  Future<void> _applyAudioOnly(PlayerHandle handle, bool value) async {
+    try {
+      await handle.setAudioOnly(audioOnly: value);
+    } on Object {
+      // A kernel without the mode leaves the picture up; the button says what
+      // was asked and the next handle gets the same try.
+    }
+  }
+
+  /// Writes the frame the stage is showing into the viewer's screenshot folder
+  /// and says how it went — a capture that fails silently reads as a dead
+  /// button.
+  Future<void> _screenshot() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final file = await capturePlayerFrame(handle, ref.read(appPathsProvider).screenshots, prefix: 'preview');
+    if (!mounted) return;
+    final t = context.t;
+    showDsToast(
+      context: context,
+      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      status: file == null ? DsStatus.danger : DsStatus.success,
+    );
   }
 
   /// Reads the current entry's sidecar — the module's own path, or the danmaku
@@ -512,7 +600,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       if (next) _scheduleTimeline();
     });
     return PopScope(
-      canPop: !immersive && !_panelOpen && !(narrow && _listOpen),
+      canPop: !immersive && !_panelOpen && !_theater && !(narrow && _listOpen),
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (immersive) {
@@ -521,11 +609,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         }
         setState(() {
           _panelOpen = false;
+          _theater = false;
           _listOpen = false;
         });
       },
       child: ColoredBox(
-        color: _stage,
+        // The page wears the theme; the picture's own box paints its dark
+        // behind it (and the whole page while a mode owns the window).
+        color: immersive ? _stage : DsTheme.colorsOf(context).canvas,
         child: immersive
             ? SafeArea(child: _stageOf(t, compact: LiveWindow.isCompact(width), immersive: true))
             : SafeArea(
@@ -562,6 +653,33 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                             t,
                             compact: LiveWindow.isCompact(constraints.maxWidth - _listWidth - 10),
                           );
+                          if (_theater) {
+                            // The theatre: the picture owns the body and the list
+                            // floats over its end edge, on the theme's surface so
+                            // it still reads against whatever is playing behind it.
+                            final colors = DsTheme.colorsOf(context);
+                            return Stack(
+                              children: [
+                                Positioned.fill(child: stage),
+                                PositionedDirectional(
+                                  top: DsSpace.s12,
+                                  bottom: DsSpace.s12,
+                                  end: DsSpace.s12,
+                                  width: _listWidth,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: colors.surface.withValues(alpha: 0.94),
+                                        border: Border.all(color: colors.border),
+                                      ),
+                                      child: _panelOpen ? _panelView() : list,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -574,8 +692,15 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                               SizedBox(
                                 width: _listWidth,
                                 child: DecoratedBox(
-                                  decoration: const BoxDecoration(
-                                    border: BorderDirectional(start: BorderSide(color: Color(0x1FFFFFFF))),
+                                  // The column is chrome, not part of the
+                                  // picture: it wears the theme's surface and
+                                  // its own hairline rather than a white wash
+                                  // that only reads on black.
+                                  decoration: BoxDecoration(
+                                    color: DsTheme.colorsOf(context).surface,
+                                    border: BorderDirectional(
+                                      start: BorderSide(color: DsTheme.colorsOf(context).border),
+                                    ),
                                   ),
                                   child: _panelOpen ? _panelView() : list,
                                 ),
@@ -607,6 +732,9 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
 
   Widget _header(Translations t, {required bool narrow}) {
     final item = _current;
+    // The header and the list are the page's chrome, so they wear the theme's
+    // ink; only the picture's own box stays dark whatever the theme is.
+    final colors = DsTheme.colorsOf(context);
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       child: Row(
@@ -617,7 +745,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             size: DsSize.sm,
             semanticLabel: t.common.back,
             onPressed: () => _leave(context, immersive: false, narrow: narrow),
-            icon: const DsIcon(DsIcons.chevronLeft, color: playerInk),
+            icon: DsIcon(DsIcons.chevronLeft, color: colors.text),
           ),
           // The page covers the shell's strip, so this bar is the window's
           // caption: the title is the drag band, the three buttons end it.
@@ -632,14 +760,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                     widget.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: DsTheme.of(context).typography.title.copyWith(color: playerInk),
+                    style: DsTheme.of(context).typography.title.copyWith(color: colors.text),
                   ),
                   if (item != null)
                     Text(
                       item.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                      style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
                     ),
                 ],
               ),
@@ -689,11 +817,49 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               semanticLabel: t.common.previewOpenFolder,
               onPressed: () => unawaited(_revealFolderOf(item.path)),
             ),
-          const RouteCaptionTail(ink: playerInk),
+          RouteCaptionTail(ink: colors.text),
         ],
       ),
     );
   }
+
+  /// The picture's own ground: dark whatever the theme, because a frame is
+  /// read against black and the overlay's ink is cut for it.
+  Widget _stageBox(Widget child) => ColoredBox(color: _stage, child: child);
+
+  /// The face of 音频模式: what is playing, said on the stage's own dark. It
+  /// covers the frame, so the words are the overlay's ink rather than the
+  /// theme's — the same rule the stage's other states follow.
+  Widget _audioCover(MediaPreviewItem item) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s12,
+      children: [
+        const DsIcon(DsIcons.headphones, size: 40, color: playerInkSubtle),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Text(
+            item.title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: DsTheme.of(context).typography.title.copyWith(color: playerInk),
+          ),
+        ),
+        if (item.subtitle.isNotEmpty)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(
+              item.subtitle,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+            ),
+          ),
+      ],
+    ),
+  );
 
   Widget _stageOf(Translations t, {required bool compact, bool immersive = false}) {
     final item = _current;
@@ -701,49 +867,53 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       // The stage is a picture's black whatever the app's theme, so its words
       // are the overlay's ink rather than the theme's (a light theme's text
       // would be dark on dark).
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s8,
-          children: [
-            const DsIcon(DsIcons.playCircle, size: 32, color: playerInkSubtle),
-            Text(t.common.previewEmpty, style: DsTheme.of(context).typography.title.copyWith(color: playerInk)),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Text(
-                t.common.previewEmptyDescription,
-                textAlign: TextAlign.center,
-                style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+      return _stageBox(
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s8,
+            children: [
+              const DsIcon(DsIcons.playCircle, size: 32, color: playerInkSubtle),
+              Text(t.common.previewEmpty, style: DsTheme.of(context).typography.title.copyWith(color: playerInk)),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Text(
+                  t.common.previewEmptyDescription,
+                  textAlign: TextAlign.center,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
     if (!item.exists) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s8,
-          children: [
-            const DsIcon(DsIcons.fileX, size: 32, color: playerInkSubtle),
-            Text(t.common.previewFileMissing, style: DsTheme.of(context).typography.title.copyWith(color: playerInk)),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Text(
-                t.common.previewFileMissingDescription,
-                textAlign: TextAlign.center,
-                style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+      return _stageBox(
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s8,
+            children: [
+              const DsIcon(DsIcons.fileX, size: 32, color: playerInkSubtle),
+              Text(t.common.previewFileMissing, style: DsTheme.of(context).typography.title.copyWith(color: playerInk)),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Text(
+                  t.common.previewFileMissingDescription,
+                  textAlign: TextAlign.center,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                ),
               ),
-            ),
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              leading: const DsIcon(DsIcons.folderOpen, size: 16),
-              onPressed: () => unawaited(_revealFolderOf(item.path)),
-              child: Text(t.common.previewOpenFolder),
-            ),
-          ],
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.folderOpen, size: 16),
+                onPressed: () => unawaited(_revealFolderOf(item.path)),
+                child: Text(t.common.previewOpenFolder),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -754,29 +924,41 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     // The player owns its transport (play, mute, seek, clock); the page owns
     // which file it plays, adds its own verbs to the bar's end, and remounts
     // the picture when the list chooses another.
-    return WallpaperVideoPlayer(
-      key: ValueKey(item.path),
-      uri: File(item.path).uri,
-      // A preview of one take stops on its last frame; looping would put the
-      // comment clock back to the start without the picture.
-      loop: false,
-      onHandle: _onHandle,
-      overlay: showLayer
-          ? FlameBarrageWidget(
-              key: const ValueKey('media-preview-danmaku'),
-              config: playerBarrageConfig(style, fps, family: resolvedFontFamily(style.fontFamily)),
-              emojiAtlas: EmojiAtlas.instance,
-              controller: _barrage,
-            )
-          : null,
-      barLeading: _barLeading(t, immersive: immersive),
-      barActions: _barActions(
-        t,
-        compact: compact,
-        visible: visible,
-        has: _hasDanmaku,
-        loading: _danmakuLoading,
-        immersive: immersive,
+    // The picture is placed the way the room's is: the viewer's 画面适配 is one
+    // rule for every surface in the app, not a choice a preview re-decides.
+    final fit = ref.watch(playbackSettingsProvider.select((settings) => settings.fit));
+    return _stageBox(
+      WallpaperVideoPlayer(
+        key: ValueKey(item.path),
+        uri: File(item.path).uri,
+        fit: fit.boxFit,
+        // A preview of one take stops on its last frame; looping would put the
+        // comment clock back to the start without the picture.
+        loop: false,
+        onHandle: _onHandle,
+        overlay: _audioOnly
+            // 音频模式 covers the picture rather than replacing the stage: the
+            // engine keeps running behind it, which is the whole point — the
+            // mode stops decoding video, not playing the file. The danmaku layer
+            // stands down for the same reason it has nothing to fly over.
+            ? _audioCover(item)
+            : showLayer
+            ? FlameBarrageWidget(
+                key: const ValueKey('media-preview-danmaku'),
+                config: playerBarrageConfig(style, fps, family: resolvedFontFamily(style.fontFamily)),
+                emojiAtlas: EmojiAtlas.instance,
+                controller: _barrage,
+              )
+            : null,
+        barLeading: _barLeading(t, immersive: immersive),
+        barActions: _barActions(
+          t,
+          compact: compact,
+          visible: visible,
+          has: _hasDanmaku,
+          loading: _danmakuLoading,
+          immersive: immersive,
+        ),
       ),
     );
   }
@@ -799,6 +981,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     required bool immersive,
   }) {
     final handle = _handle;
+    final fit = ref.watch(playbackSettingsProvider.select((settings) => settings.fit));
     final pip = ref.watch(roomPresentationProvider) == PresentationMode.pip;
     return [
       if (!compact)
@@ -831,6 +1014,68 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           semanticLabel: t.common.previewDanmakuSettings,
           selected: _panelOpen,
           onPressed: () => setState(() => _panelOpen = !_panelOpen),
+        ),
+      // The engine's own verbs, at the bar's end the room's bar puts them. Each
+      // is the page's for this visit: a viewer who chose 1.5× or 音频模式 keeps it
+      // into the next entry rather than re-choosing it for every file.
+      DsMenuAnchor(
+        semanticLabel: t.common.previewSpeed,
+        align: DsAlign.end,
+        items: [
+          for (final value in kPreviewRates)
+            DsMenuItem(
+              label: Text(_rateLabel(value)),
+              checked: value == _rate,
+              onPressed: () => unawaited(_setRate(value)),
+            ),
+        ],
+        builder: (context, controller, _) => SettingsPreviewCircleButton(
+          icon: DsIcons.gauge,
+          semanticLabel: t.common.previewSpeed,
+          selected: _rate != 1,
+          onPressed: handle == null ? null : controller.toggle,
+        ),
+      ),
+      SettingsPreviewCircleButton(
+        icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
+        semanticLabel: t.room.audioOnlyMode,
+        selected: _audioOnly,
+        onPressed: handle == null ? null : () => unawaited(_setAudioOnly(!_audioOnly)),
+      ),
+      // A kernel that cannot hand a frame back loses the button rather than
+      // offering one that only toasts a failure.
+      if (handle?.canCaptureScreenshot ?? false)
+        SettingsPreviewCircleButton(
+          icon: DsIcons.camera,
+          semanticLabel: t.room.screenshot,
+          onPressed: () => unawaited(_screenshot()),
+        ),
+      DsMenuAnchor(
+        semanticLabel: t.room.fitShort,
+        align: DsAlign.end,
+        items: [
+          for (final (index, option) in PlaybackFit.values.indexed)
+            DsMenuItem(
+              label: Text(fitLabels(t)[index]),
+              checked: option == fit,
+              onPressed: () => unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option)),
+            ),
+        ],
+        builder: (context, controller, _) => SettingsPreviewCircleButton(
+          icon: DsIcons.aspectRatio,
+          semanticLabel: t.room.fitShort,
+          onPressed: controller.toggle,
+        ),
+      ),
+      // The theatre is this page's own arrangement, so the page decides where it
+      // exists: it needs the list column to float, which a narrow window has no
+      // room for and a window the picture already owns does not need.
+      if (!compact && !immersive)
+        SettingsPreviewCircleButton(
+          icon: DsIcons.layoutHeaderSidebarRight,
+          semanticLabel: _theater ? t.room.theaterOff : t.room.theaterOn,
+          selected: _theater,
+          onPressed: () => setState(() => _theater = !_theater),
         ),
       // The window's own verbs, at the bar's end the room's bar puts them:
       // the compact window only where the platform offers one, and the
@@ -908,7 +1153,7 @@ final class _PreviewList extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     if (items.isEmpty) {
       return Center(
-        child: Text(t.common.previewEmpty, style: theme.typography.caption.copyWith(color: playerInkMuted)),
+        child: Text(t.common.previewEmpty, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
       );
     }
     // The run reads as the tree that filed it: a header names the room whose
@@ -946,7 +1191,7 @@ final class _PreviewList extends StatelessWidget {
             children: [
               Text(
                 t.common.previewCount(count: items.length),
-                style: theme.typography.overline.copyWith(color: playerInkMuted),
+                style: theme.typography.overline.copyWith(color: colors.textMuted),
               ),
               // The walk-on rule belongs with the list it moves through, not
               // on the picture: it is a fact about the queue, not the frame.
@@ -959,7 +1204,7 @@ final class _PreviewList extends StatelessWidget {
                         t.common.previewAutoNext,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: playerInkMuted),
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
                     ),
                     DsSwitch(value: autoNext, onChanged: setAutoNext),
@@ -998,7 +1243,7 @@ final class _PreviewList extends StatelessWidget {
                       color: selected
                           ? colors.accent.withValues(alpha: 0.22)
                           : hovered
-                          ? playerInkHover
+                          ? colors.hover
                           : null,
                       border: BorderDirectional(
                         start: BorderSide(color: selected ? colors.accent : const Color(0x00000000), width: 2),
@@ -1013,7 +1258,7 @@ final class _PreviewList extends StatelessWidget {
                             '${index + 1}',
                             textAlign: TextAlign.end,
                             style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: selected ? colors.accent : playerInkSubtle),
+                              theme.typography.caption.copyWith(color: selected ? colors.accent : colors.textSubtle),
                             ),
                           ),
                         ),
@@ -1028,7 +1273,7 @@ final class _PreviewList extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.typography.body.copyWith(
-                                  color: exists ? playerInk : playerInkSubtle,
+                                  color: exists ? colors.text : colors.textSubtle,
                                   fontWeight: selected ? FontWeight.w600 : null,
                                 ),
                               ),
@@ -1037,7 +1282,7 @@ final class _PreviewList extends StatelessWidget {
                                   item.subtitle,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: playerInkMuted),
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
                                 ),
                             ],
                           ),
@@ -1059,13 +1304,13 @@ final class _PreviewList extends StatelessWidget {
                                   height: 28,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: hovered ? playerInkHover : null,
+                                    color: hovered ? colors.hover : null,
                                   ),
                                   child: Center(
                                     child: DsIcon(
                                       DsIcons.ellipsisVertical,
                                       size: 14,
-                                      color: hovered ? playerInk : playerInkSubtle,
+                                      color: hovered ? colors.text : colors.textSubtle,
                                     ),
                                   ),
                                 );
@@ -1136,6 +1381,7 @@ final class _HeaderButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
     return DsPressable(
       semanticLabel: semanticLabel,
       onPressed: onPressed,
@@ -1144,16 +1390,16 @@ final class _HeaderButton extends StatelessWidget {
         return Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: hovered ? playerInkHover : null),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: hovered ? colors.hover : null),
           child: Center(
             child: DsIcon(
               icon,
               size: 18,
               color: onPressed == null
-                  ? playerInkSubtle
+                  ? colors.textSubtle
                   : hovered
-                  ? playerInk
-                  : playerInkMuted,
+                  ? colors.text
+                  : colors.textMuted,
             ),
           ),
         );
@@ -1205,6 +1451,7 @@ final class _PreviewHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, 10, DsSpace.s8, DsSpace.s4),
       child: Row(
@@ -1220,7 +1467,7 @@ final class _PreviewHeader extends StatelessWidget {
                   image: cachedImage(cover),
                   aspectRatio: 1,
                   semanticLabel: label,
-                  fallback: const ColoredBox(color: playerInkHover),
+                  fallback: ColoredBox(color: colors.control),
                 ),
               ),
             ),
@@ -1233,11 +1480,11 @@ final class _PreviewHeader extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: playerInk, fontWeight: FontWeight.w600),
+                  style: theme.typography.caption.copyWith(color: colors.text, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   t.common.previewCount(count: count),
-                  style: theme.typography.caption.copyWith(color: playerInkSubtle),
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
                 ),
               ],
             ),
