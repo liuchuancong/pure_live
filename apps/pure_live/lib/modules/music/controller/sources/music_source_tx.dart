@@ -195,12 +195,15 @@ final class TxMusicSource extends LxPlatformSource
   @override
   Future<audio.MusicSourcePage<audio.MusicTrack>> catalogItems(audio.MusicCatalog catalog, {int page = 1}) async {
     if (page > 1) return const audio.MusicSourcePage.empty();
-    final bangid = catalog.id.split(':').last;
     final json = await _musicu({
       'toplist': {
         'module': 'musicToplist.ToplistInfoServer',
         'method': 'GetDetail',
-        'param': {'topid': int.parse(bangid), 'num': 300, 'period': await _period(bangid)},
+        // An empty period asks the board's current cycle. The reference reads
+        // each board's cycle key off the top-list page first, but that page no
+        // longer carries the markers its scrape looks for, so every board came
+        // back with a date the gateway does not know and an empty song list.
+        'param': {'topid': int.parse(catalog.id.split(':').last), 'num': 100, 'period': ''},
       },
       'comm': {'uin': 0, 'format': 'json', 'ct': 20, 'cv': 1859},
     });
@@ -215,25 +218,6 @@ final class TxMusicSource extends LxPlatformSource
         for (final entry in raw) ?_trackOf(entry),
     ];
     return audio.MusicSourcePage(items: items, total: items.length);
-  }
-
-  /// A board's `period` is its current cycle key; lx-music scrapes it off the
-  /// PC top-list page. Today's date is the shape the page carries, so it is
-  /// the fallback when the scrape comes up empty.
-  Future<String> _period(String bangid) async {
-    try {
-      final html = await getText(Uri.https('c.y.qq.com', '/node/pc/wk_v15/top.html'));
-      final pattern = RegExp(r'data-listname="[^"]*" data-tid="[^"]*/(\d+)" data-date="(\d+)"');
-      for (final match in pattern.allMatches(html)) {
-        if (match[1] == bangid) return match[2] ?? '';
-      }
-    } on Object {
-      // Fall through to today's date.
-    }
-    final now = DateTime.now();
-    final month = now.month.toString().padLeft(2, '0');
-    final day = now.day.toString().padLeft(2, '0');
-    return '${now.year}$month$day';
   }
 
   @override
@@ -445,23 +429,24 @@ final class TxMusicSource extends LxPlatformSource
   /// search on the y.qq.com soso gateway.
   @override
   Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20}) async {
-    final json = jsonDecode(
-      await getText(
-        Uri.https('c.y.qq.com', '/soso/fcgi-bin/client_music_search_songlist', {
-          'page_no': '${page - 1}',
-          'num_per_page': '$pageSize',
-          'format': 'json',
-          'query': keyword,
-          'remoteplace': 'txt.yqq.playlist',
-          'inCharset': 'utf8',
-          'outCharset': 'utf-8',
-        }),
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)',
-          'Referer': 'https://y.qq.com/portal/search.html',
-        },
-      ),
-    ) as Map<String, Object?>;
+    // The legacy songlist search declares `charset=utf-8` and still emits a
+    // stray byte in a description, so reading it as text would throw on the
+    // whole page. Decoding tolerantly costs nothing here: the broken byte sits
+    // in `introduction`, which the page never shows, while every name, id and
+    // count arrives intact.
+    final json = await getJson(
+      Uri.https('c.y.qq.com', '/soso/fcgi-bin/client_music_search_songlist', {
+        'page_no': '${page - 1}',
+        'num_per_page': '$pageSize',
+        'format': 'json',
+        'query': keyword,
+        'remoteplace': 'txt.yqq.playlist',
+        'inCharset': 'utf8',
+        'outCharset': 'utf-8',
+      }),
+      userAgent: 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)',
+      headers: const {'Referer': 'https://y.qq.com/portal/search.html'},
+    );
     final data = json['data'];
     if (json['code'] != 0 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
     final raw = data['list'];
