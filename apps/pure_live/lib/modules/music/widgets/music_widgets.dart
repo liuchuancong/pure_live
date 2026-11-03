@@ -18,6 +18,16 @@ import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
     show musicTrackArtistId, openMusicAlbum, openMusicArtist;
 import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
 
+/// The content tabs the module's pages wear: 44 tall, starting flush with
+/// the strip that holds them, and no hairline under the row — the same
+/// measure the video module set, and the one the component's own defaults
+/// (46 tall, a border-coloured rule) would otherwise contradict.
+const DsTabsStyle kMusicFeedTabsStyle = DsTabsStyle(
+  height: 44,
+  padding: EdgeInsets.zero,
+  dividerColor: Color(0x00000000),
+);
+
 /// The song's own tier marker, the reference's 无损 / Hi-Res tag beside a title.
 ///
 /// Only the lossless steps are marked: a 128K or 320K song carries nothing a

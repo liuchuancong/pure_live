@@ -54,6 +54,7 @@ final class MusicSonglistTabs extends ConsumerWidget {
           child: DsTabs<bool>(
             value: online,
             onChanged: onChanged,
+            style: kMusicFeedTabsStyle,
             tabs: [
               DsTab<bool>(value: false, label: Text(t.music.songlistTabMine), count: mineCount),
               DsTab<bool>(value: true, label: Text(t.music.songlistTabOnline)),

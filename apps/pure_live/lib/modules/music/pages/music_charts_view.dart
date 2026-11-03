@@ -64,7 +64,7 @@ final class MusicChartsView extends ConsumerWidget {
                 child: DsTabs<String>(
                   value: selected.id,
                   onChanged: onCatalog,
-                  style: const DsTabsStyle(height: 44, padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
+                  style: kMusicFeedTabsStyle,
                   tabs: [for (final board in boards) DsTab(value: board.id, label: Text(board.name))],
                 ),
               ),

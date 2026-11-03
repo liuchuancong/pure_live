@@ -42,6 +42,7 @@ final class MusicStagePanelsState extends ConsumerState<MusicStagePanels> {
           child: DsTabs<int>(
             value: _tab,
             onChanged: (value) => setState(() => _tab = value),
+            style: kMusicFeedTabsStyle,
             tabs: [
               DsTab<int>(value: 0, label: Text(t.music.lyrics)),
               DsTab<int>(value: 1, label: Text(t.music.comments)),
