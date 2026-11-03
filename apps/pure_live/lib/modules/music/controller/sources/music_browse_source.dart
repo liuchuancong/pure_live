@@ -75,9 +75,12 @@ abstract interface class MusicArtistSource {
 /// This is deliberately not the platform's discography page: none of the four
 /// adapters here speaks the signed endpoint that answers one, so an album kept
 /// empty of counts and years stays empty — `0` and null are the model's own
-/// "the platform never said". The photo stays null for the same reason: no
-/// adapter parses a singer picture, so the card wears the artist's initials
-/// rather than a cover borrowed from a song.
+/// "the platform never said".
+///
+/// The photo comes from whichever adapter put one on its rows: a platform that
+/// ships the singer's picture beside the credit line is read from there, and
+/// one that does not leaves the card wearing the artist's initials rather than
+/// a cover borrowed from a song.
 ///
 /// [albumsAnswered] says whether the platform can open an album at all. An
 /// album card that leads to a "this platform cannot show an album" page is
@@ -101,7 +104,21 @@ Future<MusicArtistDetail> musicArtistPageFromSearch(
       for (final track in songs)
         if (_albumOfSong(track, artistId: artistId) case final album? when seen.add(album.id)) album,
   ];
-  return (name: subject, artistId: artistId, avatarUri: null, songs: songs, albums: albums);
+  return (
+    name: subject,
+    artistId: artistId,
+    avatarUri: songs.map(_avatarOf).whereType<Uri>().firstOrNull,
+    songs: songs,
+    albums: albums,
+  );
+}
+
+/// The singer picture a row carried, whenever the row is headlined by the very
+/// artist the page is about — a featured player's photo is not the page's.
+Uri? _avatarOf(audio.MusicTrack track) {
+  if (musicMainArtist(track.artist) != track.artist.trim()) return null;
+  final url = '${track.metadata['artistPic'] ?? ''}'.trim();
+  return url.isEmpty ? null : Uri.tryParse(url);
 }
 
 /// One album as the song that carries it names it: a blank album line and a
