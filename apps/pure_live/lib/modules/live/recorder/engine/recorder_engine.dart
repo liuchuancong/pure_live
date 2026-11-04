@@ -524,7 +524,7 @@ final class RecorderEngine {
     final backend = FfmpegRecordingBackend(
       outputDirectory: root,
       diskSpace: FfmpegDiskSpace.probe,
-      urlRefresher: (_) => _refreshTake(task.id),
+      urlRefresher: _refreshTake,
       config: FfmpegRecordConfig(
         filePrefix: take,
         // The capture name stays ASCII; the notification names the room, which
@@ -1573,21 +1573,28 @@ final class RecorderEngine {
   /// with is dead by the next expiry, and re-opening that is a retry which
   /// cannot succeed. The room is asked again instead, at the task's own quality.
   ///
-  /// A re-opening that left nothing behind says the line, not the address, is
-  /// what answers for nobody, so the room's other lines are tried in turn,
-  /// wrapping to the platform's first. A null answer stops the backend burning
-  /// the attempts it has left on a stream it cannot reach; the room's live check
-  /// picks the subscription up for the next broadcast.
-  Future<RefreshedSource?> _refreshTake(String taskId) async {
-    final session = _sessions[taskId];
-    if (session == null) return null;
+  /// A re-opening whose attempt wrote nothing moves to one of the room's other
+  /// lines rather than asking the same CDN again; a line that played for an
+  /// hour before its signature expired keeps its line, because nothing about
+  /// the line was wrong.
+  ///
+  /// When the room cannot be read at all — a platform the registry does not
+  /// serve, a request that answered nothing, or a streamer who stopped — the
+  /// address the attempt died on is handed back unchanged. An IPTV channel's
+  /// URL does not expire, so re-opening it is the whole point of the retry, and
+  /// a null answer would tell the backend this recording has no refreshable
+  /// source at all and stop it trying.
+  Future<RefreshedSource?> _refreshTake(RecordingSource source) async {
+    final id = source.id;
+    final session = id == null ? null : _sessions[id];
+    if (session == null) return (url: source.value, headers: source.headers);
     final task = session.task;
     // The backend's state still names the attempt that just ended: a line that
     // played for an hour before its signature expired reports the bytes it
     // wrote, and one refused before it sent a packet reports nothing.
     if (session.backend.state.bytesWritten <= 0) session.lineOffset++;
     final site = _ref.read(sitesProvider).getById(task.platform);
-    if (site == null) return null;
+    if (site == null) return (url: source.value, headers: source.headers);
     try {
       final stream = await resolveRecordableStream(
         site: site,
@@ -1599,9 +1606,7 @@ final class RecorderEngine {
 
       return (url: stream.line.url, headers: _sourceHeaders(stream.line));
     } on Object {
-      // Nothing usable came back — no detail, no quality, no line, or the
-      // streamer stopped; this take has no address to be re-opened with.
-      return null;
+      return (url: source.value, headers: source.headers);
     }
   }
 
