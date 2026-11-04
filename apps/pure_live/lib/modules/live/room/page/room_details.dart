@@ -10,6 +10,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
+import 'package:pure_live/modules/live/room/controller/room_open_timing.dart' show RoomOpenProxy;
 import 'package:pure_live/shared/shared.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
@@ -285,7 +286,10 @@ final class _OpenStages extends ConsumerWidget {
         if (stage.took case final took?) (_stageLabel(t, stage.name), took.inMilliseconds),
     ];
     return DsListSection(
-      header: Text('${t.room.openStages} · ${t.room.openStagesTotal(value: record.total.inMilliseconds)}'),
+      header: Text(
+        '${t.room.openStages} · ${t.room.openStagesTotal(value: record.total.inMilliseconds)}'
+        ' · ${_proxyLabel(t, record.proxy)}',
+      ),
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
@@ -312,6 +316,14 @@ final class _OpenStages extends ConsumerWidget {
       ],
     );
   }
+
+  /// The way out's name in the viewer's language. A stage the entry never
+  /// reached is left out, so the header stays one line of facts.
+  static String _proxyLabel(Translations t, RoomOpenProxy proxy) => switch (proxy) {
+    RoomOpenProxy.direct => t.settings.proxyModeOff,
+    RoomOpenProxy.system => t.settings.proxyModeSystem,
+    RoomOpenProxy.manual => t.settings.proxyModeManual,
+  };
 
   /// The stage's name in the viewer's language. A key with no row here shows
   /// its own name rather than being labelled as some other stage.

@@ -1,3 +1,25 @@
+/// How the entry's requests left the machine.
+///
+/// A room that takes ten seconds on a platform whose edge is unreachable
+/// without a proxy is not a slow adapter, and a room that is slow *through*
+/// a proxy is not a slow site either; the two look identical in the stage
+/// numbers unless the line says which way the traffic went.
+enum RoomOpenProxy {
+  /// Straight to the platform.
+  direct('direct'),
+
+  /// The operating system's own configured proxy.
+  system('system'),
+
+  /// The endpoint on the network page.
+  manual('manual');
+
+  RoomOpenProxy(this.token);
+
+  /// The word in the log line.
+  final String token;
+}
+
 /// One stage of a room entry: the segment's name — a key a page translates —
 /// and how long it took, null when the entry never reached it.
 typedef RoomOpenStage = ({String name, Duration? took});
@@ -18,17 +40,24 @@ typedef RoomOpenStage = ({String name, Duration? took});
 final class RoomOpenTiming {
   /// Starts the clock for an entry into [roomId] on [site]; [now] is the time
   /// source, replaced only by a test that wants fixed numbers.
-  RoomOpenTiming({required this.site, required this.roomId, DateTime Function()? now})
-    : _now = now ?? DateTime.now,
-      // T0 is taken here rather than on first read: a lazily started clock
-      // would begin at the first mark and report an entry as instant.
-      started = (now ?? DateTime.now)();
+  RoomOpenTiming({
+    required this.site,
+    required this.roomId,
+    this.proxy = RoomOpenProxy.direct,
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now,
+       // T0 is taken here rather than on first read: a lazily started clock
+       // would begin at the first mark and report an entry as instant.
+       started = (now ?? DateTime.now)();
 
   /// The platform id.
   final String site;
 
   /// The room's own id, enough to group the lines of one room together.
   final String roomId;
+
+  /// Which way the entry's requests left the machine.
+  final RoomOpenProxy proxy;
 
   final DateTime Function() _now;
 
@@ -93,6 +122,7 @@ final class RoomOpenTiming {
     'room-open',
     'site=$site',
     'room=$roomId',
+    'proxy=${proxy.token}',
     'result=${failed
         ? 'error'
         : _playing != null

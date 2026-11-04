@@ -22,7 +22,8 @@ import 'package:pure_live/modules/live/room/chat/gift_flights.dart' show GiftFli
 import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTier;
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
-import 'package:pure_live/modules/live/room/controller/room_open_timing.dart' show RoomOpenStage, RoomOpenTiming;
+import 'package:pure_live/modules/live/room/controller/room_open_timing.dart'
+    show RoomOpenProxy, RoomOpenStage, RoomOpenTiming;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
 
@@ -571,7 +572,14 @@ final roomChatNoticeProvider = NotifierProvider<RoomChatNoticeController, RoomCh
 /// What one entry into a room cost, stage by stage: the numbers behind "this
 /// room opens slowly", kept for the room's own details panel because a viewer
 /// is not going to open a log file to answer a question the app asked them.
-typedef RoomOpenRecord = ({String site, String roomId, List<RoomOpenStage> stages, Duration total, bool failed});
+typedef RoomOpenRecord = ({
+  String site,
+  String roomId,
+  RoomOpenProxy proxy,
+  List<RoomOpenStage> stages,
+  Duration total,
+  bool failed,
+});
 
 /// The last entry's timings.
 final class RoomOpenRecordController extends Notifier<RoomOpenRecord?> {
@@ -580,7 +588,14 @@ final class RoomOpenRecordController extends Notifier<RoomOpenRecord?> {
 
   /// Publishes the entry that just ended, measured by [timing].
   void report(RoomOpenTiming timing, {bool failed = false}) {
-    state = (site: timing.site, roomId: timing.roomId, stages: timing.stages, total: timing.total, failed: failed);
+    state = (
+      site: timing.site,
+      roomId: timing.roomId,
+      proxy: timing.proxy,
+      stages: timing.stages,
+      total: timing.total,
+      failed: failed,
+    );
   }
 
   /// Drops it: the next room has its own numbers, and last visit's would be
@@ -642,6 +657,18 @@ final class RoomController extends Notifier<RoomState> {
   /// arrives or fails and dropped when the viewer leaves before then: "the
   /// room is slow" is four different faults, and only the numbers say which.
   RoomOpenTiming? _openTiming;
+
+  /// Which way this entry's requests are leaving the machine.
+  ///
+  /// Recorded with the stages because the same stage number means two
+  /// different things depending on it: a ten-second detail behind a proxy that
+  /// cannot reach the edge is a network setting, and one that slow going
+  /// direct is the platform or the route.
+  RoomOpenProxy get _proxyForEntry => switch (ref.read(proxySettingsProvider).mode) {
+    ProxyMode.off => RoomOpenProxy.direct,
+    ProxyMode.system => RoomOpenProxy.system,
+    ProxyMode.manual => RoomOpenProxy.manual,
+  };
 
   /// Writes the entry's line to the log, hands its numbers to the details
   /// panel, and stops measuring.
@@ -791,7 +818,7 @@ final class RoomController extends Notifier<RoomState> {
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
     _teardown();
-    _openTiming = RoomOpenTiming(site: platform, roomId: roomId);
+    _openTiming = RoomOpenTiming(site: platform, roomId: roomId, proxy: _proxyForEntry);
     // Last visit's numbers describe last visit's room.
     ref.read(roomOpenRecordProvider.notifier).clear();
     final epoch = _openEpoch;

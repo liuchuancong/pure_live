@@ -62,6 +62,13 @@ void main() {
     expect(timing.line(failed: true), isNot(contains('http')));
   });
 
+  test('the line names which way the requests left the machine', () {
+    expect(_timing(site: 'youtube', roomId: '3').line(), contains('proxy=direct'));
+
+    final throughProxy = RoomOpenTiming(site: 'youtube', roomId: '3', proxy: RoomOpenProxy.manual);
+    expect(throughProxy.line(), contains('proxy=manual'));
+  });
+
   test('only the first playing report counts, so the line is written once', () {
     final timing = _timing(site: 'bilibili', roomId: '1')..markDetail();
 
