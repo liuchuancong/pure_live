@@ -292,5 +292,7 @@
   "pauseWatch": "Pause watching",
   "resumeWatch": "Resume watching",
   "lastRecordingAt": "Last recorded {time}",
-  "columnStatus": "State"
+  "columnStatus": "State",
+  "panelRecorded": "Saved {value}",
+  "segmentProgress": "Part {count} · every {minutes} min"
 }

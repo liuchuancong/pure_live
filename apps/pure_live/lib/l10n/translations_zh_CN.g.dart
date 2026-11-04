@@ -3925,6 +3925,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '这一类还没有任务'
 	String get downloadFilterEmpty => '这一类还没有任务';
 
+	/// zh-CN: '换一个筛选，或先在歌曲行的「更多」里下载。'
+	String get downloadFilterEmptyDesc => '换一个筛选，或先在歌曲行的「更多」里下载。';
+
 	/// zh-CN: '已加入下载：{title}'
 	String downloadQueued({required Object title}) => '已加入下载：${title}';
 
@@ -6204,6 +6207,12 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '状态'
 	String get columnStatus => '状态';
+
+	/// zh-CN: '已录 {value}'
+	String panelRecorded({required Object value}) => '已录 ${value}';
+
+	/// zh-CN: '第 {count} 段 · 每 {minutes} 分钟一段'
+	String segmentProgress({required Object count, required Object minutes}) => '第 ${count} 段 · 每 ${minutes} 分钟一段';
 }
 
 // Path: room
@@ -14579,6 +14588,7 @@ extension on Translations {
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
 			'music.downloadFilterEmpty' => '这一类还没有任务',
+			'music.downloadFilterEmptyDesc' => '换一个筛选，或先在歌曲行的「更多」里下载。',
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
@@ -14722,9 +14732,9 @@ extension on Translations {
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
 			'music.desktopLyricStrokeNone' => '无',
-			'music.desktopLyricColorBlack' => '黑色',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
@@ -15236,9 +15246,9 @@ extension on Translations {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
-			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
@@ -15331,6 +15341,8 @@ extension on Translations {
 			'recorder.resumeWatch' => '恢复监控',
 			'recorder.lastRecordingAt' => ({required Object time}) => '上次录制于 ${time}',
 			'recorder.columnStatus' => '状态',
+			'recorder.panelRecorded' => ({required Object value}) => '已录 ${value}',
+			'recorder.segmentProgress' => ({required Object count, required Object minutes}) => '第 ${count} 段 · 每 ${minutes} 分钟一段',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15748,11 +15760,11 @@ extension on Translations {
 			'settings.languageSimplifiedChinese' => '简体中文',
 			'settings.languageEnglish' => 'English',
 			'settings.refreshGroup' => '刷新',
+			_ => null,
+		} ?? switch (path) {
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
-			_ => null,
-		} ?? switch (path) {
 			'settings.liveAlertDesc' => '关注的主播开播时发系统通知；运行时每 15 分钟检查。',
 			'settings.liveAlertTags' => '提醒标签',
 			'settings.liveAlertTagsDesc' => '只提醒带有所选标签的关注；不选则覆盖全部关注。',
@@ -16262,11 +16274,11 @@ extension on Translations {
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
 			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideIntro' => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。',
 			'settings.playerGuideManualTitle' => '播放手册：mpv 官方文档',
 			'settings.playerGuideManualHint' => '遇到问题先看「症状对照」；设置含义查「基础概念」。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideChapterConcepts' => '基础概念',
 			'settings.playerGuideChapterPresets' => '一键播放方案',
 			'settings.playerGuideChapterPictureSync' => '画面与同步',
@@ -16776,11 +16788,11 @@ extension on Translations {
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
 			'settings.twitchLanguage_zh' => '中文',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_es' => '西班牙语',
 			'settings.twitchLanguage_pt' => '葡萄牙语',
 			'settings.twitchLanguage_de' => '德语',
@@ -17290,11 +17302,11 @@ extension on Translations {
 			'vod.showDetailsDesc' => '关闭后隐藏 UP 主、数据和简介。',
 			'vod.showFeedBanner' => '首页头图',
 			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.cardElements' => '卡片显示项',
 			'vod.cardPlays' => '播放量',
 			'vod.cardDanmaku' => '弹幕数',
-			_ => null,
-		} ?? switch (path) {
 			'vod.cardDuration' => '时长',
 			'vod.cardUploader' => 'UP 主',
 			'vod.cardSeasonState' => '更新状态',

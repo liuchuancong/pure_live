@@ -815,37 +815,27 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 }
 
-/// One labelled figure in a wide row: the value over the word that names it,
-/// so a row of them reads without a table header.
-final class _Measure extends StatelessWidget {
-  const _Measure({required this.label, required this.value});
+/// One figure in the phase panel: a quiet pill, the way a status card lists
+/// what it has written.
+final class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.text});
 
-  final String label;
-  final String value;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
-        ),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography
-              .numeric(theme.typography.caption)
-              .copyWith(color: colors.text, fontWeight: FontWeight.w600),
-        ),
-      ],
+    return DecoratedBox(
+      decoration: DsBoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(6),
+        shadows: [DsShadow.innerRing(colors.border)],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
+        child: Text(text, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+      ),
     );
   }
 }
@@ -972,15 +962,84 @@ final class _TaskCard extends ConsumerWidget {
     // read while it is still writing.
     final recorded = Duration(milliseconds: task.durationMs);
     final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
-    final figuresDuration = elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
-    final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
     final figuresBitrate = task.bytes > 0 && elapsed.inSeconds > 0 ? formatRecordingBitrate(task.bytes, elapsed) : '—';
-    final startedText = formatRecordingMoment(task.isRunning ? task.startedAt : (task.endedAt ?? task.startedAt));
     // A room that has already recorded keeps its last take's moment on the
     // card; a fresh subscription has none to name.
     final lastRun = task.isRunning || (task.endedAt == null && task.bytes == 0)
         ? ''
         : t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt));
+    final processing = task.postProcessing;
+    final fileDeleted = _fileDeleted;
+    final recording = task.isRunning && !processing;
+    final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
+    final paused = !task.enabled && !processing;
+    final segmentSeconds = ref.watch(recordingSettingsProvider).segmentSeconds;
+    final segmentMinutes = segmentSeconds <= 0 ? 0 : (segmentSeconds / 60).ceil();
+    final segment = elapsed <= Duration.zero || segmentMinutes <= 0
+        ? ''
+        : t.recorder.segmentProgress(count: elapsed.inSeconds ~/ segmentSeconds + 1, minutes: segmentMinutes);
+    final tone = processing
+        ? colors.info
+        : recording || failed
+        ? colors.danger
+        : paused || fileDeleted
+        ? null
+        : colors.warning;
+    final statusText = processing
+        ? t.recorder.stateProcessing
+        : recording
+        ? t.recorder.stateRecording
+        : failed
+        ? t.recorder.stateFailed
+        : paused
+        ? t.recorder.statePaused
+        : fileDeleted
+        ? t.recorder.stateFileDeleted
+        : t.recorder.stateWaiting;
+    final chips = [
+      if (task.bytes > 0) t.recorder.panelRecorded(value: formatRecordingBytes(task.bytes)),
+      if (figuresBitrate != '—') figuresBitrate,
+      if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
+    ];
+    final Widget action = processing
+        ? DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.x, size: 14),
+            onPressed: onCancelProcessing,
+            child: Text(t.recorder.cancelProcessing),
+          )
+        : recording
+        ? DsButton(
+            variant: DsButtonVariant.dangerSoft,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.squareStop, size: 14),
+            onPressed: onStop,
+            child: Text(t.recorder.stop),
+          )
+        : failed
+        ? DsButton(
+            variant: DsButtonVariant.primary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.refreshCw, size: 14),
+            onPressed: onStartNow,
+            child: Text(t.common.retry),
+          )
+        : paused
+        ? DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.play, size: 14),
+            onPressed: onToggleWatch,
+            child: Text(t.recorder.resumeWatch),
+          )
+        : DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.play, size: 14),
+            onPressed: onStartNow,
+            child: Text(t.recorder.startNow),
+          );
     return DsCard(
       onPressed: onOpen,
       semanticLabel: title,
@@ -988,199 +1047,172 @@ final class _TaskCard extends ConsumerWidget {
         padding: const EdgeInsets.all(DsSpace.s12),
         borderRadius: BorderRadius.circular(theme.radii.card),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final (coverWidth, coverHeight) = width >= 560
-              ? (128.0, 72.0)
-              : width >= 420
-              ? (96.0, 54.0)
-              : width >= 340
-              ? (72.0, 40.0)
-              : (0.0, 0.0);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s12,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s12,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s12,
-                children: [
-                  if (coverWidth > 0)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(theme.radii.card),
-                      child: DsImage(
-                        image: cover.isEmpty ? null : cachedImage(cover),
-                        width: coverWidth,
-                        height: coverHeight,
-                        semanticLabel: title,
-                        fallback: _CoverFallback(letter: platformLetter(task.platform)),
-                      ),
-                    ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 2,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(theme.radii.card),
+                child: DsImage(
+                  image: cover.isEmpty ? null : cachedImage(cover),
+                  width: 104,
+                  height: 58,
+                  semanticLabel: title,
+                  fallback: _CoverFallback(letter: platformLetter(task.platform)),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
+                  children: [
+                    Row(
+                      spacing: DsSpace.s6,
                       children: [
-                        Row(
-                          spacing: DsSpace.s8,
-                          children: [
-                            DsAvatar(
-                              initials: avatarInitials(anchor.isEmpty ? title : anchor),
-                              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                              size: DsSize.sm,
-                              semanticLabel: anchor.isEmpty ? title : anchor,
-                            ),
-                            Expanded(
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                              ),
-                            ),
-                          ],
+                        DsAvatar(
+                          initials: avatarInitials(anchor.isEmpty ? title : anchor),
+                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                          size: DsSize.sm,
+                          semanticLabel: anchor.isEmpty ? title : anchor,
                         ),
-                        // The category line: the streamer, then the platform's
-                        // own mark beside its name, then the room's id.
-                        Row(
-                          spacing: DsSpace.s4,
-                          children: [
-                            if (anchor.isNotEmpty) ...[
-                              Flexible(
-                                child: Text(
-                                  anchor,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                ),
-                              ),
-                              Text('·', style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-                            ],
-                            ?platformIcon,
-                            Flexible(
-                              child: Text(
-                                '$platformName · ${task.roomId}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.caption.copyWith(color: colors.textMuted),
-                              ),
-                            ),
-                          ],
+                        Expanded(
+                          child: Text(
+                            anchor.isEmpty ? title : anchor,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                          ),
                         ),
-                        if (audience.isNotEmpty || task.quality.isNotEmpty || task.scheduleEnabled)
-                          Text(
-                            [
-                              if (audience.isNotEmpty) audience,
-                              if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
-                              if (task.scheduleEnabled) _scheduleSummary(t, task),
-                            ].join(' · '),
+                      ],
+                    ),
+                    if (anchor.isNotEmpty)
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    Row(
+                      spacing: DsSpace.s4,
+                      children: [
+                        ?platformIcon,
+                        Flexible(
+                          child: Text(
+                            [platformName, if (audience.isNotEmpty) audience].join(' · '),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.typography.caption.copyWith(color: colors.textSubtle),
                           ),
+                        ),
+                        if (audience.isNotEmpty) DsIcon(DsIcons.flame, size: 12, color: colors.textSubtle),
                       ],
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    spacing: DsSpace.s3,
+                  ],
+                ),
+              ),
+              _TaskMenu(
+                task: task,
+                hasFile: (task.filePath ?? '').trim().isNotEmpty,
+                onOpen: onOpen,
+                onStop: onStop,
+                onToggleWatch: onToggleWatch,
+                onDelete: onDelete,
+                onSchedule: onSchedule,
+                onCancelProcessing: onCancelProcessing,
+                onStartNow: onStartNow,
+                onRetryJoin: onRetryJoin,
+                onPreview: onPreview,
+                onPlayExternal: onPlayExternal,
+              ),
+            ],
+          ),
+          // The phase's own panel: what is happening, the session's clock, the
+          // figures it has written, and the one verb that ends or begins it.
+          DecoratedBox(
+            decoration: DsBoxDecoration(
+              color: tone?.tint ?? colors.hover,
+              borderRadius: BorderRadius.circular(theme.radii.card),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(DsSpace.s12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s8,
+                children: [
+                  Row(
+                    spacing: DsSpace.s12,
                     children: [
-                      DsBadge(
-                        label: Text(
-                          task.postProcessing
-                              ? t.recorder.stateProcessing
-                              : _fileDeleted
-                              ? t.recorder.stateFileDeleted
-                              : !task.enabled
-                              ? t.recorder.statePaused
-                              : task.state == RecordingTaskState.stopped
-                              ? t.recorder.stateWaiting
-                              : stateLabel(t, task.state),
-                        ),
-                        status: task.postProcessing
-                            ? DsStatus.info
-                            : _fileDeleted || !task.enabled
-                            ? DsStatus.neutral
-                            : task.state == RecordingTaskState.stopped
-                            ? DsStatus.warning
-                            : stateStatus(task.state),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(color: tone?.fill ?? colors.textSubtle, shape: BoxShape.circle),
                       ),
-                      if (lastRun.isNotEmpty)
-                        Text(
-                          lastRun,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      Text(
+                        statusText,
+                        style: theme.typography.bodyStrong.copyWith(color: tone?.text ?? colors.textMuted),
+                      ),
+                      const Spacer(),
+                      if (segment.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            segment,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
                         ),
                     ],
                   ),
-                  _TaskMenu(
-                    task: task,
-                    hasFile: (task.filePath ?? '').trim().isNotEmpty,
-                    onOpen: onOpen,
-                    onStop: onStop,
-                    onToggleWatch: onToggleWatch,
-                    onDelete: onDelete,
-                    onSchedule: onSchedule,
-                    onCancelProcessing: onCancelProcessing,
-                    onStartNow: onStartNow,
-                    onRetryJoin: onRetryJoin,
-                    onPreview: onPreview,
-                    onPlayExternal: onPlayExternal,
-                  ),
+                  if (recording)
+                    Text(
+                      formatRecordingDuration(elapsed),
+                      style: theme.typography
+                          .numeric(theme.typography.heading)
+                          .copyWith(color: colors.text, fontWeight: FontWeight.w600),
+                    )
+                  else if (lastRun.isNotEmpty)
+                    Text(
+                      lastRun,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
+                    Text(
+                      task.errorText.trim(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.danger.text),
+                    ),
+                  if (!processing && task.warning.isNotEmpty)
+                    Text(
+                      _warningLabel(t, task.warning),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.warning.text),
+                    ),
+                  if (chips.isNotEmpty)
+                    Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      children: [for (final chip in chips) _StatusChip(text: chip)],
+                    ),
+                  if (processing)
+                    DsProgressBar(
+                      value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
+                      semanticLabel: t.recorder.stateProcessing,
+                    ),
+                  SizedBox(width: double.infinity, child: action),
                 ],
               ),
-              // The session's own numbers sit under the cover, four labelled
-              // measures: the word over the figure, so the row reads without a
-              // table header. A phone pairs them two by two.
-              Builder(
-                builder: (context) {
-                  final measures = [
-                    _Measure(label: t.recorder.columnBitrate, value: figuresBitrate),
-                    _Measure(label: t.recorder.columnSize, value: figuresSize),
-                    _Measure(label: t.recorder.columnDuration, value: figuresDuration),
-                    _Measure(label: t.recorder.columnStarted, value: startedText),
-                  ];
-                  Widget line(List<Widget> items) => Row(children: [for (final item in items) Expanded(child: item)]);
-                  if (width < 420) {
-                    return Column(
-                      spacing: DsSpace.s8,
-                      children: [line(measures.sublist(0, 2)), line(measures.sublist(2))],
-                    );
-                  }
-                  return line(measures);
-                },
-              ),
-              if (task.state == RecordingTaskState.recording && onStop == null)
-                Text(
-                  t.recorder.stateRecordingElsewhere,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.warning.text),
-                ),
-              if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
-                Text(
-                  task.errorText.trim(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.danger.text),
-                ),
-              if (!task.postProcessing && task.warning.isNotEmpty)
-                Text(
-                  _warningLabel(t, task.warning),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.warning.text),
-                ),
-              if (task.postProcessing)
-                DsProgressBar(
-                  value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
-                  semanticLabel: t.recorder.stateProcessing,
-                ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1188,23 +1220,6 @@ final class _TaskCard extends ConsumerWidget {
   /// Whether the take's file was deleted from the preview: a settled row
   /// whose recording is gone reads as that, not as saved.
   bool get _fileDeleted => task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
-
-  /// The state's badge label.
-  static String stateLabel(Translations t, RecordingTaskState state) => switch (state) {
-    RecordingTaskState.recording => t.recorder.stateRecording,
-    RecordingTaskState.waiting => t.recorder.stateWaiting,
-    RecordingTaskState.stopped => t.recorder.stateSaved,
-    RecordingTaskState.failed => t.recorder.stateFailed,
-  };
-
-  /// The state's badge tone: capturing is live information, waiting is a
-  /// pending state, a saved session is a success, a failed one is danger.
-  static DsStatus stateStatus(RecordingTaskState state) => switch (state) {
-    RecordingTaskState.recording => DsStatus.info,
-    RecordingTaskState.waiting => DsStatus.warning,
-    RecordingTaskState.stopped => DsStatus.success,
-    RecordingTaskState.failed => DsStatus.danger,
-  };
 
   /// The tile's letter: the platform id's first rune, uppercased.
   static String platformLetter(String platform) {
@@ -1476,15 +1491,6 @@ String _warningLabel(Translations t, String warning) => switch (warning) {
   _ => t.recorder.warningFinalizeFailed,
 };
 
-/// A clock minute in the 24-hour form the app's Chinese UI uses; 1440 is the
-/// end of the day, shown as 24:00.
-String _formatClock(int minutes) {
-  final value = minutes.clamp(0, 1440);
-  final hour = value ~/ 60;
-  final minute = value % 60;
-  return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-}
-
 String _scheduleDayLabel(Translations t, int day) => switch (day) {
   1 => t.recorder.scheduleDayMon,
   2 => t.recorder.scheduleDayTue,
@@ -1494,25 +1500,6 @@ String _scheduleDayLabel(Translations t, int day) => switch (day) {
   6 => t.recorder.scheduleDaySat,
   _ => t.recorder.scheduleDaySun,
 };
-
-/// The weekdays a schedule covers, in the shortest form that stays truthful.
-String _scheduleDaysLabel(Translations t, List<int> days) {
-  final selected = days.isEmpty ? const {1, 2, 3, 4, 5, 6, 7} : days.toSet();
-  if (selected.length == 7) return t.recorder.scheduleEveryDay;
-  if (selected.length == 5 && selected.containsAll(const [1, 2, 3, 4, 5])) {
-    return t.recorder.scheduleWorkdays;
-  }
-  if (selected.length == 2 && selected.containsAll(const [6, 7])) return t.recorder.scheduleWeekend;
-  return [
-    for (var day = 1; day <= 7; day++)
-      if (selected.contains(day)) _scheduleDayLabel(t, day),
-  ].join(t.recorder.scheduleDaySeparator);
-}
-
-String _scheduleSummary(Translations t, RecordingTask task) => t.recorder.scheduleSummary(
-  days: _scheduleDaysLabel(t, task.scheduleDays),
-  range: '${_formatClock(task.scheduleStartMinutes)}–${_formatClock(task.scheduleEndMinutes)}',
-);
 
 /// A capture length as a player shows it: minutes and seconds, hours only
 

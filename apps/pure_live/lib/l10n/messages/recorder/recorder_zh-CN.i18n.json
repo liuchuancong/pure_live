@@ -292,5 +292,7 @@
   "pauseWatch": "暂停监控",
   "resumeWatch": "恢复监控",
   "lastRecordingAt": "上次录制于 {time}",
-  "columnStatus": "状态"
+  "columnStatus": "状态",
+  "panelRecorded": "已录 {value}",
+  "segmentProgress": "第 {count} 段 · 每 {minutes} 分钟一段"
 }
