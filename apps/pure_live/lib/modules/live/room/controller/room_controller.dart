@@ -774,7 +774,7 @@ final class RoomController extends Notifier<RoomState> {
   /// qualities it offers; the first playable line begins playback. The
   /// danmaku session opens beside that, never before it. A room that cannot
   /// open says why in the state error field — the page shows it, never a blank.
-  Future<void> open({required String platform, required String roomId}) async {
+  Future<void> open({required String platform, required String roomId, LiveRoom? known}) async {
     // A room that is already playing for this very page is adopted, not
     // reopened: the floating player hands the live handle back when its
     // window returns, and tearing it down would restart the stream, drop the
@@ -822,6 +822,9 @@ final class RoomController extends Notifier<RoomState> {
     // refused playback cookie said nothing to the viewer at all.
     final refusals = site.capability<LiveCookieRefusalFeed>();
     _cookieRefusals = refusals?.cookieRefusals.listen((_) => _onCookieRefused(platform));
+    // The card the viewer picked draws the first frame; the platform's
+    // detail answer replaces it below.
+    if (known != null) state = _with(room: known);
     final roomAnswer = await roomProvider.getRoom(roomId);
     unawaited(
       roomAnswer.match(
@@ -872,6 +875,26 @@ final class RoomController extends Notifier<RoomState> {
     );
   }
 
+  /// The room as this app already knows it: the list it was opened from, a
+  /// follow, or the watch record. A detail whose platform page carries no
+  /// title falls back to it below.
+  LiveRoom? _knownRoomOf(String platform, String roomId) {
+    final normalized = platform.trim().toLowerCase();
+    for (final room in _knownRooms()) {
+      if (room.ref.platform == normalized && room.ref.roomId == roomId.trim()) return room;
+    }
+    return null;
+  }
+
+  Iterable<LiveRoom> _knownRooms() sync* {
+    final playlist = ref.read(roomPlaylistProvider)?.rooms;
+    if (playlist != null) yield* playlist;
+    yield* ref.read(followsProvider).rooms;
+    for (final (room, _) in ref.read(historyProvider).records) {
+      yield room;
+    }
+  }
+
   /// [detail] with its title filled from what the app already knows of the
   /// room when the platform's room page carries none (Kuaishou's page has
   /// no broadcast title, only its list cards do): the card the room was
@@ -880,20 +903,9 @@ final class RoomController extends Notifier<RoomState> {
   /// detail with its own title is left as it is.
   LiveRoom _fillTitleFromKnown(LiveRoom detail) {
     if (detail.content.title.trim().isNotEmpty) return detail;
-    final key = detail.ref.identityKey;
-    bool same(LiveRoom room) => room.ref.identityKey == key;
-    final known = [
-      ...?ref.read(roomPlaylistProvider)?.rooms,
-      ...ref.read(followsProvider).rooms,
-      for (final (room, _) in ref.read(historyProvider).records) room,
-    ];
-    for (final room in known) {
-      if (!same(room)) continue;
-      final title = room.content.title.trim();
-      if (title.isEmpty) continue;
-      return detail.rebuild((b) => b.content = detail.content.rebuild((c) => c.title = title).toBuilder());
-    }
-    return detail;
+    final title = _knownRoomOf(detail.ref.platform, detail.ref.roomId)?.content.title.trim() ?? '';
+    if (title.isEmpty) return detail;
+    return detail.rebuild((b) => b.content = detail.content.rebuild((c) => c.title = title).toBuilder());
   }
 
   /// Switches the quality: the plan is re-read at the new quality and
@@ -925,7 +937,7 @@ final class RoomController extends Notifier<RoomState> {
     final platform = _requestedPlatform;
     final roomId = _requestedRoomId;
     if (platform != null && roomId != null) {
-      await open(platform: platform, roomId: roomId);
+      await open(platform: platform, roomId: roomId, known: state.room);
     }
   }
 
@@ -1292,6 +1304,58 @@ final class RoomController extends Notifier<RoomState> {
     return qualities[index];
   }
 
+  /// The lines to play, with the tier the platform says it served when it
+  /// says so.
+  ///
+  /// A site that can confirm its answer is asked for the plan rather than the
+  /// bare line list, because the ask and the answer differ: an anonymous
+  /// request is quietly downgraded on several platforms, and a room naming
+  /// "1080P" over a 720P picture is a lie the viewer can only catch by
+  /// squinting. A plan that cannot be read falls back to the plain line read —
+  /// what the room did before a platform could confirm anything — so the
+  /// confirmation never costs the stream its only route to a URL.
+  Future<({List<LivePlayLine> lines, LivePlayQuality? served, LiveSiteError? error})> _resolveLines(
+    LivePlaybackProvider capability,
+    LiveRoom room,
+  ) async {
+    final asked = _wantedQuality;
+    if (asked != null) {
+      if (capability case final LivePlaybackPlanResolver resolver) {
+        final plan = await resolver.resolvePlan(room: room, quality: asked);
+        final read = plan.match<({List<LivePlayLine> lines, LivePlayQuality? served})?>(
+          (_) => null,
+          (value) => (
+            lines: value.lines.toList(growable: false),
+            served: resolveServedPlayQuality(plan: value, qualities: state.qualities, requested: asked),
+          ),
+        );
+        if (read != null) return (lines: read.lines, served: read.served, error: null);
+      }
+    }
+    final plain = await capability.getLines(room: room, quality: asked);
+    return await plain.match(
+      (error) => (lines: const <LivePlayLine>[], served: null, error: error),
+      (lines) => (lines: lines, served: null, error: null),
+    );
+  }
+
+  /// Names the tier that is actually playing.
+  ///
+  /// A served tier the list already holds is simply selected; one the list
+  /// never offered takes the asked entry's place, so the picker keeps one
+  /// entry per ask instead of growing a tier the viewer cannot ask for again.
+  void _showServedQuality(LivePlayQuality served) {
+    final asked = _wantedQuality;
+    if (asked == null) return;
+    final at = state.qualities.indexWhere((quality) => isSamePlayTier(quality, asked));
+    if (at < 0) return;
+    final current = state.qualities[at];
+    if (isSamePlayTier(current, served)) return;
+    final qualities = [...state.qualities]..[at] = served;
+    _wantedQuality = served;
+    state = _with(qualities: List<LivePlayQuality>.unmodifiable(qualities), quality: served);
+  }
+
   /// The room's controller: the parked one when the engine still matches,
   /// otherwise a new session. Its recovery callbacks follow whichever room
   /// is playing, because a parked session is reused by another room.
@@ -1326,67 +1390,67 @@ final class RoomController extends Notifier<RoomState> {
 
   Future<void> _startPlayback(LivePlaybackProvider capability, LiveRoom room) async {
     final epoch = _openEpoch;
-    final linesAnswer = await capability.getLines(room: room, quality: _wantedQuality);
-    unawaited(
-      linesAnswer.match(
-        (error) async {
-          if (epoch != _openEpoch) return;
-          state = _with(error: error.message);
-          _reportOpenTiming(failed: true);
-        },
-        (lines) async {
-          if (epoch != _openEpoch) return;
-          if (lines.isEmpty) {
-            state = _with(lines: const [], error: 'the room has nothing to play');
-            _reportOpenTiming(failed: true);
-            return;
-          }
-          _openTiming?.markLines();
-          state = _with(lines: lines);
-          final playback = _playback ??= _openSession(capability, room);
-          _states ??= playback.onStateChanged.listen((playback_) {
-            state = _with(playback: playback_);
-            // The entry's line is written the first time the room says it is
-            // playing, which is the number the viewer waits for.
-            if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
-          });
-          _failures ??= playback.onError.listen((failure) {
-            state = _with(error: failure.message ?? failure.code.name);
-            _reportOpenTiming(failed: true);
-          });
-          _handles ??= playback.onHandleChanged.listen((handle) {
-            _lastHandle = handle;
-            state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
-            _watchVideoSize(handle);
-            // The player's pause and seek carry into the flying layer; the
-            // viewer's current audio follows every engine, the decoder choice
-            // goes to the first one.
-            _pipeline?.bind(handle);
-            unawaited(_applyAudioPreferences(handle));
-            unawaited(_applyEnginePreferences(handle));
-            // The line the engine actually took may not be the one asked for;
-            // its lease is the one that has to be watched.
-            _armLeaseRenewal();
-          });
-          await playback.play(
-            LiveSourceRequest(
-              sources: roomSourcesOf(
-                lines,
-                title: room.content.title,
-                artist: room.anchor?.name,
-                artUri: room.content.coverUrl,
-              ),
-              title: room.content.title,
-              allowEngineFallback: true,
-              engineOptions: _storedEngineOptions(),
-            ),
-            preferredBackend: ref.read(playerKernelBackendProvider).id,
-          );
-          _openTiming?.markRequested();
-          _armLeaseRenewal();
-        },
+    final resolved = await _resolveLines(capability, room);
+    if (resolved.error case final error?) {
+      if (epoch == _openEpoch) {
+        state = _with(error: error.message);
+        _reportOpenTiming(failed: true);
+      }
+      return;
+    }
+    if (epoch != _openEpoch) return;
+    final lines = resolved.lines;
+    if (lines.isEmpty) {
+      state = _with(lines: const [], error: 'the room has nothing to play');
+      _reportOpenTiming(failed: true);
+      return;
+    }
+    // The platform's own word about what it served outranks the tier the room
+    // asked for.
+    if (resolved.served case final served?) _showServedQuality(served);
+    _openTiming?.markLines();
+    state = _with(lines: lines);
+    final playback = _playback ??= _openSession(capability, room);
+    _states ??= playback.onStateChanged.listen((playback_) {
+      state = _with(playback: playback_);
+      // The entry's line is written the first time the room says it is
+      // playing, which is the number the viewer waits for.
+      if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
+    });
+    _failures ??= playback.onError.listen((failure) {
+      state = _with(error: failure.message ?? failure.code.name);
+      _reportOpenTiming(failed: true);
+    });
+    _handles ??= playback.onHandleChanged.listen((handle) {
+      _lastHandle = handle;
+      state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
+      _watchVideoSize(handle);
+      // The player's pause and seek carry into the flying layer; the
+      // viewer's current audio follows every engine, the decoder choice
+      // goes to the first one.
+      _pipeline?.bind(handle);
+      unawaited(_applyAudioPreferences(handle));
+      unawaited(_applyEnginePreferences(handle));
+      // The line the engine actually took may not be the one asked for;
+      // its lease is the one that has to be watched.
+      _armLeaseRenewal();
+    });
+    await playback.play(
+      LiveSourceRequest(
+        sources: roomSourcesOf(
+          lines,
+          title: room.content.title,
+          artist: room.anchor?.name,
+          artUri: room.content.coverUrl,
+        ),
+        title: room.content.title,
+        allowEngineFallback: true,
+        engineOptions: _storedEngineOptions(),
       ),
+      preferredBackend: ref.read(playerKernelBackendProvider).id,
     );
+    _openTiming?.markRequested();
+    _armLeaseRenewal();
   }
 
   /// Re-reads the plan when the platform said its address must be rebuilt.
