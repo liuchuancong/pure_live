@@ -14,6 +14,8 @@ import 'package:pure_live/features/media_preview/media_preview_page.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_library_filter.dart' show scopeLibraryTakes;
@@ -255,7 +257,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // 重新合并 or to dropping the record. The toolbar's word narrows these
     // rows in place, the search field above.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
+    // The shell decides how the page's width reads (see PageLayoutScope).
+    final narrow = PageLayoutScope.isNarrow(context);
     final attention = [
       for (final task in listed)
         if (_filter.matches(task)) task,
@@ -315,15 +318,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   ],
                 ),
               ),
-              if (narrow)
-                DsButton.icon(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  semanticLabel: t.recorder.settingsOpen,
-                  onPressed: _openSettings,
-                  icon: const DsIcon(DsIcons.settings, size: 16),
-                )
-              else
+              if (!narrow)
                 DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
@@ -351,14 +346,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ],
             );
             const toolbar = RecorderLibraryToolbar();
-            // A phone keeps the switch alone on the line and folds the files
-            // verbs into one more menu, the way the popular page folds its
-            // layout and platform wall.
+            // A stacked toolbar hands the settings and the files verbs to the
+            // shell's head line; this row keeps the page switch alone.
             if (narrow) {
-              return Row(
-                spacing: DsSpace.s8,
-                children: [switchRow, const Spacer(), if (files) const RecorderLibraryToolbarMore()],
-              );
+              publishPageHeadActions(context, ref, [
+                DsButton.icon(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  semanticLabel: t.recorder.settingsOpen,
+                  onPressed: _openSettings,
+                  icon: const DsIcon(DsIcons.settings, size: 16),
+                ),
+                if (files) const RecorderLibraryToolbarMore(),
+              ]);
+              return Row(spacing: DsSpace.s8, children: [switchRow]);
             }
             return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar]);
           }(),

@@ -8,6 +8,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/search/search_controller.dart';
 import 'package:pure_live/modules/live/search/web_search_page.dart' show WebSearchRequest;
@@ -157,22 +158,18 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                 onChanged: chooseScope,
               );
               if (!narrow) return tabs;
-              return SizedBox(
-                height: 44,
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: tabs),
-                    PlatformToolbarMore(
-                      platforms: platforms,
-                      current: scope,
-                      nameOf: _platformName,
-                      onChanged: chooseScope,
-                      onManagePlatforms: managePlatforms,
-                    ),
-                  ],
+              // A stacked toolbar hands the platform menu to the shell's head
+              // line; this row keeps the scope tabs alone.
+              publishPageHeadActions(context, ref, [
+                PlatformToolbarMore(
+                  platforms: platforms,
+                  current: scope,
+                  nameOf: _platformName,
+                  onChanged: chooseScope,
+                  onManagePlatforms: managePlatforms,
                 ),
-              );
+              ]);
+              return SizedBox(height: 44, child: tabs);
             },
           ),
         ),

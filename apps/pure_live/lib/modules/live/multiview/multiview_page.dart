@@ -9,6 +9,8 @@ import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
@@ -269,6 +271,11 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           onPressed: () => unawaited(controls.togglePauseAll()),
         ),
     ];
+    // A stacked toolbar hands the wall's switches to the shell's head line;
+    // the arrangement control is the page's own and stays.
+    final narrow = PageLayoutScope.isNarrow(context);
+    if (narrow) publishPageHeadActions(context, ref, switches);
+    final inline = narrow ? const <Widget>[] : switches;
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 560) {
@@ -276,7 +283,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s6,
             crossAxisAlignment: WrapCrossAlignment.center,
-            children: [layout, ...switches],
+            children: [layout, ...inline],
           );
         }
         return Row(
@@ -294,7 +301,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
                 ),
               ),
             ),
-            ...switches,
+            ...inline,
           ],
         );
       },

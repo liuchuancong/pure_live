@@ -12,6 +12,7 @@ import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_inline_search.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
@@ -390,8 +391,16 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // toolbar breakpoint the page stacks its row and the head carries its
     // verbs; above it the page keeps them itself.
     final pageNarrow = LiveWindow.stacksToolbar(headWidth - 2 * LiveWindow.pageInset(width));
-    final verbs = pageNarrow ? _pageVerbs() : const <Widget>[];
-    final reserve = (verbs.isEmpty ? 0.0 : 130.0) +
+    // A page may hand its own verbs up instead of drawing them (see
+    // PageHeadActions); the built-in feeds also offer theirs by name.
+    final published = ref.watch(pageHeadActionsProvider);
+    final verbs = pageNarrow
+        ? [
+            ..._pageVerbs(),
+            if (published case final head? when head.owner == widget.selected) ...head.actions,
+          ]
+        : const <Widget>[];
+    final reserve = (verbs.isEmpty ? 0.0 : 48.0 + 48.0 * verbs.length) +
         (widget.selected == NavigationItem.logs ? 44.0 : 0.0) +
         (WindowChromeState.drawsStrip ? 0.0 : 48.0);
     final searchFieldWidth = math.min(_kToolbarSearchWidth, headWidth - 32 - 180 - reserve);
@@ -472,7 +481,10 @@ final class _AppShellState extends ConsumerState<AppShell> {
           centerTitle: false,
           actions: [
             if (searchButtonShown) ...[searchButton(), const SizedBox(width: DsSpace.s8)],
-            if (verbs.isNotEmpty) ...[...verbs, const SizedBox(width: DsSpace.s8)],
+            if (verbs.isNotEmpty) ...[
+              Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: verbs),
+              const SizedBox(width: DsSpace.s8),
+            ],
             if (logsGear) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
             if (themeToggle) const ThemeModeToggle(size: 48, iconSize: 20),
             const SizedBox(width: DsSpace.s4),
@@ -497,14 +509,17 @@ final class _AppShellState extends ConsumerState<AppShell> {
         drawer: _drawer(context, t, tabs, rail, wallpaper),
         body: PageLayoutScope(
           narrow: pageNarrow,
-          child: glass && atTab
+          child: PageOwnerScope(
+            owner: widget.selected,
+            child: glass && atTab
               ? MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
                   ),
                   child: widget.content,
                 )
-              : widget.content,
+                : widget.content,
+          ),
         ),
       );
       return CallbackShortcuts(
@@ -635,14 +650,19 @@ final class _AppShellState extends ConsumerState<AppShell> {
                                 if (searchButtonShown) ...[const SizedBox(width: DsSpace.s8), searchButton()],
                                 if (verbs.isNotEmpty) ...[
                                   const SizedBox(width: DsSpace.s8),
-                                  ...verbs,
+                                  Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: verbs),
                                 ],
                                 if (logsGear) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
                                 if (themeToggle) ...[const SizedBox(width: DsSpace.s8), const ThemeModeToggle(size: 36)],
                               ],
                             ),
                           ),
-                          Expanded(child: PageLayoutScope(narrow: pageNarrow, child: widget.content)),
+                          Expanded(
+                            child: PageLayoutScope(
+                              narrow: pageNarrow,
+                              child: PageOwnerScope(owner: widget.selected, child: widget.content),
+                            ),
+                          ),
                         ],
                       ),
                     ),

@@ -10,6 +10,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardListDesignHeight, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
 import 'package:pure_live/modules/live/history/history_repository.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
@@ -703,6 +704,9 @@ final class _Header extends ConsumerWidget {
             icon: const DsIcon(DsIcons.ellipsisVertical),
           ),
         );
+        // A stacked toolbar hands the filter and the rest to the shell's head
+        // line; this row keeps the count alone.
+        if (narrow) publishPageHeadActions(context, ref, [filter, more]);
         return Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
           child: SizedBox(
@@ -711,10 +715,7 @@ final class _Header extends ConsumerWidget {
               spacing: DsSpace.s8,
               children: [
                 Expanded(child: count),
-                if (narrow) ...[
-                  filter,
-                  more,
-                ] else ...[
+                if (!narrow) ...[
                   const LayoutToggle(),
                   DsButton.icon(
                     variant: DsButtonVariant.secondary,
