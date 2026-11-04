@@ -66,6 +66,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('interface.roomCard.mobile', BackupPrefKind.string),
   ('interface.roomCard.desktop', BackupPrefKind.string),
   ('interface.hongguoCard', BackupPrefKind.string),
+  ('interface.vodCard', BackupPrefKind.string),
   ('interface.musicUi', BackupPrefKind.string),
   ('browse.showUnplayable', BackupPrefKind.boolean),
   ('browse.crossSpacing', BackupPrefKind.floating),
@@ -328,6 +329,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('vod.playback.speed', BackupPrefKind.floating),
   ('vod.playback.finish', BackupPrefKind.string),
   ('vod.playback.showDetails', BackupPrefKind.boolean),
+  // Whether the station's feed opens with its header picture.
+  ('vod.feed.banner', BackupPrefKind.boolean),
   ('vod.favourites', BackupPrefKind.string),
   ('vod.download.maxConcurrent', BackupPrefKind.integer),
   ('vod.download.qn', BackupPrefKind.integer),
@@ -420,6 +423,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // The hongguo station's rendition, learned decoder notes and the viewer's
   // own shelves.
   ('hongguo.quality', BackupPrefKind.string),
+  // Whether 首页 draws its first pick at head size above the shelves.
+  ('hongguo.home.banner', BackupPrefKind.boolean),
   ('hongguo.danmaku', BackupPrefKind.string),
   ('hongguo.decoderFailures', BackupPrefKind.stringList),
   ('hongguo.library.favorites', BackupPrefKind.string),

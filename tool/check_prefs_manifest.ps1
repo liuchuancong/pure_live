@@ -350,6 +350,8 @@ foreach ($match in [regex]::Matches((Get-Content -Raw $backupFile), "\('([a-zA-Z
 # would otherwise print. A new entry here needs a sentence, not just a name.
 $unbackedAllowed = @{
     "recorder.saveDir" = "a legacy value recorder.dir was upgraded from, read only as a fallback and never written; the live choice travels as recorder.dir."
+    "background.glass" = "an older build's single on/off glass bool, read once when no background.glassMode is stored and never written; the live choice travels as background.glassMode."
+    "background.glassFill" = "an older build's name for the glass surface fill, read once when background.glassSurface is absent and never written; the live value travels as background.glassSurface."
     "background.stills" = "the clip-to-still map points at pictures this machine rendered; another machine has neither the clips nor the stills."
     "music.lyrics.cache" = "a fetched-lyric cache: another machine asks the source again instead of carrying this one's answers."
     "music.playback.positions" = "where each song was paused — run-time progress, not a preference; the queue itself travels as music.queue."
