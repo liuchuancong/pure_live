@@ -21,7 +21,7 @@
 - [ ] **T15 无锁定全屏**。参考 `bar_parts.dart:314-339` 的 LockButton 挂在右侧中（`player_view.dart:929-937`）：锁上后隐藏条、吞掉手势/滚轮（`:276`）。我们滚轮调音量与双击播放暂停在满屏时一直生效（`player_surface.dart:800-824`）⇒ 看电视时误触就改音量。
 - [x] **T16 睡眠定时进不了全屏**（P26 做完）。`_SleepChip` 只在页头（`room_page.dart:1896`），`roomMenuItems` 没有它（参考在房间菜单里带剩余分钟第二行：`room_menu_button.dart:152,254-259`）。做法：菜单里加一组时长项，复用 `kAsmrSleepMinuteChoices` 与 `asmrSleepDurationLabel`，别再开一套选择器。
 - [ ] **T17 桌面"在新窗口打开这间房"缺失**。参考 `room_menu_button.dart:166,357-359` 走 `DesktopWindow.openNewWindow`；我们有房间窗口（`room_opener.dart:46`）但房间菜单没有这一行。
-- [ ] **T18 被掩码名之外的一条：登录提示是常驻条**。参考在列表上方常驻 `ChatNameHintBar` 并带登录按钮（`chat_list.dart:421-433,603-649`）；我们一次 toast 过完就没了（`controller/room_controller.dart:1646`）⇒ 错过了就只能等下一次连接。
+- [x] **T18 被掩码名之外的一条：登录提示是常驻条**（P27 做完）。参考在列表上方常驻 `ChatNameHintBar` 并带登录按钮（`chat_list.dart:421-433,603-649`）；我们一次 toast 过完就没了（`controller/room_controller.dart:1646`）⇒ 错过了就只能等下一次连接。
 - [ ] **T19 满屏钟与电量**。参考底条每分钟重画时钟/电量（`bar_parts.dart:22-144`）。桌面价值低（系统托盘已有），手机价值高：留到最后。
 - [ ] **已判定不平**：参考的本地"+1/存为常用语"回放体系（`message_panel.dart:219-341`）——我们的发送框真发（`room_chat.dart:360+`），这是两套子系统的边界，不是缺功能；参考的投屏只有 Android（`player_controls.dart:177`），我们桌面也有（此项我们更强）。
 
@@ -57,6 +57,7 @@
 
 | P25 | `b7464e12a` | 关注 | T13：房间菜单里加「关注/取消关注」。关注以前只在页头那枚 pill 上，而浮层/全屏时页头消失（`menuItems: widget.immersive ? widget.roomMenu : const []`）⇒ 满屏里想关注必须先退出。放菜单而不放底条：底条是画面自己的动词（播放/音量/源目录/窗口），房间的事在详情与切换旁边；pill 仍是非全屏的快捷入口，两处读同一个 `followsRoomProvider`，不会各说一奔。 |
 | P26 | `5e4e68a05` + `67cd6c4cc` | 睡眠定时 | T16：定时关闭进房间菜单（弹一个 `showDsPanel` 面板，标题＝定时关闭，运行中则先给关闭项），并且时长列表成了一份 `roomSleepTimerChoices()`：原本 chip 的 hover 菜单里写了一遍十个分钟，菜单再写一遍就是下次加档位漏掉的那个地方。 **同时纠正自己**：本轮第三次犯同一个错——`dart format lib/modules/live/room` 把 gift_text/gift_flights/room_switcher 重排后跟着提交了，已用 `67cd6c4cc` 把三个文件退回原样。**只 format 本轮真改的那几个文件路径，别再指向目录。** |
+| P27 | `6899475a4` | 登录提示 | T18：房间说"你看到的名字全是被打了码的"或"Twitch 的 cookie 被拒了"时，不再丢一枚 toast，而是在它影响的聊天列上方挂一条常驻条（`roomChatNoticeProvider` + `_ChatNoticeBar`），条上直接给「Cookie 登录」入口（`showAccountSignInAlternative(..., exit: AccountQrExit.cookiePage)`）与"我知道了"。toast  Shape 不对的原因：提示出现时人正在看画面，而修复是去登录页花一分钟，不是一瞥。条在下一次连接不再像登录死了时自己消失（`_installDanmaku` 清），换房/`_teardown` 也清 ⇒ 旧抱怨不会活得比造成它的那次登录长；同一房同一句话重复上抛不改状态（不闪烁）。 |
 
 ## 已核对为持平或更强（别重做，附证据）
 
@@ -67,7 +68,7 @@
 | 聊天列 | `34% clamp(300,400)` + 22×56 折叠把手（`logic/room_layout.dart:317`） | 可拖 + 方向键/Shift + 双击复位 + `collapseChat` 折叠（`room/page/chat_splitter.dart`、`room_page.dart:1025`） |
 | 名字色 | 平台色走到 ≥4.5:1 并缓存（`danmaku/chat_list.dart:31-78`） | 同机制（`room/chat/room_chat.dart:812-840`） |
 | 弹幕行 | 徽章图片 + 粉丝牌 chip + 角色；名字 w600 +「：」；列表内无时间戳；无 maxLines | 最多 3 枚平台徽章 + 角色 + 粉丝牌 + 等级、`tagHeight` 统一、连续同人合并（`room_chat.dart:496-515`） |
-| 竖屏 | 三停靠点拖面板（min 250 / 44% / 68%）+ 手柄 48 + grip 38×4 + 「横屏全屏」pill | 我们窄窗是 58% 舞台 + 信息条 + 聊天堆叠（`player_surface.dart:1817`、`room_orientation.dart`）→ **不是同一形态，见 T2** |
+| 竖屏 | 三停靠点拖面板（min 250 / 44% / 68%）+ 手柄 48 + grip 38×4 + 「横屏全屏」pill | 已同形态（P22：`room/page/room_bottom_panel.dart` 250 px 地板 / 44 % / 68 % 且给画面留 120 px、手柄 48、grip 38×4、右侧 pill；`PlayerSurface.bottomInset` 让控制条站到面板之上）|
 | 沉浸式 | **absent**（只有 fullscreen / portraitFullscreen / windowFullscreen 三态） | 我们有剧场（玻璃卡聊天叠在画面上）——我们更多，别照抄删掉 |
 | 打开链路请求数 | detail(+弹幕票) → discover → urls 串行，且明确不缓存播放地址（`live_core/live_site.dart:385`） | 同数量级；双 `getRoomPlayInfo` 是 API 固有（bilibili 只在 `accept_qn` 里列其它档， douyu 档表无 URL） |
 
@@ -113,3 +114,5 @@
 - 2026-11-04 P23+P24：参考第二次全量审计的前两项落地（掩码名不再提供屏蔽动作、复制带名字；T14 页签计数）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例绿（仍只录像 lane 一红）；live_sites 463/463。运行期未验证：页签计数要真房间切来切去才看得见。新队列剩 T13（关注进不了全屏）、T15（锁定全屏）、T16（睡眠定时进菜单）、T17（新窗口）、T18（常驻登录提示条）、T19（钟与电量）。
 
 - 2026-11-04 P25+P26：T13、T16 勾提（关注与定时关闭进房间菜单，后者顺手把十个时长收成一份）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例绿（仍只剩录像 lane 那一红）。运行期未验证。剩下 T15（锁定全屏）、T17（新窗口）、T18（常驻登录提示条）、T19（钟与电量）。
+
+- 2026-11-04 P27：T18 勾提（常驻登录提示条）。门：app `dart analyze lib` 0 issues、`dart format` 只点这两个文件（0 changed）、`flutter test test/live` 48 例中 47 绿——唯一红仍是录像 lane 的 `recording_schedule_test.dart`「只有开播检查能推动等待/排期中的任务」（`needsLiveCheck => isArmed`，`3a2b6d129` 引入，不是本轮改的）。运行期未验证：条要真用坏 cookie 连 bilibili/twitch 才看得到，交用户自测。顺手把"已持平"表里那条过期行（窄窗仍是 58 % 舞台）按 P22 的现状改了。剩下 T15（锁定全屏）、T17（新窗口，窗口层还没有"按路由开一扇"的能力，别挂打不开的门）、T19（钟与电量，价值最低）。
