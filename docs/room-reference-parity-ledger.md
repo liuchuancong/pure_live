@@ -66,6 +66,7 @@
 | P30 | `2bbdf6c26` | 竖屏手势 | T20：`portraitSwipeSwitchProvider` 之前只有读者没有写者（全仓没有一行设置调它的 `set()`，默认 false）⇒ "上下滑画面中段换直播间"这条手势对所有人都等于不存在。开关进"画面"页 room-only 段（`playback_panes.dart`，紧跟自动全屏），同步进设置搜索目录；进入竖屏全屏时按参考 `PortraitEntryHint` 给一条 3 s 后淡掉的玻璃提示（`_PortraitSwipeHint`，reduce-motion 用 `Duration.zero`），并且只在 `swipeSwitch && mobile` 为真时画——提示不能教一条被关掉的手势。`_buildPortraitFullscreen` 因此多了 `canSwipeRooms`，与 `onPortraitSwipe` 用同一个判据，两处不会各说一遍。 |
 | P31 | `454afe83d` | 满屏动词 | T21+T22：①弹幕开关抽成 `_DanmakuTogglePill`（一处两处用），identity（全屏）那条 strip 也画——之前它只在非 identity 分支，全屏就没了；②房间菜单加"弹幕"一行，push 与聊天列页签里那行同一个 `SettingsSectionRoute(danmaku)`（同一个门、同一套词），全屏没有聊天列时才有地方改样式；③`_onPictureTap` 落参考 D-038：条不在时那一跳一律叫回条（`shownBefore`），只有条已显示且在播才把命中的消息当消息，冻结过的那条 `resumeAllPaused()`；④竖屏全屏自己飘在右上的两枚按钮拆掉——它们与 strip 的返回/开关/集群/⋮ 画在同一条带上会重叠，返回键本来第一支就是退竖屏全屏，切换直播间在 ⋮ 里；`room.portraitFullscreenExit` 改给 strip 的返回键按 `portraitExit` 用，动词还是只有一个入口。门：`dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 那条）。运行期未验证：满屏点一下应先叫回条、竖屏全屏顶部不再叠两层。 |
 | P32 | `866489388` | 新窗口 | T17：房间菜单加"在新窗口打开"（`DsIcons.appWindow` + `t.room.openInNewWindow`，与画中画同一族动词）。**同时纠正上一轮自己的判断**：台账里写的"窗口层还没有按路由开一扇的能力"是没读 `openRoom` 就下的结论——`room_opener.dart:61` 早就 `windows.open(role: WindowRole.panel, route:, businessKey:)`，命中同 businessKey 的窗口就发消息导航 + raise。教训：**判"做不了"之前先把现成入口的源码读完**，别把已有能力记成缺口。条件照参考 `offersNewWindow` 收窄（桌面 + 房间窗口开关 + 有 secondaryWindows + 本页不是房间窗口）。带 `playlist: roomPlaylistProvider?.rooms`，新窗口进去后竖屏滑动能沿同一份列表走。运行期未验证：多窗口是同 lane 别人正在改的层，真机上验一次再说。 |
+| P33 | `224550c67` | 直链 | T23（第四次对照）：正在播的房间菜单加「获取直链」，开的是已有 `toolbox/direct_link_dialog.dart`（房卡菜单与工具箱早就用它的同一个弹窗，逐档列线、每条 URL 自带复制）。行只在该站声明了 `LivePlaybackProvider` 能力时出现——否则这行点下去只会说"这个房间暂时没有可用的直链"，是打不开的门。 |
 
 ## 已核对为持平或更强（别重做，附证据）
 
@@ -80,14 +81,25 @@
 | 沉浸式 | **absent**（只有 fullscreen / portraitFullscreen / windowFullscreen 三态） | 我们有剧场（玻璃卡聊天叠在画面上）——我们更多，别照抄删掉 |
 | 打开链路请求数 | detail(+弹幕票) → discover → urls 串行，且明确不缓存播放地址（`live_core/live_site.dart:385`） | 同数量级；双 `getRoomPlayInfo` 是 API 固有（bilibili 只在 `accept_qn` 里列其它档， douyu 档表无 URL） |
 
+## 第四次对照（2026-11-05：参考 live_core/live_danmaku 与我们引擎、以及条上动词的最后一族）
+
+| 查的东西 | 参考 | 我们 | 结论 |
+| --- | --- | --- | --- |
+| 弹幕过滤器族 | `live_danmaku/lib/src/filters/`（block_list/block_pattern/message_filter/message_gate/notice_throttle/partial_ratio/repeated_filter/similarity_filter/text_shape） | `live_sites/lib/src/common/danmaku/filters/` 同名九件 | **齐**，别再造第十件 |
+| 表情库 | `apps/.../shared/danmaku/emotes.dart` `EmoteLibrary` + `assets/emo/json` + 每平台图片文件 | `shared/player/emoji_atlas_loader.dart`：`live_sites` 用 `tool/pack_emoji_atlas.py` 打成**一张图集 + manifest**，飞层与列表共用 | **同一能力、不同形态**（我们更省：一次解码全目录）。列表已用 `_wordSpans` 画图集表情（`room_chat.dart:1165`），别照抄参考的逐平台 JSON/图片 |
+| 大小写敏感握手 | `live_danmaku/lib/src/exact_websocket.dart`（YY/SOOP 边缘节点） | `packages/live_websocket/lib/src/client/exact_web_socket*.dart` | **齐** |
+| 底条中间那个发送框 | `LocalDanmakuComposer.onVideo`（属于 `local_interaction/`：+1/常用语本地回放体系） | 我们的真发送在聊天列 `_ChatComposer` | 已判定不平（见上"已判定不平"）。参考全屏也只发本地条，不是我们缺入口 |
+| HLS 主列表选流/查询串策略 | `live_core/lib/src/hls_master.dart`、`hls_source_query_policy.dart`（后者明确"只对验证过的 TTing/FLEX NCP 契约开启"） | 我们把 master URL 交给 mpv/ffmpeg 自己 ABR | 不动：参考自己也说这不是全局规则；要为某站补需要该站的实测证据 |
+| 房间菜单族 `streamLink` | `room_menu_button.dart:268,351-352` → `showStreamPanel(..., copy)` | 有 `toolbox/direct_link_dialog.dart`（房间卡片菜单、工具箱都能开），**但正在播的房间自己没这一行** | **T23 补上**（P33） |
+
 ## 待办队列（自上而下，一项一轮）
 
 - [x] **T1 录制状态卡的完整数字**（P21，随 T5 一起做）。参考 `shared/record/record_status_card.dart:341-388`：`第 n 段 · 每 N 分钟一段`、36 px 时钟、chips `已录 356 MB` / `3.2 Mbps` / 画质 / `弹幕 1,284 条`。P9/P11 已把大小与合并百分比放上条上、并让非写入态有名；**条上到此为止是刻意的**——参考的条/角标也只放时钟与状态词，段数/码率/弹幕条数属于卡（面板）。故这些数字随 T5 的只读面板一起做，不要塞进玻璃 pill。
 - [x] **T2 竖屏直播的三停靠点面板**（P22）。参考解剖见上；窄窗竖屏源已从"堆叠"改成"画面满幅 + 可拖底部面板（250 px 地板 / 44 % / 68 % 且留 120 px 画面，手柄行 48、grip 38×4、进竖屏全屏的按钮、右侧全屏 pill）"。样张给过 B/C/D 三档但任务被逐字重发（`feedback-carry-clarified-decision-into-code`），按最贴参考又覆盖"16:9"那句的 **D** 当轮落实：横屏源仍堆叠但信箱加 `min(width/ratio, height*0.6)` 上限。要退回 B 只需去掉那条上限；要 C 只需把面板换成只包聊天列。**沉浸式（剧场）没动**——参考没有这一档。
 - [x] **T3 弹幕列表：过滤计数可见**（P17）。参考把被屏蔽条数只放屏蔽页「本场已屏蔽 N 条」（`blocked_count.dart:5`、`block_manager.dart:293`）。我们此前根本没有计数（包与 app 都只回 bool）⇒ 已补：引擎报 policy 判定、房间只数观众的四条规则、面板第一行显示；设置页不放第二个入口。
-- [ ] **T4 live_core / live_danmaku 能力差**：另派代理解剖（结论未回收）→ 回到本表补队列，别在 app 里重做包能力（`feedback-use-package-facilities-not-app-hacks`）。
+- [x] **T4 live_core / live_danmaku 能力差**（第四次对照做完，见上表 + P33）。九件过滤器、大小写敏感握手、表情库、错误分类、撤回、gate 键、lease 都已对齐或以更强形态存在；这一轮查出来的唯一真缺口是"正在播的房间自己拿不到直链"（工具箱和房卡能拿），已补。HLS 主列表选流与查询串策略**不搬**（参考自己写明只对验证过的 TTing/FLEX NCP 契约开启）。
+- [x] **T6 已判定不做**：到期前主动换地址——bilibili 自己的 lease 注释写着"expiry does not cut an established connection"（`parsers/bilibili_play_parser.dart:240`），主动重开会**制造**缺口；`requiresReconnect` 默认 false。礼物/SC 结构化 XML 需要改 `DanmakuEntry` + 全部 5 种渲染器，不在房间线里做。`forceDestroy` 默认 true 已实测只值 ~60 ms，不改默认。
 - [x] **T5 房间侧「录制」只读面板 + 跳「录制中心」**（P21）。**不做**其中的画质**选档** chips 与"开播自动录"开关：改画质是录像 lane 的待办（页签只读显示 `task.quality` 的标签，这不算选档），后者与订阅卡片右端开关重复（同项一个入口）。
-- [ ] **T6 已判定不做**：到期前主动换地址——bilibili 自己的 lease 注释写着"expiry does not cut an established connection"（`parsers/bilibili_play_parser.dart:240`），主动重开会**制造**缺口；`requiresReconnect` 默认 false。礼物/SC 结构化 XML 需要改 `DanmakuEntry` + 全部 5 种渲染器，不在房间线里做。`forceDestroy` 默认 true 已实测只值 ~60 ms，不改默认。
 
 - [x] **T7 撤回落实**（P13）。参考 `features/live_play/danmaku/chat_feed.dart:285` + `live_danmaku/filters/message_gate.dart:71`。我们：`bilibili_danmaku_codec.dart:299,334` 会发 `retraction`，`flame_barrage_sink.dart:95` 有 `retract()`，但 `room_controller.dart` 把非礼物类型统统当 `chat` 灌进管线、空文本又丢掉 ⇒ 房管删除的弹幕永远留在屏幕与列表。**做法**：分派 `retraction` 到聊天 feed 删除 + 飞行层 `retract`；`retractByUser/clear` 的引擎调用一并补。**已按此做完**：一条 `LiveRetraction.matches` 同时喂两个面（列表 `retract`、飞行层 `retractWhere`），`all` 只删说过的话、礼物与通知留下。参考 gate 把撤回目标并进去重键（`message_gate.dart:71`）这 ours 不需要——撤回在进 gate 之前就分派走了。
 - [x] **T8 gate 缺 replay / SC / combo 键**（P14）。参考 `message_gate.dart:28-33,61-62,95-98`。我们 `danmaku_message_gate.dart` 无 `maxReplayAge`、不读 payload ⇒ **YouTube 回放与重连补发被 45 s 规则整段吞掉**（`youtube_danmaku_codec.dart:458` 已设 `replayed`，无人读）。**已做完**：`replayed` 与 `maxReplayAge` 进消息/配置/gate，付费卡按 `endTime` 免死。**combo 键刻意不搬**：我们的房间在 `RoomDanmakuPipeline.accept()` 就把礼物分流出管线（连击走 `GiftFlights`），gate 永远看不到礼物，搬进去是死代码；参考那边需要它是因为礼物同过 gate。
@@ -134,3 +146,5 @@
 - 2026-11-04 P31：第三次对照的第二批（T21 满屏弹幕开关/设置门、T22 参考 D-038 的 tap 规则 + 竖屏全屏顶部两层叠在一起）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点本轮两个 dart 文件（0 changed）。运行期未验证：满屏点一下应先叫回控制条而不是开某条弹幕的面板；竖屏全屏顶部只有一条 strip。台账自己出过一次事故：用行首做 old_string 去插新行，把 T20 那行的前半截吃掉了（现已拆回，T20 行完整）——**插行要拿整行的唯一尾串做锚，别用别行的开头**。队列仍剩 T17（新窗口，先给窗口层"按路由开一扇"的能力）。
 
 - 2026-11-05 P32：T17 勾提（房间菜单开自己的窗口）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点 room_page.dart（0 changed）。这一轮把自己上一条误判写进台账了：T17 曾被记成"要先给窗口层加按路由开一扇的能力"，实际 `openRoom` 早就这么开，缺的只是房间菜单那一行——以后判"能力不存在"必须先读完那条现成路径再落字。第三次审计的队列（T13–T22）至此全部勾完。
+
+- 2026-11-05 P33 + 第四次对照：把参考 `live_core`/`live_danmaku` 逐文件过了一遍（过滤器九件、exact_websocket、表情库形态、HLS 两件、错误分类），结论都写进上表——我们要么齐要么更强（表情是单张精灵图集，不是每平台 JSON+散图）。唯一真缺口是房间自己拿不到直链，已补（T23/P33）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点 room_page.dart（0 changed）。运行期未验证：直链弹窗要真站点才看得见线列表；新窗口那行要桌面多窗口真机验。**本轮又自己犯了同一种编辑事故两次**：拿"别行的开头"当 old_string 去插行（把 T20 前半截吃掉）、以及替换时漏掉一条守卫行与造出一行重复 T5——都已当场修回。规矩：**插行用整行唯一尾串；改完立刻 grep 计数复核，别只看工具说成功**。
