@@ -49,7 +49,7 @@ final class HongguoDecoderLessonsController extends Notifier<Set<String>> {
 
   void _persist() {
     try {
-      unawaited(StoragePrefs.setStringList(kHongguoDecoderLessonsKey, [...state]));
+      unawaited(StoragePrefs.setStringList(kHongguoDecoderLessonsKey, [...state]).catchError((Object _) => false));
     } on Object {
       // A closed store loses the lessons; the next failure writes again.
     }

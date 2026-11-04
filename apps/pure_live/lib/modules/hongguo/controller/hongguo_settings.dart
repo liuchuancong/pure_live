@@ -87,7 +87,7 @@ final class HongguoSettingsController extends Notifier<HongguoSettings> {
   Future<void> setQuality(HongguoQualityChoice quality) async {
     state = HongguoSettings(quality: quality);
     try {
-      unawaited(StoragePrefs.setString(kHongguoQualityPrefsKey, quality.name));
+      unawaited(StoragePrefs.setString(kHongguoQualityPrefsKey, quality.name).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }

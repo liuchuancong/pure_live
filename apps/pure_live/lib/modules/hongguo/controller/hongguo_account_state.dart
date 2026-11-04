@@ -96,7 +96,7 @@ final class HongguoAccountController extends Notifier<HongguoAccountState> {
       final profile = await ref.read(hongguoAccountClientProvider).profile(credentials);
       state = HongguoAccountState(credentials: credentials, profile: profile);
       try {
-        unawaited(StoragePrefs.setString(_kCredentialsKey, credentials.toJson()));
+        unawaited(StoragePrefs.setString(_kCredentialsKey, credentials.toJson()).catchError((Object _) => false));
       } on Object {
         // A closed store loses the login; the next sign-in writes again.
       }
@@ -109,7 +109,7 @@ final class HongguoAccountController extends Notifier<HongguoAccountState> {
   Future<void> signOut() async {
     state = const HongguoAccountState();
     try {
-      unawaited(StoragePrefs.remove(_kCredentialsKey));
+      unawaited(StoragePrefs.remove(_kCredentialsKey).catchError((Object _) => false));
     } on Object {
       // A closed store keeps the stale login; the next start re-reads it.
     }

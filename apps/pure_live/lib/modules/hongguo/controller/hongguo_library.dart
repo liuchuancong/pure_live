@@ -281,12 +281,17 @@ final class HongguoLibraryController extends Notifier<HongguoLibraryState> {
           ]),
         ),
       );
-      unawaited(StoragePrefs.setString(_kHistoryKey, jsonEncode([for (final row in state.history) row.toJson()])));
+      unawaited(
+        StoragePrefs.setString(
+          _kHistoryKey,
+          jsonEncode([for (final row in state.history) row.toJson()]),
+        ).catchError((Object _) => false),
+      );
       unawaited(
         StoragePrefs.setString(
           _kUpdatesKey,
           jsonEncode({for (final entry in state.updates.entries) entry.key: entry.value.toJson()}),
-        ),
+        ).catchError((Object _) => false),
       );
     } on Object {
       // A closed store loses the shelves; the next change retries.

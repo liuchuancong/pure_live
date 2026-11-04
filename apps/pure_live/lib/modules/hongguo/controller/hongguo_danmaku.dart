@@ -166,7 +166,9 @@ final class HongguoDanmakuSettingsController extends Notifier<HongguoDanmakuSett
 
   Future<void> _save() async {
     try {
-      unawaited(StoragePrefs.setString(kHongguoDanmakuPrefsKey, jsonEncode(state.toJson())));
+      unawaited(
+        StoragePrefs.setString(kHongguoDanmakuPrefsKey, jsonEncode(state.toJson())).catchError((Object _) => false),
+      );
     } on Object {
       // A preference; a closed store loses it.
     }

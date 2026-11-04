@@ -258,7 +258,7 @@ final class HongguoDownloadSettingsController extends Notifier<int> {
     if (value == state) return;
     state = value;
     try {
-      unawaited(StoragePrefs.setInt(_kMaxConcurrent, value));
+      unawaited(StoragePrefs.setInt(_kMaxConcurrent, value).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -298,7 +298,7 @@ final class HongguoDownloadRetryController extends Notifier<int> {
     if (value == state) return;
     state = value;
     try {
-      unawaited(StoragePrefs.setInt(_kRetryAttempts, value));
+      unawaited(StoragePrefs.setInt(_kRetryAttempts, value).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -331,7 +331,7 @@ final class HongguoDownloadRetryDelayController extends Notifier<int> {
     if (!choices.contains(seconds) || seconds == state) return;
     state = seconds;
     try {
-      unawaited(StoragePrefs.setInt(_kRetryDelay, seconds));
+      unawaited(StoragePrefs.setInt(_kRetryDelay, seconds).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -364,7 +364,7 @@ final class HongguoDownloadQualityController extends Notifier<HongguoQualityChoi
     if (choice == state) return;
     state = choice;
     try {
-      unawaited(StoragePrefs.setString(_kDownloadQuality, choice.name));
+      unawaited(StoragePrefs.setString(_kDownloadQuality, choice.name).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
