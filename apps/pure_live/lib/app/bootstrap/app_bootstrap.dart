@@ -62,7 +62,7 @@ Future<Boot> bootstrap() async {
     // literal default).
     // ignore: avoid_redundant_argument_values
     formFactor: const bool.fromEnvironment('PURE_LIVE_TV') ? FormFactor.tv : null,
-    // A debug run keeps its storage in a `userdata` tree beside the
+    // A debug run keeps its storage in an `appdata` tree beside the
     // executable, so it never reads or writes a release's data.
     debug: kDebugMode,
   );

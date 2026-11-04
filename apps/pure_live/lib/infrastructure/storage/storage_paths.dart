@@ -82,7 +82,7 @@ final class StoragePaths {
     final roots = await OsRoots.measure();
     final exeRoot = environment.runtime.executableRoot;
     // The policy owns the deployment branches, the debug build included: a
-    // debug run resolves its storage into a `userdata` tree beside the
+    // debug run resolves its storage into an `appdata` tree beside the
     // executable (the portable shape), an installed release into the OS
     // application directories. Passing every root lets each branch use what
     // it is allowed to.

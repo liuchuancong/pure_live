@@ -76,7 +76,7 @@ void main() {
     ], reason: 'the OS application-support root is already per-application');
   });
 
-  test('a debug build roots its storage in userdata beside the executable', () {
+  test('a debug build roots its storage in appdata beside the executable', () {
     final policy = DefaultStoragePolicy(portableRoot: exeRoot, userRoot: userRoot, cacheRoot: cacheRoot, tempRoot: tempRoot);
     final debug = snapshot(portable: false, debug: true);
 

@@ -41,7 +41,7 @@ abstract final class PlatformBootstrap {
   /// the read-only install resources; null disables caching. A portable
   /// verdict is cached beside the executable instead, on the medium it
   /// vouches for.
-  /// [debug] marks a debug build: its storage resolves to a `userdata` tree
+  /// [debug] marks a debug build: its storage resolves to an `appdata` tree
   /// beside the executable instead of the OS application directories.
   /// [packageIdentity] carries the native probe's answer (a non-null
   /// `windowsFamilyName()`); null means not probed. [formFactor] overrides

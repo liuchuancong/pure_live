@@ -8,7 +8,7 @@ import 'package:path/path.dart' as p;
 /// executable: a self-contained tree with the portable layout's shape, so a
 /// `flutter run` never reads or writes a release's data in the OS
 /// application directories.
-const String kDebugDataDirectoryName = 'userdata';
+const String kDebugDataDirectoryName = 'appdata';
 
 /// Ordered candidate directories per storage area.
 ///
@@ -109,7 +109,7 @@ final class DefaultStoragePolicy implements StoragePolicy {
   @override
   List<Directory> candidatesFor(StorageArea area, PlatformRuntimeInfo runtime) {
     final namespace = namespaceFor(runtime);
-    // A debug build keeps its storage beside the executable in a `userdata`
+    // A debug build keeps its storage beside the executable in an `appdata`
     // tree — the portable layout's self-contained shape — whatever the
     // deployment is, so a `flutter run` never touches a release's data and
     // nothing lands in the OS application directories.
@@ -147,7 +147,7 @@ final class DefaultStoragePolicy implements StoragePolicy {
             // executable (`data/flutter_assets`, `data/icudtl.dat`), so the
             // portable data area namespaces itself beneath that directory
             // instead of writing into the runtime's files. A debug tree is
-            // `userdata/`, which the bundle does not occupy, but the same
+            // `appdata/`, which the bundle does not occupy, but the same
             // layout keeps one rule for every self-contained root.
             StorageArea.data => portable ? portableDataRoot(base, namespace: namespace) : installedDataRoot(base),
             _ => Directory(p.join(base.path, _segment(area))),
