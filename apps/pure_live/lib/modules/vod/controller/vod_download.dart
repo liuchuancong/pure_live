@@ -11,7 +11,14 @@ String vodDownloadFileName({
   int parts = 1,
   String extension = 'mp4',
 }) {
-  final raw = parts > 1 ? '$title - P$index $part' : title;
+  // Trim the pieces, never the line: cutting the whole name at some limit
+  // would drop the `P<index>` marker at its tail and let two parts of one
+  // archive collide under the same dodged `_2` name. The ceiling matches the
+  // music downloader's own 120-character trim (`sanitizeFileName`), because a
+  // name is one component of a path the viewer may have parked under a deep
+  // custom folder — Windows stops a whole path near 260 characters.
+  String clip(String value, int max) => value.length <= max ? value : value.substring(0, max).trim();
+  final raw = parts > 1 ? '${clip(title, 80)} - P$index ${clip(part, 30)}' : clip(title, 120);
   final clean = raw.replaceAll(RegExp(r'[\\/:*?"<>|\r\n\t]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   final name = clean.isEmpty ? 'bilibili_$index' : clean;
   return '$name.$extension';
