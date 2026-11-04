@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart' show RecordingTake;
-import 'package:pure_live/shared/shared.dart' show kAllPlatforms;
 
 /// The orders the library can read itself by — the file manager's sort menu.
 ///
@@ -29,18 +28,11 @@ enum RecorderLibrarySort {
   }
 }
 
-/// How the library is narrowed: one site, whether a row must hold something
-/// playable, and the order the days are read in.
+/// How the library is narrowed: whether a row must hold something playable,
+/// and the order the days are read in.
 final class RecorderLibraryFilter {
-  /// The untouched library: every site, every file, newest first.
-  const RecorderLibraryFilter({
-    this.platform = kAllPlatforms,
-    this.playableOnly = false,
-    this.sort = RecorderLibrarySort.newest,
-  });
-
-  /// The site the chips inside the panel picked; 'all' is every site.
-  final String platform;
+  /// The untouched library: every file, newest first.
+  const RecorderLibraryFilter({this.playableOnly = false, this.sort = RecorderLibrarySort.newest});
 
   /// Whether a row must hold something a player opens.
   final bool playableOnly;
@@ -50,15 +42,11 @@ final class RecorderLibraryFilter {
 
   /// Whether anything but the order is holding the library down — what makes
   /// the toolbar's entry read as engaged.
-  bool get narrowed => platform != kAllPlatforms || playableOnly;
+  bool get narrowed => playableOnly;
 
   /// The filter with the given parts replaced.
-  RecorderLibraryFilter copyWith({String? platform, bool? playableOnly, RecorderLibrarySort? sort}) =>
-      RecorderLibraryFilter(
-        platform: platform ?? this.platform,
-        playableOnly: playableOnly ?? this.playableOnly,
-        sort: sort ?? this.sort,
-      );
+  RecorderLibraryFilter copyWith({bool? playableOnly, RecorderLibrarySort? sort}) =>
+      RecorderLibraryFilter(playableOnly: playableOnly ?? this.playableOnly, sort: sort ?? this.sort);
 }
 
 /// The library's narrowing, shared by the toolbar that edits it and the pane
@@ -66,9 +54,6 @@ final class RecorderLibraryFilter {
 final class RecorderLibraryFilterController extends Notifier<RecorderLibraryFilter> {
   @override
   RecorderLibraryFilter build() => const RecorderLibraryFilter();
-
-  /// Shows one site's takes.
-  void setPlatform(String value) => state = state.copyWith(platform: value);
 
   /// Requires a row to hold something playable.
   void setPlayableOnly({required bool value}) => state = state.copyWith(playableOnly: value);

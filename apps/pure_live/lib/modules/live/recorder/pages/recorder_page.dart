@@ -866,7 +866,6 @@ final class _TaskDetailsPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
     // The switch lives here too, so the panel follows the store instead of
     // the snapshot it opened with: turning the check on outside this panel
     // must not leave this copy reading the old value.
@@ -892,11 +891,7 @@ final class _TaskDetailsPanel extends ConsumerWidget {
       if (task.audioCodec.isNotEmpty) task.audioCodec.toUpperCase(),
     ].join(' · ');
     final saved = (task.filePath ?? '').trim();
-    // The section's edge drawn inside its own bounds: the theme's outer
-    // hairline is a single device pixel at 8% ink, so on this white panel it
-    // either halves away between pixels or gets clipped at the scroll top.
-    // A one-point inner ring reads as a line and needs no room outside.
-    final section = DsListSectionStyle(shadows: [DsShadow.innerRing(colors.border)]);
+    final section = recorderPanelSectionStyle(context);
     return DsPanel(
       title: Text(t.recorder.detailsTitle),
       child: Column(

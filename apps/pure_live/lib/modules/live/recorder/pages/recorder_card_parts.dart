@@ -19,6 +19,15 @@ double recorderPunctuationHang(String text, double fontSize) {
   return fontSize * 0.56;
 }
 
+/// The edge a recorder panel's list sections wear.
+///
+/// The theme draws a section's edge as an outer hairline: one device pixel at
+/// 8% ink, which on a panel's white surface halves away between pixels and is
+/// clipped at the scroll top. An inner ring in the border ink reads as a line
+/// and stays inside the card's own bounds.
+DsListSectionStyle recorderPanelSectionStyle(BuildContext context) =>
+    DsListSectionStyle(shadows: [DsShadow.innerRing(DsTheme.colorsOf(context).border)]);
+
 /// One small fact on a recorder card: the room's platform with its mark, a
 /// category, a take's size or rate.
 ///

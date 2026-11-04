@@ -19,7 +19,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, avatarInitials, cachedImage, kAllPlatforms;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, avatarInitials, cachedImage;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -423,20 +423,12 @@ Future<void> playRecordingTake(
   );
 }
 
-/// The library's conditions applied: one site (while that choice has anything
-/// to choose between) and, when asked, only the rows a player can open.
-///
-/// A platform choice only exists while the tree holds more than one site; with
-/// one site the stored choice is ignored rather than hiding every take behind a
-/// row nobody can see.
-List<RecordingTake> narrowLibraryTakes(List<RecordingTake> takes, RecorderLibraryFilter filter) {
-  final platforms = {for (final take in takes) take.platformId};
-  final platform = platforms.length > 1 ? filter.platform : kAllPlatforms;
-  return [
-    for (final take in takes)
-      if ((platform == kAllPlatforms || take.platformId == platform) && (!filter.playableOnly || take.playable)) take,
-  ];
-}
+/// The library's conditions applied: when asked, only the rows a player can
+/// open.
+List<RecordingTake> narrowLibraryTakes(List<RecordingTake> takes, RecorderLibraryFilter filter) => [
+  for (final take in takes)
+    if (!filter.playableOnly || take.playable) take,
+];
 
 /// The library's own controls: one entry to its conditions, the folder the
 /// takes sit in, and the refresh that walks the tree again.
@@ -461,7 +453,7 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
     final filter = ref.watch(recorderLibraryFilterProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
     final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
-    void open() => unawaited(showRecordingLibraryFilter(context, ref, takes: takes, platformName: platformName));
+    void open() => unawaited(showRecordingLibraryFilter(context, ref));
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
@@ -512,36 +504,24 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
   }
 }
 
-/// The library's conditions, behind the toolbar's one entry: which site's takes
-/// show, whether a row must hold something playable, and the order the days are
-/// read in.
+/// The library's conditions, behind the toolbar's one entry: whether a row must
+/// hold something playable and the order the days are read in.
 ///
 /// The panel edits the provider rather than a local copy, so the list under it
 /// answers while the panel is still open — the conditions are few enough that a
 /// separate 应用 step would only hide what each one just did.
-Future<void> showRecordingLibraryFilter(
-  BuildContext context,
-  WidgetRef ref, {
-  required List<RecordingTake> takes,
-  required String Function(String platformId) platformName,
-}) => showDsPanel<void>(
-  context: context,
-  builder: (panelContext) => _LibraryFilterPanel(takes: takes, platformName: platformName),
-);
+Future<void> showRecordingLibraryFilter(BuildContext context, WidgetRef ref) =>
+    showDsPanel<void>(context: context, builder: (panelContext) => const _LibraryFilterPanel());
 
 final class _LibraryFilterPanel extends ConsumerWidget {
-  const _LibraryFilterPanel({required this.takes, required this.platformName});
-
-  final List<RecordingTake> takes;
-  final String Function(String platformId) platformName;
+  const _LibraryFilterPanel();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final filter = ref.watch(recorderLibraryFilterProvider);
     final controller = ref.read(recorderLibraryFilterProvider.notifier);
-    final ids = {for (final take in takes) take.platformId}.toList()
-      ..sort((a, b) => platformName(a).compareTo(platformName(b)));
+    final section = recorderPanelSectionStyle(context);
     return DsPanel(
       title: Text(t.recorder.filterTitle),
       child: Column(
@@ -549,20 +529,7 @@ final class _LibraryFilterPanel extends ConsumerWidget {
         spacing: DsSpace.s12,
         children: [
           DsListSection(
-            header: Text(t.recorder.filterPlatformGroup),
-            children: [
-              for (final id in [kAllPlatforms, ...ids])
-                DsListRow(
-                  title: Text(id == kAllPlatforms ? t.recorder.filterAll : platformName(id)),
-                  detail: Text(
-                    '${id == kAllPlatforms ? takes.length : takes.where((take) => take.platformId == id).length}',
-                  ),
-                  trailing: filter.platform == id ? const DsIcon(DsIcons.check, size: 16) : null,
-                  onPressed: () => controller.setPlatform(id),
-                ),
-            ],
-          ),
-          DsListSection(
+            style: section,
             children: [
               DsListRow(
                 title: Text(t.recorder.filterPlayable),
@@ -574,17 +541,27 @@ final class _LibraryFilterPanel extends ConsumerWidget {
             ],
           ),
           DsListSection(
+            style: section,
             header: Text(t.recorder.sortLabel),
             children: [
-              for (final order in RecorderLibrarySort.values)
-                DsListRow(
-                  title: Text(recorderLibrarySortLabel(t, order)),
-                  trailing: filter.sort == order ? const DsIcon(DsIcons.check, size: 16) : null,
-                  onPressed: () => controller.setSort(order),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s8),
+                child: DsSelect<RecorderLibrarySort>(
+                  value: filter.sort,
+                  onChanged: (order) {
+                    if (order != null) controller.setSort(order);
+                  },
+                  semanticLabel: t.recorder.sortLabel,
+                  options: [
+                    for (final order in RecorderLibrarySort.values)
+                      DsSelectOption(value: order, label: recorderLibrarySortLabel(t, order)),
+                  ],
                 ),
+              ),
             ],
           ),
           DsListSection(
+            style: section,
             children: [DsListRow(title: Text(t.recorder.filterClear), onPressed: controller.reset)],
           ),
         ],
