@@ -891,94 +891,89 @@ final class _TaskDetailsPanel extends ConsumerWidget {
       if (task.audioCodec.isNotEmpty) task.audioCodec.toUpperCase(),
     ].join(' · ');
     final saved = (task.filePath ?? '').trim();
-    // A hairline edge that reads on the panel's own surface: the theme's
-    // section ring is 8% ink, which the panel's white swallows, and its top
-    // line is clipped by the panel's scroll view unless the first section
-    // keeps a couple of pixels clear of the top.
-    final section = DsListSectionStyle(shadows: [DsShadow.ring(colors.border, hairline: true)]);
+    // The section's edge drawn inside its own bounds: the theme's outer
+    // hairline is a single device pixel at 8% ink, so on this white panel it
+    // either halves away between pixels or gets clipped at the scroll top.
+    // A one-point inner ring reads as a line and needs no room outside.
+    final section = DsListSectionStyle(shadows: [DsShadow.innerRing(colors.border)]);
     return DsPanel(
       title: Text(t.recorder.detailsTitle),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s16,
-          children: [
-            DsListSection(
-              style: section,
-              header: Text(t.recorder.detailsMetrics),
-              children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s16,
+        children: [
+          DsListSection(
+            style: section,
+            header: Text(t.recorder.detailsMetrics),
+            children: [
+              DsListRow(
+                title: Text(t.recorder.columnDuration),
+                detail: Text(liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—'),
+              ),
+              DsListRow(title: Text(t.recorder.columnBitrate), detail: Text(bitrate)),
+              DsListRow(title: Text(t.recorder.statProfile), detail: Text(spec)),
+              if (codec.isNotEmpty) DsListRow(title: Text(t.recorder.statCodec), detail: Text(codec)),
+              DsListRow(
+                title: Text(t.recorder.statSaved),
+                detail: Text(savingNote(task: task, size: size, empty: t.recorder.statSavedEmpty)),
+              ),
+              if (task.droppedFrames > 0)
                 DsListRow(
-                  title: Text(t.recorder.columnDuration),
-                  detail: Text(liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—'),
+                  title: Text(t.recorder.stateRecording),
+                  detail: Text(t.recorder.droppedFramesNote(count: task.droppedFrames)),
                 ),
-                DsListRow(title: Text(t.recorder.columnBitrate), detail: Text(bitrate)),
-                DsListRow(title: Text(t.recorder.statProfile), detail: Text(spec)),
-                if (codec.isNotEmpty) DsListRow(title: Text(t.recorder.statCodec), detail: Text(codec)),
-                DsListRow(
-                  title: Text(t.recorder.statSaved),
-                  detail: Text(savingNote(task: task, size: size, empty: t.recorder.statSavedEmpty)),
-                ),
-                if (task.droppedFrames > 0)
-                  DsListRow(
-                    title: Text(t.recorder.stateRecording),
-                    detail: Text(t.recorder.droppedFramesNote(count: task.droppedFrames)),
-                  ),
-              ],
-            ),
-            DsListSection(
-              style: section,
-              header: Text(t.recorder.detailsLocation),
-              children: [
-                DsListRow(
-                  title: Text(t.recorder.saveLocation),
-                  detail: Text(saved.isEmpty ? t.recorder.saveDirTitle : saved),
-                  trailing: saved.isEmpty
-                      ? null
-                      : DsButton.icon(
-                          variant: DsButtonVariant.ghost,
-                          size: DsSize.sm,
-                          onPressed: () => unawaited(
-                            openDownloadedPath(context, p.dirname(saved), failedTitle: t.recorder.openFolderFailed),
-                          ),
-                          icon: const DsIcon(DsIcons.folderOpen, size: 16),
-                          semanticLabel: t.recorder.openFolder,
+            ],
+          ),
+          DsListSection(
+            style: section,
+            header: Text(t.recorder.detailsLocation),
+            children: [
+              DsListRow(
+                title: Text(t.recorder.saveLocation),
+                detail: Text(saved.isEmpty ? t.recorder.saveDirTitle : saved),
+                trailing: saved.isEmpty
+                    ? null
+                    : DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(
+                          openDownloadedPath(context, p.dirname(saved), failedTitle: t.recorder.openFolderFailed),
                         ),
-                ),
-                if (task.endedAt != null || task.bytes > 0)
-                  DsListRow(
-                    title: Text(t.recorder.statLatest),
-                    detail: Text(
-                      t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt)),
-                    ),
-                  ),
-              ],
-            ),
-            DsListSection(
-              style: section,
-              header: Text(t.recorder.liveCheckGroup),
-              children: [
+                        icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                        semanticLabel: t.recorder.openFolder,
+                      ),
+              ),
+              if (task.endedAt != null || task.bytes > 0)
                 DsListRow(
-                  title: Text(t.recorder.roomCheckTitle),
-                  trailing: DsSwitch(
-                    value: task.enabled,
-                    onChanged: (value) =>
-                        unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
-                    semanticLabel: t.recorder.roomCheckTitle,
-                  ),
+                  title: Text(t.recorder.statLatest),
+                  detail: Text(t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt))),
                 ),
-                DsListRow(
-                  title: Text(t.recorder.liveCheckSecondsTitle),
-                  detail: Text(t.recorder.checkEvery(seconds: task.checkSeconds)),
+            ],
+          ),
+          DsListSection(
+            style: section,
+            header: Text(t.recorder.liveCheckGroup),
+            children: [
+              DsListRow(
+                title: Text(t.recorder.roomCheckTitle),
+                trailing: DsSwitch(
+                  value: task.enabled,
+                  onChanged: (value) =>
+                      unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
+                  semanticLabel: t.recorder.roomCheckTitle,
                 ),
-                DsListRow(
-                  title: Text(t.recorder.statProfile),
-                  detail: Text(task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              DsListRow(
+                title: Text(t.recorder.liveCheckSecondsTitle),
+                detail: Text(t.recorder.checkEvery(seconds: task.checkSeconds)),
+              ),
+              DsListRow(
+                title: Text(t.recorder.statProfile),
+                detail: Text(task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
