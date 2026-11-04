@@ -6243,6 +6243,39 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。'
 	String get emptyCheckDescription => '在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。';
+
+	/// zh-CN: '画面规格'
+	String get statProfile => '画面规格';
+
+	/// zh-CN: '已保存文件'
+	String get statSaved => '已保存文件';
+
+	/// zh-CN: '还没有'
+	String get statSavedEmpty => '还没有';
+
+	/// zh-CN: '检测到开播后自动开始'
+	String get statCheckOn => '检测到开播后自动开始';
+
+	/// zh-CN: '检测已关闭'
+	String get statCheckOff => '检测已关闭';
+
+	/// zh-CN: '本次任务'
+	String get statThisTask => '本次任务';
+
+	/// zh-CN: '上次录制'
+	String get statLastTask => '上次录制';
+
+	/// zh-CN: '实时码率'
+	String get statLiveBitrate => '实时码率';
+
+	/// zh-CN: '最近码率'
+	String get statLastBitrate => '最近码率';
+
+	/// zh-CN: '保存位置'
+	String get saveLocation => '保存位置';
+
+	/// zh-CN: '分区'
+	String get roomArea => '分区';
 }
 
 // Path: room
@@ -15383,6 +15416,17 @@ extension on Translations {
 			'recorder.checkEvery' => ({required Object seconds}) => '每 ${seconds} 秒',
 			'recorder.emptyCheckTitle' => '还没有直播间',
 			'recorder.emptyCheckDescription' => '在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。',
+			'recorder.statProfile' => '画面规格',
+			'recorder.statSaved' => '已保存文件',
+			'recorder.statSavedEmpty' => '还没有',
+			'recorder.statCheckOn' => '检测到开播后自动开始',
+			'recorder.statCheckOff' => '检测已关闭',
+			'recorder.statThisTask' => '本次任务',
+			'recorder.statLastTask' => '上次录制',
+			'recorder.statLiveBitrate' => '实时码率',
+			'recorder.statLastBitrate' => '最近码率',
+			'recorder.saveLocation' => '保存位置',
+			'recorder.roomArea' => '分区',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15779,6 +15823,8 @@ extension on Translations {
 			'settings.themeColorCustom' => '自定义颜色',
 			'settings.themeColorHex' => '十六进制颜色',
 			'settings.themeColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeColorHue' => '色相',
 			'settings.themeColorSaturation' => '饱和度与明度',
 			'settings.seedBlue' => '蓝',
@@ -15790,8 +15836,6 @@ extension on Translations {
 			'settings.corners' => '圆角',
 			'settings.cornersStandard' => '标准',
 			'settings.cornersSharp' => '锐利',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cornersSoft' => '柔和',
 			'settings.cornersPill' => '胶囊',
 			'settings.density' => '控件密度',
@@ -16293,6 +16337,8 @@ extension on Translations {
 			'settings.deinterlaceAuto' => '自动',
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
 			'settings.hwdecCodecsAll' => '全部编码格式',
@@ -16304,8 +16350,6 @@ extension on Translations {
 			'settings.forceDestroy' => '播放器强制销毁',
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
-			_ => null,
-		} ?? switch (path) {
 			'settings.mpvReset' => '恢复播放内核默认设置',
 			'settings.mpvResetDesc' => '恢复本页设置，首选清晰度不受影响。',
 			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR：关\n• 播放器强制销毁：开\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
@@ -16807,6 +16851,8 @@ extension on Translations {
 			'settings.storageFolderCustomLabel' => '自定义',
 			'settings.storageFolderPickFailed' => '无法选择下载目录',
 			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
 			'settings.chatShowAvatars' => '显示头像',
@@ -16818,8 +16864,6 @@ extension on Translations {
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
 			'settings.chatListSpacingCompact' => '紧凑',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
@@ -17321,6 +17365,8 @@ extension on Translations {
 			'vod.quality' => '清晰度',
 			'vod.speed' => '倍速',
 			'vod.fullscreen' => '全屏',
+			_ => null,
+		} ?? switch (path) {
 			'vod.exitFullscreen' => '退出全屏',
 			'vod.pip' => '小窗播放',
 			'vod.exitPip' => '退出小窗',
@@ -17332,8 +17378,6 @@ extension on Translations {
 			'vod.up' => 'UP主',
 			'vod.openingSpeed' => '默认倍速',
 			'vod.openingSpeedDesc' => '打开视频时的倍速；播放器菜单只改当前视频。',
-			_ => null,
-		} ?? switch (path) {
 			'vod.finishAction' => '播放结束动作',
 			'vod.finishActionDesc' => '一集播完之后做什么。',
 			'vod.finishPause' => '停在最后一帧',

@@ -304,5 +304,16 @@
   "roomCheckDesc": "开启后按设定的间隔检查这个直播间，开播时自动开始录制。",
   "checkEvery": "每 {seconds} 秒",
   "emptyCheckTitle": "还没有直播间",
-  "emptyCheckDescription": "在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。"
+  "emptyCheckDescription": "在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。",
+  "statProfile": "画面规格",
+  "statSaved": "已保存文件",
+  "statSavedEmpty": "还没有",
+  "statCheckOn": "检测到开播后自动开始",
+  "statCheckOff": "检测已关闭",
+  "statThisTask": "本次任务",
+  "statLastTask": "上次录制",
+  "statLiveBitrate": "实时码率",
+  "statLastBitrate": "最近码率",
+  "saveLocation": "保存位置",
+  "roomArea": "分区"
 }

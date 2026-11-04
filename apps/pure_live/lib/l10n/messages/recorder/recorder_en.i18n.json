@@ -304,5 +304,16 @@
   "roomCheckDesc": "Checks this room at its interval and starts recording when it goes live.",
   "checkEvery": "Every {seconds}s",
   "emptyCheckTitle": "No rooms yet",
-  "emptyCheckDescription": "Pick “Record when live” in a room’s menu, or add one under Subscriptions."
+  "emptyCheckDescription": "Pick “Record when live” in a room’s menu, or add one under Subscriptions.",
+  "statProfile": "Profile",
+  "statSaved": "Saved file",
+  "statSavedEmpty": "None yet",
+  "statCheckOn": "Starts when a stream begins",
+  "statCheckOff": "Check is off",
+  "statThisTask": "This session",
+  "statLastTask": "Last session",
+  "statLiveBitrate": "Live bitrate",
+  "statLastBitrate": "Last bitrate",
+  "saveLocation": "Saved to",
+  "roomArea": "Area"
 }

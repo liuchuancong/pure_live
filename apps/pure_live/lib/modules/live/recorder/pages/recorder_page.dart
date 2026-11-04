@@ -408,263 +408,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     );
   }
 
-  /// The subscription table: the room, its state, the figures that fit, the
-  /// live-check switch, and the row's verbs. Narrow windows drop the figures
-  /// first, then the state's length line, before the table gives way to cards.
-  List<DsTableColumn<RecordingTask>> _taskColumns(BuildContext context, Map<String, LiveRoom> rooms, double width) {
-    final t = context.t;
-    return [
-      DsTableColumn<RecordingTask>(
-        id: 'task',
-        label: t.recorder.columnTask,
-        value: (task) => task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId,
-        cell: (context, task) => _taskNameCell(context, task, rooms),
-        width: const DsTableColumnWidth.flex(4, 220),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'state',
-        label: t.recorder.columnStatus,
-        cell: _taskStateCell,
-        width: const DsTableColumnWidth.intrinsic(min: 104),
-      ),
-      if (width >= 900)
-        DsTableColumn<RecordingTask>(
-          id: 'bitrate',
-          label: t.recorder.columnBitrate,
-          value: (task) => (task.bytes * 8 / recordingElapsed(task).inSeconds.clamp(1, 1 << 31)).round(),
-          text: (task) {
-            final rate = formatRecordingBitrate(task.bytes, recordingElapsed(task));
-            return rate.isEmpty ? '—' : rate;
-          },
-          numeric: true,
-          width: const DsTableColumnWidth.intrinsic(min: 92),
-        ),
-      if (width >= 800)
-        DsTableColumn<RecordingTask>(
-          id: 'size',
-          label: t.recorder.columnSize,
-          value: (task) => task.bytes,
-          text: (task) => task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
-          numeric: true,
-          width: const DsTableColumnWidth.intrinsic(min: 88),
-        ),
-      if (width >= 800)
-        DsTableColumn<RecordingTask>(
-          id: 'duration',
-          label: t.recorder.columnDuration,
-          value: (task) => recordingElapsed(task).inMilliseconds,
-          text: (task) {
-            final elapsed = recordingElapsed(task);
-            return elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
-          },
-          numeric: true,
-          width: const DsTableColumnWidth.intrinsic(min: 84),
-        ),
-      DsTableColumn<RecordingTask>(
-        id: 'check',
-        label: t.recorder.roomCheckTitle,
-        cell: (context, task) => Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DsSwitch(
-            value: task.enabled,
-            onChanged: (value) =>
-                unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
-            semanticLabel: t.recorder.roomCheckTitle,
-          ),
-        ),
-        width: const DsTableColumnWidth.intrinsic(min: 84),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'actions',
-        label: t.recorder.columnActions,
-        alignment: DsTableCellAlignment.end,
-        cell: _taskActionsCell,
-        width: const DsTableColumnWidth.fixed(168),
-      ),
-    ];
-  }
-
-  /// The row's identity: cover, the streamer's avatar and name, and the
-  /// platform with the room id beneath.
-  Widget _taskNameCell(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
-    final liveAnchor = (room?.anchor?.name ?? '').trim();
-    final anchor = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
-    final title = task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId;
-    final liveAvatar = (room?.anchor?.avatarUrl ?? '').trim();
-    final avatarUrl = liveAvatar.isNotEmpty ? liveAvatar : task.anchorAvatarUrl.trim();
-    final liveCover = (room?.content.coverUrl ?? '').trim();
-    final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: DsImage(
-            image: cover.isEmpty ? null : cachedImage(cover),
-            width: 96,
-            height: 54,
-            semanticLabel: title,
-            fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
-          ),
-        ),
-        DsAvatar(
-          initials: avatarInitials(anchor.isEmpty ? title : anchor),
-          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-          size: DsSize.md,
-          semanticLabel: anchor.isEmpty ? title : anchor,
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 2,
-            children: [
-              Text(
-                anchor.isEmpty ? title : anchor,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.bodyStrong.copyWith(color: colors.text),
-              ),
-              if (anchor.isNotEmpty)
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              Text(
-                '${_platformName(task.platform)} · ${task.roomId}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// The state's column: the badge, with the take's length under it while one
-  /// is being written.
-  Widget _taskStateCell(BuildContext context, RecordingTask task) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    final fileDeleted = task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
-    final elapsed = recordingElapsed(task);
-    final recording = task.isRunning && !task.postProcessing;
-    final failed = task.enabled && task.state == RecordingTaskState.failed && !task.postProcessing;
-    final statusText = task.postProcessing
-        ? t.recorder.stateProcessing
-        : recording
-        ? t.recorder.stateRecording
-        : failed
-        ? t.recorder.stateFailed
-        : !task.enabled
-        ? t.recorder.statePaused
-        : fileDeleted
-        ? t.recorder.stateFileDeleted
-        : t.recorder.stateWaiting;
-    final tone = task.postProcessing
-        ? DsStatus.info
-        : recording || failed
-        ? DsStatus.danger
-        : !task.enabled || fileDeleted
-        ? DsStatus.neutral
-        : DsStatus.warning;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        DsBadge(label: Text(statusText), status: tone),
-        if (!task.postProcessing && elapsed > Duration.zero)
-          Text(
-            formatRecordingDuration(elapsed),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          ),
-      ],
-    );
-  }
-
-  /// The row's verbs: the room's settings, the phase's own action, and the
-  /// menu that holds the rest.
-  Widget _taskActionsCell(BuildContext context, RecordingTask task) {
-    final t = context.t;
-    final engine = ref.read(recorderEngineProvider);
-    final runningHere = engine.isRecording(task.id);
-    final Widget primary = task.postProcessing
-        ? DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.recorder.cancelProcessing,
-            onPressed: () => unawaited(_cancelProcessing(task.id)),
-            icon: const DsIcon(DsIcons.x, size: 14),
-          )
-        : runningHere
-        ? DsButton.icon(
-            variant: DsButtonVariant.dangerSoft,
-            size: DsSize.sm,
-            semanticLabel: t.recorder.stop,
-            onPressed: () => unawaited(_stop(task.id)),
-            icon: const DsIcon(DsIcons.squareStop, size: 14),
-          )
-        : task.enabled
-        ? DsButton.icon(
-            variant: DsButtonVariant.primary,
-            size: DsSize.sm,
-            semanticLabel: t.recorder.startNow,
-            onPressed: () => unawaited(_startNow(task)),
-            icon: const DsIcon(DsIcons.play, size: 14),
-          )
-        : DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.recorder.resumeWatch,
-            onPressed: () => unawaited(_setWatched(task, watched: true)),
-            icon: const DsIcon(DsIcons.play, size: 14),
-          );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s4,
-      children: [
-        DsButton.icon(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          semanticLabel: t.recorder.roomSettings,
-          onPressed: () => unawaited(_editSchedule(task)),
-          icon: const DsIcon(DsIcons.settings, size: 14),
-        ),
-        primary,
-        _TaskMenu(
-          task: task,
-          hasFile: (task.filePath ?? '').trim().isNotEmpty,
-          onOpen: playableFileAt(task.filePath) == null
-              ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
-              : () => unawaited(_openPreview(task)),
-          onStop: runningHere ? () => unawaited(_stop(task.id)) : null,
-          onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
-          onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
-          onSchedule: () => unawaited(_editSchedule(task)),
-          onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
-          onStartNow: task.postProcessing || runningHere ? null : () => unawaited(_startNow(task)),
-          onRetryJoin: !task.postProcessing && !runningHere && (task.filePath ?? '').isNotEmpty
-              ? () => unawaited(_retryJoin(task))
-              : null,
-          onPreview: _canPreview(task) ? () => unawaited(_openPreview(task)) : null,
-          onPlayExternal: _canPreview(task) ? () => unawaited(_playExternal(task)) : null,
-        ),
-      ],
-    );
-  }
-
-  /// The tasks page's own body: the four figures, the toolbar, the banner
-  /// and the task rows — the operation centre, not a file list.
   Widget _tasksBody({
     required double inset,
     required bool narrow,
@@ -735,33 +478,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                       padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
                       child: _LiveClock(
                         active: attention.any((task) => task.isRunning),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            // A phone keeps the cards; from a small window up
-                            // the same information is a table, and the columns
-                            // that fit are the columns it shows.
-                            if (constraints.maxWidth < 760) {
-                              return SingleChildScrollView(
-                                padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  spacing: DsSpace.s8,
-                                  children: [for (final task in attention) ..._taskCards(context, task, rooms)],
-                                ),
-                              );
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                              child: DsTable<RecordingTask>(
-                                semanticLabel: t.recorder.tabTasks,
-                                style: const DsTableStyle(rowHeight: 78),
-                                columns: _taskColumns(context, rooms, constraints.maxWidth),
-                                rows: attention,
-                                rowKey: (task) => task.id,
-                                emptyView: const SizedBox.shrink(),
-                              ),
-                            );
-                          },
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: DsSpace.s8,
+                            children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                          ),
                         ),
                       ),
                     ),
@@ -1123,13 +846,13 @@ final class _LiveClockState extends State<_LiveClock> {
   Widget build(BuildContext context) => widget.child;
 }
 
-/// One figure of a row: the word over the number, so three of them line up
-/// without a table header.
-final class _Figure extends StatelessWidget {
-  const _Figure({required this.label, required this.value});
+/// One figure of the card's strip: the value over the word that names it.
+final class _StatBlock extends StatelessWidget {
+  const _StatBlock({required this.label, required this.value, this.emphasis = false});
 
   final String label;
   final String value;
+  final bool emphasis;
 
   @override
   Widget build(BuildContext context) {
@@ -1141,21 +864,54 @@ final class _Figure extends StatelessWidget {
       spacing: 2,
       children: [
         Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography
+              .numeric(theme.typography.title)
+              .copyWith(color: emphasis ? colors.accent : colors.text, fontWeight: FontWeight.w600),
+        ),
+        Text(
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
         ),
-        Text(
-          value,
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography
-              .numeric(theme.typography.caption)
-              .copyWith(color: colors.text, fontWeight: FontWeight.w600, fontSize: 13),
-        ),
       ],
+    );
+  }
+}
+
+/// One small word on the card's header: the platform with its mark, or a
+/// category the room carries.
+final class _TagChip extends StatelessWidget {
+  const _TagChip({required this.text, this.icon});
+
+  final String text;
+  final Widget? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    return DecoratedBox(
+      decoration: DsBoxDecoration(color: colors.hover, borderRadius: BorderRadius.circular(6)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s4,
+          children: [
+            ?icon,
+            Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.textMuted, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1274,7 +1030,6 @@ final class _TaskCard extends ConsumerWidget {
     final anchor = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
     final liveAvatar = (room?.anchor?.avatarUrl ?? '').trim();
     final avatarUrl = liveAvatar.isNotEmpty ? liveAvatar : task.anchorAvatarUrl.trim();
-    final audience = _audienceOf(room);
     final liveCover = (room?.content.coverUrl ?? '').trim();
     final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
     // Media time is what the take captured; a session that has not reported
@@ -1292,8 +1047,7 @@ final class _TaskCard extends ConsumerWidget {
     final recording = task.isRunning && !processing;
     final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
     final paused = !task.enabled && !processing;
-    // A running take's length is the wall clock since it started, so the row
-    // ticks every second instead of waiting for the ten-second status write.
+    final area = (room?.area?.areaName ?? '').trim();
     final liveElapsed = task.isRunning ? DateTime.now().difference(task.startedAt) : elapsed;
     final figuresDuration = liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—';
     final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
@@ -1323,7 +1077,15 @@ final class _TaskCard extends ConsumerWidget {
         : paused || fileDeleted
         ? DsStatus.neutral
         : DsStatus.warning;
-    final subtext = recording ? segment : lastRun;
+    final statusNote = recording
+        ? segment
+        : (lastRun.isNotEmpty ? lastRun : (fileDeleted ? t.recorder.warningFileDeleted : ''));
+    final audience = _audienceOf(room);
+    final tags = [
+      if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
+      if (area.isNotEmpty) area,
+      if (audience.isNotEmpty) audience,
+    ];
     final Widget action = processing
         ? DsButton(
             variant: DsButtonVariant.secondary,
@@ -1334,11 +1096,11 @@ final class _TaskCard extends ConsumerWidget {
           )
         : recording
         ? DsButton(
-            variant: DsButtonVariant.dangerSoft,
+            variant: DsButtonVariant.secondary,
             size: DsSize.sm,
-            leading: const DsIcon(DsIcons.squareStop, size: 14),
-            onPressed: onStop,
-            child: Text(t.recorder.stop),
+            leading: const DsIcon(DsIcons.pause, size: 14),
+            onPressed: onToggleWatch,
+            child: Text(t.recorder.pauseWatch),
           )
         : failed
         ? DsButton(
@@ -1350,7 +1112,7 @@ final class _TaskCard extends ConsumerWidget {
           )
         : paused
         ? DsButton(
-            variant: DsButtonVariant.secondary,
+            variant: DsButtonVariant.primary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.play, size: 14),
             onPressed: onToggleWatch,
@@ -1363,219 +1125,236 @@ final class _TaskCard extends ConsumerWidget {
             onPressed: onStartNow,
             child: Text(t.recorder.startNow),
           );
-    final radius = BorderRadius.circular(theme.radii.card);
-    final badge = DsBadge(label: Text(statusText), status: statusTone);
-    Widget identity(double width) => Expanded(
-      flex: 5,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 2,
-        children: [
-          Row(
-            spacing: DsSpace.s6,
-            children: [
-              DsAvatar(
-                initials: avatarInitials(anchor.isEmpty ? title : anchor),
-                image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                size: DsSize.sm,
-                semanticLabel: anchor.isEmpty ? title : anchor,
-              ),
-              Expanded(
-                child: Text(
-                  anchor.isEmpty ? title : anchor,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                ),
-              ),
-            ],
-          ),
-          if (anchor.isNotEmpty)
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
-          Row(
-            spacing: DsSpace.s4,
-            children: [
-              ?platformIcon,
-              Flexible(
-                child: Text(
-                  [platformName, if (audience.isNotEmpty) audience].join(' · '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-              ),
-              if (audience.isNotEmpty) DsIcon(DsIcons.flame, size: 12, color: colors.textSubtle),
-            ],
-          ),
-          // The phase's own line — the take's segment, or when it last ran —
-          // sits with the platform, not pushed out to the row's end.
-          if (subtext.isNotEmpty)
-            Text(
-              subtext,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-            ),
-          if (task.state == RecordingTaskState.recording && onStop == null)
-            Text(
-              t.recorder.stateRecordingElsewhere,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.warning.text),
-            ),
-          if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
-            Text(
-              task.errorText.trim(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.danger.text),
-            ),
-          if (!processing && task.warning.isNotEmpty)
-            Text(
-              _warningLabel(t, task.warning),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.warning.text),
-            ),
-          if (processing)
-            Padding(
-              padding: const EdgeInsets.only(top: DsSpace.s4),
-              child: DsProgressBar(
-                value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
-                semanticLabel: t.recorder.stateProcessing,
-              ),
-            ),
-        ],
+    final saved = (task.filePath ?? '').trim();
+    return DsCard(
+      onPressed: onOpen,
+      semanticLabel: title,
+      style: DsCardStyle(
+        padding: const EdgeInsets.all(DsSpace.s16),
+        borderRadius: BorderRadius.circular(theme.radii.card),
       ),
-    );
-    Widget menu() => _TaskMenu(
-      task: task,
-      hasFile: (task.filePath ?? '').trim().isNotEmpty,
-      onOpen: onOpen,
-      onStop: onStop,
-      onToggleWatch: onToggleWatch,
-      onDelete: onDelete,
-      onSchedule: onSchedule,
-      onCancelProcessing: onCancelProcessing,
-      onStartNow: onStartNow,
-      onRetryJoin: onRetryJoin,
-      onPreview: onPreview,
-      onPlayExternal: onPlayExternal,
-    );
-    return ClipRRect(
-      borderRadius: radius,
-      child: Stack(
-        children: [
-          DsCard(
-            onPressed: onOpen,
-            semanticLabel: title,
-            style: const DsCardStyle(padding: EdgeInsets.zero),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final compact = width < 720;
-                final (coverWidth, coverHeight) = compact ? (112.0, 63.0) : (160.0, 90.0);
-                final coverTile = ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: DsImage(
-                    image: cover.isEmpty ? null : cachedImage(cover),
-                    width: coverWidth,
-                    height: coverHeight,
-                    semanticLabel: title,
-                    fallback: _CoverFallback(letter: platformLetter(task.platform)),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final (coverWidth, coverHeight) = width >= 560 ? (132.0, 74.0) : (96.0, 54.0);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s12,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s16,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: DsImage(
+                      image: cover.isEmpty ? null : cachedImage(cover),
+                      width: coverWidth,
+                      height: coverHeight,
+                      semanticLabel: title,
+                      fallback: _CoverFallback(letter: platformLetter(task.platform)),
+                    ),
                   ),
-                );
-                // A phone stacks the state under the identity: the row cannot
-                // carry cover, text, figures, badge and a verb side by side.
-                if (compact) {
-                  return Padding(
-                    padding: const EdgeInsets.all(DsSpace.s12),
+                  Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      spacing: DsSpace.s8,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s4,
                       children: [
-                        Row(spacing: DsSpace.s12, children: [coverTile, identity(width), menu()]),
+                        Wrap(
+                          spacing: DsSpace.s6,
+                          runSpacing: DsSpace.s4,
+                          children: [
+                            _TagChip(text: platformName, icon: platformIcon),
+                            for (final tag in tags) _TagChip(text: tag),
+                          ],
+                        ),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.heading.copyWith(color: colors.text),
+                        ),
                         Row(
                           spacing: DsSpace.s8,
                           children: [
-                            badge,
-                            const Spacer(),
-                            DsButton.icon(
-                              variant: DsButtonVariant.secondary,
+                            DsAvatar(
+                              initials: avatarInitials(anchor.isEmpty ? title : anchor),
+                              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
                               size: DsSize.sm,
-                              semanticLabel: t.recorder.roomSettings,
-                              onPressed: onSchedule,
-                              icon: const DsIcon(DsIcons.settings, size: 14),
+                              semanticLabel: anchor.isEmpty ? title : anchor,
                             ),
-                            action,
+                            Flexible(
+                              child: Text(
+                                anchor.isEmpty ? title : anchor,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              ),
+                            ),
+                            Text(
+                              '${t.recorder.roomArea} ${task.roomId}',
+                              style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
                           ],
                         ),
                       ],
                     ),
-                  );
-                }
-                final showFigures = width >= 820;
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s8, DsSpace.s8),
-                  child: Row(
-                    spacing: DsSpace.s20,
-                    children: [
-                      coverTile,
-                      identity(width),
-                      if (showFigures)
-                        Expanded(
-                          flex: 3,
-                          child: Row(
-                            spacing: DsSpace.s32,
-                            children: [
-                              Expanded(
-                                child: _Figure(label: t.recorder.columnBitrate, value: figuresBitrate),
-                              ),
-                              Expanded(
-                                child: _Figure(label: t.recorder.columnSize, value: figuresSize),
-                              ),
-                              Expanded(
-                                child: _Figure(label: t.recorder.columnDuration, value: figuresDuration),
-                              ),
-                            ],
-                          ),
-                        ),
-                      SizedBox(
-                        width: 132,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          spacing: DsSpace.s4,
-                          children: [badge],
-                        ),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: DsSpace.s4,
-                        children: [
-                          DsButton.icon(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            semanticLabel: t.recorder.roomSettings,
-                            onPressed: onSchedule,
-                            icon: const DsIcon(DsIcons.settings, size: 14),
-                          ),
-                          action,
-                          menu(),
-                        ],
-                      ),
-                    ],
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ],
+              ),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  DsBadge(label: Text(statusText), status: statusTone),
+                  if (statusNote.isNotEmpty)
+                    Flexible(
+                      child: Text(
+                        statusNote,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      ),
+                    ),
+                  const Spacer(),
+                  DsButton.icon(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    semanticLabel: t.recorder.roomSettings,
+                    onPressed: onSchedule,
+                    icon: const DsIcon(DsIcons.settings, size: 14),
+                  ),
+                  action,
+                  _TaskMenu(
+                    task: task,
+                    hasFile: saved.isNotEmpty,
+                    onOpen: onOpen,
+                    onStop: onStop,
+                    onToggleWatch: onToggleWatch,
+                    onDelete: onDelete,
+                    onSchedule: onSchedule,
+                    onCancelProcessing: onCancelProcessing,
+                    onStartNow: onStartNow,
+                    onRetryJoin: onRetryJoin,
+                    onPreview: onPreview,
+                    onPlayExternal: onPlayExternal,
+                  ),
+                ],
+              ),
+              ColoredBox(color: colors.border, child: const SizedBox(height: 1)),
+              Wrap(
+                spacing: DsSpace.s32,
+                runSpacing: DsSpace.s12,
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: _StatBlock(
+                      label: recording ? t.recorder.statThisTask : t.recorder.statLastTask,
+                      value: figuresDuration,
+                      emphasis: recording,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 130,
+                    child: _StatBlock(
+                      label: recording ? t.recorder.statLiveBitrate : t.recorder.statLastBitrate,
+                      value: figuresBitrate,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 130,
+                    child: _StatBlock(
+                      label: t.recorder.statProfile,
+                      value: task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 150,
+                    child: _StatBlock(
+                      label: t.recorder.statSaved,
+                      value: figuresSize == '—' ? t.recorder.statSavedEmpty : figuresSize,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 190,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 2,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s6,
+                          children: [
+                            Text(
+                              t.recorder.roomCheckTitle,
+                              style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+                            ),
+                            DsSwitch(
+                              value: task.enabled,
+                              onChanged: (value) => onToggleWatch(),
+                              semanticLabel: t.recorder.roomCheckTitle,
+                            ),
+                          ],
+                        ),
+                        Text(
+                          task.enabled ? t.recorder.statCheckOn : t.recorder.statCheckOff,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              ColoredBox(color: colors.border, child: const SizedBox(height: 1)),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  DsIcon(DsIcons.folderOpen, size: 14, color: colors.textSubtle),
+                  Flexible(
+                    child: Text(
+                      saved.isEmpty ? t.recorder.saveDirTitle : saved,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (task.state == RecordingTaskState.recording && onStop == null)
+                    Text(
+                      t.recorder.stateRecordingElsewhere,
+                      style: theme.typography.caption.copyWith(color: colors.warning.text),
+                    )
+                  else if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
+                    Flexible(
+                      child: Text(
+                        task.errorText.trim(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.danger.text),
+                      ),
+                    )
+                  else if (!processing && task.warning.isNotEmpty)
+                    Flexible(
+                      child: Text(
+                        _warningLabel(t, task.warning),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.warning.text),
+                      ),
+                    ),
+                ],
+              ),
+              if (processing) ...[
+                DsProgressBar(
+                  value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
+                  semanticLabel: t.recorder.stateProcessing,
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }

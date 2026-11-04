@@ -2206,6 +2206,17 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String checkEvery({required Object seconds}) => 'Every ${seconds}s';
 	@override String get emptyCheckTitle => 'No rooms yet';
 	@override String get emptyCheckDescription => 'Pick “Record when live” in a room’s menu, or add one under Subscriptions.';
+	@override String get statProfile => 'Profile';
+	@override String get statSaved => 'Saved file';
+	@override String get statSavedEmpty => 'None yet';
+	@override String get statCheckOn => 'Starts when a stream begins';
+	@override String get statCheckOff => 'Check is off';
+	@override String get statThisTask => 'This session';
+	@override String get statLastTask => 'Last session';
+	@override String get statLiveBitrate => 'Live bitrate';
+	@override String get statLastBitrate => 'Last bitrate';
+	@override String get saveLocation => 'Saved to';
+	@override String get roomArea => 'Area';
 }
 
 // Path: room
@@ -6760,6 +6771,17 @@ extension on TranslationsEn {
 			'recorder.checkEvery' => ({required Object seconds}) => 'Every ${seconds}s',
 			'recorder.emptyCheckTitle' => 'No rooms yet',
 			'recorder.emptyCheckDescription' => 'Pick “Record when live” in a room’s menu, or add one under Subscriptions.',
+			'recorder.statProfile' => 'Profile',
+			'recorder.statSaved' => 'Saved file',
+			'recorder.statSavedEmpty' => 'None yet',
+			'recorder.statCheckOn' => 'Starts when a stream begins',
+			'recorder.statCheckOff' => 'Check is off',
+			'recorder.statThisTask' => 'This session',
+			'recorder.statLastTask' => 'Last session',
+			'recorder.statLiveBitrate' => 'Live bitrate',
+			'recorder.statLastBitrate' => 'Last bitrate',
+			'recorder.saveLocation' => 'Saved to',
+			'recorder.roomArea' => 'Area',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7156,6 +7178,8 @@ extension on TranslationsEn {
 			'settings.themeColorCustom' => 'Custom colour',
 			'settings.themeColorHex' => 'Hex colour',
 			'settings.themeColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeColorHue' => 'Hue',
 			'settings.themeColorSaturation' => 'Saturation and brightness',
 			'settings.seedBlue' => 'Blue',
@@ -7167,8 +7191,6 @@ extension on TranslationsEn {
 			'settings.corners' => 'Corners',
 			'settings.cornersStandard' => 'Standard',
 			'settings.cornersSharp' => 'Sharp',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cornersSoft' => 'Soft',
 			'settings.cornersPill' => 'Pill',
 			'settings.density' => 'Control density',
@@ -7670,6 +7692,8 @@ extension on TranslationsEn {
 			'settings.deinterlaceAuto' => 'Auto',
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecs' => 'Hardware codecs',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
 			'settings.hwdecCodecsAll' => 'All codecs',
@@ -7681,8 +7705,6 @@ extension on TranslationsEn {
 			'settings.forceDestroy' => 'Force Stop Player',
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
 			'settings.mpvAdvanced' => 'mpv advanced',
-			_ => null,
-		} ?? switch (path) {
 			'settings.mpvReset' => 'Restore the player defaults',
 			'settings.mpvResetDesc' => 'Restores this page; the preferred quality stays.',
 			'settings.mpvResetConfirm' => 'These go back to their defaults:\n• Hardware decoding: on\n• Compatibility mode, RTX VSR: off\n• Force Stop Player: on\n• Custom drivers: off; the three drivers: default\nThe preferred quality in Video stays.',
@@ -8184,6 +8206,8 @@ extension on TranslationsEn {
 			'settings.storageFolderCustomLabel' => 'Custom',
 			'settings.storageFolderPickFailed' => 'Could not select a download folder',
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatShowNames' => 'Show names',
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
 			'settings.chatShowAvatars' => 'Show avatars',
@@ -8195,8 +8219,6 @@ extension on TranslationsEn {
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
 			'settings.chatListSpacingCompact' => 'Compact',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => 'Standard',
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
@@ -8698,6 +8720,8 @@ extension on TranslationsEn {
 			'vod.quality' => 'Quality',
 			'vod.speed' => 'Speed',
 			'vod.fullscreen' => 'Fullscreen',
+			_ => null,
+		} ?? switch (path) {
 			'vod.exitFullscreen' => 'Exit fullscreen',
 			'vod.pip' => 'Picture in picture',
 			'vod.exitPip' => 'Exit picture in picture',
@@ -8709,8 +8733,6 @@ extension on TranslationsEn {
 			'vod.up' => 'Uploader',
 			'vod.openingSpeed' => 'Opening speed',
 			'vod.openingSpeedDesc' => 'Speed a video opens with; the in-player menu only changes this one.',
-			_ => null,
-		} ?? switch (path) {
 			'vod.finishAction' => 'When a part ends',
 			'vod.finishActionDesc' => 'What happens after the last frame of a part.',
 			'vod.finishPause' => 'Stay on the last frame',
