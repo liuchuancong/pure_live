@@ -1454,6 +1454,16 @@ List<Widget> roomMenuItems(
             .firstOrNull;
   final waiting = existing?.state == RecordingTaskState.waiting;
   final recording = existing?.state == RecordingTaskState.recording;
+  // The follow verb's state, read the way the header's pill reads it: the menu
+  // carries the same single switch, so the two can never disagree about whether
+  // this room is followed.
+  final followed =
+      detail != null &&
+      ref.watch(
+        followsRoomProvider.select(
+          (follows) => follows.any((candidate) => candidate.ref.identityKey == detail.ref.identityKey),
+        ),
+      );
   final pipOn = ref.watch(roomPresentationProvider) == PresentationMode.pip;
   final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
   final external =
@@ -1477,6 +1487,12 @@ List<Widget> roomMenuItems(
           leading: const DsIcon(DsIcons.arrowLeftRight),
           label: Text(t.room.switchRoom),
           onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
+        ),
+      if (detail != null)
+        DsMenuItem(
+          leading: DsIcon(followed ? DsIcons.heart : DsIcons.heartCrack),
+          label: Text(followed ? t.room.unfollow : t.room.follow),
+          onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
         ),
     ],
     [
