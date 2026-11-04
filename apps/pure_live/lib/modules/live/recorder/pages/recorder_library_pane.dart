@@ -19,7 +19,8 @@ import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
     show formatRecordingBytes, formatRecordingDuration, formatRecordingMoment;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, kAllPlatforms;
+import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow, avatarInitials, cachedImage, kAllPlatforms;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -296,28 +297,18 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     widget.onPlay(filter.sort.sorted(narrowLibraryTakes(_all, filter)), take);
   }
 
-  /// The row menu: play, the room, the folder, the path, the delete.
+  /// The row menu: the room it came from, its path and the delete. Playing and
+  /// the folder are the card's own verbs, so the menu does not repeat them.
   List<Widget> _takeMenu(RecordingTake take) {
     final t = context.t;
     final task = take.task;
     return [
-      if (take.playable)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.play),
-          label: Text(t.recorder.playRecording),
-          onPressed: () => _play(take),
-        ),
       if (task != null)
         DsMenuItem(
           leading: const DsIcon(DsIcons.externalLink),
           label: Text(widget.openRoomLabel ?? t.recorder.openRoom),
           onPressed: () => widget.onOpenRoom(take),
         ),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.folderOpen),
-        label: Text(t.recorder.openFolder),
-        onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
-      ),
       if (take.filePath case final file?)
         DsMenuItem(
           leading: const DsIcon(DsIcons.copy),
@@ -700,9 +691,10 @@ final class _DayHeader extends StatelessWidget {
   }
 }
 
-/// One take as the file manager draws it: the cover tile with its duration,
-/// the platform · title line, the facts line, the state's badge, and the
-/// play / folder / menu actions.
+/// One take as the subscription cards draw a room: the cover with its length,
+/// the avatar and the room's name over the take's own line, the facts as small
+/// chips, the state's badge with the selection at its end, and the verbs at the
+/// header's right.
 final class _TakeRow extends StatelessWidget {
   const _TakeRow({
     required this.take,
@@ -726,101 +718,155 @@ final class _TakeRow extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     final key = take.filePath ?? take.folder;
-    final name = take.roomTitle.trim().isNotEmpty ? take.roomTitle.trim() : take.name;
+    final name = take.roomTitle;
     final ok = take.playable;
+    final task = take.task;
+    final duration = take.duration;
+    final anchor = (task?.anchorName ?? '').trim();
+    final avatarUrl = (task?.anchorAvatarUrl ?? '').trim();
+    final caption = [
+      platformName(take.platformId),
+      formatRecordingMoment(take.takenAt),
+    ].where((part) => part.isNotEmpty).join(' · ');
+    final hang = recorderPunctuationHang(name, theme.typography.heading.fontSize ?? 14);
+    // The store keeps one row per room, so its media facts belong to the last
+    // take only; an older file under the same row must not wear them.
+    final ownsTask = task != null && (take.filePath == null || taskOwnsFile(task, take.filePath!));
+    // The length sits on the cover; everything else the file can say about
+    // itself goes in the chip row.
+    final chips = [
+      if (take.bytes > 0) formatRecordingBytes(take.bytes),
+      if (duration != null) formatRecordingBitrate(take.bytes, duration),
+      if (take.filePath case final file?) p.extension(file).replaceFirst('.', '').toUpperCase(),
+      if (ownsTask && task.videoWidth > 0 && task.videoHeight > 0) '${task.videoWidth}×${task.videoHeight}',
+    ].where((part) => part.isNotEmpty).toList();
+    final avatarLabel = anchor.isNotEmpty ? anchor : _initialsOfTitle(name);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // The checkbox, the badge, the verbs and the menu are the fixed part,
-          // so the row gives way in the order a viewer reads it: the words on
-          // the buttons first (the glyphs say the same thing), then the state
-          // badge — which stays only when it is the bad news — then the cover,
-          // so the name keeps a readable line at the window's floor.
           final width = constraints.maxWidth;
-          final roomy = width >= 620;
-          final (coverWidth, coverHeight) = width >= 520
-              ? (96.0, 54.0)
-              : width >= 400
-              ? (72.0, 40.0)
-              : (0.0, 0.0);
-          return DsCard(
-            onPressed: onPlay,
-            style: DsCardStyle(
-              padding: const EdgeInsets.all(DsSpace.s8),
-              borderRadius: BorderRadius.circular(theme.radii.card),
-            ),
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
-                if (coverWidth > 0) _TakeCover(take: take, width: coverWidth, height: coverHeight),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 2,
-                    children: [
-                      Text(
-                        '${platformName(take.platformId)} · $name',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                      ),
-                      Text(
-                        [
-                          formatRecordingMoment(take.takenAt),
-                          if (take.duration case final length?) formatRecordingDuration(length),
-                          if (take.bytes > 0) formatRecordingBytes(take.bytes),
-                          if (take.duration case final length?) formatRecordingBitrate(take.bytes, length),
-                        ].where((part) => part.isNotEmpty).join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ],
-                  ),
+          final (coverWidth, coverHeight) = width >= 560 ? (132.0, 74.0) : (96.0, 54.0);
+          Widget cell(Widget child) => SizedBox(width: 112, child: child);
+          final verbs = Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s8,
+            children: [
+              cell(
+                DsButton(
+                  variant: DsButtonVariant.primary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.play, size: 14),
+                  onPressed: ok ? onPlay : null,
+                  child: Text(t.recorder.playRecording),
                 ),
-                if (roomy || !ok)
-                  DsBadge(
-                    label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
-                    status: ok ? DsStatus.success : DsStatus.neutral,
-                  ),
-                if (roomy)
-                  DsButton(
-                    variant: DsButtonVariant.primary,
-                    size: DsSize.sm,
-                    leading: const DsIcon(DsIcons.play, size: 14),
-                    onPressed: ok ? onPlay : null,
-                    child: Text(t.recorder.playRecording),
-                  )
-                else
-                  DsButton.icon(
-                    variant: DsButtonVariant.primary,
-                    size: DsSize.sm,
-                    onPressed: ok ? onPlay : null,
-                    icon: const DsIcon(DsIcons.play, size: 16),
-                    semanticLabel: t.recorder.playRecording,
-                  ),
-                if (roomy)
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
-                    icon: const DsIcon(DsIcons.folderOpen, size: 16),
-                    semanticLabel: t.recorder.openFolder,
-                  ),
+              ),
+              cell(
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.folderOpen, size: 14),
+                  onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
+                  child: Text(t.recorder.openFolder),
+                ),
+              ),
+              cell(
                 DsMenuAnchor(
                   align: DsAlign.end,
                   semanticLabel: t.recorder.menuMore,
                   items: menu,
-                  builder: (context, controller, _) => DsButton.icon(
-                    variant: DsButtonVariant.ghost,
+                  builder: (context, controller, _) => DsButton(
+                    variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
-                    onPressed: controller.toggle,
-                    icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
                     semanticLabel: t.recorder.menuMore,
+                    leading: const DsIcon(DsIcons.chevronDown, size: 14),
+                    onPressed: controller.toggle,
+                    child: Text(t.common.more),
                   ),
                 ),
+              ),
+            ],
+          );
+          return DsCard(
+            onPressed: onPlay,
+            style: DsCardStyle(
+              padding: const EdgeInsets.all(DsSpace.s16),
+              borderRadius: BorderRadius.circular(theme.radii.card),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s12,
+              children: [
+                Row(
+                  spacing: DsSpace.s16,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: _TakeCover(take: take, width: coverWidth, height: coverHeight),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s4,
+                        children: [
+                          Row(
+                            spacing: DsSpace.s8,
+                            children: [
+                              DsAvatar(
+                                initials: avatarInitials(avatarLabel),
+                                image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                                size: DsSize.sm,
+                                semanticLabel: avatarLabel,
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 1,
+                                  children: [
+                                    Text(
+                                      name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.typography.heading.copyWith(color: colors.text),
+                                    ),
+                                    if (caption.isNotEmpty)
+                                      Padding(
+                                        padding: EdgeInsetsDirectional.only(start: hang),
+                                        child: Text(
+                                          caption,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (chips.isNotEmpty)
+                            Wrap(
+                              spacing: DsSpace.s6,
+                              runSpacing: DsSpace.s4,
+                              children: [for (final chip in chips) RecorderTagChip(text: chip)],
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (width >= 620) ...[const SizedBox(width: DsSpace.s16), verbs],
+                  ],
+                ),
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
+                    DsBadge(
+                      label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
+                      status: ok ? DsStatus.success : DsStatus.neutral,
+                    ),
+                  ],
+                ),
+                if (width < 620) Align(alignment: AlignmentDirectional.centerEnd, child: verbs),
               ],
             ),
           );
@@ -829,6 +875,13 @@ final class _TakeRow extends StatelessWidget {
     );
   }
 }
+
+/// The first letter a title can give an avatar.
+///
+/// A room title may open on a bracket or a mark (「【重播】…」), which
+/// [avatarInitials] would draw as the disc's letter; the first letter or digit
+/// is the one the avatar should show.
+String _initialsOfTitle(String title) => title.replaceFirst(RegExp(r'^[^\p{L}\p{N}]+', unicode: true), '');
 
 /// The take's own frame, cut from the file by the recording backend's FFmpeg.
 ///

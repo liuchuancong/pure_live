@@ -26,6 +26,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
     show NoRecordableStream, resolveRecordableStream;
+import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
 import 'package:pure_live/modules/live/recorder/pages/recorder_library_pane.dart';
 import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
 import 'package:pure_live/shared/shared.dart';
@@ -988,40 +989,6 @@ String savingNote({required RecordingTask task, required String size, required S
   return container.isEmpty ? size : '$size · $container';
 }
 
-/// One small word on the card's header: the platform with its mark, or a
-/// category the room carries.
-final class _TagChip extends StatelessWidget {
-  const _TagChip({required this.text, this.icon});
-
-  final String text;
-  final Widget? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return DecoratedBox(
-      decoration: DsBoxDecoration(color: colors.hover, borderRadius: BorderRadius.circular(6)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s4,
-          children: [
-            ?icon,
-            Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.textMuted, fontSize: 11),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// The length a row can speak for: media time once the engine reports it,
 /// and the wall clock since the start while the take is still writing — a
 /// running session's size and rate have to read before the first report.
@@ -1158,7 +1125,7 @@ final class _TaskCard extends ConsumerWidget {
     // under it starts at the box's edge, so it takes the same blank to read
     // as one left edge with the title.
     final category = [area, anchor].where((part) => part.isNotEmpty).join(' · ');
-    final categoryHang = _leadingPunctuationHang(title, theme.typography.heading.fontSize ?? 14);
+    final categoryHang = recorderPunctuationHang(title, theme.typography.heading.fontSize ?? 14);
     final liveElapsed = task.isRunning ? DateTime.now().difference(task.startedAt) : elapsed;
     final segmentSeconds = ref.watch(recordingSettingsProvider).segmentSeconds;
     final segmentMinutes = segmentSeconds <= 0 ? 0 : (segmentSeconds / 60).ceil();
@@ -1361,8 +1328,8 @@ final class _TaskCard extends ConsumerWidget {
                           spacing: DsSpace.s6,
                           runSpacing: DsSpace.s4,
                           children: [
-                            _TagChip(text: platformName, icon: platformIcon),
-                            for (final tag in tags) _TagChip(text: tag),
+                            RecorderTagChip(text: platformName, icon: platformIcon),
+                            for (final tag in tags) RecorderTagChip(text: tag),
                           ],
                         ),
                       ],
@@ -1619,24 +1586,6 @@ String _audienceOf(LiveRoom? room) {
     _ => audience.popularity,
   };
   return AudienceFormat.format(figure);
-}
-
-/// The blank an opening CJK punctuation leaves before its ink.
-///
-/// 【 (and its relatives) is drawn about 0.56 em into its full-width cell —
-/// the Windows CJK families measure between 0.43 and 0.64 em — so a line that
-/// starts with one begins further right than a line that starts with a han
-/// character, even when both boxes share a left edge. A caption printed under
-/// such a title takes the same blank so the two read as one left edge.
-double _leadingPunctuationHang(String text, double fontSize) {
-  const openers = {
-    0x2018, 0x201C, // ‘ “
-    0x3008, 0x300A, 0x300C, 0x300E, // 〈 《 「 『
-    0x3010, 0x3014, 0x3016, 0x3018, 0x301A, // 【 〔 〖 〘 〚
-    0xFF08, 0xFF3B, 0xFF5B, // （ ［ ｛
-  };
-  if (text.isEmpty || !openers.contains(text.runes.first)) return 0;
-  return fontSize * 0.56;
 }
 
 /// Renders a bytes figure the way a file manager would: the largest unit

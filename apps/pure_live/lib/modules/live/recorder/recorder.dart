@@ -18,5 +18,6 @@ export 'engine/recorder_engine.dart';
 export 'engine/recording_chat_writer.dart';
 export 'engine/recording_monitor.dart';
 export 'engine/stream_resolver.dart';
+export 'pages/recorder_card_parts.dart';
 export 'pages/recorder_library_pane.dart';
 export 'pages/recorder_page.dart';
