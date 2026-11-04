@@ -31,7 +31,7 @@ import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/danmaku/danmaku.dart' show danmakuSaveFormatsProvider;
 
 /// How often a running session's byte count is written to its task.
-const Duration _kProgressWrite = Duration(seconds: 10);
+const Duration _kProgressWrite = Duration(seconds: 1);
 
 /// How often recorded chat reaches its files.
 const Duration _kChatFlush = Duration(seconds: 2);
@@ -125,7 +125,8 @@ final class _LiveRecording {
   int _persistedBytes = 0;
   int _persistedDurationMs = 0;
 
-  /// Progress ticks between free-space probes; six ticks is one minute.
+  /// Progress ticks between free-space probes; sixty one-second ticks are a
+  /// minute.
   int diskTicks = 0;
   bool diskChecking = false;
   bool _settling = false;
@@ -818,13 +819,21 @@ final class RecorderEngine {
     // "nothing recorded yet". The folder and the wall clock answer instead,
     // so a running row shows its size and rate from the first tick.
     var bytes = state.bytesWritten;
+    // While the backend has not answered a size there is nothing to report but
+    // the folder itself; a take holds a handful of segments, so a scan a
+    // second costs less than a row that shows nothing for ten.
     if (bytes <= 0) {
       final directory = _takeDirectoryOf(session.task.filePath);
       if (directory != null && directory.existsSync()) bytes = await _directoryBytes(directory);
     }
     var durationMs = state.duration.inMilliseconds;
     if (durationMs <= 0) durationMs = DateTime.now().difference(session.videoStartedAt).inMilliseconds;
-    if (bytes != session._persistedBytes || durationMs != session._persistedDurationMs) {
+    // The UI needs the size every second; the store does not need a row write
+    // for every tick. A changed size is written at once, a length that only
+    // moved with the clock every five seconds.
+    final bytesMoved = bytes != session._persistedBytes;
+    final durationMoved = (durationMs - session._persistedDurationMs).abs() >= 5000;
+    if (bytesMoved || durationMoved) {
       session
         .._persistedBytes = bytes
         .._persistedDurationMs = durationMs;
@@ -836,7 +845,7 @@ final class RecorderEngine {
     // a minute is often enough to stop before the disk fills, and cheap enough
     // to run beside the progress write.
     final watermark = _ref.read(recordingSettingsProvider).diskWatermarkMb;
-    if (watermark > 0 && !session.diskChecking && ++session.diskTicks % 6 == 0) {
+    if (watermark > 0 && !session.diskChecking && ++session.diskTicks % 60 == 0) {
       session.diskChecking = true;
       unawaited(_checkFreeSpace(session, watermark));
     }
