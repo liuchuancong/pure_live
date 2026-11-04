@@ -27,6 +27,47 @@ final class LxScriptSource {
   bool get canResolve => actions.contains('musicUrl');
 }
 
+/// The actions the lx-music protocol routes for each source. The desktop host
+/// keeps `musicUrl` for the online platforms and adds `lyric`/`pic` for the
+/// local one; a script advertising anything else is filtered at init, never
+/// asked (`userApi/renderer/preload.js:37`).
+const Map<String, List<String>> _lxProtocolActions = {
+  'kw': ['musicUrl'],
+  'kg': ['musicUrl'],
+  'tx': ['musicUrl'],
+  'wy': ['musicUrl'],
+  'mg': ['musicUrl'],
+  'local': ['musicUrl', 'lyric', 'pic'],
+};
+
+/// The tiers the protocol names, the same list that host filters against; the
+/// local source plays files and so has none.
+const List<String> _lxProtocolQualitys = ['128k', '320k', 'flac', 'flac24bit'];
+
+/// What a script may actually be asked for under its own hand: the declared
+/// actions and tiers kept down to the protocol's, or nothing at all when the
+/// script names a source the protocol does not route.
+///
+/// Advertising is not ability — a script that claims a fifth tier, or a
+/// source of its own invention, would otherwise be trusted with a request no
+/// platform behind it can answer.
+LxScriptSource? lxScriptSourceCaps(String id, List<String> actions, List<String> qualitys) {
+  final allowed = _lxProtocolActions[id];
+  if (allowed == null) return null;
+  final tiers = id == 'local' ? const <String>[] : _lxProtocolQualitys;
+  return LxScriptSource(
+    id: id,
+    actions: [
+      for (final action in actions)
+        if (allowed.contains(action)) action,
+    ],
+    qualitys: [
+      for (final quality in qualitys)
+        if (tiers.contains(quality)) quality,
+    ],
+  );
+}
+
 /// One loaded lx-music script and its declared sources.
 final class LxScriptInstance {
   LxScriptInstance({required this.source, required this.engine});
@@ -284,11 +325,12 @@ final class LxScriptRuntime {
         final id = '${entry.key}';
         final info = entry.value;
         if (info is! Map) continue;
-        declared[id] = LxScriptSource(
-          id: id,
-          actions: [for (final action in _list(info['actions'])) '$action'],
-          qualitys: [for (final quality in _list(info['qualitys'])) '$quality'],
+        final caps = lxScriptSourceCaps(
+          id,
+          [for (final action in _list(info['actions'])) '$action'],
+          [for (final quality in _list(info['qualitys'])) '$quality'],
         );
+        if (caps != null) declared[id] = caps;
       }
       instance
         ..sources = declared
