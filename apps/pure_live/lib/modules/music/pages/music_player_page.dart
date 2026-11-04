@@ -120,7 +120,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                           spacing: DsSpace.s8,
                           children: [
                             DsButton.icon(
-                              variant: DsButtonVariant.secondary,
+                              variant: DsButtonVariant.ghost,
                               size: DsSize.sm,
                               semanticLabel: t.common.close,
                               onPressed: () => context.pop(),
@@ -176,16 +176,21 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                                   Expanded(child: MusicStagePanels()),
                                 ],
                               );
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s8, DsSpace.s12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            spacing: DsSpace.s12,
-                            children: [
-                              header,
-                              Expanded(child: body),
-                            ],
-                          ),
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s8, DsSpace.s12),
+                              child: header,
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, 0),
+                                child: body,
+                              ),
+                            ),
+                            const _TransportBar(),
+                          ],
                         );
                       },
                     ),
@@ -228,8 +233,6 @@ final class _Stage extends ConsumerStatefulWidget {
 
 final class _StageState extends ConsumerState<_Stage> {
   /// Where the seek slider is while the viewer drags it, in seconds.
-  double? _dragSeconds;
-
   /// This run's stage, or the stored default while none was chosen.
   MusicPlayerMode _stageMode() => ref.watch(musicStageOverrideProvider) ?? ref.watch(musicPlayerModeProvider);
 
@@ -239,15 +242,12 @@ final class _StageState extends ConsumerState<_Stage> {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final state = ref.watch(musicPlayerProvider);
-    final controller = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     final track = state.track!;
-    final duration = state.duration;
     // The settings hold the default; the switch under the stage sets this
     // run's own choice without rewriting that default.
     final playerMode = _stageMode();
-    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : state.position;
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = (constraints.maxHeight >= 560 ? 320 : 216).toDouble();
@@ -407,95 +407,6 @@ final class _StageState extends ConsumerState<_Stage> {
               // frames arrive, so a backend without taps leaves the stage
               // exactly as it was.
               const MusicSpectrum(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s4,
-                children: [
-                  Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      SizedBox(
-                        width: 48,
-                        child: Text(
-                          musicDurationText(position),
-                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                        ),
-                      ),
-                      Expanded(
-                        child: DsSlider(
-                          value: duration.inMilliseconds <= 0
-                              ? 0
-                              : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
-                          max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
-                          semanticLabel: t.music.progress,
-                          onChanged: duration.inMilliseconds <= 0
-                              ? null
-                              : (value) => setState(() => _dragSeconds = value / 1000),
-                          onChangeEnd: duration.inMilliseconds <= 0
-                              ? null
-                              : (value) {
-                                  setState(() => _dragSeconds = null);
-                                  unawaited(controller.seek(Duration(milliseconds: value.round())));
-                                },
-                        ),
-                      ),
-                      SizedBox(
-                        width: 48,
-                        child: Text(
-                          musicDurationText(duration),
-                          textAlign: TextAlign.end,
-                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    spacing: DsSpace.s12,
-                    children: [
-                      DsButton.icon(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.lg,
-                        semanticLabel: musicPlayModeLabel(t, state.mode),
-                        onPressed: controller.cycleMode,
-                        icon: DsIcon(musicPlayModeIcon(state.mode)),
-                      ),
-                      DsButton.icon(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.lg,
-                        semanticLabel: t.music.previous,
-                        onPressed: () => unawaited(controller.previous()),
-                        icon: const DsIcon(DsIcons.skipBack),
-                      ),
-                      DsButton.icon(
-                        variant: DsButtonVariant.primary,
-                        size: DsSize.lg,
-                        semanticLabel: state.playing ? t.music.pause : t.music.play,
-                        onPressed: () => unawaited(controller.toggle()),
-                        icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
-                      ),
-                      DsButton.icon(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.lg,
-                        semanticLabel: t.music.next,
-                        onPressed: () => unawaited(controller.next()),
-                        icon: const DsIcon(DsIcons.skipForward),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: _Volume(
-                    volume: state.volume,
-                    muted: state.muted,
-                    onVolume: (value) => unawaited(controller.setVolume(value)),
-                    onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -1285,6 +1196,138 @@ final class _Volume extends StatelessWidget {
           child: DsSlider(value: muted ? 0 : volume, onChanged: onVolume, semanticLabel: t.music.volume),
         ),
       ],
+    );
+  }
+}
+
+/// The transport dock under the detail: the seek, the clock and the engine's
+/// own verbs, fixed at the bottom while the stage scrolls — the reference's
+/// play bar. The volume sits at the leading end where the window has room for
+/// it; a phone leaves it to the hardware keys and keeps the transport centred.
+final class _TransportBar extends ConsumerStatefulWidget {
+  const _TransportBar();
+
+  @override
+  ConsumerState<_TransportBar> createState() => _TransportBarState();
+}
+
+final class _TransportBarState extends ConsumerState<_TransportBar> {
+  double? _dragSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final state = ref.watch(musicPlayerProvider);
+    final controller = ref.read(musicPlayerProvider.notifier);
+    final duration = state.duration;
+    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : state.position;
+    final total = duration.inMilliseconds;
+    Widget clock(Duration value, {bool end = false}) => SizedBox(
+      width: 48,
+      child: Text(
+        musicDurationText(value),
+        textAlign: end ? TextAlign.end : TextAlign.start,
+        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
+      ),
+    );
+    final seek = Row(
+      spacing: DsSpace.s8,
+      children: [
+        clock(position),
+        Expanded(
+          child: DsSlider(
+            value: total <= 0 ? 0 : position.inMilliseconds.clamp(0, total).toDouble(),
+            max: total <= 0 ? 1 : total.toDouble(),
+            semanticLabel: t.music.progress,
+            onChanged: total <= 0 ? null : (value) => setState(() => _dragSeconds = value / 1000),
+            onChangeEnd: total <= 0
+                ? null
+                : (value) {
+                    setState(() => _dragSeconds = null);
+                    unawaited(controller.seek(Duration(milliseconds: value.round())));
+                  },
+          ),
+        ),
+        clock(duration, end: true),
+      ],
+    );
+    final transport = Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s12,
+      children: [
+        DsButton.icon(
+          variant: DsButtonVariant.ghost,
+          size: DsSize.lg,
+          semanticLabel: musicPlayModeLabel(t, state.mode),
+          onPressed: controller.cycleMode,
+          icon: DsIcon(musicPlayModeIcon(state.mode)),
+        ),
+        DsButton.icon(
+          variant: DsButtonVariant.ghost,
+          size: DsSize.lg,
+          semanticLabel: t.music.previous,
+          onPressed: () => unawaited(controller.previous()),
+          icon: const DsIcon(DsIcons.skipBack),
+        ),
+        DsButton.icon(
+          variant: DsButtonVariant.primary,
+          size: DsSize.lg,
+          semanticLabel: state.playing ? t.music.pause : t.music.play,
+          onPressed: () => unawaited(controller.toggle()),
+          icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
+        ),
+        DsButton.icon(
+          variant: DsButtonVariant.ghost,
+          size: DsSize.lg,
+          semanticLabel: t.music.next,
+          onPressed: () => unawaited(controller.next()),
+          icon: const DsIcon(DsIcons.skipForward),
+        ),
+      ],
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s4,
+          children: [
+            seek,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 600) return Center(child: transport);
+                return Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 180),
+                          child: _Volume(
+                            volume: state.volume,
+                            muted: state.muted,
+                            onVolume: (value) => unawaited(controller.setVolume(value)),
+                            onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    transport,
+                    const Expanded(child: SizedBox()),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
