@@ -1358,7 +1358,7 @@ final class _TaskCard extends ConsumerWidget {
                     if (note != null) Flexible(child: note),
                   ],
                 ),
-                Center(child: watch()),
+                Align(alignment: AlignmentDirectional.centerEnd, child: watch()),
                 Align(alignment: AlignmentDirectional.centerEnd, child: controls),
               ] else
                 Row(
@@ -1366,7 +1366,8 @@ final class _TaskCard extends ConsumerWidget {
                   children: [
                     badge,
                     if (note != null) Flexible(child: note),
-                    Expanded(child: Center(child: watch())),
+                    const Spacer(),
+                    watch(),
                   ],
                 ),
               if (task.state == RecordingTaskState.recording && onStop == null)
