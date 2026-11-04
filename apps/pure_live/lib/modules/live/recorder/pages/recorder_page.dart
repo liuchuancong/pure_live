@@ -244,7 +244,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // rows in place, the search field above.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
-    final wide = MediaQuery.sizeOf(context).width >= 720;
     final attention = [
       for (final task in listed)
         if (_filter.matches(task)) task,
@@ -360,7 +359,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             child: _tasksBody(
               inset: inset,
               narrow: narrow,
-              wide: wide,
               statusFilter: statusFilter,
               attention: attention,
               total: listed.length,
@@ -406,7 +404,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   Widget _tasksBody({
     required double inset,
     required bool narrow,
-    required bool wide,
     required Widget statusFilter,
     required List<RecordingTask> attention,
     required int total,
@@ -501,23 +498,14 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                     )
                   : Padding(
                       padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-                      child: wide
-                          ? DsTable<RecordingTask>(
-                              semanticLabel: t.recorder.runningTitle,
-                              style: const DsTableStyle(rowHeight: 68),
-                              columns: _taskColumns(context, rooms),
-                              rows: attention,
-                              rowKey: (task) => task.id,
-                              emptyView: const SizedBox.shrink(),
-                            )
-                          : SingleChildScrollView(
-                              padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: DsSpace.s8,
-                                children: [for (final task in attention) ..._taskCards(context, task, rooms)],
-                              ),
-                            ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: DsSpace.s8,
+                          children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                        ),
+                      ),
                     ),
             ),
           ],
@@ -526,273 +514,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     );
   }
 
-  /// The task table's columns: the take (its cover, its name and its
-  /// state), what it has written, when it began, and the phase's own
-  /// action beside the menu — the file manager's columns.
-  List<DsTableColumn<RecordingTask>> _taskColumns(BuildContext context, Map<String, LiveRoom> rooms) {
-    final t = context.t;
-    return [
-      DsTableColumn<RecordingTask>(
-        id: 'task',
-        label: t.recorder.columnTask,
-        value: (task) => task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId,
-        cell: (context, task) => _taskNameCell(context, task, rooms),
-        width: const DsTableColumnWidth.flex(4, 240),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'state',
-        label: t.recorder.columnStatus,
-        cell: _taskStateCell,
-        width: const DsTableColumnWidth.intrinsic(min: 116),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'size',
-        label: t.recorder.columnSize,
-        value: (task) => task.bytes,
-        text: (task) => task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
-        numeric: true,
-        width: const DsTableColumnWidth.intrinsic(min: 88),
-      ),
-      // What the take captured and how fast it went in: the two figures a
-      // recording can answer with from its own bytes and media time.
-      DsTableColumn<RecordingTask>(
-        id: 'duration',
-        label: t.recorder.columnDuration,
-        value: (task) => task.durationMs,
-        text: (task) {
-          final elapsed = recordingElapsed(task);
-          return elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
-        },
-        numeric: true,
-        width: const DsTableColumnWidth.intrinsic(min: 76),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'bitrate',
-        label: t.recorder.columnBitrate,
-        value: (task) => (task.bytes * 8 / recordingElapsed(task).inSeconds.clamp(1, 1 << 31)).round(),
-        text: (task) => formatRecordingBitrate(task.bytes, recordingElapsed(task)).isEmpty
-            ? '—'
-            : formatRecordingBitrate(task.bytes, recordingElapsed(task)),
-        numeric: true,
-        width: const DsTableColumnWidth.intrinsic(min: 84),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'time',
-        label: t.recorder.columnStarted,
-        value: (task) => task.startedAt.millisecondsSinceEpoch,
-        text: (task) => formatRecordingMoment(task.startedAt),
-        width: const DsTableColumnWidth.intrinsic(min: 92),
-      ),
-      DsTableColumn<RecordingTask>(
-        id: 'actions',
-        label: t.recorder.columnActions,
-        alignment: DsTableCellAlignment.end,
-        cell: (context, task) => _taskActionsCell(context, task, rooms),
-        width: const DsTableColumnWidth.fixed(150),
-      ),
-    ];
-  }
-
-  /// The row's identity, the way the reference's table draws it: the room's
-  /// cover, the streamer's avatar and name, and the platform with the room id
-  /// under them. The room's title rides the cover's label for screen readers
-  /// and the hover summary, so the two lines stay short.
-  Widget _taskNameCell(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
-    final liveAnchor = (room?.anchor?.name ?? '').trim();
-    final anchor = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
-    final storedTitle = task.roomTitle.trim();
-    final liveTitle = (room?.content.title ?? '').trim();
-    final title = storedTitle.isNotEmpty ? storedTitle : (liveTitle.isNotEmpty ? liveTitle : task.roomId);
-    final nickname = anchor.isEmpty ? title : anchor;
-    final liveAvatar = (room?.anchor?.avatarUrl ?? '').trim();
-    final avatarUrl = liveAvatar.isNotEmpty ? liveAvatar : task.anchorAvatarUrl.trim();
-    final liveCover = (room?.content.coverUrl ?? '').trim();
-    final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: DsImage(
-            image: cover.isEmpty ? null : cachedImage(cover),
-            width: 64,
-            height: 36,
-            semanticLabel: title,
-            fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
-          ),
-        ),
-        DsAvatar(
-          initials: avatarInitials(nickname),
-          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-          size: DsSize.sm,
-          semanticLabel: nickname,
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 2,
-            children: [
-              Text(
-                nickname,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.bodyStrong.copyWith(color: colors.text),
-              ),
-              Text(
-                '${_platformName(task.platform)} · ${task.roomId}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// The state's own column: the badge, with the take's length under it while
-  /// one is being written — the reference's "录制中 + 已录时长".
-  Widget _taskStateCell(BuildContext context, RecordingTask task) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final fileDeleted = task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
-    final elapsed = recordingElapsed(task);
-    final showsLength = !task.postProcessing && elapsed > Duration.zero;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      spacing: 2,
-      children: [
-        DsBadge(
-          label: Text(
-            task.postProcessing
-                ? t.recorder.stateProcessing
-                : fileDeleted
-                ? t.recorder.stateFileDeleted
-                : !task.enabled
-                ? t.recorder.statePaused
-                : task.state == RecordingTaskState.stopped
-                ? t.recorder.stateWaiting
-                : _TaskCard.stateLabel(t, task.state),
-          ),
-          status: task.postProcessing
-              ? DsStatus.info
-              : fileDeleted || !task.enabled
-              ? DsStatus.neutral
-              : task.state == RecordingTaskState.stopped
-              ? DsStatus.warning
-              : _TaskCard.stateStatus(task.state),
-        ),
-        if (showsLength)
-          Text(
-            formatRecordingDuration(elapsed),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          ),
-      ],
-    );
-  }
-
-  /// The row's one action: the verb this phase asks for — stop a capture,
-  /// cancel a join, start a waiting or failed one now — beside the row's
-  /// menu. A capture another window holds answers nothing here, so its row
-  /// carries the menu alone.
-  Widget _taskActionsCell(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
-    final t = context.t;
-    final engine = ref.read(recorderEngineProvider);
-    final callbacks = _taskCallbacks(task, rooms);
-    final runningHere = engine.isRecording(task.id);
-    Widget? primary;
-    if (task.postProcessing) {
-      primary = DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        leading: const DsIcon(DsIcons.x, size: 14),
-        onPressed: callbacks.onCancelProcessing,
-        child: Text(t.recorder.cancelProcessing),
-      );
-    } else if (runningHere) {
-      primary = DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        leading: const DsIcon(DsIcons.squareStop, size: 14),
-        onPressed: callbacks.onStop,
-        child: Text(t.recorder.stop),
-      );
-    } else if (callbacks.onStartNow != null) {
-      primary = DsButton(
-        variant: DsButtonVariant.primary,
-        size: DsSize.sm,
-        leading: const DsIcon(DsIcons.play, size: 14),
-        onPressed: callbacks.onStartNow,
-        child: Text(t.recorder.startNow),
-      );
-    }
-    // The watch switch is the row's everyday verb: a paused room resumes,
-    // a watched one pauses; the phase's own action follows it.
-    final watch = DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      semanticLabel: task.enabled ? t.recorder.pauseWatch : t.recorder.resumeWatch,
-      onPressed: callbacks.onToggleWatch,
-      icon: DsIcon(task.enabled ? DsIcons.pause : DsIcons.play, size: 14),
-    );
-    return Row(
-      spacing: DsSpace.s4,
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        watch,
-        ?primary,
-        _TaskMenu(
-          task: task,
-          hasFile: (task.filePath ?? '').trim().isNotEmpty,
-          onOpen: callbacks.onOpen,
-          onStop: callbacks.onStop,
-          onToggleWatch: callbacks.onToggleWatch,
-          onDelete: callbacks.onDelete,
-          onSchedule: callbacks.onSchedule,
-          onCancelProcessing: callbacks.onCancelProcessing,
-          onStartNow: callbacks.onStartNow,
-          onRetryJoin: callbacks.onRetryJoin,
-          onPreview: callbacks.onPreview,
-          onPlayExternal: callbacks.onPlayExternal,
-        ),
-      ],
-    );
-  }
-
-  /// The callbacks one task's row needs, shared by the card list and the
-  /// table — the store's answers decide which are present.
-  _TaskCallbacks _taskCallbacks(RecordingTask task, Map<String, LiveRoom> rooms) {
-    final engine = ref.read(recorderEngineProvider);
-    return (
-      onOpen: playableFileAt(task.filePath) == null
-          ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
-          : () => unawaited(_openPreview(task)),
-      onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
-      onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
-      onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
-      onSchedule: () => unawaited(_editSchedule(task)),
-      onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
-          ? () => unawaited(_startNow(task))
-          : null,
-      onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
-      onRetryJoin:
-          !task.postProcessing && task.state != RecordingTaskState.recording && (task.filePath ?? '').isNotEmpty
-          ? () => unawaited(_retryJoin(task))
-          : null,
-      onPreview: _canPreview(task) ? () => unawaited(_openPreview(task)) : null,
-      onPlayExternal: _canPreview(task) ? () => unawaited(_playExternal(task)) : null,
-    );
-  }
-
-  /// The rows the task strip still lists. A saved take with a file on disk
   /// One task as its card, with the actions that depend on the store's answer.
   List<Widget> _taskCards(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
     final engine = ref.read(recorderEngineProvider);
@@ -1094,20 +815,40 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 }
 
-/// The callbacks one task row carries, named for the helpers that pass
-/// them between the card list and the table.
-typedef _TaskCallbacks = ({
-  VoidCallback onOpen,
-  VoidCallback onToggleWatch,
-  VoidCallback? onStop,
-  VoidCallback onDelete,
-  VoidCallback onSchedule,
-  VoidCallback? onStartNow,
-  VoidCallback? onCancelProcessing,
-  VoidCallback? onRetryJoin,
-  VoidCallback? onPreview,
-  VoidCallback? onPlayExternal,
-});
+/// One labelled figure in a wide row: the value over the word that names it,
+/// so a row of them reads without a table header.
+final class _Measure extends StatelessWidget {
+  const _Measure({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 2,
+      children: [
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography
+              .numeric(theme.typography.caption)
+              .copyWith(color: colors.text, fontWeight: FontWeight.w600),
+        ),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+        ),
+      ],
+    );
+  }
+}
 
 /// The length a row can speak for: media time once the engine reports it,
 /// and the wall clock since the start while the take is still writing — a
@@ -1230,11 +971,11 @@ final class _TaskCard extends StatelessWidget {
     // read while it is still writing.
     final recorded = Duration(milliseconds: task.durationMs);
     final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
-    final figures = [
-      if (elapsed > Duration.zero) formatRecordingDuration(elapsed),
-      if (task.bytes > 0) formatRecordingBytes(task.bytes),
-      if (task.bytes > 0 && elapsed.inSeconds > 0) formatRecordingBitrate(task.bytes, elapsed),
-    ].where((part) => part.isNotEmpty).join(' · ');
+    final figuresDuration = elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
+    final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
+    final figuresBitrate = task.bytes > 0 && elapsed.inSeconds > 0 ? formatRecordingBitrate(task.bytes, elapsed) : '—';
+    final figures = [figuresDuration, figuresSize, figuresBitrate].where((part) => part != '—').join(' · ');
+    final startedText = formatRecordingMoment(task.isRunning ? task.startedAt : (task.endedAt ?? task.startedAt));
     final meta = [
       platformName,
       if (audience.isNotEmpty) audience,
@@ -1313,10 +1054,23 @@ final class _TaskCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
-                    // The session's own figures — length, size and the rate
-                    // they imply: a running take grows them while it writes, a
-                    // settled one keeps them.
-                    if (figures.isNotEmpty)
+                    // The session's own figures. A wide row sets them as
+                    // labelled measures the way a worklist reads; a narrow one
+                    // keeps one line.
+                    if (width >= 720)
+                      Padding(
+                        padding: const EdgeInsets.only(top: DsSpace.s4),
+                        child: Row(
+                          spacing: DsSpace.s24,
+                          children: [
+                            _Measure(label: t.recorder.columnBitrate, value: figuresBitrate),
+                            _Measure(label: t.recorder.columnSize, value: figuresSize),
+                            _Measure(label: t.recorder.columnDuration, value: figuresDuration),
+                            _Measure(label: t.recorder.columnStarted, value: startedText),
+                          ],
+                        ),
+                      )
+                    else if (figures.isNotEmpty)
                       Text(
                         figures,
                         maxLines: 1,
@@ -1401,7 +1155,7 @@ final class _TaskCard extends StatelessWidget {
                         ? DsStatus.warning
                         : stateStatus(task.state),
                   ),
-                  if (lastRun.isNotEmpty)
+                  if (width < 720 && lastRun.isNotEmpty)
                     Text(
                       lastRun,
                       maxLines: 1,
