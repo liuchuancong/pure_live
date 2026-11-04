@@ -7,6 +7,7 @@ import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart' show FavoritesTopBarActions;
+import 'package:pure_live/modules/live/popular/popular.dart' show PopularTopBarActions;
 import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
 import 'package:pure_live/shared/shared.dart';
 
@@ -231,13 +232,18 @@ final class MobileLayout extends ConsumerWidget {
           // The log console's settings gear and the favorites' refresh ride
           // the top bar, the same corner the desktop's head rows give them.
           if (selected == NavigationItem.logs) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
-          // The follows page's own verbs move here when the window is narrow
-          // enough for it to drop them: the platform menu and the refresh,
-          // with the page's button style, so the refresh is not offered twice.
-          if (selected == NavigationItem.favorites &&
-              LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width)) ...[
-            const FavoritesTopBarActions(),
-            const SizedBox(width: DsSpace.s4),
+          // The follows and popular pages' own verbs move here when the window
+          // is narrow enough for them to drop them: the refresh and the more
+          // menu, with the pages' button style, so no verb is offered twice.
+          if (LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width)) ...[
+            if (selected == NavigationItem.hot) ...[
+              const PopularTopBarActions(),
+              const SizedBox(width: DsSpace.s4),
+            ],
+            if (selected == NavigationItem.favorites) ...[
+              const FavoritesTopBarActions(),
+              const SizedBox(width: DsSpace.s4),
+            ],
           ],
           // A window strip above this bar already carries the switch; two
           // moons stacked on a narrow desktop window would be one too many.

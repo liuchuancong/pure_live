@@ -5,5 +5,6 @@ library;
 
 export 'popular_controller.dart';
 export 'popular_page.dart';
+export 'popular_top_bar_actions.dart';
 export 'room_card.dart';
 export 'room_card_menu.dart';

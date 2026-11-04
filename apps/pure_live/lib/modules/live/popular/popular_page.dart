@@ -195,23 +195,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                   ],
                 );
               }
-              return SizedBox(
-                height: 44,
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: tabs),
-                    refresh,
-                    PlatformToolbarMore(
-                      platforms: ids,
-                      current: platform,
-                      nameOf: _platformName,
-                      onChanged: choosePlatform,
-                      onManagePlatforms: managePlatforms,
-                    ),
-                  ],
-                ),
-              );
+              // A phone's refresh and platform menu ride the top bar with the
+              // page's button style (see PopularTopBarActions), so this line
+              // keeps the tabs alone and no verb is offered twice.
+              return SizedBox(height: 44, child: tabs);
             },
           ),
         ),
