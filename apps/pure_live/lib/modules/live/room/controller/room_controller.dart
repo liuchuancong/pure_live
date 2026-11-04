@@ -202,9 +202,20 @@ final class RoomDanmakuPipeline {
   /// Applies a changed shield rule set to the following messages: the
   /// policy is a plain object the controller swaps in place, so the next
   /// line is judged by the new words without reconnecting.
+  ///
+  /// The same words are built into a block list for the messages that never
+  /// reach the pipeline — a gift is one of them (see [accept]). Without this a
+  /// viewer can block a name and still be shown that name's paid line and gift
+  /// animation, which reads as the shield being decorative.
   void setShieldPolicy(ShieldRules rules) {
     danmaku.policy = _shieldPolicyFor(rules);
+    if (identical(rules, _shieldRules)) return;
+    _shieldRules = rules;
+    _shieldBlockList = rules.enabled ? DanmakuBlockList.of(users: rules.users, keywords: rules.keywords) : null;
   }
+
+  ShieldRules? _shieldRules;
+  DanmakuBlockList? _shieldBlockList;
 
   /// Applies a changed "飞行弹幕显示礼物" choice: turning it off forgets the
   /// combos on their way without flying their ends.
@@ -229,6 +240,10 @@ final class RoomDanmakuPipeline {
     // A gift is a line of its own, never flying chat: the list's switch
     // decides it, and the flying layer's own switch is its own setting.
     if (message.type == LiveMessageType.gift) {
+      // The shield is consulted here because a gift never enters the pipeline:
+      // the block list is the viewer's own words, and paying for a message is
+      // not a way back onto a screen they cleared.
+      if ((_shieldRules?.enabled ?? false) && (_shieldBlockList?.blocks(message) ?? false)) return;
       if (showChatGifts()) {
         final line = chatGifts.add(message);
         if (line != null) onChat(line.message, replaceId: line.replaceId);
