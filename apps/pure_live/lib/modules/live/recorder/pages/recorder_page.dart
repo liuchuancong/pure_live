@@ -1360,7 +1360,9 @@ final class _TaskCard extends ConsumerWidget {
                   watch(),
                 ],
               ),
-              if (width < 620) Align(alignment: AlignmentDirectional.centerEnd, child: controls),
+              // A narrow card puts the verbs under the state line, held to the
+              // card's right edge instead of stretching across it.
+              if (width < 620) Row(mainAxisAlignment: MainAxisAlignment.end, children: [controls]),
               if (task.state == RecordingTaskState.recording && onStop == null)
                 Text(
                   t.recorder.stateRecordingElsewhere,
