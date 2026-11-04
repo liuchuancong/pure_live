@@ -7,8 +7,11 @@ import 'package:test/test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 final class _FakeSink implements WebSocketSink {
+  new({this.hangClose = false});
+
   final sent = <Object?>[];
   int? closeCode;
+  final bool hangClose;
   final _closed = Completer<void>();
 
   @override
@@ -25,6 +28,11 @@ final class _FakeSink implements WebSocketSink {
   @override
   Future<void> close([int? closeCode, String? closeReason]) {
     this.closeCode ??= closeCode;
+    if (hangClose) {
+      // A peer that never acknowledges: the socket's own close handshake is
+      // what the client must not wait on forever.
+      return Completer<void>().future;
+    }
     _closed.complete();
     return Future<void>.value();
   }
@@ -34,13 +42,14 @@ final class _FakeSink implements WebSocketSink {
 }
 
 final class _FakeChannel extends StreamChannelMixin<dynamic> implements WebSocketChannel {
-  new({this.readyError});
+  new({this.readyError, this.hangClose = false});
 
   final Object? readyError;
+  final bool hangClose;
   final incoming = StreamController<dynamic>();
 
   @override
-  final _FakeSink sink = _FakeSink();
+  late final _FakeSink sink = _FakeSink(hangClose: hangClose);
 
   @override
   Future<void> get ready {
@@ -175,6 +184,37 @@ void main() {
 
       expect(channels, hasLength(1));
       expect(client.state, WebSocketConnectionState.disconnected);
+    });
+
+    test('drops a socket whose peer never acknowledges the close', () async {
+      final client = LiveWebSocketClient(
+        uri: Uri.parse('wss://unit.test/stream'),
+        config: const WebSocketConfig(shutdownTimeout: Duration(milliseconds: 50)),
+        channelFactory: (_, _) => _FakeChannel(hangClose: true),
+      );
+      addTearDown(() async {
+        await client.dispose();
+      });
+
+      await client.connect();
+
+      // A room's teardown, and behind it the app's exit, waits here. The
+      // deadline, not the peer, decides when the caller gets its answer back.
+      final stopped = client.disconnect().timeout(
+        const Duration(seconds: 1),
+        onTimeout: () => fail('disconnect waited on the peer instead of its deadline'),
+      );
+      await stopped;
+
+      expect(client.state, WebSocketConnectionState.disconnected);
+      expect(client.isConnected, isFalse);
+    });
+
+    test('the close deadline is short but not immediate', () {
+      // Zero would drop sockets the peer is still acknowledging, and a long
+      // one is the hang this bounds; two seconds is the reference runtime's
+      // own shutdownTimeout.
+      expect(const WebSocketConfig().shutdownTimeout, const Duration(seconds: 2));
     });
 
     test('stops after the retry limit and reports an error', () async {

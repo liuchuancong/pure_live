@@ -8,6 +8,7 @@ final class WebSocketConfig {
     this.protocols,
     this.headers,
     this.connectTimeout = const Duration(seconds: 15),
+    this.shutdownTimeout = const Duration(seconds: 2),
     this.pingInterval,
     this.reconnectPolicy = const ReconnectPolicy(),
     this.heartbeat,
@@ -25,6 +26,13 @@ final class WebSocketConfig {
   /// Maximum time to wait for the handshake before treating the attempt as
   /// failed. Must be positive.
   final Duration connectTimeout;
+
+  /// Longest wait for the closing handshake before the socket is dropped.
+  ///
+  /// A peer that answers nothing cannot be allowed to decide when the caller
+  /// finishes: `disconnect` waits this long for the close to be acknowledged
+  /// and then reports the connection as closed regardless. Must be positive.
+  final Duration shutdownTimeout;
 
   /// WebSocket protocol-level ping interval.
   ///

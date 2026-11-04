@@ -144,7 +144,13 @@ final class LiveWebSocketClient {
     _channel = null;
 
     try {
-      await channel?.sink.close(closeCode, closeReason);
+      // The peer's acknowledgement is not the caller's deadline: a socket
+      // whose host went silent never finishes the closing handshake, and an
+      // awaited close would then hold the room's teardown - and, past it, the
+      // app's exit - for as long as the OS takes to drop the connection.
+      // The frame subscription is already cancelled, so a late handshake
+      // answers nothing anyone is still listening to.
+      await channel?.sink.close(closeCode, closeReason).timeout(config.shutdownTimeout);
     } on Object {
       // A channel whose handshake never completed may refuse to close.
     } finally {

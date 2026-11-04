@@ -23,6 +23,10 @@ abstract interface class SocketChannel {
   void add(Object data);
 
   /// Starts the closing handshake; the peer's close code and reason follow.
+  ///
+  /// Waits at most two seconds for the acknowledgement: a peer that answers
+  /// nothing must not decide when the caller's teardown finishes, so the
+  /// returned future completes on the deadline and [closeCode] stays null.
   Future<void> close([int? code, String? reason]);
 
   /// The close code the peer sent, once closed; null while open or if it named
@@ -65,6 +69,11 @@ Future<SocketChannel> webSocketConnect(
   return _WebSocketSocketChannel(channel);
 }
 
+/// Longest wait for a peer to acknowledge a close before the channel is
+/// treated as closed — the same budget [WebSocketConfig.shutdownTimeout]
+/// gives the reconnecting client.
+const Duration _shutdownTimeout = Duration(seconds: 2);
+
 final class _WebSocketSocketChannel implements SocketChannel {
   new(this._channel);
 
@@ -77,7 +86,12 @@ final class _WebSocketSocketChannel implements SocketChannel {
   void add(Object data) => _channel.sink.add(data);
 
   @override
-  Future<void> close([int? code, String? reason]) => _channel.sink.close(code, reason);
+  Future<void> close([int? code, String? reason]) =>
+      // The peer's acknowledgement cannot be the caller's deadline: a host
+      // that answers nothing leaves the closing handshake open for as long as
+      // the OS takes to drop the socket, and every site's `disconnect` waits
+      // here. The deadline says when the channel counts as closed.
+      _channel.sink.close(code, reason).timeout(_shutdownTimeout, onTimeout: () {});
 
   @override
   int? get closeCode => _channel.closeCode;
