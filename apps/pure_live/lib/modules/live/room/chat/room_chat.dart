@@ -47,6 +47,36 @@ final class RoomChatPanel extends ConsumerStatefulWidget {
 final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
   _ChatTab _tab = _ChatTab.danmaku;
 
+  /// The newest line the viewer had reached when they last left the chat tab.
+  ///
+  /// Measured by identity rather than by counting arrivals, because the feed is
+  /// capped: once it is full, a burst pushes the oldest talk out and the length
+  /// stops moving, so a length difference would report that nothing arrived.
+  String? _lastReadId;
+
+  /// What the chat tab holds that the viewer has not seen, worn as its badge.
+  int _unread = 0;
+
+  /// Arrivals while the viewer is on another tab. The panel counts them, not the
+  /// list, which is disposed the moment another tab is picked — a count kept
+  /// there would reset at exactly the moment it matters.
+  void _chatArrived(List<LiveMessage>? previous, List<LiveMessage> next) {
+    if (_tab == _ChatTab.danmaku) return;
+    final mark = _lastReadId;
+    // A line the platform gave no id cannot serve as a mark; fall back to the
+    // rows there are, which is right until the feed fills up.
+    final unseen = mark == null || mark.isEmpty
+        ? (previous == null || next.length <= previous.length ? _unread : next.length)
+        : _after(next, mark);
+    if (unseen == _unread) return;
+    setState(() => _unread = unseen);
+  }
+
+  static int _after(List<LiveMessage> chat, String mark) {
+    final index = chat.lastIndexWhere((line) => line.messageId == mark);
+    return index < 0 ? chat.length : chat.length - index - 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -55,6 +85,8 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // panel does, because a membership or a subscription can arrive where
     // the platform keeps no board.
     final tab = _tab;
+    ref.listen(roomChatProvider, _chatArrived);
+    final board = ref.watch(roomSuperChatsProvider);
     return ColoredBox(
       color: widget.translucent ? const Color(0x00000000) : colors.surface,
       child: Column(
@@ -62,11 +94,30 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
         children: [
           DsTabs<_ChatTab>(
             value: tab,
-            onChanged: (value) => setState(() => _tab = value),
+            onChanged: (value) => setState(() {
+              if (value == _ChatTab.danmaku) {
+                // Coming to the tab is reading it: the badge counts what the
+                // viewer left behind, not what they are looking at.
+                _lastReadId = null;
+                _unread = 0;
+              } else if (tab == _ChatTab.danmaku) {
+                final chat = ref.read(roomChatProvider);
+                _lastReadId = chat.isEmpty ? null : chat.last.messageId;
+                _unread = 0;
+              }
+              _tab = value;
+            }),
             semanticLabel: t.room.chatTitle,
             tabs: [
-              DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
-              DsTab(value: _ChatTab.superChats, label: Text(t.room.tabSuperChats)),
+              DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList), count: _unread == 0 ? null : _unread),
+              DsTab(
+                value: _ChatTab.superChats,
+                label: Text(t.room.tabSuperChats),
+                // The board's own size rather than a count of unread: a paid
+                // message is shown for its own minutes, so the number answers
+                // "how many are pinned here", which is what the tab then lists.
+                count: board.messages.isEmpty ? null : board.messages.length,
+              ),
               DsTab(value: _ChatTab.recording, label: Text(t.room.tabRecording)),
               DsTab(value: _ChatTab.settings, label: Text(t.room.tabSettings)),
               DsTab(value: _ChatTab.shield, label: Text(t.room.tabShield)),
