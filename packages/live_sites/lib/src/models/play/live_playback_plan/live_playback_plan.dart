@@ -51,3 +51,33 @@ abstract class LivePlaybackPlan implements Built<LivePlaybackPlan, LivePlaybackP
   /// Where playback begins, when the source declares an offset.
   Duration? get start;
 }
+
+/// Whether two entries name the same tier: the platform's own id when both
+/// carry one, else their label.
+bool isSamePlayTier(LivePlayQuality a, LivePlayQuality b) =>
+    a.qualityId != null && b.qualityId != null ? a.qualityId == b.qualityId : a.label == b.label;
+
+/// The tier a room should be *shown* as playing after [plan] answered a
+/// request for [requested], or null when the platform said nothing.
+///
+/// The ask and the answer differ on several platforms: an anonymous request
+/// is quietly downgraded, and a streamer can change profile mid-broadcast.
+/// Naming what was asked for over a picture that is not it is a lie the
+/// viewer can only catch by squinting at the pixels. A served tier the list
+/// already holds is returned as that entry; one the list never offered takes
+/// [requested]'s place in the caller's list — the reference's C01.4 rule — so
+/// the picker keeps exactly one entry per ask rather than growing a tier the
+/// viewer cannot ask for again.
+LivePlayQuality? resolveServedPlayQuality({
+  required LivePlaybackPlan plan,
+  required List<LivePlayQuality> qualities,
+  required LivePlayQuality requested,
+}) {
+  if (plan.qualityUnconfirmed) return null;
+  final applied = plan.appliedQuality;
+  if (applied == null) return null;
+  for (final quality in qualities) {
+    if (isSamePlayTier(quality, applied)) return quality;
+  }
+  return isSamePlayTier(requested, applied) ? requested : applied;
+}
