@@ -23,10 +23,22 @@ DanmakuTextShape danmakuTextShape(String text, {int emotes = 0}) {
 
 /// The shape of [message] by the codes it names itself
 /// ([LiveMessage.emotes]: CHZZK, YouTube, Bilibili, Kuaishou) and Unicode
-/// emoji; a platform's bundled list (`[笑哭]`) is the app's to add.
-DanmakuTextShape danmakuMessageShape(LiveMessage message) {
+/// emoji.
+///
+/// [emoticonPattern] is how a host adds the platform's bundled list — the
+/// codes a site draws from its own sheet without naming them per message
+/// (`[笑哭]` on Douyu and Huya). Without it those lines read as the brackets
+/// and letters they are typed as, so "屏蔽只有表情的弹幕" — and the length
+/// limit beside it — judge a screenful of pictures as ordinary text. The
+/// pattern is expected to match one emoticon per match, longest alternative
+/// first, which is what a host's drawing catalogue already is.
+DanmakuTextShape danmakuMessageShape(LiveMessage message, {RegExp? emoticonPattern}) {
   var text = message.text;
   var emotes = 0;
+  if (emoticonPattern case final pattern?) {
+    emotes += pattern.allMatches(text).length;
+    text = text.replaceAll(pattern, '');
+  }
   final codes = {
     for (final emote in message.emotes)
       if (emote.code.isNotEmpty) emote.code,

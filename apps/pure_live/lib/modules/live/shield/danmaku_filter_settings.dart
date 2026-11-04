@@ -1,5 +1,6 @@
+import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart' show LiveMessage, danmakuShapeBlocked;
+import 'package:live_sites/live_sites.dart' show DanmakuTextShape, LiveMessage, danmakuMessageShape, danmakuShapeBlocked;
 import 'package:live_storage/live_storage.dart';
 
 /// The fuzzy half of the room danmaku filter: whether a line that closely
@@ -252,4 +253,20 @@ bool danmakuShapeBlockedByRules(LiveMessage message, DanmakuFilterRules rules) =
   blockEmoteOnly: rules.blockEmoteOnly,
   blockLong: rules.blockLong,
   blockLongLength: rules.blockLongLength,
+  shapeOf: _shapeAsDrawn,
+);
+
+/// The message's shape read the way the chat draws it.
+///
+/// The flying layer's catalogue is the one table that knows `[笑哭]` is a
+/// picture: Douyu and Huya send the code as the message's whole text and keep
+/// the sheet themselves, so a filter that only reads [LiveMessage.emotes] —
+/// the sites that name each emoticon — sees brackets and letters. Then
+/// "屏蔽只有表情的弹幕" lets through exactly the screenful of faces it was
+/// switched on for, and the length limit counts six characters for one
+/// emoticon. The catalogue is the app's, so the reading is here rather than in
+/// the package; a catalogue that has not loaded leaves the plain reading.
+DanmakuTextShape _shapeAsDrawn(LiveMessage message) => danmakuMessageShape(
+  message,
+  emoticonPattern: EmojiAtlas.instance.regex,
 );
