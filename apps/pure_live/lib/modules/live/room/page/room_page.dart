@@ -1,6 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -26,8 +25,10 @@ import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
     show PlayerSurface, kPlayerStageColor, toggleRoomPip, toggleRoomRecording;
+import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
 import 'package:pure_live/modules/live/room/page/room_details.dart'
     show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
+import 'package:pure_live/modules/live/room/page/room_glass_card.dart';
 import 'package:pure_live/modules/live/room/page/room_orientation.dart'
     show
         RoomOrientation,
@@ -108,6 +109,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// Whether this visit already handled the auto-fullscreen preference: the
   /// room asks once, when its stream first plays, and a later exit stays.
   bool _autoFullscreenDone = false;
+
+  /// How much of the narrow room's window its chat sheet covers, once settled.
+  /// The picture keeps its full bleed and the bars stand above this, so a drag
+  /// moves the sheet without moving the buttons under it.
+  double _panelCover = 0;
 
   /// Whether the page is showing its portrait full-screen surface.
   bool _portraitFullscreen = false;
@@ -248,6 +254,27 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     FloatingOverlay.listen();
     FloatingOverlay.active.addListener(_onFloatingWindowChanged);
     FloatingOverlay.permitted.addListener(_onFloatingWindowPermitted);
+  }
+
+  /// Remembers where the chat sheet settled: the bars over the picture stand
+  /// that much higher, so a control row is never under a panel the viewer cannot
+  /// see through.
+  ///
+  /// The first report arrives while the panel is still building, so the state
+  /// change waits for the frame that is finishing.
+  void _setPanelCover(double height) {
+    if (height == _panelCover) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || height == _panelCover) return;
+      setState(() => _panelCover = height);
+    });
+  }
+
+  /// The sheet's pill: the room's own full screen, the same verb the bar carries.
+  void _enterFullscreen() {
+    final handle = ref.read(roomProvider).handle;
+    if (handle == null) return;
+    unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
   }
 
   /// Shows or leaves the portrait full-screen surface and publishes it: the
@@ -876,7 +903,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     /// The picture surface, with the theatre's chat handed in as a page layer
     /// when the layout has one: the surface draws its own bars and catalogues
     /// above that layer.
-    Widget playerWith({Widget? overlay}) => PlayerSurface(
+    Widget playerWith({Widget? overlay, double bottomInset = 0}) => PlayerSurface(
       key: _playerKey,
       roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
@@ -895,6 +922,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       onPortraitFullscreen: () => _setPortraitFullscreen(true),
       onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
       overlay: overlay,
+      bottomInset: bottomInset,
       theater: theater,
       // A presentation mode that owns the window has no chat to float, and a
       // narrow page stacks it under the picture.
@@ -921,6 +949,63 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 // source takes the tall panel unless the viewer chose the
                 // regular 16:9 room page.
                 final tallPortrait = portraitStream && portraitLayout != PortraitLayoutMode.compatibility;
+                // The reference's narrow room for a portrait stream: the picture
+                // fills the window and the room's facts and chat ride over it on
+                // a sheet with three stops. A stream that is not portrait keeps
+                // the stacked room, because a 16:9 frame stretched over a phone is
+                // either cropped or a black band with a title on it.
+                if (tallPortrait) {
+                  return RoomBottomPanel(
+                    // The immersive layout opens on the least picture covered;
+                    // the balanced one opens where a chat is readable.
+                    preferred: portraitLayout == PortraitLayoutMode.immersive
+                        ? RoomPanelStop.minimum
+                        : RoomPanelStop.middle,
+                    onCoverChanged: _setPanelCover,
+                    picture: ColoredBox(
+                      color: kPlayerStageColor,
+                      child: playerWith(bottomInset: _panelCover),
+                    ),
+                    // A thumb gets the way into the room's own full screen, which
+                    // is what the bar's entry costs at this width — the bar hides
+                    // it below its own floor. A pointer gets the grip that says
+                    // the sheet holds.
+                    handle: mobile
+                        ? DsButton(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.xs,
+                            onPressed: () => _setPortraitFullscreen(true),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: DsSpace.s4,
+                              children: [
+                                const DsIcon(DsIcons.rectangleVertical, size: 14),
+                                Text(t.room.portraitFullscreen),
+                              ],
+                            ),
+                          )
+                        : null,
+                    pill: DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.xs,
+                      onPressed: _enterFullscreen,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s4,
+                        children: [const DsIcon(DsIcons.fullscreen, size: 14), Text(t.room.fullscreenOn)],
+                      ),
+                    ),
+                    panel: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _RoomHero(room: room),
+                        // The sheet paints its own frosted surface; a second
+                        // opaque one under it would hide the glass.
+                        const Expanded(child: RoomChatPanel(translucent: true)),
+                      ],
+                    ),
+                  );
+                }
                 final ratio = tallPortrait
                     ? pictureRatio.clamp(0.5, 0.8)
                     : portraitStream
@@ -930,7 +1015,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     : pictureRatio;
                 final desired = tallPortrait
                     ? constraints.maxHeight * (portraitLayout == PortraitLayoutMode.immersive ? 0.72 : 0.58)
-                    : constraints.maxWidth / ratio;
+                    // A 16:9 frame in a tall window is letterboxed, not stretched:
+                    // three fifths of the height at most, so the chat under it keeps
+                    // a readable count instead of one line and a button.
+                    : math.min(constraints.maxWidth / ratio, constraints.maxHeight * 0.6);
                 final picture = SizedBox(
                   height: math.min(desired, maxPicture),
                   child: ColoredBox(
@@ -1009,7 +1097,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                         ),
                         SizedBox(
                           width: chatWidth,
-                          child: _RoomChatGlass(
+                          child: RoomGlassCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -1579,44 +1667,6 @@ Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom det
     title: t.room.autoRecordArmed(seconds: settings.schedule.liveCheckSeconds),
     status: DsStatus.success,
   );
-}
-
-/// The theatre's chat column: the room's chat, its hero strip and its fold
-/// control inside one frosted card over the picture.
-///
-/// The glass is the theme's own surface, not the player's fixed ink: the words
-/// inside wear the theme's colours, so a light app gets a milky card and a dark
-/// one an inked card. The frost is the standard (G2) level's radius — the tier
-/// the glass ladder assigns to a floating panel — so no magic sigma lives here;
-/// it keeps the picture legible as motion behind it without letting it compete
-/// with the text.
-final class _RoomChatGlass extends StatelessWidget {
-  const _RoomChatGlass({required this.child});
-
-  /// The column the card holds.
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final radius = BorderRadius.circular(theme.radii.card);
-    final frost = LiveGlassLevel.standard.blurSigma;
-    return ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: frost, sigmaY: frost, tileMode: TileMode.decal),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surface.withValues(alpha: 0.86),
-            borderRadius: radius,
-            border: Border.all(color: colors.border),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
 }
 
 /// The room's own card, the reference's `RoomInfoBar` grown up: the

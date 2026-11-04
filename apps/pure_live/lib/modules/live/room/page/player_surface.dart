@@ -124,6 +124,7 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onPortraitFullscreen,
     this.onPortraitSwipe,
     this.overlay,
+    this.bottomInset = 0,
     this.theater = false,
     this.onTheater,
     super.key,
@@ -173,6 +174,15 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// A vertical swipe in the middle third of the portrait full screen: +1
   /// for the next room, -1 for the previous (the page owns the list).
   final ValueChanged<int>? onPortraitSwipe;
+
+  /// How much of the picture's bottom edge a page layer covers: the narrow
+  /// room's chat sheet rides over the stream, so the control bar and the strip
+  /// that wakes it stand above the sheet instead of under a panel the viewer
+  /// cannot see through.
+  ///
+  /// The settled height, not the live one: dragging the sheet moves the sheet,
+  /// not the buttons, so the control row never jitters along with a finger.
+  final double bottomInset;
 
   /// A page layer over the picture and under the surface's own controls: the
   /// wide room's theatre floats its chat here, so the stream's pickers, the
@@ -990,7 +1000,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                 ),
               if (showBar && !mini)
                 Positioned(
-                  bottom: 0,
+                  bottom: widget.bottomInset,
                   left: 0,
                   right: 0,
                   child: MouseRegion(
@@ -1026,7 +1036,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               // progress line, because a live stream has no played share to
               // draw and a line of its own would read as a timeline.
               else if (playing && !mini && handle != null)
-                Positioned(bottom: 0, left: 0, right: 0, child: _IdleWakeStrip(onWake: _wake)),
+                Positioned(
+                  bottom: widget.bottomInset,
+                  left: 0,
+                  right: 0,
+                  child: _IdleWakeStrip(onWake: _wake),
+                ),
               // The stream's own numbers when the viewer asked for them: a small
               // glass panel under the top bar, over the picture and out of the
               // buttons' way.
