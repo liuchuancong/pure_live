@@ -1229,15 +1229,23 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     resume
       ..playing = false
       ..position = Duration.zero;
-    // Boot opens paused unless the viewer asked the module to continue; a
-    // module switch resumes the song that was sounding, as the sandbox rule
-    // promises.
-    if (!interrupted && !ref.read(musicPlaybackSettingsProvider).autoplay) return;
+    final settings = ref.read(musicPlaybackSettingsProvider);
+    // A module switch resumes the song that was sounding, as the sandbox rule
+    // promises; a cold open follows 打开时继续播放, which restores the last
+    // song at its saved position and keeps playing.
+    if (!interrupted && !settings.autoplay) return;
     final snapshot = ref.read(musicQueueStoreProvider).read();
     if (snapshot == null || !ref.mounted) return;
     await _audio.setQueue(snapshot.tracks, startIndex: snapshot.index, autoPlay: false);
-    if (!interrupted) return;
-    if (position > Duration.zero) await _audio.seek(position);
+    if (!ref.mounted) return;
+    var seekTo = interrupted ? position : Duration.zero;
+    if (!interrupted && settings.rememberProgress) {
+      final saved = _positions[musicTrackKey(snapshot.tracks[snapshot.index])];
+      if (saved != null && saved >= _minResumeMs) {
+        seekTo = Duration(milliseconds: saved);
+      }
+    }
+    if (seekTo > Duration.zero) await _audio.seek(seekTo);
     if (!ref.mounted) return;
     await _audio.play();
   }

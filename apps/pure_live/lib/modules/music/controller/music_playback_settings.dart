@@ -105,13 +105,14 @@ final class MusicPlaybackSettings {
   });
 
   /// The reference's defaults: no source until one is imported, 128k, skip a
-  /// source that fails, no autoplay, new songs at the top, sources shown.
+  /// source that fails, the last song resumed and playing, new songs at the
+  /// top, sources shown.
   static const MusicPlaybackSettings standard = MusicPlaybackSettings(
     defaultSourceId: '',
     sourceNameType: MusicSourceNameType.alias,
     quality: MusicQuality.standard,
     skipOnError: true,
-    autoplay: false,
+    autoplay: true,
     rememberProgress: true,
     volume: 1,
     playbackRate: 1,
@@ -137,7 +138,8 @@ final class MusicPlaybackSettings {
   /// the queue.
   final bool skipOnError;
 
-  /// Whether opening the module resumes the last queue.
+  /// Whether opening the module restores the last queue — the song it
+  /// stopped on, its position (when [rememberProgress]) — and keeps playing.
   final bool autoplay;
 
   /// Whether a song opened again resumes at its last position.
@@ -222,7 +224,7 @@ final class MusicPlaybackSettingsController extends Notifier<MusicPlaybackSettin
     sourceNameType: _readSourceNameType(),
     quality: _readQuality(),
     skipOnError: readMusicPrefBool(_skipOnErrorKey) ?? true,
-    autoplay: readMusicPrefBool(_autoplayKey) ?? false,
+    autoplay: readMusicPrefBool(_autoplayKey) ?? true,
     rememberProgress: readMusicPrefBool(_rememberProgressKey) ?? true,
     volume: readMusicPrefDouble(_volumeKey) ?? 1,
     playbackRate: readMusicPrefDouble(_rateKey) ?? 1,
@@ -333,7 +335,7 @@ final class MusicPlaybackSettingsController extends Notifier<MusicPlaybackSettin
       defaultSourceId: '',
       quality: MusicQuality.standard,
       skipOnError: true,
-      autoplay: false,
+      autoplay: true,
       rememberProgress: true,
       addToTop: true,
       showSource: true,
