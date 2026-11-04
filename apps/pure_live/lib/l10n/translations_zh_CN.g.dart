@@ -6276,6 +6276,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '分区'
 	String get roomArea => '分区';
+
+	/// zh-CN: '编码'
+	String get statCodec => '编码';
 }
 
 // Path: room
@@ -15427,6 +15430,7 @@ extension on Translations {
 			'recorder.statLastBitrate' => '最近码率',
 			'recorder.saveLocation' => '保存位置',
 			'recorder.roomArea' => '分区',
+			'recorder.statCodec' => '编码',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15822,9 +15826,9 @@ extension on Translations {
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
 			'settings.themeColorHex' => '十六进制颜色',
-			'settings.themeColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.themeColorHue' => '色相',
 			'settings.themeColorSaturation' => '饱和度与明度',
 			'settings.seedBlue' => '蓝',
@@ -16336,9 +16340,9 @@ extension on Translations {
 			'settings.deinterlaceDesc' => '直播源多为逐行，保持自动；老电视或采集卡才需要。',
 			'settings.deinterlaceAuto' => '自动',
 			'settings.deinterlaceOff' => '关闭',
-			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			_ => null,
 		} ?? switch (path) {
+			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
 			'settings.hwdecCodecsAll' => '全部编码格式',
@@ -16850,9 +16854,9 @@ extension on Translations {
 			'settings.storageFolderDefaultLabel' => '默认',
 			'settings.storageFolderCustomLabel' => '自定义',
 			'settings.storageFolderPickFailed' => '无法选择下载目录',
-			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
 			'settings.chatShowAvatars' => '显示头像',
@@ -17364,9 +17368,9 @@ extension on Translations {
 			'vod.volume' => '音量',
 			'vod.quality' => '清晰度',
 			'vod.speed' => '倍速',
-			'vod.fullscreen' => '全屏',
 			_ => null,
 		} ?? switch (path) {
+			'vod.fullscreen' => '全屏',
 			'vod.exitFullscreen' => '退出全屏',
 			'vod.pip' => '小窗播放',
 			'vod.exitPip' => '退出小窗',

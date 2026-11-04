@@ -200,12 +200,22 @@ final class RecordingTaskRepository {
     required int width,
     required int height,
     required double frameRate,
+    required String videoCodec,
+    required String audioCodec,
   }) async {
     final stored = store.get(id);
     if (stored == null) return false;
     final task = RecordingTask.fromJson(stored);
     if (!task.startedAt.isAtSameMomentAs(expectedStartedAt)) return false;
-    await save(task.copyWith(videoWidth: width, videoHeight: height, frameRate: frameRate));
+    await save(
+      task.copyWith(
+        videoWidth: width,
+        videoHeight: height,
+        frameRate: frameRate,
+        videoCodec: videoCodec,
+        audioCodec: audioCodec,
+      ),
+    );
     return true;
   }
 
@@ -366,6 +376,8 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     required int width,
     required int height,
     required double frameRate,
+    required String videoCodec,
+    required String audioCodec,
   }) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
@@ -375,6 +387,8 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
       width: width,
       height: height,
       frameRate: frameRate,
+      videoCodec: videoCodec,
+      audioCodec: audioCodec,
     );
   }
 

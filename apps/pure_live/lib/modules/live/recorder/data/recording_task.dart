@@ -66,6 +66,8 @@ final class RecordingTask {
     this.videoWidth = 0,
     this.videoHeight = 0,
     this.frameRate = 0,
+    this.videoCodec = '',
+    this.audioCodec = '',
     this.endedAt,
     this.filePath,
     this.bytes = 0,
@@ -107,6 +109,8 @@ final class RecordingTask {
       videoWidth: (map['videoWidth'] as num?)?.toInt() ?? 0,
       videoHeight: (map['videoHeight'] as num?)?.toInt() ?? 0,
       frameRate: (map['frameRate'] as num?)?.toDouble() ?? 0,
+      videoCodec: map['videoCodec'] as String? ?? '',
+      audioCodec: map['audioCodec'] as String? ?? '',
       state: RecordingTaskState.fromJson(map['state']),
       startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
@@ -180,6 +184,13 @@ final class RecordingTask {
 
   /// The captured video's frames per second (0 until the probe answers).
   final double frameRate;
+
+  /// The video codec's short name (`h264`), empty until the probe answers.
+  final String videoCodec;
+
+  /// The audio codec's short name (`aac`), empty until the probe answers or
+  /// when the take has no sound.
+  final String audioCodec;
 
   /// How often this room's live check runs, in seconds (10–300).
   ///
@@ -336,6 +347,8 @@ final class RecordingTask {
     'videoWidth': videoWidth,
     'videoHeight': videoHeight,
     'frameRate': frameRate,
+    'videoCodec': videoCodec,
+    'audioCodec': audioCodec,
     'state': state.toJson(),
     'startedAt': startedAt.toUtc().toIso8601String(),
     'endedAt': endedAt?.toUtc().toIso8601String(),
@@ -372,6 +385,8 @@ final class RecordingTask {
     int? videoWidth,
     int? videoHeight,
     double? frameRate,
+    String? videoCodec,
+    String? audioCodec,
     RecordingTaskState? state,
     DateTime? startedAt,
     DateTime? endedAt,
@@ -406,6 +421,8 @@ final class RecordingTask {
       videoWidth: videoWidth ?? this.videoWidth,
       videoHeight: videoHeight ?? this.videoHeight,
       frameRate: frameRate ?? this.frameRate,
+      videoCodec: videoCodec ?? this.videoCodec,
+      audioCodec: audioCodec ?? this.audioCodec,
       state: state ?? this.state,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,

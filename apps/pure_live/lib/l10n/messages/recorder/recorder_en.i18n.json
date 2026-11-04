@@ -315,5 +315,6 @@
   "statLiveBitrate": "Live bitrate",
   "statLastBitrate": "Last bitrate",
   "saveLocation": "Saved to",
-  "roomArea": "Area"
+  "roomArea": "Area",
+  "statCodec": "Codec"
 }

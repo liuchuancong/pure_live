@@ -315,5 +315,6 @@
   "statLiveBitrate": "实时码率",
   "statLastBitrate": "最近码率",
   "saveLocation": "保存位置",
-  "roomArea": "分区"
+  "roomArea": "分区",
+  "statCodec": "编码"
 }

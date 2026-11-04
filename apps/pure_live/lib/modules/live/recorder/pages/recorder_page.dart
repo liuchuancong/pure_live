@@ -1103,6 +1103,7 @@ final class _TaskCard extends ConsumerWidget {
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
       if (area.isNotEmpty) area,
       if (audience.isNotEmpty) audience,
+      if (task.videoCodec.isNotEmpty) task.videoCodec.toUpperCase(),
     ];
     final Widget action = processing
         ? DsButton(
@@ -1291,6 +1292,14 @@ final class _TaskCard extends ConsumerWidget {
                           : (resolutionOf(task.quality) == null
                                 ? ''
                                 : (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest)),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 130,
+                    child: _StatBlock(
+                      label: t.recorder.statCodec,
+                      value: task.videoCodec.isEmpty ? '—' : task.videoCodec.toUpperCase(),
+                      note: task.audioCodec.isEmpty ? '' : task.audioCodec.toUpperCase(),
                     ),
                   ),
                   SizedBox(
