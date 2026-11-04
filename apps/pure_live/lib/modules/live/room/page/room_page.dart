@@ -630,13 +630,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// one, else the picture's width over height once the engine reports it,
   /// else the usual 16:9. A portrait stream keeps its tall shape instead of
   /// sitting letterboxed in a landscape box.
-  /// The portrait full-screen surface: the same player filling the page,
-  /// the way to another room and the way out. The picture fills it exactly
-  /// as the 画面 setting says, and the flying layer keeps the one danmaku
-  /// configuration.
-  Widget _buildPortraitFullscreen(BuildContext context, RoomState room, Widget player, {required bool canSwipeRooms}) {
-    final t = context.t;
-
+  /// The portrait full-screen surface: the same player filling the page. The
+  /// picture fills it exactly as the 画面 setting says, and the flying layer
+  /// keeps the one danmaku configuration.
+  ///
+  /// Two buttons used to float here at the top right, and the player's strip
+  /// draws its back arrow, its danmaku switch, its presentation cluster and
+  /// its ⋮ across the same band — the two rows stood on one another. Both
+  /// verbs the row carried are on the strip already: the back arrow leaves the
+  /// portrait full screen (`leave` answers that first) and 切换直播间 sits in
+  /// the ⋮ beside it.
+  Widget _buildPortraitFullscreen(BuildContext context, Widget player, {required bool canSwipeRooms}) {
     return ColoredBox(
       color: const Color(0xFF000000),
       child: Stack(
@@ -649,33 +653,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               bottom: 28,
               child: IgnorePointer(child: _PortraitSwipeHint()),
             ),
-          PositionedDirectional(
-            start: 8,
-            end: 8,
-            top: 8,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Spacer(),
-                if (room.room case final detail?)
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
-                    icon: const DsIcon(DsIcons.arrowLeftRight),
-                    semanticLabel: t.room.switchRoom,
-                  ),
-                if (room.room != null) const SizedBox(width: DsSpace.s8),
-                DsButton.icon(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => _setPortraitFullscreen(false),
-                  icon: const DsIcon(DsIcons.x),
-                  semanticLabel: t.room.portraitFullscreenExit,
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -938,7 +915,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     );
 
     final body = _portraitFullscreen
-        ? _buildPortraitFullscreen(context, room, playerWith(), canSwipeRooms: swipeSwitch && mobile)
+        ? _buildPortraitFullscreen(context, playerWith(), canSwipeRooms: swipeSwitch && mobile)
         : LayoutBuilder(
             builder: (context, constraints) {
               final wide = constraints.maxWidth >= _wideBreakpoint;
@@ -1632,6 +1609,15 @@ List<Widget> roomMenuItems(
         leading: const DsIcon(DsIcons.activity),
         label: Text(t.room.statsToggle),
         onPressed: () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+      ),
+      // The danmaku's look lives on the chat column's own tab, and the column
+      // is gone the moment the picture owns the window — which is again when a
+      // viewer most wants the lines smaller or the area taller. Same door the
+      // tab opens, same words it uses.
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.slidersHorizontal),
+        label: Text(t.settings.navDanmaku),
+        onPressed: () => unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location)),
       ),
     ],
     [

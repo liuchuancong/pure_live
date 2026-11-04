@@ -539,9 +539,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     _scheduleHide();
   }
 
-  /// A tap on the picture: with tap actions on, a message under the finger
-  /// is held while its panel shows; a tap that hits nothing — or every tap
-  /// with the switch off — wakes or dismisses the bars as before.
+  /// A tap on the picture: the reference's D-038 rule. With lines flying,
+  /// nearly every tap lands on one, so a tap that finds the bars away brings
+  /// them back whatever it hit; a message opens its actions only while the
+  /// bars already show, and not on a picture that is stopped — there the tap
+  /// is the way back to play.
   Future<void> _onPictureTap() async {
     // Locked, the picture answers nothing: a tap must neither open the
     // message under the finger nor bring the bars back.
@@ -552,13 +554,17 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
       _hidePicker();
       return;
     }
+    final shownBefore = _controlsVisible;
     if (!ref.read(danmakuTapInteractionProvider)) {
       _releaseDanmaku();
       _toggleControls();
       return;
     }
     final item = _takeHeldDanmaku();
-    if (item == null) {
+    if (item == null || !shownBefore || !widget.roomState.playback.playing) {
+      // The message was frozen on pointer-down; this tap was never going to
+      // open it, so it flies on and the bars take the tap instead.
+      if (item != null) widget.barrage?.resumeAllPaused();
       _toggleControls();
       return;
     }
@@ -997,6 +1003,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     onWake: _wake,
                     menuItems: widget.immersive ? widget.roomMenu : const [],
                     fullscreen: widget.immersive,
+                    portraitExit: widget.portraitFullscreen,
                     // The page's own header already carries the avatar, the live
                     // ring, the counts and the title above the picture, so the
                     // strip only names the room once the chrome is gone — or on
@@ -1348,6 +1355,7 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
     required this.onWake,
     required this.menuItems,
     this.fullscreen = false,
+    this.portraitExit = false,
     this.identity = true,
   });
 
@@ -1364,6 +1372,10 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
   /// and the battery, because the window's own chrome — and with it the
   /// system's tray — is not on screen to be read.
   final bool fullscreen;
+
+  /// Whether that window is the portrait full screen: the back arrow is then
+  /// the only way out, so its name says which of the two it leaves.
+  final bool portraitExit;
 
   /// Whether the strip names the room. The page's own header already carries
   /// the avatar, the live ring, the counts and the title above the picture, so
@@ -1444,26 +1456,13 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
           // only the verbs stay — each in a glass disc of its own (the
           // reference's row of four), the flying danmaku's switch first — and
           // no gradient band darkening an image the viewer is watching.
-          final settings = ref.watch(playbackSettingsProvider);
           return Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s12, DsSpace.s12, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               spacing: DsSpace.s8,
               children: [
-                PlayerGlassPill(
-                  child: PlayerBarButton(
-                    icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-                    label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-                    selected: settings.danmakuVisible,
-                    onPressed: () {
-                      widget.onWake();
-                      unawaited(
-                        ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible),
-                      );
-                    },
-                  ),
-                ),
+                _DanmakuTogglePill(onWake: widget.onWake),
                 _PresentationCluster(room: widget.room, onWake: widget.onWake, narrow: narrow, split: true),
                 menuPill,
               ],
@@ -1483,7 +1482,11 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
             spacing: tv ? DsSpace.s12 : DsSpace.s8,
             children: [
               PlayerGlassPill(
-                child: PlayerBarButton(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: widget.onLeave),
+                child: PlayerBarButton(
+                  icon: DsIcons.chevronLeft,
+                  label: widget.portraitExit ? t.room.portraitFullscreenExit : t.common.close,
+                  onPressed: widget.onLeave,
+                ),
               ),
               if (widget.fullscreen) const _PlayerClockBattery(),
               if (label != null)
@@ -1528,12 +1531,46 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                     ),
                   ),
                 ),
+              // The danmaku's switch, in every tier: a viewer who came for the
+              // lines and wants them off does not leave the picture to find
+              // the one control that is about the picture.
+              _DanmakuTogglePill(onWake: widget.onWake),
               cluster,
               menuPill,
             ],
           ),
         );
       },
+    );
+  }
+}
+
+/// The flying danmaku's own switch, as the strip draws it in both tiers.
+///
+/// One preference and one control, drawn twice: in-page it leads the row of
+/// overlay verbs, and in fullscreen the reference keeps it on the bar beside
+/// the play button — a viewer who wants the lines gone should not have to
+/// leave the picture to say so.
+final class _DanmakuTogglePill extends ConsumerWidget {
+  const _DanmakuTogglePill({required this.onWake});
+
+  /// Resets the bars' auto-hide timer after the press.
+  final VoidCallback onWake;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(playbackSettingsProvider);
+    final t = context.t;
+    return PlayerGlassPill(
+      child: PlayerBarButton(
+        icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+        label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+        selected: settings.danmakuVisible,
+        onPressed: () {
+          onWake();
+          unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible));
+        },
+      ),
     );
   }
 }
