@@ -172,7 +172,8 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           // platform wall move behind the page's more icon.
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+              // The shell's one width decision, never a local measure.
+              final narrow = PageLayoutScope.isNarrow(context);
               final tabs = PlatformTabRow(
                 platforms: platforms,
                 current: scope,

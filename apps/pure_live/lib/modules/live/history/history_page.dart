@@ -11,6 +11,7 @@ import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardListDesignHeight, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
 import 'package:pure_live/modules/live/history/history_repository.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
@@ -626,7 +627,8 @@ final class _Header extends ConsumerWidget {
     void chooseLayout(CardLayout value) => unawaited(ref.read(browseLayoutProvider.notifier).set(value));
     return LayoutBuilder(
       builder: (context, constraints) {
-        final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+        // The shell's one width decision, never a local measure.
+        final narrow = PageLayoutScope.isNarrow(context);
         final inset = LiveWindow.pageInset(constraints.maxWidth);
         final count = Text.rich(
           TextSpan(

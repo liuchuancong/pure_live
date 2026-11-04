@@ -65,20 +65,6 @@ final class AreasTopBarActions extends ConsumerWidget {
                 DsListSection(
                   children: [
                     DsListRow(
-                      leading: const DsIcon(DsIcons.search, size: 16),
-                      title: Text(t.areas.searchHint),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        unawaited(
-                          showAreasSearchPanel(context, initial: ref.read(areasInlineSearchProvider) ?? ''),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                DsListSection(
-                  children: [
-                    DsListRow(
                       title: Text(t.areas.viewPlatform),
                       trailing: view == AreasView.platform ? const DsIcon(DsIcons.check, size: 16) : null,
                       onPressed: () {
