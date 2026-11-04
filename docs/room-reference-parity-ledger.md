@@ -10,8 +10,8 @@
 2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
 4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。
-5. **还欠的两笔小账**（都被别人的在途改动挡住）：`displayLabel` 四处显示位（`player_surface.dart:430,1246`、`multiview_page.dart:1099,1104`）；开工前 `git status` 复核，文件干净就把这两处补完再划掉。
-6. **一个等点名的决定**：Bigo 的 HLS 已实测是逐段加扰（`#EXT-X-BIGO-WEB-PROTECTION:SEED=…`），我们包里有还原算法但没有中继 ⇒ 现在进 bigo 房基本黑屏（参考实测直连 11 次成 1 次）。选 **1** 我做环回中继（并给 `LivePlayLine` 一个"要先还原"的表达），选 **2** 我让它带可读原因失败。**没点名之前两样都不做**。
+5. **还欠的两笔小账**（都被别人的在途改动挡住，2026-11-05 复核仍挡）：`displayLabel` 的显示位只剩 `player_surface.dart:430,1246`（被别人 `:81` 的 `open(known: room)` hunk 挡住）与 `multiview_page.dart:1099,1104`（被别人 `:535` 的 `openRoom(room:)` hunk 挡住）；getter 早已在 HEAD（`34578f23c`），谁先落地都不影响编译。开工前 `git status` 复核，文件干净就把这两处补完再划掉。
+6. **两个等点名的决定**：①Bigo 的 HLS 已实测是逐段加扰（`#EXT-X-BIGO-WEB-PROTECTION:SEED=…`），我们包里有还原算法但没有中继 ⇒ 现在进 bigo 房基本黑屏（参考实测直连 11 次成 1 次）。选 **1** 我做环回中继（并给 `LivePlayLine` 一个"要先还原"的表达），选 **2** 我让它带可读原因失败。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前两样都不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
 
 ## 车道规格
@@ -335,3 +335,25 @@ PLAN-CHECK huya     没有注册 resolver
 - 2026-11-05 **P43（`38bb13093`）：`firstFrame` 也犯过同一类的错，已改。** 它原来标在 `geometryController` 第一次报出 videoSize 的时刻，但引擎的事件表自己写着两套语义：`videoSizeChanged` "**only describes video geometry**"（demuxer 探测阶段就知道尺寸），`videoFrameProgress` 才是"后端又解出一帧"（`player_adapter_event.dart:66-73`，media_kit 适配层在 `:962 emitVideoFrameProgress()`，且能力位 `supportsVideoFrameProgress` 可能为 false）。⇒ 用几何当首帧会把解码时间记到网络段上，正好毁掉昨天那段拆分要买的东西。现在：`_watchFirstFrame(handle)` 订 `handle.adapterEvents`（引擎文档保证该流跨后端切换仍有效），只认 `PlayerAdapterVideoFrameProgress`；报不了的后备就留 `-`，不猜。订阅随 handle 重建、随 `_teardown` 取消。
 - **本轮立的车道规矩**：给"某一时刻"加计时标记之前，先去引擎里读**是谁、在哪一行、因何而发**置的这个状态/事件（昨天 `ready`、今天 `videoSize`，两次都是名字像而语义不同）。判据不是"看起来是那个东西"，是发它的那行代码的注释与前置条件。
 - 门：`dart analyze lib` 0 issues、`flutter test test/live` 61 例中 60 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点本文件。
+
+## 第六次对照（2026-11-05 第四次续）：live_core 的 HLS 选流族，实测出一个真洞
+
+参考 `live_core/lib/src/hls_master.dart`（358 行，`HlsMasterPlaylist`/`HlsVariantSelector`/`HlsMasterSelection.rewrite`）+ `hls_source_query_policy.dart`（87 行）。第四次对照时把这一族判成"不搬"，理由是参考自己写明查询串策略只对验证过的 TTing/FLEX NCP 契约开启——那个理由对 `hls_source_query_policy` 仍然成立，但**`hls_master.dart` 的选档（G01.4）对我们是一处真实的功能洞**，本轮用真适配器实测出来：
+
+- 我们的 7 站已经把 master 的变体解析成**自己的 URL 并当作线路**交出去（twitch/youtube/kick/chzzk/niconico/pandalive/picarto 都走 `resolveHlsVariantUri`，`twitch_play_parser.dart:82` 是把 master 交给 mpv 的反例——它每档一条变体地址）。
+- **只有 steambroadcast 是"档位名单来自变体、线路却永远是 master"**：`steambroadcast_room_parser.dart:794` 写死 `url: '${data.master}'`，`SteambroadcastVariant` 连 URI 字段都没有；它自己的注释就承认"the master restricted to a variant is not expressible as a line here"。⇒ 今天选 1080p 还是 360p，交给引擎的都是同一条 master，mpv 自己 ABR：**档位是装饰品，而且每次改档都要重新打开一次流**（`selectQuality` 无条件 `_startPlayback`），观众看到的是一次黑屏 + 重缓冲，换来的是标签变了。
+- 探针（临时 `dart test`，跑 `DioFactory(proxyPolicy: FixedProxyPolicy(HttpProxyRoute(127.0.0.1:7890)))` + 真 `SteambroadcastSite`，用完已删）实测一间 4 变体的在播房：
+  ```
+  room=76561199466473501 variants=4 qualities=自适应 HLS,1080p,720p,480p,360p
+    MASTER #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aac",NAME="Default",...URI=".../320000/audio.m3u8?broadcast_origin=ext6-hkg1..."
+    MASTER #EXT-X-STREAM-INF:BANDWIDTH=7320000,CODECS="avc1.640028,mp4a.40.2",RESOLUTION=1920x1080,FRAME-RATE=30,AUDIO="aac"
+      child 1080p media=true seg=200/1350540B  init: box=ftypiso5 handler vide=true soun=false
+      child 720p  media=true seg=200/238358B   …
+  ```
+  两件事由此钉死：**① 变体地址能独立应答**（200、是媒体播放列表、首片能下）；**② 但它没有音轨**（init 盒 `ftypiso5` 里只有 `vide` handler，`soun=false`；`AUDIO="aac"` 指向 master 的另一条 rendition）。⇒ **照 twitch 的样子把变体 URL 当线路交出去会播出声画分离的哑片**，参考的 `HlsMasterSelection` 保留 `#EXT-X-MEDIA` 那一行、把 master 改窄，正是为了躲这个。
+- 所以"接参考的选档"在我们的架构里必须回答"改写后的 master 交给引擎走哪条路"，两条形状都要用户点名（本车道不擅自新增媒体子系统）：
+  **1** 环回中继：房间起一个只服务这一份文本的 `127.0.0.1` 小服务（变体与音轨 URI 在 Steam 的 master 里本来就是绝对地址，中继只需应答那一个 master 请求，段流量仍直连 CDN）；`LivePlayLine` 要能表达"这条要先还原/改写"。**2** 交本地文件：把改写后的 master 写进临时目录、以 `file://` 交给引擎（无服务，但 `live_sites` 是纯 Dart 领域包不能做 IO，装配点要在 app/引擎侧；录制侧重签地址的路也会跟着变）。两样都要先决定"谁拥有这段文本"。**没点名之前两样都不做**，本轮先做不需要新形状的那一半 ↓。
+
+| P44 | （本轮）| 档位诚实 | 把"选了平台 serve 不出来的档"从一次重开降成一次改标签：包侧新 `isSamePlayPlan(loaded, asked)`（`live_play_line.dart`：同序、同 URL、同 `format`、同 headers；**同一地址换了 lease 不算换媒体**，到期由 `_armLeaseRenewal` 自己盯），房间侧 `selectQuality` 带 `keepPlayingWhenUnchanged: true`，`_startPlayback` 在"当前在播 + 新计划就是已加载的那份"时直接返回。**只有改画质这一路可以短路**：lease 重建（`:1527`）与进房（`:899`）不带这个旗标——它们要的就是"哪怕地址相同也要重开"。新 `packages/live_sites/test/models/live_play_line_test.dart` 6 例（相同/换地址/换 headers/条数变/顺序变/换 lease）。门：live_sites `dart analyze lib test` 0 issues、`dart test` **475 例中 474 绿**（唯一红是搜索 lane 在途的 `site_facts_test.dart`：他们的 `looklive` 退役让 retired 集合从 11 变 12，测试没跟着改，`site_facts.dart` 是他们脏文件）；app `dart analyze lib` 0 issues、`flutter test test/live` 61 例中 60 绿（唯一红仍是录像 lane）。运行期未验：要在 Steam 房改一次档，画面不该再断。 |
+
+- **Steam 的档位名单本身仍然是假的**（P44 只是不再为它重开流）。要让它真生效，等上面 1/2 点名。这是本车道第二个"等点名"的决定，第一个是 Bigo 的加扰 HLS。
