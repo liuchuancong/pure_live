@@ -185,6 +185,10 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
                     fallback: Center(child: DsIcon(DsIcons.image, size: 32, color: colors.textSubtle)),
                   ),
           ),
+          // DsPressable paints no feedback of its own; without this the poster
+          // looked inert under the pointer even though it opens the preview.
+          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed))
+            Positioned.fill(child: ColoredBox(color: colors.hover)),
           Center(
             child: Container(
               width: 56,

@@ -424,7 +424,12 @@ final class SettingsPreviewCircleButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: background,
+          // The stage's chrome sits over media, so the pointer's answer is the
+          // theme's hover wash blended onto its own fill rather than a swap:
+          // the button stays legible on a bright or a dark frame alike.
+          color: states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)
+              ? Color.alphaBlend(colors.hover, background)
+              : background,
           border: Border.all(color: border),
         ),
         child: Center(

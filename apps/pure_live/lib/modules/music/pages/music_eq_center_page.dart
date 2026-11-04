@@ -486,10 +486,19 @@ final class _GalleryCard extends ConsumerWidget {
         builder: (context, states, _) => Container(
           padding: const EdgeInsets.symmetric(vertical: DsSpace.s12, horizontal: DsSpace.s4),
           decoration: BoxDecoration(
-            color: colors.surface,
+            // A preset card painted nothing for the pointer or the D-pad until
+            // its own states were read; the wash sits under the accent border
+            // so the selected one still reads first.
+            color: states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)
+                ? Color.alphaBlend(colors.hover, colors.surface)
+                : colors.surface,
             borderRadius: BorderRadius.circular(theme.radii.control(36)),
             border: Border.all(
-              color: selected ? colors.accent : colors.border.withValues(alpha: 0.4),
+              color: selected
+                  ? colors.accent
+                  : states.contains(WidgetState.focused)
+                  ? colors.focus
+                  : colors.border.withValues(alpha: 0.4),
               width: selected ? 2 : 1,
             ),
           ),

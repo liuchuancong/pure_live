@@ -2310,9 +2310,21 @@ final class MusicSyncPane extends ConsumerWidget {
                             child: DsPressable(
                               semanticLabel: host,
                               onPressed: () => Navigator.of(dialogContext).pop(host),
-                              builder: (context, states, _) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
-                                child: Text(host, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              builder: (context, states, _) => ColoredBox(
+                                // The row is the only way to pick a host back
+                                // out of the history; it answered nothing to
+                                // the pointer or the D-pad until its states were
+                                // read here.
+                                color:
+                                    states.contains(WidgetState.hovered) ||
+                                        states.contains(WidgetState.pressed) ||
+                                        states.contains(WidgetState.focused)
+                                    ? DsTheme.colorsOf(context).hover
+                                    : const Color(0x00000000),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
+                                  child: Text(host, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
                               ),
                             ),
                           ),
