@@ -287,3 +287,4 @@ PLAN-CHECK huya     没有注册 resolver
 - `firstSame=false` 是**正常的**：bilibili 每次问线路都重签 CDN 令牌，两次请求的 URL 天然不同；条数一致即可，播放器拿的是 plan 那份，不会再混用。
 - **纠正我自己写错的两处散文**（代码没问题，登记以防下轮照抄错事实）：注册 `LivePlaybackPlanResolver` 的是 **bilibili / cc / douyin / twitch / yy** 五站（`*_site.dart:573/416/513/650/678`），**huya 不在其中**；我在 `746fec7d7` 的提交正文里把 huya 也算进去了。
 - 探针侧的 cc/yy/twitch 超时是探针自己没包 try（推荐接口 20 s 未回），不是产品分支：房间那条路是 `resolvePlan` 失败就退回 `getLines`，正是今天的行为。
+| P40 | `da0be7760` | 门的补票 | 本车道这一路有几个行为是"只有静态门、运行期没验"的：常驻登录提示条（P27）与进房耗时记录（P35/P39）。给它们补了 `test/live/room_notice_record_test.dart`（6 例）钉住可钉的部分——**同平台同文案不再换 state 实例**（换了就是每来一轮掩码名就闪一次条）、**换平台要替换**（条上那个按钮开的必须是这一站的登录）、**新房间要清空上一间的毫秒**、发布的 stage 只列到达过的段、`proxy` 随记录一起出去。门：`dart analyze` 0 issues、`flutter test test/live` 60 例中 59 绿（新增 6；唯一红仍是录像 lane 的 `recording_schedule_test.dart`）。运行期仍未验：条要真坏 cookie、面板要真开一次房。 |
