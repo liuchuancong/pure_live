@@ -362,7 +362,10 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       pageIdentity: inSettings
           ? '${module.name}/settings/${sectionOpen ? settingsSection.name : 'category/$settingsCategory'}'
           : '${module.name}/${selected.name}/',
-      child: moduleContent,
+      // The page tree is the module's own: a switch builds a new one instead
+      // of handing the previous module's state to the next, even when the two
+      // show the same page type (the settings surface is one).
+      child: KeyedSubtree(key: ValueKey(module), child: moduleContent),
     );
     // The music module keeps its now-playing bar under every page — search,
     // the lists, the local library, downloads, the effects page — the way the

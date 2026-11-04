@@ -18,7 +18,7 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         MpvAudioPlayerAdapter,
         PcmFrame,
         kMpvAudioBackendId;
-import 'package:pure_live/app/app.dart' show playerKernelProvider;
+import 'package:pure_live/app/app.dart' show playerKernelProvider, selectedModuleProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_engine_effects.dart'
@@ -33,6 +33,7 @@ import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' sh
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
     show MusicQuality, musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/shared/shared.dart' show AppModule;
 
 /// The preference the last queue is kept under, so 打开时继续播放 has
 /// something to resume.
@@ -138,6 +139,33 @@ audio.MusicQuality musicQualityOf(MusicQuality quality) => switch (quality) {
   MusicQuality.hiRes => audio.MusicQuality.flac24bit,
 };
 
+/// What a module switch interrupted: the queue comes back from its store, but
+/// whether the song was sounding and where it stood are this session's facts,
+/// kept in memory for the rebuilt controller to take.
+final class MusicSwitchResume {
+  /// Whether the song was playing when the module was left.
+  bool playing = false;
+
+  /// Where it stood at that moment.
+  Duration position = Duration.zero;
+}
+
+/// The interrupted song, written by the controller on the way out and taken
+/// by its replacement on the way back.
+final musicSwitchResumeProvider = Provider<MusicSwitchResume>((ref) => MusicSwitchResume());
+
+/// Ties the music player's lifetime to its module: any switch disposes the
+/// controller right away — stopping the engine and leaving a resume point —
+/// and the module's next read builds its own. Kept alive from the root so an
+/// unlistened player (the module's pages are gone) is disposed at the switch
+/// instead of lingering until the module comes back.
+final musicModulePlayerGuardProvider = Provider<void>((ref) {
+  ref.listen<AppModule>(selectedModuleProvider, (previous, next) {
+    if (previous == next) return;
+    ref.invalidate(musicPlayerProvider);
+  });
+});
+
 /// The module's player: a song queue, the audio engine and the module's own
 /// preferences.
 ///
@@ -173,10 +201,19 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   bool _engineSessionBound = false;
   MpvAudioPlayerAdapter? _sessionAdapter;
 
+  /// The module this controller was built for: only the music module's own
+  /// instance records a resume point or restarts the queue; the idle
+  /// instance built when another module is on screen must not overwrite it.
+  late final AppModule _module;
+
   @override
   audio.AudioPlaybackState build() {
-    // The kernel is read, not watched: rebuilding this controller would throw
-    // its queue away, and a kernel that changes belongs to a new window.
+    // The player is the module's: leaving the module disposes this controller
+    // (stopping the engine and releasing the kernel handle), and coming back
+    // builds a fresh one that resumes where the switch interrupted. The
+    // kernel itself is read, not watched: it is rebuilt with the module.
+    ref.watch(selectedModuleProvider);
+    _module = ref.read(selectedModuleProvider);
     final settings = ref.read(musicPlaybackSettingsProvider);
     final lyricSettings = ref.read(musicLyricsSettingsProvider);
     _progressStore = ref.read(musicProgressStoreProvider);
@@ -331,6 +368,21 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     });
     ref.onDispose(() {
+      // Leave the interruption for the controller the module builds on its
+      // way back. A container that is already closing cannot answer the
+      // read; the shutdown path loses nothing by keeping the store's own
+      // position instead.
+      try {
+        if (_module == AppModule.music) {
+          final resume = ref.read(musicSwitchResumeProvider);
+          final interrupted = _audio.state;
+          resume
+            ..playing = interrupted.playing
+            ..position = interrupted.position;
+        }
+      } on Object {
+        // The process is going away.
+      }
       _eqDebounce?.cancel();
       _flushProgress();
       unawaited(_states?.cancel() ?? Future<void>.value());
@@ -346,7 +398,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _applyEq(ref.read(musicEqProvider));
     _applyPitchCorrection(ref.read(musicPlaybackSettingsProvider).preservesPitch);
     _applyAudioDevice();
-    unawaited(_restore());
+    // Only the music module's instance resumes: the idle one built while
+    // another module is on screen stays silent.
+    if (_module == AppModule.music) unawaited(_restore());
     unawaited(_restoreDesktopLyric());
     return _audio.state;
   }
@@ -1169,10 +1223,23 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   Future<void> _restore() async {
-    if (!ref.read(musicPlaybackSettingsProvider).autoplay) return;
+    final resume = ref.read(musicSwitchResumeProvider);
+    final interrupted = resume.playing;
+    final position = resume.position;
+    resume
+      ..playing = false
+      ..position = Duration.zero;
+    // Boot opens paused unless the viewer asked the module to continue; a
+    // module switch resumes the song that was sounding, as the sandbox rule
+    // promises.
+    if (!interrupted && !ref.read(musicPlaybackSettingsProvider).autoplay) return;
     final snapshot = ref.read(musicQueueStoreProvider).read();
     if (snapshot == null || !ref.mounted) return;
     await _audio.setQueue(snapshot.tracks, startIndex: snapshot.index, autoPlay: false);
+    if (!interrupted) return;
+    if (position > Duration.zero) await _audio.seek(position);
+    if (!ref.mounted) return;
+    await _audio.play();
   }
 }
 

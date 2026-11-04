@@ -37,6 +37,7 @@ import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/music/controller/music_deeplink_binding.dart';
+import 'package:pure_live/modules/music/controller/music_playback.dart' show musicModulePlayerGuardProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
@@ -138,6 +139,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     if (ref.read(isPrimaryWindowProvider)) ref.read(musicDeeplinkBindingProvider).start();
     // purelive://auth links: the GitHub sign-in's callback, same shape.
     if (ref.read(isPrimaryWindowProvider)) ref.read(cloudCallbackBindingProvider).start();
+    // The music player belongs to the music module: the guard disposes it the
+    // moment the shell leaves, even when the module's pages are already gone.
+    ref.read(musicModulePlayerGuardProvider);
     // iOS's system picture-in-picture window keeps the picture alive while
     // the app is away and hands it back on return; the kernel's own
     // background pause is off there, so this guard owns the rule.

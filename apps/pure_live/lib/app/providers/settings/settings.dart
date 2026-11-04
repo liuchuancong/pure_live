@@ -3,6 +3,7 @@
 library;
 
 export 'log_settings_provider.dart';
+export 'module_settings.dart';
 export 'settings_refresh.dart';
 export 'settings_section_provider.dart';
 export 'settings_sync.dart';

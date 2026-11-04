@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:pure_live/app/providers/settings/module_settings.dart' show ModuleSettings, moduleSettingsProvider;
 
 /// The player backends this build can choose between.
 ///
@@ -44,14 +44,17 @@ List<PlayerKernelBackend> availablePlayerKernelBackends() {
 /// The viewer's engine choice, persisted under `player.backend` and read
 /// when a room opens its playback.
 final class PlayerKernelBackendController extends Notifier<PlayerKernelBackend> {
+  late ModuleSettings _scope;
+
   static const String _key = 'player.backend';
 
   @override
   PlayerKernelBackend build() {
+    _scope = ref.watch(moduleSettingsProvider);
     final available = availablePlayerKernelBackends();
     PlayerKernelBackend stored;
     try {
-      stored = PlayerKernelBackend.fromId(StoragePrefs.getString(_key));
+      stored = PlayerKernelBackend.fromId(_scope.getString(_key));
     } on Object {
       stored = PlayerKernelBackend.mpv;
     }
@@ -63,7 +66,7 @@ final class PlayerKernelBackendController extends Notifier<PlayerKernelBackend> 
     if (!availablePlayerKernelBackends().contains(backend) || backend == state) return;
     state = backend;
     try {
-      await StoragePrefs.setString(_key, backend.id);
+      await _scope.setString(_key, backend.id);
     } on Object {
       // A preference; a closed store loses it.
     }

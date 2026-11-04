@@ -10,15 +10,18 @@ import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:media_core_mediasession/media_core_mediasession.dart' show mediaSessionArtUriKey, mediaSessionArtistKey;
 import 'package:media_core_mpv_audio/media_core_mpv_audio.dart' show MpvAudioAdapterFactory;
+import 'package:pure_live/app/providers/navigation/module_providers.dart' show selectedModuleProvider;
 import 'package:pure_live/app/providers/window/presentation_providers.dart' show presentationDriverProvider;
 
-/// The process's one player kernel: the mpv backend registered, the
-/// presentation chain attached (fullscreen, window fullscreen and PiP), ready
-/// to hand a controller to any room.
+/// The module's player kernel: the mpv backend registered, the presentation
+/// chain attached (fullscreen, window fullscreen and PiP), ready to hand a
+/// controller to any page of the module on screen.
 ///
 /// `MediaKitPlayerAdapter.ensureInitialized` runs once at boot (the app's
-/// bootstrap calls [primePlayerEngine] before the first frame); the kernel
-/// itself is cheap to hold and never disposed.
+/// bootstrap calls [primePlayerEngine] before the first frame). The kernel
+/// itself is rebuilt when the shell moves to another module: the outgoing
+/// kernel is disposed with every handle it owns, so no player survives the
+/// sandbox wall, and the incoming module starts a fresh one.
 final Provider<PlayerKernel> playerKernelProvider = Provider<PlayerKernel>(createPlayerKernel);
 
 /// Builds one window's player kernel.
@@ -27,6 +30,9 @@ final Provider<PlayerKernel> playerKernelProvider = Provider<PlayerKernel>(creat
 /// two room windows never share a controller. The native engine itself is
 /// primed once at boot and is safe to attach several kernels to.
 PlayerKernel createPlayerKernel(Ref ref) {
+  // One kernel per module: switching the shell disposes this one (its
+  // `onDispose` releases every handle) and the next module builds its own.
+  ref.watch(selectedModuleProvider);
   // The kernel's own background pause stops every playing handle when the app
   // leaves the foreground — including the player a system picture-in-picture
   // window (iOS) is showing. That platform keeps its own rule instead
@@ -207,6 +213,9 @@ final Provider<RoomPlaybackStandby> roomPlaybackStandbyProvider = Provider(creat
 
 /// Builds one window's parked-playback slot.
 RoomPlaybackStandby createRoomPlaybackStandby(Ref ref) {
+  // A parked room session is this module's: leaving the module disposes it
+  // with the kernel, so the next module never inherits a player.
+  ref.watch(selectedModuleProvider);
   final standby = RoomPlaybackStandby();
   ref.onDispose(() => unawaited(standby.dispose()));
   return standby;
