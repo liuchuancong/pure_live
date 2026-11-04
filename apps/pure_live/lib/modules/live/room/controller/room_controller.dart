@@ -625,6 +625,9 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<LiveMessage>? _chat;
   StreamSubscription<GeometryState>? _geometry;
 
+  /// The adapter events that carry the first decoded frame of an entry.
+  StreamSubscription<PlayerAdapterEvent>? _frames;
+
   /// The platform's own "the stored cookie was refused" events, for the site
   /// this room was opened from; cancelled with the room.
   StreamSubscription<void>? _cookieRefusals;
@@ -1457,6 +1460,7 @@ final class RoomController extends Notifier<RoomState> {
       _lastHandle = handle;
       state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
       _watchVideoSize(handle);
+      _watchFirstFrame(handle);
       // The player's pause and seek carry into the flying layer; the
       // viewer's current audio follows every engine, the decoder choice
       // goes to the first one.
@@ -1538,10 +1542,23 @@ final class RoomController extends Notifier<RoomState> {
     _geometry = handle.geometryController.state.listen((state) {
       final size = state.geometry.videoSize;
       if (size.width <= 0 || size.height <= 0) return;
-      // The first size the engine reports is the first frame the viewer sees.
-      _openTiming?.markFirstFrame();
       ref.read(fullscreenDriverProvider).onVideoSize(size.width, size.height);
       ref.read(pipDriverProvider).onVideoSize(size.width, size.height);
+    });
+  }
+
+  /// The entry's first frame, from the only event that means it: the backend
+  /// reporting a decoded video frame.
+  ///
+  /// The picture's geometry is not that. `videoSizeChanged` says the stream has
+  /// a size, which the demuxer learns while it is still probing — marking the
+  /// frame there hands the decoder's seconds to the network column and hides
+  /// the very split this measurement exists to make. A backend that cannot
+  /// report frames leaves the field as `-` rather than guessing.
+  void _watchFirstFrame(PlayerHandle handle) {
+    unawaited(_frames?.cancel() ?? Future<void>.value());
+    _frames = handle.adapterEvents.listen((event) {
+      if (event case PlayerAdapterVideoFrameProgress()) _openTiming?.markFirstFrame();
     });
   }
 
@@ -1948,6 +1965,8 @@ final class RoomController extends Notifier<RoomState> {
     unawaited(_failures?.cancel() ?? Future<void>.value());
     unawaited(_chat?.cancel() ?? Future<void>.value());
     unawaited(_geometry?.cancel() ?? Future<void>.value());
+    unawaited(_frames?.cancel() ?? Future<void>.value());
+    _frames = null;
     unawaited(_cookieRefusals?.cancel() ?? Future<void>.value());
     _cookieRefusals = null;
     _states = null;
