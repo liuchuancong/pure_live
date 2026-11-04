@@ -222,10 +222,25 @@ final class RecordingTaskRepository {
   /// Puts the running session's [bytes] and media time on the task without
   /// touching its state or start: the engine's progress line, written on its
   /// own clock. A task never stored is a no-op.
-  Future<void> setProgress(String id, int bytes, {int durationMs = 0, int? segments}) async {
+  Future<void> setProgress(
+    String id,
+    int bytes, {
+    int durationMs = 0,
+    int? segments,
+    double? liveFps,
+    int? droppedFrames,
+  }) async {
     final stored = store.get(id);
     if (stored == null) return;
-    await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes, durationMs: durationMs, segments: segments));
+    await save(
+      RecordingTask.fromJson(stored).copyWith(
+        bytes: bytes,
+        durationMs: durationMs,
+        segments: segments,
+        liveFps: liveFps,
+        droppedFrames: droppedFrames,
+      ),
+    );
   }
 }
 
@@ -394,10 +409,24 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
 
   /// Puts the running session's [bytes] and media time on the task (the
   /// engine's progress).
-  Future<void> setProgress(String id, int bytes, {int durationMs = 0, int? segments}) async {
+  Future<void> setProgress(
+    String id,
+    int bytes, {
+    int durationMs = 0,
+    int? segments,
+    double? liveFps,
+    int? droppedFrames,
+  }) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setProgress(id, bytes, durationMs: durationMs, segments: segments);
+    await repository.setProgress(
+      id,
+      bytes,
+      durationMs: durationMs,
+      segments: segments,
+      liveFps: liveFps,
+      droppedFrames: droppedFrames,
+    );
   }
 }
 

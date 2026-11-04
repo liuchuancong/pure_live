@@ -1284,7 +1284,7 @@ final class _TaskCard extends ConsumerWidget {
                     child: _StatBlock(
                       label: t.recorder.statProfile,
                       value: task.videoHeight > 0
-                          ? '${task.videoHeight}P${task.frameRate > 0 ? ' ${task.frameRate.round()} FPS' : ''}'
+                          ? '${task.videoHeight}P${(task.frameRate > 0 ? task.frameRate : task.liveFps) > 0 ? ' ${(task.frameRate > 0 ? task.frameRate : task.liveFps).round()} FPS' : ''}'
                           : (resolutionOf(task.quality) ??
                                 (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest)),
                       note: task.videoWidth > 0 && task.videoHeight > 0
@@ -1383,6 +1383,13 @@ final class _TaskCard extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.warning.text),
                       ),
+                    )
+                  else if (task.droppedFrames > 0)
+                    // A dropped frame is the encoder telling the viewer the
+                    // take is missing pictures it should have.
+                    Text(
+                      t.recorder.droppedFramesNote(count: task.droppedFrames),
+                      style: theme.typography.caption.copyWith(color: colors.warning.text),
                     ),
                 ],
               ),

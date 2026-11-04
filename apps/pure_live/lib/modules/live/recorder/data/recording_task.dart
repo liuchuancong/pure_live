@@ -68,6 +68,8 @@ final class RecordingTask {
     this.frameRate = 0,
     this.videoCodec = '',
     this.audioCodec = '',
+    this.liveFps = 0,
+    this.droppedFrames = 0,
     this.endedAt,
     this.filePath,
     this.bytes = 0,
@@ -111,6 +113,8 @@ final class RecordingTask {
       frameRate: (map['frameRate'] as num?)?.toDouble() ?? 0,
       videoCodec: map['videoCodec'] as String? ?? '',
       audioCodec: map['audioCodec'] as String? ?? '',
+      liveFps: (map['liveFps'] as num?)?.toDouble() ?? 0,
+      droppedFrames: (map['droppedFrames'] as num?)?.toInt() ?? 0,
       state: RecordingTaskState.fromJson(map['state']),
       startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
@@ -191,6 +195,14 @@ final class RecordingTask {
   /// The audio codec's short name (`aac`), empty until the probe answers or
   /// when the take has no sound.
   final String audioCodec;
+
+  /// The encoder's own frames per second, as its statistics line reports them
+  /// while the take is written (0 before the first line).
+  final double liveFps;
+
+  /// Frames the encoder dropped so far: non-zero means the input could not
+  /// keep up with the output.
+  final int droppedFrames;
 
   /// How often this room's live check runs, in seconds (10–300).
   ///
@@ -349,6 +361,8 @@ final class RecordingTask {
     'frameRate': frameRate,
     'videoCodec': videoCodec,
     'audioCodec': audioCodec,
+    'liveFps': liveFps,
+    'droppedFrames': droppedFrames,
     'state': state.toJson(),
     'startedAt': startedAt.toUtc().toIso8601String(),
     'endedAt': endedAt?.toUtc().toIso8601String(),
@@ -387,6 +401,8 @@ final class RecordingTask {
     double? frameRate,
     String? videoCodec,
     String? audioCodec,
+    double? liveFps,
+    int? droppedFrames,
     RecordingTaskState? state,
     DateTime? startedAt,
     DateTime? endedAt,
@@ -423,6 +439,8 @@ final class RecordingTask {
       frameRate: frameRate ?? this.frameRate,
       videoCodec: videoCodec ?? this.videoCodec,
       audioCodec: audioCodec ?? this.audioCodec,
+      liveFps: liveFps ?? this.liveFps,
+      droppedFrames: droppedFrames ?? this.droppedFrames,
       state: state ?? this.state,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,

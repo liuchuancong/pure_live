@@ -2218,6 +2218,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get saveLocation => 'Saved to';
 	@override String get roomArea => 'Area';
 	@override String get statCodec => 'Codec';
+	@override String droppedFramesNote({required Object count}) => '${count} frames dropped';
 }
 
 // Path: room
@@ -6784,6 +6785,7 @@ extension on TranslationsEn {
 			'recorder.saveLocation' => 'Saved to',
 			'recorder.roomArea' => 'Area',
 			'recorder.statCodec' => 'Codec',
+			'recorder.droppedFramesNote' => ({required Object count}) => '${count} frames dropped',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7178,9 +7180,9 @@ extension on TranslationsEn {
 			'settings.themeColorTitle' => 'Accent colour',
 			'settings.themeColorPresets' => 'Presets',
 			'settings.themeColorCustom' => 'Custom colour',
-			'settings.themeColorHex' => 'Hex colour',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeColorHex' => 'Hex colour',
 			'settings.themeColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
 			'settings.themeColorHue' => 'Hue',
 			'settings.themeColorSaturation' => 'Saturation and brightness',
@@ -7692,9 +7694,9 @@ extension on TranslationsEn {
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
 			'settings.deinterlaceDesc' => 'Live sources are progressive; only old TV signals or captures need it.',
 			'settings.deinterlaceAuto' => 'Auto',
-			'settings.deinterlaceOff' => 'Off',
 			_ => null,
 		} ?? switch (path) {
+			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
 			'settings.hwdecCodecs' => 'Hardware codecs',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
@@ -8206,9 +8208,9 @@ extension on TranslationsEn {
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
 			'settings.storageFolderDefaultLabel' => 'Default',
 			'settings.storageFolderCustomLabel' => 'Custom',
-			'settings.storageFolderPickFailed' => 'Could not select a download folder',
 			_ => null,
 		} ?? switch (path) {
+			'settings.storageFolderPickFailed' => 'Could not select a download folder',
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
@@ -8720,9 +8722,9 @@ extension on TranslationsEn {
 			'vod.unmute' => 'Unmute',
 			'vod.volume' => 'Volume',
 			'vod.quality' => 'Quality',
-			'vod.speed' => 'Speed',
 			_ => null,
 		} ?? switch (path) {
+			'vod.speed' => 'Speed',
 			'vod.fullscreen' => 'Fullscreen',
 			'vod.exitFullscreen' => 'Exit fullscreen',
 			'vod.pip' => 'Picture in picture',

@@ -6279,6 +6279,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '编码'
 	String get statCodec => '编码';
+
+	/// zh-CN: '丢帧 {count} 帧'
+	String droppedFramesNote({required Object count}) => '丢帧 ${count} 帧';
 }
 
 // Path: room
@@ -15431,6 +15434,7 @@ extension on Translations {
 			'recorder.saveLocation' => '保存位置',
 			'recorder.roomArea' => '分区',
 			'recorder.statCodec' => '编码',
+			'recorder.droppedFramesNote' => ({required Object count}) => '丢帧 ${count} 帧',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15825,9 +15829,9 @@ extension on Translations {
 			'settings.themeColorTitle' => '主题色',
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
-			'settings.themeColorHex' => '十六进制颜色',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeColorHex' => '十六进制颜色',
 			'settings.themeColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.themeColorHue' => '色相',
 			'settings.themeColorSaturation' => '饱和度与明度',
@@ -16339,9 +16343,9 @@ extension on Translations {
 			'settings.deinterlace' => '反交错 (--deinterlace)',
 			'settings.deinterlaceDesc' => '直播源多为逐行，保持自动；老电视或采集卡才需要。',
 			'settings.deinterlaceAuto' => '自动',
-			'settings.deinterlaceOff' => '关闭',
 			_ => null,
 		} ?? switch (path) {
+			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
@@ -16853,9 +16857,9 @@ extension on Translations {
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
 			'settings.storageFolderDefaultLabel' => '默认',
 			'settings.storageFolderCustomLabel' => '自定义',
-			'settings.storageFolderPickFailed' => '无法选择下载目录',
 			_ => null,
 		} ?? switch (path) {
+			'settings.storageFolderPickFailed' => '无法选择下载目录',
 			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
@@ -17367,9 +17371,9 @@ extension on Translations {
 			'vod.unmute' => '取消静音',
 			'vod.volume' => '音量',
 			'vod.quality' => '清晰度',
-			'vod.speed' => '倍速',
 			_ => null,
 		} ?? switch (path) {
+			'vod.speed' => '倍速',
 			'vod.fullscreen' => '全屏',
 			'vod.exitFullscreen' => '退出全屏',
 			'vod.pip' => '小窗播放',

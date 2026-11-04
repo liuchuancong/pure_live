@@ -316,5 +316,6 @@
   "statLastBitrate": "Last bitrate",
   "saveLocation": "Saved to",
   "roomArea": "Area",
-  "statCodec": "Codec"
+  "statCodec": "Codec",
+  "droppedFramesNote": "{count} frames dropped"
 }

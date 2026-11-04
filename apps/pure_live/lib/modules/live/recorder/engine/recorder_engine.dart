@@ -904,6 +904,12 @@ final class RecorderEngine {
     }
     var durationMs = state.duration.inMilliseconds;
     if (durationMs <= 0) durationMs = DateTime.now().difference(session.videoStartedAt).inMilliseconds;
+    // The encoder's own line: the frames it is really producing and the ones
+    // it had to drop. RecordingState promises only time and bytes, so these
+    // ride the same write as extra figures of the row.
+    final statistics = session.backend.lastStatistics;
+    final liveFps = statistics?.videoFps ?? 0;
+    final dropped = statistics?.droppedFrames ?? 0;
     // The UI needs the size every second; the store does not need a row write
     // for every tick. A changed size is written at once, a length that only
     // moved with the clock every five seconds.
@@ -914,7 +920,14 @@ final class RecorderEngine {
         .._persistedBytes = bytes
         .._persistedDurationMs = durationMs;
       final repo = _ref.read(recordingRepositoryProvider).value;
-      await repo?.setProgress(taskId, bytes, durationMs: durationMs, segments: files);
+      await repo?.setProgress(
+        taskId,
+        bytes,
+        durationMs: durationMs,
+        segments: files,
+        liveFps: liveFps,
+        droppedFrames: dropped,
+      );
     }
     if (session.capBytes > 0 && bytes >= session.capBytes) await stop(taskId);
     // A take that outlives the free-space check at start is caught here: once
