@@ -6874,6 +6874,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '弹幕连接失败（{reason}），直播画面不受影响'
 	String danmakuConnectFailed({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响';
 
+	/// zh-CN: '登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写'
+	String get chatCookieExpired => '登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写';
+
 	/// zh-CN: '已直播 {time: String}'
 	String onAirFor({required String time}) => '已直播 ${time}';
 
@@ -15656,6 +15659,7 @@ extension on Translations {
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
 			'room.danmakuConnectFailed' => ({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响',
+			'room.chatCookieExpired' => '登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写',
 			'room.onAirFor' => ({required String time}) => '已直播 ${time}',
 			'room.tabSuperChats' => '超聊',
 			'room.tabSettings' => '设置',
@@ -15855,9 +15859,9 @@ extension on Translations {
 			'settings.themeSeed' => '主题色',
 			'settings.themeSeedSystem' => '跟随系统取色',
 			'settings.themeSeedDescription' => '用于按钮、选中态和强调色。',
-			'settings.themeSeedDynamic' => '跟随系统动态取色',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeSeedDynamic' => '跟随系统动态取色',
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '用系统壁纸或强调色生成主题。',
@@ -16369,9 +16373,9 @@ extension on Translations {
 			'settings.scaleSpline16' => 'Spline16（快）',
 			'settings.scaleCatmullRom' => 'Catmull-Rom',
 			'settings.scaleMitchell' => 'Mitchell',
-			'settings.scaleHermite' => 'Hermite（柔和）',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleHermite' => 'Hermite（柔和）',
 			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			'settings.scaleNearest' => '最近邻（块状）',
@@ -16883,9 +16887,9 @@ extension on Translations {
 			'settings.backgroundPreviewMedia' => '预览',
 			'settings.backgroundCopyColor' => '复制色值',
 			'settings.backgroundCopyGradient' => '复制渐变',
-			'settings.backgroundCopyAddress' => '复制地址',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundCopyAddress' => '复制地址',
 			'settings.backgroundDownloadFailed' => '下载失败',
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存。',
@@ -17397,9 +17401,9 @@ extension on Translations {
 			'vod.danmakuOff' => '隐藏弹幕',
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
-			'vod.coins' => '投币',
 			_ => null,
 		} ?? switch (path) {
+			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',

@@ -555,6 +555,14 @@ final class RoomController extends Notifier<RoomState> {
   /// The timer that re-reads the plan when the platform's own address lease
   /// says it has to be rebuilt. See [RoomController._armLeaseRenewal].
   Timer? _leaseRenewal;
+
+  /// How many times a chat the platform refused *for now* is opened again on
+  /// the room's own, before the column's 重试 button is left to the viewer.
+  static const int _kChatTransientRetries = 3;
+
+  /// The pending automatic chat retry, and how many this room has spent.
+  Timer? _chatRetry;
+  int _chatAttempts = 0;
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
 
@@ -1346,12 +1354,53 @@ final class RoomController extends Notifier<RoomState> {
         // missing), and the standing outlives it: the column keeps saying so
         // with a way to try again after the hint has gone.
         _setChat(RoomChatStatus.failed, error: error.message);
-        ref.read(roomHintProvider.notifier).show(l10n.t.room.danmakuConnectFailed(reason: error.message));
+        // A refused login names its own answer; the platform's diagnostic
+        // sentence only helps a viewer who can read a raw log line.
+        ref
+            .read(roomHintProvider.notifier)
+            .show(
+              error.cookieSuspect
+                  ? l10n.t.room.chatCookieExpired
+                  : l10n.t.room.danmakuConnectFailed(reason: error.message),
+            );
+        _armChatRetry(error, provider, room);
       }, (session) => _installDanmaku(session, room, epoch: epoch));
     } finally {
       // Only this open's own marker: a room switch already put its open there.
       if (_danmakuOpeningEpoch == epoch) _danmakuOpeningEpoch = null;
     }
+  }
+
+  /// Opens a chat the platform refused *for now* again by itself.
+  ///
+  /// A blip on the way to the danmaku credentials used to leave the column on
+  /// its failure state until the viewer noticed the 重试 button — for a socket
+  /// that failed for two seconds, that is a room with no chat for the rest of
+  /// the visit. The platform's own classification decides: a transient answer
+  /// (a transport failure, a throttle) is worth another attempt after the wait
+  /// it asked for, and anything else — no such room, no such capability, a body
+  /// that broke the spec — is not, because retrying those only spends the quota
+  /// the next real request needs.
+  ///
+  /// Bounded, so a platform that says "transient" forever does not get an
+  /// unlimited number of tries; past the bound the button is the only way back,
+  /// which is where a viewer who has been waiting expects to find it.
+  void _armChatRetry(LiveSiteError error, LiveDanmakuProvider provider, LiveRoom room) {
+    if (!error.isTransient || _chatAttempts >= _kChatTransientRetries) return;
+    _chatAttempts++;
+    // A throttle without a named wait is given more room than a socket that
+    // blinked: the first says the site wants quiet, the second says nothing.
+    final wait =
+        error.retryAfter ??
+        (error is LiveSiteRateLimitError ? const Duration(seconds: 15) : Duration(seconds: 2 * _chatAttempts));
+    final epoch = _danmakuEpoch;
+    _chatRetry?.cancel();
+    _chatRetry = Timer(wait, () {
+      // A newer open (a login change, another room) owns the chat now.
+      if (!ref.mounted || epoch != _danmakuEpoch) return;
+      if (state.room?.ref != room.ref) return;
+      unawaited(_openDanmaku(provider, room));
+    });
   }
 
   /// The viewer's login for [siteId] changed while this room is showing: the
@@ -1419,6 +1468,8 @@ final class RoomController extends Notifier<RoomState> {
     _namedChats = 0;
     _nameHintShown = false;
     _twitchRefusalShown = false;
+    // A chat that got in spends its retries again from zero.
+    _chatAttempts = 0;
     // The pipeline (the flying layer over the site session) starts with
     // the session: the bridge settles the controller, every site message
     // runs the pipeline's shield policy and filters, and what passes
@@ -1696,6 +1747,9 @@ final class RoomController extends Notifier<RoomState> {
     _detailRefresh = null;
     _leaseRenewal?.cancel();
     _leaseRenewal = null;
+    _chatRetry?.cancel();
+    _chatRetry = null;
+    _chatAttempts = 0;
     final session = _session;
     _session = null;
     _playback = null;

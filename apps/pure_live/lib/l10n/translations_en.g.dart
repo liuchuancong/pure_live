@@ -2422,6 +2422,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get bilibiliGuestNames => 'Connected as a guest — Bilibili chat hides the full nicknames';
 	@override String get bilibiliLoginExpired => 'Your Bilibili login looks expired — every nickname is masked; please sign in again';
 	@override String danmakuConnectFailed({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected';
+	@override String get chatCookieExpired => 'The stored cookie seems expired, so chat did not connect — renew it on the account page';
 	@override String onAirFor({required String time}) => 'On air ${time}';
 	@override String get tabSuperChats => 'Chats';
 	@override String get tabSettings => 'Settings';
@@ -6989,6 +6990,7 @@ extension on TranslationsEn {
 			'room.bilibiliGuestNames' => 'Connected as a guest — Bilibili chat hides the full nicknames',
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
 			'room.danmakuConnectFailed' => ({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected',
+			'room.chatCookieExpired' => 'The stored cookie seems expired, so chat did not connect — renew it on the account page',
 			'room.onAirFor' => ({required String time}) => 'On air ${time}',
 			'room.tabSuperChats' => 'Chats',
 			'room.tabSettings' => 'Settings',
@@ -7188,9 +7190,9 @@ extension on TranslationsEn {
 			'settings.themeSeed' => 'Accent colour',
 			'settings.themeSeedSystem' => 'Follow the system accent',
 			'settings.themeSeedDescription' => 'Drives buttons, selection and emphasis.',
-			'settings.themeSeedDynamic' => 'Follow the system\'s dynamic colour',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeSeedDynamic' => 'Follow the system\'s dynamic colour',
 			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
 			'settings.dynamicColor' => 'Dynamic colour',
 			'settings.dynamicColorDescription' => 'Builds the theme from the wallpaper or accent colour.',
@@ -7702,9 +7704,9 @@ extension on TranslationsEn {
 			'settings.scaleSpline16' => 'Spline16 (fast)',
 			'settings.scaleCatmullRom' => 'Catmull-Rom',
 			'settings.scaleMitchell' => 'Mitchell',
-			'settings.scaleHermite' => 'Hermite (soft)',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleHermite' => 'Hermite (soft)',
 			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
 			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
 			'settings.scaleNearest' => 'Nearest (blocky)',
@@ -8216,9 +8218,9 @@ extension on TranslationsEn {
 			'settings.backgroundPreviewMedia' => 'Preview',
 			'settings.backgroundCopyColor' => 'Copy color value',
 			'settings.backgroundCopyGradient' => 'Copy gradient',
-			'settings.backgroundCopyAddress' => 'Copy address',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundCopyAddress' => 'Copy address',
 			'settings.backgroundDownloadFailed' => 'Download failed',
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			'settings.cacheRefreshThumbnailsDesc' => 'Clears cover, avatar and icon caches.',
@@ -8730,9 +8732,9 @@ extension on TranslationsEn {
 			'vod.danmakuOff' => 'Hide danmaku',
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
-			'vod.coins' => 'Coins',
 			_ => null,
 		} ?? switch (path) {
+			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
