@@ -198,3 +198,13 @@
 2. 剩下的时间只能花在 **引擎侧**（create→open→首帧）或 UI 等待上；`room-open` 的 `request/firstFrame/playing` 三段能量它，但**当前盘上的 exe 早于计时**（`project-pure-live-room-open-latency` 同样记着这条）⇒ 下一轮要真数字只有一条路：重新构建并跑一次 App（`build/verify_room.py`/`drive_app.py` 已不在仓里，只剩 `scripts/sync_github_mirrors.py`）。
 3. **站点侧的真慢点有主了**：bigo 的 `getRoom` 单段 2.4 s（另加 lines 1.2 s）——这是 bigo 适配器/端点的问题，不是进房流程的问题；soop 957、chzzk  qualities 1132 同理。**归站点 lane**，别在房间线里绕。
 4. **普查顺手发现**：`LiveHotProvider` 在 34 站里**零实现**（热门实际走 `LiveDiscoveryProvider.getRecommendedRooms`）。`toolbox_controllers.dart:246` 的 `capability<LiveHotProvider>()` 分支永远是 null——它能正确退回 discovery，所以不是 bug，但这是接口冗余；删接口是包侧决定（等点名）。
+
+## 别人的门：`recording_schedule_test.dart` 为什么长期一红（我只报，不改）
+
+`flutter test test/live` 连续多轮 52/53，红的 Always 是这一条。判据现场：
+
+- `modules/live/recorder/data/recording_task.dart:331` 现在是 `bool get needsLiveCheck => isArmed;`
+- 同一文件 `:325-330` 的文档注释还在写旧语义（"等待开播的房间一上线就起录；排期结束的等下个窗口再装填；正在录或一次性录完的不必检查"）。
+- `test/live/recording_schedule_test.dart:97,103` 断言的正是文档那套：waiting ⇒ true、排期任务 ⇒ true。
+
+⇒ 代码/注释/测试三者两两矛盾，改哪一边都是**录像 lane 的产品决定**（结合 `project-pure-live-recorder-subscriptions` 的"开播检测默认 false"，新语义像是刻意的：没订阅检测就不轮询）。要落新语义，需要同步改掉 `:325-330` 的注释与 `:97/:103` 两条断言；要回旧语义，就把 waiting/排期-结束两支写回 getter。我不碰他们正在编辑的文件，只把冲突点写在这里，省得每轮重新解剖一次。
