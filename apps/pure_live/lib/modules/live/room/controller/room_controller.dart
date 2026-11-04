@@ -745,24 +745,26 @@ final class RoomController extends Notifier<RoomState> {
   /// the room's identity; a platform without a refresh read replays the
   /// detail request only when nothing is playing.
   ///
-  /// [reportFailure] is false for the automatic re-read: one network turn that
-  /// did not answer must not put a failure overlay over a stream that is still
-  /// playing. The viewer's own refresh press keeps the error, because there it
-  /// is the answer to what they just asked for.
-  Future<void> refreshRoom({bool reportFailure = true}) async {
+  /// [manual] is the viewer's own press. The minute-by-minute re-read passes
+  /// false, and that changes two things: one network turn that did not answer
+  /// must not put a failure overlay over a stream that is still playing, and a
+  /// tick must never rebuild the player. A background read that fell through to
+  /// [open] would start playback on its own, once a minute, in a room the viewer
+  /// is only watching.
+  Future<void> refreshRoom({bool manual = true}) async {
     final room = state.room;
     final platform = _requestedPlatform;
     final roomId = _requestedRoomId;
     if (room == null || platform == null || roomId == null) return;
     final capability = ref.read(sitesProvider).getById(platform)?.capability<LiveRoomRefresh>();
     if (capability == null) {
-      if (state.handle == null) await open(platform: platform, roomId: roomId);
+      if (manual && state.handle == null) await open(platform: platform, roomId: roomId);
       return;
     }
     final answer = await capability.getRoomForRefresh(roomId: roomId);
     if (!ref.mounted) return;
     answer.match((error) {
-      if (reportFailure) state = _with(error: error.message);
+      if (manual) state = _with(error: error.message);
     }, (fresh) => state = _with(room: room.mergedWith(fresh)));
   }
 
@@ -774,7 +776,7 @@ final class RoomController extends Notifier<RoomState> {
   /// learned when the viewer asks.
   void _armDetailRefresh() {
     _detailRefresh?.cancel();
-    _detailRefresh = Timer.periodic(kRoomDetailRefreshEvery, (_) => unawaited(refreshRoom(reportFailure: false)));
+    _detailRefresh = Timer.periodic(kRoomDetailRefreshEvery, (_) => unawaited(refreshRoom(manual: false)));
   }
 
   /// Pauses (the sleep timer's stop; never resumes a paused room).
