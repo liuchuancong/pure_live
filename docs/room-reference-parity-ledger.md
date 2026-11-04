@@ -31,9 +31,11 @@
 | P13 | `c4a1485e4` | 撤回 | 平台的 `retraction` 真正落实：`_onSiteMessage` 先分派它（空文本本来会被 shape/gate 丢掉），聊天列表按 `LiveRetraction.matches` 删行、只删 `chat` 类型（礼物与通知留下，同参考 `chat_feed.dart:285`），飞行层 `barrage.retractWhere` 把排队中和已在屏上的同三条匹配一并收回。测试 `apps/pure_live/test/live/room_retraction_test.dart`（4 例：按 id、按用户 id/昵称、all、无命中不动状态）。 |
 | P14 | media_core `7c97dab` + `36c998de9` | 打开后聊天 | gate 的补发窗口：`DanmakuMessage.replayed` + `DanmakuConfig.maxReplayAge`（135 s＝参考里 17LIVE 的 resume 窗口），按消息选限长；未到 `endTime` 的付费卡不因时间丢。app 两处缝（`acceptExternal` 前与 `_ChatMirrorSink` 回落成 `LiveMessage`）都带上这个旗标，否则进了列表的历史会自称"现在说的"，`room_chat.dart:651` 的「之前发的」也永远不出现。 |
 | P15 | media_core `cea97d6` + `eeeda8c10` | 正则屏蔽 | 房间终于吃 `/…/`：`DanmakuFilterPolicy` 加 `blockedPatterns`（host 编译好的 `RegExp`）与 `patternMatchLength=200` 上限，按原文匹配（大小写规则在编译时就定好了）；app 侧 `_shieldPolicyFor` 用 `live_sites` 的 `DanmakuBlockPattern` 拆词（格式与 ReDoS 判据只有一份，在站点包里），录制侧本来就用 `DanmakuBlockList`。屏蔽词输入框加 `acceptsPatterns`，跑不动的正则当场拒绝并说明原因（否则列表把它当空气、UI 却说"已添加"）；`keywordFieldHint` 说明 `/…/` 是正则。新串 `shield.patternRejected`/`patternTooSlow`。 |
+| P16 | `6374af2c1` | 屏蔽纯表情/超长 | `danmakuMessageShape` 加可选 `emoticonPattern`；app 在 `danmakuShapeBlockedByRules` 里传 `EmojiAtlas.instance.regex`（就是聊天绘制用的那张表）。之前斗鱼/虎牙的 `[笑哭][笑哭]` 被当成 8 个字符：表情屏蔽放行、超长屏蔽多算。图集没加载完就退回旧读法（不因此拦掉没要求拦的行）。测试 `packages/live_sites/test/models/danmaku_text_shape_test.dart` 5 例。 |
 | P17 | media_core `49e418c` + `af59be0f1` | 屏蔽可见 | 「本场已屏蔽 N 条」：引擎把 policy 的判定（屏蔽的人/词）用 `onSuppressed(message, reason)` 报给 host，app 只把**观众自己的四条**计入（屏蔽名、屏蔽词含正则、纯表情、超长）；重复/相似/重发不算——那度量的是房间有多吵，不是屏蔽有没有在跑。位置=房间屏蔽面板第一行（参考同处），设置页不放第二个入口。`RoomShieldCountController` 计数立刻、通知按帧合并；开房/关房/离场三处归零。新串 `shield.blockedThisStream`。测试：引擎 2 例（只报 policy、按名字算）、app 2 例（计数、归零）。 |
 | P18 | `27daeda3f` | 稳定/秒开 | lease 驱动的提前换链：chzzk/douyu/fc2live/pandalive 的解析器会给 `LivePlayLease.requiresReconnect=true`，app 此前零读者 ⇒ 地址到期就是一段冻屏，直到引擎自己发现线死了才走恢复重签。现在 `_armLeaseRenewal()` 在 `refreshAt` 到点前重读计划并重开（同一条恢复路径，提前到故障之前）；能 resume 的线（FLV）继续不管——定时重开正是 T6 判过的那个缺口。换 handle 与换线两处重挂、`_teardown` 取消、已经过期的 lease 最少隔 5 s 再读（不空转）。 |
-| P16 | `6374af2c1` | 屏蔽纯表情/超长 | `danmakuMessageShape` 加可选 `emoticonPattern`；app 在 `danmakuShapeBlockedByRules` 里传 `EmojiAtlas.instance.regex`（就是聊天绘制用的那张表）。之前斗鱼/虎牙的 `[笑哭][笑哭]` 被当成 8 个字符：表情屏蔽放行、超长屏蔽多算。图集没加载完就退回旧读法（不因此拦掉没要求拦的行）。测试 `packages/live_sites/test/models/danmaku_text_shape_test.dart` 5 例。 |
+| P19 | `4e9150798` | 错误分类 | `LiveSiteError` 一次补齐三个判据（对齐参考 `live_core/site_error.dart:19,47-58,63-71`）：`isTransient`（只有 network 与 rateLimit 为真，其余一律假——猜一次就要花配额）、`retryAfter`（限流自带就带上）、`cookieSuspect`（登录被拒 ≠ 没登录）。生产者先只接 baidulive 的"弹幕签名过期"（唯一已经知道自己原因的地方）；测试 5 例（含相等性把新字段算进去）。 |
+| P20 | `6f214f8ff` | 弹幕稳定 | 房间按新判据自己重连弹幕：blink 走 2 s/4 s/6 s 退避，限流按 `retryAfter`（没给就 15 s），不可重试的类不试；三次封顶后仍留给列上的"重试"按钮；`_installDanmaku` 成功归零、换房/`_teardown` 取消。被拒登录改用新串 `room.chatCookieExpired`，不再把平台英文诊断当 toast。 |
 
 ## 已核对为持平或更强（别重做，附证据）
 
@@ -62,7 +64,7 @@
 - [x] **T9 正则黑名单在直播间失效**（P15）。`media_core_danmaku/danmaku_filter_policy.dart` 过去只 substring；`live_sites/common/danmaku/filters/block_pattern.dart` 只有录制读 ⇒ 同一份名单两处行为不一致。**已统一到包侧**：格式的权威仍在 `live_sites`（它同时管着设置页添加时的耗时探测与指数回溯判据，两份实现会漂），引擎只收编译好的 `RegExp` 并保证代价（只看前 200 字）。app 不重实现，只做一次拆词。
 - [x] **T10 「屏蔽纯表情」不吃内置表情表**（P16）。参考 `message_filter.dart:126` 有 shaper hook；我们 `danmaku_filter_settings.dart:250` 用默认 shaper（只认 `message.emotes`），而图集键就在 `shared/player/emoji_atlas_loader.dart:47`。⇒ 斗鱼/虎牙 `[笑哭][笑哭]` 屏蔽不掉。**已做**：包侧 `danmakuMessageShape(..., emoticonPattern:)`（规则在包里，表在 app），app 传 `EmojiAtlas.instance.regex`——和聊天绘制同一张表，屏幕说什么就按什么算。
 - [x] **T11 lease 驱动的换链**（P18）。`live_sites` 有 `LivePlayLease`（refreshAt/expiresAt/requiresReconnect）+ 10 个 `*PlayLeaseLookup` capability，**app 内零读者**；播放器只在失败后重取。注意与 T6 的区别：**HLS/需要重连的线**才该提前换（`requiresReconnect`），FLV 建立中的连接不受到期影响。⇒ 已按这条界线做：只有声明 `requiresReconnect` 的线挂定时器。
-- [ ] **T12 错误分类太薄**。参考 `live_core/site_error.dart:19,47-58,63-71` 有 `isTransient`/`retryAfter`/`cookieSuspect`；我们 `live_sites/core/live_site_error.dart:38` 三者皆无 ⇒ 429/风控时上层不知该等多久、该不该提示换 cookie。扩 `LiveSiteError`（一次补全字段，别逐条加）。
+- [x] **T12 错误分类太薄**（P19+P20）。参考 `live_core/site_error.dart:19,47-58,63-71` 有 `isTransient`/`retryAfter`/`cookieSuspect`；我们 `live_sites/core/live_site_error.dart` 此前三者皆无 ⇒ 429/风控时上层不知该等多久、该不该提示换 cookie。**已一次补齐三个判据并接了第一个消费者**（房间弹幕按判据自恢复）。剩余可继续做的：给更多站点当生产者（baidulive 已接），以及账号页用 `cookieSuspect` 区分"要登录"与"Cookie 被拒"。
 
 ### 我们在参考之前的地方（别回退）
 
@@ -79,3 +81,5 @@
 - 2026-11-04 P17：本场屏蔽计数（T3 勾掉）。门：media_core_danmaku `dart analyze lib test` 0 issues、`flutter test` 107/107 绿；app `dart analyze lib` 0 issues、`flutter test test/live/room_shield_count_test.dart test/live/room_retraction_test.dart` 6/6 绿。运行期未验证（数字要真进房才会动）。本轮自己踩一条老规矩：**提交主题里不要夹中文**（第一版主题写了界面原话，推送前 `--amend` 改成英文转述；正文要用英文说界面词，别把中文串塞进 subject）。
 - 本轮另外确认：**media_core 的 gate 只做到 `maxReplayAge` 为止**（参考也是），没有给"未声明但很旧"的包再加一套首次放行机制——那会把"后台攒了一批没发的 socket 不许当直播倒"的保护拆掉。`git status` 在包根看的是整个引擎仓，别看错成"我的改动没了"。
 - 2026-11-04 P18：lease 提前换链（T11 勾掉）。门：app `dart analyze lib` 0 issues；`flutter test test/live` 42 例绿，只剩录像 lane 那一红（`recording_schedule_test`，别人的）。运行期未验证——要真房间跑到地址到期才看得见，交用户自测。T2 已按规矩出样张（A0 现状 / B 参考同款三停靠点 / C 只给聊天加停靠 / D 照参考+横屏源 16:9 信箱），等用户点方向，没点就不动布局形态。
+
+- 2026-11-04 P19+P20：错误分类与房间自恢复（T12 勾提，队列剩 T1/T5、T2 等用户点方向）。门：live_sites `dart analyze lib test` 0 issues、`dart test` 463/463 绿；app `dart analyze lib` 0 issues、`flutter test test/live` 42 例绿、仍只剩录像 lane 的 recording_schedule_test 一红。踩坑：sealed 联合的 **转发式 const factory 不能给新参数写默认值**（报 default_value_in_redirecting_factory_constructor），所以 `cookieSuspect` 用可空参数 + 私有字段 + 覆盖 getter，对外仍是非空 bool。运行期未验证：要真断网/限流才看得见重连。
