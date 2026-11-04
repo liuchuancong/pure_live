@@ -48,6 +48,7 @@ import 'package:pure_live/modules/live/room/player/room_playlist.dart'
     show RoomPlaylistController, roomPlaylistProvider;
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart';
+import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart' show showRoomDirectLinks;
 import 'package:pure_live/shared/shared.dart';
 
 /// The live room: media_core's picture with the app's control layer over
@@ -1525,6 +1526,12 @@ List<Widget> roomMenuItems(
   final external =
       detail != null &&
       ((detail.links.webUrl?.trim().isNotEmpty ?? false) || (detail.links.appUrl?.trim().isNotEmpty ?? false));
+  // Whether this room's site can answer for its own stream address: a row that
+  // only ever says "no link available" is a door to a wall, so the tool's own
+  // capability check decides whether the menu carries it.
+  final directLinks =
+      detail != null &&
+      ref.read(sitesProvider).getById(detail.ref.platform)?.capability<LivePlaybackProvider>() != null;
   // Four sections, each a kind of errand, so the list reads as a place to look
   // rather than a pile: the room and its facts; what the picture does (record,
   // small window, cast, framing, capture, the scheduled capture, the numbers on
@@ -1657,6 +1664,15 @@ List<Widget> roomMenuItems(
         label: Text(t.common.retry),
         onPressed: () => unawaited(ref.read(roomProvider.notifier).retry()),
       ),
+      // The room's own stream address, with each line's URL copyable — the
+      // link tool and the room cards already open this dialog; the room that
+      // is playing was the one place that never offered it.
+      if (directLinks)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.link2),
+          label: Text(t.toolbox.linkDirect),
+          onPressed: () => unawaited(showRoomDirectLinks(context, ref, detail)),
+        ),
       if (detail != null)
         DsMenuItem(
           leading: const DsIcon(DsIcons.share),
