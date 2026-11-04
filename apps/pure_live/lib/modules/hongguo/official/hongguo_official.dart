@@ -140,6 +140,11 @@ const String _kSearchHost = 'https://api5-normal-sinfonlinea.fqnovel.com';
 const String _kPlayerUa =
     'com.phoenix.read/71532 (Linux; U; Android 9; SM-N9860; Build/PQ3A.190705.10241111;tt-ok/3.12.13.20)';
 
+/// The UA the website's own pages send; its fallback play-info route is a web
+/// endpoint and answers a browser client, not the app's.
+const String _kWebUa =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
 /// The official client the station's feeds ask.
 final class HongguoOfficialClient {
   /// Creates the client over [http].
@@ -781,10 +786,10 @@ final class HongguoOfficialClient {
   /// registered device identity is the ticket.
   ///
   /// That ticket only reaches so far: an anonymous session is answered a 200
-  /// with no bytes at all (`播放信息为空`), and the episode then falls to the
-  /// website's own copy — [publicVideoUrl], the file the site hands its own
-  /// video element. Without that the viewer gets an error card over a drama
-  /// the site plays in the open.
+  /// with no bytes at all (`播放信息为空`), so the episode falls to the
+  /// website's own fallback play info — [_webFallbackRendition], the full file
+  /// its own player takes. Only when no address answers at all does the model
+  /// call's own refusal reach the viewer.
   Future<List<HongguoRendition>> playbackLadder(String vid, {List<String> ahead = const []}) async {
     final pattern = RegExp(r'^[0-9]{1,30}$');
     if (!pattern.hasMatch(vid)) {
@@ -803,18 +808,65 @@ final class HongguoOfficialClient {
     List<HongguoRendition> ladder;
     try {
       ladder = await _modelLadder(ids, vid);
-    } on HongguoOfficialFailure {
-      // The model call refused this session; the public copy still plays. A
-      // transport breakdown is not caught here — no route works without it.
-      ladder = const [];
-      // A session refused for this episode is refused for the two queued
-      // behind it too, and each of those would pay the same three reads; hand
-      // them their public copy now so the next episode starts from the cache.
+    } on Object catch (error) {
+      if (error is! HongguoOfficialFailure && error is! HongguoDeviceException) rethrow;
+      // The app's model refused this session. The website's own fallback play
+      // info hands the full episode over without a signature, so the episode
+      // keeps its length.
+      final fallback = <String, HongguoRendition>{};
       for (final next in ids) {
-        _rememberAhead(next, [_publicRendition(next)]);
+        try {
+          final rendition = await _webFallbackRendition(next);
+          if (rendition != null) fallback[next] = rendition;
+        } on Object {
+          // The next episode asks again when its turn comes.
+        }
       }
+      final current = fallback[vid];
+      // No full copy anywhere: the model's own words describe the refusal
+      // better than the site's ten-second public teaser would.
+      if (current == null) rethrow;
+      // A session refused for this episode is refused for the two queued
+      // behind it too; hand them their address now so the next episode starts
+      // from the cache.
+      for (final next in ids) {
+        final rendition = fallback[next];
+        if (rendition != null) _rememberAhead(next, [rendition]);
+      }
+      return [current];
     }
-    return ladder.isNotEmpty ? ladder : [_publicRendition(vid)];
+    return ladder;
+  }
+
+  /// The website's own fallback play info: the episode's whole file, the copy
+  /// its `video` element plays when the protected path is refused.
+  ///
+  /// The app's playback model answers an anonymous session with no bytes at
+  /// all; this route answers a bare JSON holding `main_url` (measured: the
+  /// same 143-second file the site plays, where `/video/public/<vid>/360p.mp4`
+  /// is a ten-second teaser). No signature, no device identity, no cookie.
+  Future<HongguoRendition?> _webFallbackRendition(String vid) async {
+    final body = utf8.encode(jsonEncode({'item_id': vid}));
+    final raw = await _text(
+      Uri.parse('$kHongguoSite/api/video/protected/fallback-play-info?aid=8662'),
+      body: Uint8List.fromList(body),
+      headers: const {
+        'User-Agent': _kWebUa,
+        'Accept': 'application/json; charset=utf-8',
+        'Content-Type': 'application/json',
+        'Referer': '$kHongguoSite/',
+      },
+      retry: true,
+    );
+    final data = _jsonBody(raw, emptyMessage: '播放地址为空');
+    final status = data['base_resp'];
+    final code = status is Map<String, Object?> ? (status['StatusCode'] as num?)?.toInt() : null;
+    if (code != null && code != 0) return null;
+    final url = _cleanUrl(_str(data, 'main_url'));
+    if (!url.startsWith('http')) return null;
+    final expire = (data['url_expire'] as num?)?.toInt() ?? 0;
+    if (expire > 0 && expire < DateTime.now().millisecondsSinceEpoch ~/ 1000) return null;
+    return HongguoRendition(quality: 0, codec: 'h264', url: url);
   }
 
   /// The app's own ladder for [ids], read from the row named [vid].
@@ -854,18 +906,6 @@ final class HongguoOfficialClient {
     if (inline.isNotEmpty) return inline;
     return await _fallbackLadder(model);
   }
-
-  /// The website's own copy of one episode: a plain 360p MP4, no key and no
-  /// signature.
-  ///
-  /// The site's bundle builds it as `/video/public/<episode vid>/360p.mp4` and
-  /// gives it to a `video` element, so the file answers a bare ranged GET like
-  /// any other mp4 — measured: 206, `video/mp4`, and the first bytes are
-  /// `ftypisom`.
-  String publicVideoUrl(String vid) => '$kHongguoSite/video/public/$vid/360p.mp4';
-
-  HongguoRendition _publicRendition(String vid) =>
-      HongguoRendition(quality: 360, codec: 'h264', url: publicVideoUrl(vid));
 
   /// The `data` map of the player-model call for [ids] — the current vid plus
   /// at most two ahead, in one request.
