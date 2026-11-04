@@ -130,11 +130,19 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final settings = ref.read(recordingSettingsProvider);
     final existing = ref.read(recordingTasksProvider).tasks.where((task) => task.id == id).firstOrNull;
     final now = DateTime.now().toUtc();
+    // The card keeps naming the streamer and pictures the room even after the
+    // room leaves both stores: the snapshot rides on the subscription.
+    final anchorName = (room.anchor?.name ?? '').trim();
+    final avatarUrl = (room.anchor?.avatarUrl ?? '').trim();
+    final coverUrl = room.content.coverUrl.trim();
     if (live) {
       final task =
           existing?.copyWith(
             roomTitle: room.content.title,
             quality: settings.defaultQuality,
+            anchorName: anchorName,
+            anchorAvatarUrl: avatarUrl,
+            coverUrl: coverUrl,
             state: RecordingTaskState.stopped,
             startedAt: now,
           ) ??
@@ -144,6 +152,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             roomId: room.ref.roomId,
             roomTitle: room.content.title,
             quality: settings.defaultQuality,
+            anchorName: anchorName,
+            anchorAvatarUrl: avatarUrl,
+            coverUrl: coverUrl,
             state: RecordingTaskState.stopped,
             startedAt: now,
           );
@@ -158,6 +169,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         existing?.copyWith(
           roomTitle: room.content.title,
           quality: settings.defaultQuality,
+          anchorName: anchorName,
+          anchorAvatarUrl: avatarUrl,
+          coverUrl: coverUrl,
           state: RecordingTaskState.waiting,
           startedAt: now,
         ) ??
@@ -167,6 +181,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           roomId: room.ref.roomId,
           roomTitle: room.content.title,
           quality: settings.defaultQuality,
+          anchorName: anchorName,
+          anchorAvatarUrl: avatarUrl,
+          coverUrl: coverUrl,
           state: RecordingTaskState.waiting,
           startedAt: now,
         );
@@ -478,18 +495,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         id: 'duration',
         label: t.recorder.columnDuration,
         value: (task) => task.durationMs,
-        text: (task) => task.durationMs > 0 ? formatRecordingDuration(Duration(milliseconds: task.durationMs)) : '—',
+        text: (task) {
+          final elapsed = recordingElapsed(task);
+          return elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
+        },
         numeric: true,
         width: const DsTableColumnWidth.intrinsic(min: 76),
       ),
       DsTableColumn<RecordingTask>(
         id: 'bitrate',
         label: t.recorder.columnBitrate,
-        value: (task) => task.durationMs > 0 ? (task.bytes * 8 / (task.durationMs / 1000)).round() : 0,
-        text: (task) {
-          final rate = formatRecordingBitrate(task.bytes, Duration(milliseconds: task.durationMs));
-          return rate.isEmpty ? '—' : rate;
-        },
+        value: (task) => (task.bytes * 8 / recordingElapsed(task).inSeconds.clamp(1, 1 << 31)).round(),
+        text: (task) => formatRecordingBitrate(task.bytes, recordingElapsed(task)).isEmpty
+            ? '—'
+            : formatRecordingBitrate(task.bytes, recordingElapsed(task)),
         numeric: true,
         width: const DsTableColumnWidth.intrinsic(min: 84),
       ),
@@ -518,20 +537,25 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
-    final streamer = room?.anchor?.name.trim() ?? '';
+    final liveAnchor = (room?.anchor?.name ?? '').trim();
+    final streamer = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
     final storedTitle = task.roomTitle.trim();
-    final roomTitle = room?.content.title.trim() ?? '';
-    final title = storedTitle.isNotEmpty ? storedTitle : (roomTitle.isNotEmpty ? roomTitle : task.roomId);
-    final cover = room?.content.coverUrl.trim() ?? '';
+    final liveTitle = (room?.content.title ?? '').trim();
+    final title = storedTitle.isNotEmpty ? storedTitle : (liveTitle.isNotEmpty ? liveTitle : task.roomId);
+    final liveCover = (room?.content.coverUrl ?? '').trim();
+    final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
     final fileDeleted = task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
     return Row(
       spacing: DsSpace.s8,
       children: [
-        DsImage(
-          image: cover.isEmpty ? null : cachedImage(cover),
-          width: 48,
-          height: 32,
-          fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: DsImage(
+            image: cover.isEmpty ? null : cachedImage(cover),
+            width: 48,
+            height: 32,
+            fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
+          ),
         ),
         Expanded(
           child: Column(
@@ -555,12 +579,18 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                           ? t.recorder.stateProcessing
                           : fileDeleted
                           ? t.recorder.stateFileDeleted
+                          : !task.enabled
+                          ? t.recorder.statePaused
+                          : task.state == RecordingTaskState.stopped
+                          ? t.recorder.stateWaiting
                           : _TaskCard.stateLabel(t, task.state),
                     ),
                     status: task.postProcessing
                         ? DsStatus.info
-                        : fileDeleted
+                        : fileDeleted || !task.enabled
                         ? DsStatus.neutral
+                        : task.state == RecordingTaskState.stopped
+                        ? DsStatus.warning
                         : _TaskCard.stateStatus(task.state),
                   ),
                 ],
@@ -982,6 +1012,15 @@ typedef _TaskCallbacks = ({
   VoidCallback? onPlayExternal,
 });
 
+/// The length a row can speak for: media time once the engine reports it,
+/// and the wall clock since the start while the take is still writing — a
+/// running session's size and rate have to read before the first report.
+Duration recordingElapsed(RecordingTask task) {
+  final recorded = Duration(milliseconds: task.durationMs);
+  if (!task.isRunning || recorded > Duration.zero) return recorded;
+  return DateTime.now().difference(task.startedAt);
+}
+
 /// The list's order: a room being recorded first, then a room being finished,
 /// then the ones waiting for their next live stream, then a failed last take,
 /// and the paused rooms last. Ties keep the newest session on top.
@@ -1076,37 +1115,40 @@ final class _TaskCard extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final streamer = room?.anchor?.name.trim() ?? '';
+    // The live stores win; the snapshot stored with the subscription answers
+    // when the room is in neither of them, so the card always names the
+    // streamer and pictures the room.
+    final liveAnchor = (room?.anchor?.name ?? '').trim();
     final storedTitle = task.roomTitle.trim();
-    final roomTitle = room?.content.title.trim() ?? '';
-    final title = storedTitle.isNotEmpty ? storedTitle : (roomTitle.isNotEmpty ? roomTitle : task.roomId);
+    final liveTitle = (room?.content.title ?? '').trim();
+    final title = storedTitle.isNotEmpty ? storedTitle : (liveTitle.isNotEmpty ? liveTitle : task.roomId);
+    final anchor = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
+    final liveAvatar = (room?.anchor?.avatarUrl ?? '').trim();
+    final avatarUrl = liveAvatar.isNotEmpty ? liveAvatar : task.anchorAvatarUrl.trim();
     final audience = _audienceOf(room);
-    final cover = room?.content.coverUrl.trim() ?? '';
-    // A room that has already recorded keeps its last take's moment on the
-    // card; a fresh subscription has none to name.
-    final hasLastRun = task.endedAt != null || task.bytes > 0;
+    final liveCover = (room?.content.coverUrl ?? '').trim();
+    final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
+    // Media time is what the take captured; a session that has not reported
+    // yet falls back to the wall clock, so the length, the size and the rate
+    // read while it is still writing.
+    final recorded = Duration(milliseconds: task.durationMs);
+    final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
+    final figures = [
+      if (elapsed > Duration.zero) formatRecordingDuration(elapsed),
+      if (task.bytes > 0) formatRecordingBytes(task.bytes),
+      if (task.bytes > 0 && elapsed.inSeconds > 0) formatRecordingBitrate(task.bytes, elapsed),
+    ].where((part) => part.isNotEmpty).join(' · ');
     final meta = [
       platformName,
       if (audience.isNotEmpty) audience,
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
       if (task.scheduleEnabled) _scheduleSummary(t, task),
-      if (task.isRunning)
-        t.recorder.startedAt(time: formatRecordingMoment(task.startedAt))
-      else if (hasLastRun)
-        t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt)),
     ].join(' · ');
-    // Media time is what the take actually captured; a running session that
-    // has not reported yet falls back to the wall clock since it started.
-    final recorded = Duration(milliseconds: task.durationMs);
-    final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
-    final speed = task.isRunning && elapsed.inSeconds > 0 && task.bytes > 0 ? task.bytes / elapsed.inSeconds : 0.0;
-    final progress = [
-      if (elapsed > Duration.zero) formatRecordingDuration(elapsed),
-      if (speed > 0) '${formatRecordingBytes(speed.round())}/s',
-      // A settled take says what it went in at; a running one already shows
-      // the rate it is writing at now.
-      if (!task.isRunning) formatRecordingBitrate(task.bytes, recorded),
-    ].where((part) => part.isNotEmpty).join(' · ');
+    // A room that has already recorded keeps its last take's moment on the
+    // card; a fresh subscription has none to name.
+    final lastRun = task.isRunning || (task.endedAt == null && task.bytes == 0)
+        ? ''
+        : t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt));
     return DsCard(
       onPressed: onOpen,
       semanticLabel: title,
@@ -1133,36 +1175,67 @@ final class _TaskCard extends StatelessWidget {
             spacing: DsSpace.s12,
             children: [
               if (coverWidth > 0)
-                DsImage(
-                  image: cover.isEmpty ? null : cachedImage(cover),
-                  width: coverWidth,
-                  height: coverHeight,
-                  semanticLabel: title,
-                  fallback: _CoverFallback(letter: platformLetter(task.platform)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(theme.radii.card),
+                  child: DsImage(
+                    image: cover.isEmpty ? null : cachedImage(cover),
+                    width: coverWidth,
+                    height: coverHeight,
+                    semanticLabel: title,
+                    fallback: _CoverFallback(letter: platformLetter(task.platform)),
+                  ),
                 ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: DsSpace.s3,
                   children: [
-                    Text(
-                      streamer.isEmpty ? title : streamer,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        DsAvatar(
+                          initials: avatarInitials(anchor.isEmpty ? title : anchor),
+                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                          size: DsSize.sm,
+                          semanticLabel: anchor.isEmpty ? title : anchor,
+                        ),
+                        Expanded(
+                          child: Text(
+                            anchor.isEmpty ? title : anchor,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                          ),
+                        ),
+                      ],
                     ),
-                    if (streamer.isNotEmpty)
+                    if (anchor.isNotEmpty)
                       Text(
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
+                    // The session's own figures — length, size and the rate
+                    // they imply: a running take grows them while it writes, a
+                    // settled one keeps them.
+                    if (figures.isNotEmpty)
+                      Text(
+                        figures,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography
+                            .numeric(theme.typography.caption)
+                            .copyWith(
+                              color: task.isRunning ? colors.accent : colors.textMuted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
                     Text(
                       meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
                     ),
                     // A row that says recording while this window holds no
                     // session tells the truth about the store, not about here:
@@ -1231,13 +1304,9 @@ final class _TaskCard extends StatelessWidget {
                         ? DsStatus.warning
                         : stateStatus(task.state),
                   ),
-                  Text(
-                    task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                  ),
-                  if (progress.isNotEmpty)
+                  if (lastRun.isNotEmpty)
                     Text(
-                      progress,
+                      lastRun,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(color: colors.textSubtle),

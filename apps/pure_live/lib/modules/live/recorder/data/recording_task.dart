@@ -55,6 +55,9 @@ final class RecordingTask {
     required this.startedAt,
     this.quality = '',
     this.enabled = true,
+    this.anchorName = '',
+    this.anchorAvatarUrl = '',
+    this.coverUrl = '',
     this.endedAt,
     this.filePath,
     this.bytes = 0,
@@ -85,6 +88,9 @@ final class RecordingTask {
       roomTitle: map['roomTitle'] as String? ?? '',
       quality: map['quality'] as String? ?? '',
       enabled: map['enabled'] as bool? ?? true,
+      anchorName: map['anchorName'] as String? ?? '',
+      anchorAvatarUrl: map['anchorAvatarUrl'] as String? ?? '',
+      coverUrl: map['coverUrl'] as String? ?? '',
       state: RecordingTaskState.fromJson(map['state']),
       startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
@@ -129,6 +135,17 @@ final class RecordingTask {
   /// The quality id the task asks the platform for ('' = the platform's
   /// best, the reference's default).
   final String quality;
+
+  /// The streamer's name as the room showed it when the subscription was
+  /// saved, so the card names the anchor even when the room is in neither the
+  /// follows nor the history store.
+  final String anchorName;
+
+  /// The streamer's avatar, cached with the same snapshot.
+  final String anchorAvatarUrl;
+
+  /// The room's cover, cached with the same snapshot.
+  final String coverUrl;
 
   /// Whether this room is still watched.
   ///
@@ -262,6 +279,9 @@ final class RecordingTask {
     'roomTitle': roomTitle,
     'quality': quality,
     'enabled': enabled,
+    'anchorName': anchorName,
+    'anchorAvatarUrl': anchorAvatarUrl,
+    'coverUrl': coverUrl,
     'state': state.toJson(),
     'startedAt': startedAt.toUtc().toIso8601String(),
     'endedAt': endedAt?.toUtc().toIso8601String(),
@@ -287,6 +307,9 @@ final class RecordingTask {
     String? roomTitle,
     String? quality,
     bool? enabled,
+    String? anchorName,
+    String? anchorAvatarUrl,
+    String? coverUrl,
     RecordingTaskState? state,
     DateTime? startedAt,
     DateTime? endedAt,
@@ -310,6 +333,9 @@ final class RecordingTask {
       roomTitle: roomTitle ?? this.roomTitle,
       quality: quality ?? this.quality,
       enabled: enabled ?? this.enabled,
+      anchorName: anchorName ?? this.anchorName,
+      anchorAvatarUrl: anchorAvatarUrl ?? this.anchorAvatarUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
       state: state ?? this.state,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,
