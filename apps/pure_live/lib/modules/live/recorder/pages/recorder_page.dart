@@ -1129,6 +1129,11 @@ final class _TaskCard extends ConsumerWidget {
     final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
     final paused = !task.enabled && !processing;
     final area = (room?.area?.areaName ?? '').trim();
+    // A title that opens with a bracket starts half an em in; the caption
+    // under it starts at the box's edge, so it takes the same blank to read
+    // as one left edge with the title.
+    final category = [area, anchor].where((part) => part.isNotEmpty).join(' · ');
+    final categoryHang = _leadingPunctuationHang(title, theme.typography.heading.fontSize ?? 14);
     final liveElapsed = task.isRunning ? DateTime.now().difference(task.startedAt) : elapsed;
     final segmentSeconds = ref.watch(recordingSettingsProvider).segmentSeconds;
     final segmentMinutes = segmentSeconds <= 0 ? 0 : (segmentSeconds / 60).ceil();
@@ -1317,12 +1322,15 @@ final class _TaskCard extends ConsumerWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.typography.heading.copyWith(color: colors.text),
                                   ),
-                                  if ([area, anchor].where((part) => part.isNotEmpty).isNotEmpty)
-                                    Text(
-                                      [area, anchor].where((part) => part.isNotEmpty).join(' · '),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                  if (category.isNotEmpty)
+                                    Padding(
+                                      padding: EdgeInsetsDirectional.only(start: categoryHang),
+                                      child: Text(
+                                        category,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                      ),
                                     ),
                                 ],
                               ),
@@ -1633,6 +1641,24 @@ String _audienceOf(LiveRoom? room) {
     _ => audience.popularity,
   };
   return AudienceFormat.format(figure);
+}
+
+/// The blank an opening CJK punctuation leaves before its ink.
+///
+/// 【 (and its relatives) is drawn about 0.56 em into its full-width cell —
+/// the Windows CJK families measure between 0.43 and 0.64 em — so a line that
+/// starts with one begins further right than a line that starts with a han
+/// character, even when both boxes share a left edge. A caption printed under
+/// such a title takes the same blank so the two read as one left edge.
+double _leadingPunctuationHang(String text, double fontSize) {
+  const openers = {
+    0x2018, 0x201C, // ‘ “
+    0x3008, 0x300A, 0x300C, 0x300E, // 〈 《 「 『
+    0x3010, 0x3014, 0x3016, 0x3018, 0x301A, // 【 〔 〖 〘 〚
+    0xFF08, 0xFF3B, 0xFF5B, // （ ［ ｛
+  };
+  if (text.isEmpty || !openers.contains(text.runes.first)) return 0;
+  return fontSize * 0.56;
 }
 
 /// Renders a bytes figure the way a file manager would: the largest unit
