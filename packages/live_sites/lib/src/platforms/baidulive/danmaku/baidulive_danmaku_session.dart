@@ -370,9 +370,14 @@ final class BaiduliveDanmakuSession implements LiveDanmakuSession {
     unawaited(dispose());
   }
 
+  /// The signature the stored cookie was read from ran out mid-connection.
+  ///
+  /// `cookieSuspect` because the app holds a login and the platform refused it:
+  /// the answer is the account page, not another attempt at the room.
   LiveSiteError _expired() => LiveSiteError.authentication(
     siteId: baiduliveSiteId,
     message: 'Chat list signature expired at ${args.expiresAt?.toUtc().toIso8601String()}',
+    cookieSuspect: true,
   );
 }
 
