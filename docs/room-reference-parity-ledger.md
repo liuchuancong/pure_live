@@ -22,7 +22,7 @@
 - [x] **T16 睡眠定时进不了全屏**（P26 做完）。`_SleepChip` 只在页头（`room_page.dart:1896`），`roomMenuItems` 没有它（参考在房间菜单里带剩余分钟第二行：`room_menu_button.dart:152,254-259`）。做法：菜单里加一组时长项，复用 `kAsmrSleepMinuteChoices` 与 `asmrSleepDurationLabel`，别再开一套选择器。
 - [ ] **T17 桌面"在新窗口打开这间房"缺失**。参考 `room_menu_button.dart:166,357-359` 走 `DesktopWindow.openNewWindow`；我们有房间窗口（`room_opener.dart:46`）但房间菜单没有这一行。
 - [x] **T18 被掩码名之外的一条：登录提示是常驻条**（P27 做完）。参考在列表上方常驻 `ChatNameHintBar` 并带登录按钮（`chat_list.dart:421-433,603-649`）；我们一次 toast 过完就没了（`controller/room_controller.dart:1646`）⇒ 错过了就只能等下一次连接。
-- [ ] **T19 满屏钟与电量**。参考底条每分钟重画时钟/电量（`bar_parts.dart:22-144`）。桌面价值低（系统托盘已有），手机价值高：留到最后。
+- [x] **T19 满屏钟与电量**（P29 做完）。参考底条每分钟重画时钟/电量（`bar_parts.dart:22-144`）。桌面价值低（系统托盘已有），手机价值高：留到最后。
 - [ ] **已判定不平**：参考的本地"+1/存为常用语"回放体系（`message_panel.dart:219-341`）——我们的发送框真发（`room_chat.dart:360+`），这是两套子系统的边界，不是缺功能；参考的投屏只有 Android（`player_controls.dart:177`），我们桌面也有（此项我们更强）。
 
 ## 已修（本轮线，全部已推送）
@@ -59,6 +59,7 @@
 | P26 | `5e4e68a05` + `67cd6c4cc` | 睡眠定时 | T16：定时关闭进房间菜单（弹一个 `showDsPanel` 面板，标题＝定时关闭，运行中则先给关闭项），并且时长列表成了一份 `roomSleepTimerChoices()`：原本 chip 的 hover 菜单里写了一遍十个分钟，菜单再写一遍就是下次加档位漏掉的那个地方。 **同时纠正自己**：本轮第三次犯同一个错——`dart format lib/modules/live/room` 把 gift_text/gift_flights/room_switcher 重排后跟着提交了，已用 `67cd6c4cc` 把三个文件退回原样。**只 format 本轮真改的那几个文件路径，别再指向目录。** |
 | P27 | `6899475a4` | 登录提示 | T18：房间说"你看到的名字全是被打了码的"或"Twitch 的 cookie 被拒了"时，不再丢一枚 toast，而是在它影响的聊天列上方挂一条常驻条（`roomChatNoticeProvider` + `_ChatNoticeBar`），条上直接给「Cookie 登录」入口（`showAccountSignInAlternative(..., exit: AccountQrExit.cookiePage)`）与"我知道了"。toast  Shape 不对的原因：提示出现时人正在看画面，而修复是去登录页花一分钟，不是一瞥。条在下一次连接不再像登录死了时自己消失（`_installDanmaku` 清），换房/`_teardown` 也清 ⇒ 旧抱怨不会活得比造成它的那次登录长；同一房同一句话重复上抛不改状态（不闪烁）。 |
 | P28 | `30ab1e8e0` | 锁定全屏 | T15：满屏右侧中一枚锁（`PlayerGlassPill` + `PlayerBarButton`，50×50，图标 `lock`/`unlock`，新串 `room.lockControls`/`room.unlockControls`）。锁上后：条与唤醒条与码率面板都不画、滚轮调音量/上下半拖动/单击/双击暂停/点弹幕全部吞掉、录制标只留数字（`onStop` 交 null，控件不能长得一样却按下去没反应）；解锁键在锁上后常驻（房间掉线/失败也还在，否则满屏没有门可开）；`didUpdateWidget` 在退出全屏时释放锁（参考同规则，否则锁键会飘在页面自己的画面上而手势还关着）。`immersive`＝`ownsWindow \|\| 竖屏全屏`，与参考 `arrangement != inline` 同一档。**门里没有的一条**：本 app 没有任何测试泵过 `PlayerSurface`（它要播放器 handle 与整张房间 provider 图），所以锁的判据只过编译与既有测试，行为待真机。 |
+| P29 | `ec577f210` | 钟与电量 | T19：满屏顶条在返回键右侧加一枚玻璃条（钟 + 电量图标 + 百分数）。钟按「分钟翻牌」定时重画（不是 60 s 周期：21:04:30 开的会在 21:05:00 还写 21:04 半分钟），电量读一次然后每分钟一次；`PlatformBatteryService.readLevel()` 回 -1 就是"这台机器没有电池"，那种机器不画任何数字（画 0 会被读成快没电的笔记本）。门：只给 `immersive`（`_PlayerTopBar.fullscreen`），页面内不画——页头那条系统标题栏本来就有时间。图标按档取 `batteryEmpty/Low/Medium/High`，数字用 `typography.numeric`。 |
 
 ## 已核对为持平或更强（别重做，附证据）
 
@@ -119,3 +120,5 @@
 - 2026-11-04 P27：T18 勾提（常驻登录提示条）。门：app `dart analyze lib` 0 issues、`dart format` 只点这两个文件（0 changed）、`flutter test test/live` 48 例中 47 绿——唯一红仍是录像 lane 的 `recording_schedule_test.dart`「只有开播检查能推动等待/排期中的任务」（`needsLiveCheck => isArmed`，`3a2b6d129` 引入，不是本轮改的）。运行期未验证：条要真用坏 cookie 连 bilibili/twitch 才看得到，交用户自测。顺手把"已持平"表里那条过期行（窄窗仍是 58 % 舞台）按 P22 的现状改了。剩下 T15（锁定全屏）、T17（新窗口，窗口层还没有"按路由开一扇"的能力，别挂打不开的门）、T19（钟与电量，价值最低）。
 
 - 2026-11-04 P28：T15 勾提（锁定全屏）。门：app `dart analyze lib` 0 issues、`dart format` 只点 player_surface.dart（0 changed）、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`，不是本轮改的）。运行期未验证：锁只在真全屏里看得出——误触滚轮不该改音量、锁上后录制标不该能停。新串两枚（`room.lockControls`/`room.unlockControls`）经 `dart run slang`（在 apps/pure_live 跑）生成；生成文件里 4 处 `settings.*`/`vod.*` 行只是换了 switch 分桶位置（字节相同），是生成器自己的产物，不是别人 lane 的内容改动。剩下 T17（新窗口，窗口层还没有"按路由开一扇"的能力，别挂打不开的门）、T19（钟与电量，价值最低）。
+
+- 2026-11-04 P29：T19 勾提（满屏钟与电量）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`，不是本轮改的）、`dart format` 只点 player_surface.dart。运行期未验证：桌面机 readLevel 应回 -1（于是只画钟），手机要真机才看得出百分数与每分钟一跳。新队列只剩 T17（"在新窗口打开这间房"）——窗口层现在只有 `secondaryWindowsProvider.open(role: WindowRole.panel)`，没有按路由开一扇的能力，先把能力做出来再挂门，别挂打不开的门。本轮另外落地的还有 P28（T15 锁定全屏）与 P27（T18 常驻登录提示条），三条都只过静态门，真机观感交用户。
