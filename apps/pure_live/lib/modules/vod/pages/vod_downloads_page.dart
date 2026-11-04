@@ -774,11 +774,12 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                 shown,
                 narrow: width < 720,
                 withFacts: withFacts,
+                filterActive: filterActive,
                 tasks: tasks,
                 isMissing: (task) => missing[task.id] ?? false,
               )
             : shown.isEmpty
-            ? _empty(t, tasks, directory)
+            ? _empty(t, tasks, directory, filterActive)
             : _cards(shown);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -916,13 +917,25 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
 
   /// Nothing on screen: what the queue holds in total answers better than an
   /// empty table would, because a filtered-out task is still a task the viewer
-  /// has to un-tick to see.
-  Widget _empty(Translations t, List<VodDownloadItem> tasks, String directory) => Center(
+  /// has to un-tick to see — and the un-ticking is offered here rather than
+  /// left for the filter panel, the way the music queue's empty page does it.
+  Widget _empty(Translations t, List<VodDownloadItem> tasks, String directory, bool filterActive) => Center(
     child: DsEmptyState(
       icon: const DsIcon(DsIcons.download),
       title: Text(tasks.isEmpty ? t.vod.downloadEmpty : t.vod.downloadFilterEmpty),
       description: Text(tasks.isEmpty ? t.vod.downloadEmptyDesc : t.vod.downloadFilterEmptyDesc),
       actions: [
+        if (filterActive)
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.filter, size: 14),
+            onPressed: () => setState(() {
+              _phases.clear();
+              _playableOnly = false;
+            }),
+            child: Text(t.settings.downloadFilterReset),
+          ),
         DsButton(
           variant: DsButtonVariant.secondary,
           size: DsSize.sm,
@@ -946,6 +959,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     List<VodDownloadItem> rows, {
     required bool narrow,
     required bool withFacts,
+    required bool filterActive,
     required List<VodDownloadItem> tasks,
     required bool Function(VodDownloadItem task) isMissing,
   }) {
@@ -1032,7 +1046,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
             : null,
         rowMenuBuilder: (context, task) => _vodRowMenu(context, ref, task, missing: isMissing(task)),
         showRowMenuButton: true,
-        emptyView: _empty(t, tasks, ref.read(appPathsProvider).videos.path),
+        emptyView: _empty(t, tasks, ref.read(appPathsProvider).videos.path, filterActive),
       ),
     );
   }
