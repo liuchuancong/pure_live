@@ -815,27 +815,38 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 }
 
-/// One figure in the phase panel: a quiet pill, the way a status card lists
-/// what it has written.
-final class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.text});
+/// One figure of a row: the word over the number, so three of them line up
+/// without a table header.
+final class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value});
 
-  final String text;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    return DecoratedBox(
-      decoration: DsBoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(6),
-        shadows: [DsShadow.innerRing(colors.border)],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-        child: Text(text, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 2,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+        ),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography
+              .numeric(theme.typography.caption)
+              .copyWith(color: colors.text, fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+      ],
     );
   }
 }
@@ -973,18 +984,13 @@ final class _TaskCard extends ConsumerWidget {
     final recording = task.isRunning && !processing;
     final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
     final paused = !task.enabled && !processing;
+    final figuresDuration = elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
+    final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
     final segmentSeconds = ref.watch(recordingSettingsProvider).segmentSeconds;
     final segmentMinutes = segmentSeconds <= 0 ? 0 : (segmentSeconds / 60).ceil();
     final segment = elapsed <= Duration.zero || segmentMinutes <= 0
         ? ''
         : t.recorder.segmentProgress(count: elapsed.inSeconds ~/ segmentSeconds + 1, minutes: segmentMinutes);
-    final tone = processing
-        ? colors.info
-        : recording || failed
-        ? colors.danger
-        : paused || fileDeleted
-        ? null
-        : colors.warning;
     final statusText = processing
         ? t.recorder.stateProcessing
         : recording
@@ -996,11 +1002,14 @@ final class _TaskCard extends ConsumerWidget {
         : fileDeleted
         ? t.recorder.stateFileDeleted
         : t.recorder.stateWaiting;
-    final chips = [
-      if (task.bytes > 0) t.recorder.panelRecorded(value: formatRecordingBytes(task.bytes)),
-      if (figuresBitrate != '—') figuresBitrate,
-      if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
-    ];
+    final statusTone = processing
+        ? DsStatus.info
+        : recording || failed
+        ? DsStatus.danger
+        : paused || fileDeleted
+        ? DsStatus.neutral
+        : DsStatus.warning;
+    final subtext = recording ? segment : lastRun;
     final Widget action = processing
         ? DsButton(
             variant: DsButtonVariant.secondary,
@@ -1034,184 +1043,203 @@ final class _TaskCard extends ConsumerWidget {
             child: Text(t.recorder.resumeWatch),
           )
         : DsButton(
-            variant: DsButtonVariant.secondary,
+            variant: DsButtonVariant.primary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.play, size: 14),
             onPressed: onStartNow,
             child: Text(t.recorder.startNow),
           );
-    return DsCard(
-      onPressed: onOpen,
-      semanticLabel: title,
-      style: DsCardStyle(
-        padding: const EdgeInsets.all(DsSpace.s12),
-        borderRadius: BorderRadius.circular(theme.radii.card),
-      ),
+    final radius = BorderRadius.circular(theme.radii.card);
+    final badge = DsBadge(label: Text(statusText), status: statusTone);
+    Widget identity(double width) => Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 2,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s12,
+            spacing: DsSpace.s6,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(theme.radii.card),
-                child: DsImage(
-                  image: cover.isEmpty ? null : cachedImage(cover),
-                  width: 104,
-                  height: 58,
-                  semanticLabel: title,
-                  fallback: _CoverFallback(letter: platformLetter(task.platform)),
-                ),
+              DsAvatar(
+                initials: avatarInitials(anchor.isEmpty ? title : anchor),
+                image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                size: DsSize.sm,
+                semanticLabel: anchor.isEmpty ? title : anchor,
               ),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
-                  children: [
-                    Row(
-                      spacing: DsSpace.s6,
-                      children: [
-                        DsAvatar(
-                          initials: avatarInitials(anchor.isEmpty ? title : anchor),
-                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                          size: DsSize.sm,
-                          semanticLabel: anchor.isEmpty ? title : anchor,
-                        ),
-                        Expanded(
-                          child: Text(
-                            anchor.isEmpty ? title : anchor,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (anchor.isNotEmpty)
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    Row(
-                      spacing: DsSpace.s4,
-                      children: [
-                        ?platformIcon,
-                        Flexible(
-                          child: Text(
-                            [platformName, if (audience.isNotEmpty) audience].join(' · '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                          ),
-                        ),
-                        if (audience.isNotEmpty) DsIcon(DsIcons.flame, size: 12, color: colors.textSubtle),
-                      ],
-                    ),
-                  ],
+                child: Text(
+                  anchor.isEmpty ? title : anchor,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.bodyStrong.copyWith(color: colors.text),
                 ),
-              ),
-              _TaskMenu(
-                task: task,
-                hasFile: (task.filePath ?? '').trim().isNotEmpty,
-                onOpen: onOpen,
-                onStop: onStop,
-                onToggleWatch: onToggleWatch,
-                onDelete: onDelete,
-                onSchedule: onSchedule,
-                onCancelProcessing: onCancelProcessing,
-                onStartNow: onStartNow,
-                onRetryJoin: onRetryJoin,
-                onPreview: onPreview,
-                onPlayExternal: onPlayExternal,
               ),
             ],
           ),
-          // The phase's own panel: what is happening, the session's clock, the
-          // figures it has written, and the one verb that ends or begins it.
-          DecoratedBox(
-            decoration: DsBoxDecoration(
-              color: tone?.tint ?? colors.hover,
-              borderRadius: BorderRadius.circular(theme.radii.card),
+          if (anchor.isNotEmpty)
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(DsSpace.s12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s8,
-                children: [
-                  Row(
-                    spacing: DsSpace.s12,
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(color: tone?.fill ?? colors.textSubtle, shape: BoxShape.circle),
-                      ),
-                      Text(
-                        statusText,
-                        style: theme.typography.bodyStrong.copyWith(color: tone?.text ?? colors.textMuted),
-                      ),
-                      const Spacer(),
-                      if (segment.isNotEmpty)
-                        Flexible(
-                          child: Text(
-                            segment,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                            style: theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (recording)
-                    Text(
-                      formatRecordingDuration(elapsed),
-                      style: theme.typography
-                          .numeric(theme.typography.heading)
-                          .copyWith(color: colors.text, fontWeight: FontWeight.w600),
-                    )
-                  else if (lastRun.isNotEmpty)
-                    Text(
-                      lastRun,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
-                    Text(
-                      task.errorText.trim(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.danger.text),
-                    ),
-                  if (!processing && task.warning.isNotEmpty)
-                    Text(
-                      _warningLabel(t, task.warning),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.warning.text),
-                    ),
-                  if (chips.isNotEmpty)
-                    Wrap(
-                      spacing: DsSpace.s8,
-                      runSpacing: DsSpace.s8,
-                      children: [for (final chip in chips) _StatusChip(text: chip)],
-                    ),
-                  if (processing)
-                    DsProgressBar(
-                      value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
-                      semanticLabel: t.recorder.stateProcessing,
-                    ),
-                  SizedBox(width: double.infinity, child: action),
-                ],
+          Row(
+            spacing: DsSpace.s4,
+            children: [
+              ?platformIcon,
+              Flexible(
+                child: Text(
+                  [platformName, if (audience.isNotEmpty) audience].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                ),
+              ),
+              if (audience.isNotEmpty) DsIcon(DsIcons.flame, size: 12, color: colors.textSubtle),
+            ],
+          ),
+          if (task.state == RecordingTaskState.recording && onStop == null)
+            Text(
+              t.recorder.stateRecordingElsewhere,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.warning.text),
+            ),
+          if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
+            Text(
+              task.errorText.trim(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.danger.text),
+            ),
+          if (!processing && task.warning.isNotEmpty)
+            Text(
+              _warningLabel(t, task.warning),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.warning.text),
+            ),
+          if (processing)
+            Padding(
+              padding: const EdgeInsets.only(top: DsSpace.s4),
+              child: DsProgressBar(
+                value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
+                semanticLabel: t.recorder.stateProcessing,
               ),
             ),
+        ],
+      ),
+    );
+    Widget subline() => subtext.isEmpty
+        ? const SizedBox.shrink()
+        : Text(
+            subtext,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+          );
+    Widget menu() => _TaskMenu(
+      task: task,
+      hasFile: (task.filePath ?? '').trim().isNotEmpty,
+      onOpen: onOpen,
+      onStop: onStop,
+      onToggleWatch: onToggleWatch,
+      onDelete: onDelete,
+      onSchedule: onSchedule,
+      onCancelProcessing: onCancelProcessing,
+      onStartNow: onStartNow,
+      onRetryJoin: onRetryJoin,
+      onPreview: onPreview,
+      onPlayExternal: onPlayExternal,
+    );
+    return ClipRRect(
+      borderRadius: radius,
+      child: Stack(
+        children: [
+          DsCard(
+            onPressed: onOpen,
+            semanticLabel: title,
+            style: const DsCardStyle(padding: EdgeInsets.zero),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final compact = width < 720;
+                final (coverWidth, coverHeight) = compact ? (88.0, 50.0) : (120.0, 68.0);
+                final coverTile = ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: DsImage(
+                    image: cover.isEmpty ? null : cachedImage(cover),
+                    width: coverWidth,
+                    height: coverHeight,
+                    semanticLabel: title,
+                    fallback: _CoverFallback(letter: platformLetter(task.platform)),
+                  ),
+                );
+                // A phone stacks the state under the identity: the row cannot
+                // carry cover, text, figures, badge and a verb side by side.
+                if (compact) {
+                  return Padding(
+                    padding: const EdgeInsets.all(DsSpace.s12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s8,
+                      children: [
+                        Row(spacing: DsSpace.s12, children: [coverTile, identity(width), menu()]),
+                        Row(
+                          spacing: DsSpace.s8,
+                          children: [
+                            badge,
+                            Flexible(child: subline()),
+                            const Spacer(),
+                            action,
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                final showFigures = width >= 820;
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s8, DsSpace.s8),
+                  child: Row(
+                    spacing: DsSpace.s12,
+                    children: [
+                      coverTile,
+                      identity(width),
+                      if (showFigures)
+                        Row(
+                          spacing: DsSpace.s24,
+                          children: [
+                            _Figure(label: t.recorder.columnBitrate, value: figuresBitrate),
+                            _Figure(label: t.recorder.columnSize, value: figuresSize),
+                            _Figure(label: t.recorder.columnDuration, value: figuresDuration),
+                          ],
+                        ),
+                      SizedBox(
+                        width: 132,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          spacing: DsSpace.s4,
+                          children: [badge, subline()],
+                        ),
+                      ),
+                      Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s4, children: [action, menu()]),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
+          // The live take's own edge: a thin band that says "writing" before
+          // the badge is read.
+          if (recording)
+            PositionedDirectional(
+              start: 0,
+              top: 0,
+              bottom: 0,
+              width: 3,
+              child: IgnorePointer(child: ColoredBox(color: colors.danger.fill)),
+            ),
         ],
       ),
     );
