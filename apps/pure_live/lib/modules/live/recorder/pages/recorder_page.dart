@@ -103,18 +103,31 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // for; every other click is the page's own.
     final barrier = renders.contains('RenderBlockSemantics') && renders.contains('RenderSemanticsGestureHandler');
     if (!barrier) return;
-    const keywords = ['Dialog', 'Panel', 'Modal', 'Update', 'Download', 'Sheet', 'Tooltip', 'Menu', 'Route', 'Barrier'];
-    final found = <String>{};
+    final routes = <ModalRoute<Object?>>[];
+    final pages = <ModalRoute<Object?>, List<String>>{};
     void visit(Element element) {
-      final type = element.widget.runtimeType.toString();
-      if (keywords.any(type.contains)) found.add(type);
+      final route = ModalRoute.of(element);
+      if (route != null && !routes.contains(route)) {
+        routes.add(route);
+        final chain = <String>[];
+        element.visitAncestorElements((ancestor) {
+          chain.add(ancestor.widget.runtimeType.toString());
+          return chain.length < 3;
+        });
+        pages[route] = [element.widget.runtimeType.toString(), ...chain];
+      }
       element.visitChildren(visit);
     }
 
     WidgetsBinding.instance.rootElement?.visitChildren(visit);
-    appLog
-        .forCategory('tap-probe')
-        .info('barrier click at ${event.position} :: ${found.join(', ')} :: ${renders.join(' > ')}');
+    for (final route in routes) {
+      appLog
+          .forCategory('tap-probe')
+          .info(
+            'route ${route.runtimeType} name=${route.settings.name} dismissible=${route.barrierDismissible} '
+            'current=${route.isCurrent} first=${route.isFirst} page=${pages[route]?.join(' < ')}',
+          );
+    }
   }
 
   @override
