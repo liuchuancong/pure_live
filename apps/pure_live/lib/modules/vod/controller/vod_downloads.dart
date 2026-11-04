@@ -659,6 +659,16 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       } else if (written > 0 && response.statusCode == 200) {
         // It answered from the top; start over.
         await _delete(scratch);
+      } else if (written > 0 && response.statusCode == 416) {
+        // The part on disk begins past the end of the file this cid serves
+        // now: the source re-encodes, and a row kept from the last session asks
+        // yesterday's length. Nothing else shrinks that scratch, so every retry
+        // heard 416 and the part never finished. It carries no body, so the run
+        // cannot write from here either — drop the scratch and fail this
+        // attempt once, leaving the next one to start from the front.
+        await response.drain<void>();
+        await _delete(scratch);
+        throw const HttpException('HTTP 416');
       } else if (response.statusCode < 200 || response.statusCode >= 300) {
         throw HttpException('HTTP ${response.statusCode}');
       }

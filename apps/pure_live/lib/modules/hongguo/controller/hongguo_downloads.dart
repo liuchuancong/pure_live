@@ -671,6 +671,24 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     }
   }
 
+  /// The length of the file [proxyUrl] serves right now, read from an ask for
+  /// its first byte; 0 when the answer names none.
+  static Future<int> _servingSize(HttpClient client, String proxyUrl) async {
+    try {
+      final request = await client.getUrl(Uri.parse(proxyUrl));
+      request.headers.set('range', 'bytes=0-0');
+      final response = await request.close();
+      final contentRange = response.headers.value('content-range') ?? '';
+      await response.drain<void>();
+      final match = RegExp(r'bytes \d+-\d+/(\d+)').firstMatch(contentRange);
+      return match == null ? 0 : int.tryParse(match.group(1) ?? '') ?? 0;
+    } on Object {
+      // A guard, not a requirement: when the head ask itself fails the run
+      // proceeds on the resume it would have used before this check existed.
+      return 0;
+    }
+  }
+
   /// Fills the free lanes with queued tasks, oldest first.
   void _pump() {
     if (!ref.mounted) return;
@@ -717,9 +735,24 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       // makes room for itself again.
       await Directory(item.filePath).parent.create(recursive: true);
       final scratch = File('${item.filePath}.part');
-      final written = scratch.existsSync() ? scratch.lengthSync() : 0;
+      var written = scratch.existsSync() ? scratch.lengthSync() : 0;
       client = HttpClient()..connectionTimeout = const Duration(seconds: 20);
       _clients[id] = client;
+      // One byte at the head names the file being served now. A scratch kept
+      // from an earlier session can be as long as that file or longer: the same
+      // episode changes hands between runs (an anonymous one is served the
+      // website's own copy, a signed-in one the model's rendition), and a run
+      // killed exactly on the seam leaves a scratch the size of the whole file.
+      // A window asked past the end is then answered 416 for as long as the
+      // scratch stays, because nothing else shrinks it — the row would fail on
+      // every retry. Take the file again from its front instead.
+      if (written > 0) {
+        final serving = await _servingSize(client, proxyUrl);
+        if (serving > 0 && written >= serving) {
+          await scratch.delete();
+          written = 0;
+        }
+      }
       received = written;
       sink = scratch.openWrite(mode: written > 0 ? FileMode.append : FileMode.write);
       // The sink's own future reports a failed write; observing it keeps the

@@ -6,12 +6,15 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   battery_plus
   bonsoir_windows
+  cloud_firestore
   connectivity_plus
   desktop_drop
   device_screen_brightness
   dynamic_color
   ffmpeg_kit_extended_flutter
   file_selector_windows
+  firebase_auth
+  firebase_core
   flutter_acrylic
   flutter_media_session
   flutter_secure_storage_windows

@@ -50,7 +50,7 @@ dependencies:
   flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
   heic_native: ^1.1.0 # 红果 HEIC 封面转 PNG（libheif）
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
-  desen_ui: ^0.3.2 # 设计令牌、主题与组件
+  desen_ui: ^0.3.3 # 设计令牌、主题与组件
   dynamic_color: ^1.7.0 # Android 12+ 动态取色
   flutter_helper_utils: ^10.0.0
   flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态
@@ -114,7 +114,7 @@ dependencies:
   media_core_mediasession: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession } # 媒体会话通知
   media_core_notify: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_notify } # 用户通知
 
-  responsive_breakpoints: ^1.0.3 # 断点定义与解析（Tailwind/Material/Bootstrap）
+  responsive_breakpoints: ^1.0.3
 
   # 路由、配置与序列化
   envied: ^1.3.10 # 编译期环境变量
@@ -149,22 +149,11 @@ dev_dependencies:
 
   # 开发辅助
   slang_mcp: ^0.2.1 # 多语言开发辅助工具（MCP 服务器）
-
-# 本地 fork：Windows 通知插件的 FFI 导出边界不允许 C++ 异常逃逸（逃逸即
-# std::terminate，debug 弹 abort 对话框、release 直接 0xC0000409）。fork 把每个
-# 导出包进 try/catch，失败以返回值上报并落日志（exe 旁
-# flutter_local_notifications_fork.log），Dart 侧按"平台拒绝"优雅降级。
-# 原 override 指向本地 fork F:/flutter_local_notifications_windows_local；本机没有
-# F: 盘，全盘也没有该 fork 源码，先按上游 3.1.1 解析。通知边界异常一旦复现，
-# 要么补回 fork，要么在本机重建它。
 dependency_overrides:
   flutter_local_notifications_windows: ^3.1.1
 
 flutter:
   uses-material-design: true
-
-  # 默认界面字体：MiSans 随应用打包，所有平台默认使用它。
-  # 只内置 Regular（400）一档，粗字重由引擎合成。
   fonts:
     - family: MiSans
       fonts:
@@ -175,7 +164,7 @@ flutter:
     - assets/preview/ # 设置预览页的舞台背景
     - assets/fonts/free_font.json # 国内免费字体清单（jaywcjlove/free-font）
     - assets/fonts/google_font_categories.json # Google 字体分类（font_picker 的 constants）
-    - assets/certs/ # FFmpeg 录制用的 Mozilla CA 信任根（curl.se 官方 cacert.pem）
+    - assets/certs/
     - assets/webdav/ # WebDAV 帮助页的坚果云设置截图
 
 # 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。

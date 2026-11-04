@@ -605,10 +605,10 @@ packages:
     dependency: transitive
     description:
       name: desen_ui
-      sha256: "8a6f8ab9ce73e12cf1c4f71fb3548faa8a2ccf27b56468dda048901e48fdd984"
+      sha256: d4c15f11bfca016b20de75001639921e2ab64445fa8fc8052c3983e0ec0c6fbb
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.2"
+    version: "0.3.3"
   desktop_drop:
     dependency: transitive
     description:
