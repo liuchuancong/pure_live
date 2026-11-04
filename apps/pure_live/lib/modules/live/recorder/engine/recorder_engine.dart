@@ -43,6 +43,13 @@ const Duration _kChatRetry = Duration(seconds: 30);
 /// How long opening a chat connection may take before it counts as failed.
 const Duration _kChatTimeout = Duration(seconds: 20);
 
+/// How long a take's re-mint may take before the recording carries on with the
+/// address it already holds. The backend asks for a fresh address while its
+/// process is already dead and the retry clock is stopped: a platform read that
+/// hangs would leave the take frozen with nothing writing to disk, which is a
+/// worse failure than re-opening an address that may still work.
+const Duration _kTakeRefreshTimeout = Duration(seconds: 20);
+
 /// The marker that proves a folder is this app's recording root.
 const String _kRecordMarker = '.pure_live_recording_root';
 
@@ -1673,6 +1680,10 @@ final class RecorderEngine {
   /// URL does not expire, so re-opening it is the whole point of the retry, and
   /// a null answer would tell the backend this recording has no refreshable
   /// source at all and stop it trying.
+  ///
+  /// The ask is bounded by [_kTakeRefreshTimeout] for the same reason: it runs
+  /// while no process is writing, so a platform read that hangs would leave the
+  /// take held open by a request that never answers.
   Future<RefreshedSource?> _refreshTake(RecordingSource source) async {
     final id = source.id;
     final session = id == null ? null : _sessions[id];
@@ -1691,7 +1702,7 @@ final class RecorderEngine {
         roomId: task.roomId,
         qualityLabel: task.quality,
         lineOffset: session.lineOffset,
-      );
+      ).timeout(_kTakeRefreshTimeout);
 
       return (url: stream.line.url, headers: _sourceHeaders(stream.line));
     } on Object {
