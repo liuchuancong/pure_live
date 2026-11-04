@@ -832,18 +832,18 @@ final class _Measure extends StatelessWidget {
       spacing: 2,
       children: [
         Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+        ),
+        Text(
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.typography
               .numeric(theme.typography.caption)
               .copyWith(color: colors.text, fontWeight: FontWeight.w600),
-        ),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
         ),
       ],
     );
@@ -891,7 +891,7 @@ String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
 /// The card's room facts come from the follows/history snapshots; a task
 /// whose room is stored in neither keeps its title and platform and shows
 /// the letter tile.
-final class _TaskCard extends StatelessWidget {
+final class _TaskCard extends ConsumerWidget {
   const _TaskCard({
     required this.task,
     required this.room,
@@ -949,10 +949,11 @@ final class _TaskCard extends StatelessWidget {
   final VoidCallback? onPlayExternal;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final platformIcon = localizedSiteIcon(ref.watch(sitesProvider).getById(task.platform), size: 14);
     // The live stores win; the snapshot stored with the subscription answers
     // when the room is in neither of them, so the card always names the
     // streamer and pictures the room.
@@ -974,14 +975,7 @@ final class _TaskCard extends StatelessWidget {
     final figuresDuration = elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
     final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
     final figuresBitrate = task.bytes > 0 && elapsed.inSeconds > 0 ? formatRecordingBitrate(task.bytes, elapsed) : '—';
-    final figures = [figuresDuration, figuresSize, figuresBitrate].where((part) => part != '—').join(' · ');
     final startedText = formatRecordingMoment(task.isRunning ? task.startedAt : (task.endedAt ?? task.startedAt));
-    final meta = [
-      platformName,
-      if (audience.isNotEmpty) audience,
-      if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
-      if (task.scheduleEnabled) _scheduleSummary(t, task),
-    ].join(' · ');
     // A room that has already recorded keeps its last take's moment on the
     // card; a fresh subscription has none to name.
     final lastRun = task.isRunning || (task.endedAt == null && task.bytes == 0)
@@ -996,11 +990,6 @@ final class _TaskCard extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // The badge, the size figure and the menu — with the gaps, some
-          // 110–130 px — are fixed, so the cover follows the card's own
-          // width (the sidebar beside the list shrinks it too) and steps
-          // down before the title starves; at the window's floor it stands
-          // down entirely.
           final width = constraints.maxWidth;
           final (coverWidth, coverHeight) = width >= 560
               ? (128.0, 72.0)
@@ -1009,175 +998,186 @@ final class _TaskCard extends StatelessWidget {
               : width >= 340
               ? (72.0, 40.0)
               : (0.0, 0.0);
-          return Row(
-            spacing: DsSpace.s12,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s8,
             children: [
-              if (coverWidth > 0)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(theme.radii.card),
-                  child: DsImage(
-                    image: cover.isEmpty ? null : cachedImage(cover),
-                    width: coverWidth,
-                    height: coverHeight,
-                    semanticLabel: title,
-                    fallback: _CoverFallback(letter: platformLetter(task.platform)),
-                  ),
-                ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s3,
-                  children: [
-                    Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        DsAvatar(
-                          initials: avatarInitials(anchor.isEmpty ? title : anchor),
-                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                          size: DsSize.sm,
-                          semanticLabel: anchor.isEmpty ? title : anchor,
-                        ),
-                        Expanded(
-                          child: Text(
-                            anchor.isEmpty ? title : anchor,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (anchor.isNotEmpty)
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s12,
+                children: [
+                  if (coverWidth > 0)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(theme.radii.card),
+                      child: DsImage(
+                        image: cover.isEmpty ? null : cachedImage(cover),
+                        width: coverWidth,
+                        height: coverHeight,
+                        semanticLabel: title,
+                        fallback: _CoverFallback(letter: platformLetter(task.platform)),
                       ),
-                    // The session's own figures. A wide row sets them as
-                    // labelled measures the way a worklist reads; a narrow one
-                    // keeps one line.
-                    if (width >= 720)
-                      Padding(
-                        padding: const EdgeInsets.only(top: DsSpace.s4),
-                        child: Row(
-                          spacing: DsSpace.s24,
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 2,
+                      children: [
+                        Row(
+                          spacing: DsSpace.s8,
                           children: [
-                            _Measure(label: t.recorder.columnBitrate, value: figuresBitrate),
-                            _Measure(label: t.recorder.columnSize, value: figuresSize),
-                            _Measure(label: t.recorder.columnDuration, value: figuresDuration),
-                            _Measure(label: t.recorder.columnStarted, value: startedText),
+                            DsAvatar(
+                              initials: avatarInitials(anchor.isEmpty ? title : anchor),
+                              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                              size: DsSize.sm,
+                              semanticLabel: anchor.isEmpty ? title : anchor,
+                            ),
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                              ),
+                            ),
                           ],
                         ),
-                      )
-                    else if (figures.isNotEmpty)
-                      Text(
-                        figures,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography
-                            .numeric(theme.typography.caption)
-                            .copyWith(
-                              color: task.isRunning ? colors.accent : colors.textMuted,
-                              fontWeight: FontWeight.w600,
+                        // The category line: the streamer, then the platform's
+                        // own mark beside its name, then the room's id.
+                        Row(
+                          spacing: DsSpace.s4,
+                          children: [
+                            if (anchor.isNotEmpty) ...[
+                              Flexible(
+                                child: Text(
+                                  anchor,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                ),
+                              ),
+                              Text('·', style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+                            ],
+                            ?platformIcon,
+                            Flexible(
+                              child: Text(
+                                '$platformName · ${task.roomId}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              ),
                             ),
-                      ),
-                    Text(
-                      meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                    ),
-                    // A row that says recording while this window holds no
-                    // session tells the truth about the store, not about here:
-                    // another window may be writing it, or the last process
-                    // died mid-take. The line says which readings to expect
-                    // rather than leaving a card that looks live and answers
-                    // nothing.
-                    if (task.state == RecordingTaskState.recording && onStop == null)
-                      Text(
-                        t.recorder.stateRecordingElsewhere,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.warning.text),
-                      ),
-                    if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
-                      Text(
-                        task.errorText.trim(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.danger.text),
-                      ),
-                    if (!task.postProcessing && task.warning.isNotEmpty)
-                      Text(
-                        _warningLabel(t, task.warning),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.warning.text),
-                      ),
-                    if (task.postProcessing)
-                      Padding(
-                        padding: const EdgeInsets.only(top: DsSpace.s4),
-                        child: Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: DsProgressBar(
-                            value: task.postProcessingProgress >= 0
-                                ? task.postProcessingProgress.clamp(0.0, 1.0)
-                                : null,
-                            semanticLabel: t.recorder.stateProcessing,
-                          ),
+                          ],
                         ),
-                      ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: DsSpace.s3,
-                children: [
-                  DsBadge(
-                    label: Text(
-                      task.postProcessing
-                          ? t.recorder.stateProcessing
-                          : _fileDeleted
-                          ? t.recorder.stateFileDeleted
-                          : !task.enabled
-                          ? t.recorder.statePaused
-                          : task.state == RecordingTaskState.stopped
-                          ? t.recorder.stateWaiting
-                          : stateLabel(t, task.state),
+                        if (audience.isNotEmpty || task.quality.isNotEmpty || task.scheduleEnabled)
+                          Text(
+                            [
+                              if (audience.isNotEmpty) audience,
+                              if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
+                              if (task.scheduleEnabled) _scheduleSummary(t, task),
+                            ].join(' · '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                      ],
                     ),
-                    status: task.postProcessing
-                        ? DsStatus.info
-                        : _fileDeleted || !task.enabled
-                        ? DsStatus.neutral
-                        : task.state == RecordingTaskState.stopped
-                        ? DsStatus.warning
-                        : stateStatus(task.state),
                   ),
-                  if (width < 720 && lastRun.isNotEmpty)
-                    Text(
-                      lastRun,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    spacing: DsSpace.s3,
+                    children: [
+                      DsBadge(
+                        label: Text(
+                          task.postProcessing
+                              ? t.recorder.stateProcessing
+                              : _fileDeleted
+                              ? t.recorder.stateFileDeleted
+                              : !task.enabled
+                              ? t.recorder.statePaused
+                              : task.state == RecordingTaskState.stopped
+                              ? t.recorder.stateWaiting
+                              : stateLabel(t, task.state),
+                        ),
+                        status: task.postProcessing
+                            ? DsStatus.info
+                            : _fileDeleted || !task.enabled
+                            ? DsStatus.neutral
+                            : task.state == RecordingTaskState.stopped
+                            ? DsStatus.warning
+                            : stateStatus(task.state),
+                      ),
+                      if (lastRun.isNotEmpty)
+                        Text(
+                          lastRun,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                        ),
+                    ],
+                  ),
+                  _TaskMenu(
+                    task: task,
+                    hasFile: (task.filePath ?? '').trim().isNotEmpty,
+                    onOpen: onOpen,
+                    onStop: onStop,
+                    onToggleWatch: onToggleWatch,
+                    onDelete: onDelete,
+                    onSchedule: onSchedule,
+                    onCancelProcessing: onCancelProcessing,
+                    onStartNow: onStartNow,
+                    onRetryJoin: onRetryJoin,
+                    onPreview: onPreview,
+                    onPlayExternal: onPlayExternal,
+                  ),
                 ],
               ),
-              _TaskMenu(
-                task: task,
-                hasFile: (task.filePath ?? '').trim().isNotEmpty,
-                onOpen: onOpen,
-                onStop: onStop,
-                onToggleWatch: onToggleWatch,
-                onDelete: onDelete,
-                onSchedule: onSchedule,
-                onCancelProcessing: onCancelProcessing,
-                onStartNow: onStartNow,
-                onRetryJoin: onRetryJoin,
-                onPreview: onPreview,
-                onPlayExternal: onPlayExternal,
+              // The session's own numbers sit under the cover, four labelled
+              // measures: the word over the figure, so the row reads without a
+              // table header. A phone pairs them two by two.
+              Builder(
+                builder: (context) {
+                  final measures = [
+                    _Measure(label: t.recorder.columnBitrate, value: figuresBitrate),
+                    _Measure(label: t.recorder.columnSize, value: figuresSize),
+                    _Measure(label: t.recorder.columnDuration, value: figuresDuration),
+                    _Measure(label: t.recorder.columnStarted, value: startedText),
+                  ];
+                  Widget line(List<Widget> items) => Row(children: [for (final item in items) Expanded(child: item)]);
+                  if (width < 420) {
+                    return Column(
+                      spacing: DsSpace.s8,
+                      children: [line(measures.sublist(0, 2)), line(measures.sublist(2))],
+                    );
+                  }
+                  return line(measures);
+                },
               ),
+              if (task.state == RecordingTaskState.recording && onStop == null)
+                Text(
+                  t.recorder.stateRecordingElsewhere,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.warning.text),
+                ),
+              if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
+                Text(
+                  task.errorText.trim(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.danger.text),
+                ),
+              if (!task.postProcessing && task.warning.isNotEmpty)
+                Text(
+                  _warningLabel(t, task.warning),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.warning.text),
+                ),
+              if (task.postProcessing)
+                DsProgressBar(
+                  value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,
+                  semanticLabel: t.recorder.stateProcessing,
+                ),
             ],
           );
         },
