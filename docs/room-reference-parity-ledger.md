@@ -9,7 +9,7 @@
 1. **第 1 部分（桌面控件/弹幕列表/录制显示）**：与参考逐控件比过三轮并已持平或更强；`T13–T23`、`P27–P39` 是成果清单。**再动就是凭喜好重排**——参考底条动词与我们的"条 + ⋮ 菜单"分工按参考自己的 `menuEntriesOnBars` 规则等价（它把条上有的从菜单里删掉，我们把同类动词收进菜单，都是一个入口）。
 2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
-4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。
+4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。
 5. **还欠的两笔小账**（都被别人的在途改动挡住，2026-11-05 复核仍挡）：`displayLabel` 的显示位只剩 `player_surface.dart:430,1246`（被别人 `:81` 的 `open(known: room)` hunk 挡住）与 `multiview_page.dart:1099,1104`（被别人 `:535` 的 `openRoom(room:)` hunk 挡住）；getter 早已在 HEAD（`34578f23c`），谁先落地都不影响编译。开工前 `git status` 复核，文件干净就把这两处补完再划掉。
 6. **两个等点名的决定**：①Bigo 的 HLS 已实测是逐段加扰（`#EXT-X-BIGO-WEB-PROTECTION:SEED=…`），我们包里有还原算法但没有中继 ⇒ 现在进 bigo 房基本黑屏（参考实测直连 11 次成 1 次）。选 **1** 我做环回中继（并给 `LivePlayLine` 一个"要先还原"的表达），选 **2** 我让它带可读原因失败。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前两样都不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
@@ -357,3 +357,20 @@ PLAN-CHECK huya     没有注册 resolver
 | P44 | （本轮）| 档位诚实 | 把"选了平台 serve 不出来的档"从一次重开降成一次改标签：包侧新 `isSamePlayPlan(loaded, asked)`（`live_play_line.dart`：同序、同 URL、同 `format`、同 headers；**同一地址换了 lease 不算换媒体**，到期由 `_armLeaseRenewal` 自己盯），房间侧 `selectQuality` 带 `keepPlayingWhenUnchanged: true`，`_startPlayback` 在"当前在播 + 新计划就是已加载的那份"时直接返回。**只有改画质这一路可以短路**：lease 重建（`:1527`）与进房（`:899`）不带这个旗标——它们要的就是"哪怕地址相同也要重开"。新 `packages/live_sites/test/models/live_play_line_test.dart` 6 例（相同/换地址/换 headers/条数变/顺序变/换 lease）。门：live_sites `dart analyze lib test` 0 issues、`dart test` **475 例中 474 绿**（唯一红是搜索 lane 在途的 `site_facts_test.dart`：他们的 `looklive` 退役让 retired 集合从 11 变 12，测试没跟着改，`site_facts.dart` 是他们脏文件）；app `dart analyze lib` 0 issues、`flutter test test/live` 61 例中 60 绿（唯一红仍是录像 lane）。运行期未验：要在 Steam 房改一次档，画面不该再断。 |
 
 - **Steam 的档位名单本身仍然是假的**（P44 只是不再为它重开流）。要让它真生效，等上面 1/2 点名。这是本车道第二个"等点名"的决定，第一个是 Bigo 的加扰 HLS。
+
+## 弹幕 socket 运行时普查（2026-11-05 第六次，第四部分：把"参考有 DanmakuSocketPolicy 我们没有"证伪）
+
+参考 `live_danmaku/lib/src/socket_connection.dart` + `connection_base.dart`：一个**共享运行时** + 每站一份 `DanmakuSocketPolicy`（`heartbeatInterval`、`inactivityTimeout`（默认=3 个心跳周期、至少 90 s）、`joinTimeout`、`maxReconnects=8`（**收到任何消息就把计数归零**）、端点轮换 + 每轮加一档回退、`connectTimeout=10`、`shutdownTimeout=2`）。第一遍普查我用 `HeartbeatConfig(`/`ReconnectPolicy(` 计数，得出"只有 7 站配了心跳"——**那是错的度量**：我们 22 个 socket 站分两个缝，只有 10 站走 `DanmakuSocket`（`live_websocket` 的 `LiveWebSocketClient`），另外 12 站（yy/acfun/picarto/showroom/soop/kick…）拿 `SocketChannel`（`webSocketConnect`）**自己按协议打拍子**。按正确的词汇重数（`silence/silent/inactivity/quieter`、`joinTimeout/_join/handshakeTimeout`）：
+
+| 检查项 | 结果 |
+| --- | --- |
+| 心跳 | 22 站全有（7 站用 `HeartbeatConfig`，其余 `Timer.periodic` 发协议帧） |
+| 静默看门狗（socket 还在但不吐消息就换） | socket 站**全有**：`acfun_danmaku_session.dart:403 _startSilenceWatch`（"every frame rearms it"）、yy `:237 _watchdog`、bigo/kick/picarto/showroom/soop… 各自的 silence 常量；HTTP 轮询站（youtube/niconico/kuaishou/baidulive/steambroadcast）不适用 |
+| 进房握手超时 | 参考逐站设的（acfun 10 s / bilibili 8 s / kilakila 8 s / YY handshakeTimeout）**我们都有**：acfun `joinTimeout=10 处命中`、kick 12、bilibili/chzzk/fc2live/kugoulive/missevan/pandalive/picarto/seventeenlive/kilakila/sixroom 均非零，yy 用 `handshakeTimeout` 起 `_join` 定时器（`:172`） |
+| 有界重连 + 计数复位 | `ReconnectPolicy(maxAttempts…)`，`websocket_client.dart:198` 在**连上时 `_retryCount = 0`** ⇒ 与参考"收到消息就归零"同义（不会在看了一晚上之后因为累计断连次数把聊天判死）；10 站显式配置自己的策略，8 站关掉通用重连自己走阶梯（`reconnectPolicy: enabled: false`），无一站留默认 |
+| `shutdownTimeout`（关闭握手的最长等待） | **没有——本轮唯一的真缺口**，见 P45 |
+
+| P45 | `c52f41c76` | 退出不被静默的对端拖住 | 离房要 dispose 聊天 socket，dispose 里 `await sink.close()`。dart:io 的关闭握手**要等对端回应**，所以对端一旦"连着但不应"（代理不再转发、网络到不了边缘节点），这个 await 会挂到操作系统放弃那条连接为止，而后面排队等着的正是弹幕会话的收尾、房间切换、乃至退出程序。两个缝都补了 2 s 期限（与参考 `shutdownTimeout` 同值）：`WebSocketConfig.shutdownTimeout`（客户端，10 站）+ `socket_channel.dart` 的 `_shutdownTimeout`（`SocketChannel.close()`，12 个自打拍子的站）。到期就**当作已关闭返回**，`closeCode` 留 null（各站在打开时本来就当 null 处理，只有卡住这一种情况的行为变了）。门：live_websocket `dart analyze lib test` 0 issues、`dart test` **16 绿**（新 2 例：`drops a socket whose peer never acknowledges the close` 用不回应关闭的假 sink + 1 s 外层期限，`the close deadline is short but not immediate` 钉住默认 2 s）；live_sites `dart test` 475 绿 + 1 红（搜索 lane 在途的 `site_facts_test`）；app `dart analyze lib` 0 issues、`flutter test test/live` 61 例中 60 绿（唯一红仍是录像 lane）。**薄缝（`SocketChannel`）那一路只有代码+文档，没有自动化测试**：它要一个"接受连接但故意不回关闭帧"的真服务器才测得动，dart:io 的服务器会自动回应，所以这 2 s 靠的是与客户端同一份实现的判据，不是钉住的门。运行期未验：断网/关代理后离房不该卡一下。 |
+
+- **教训（度量类）**：普查"某能力哪些站有"之前，先确认**这个包里有几条路通向它**。我们弹幕 socket 有两条缝，用其中一条的配置名去数另一条，会同时造出假缺口（"15 站没心跳"）和假持平（"只有 7 站配了重连"）。
+- 结构性差异记录为**不动**：参考一份共享运行时，我们两条缝（`LiveWebSocketClient` 与 `SocketChannel`）。把 12 个自打拍子的站搬到通用客户端是一次跨 22 站的协议重构（每站的心跳是几帧、什么顺序、带不带 ticket 各不相同），没有运行期验收手段就别做——这条留给以后真出现"某站阶梯不一致"的症状时再动。
