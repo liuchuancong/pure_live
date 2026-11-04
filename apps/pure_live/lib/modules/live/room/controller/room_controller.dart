@@ -22,7 +22,7 @@ import 'package:pure_live/modules/live/room/chat/gift_flights.dart' show GiftFli
 import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTier;
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
-import 'package:pure_live/modules/live/room/controller/room_open_timing.dart' show RoomOpenTiming;
+import 'package:pure_live/modules/live/room/controller/room_open_timing.dart' show RoomOpenStage, RoomOpenTiming;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
 
@@ -568,6 +568,31 @@ final roomChatNoticeProvider = NotifierProvider<RoomChatNoticeController, RoomCh
   RoomChatNoticeController.new,
 );
 
+/// What one entry into a room cost, stage by stage: the numbers behind "this
+/// room opens slowly", kept for the room's own details panel because a viewer
+/// is not going to open a log file to answer a question the app asked them.
+typedef RoomOpenRecord = ({String site, String roomId, List<RoomOpenStage> stages, Duration total, bool failed});
+
+/// The last entry's timings.
+final class RoomOpenRecordController extends Notifier<RoomOpenRecord?> {
+  @override
+  RoomOpenRecord? build() => null;
+
+  /// Publishes the entry that just ended, measured by [timing].
+  void report(RoomOpenTiming timing, {bool failed = false}) {
+    state = (site: timing.site, roomId: timing.roomId, stages: timing.stages, total: timing.total, failed: failed);
+  }
+
+  /// Drops it: the next room has its own numbers, and last visit's would be
+  /// read as this one's.
+  void clear() => state = null;
+}
+
+/// The stage timings of the room's most recent entry.
+final roomOpenRecordProvider = NotifierProvider<RoomOpenRecordController, RoomOpenRecord?>(
+  RoomOpenRecordController.new,
+);
+
 /// One open live room: its detail, its play plan, the playback over
 /// media_core's live controller, and the danmaku session beside it.
 ///
@@ -614,12 +639,15 @@ final class RoomController extends Notifier<RoomState> {
   /// room is slow" is four different faults, and only the numbers say which.
   RoomOpenTiming? _openTiming;
 
-  /// Writes the entry's line to the log and stops measuring it.
+  /// Writes the entry's line to the log, hands its numbers to the details
+  /// panel, and stops measuring.
   void _reportOpenTiming({bool failed = false}) {
     final timing = _openTiming;
     if (timing == null) return;
     _openTiming = null;
     appLog.forCategory('room').info(timing.line(failed: failed));
+    if (!ref.mounted) return;
+    ref.read(roomOpenRecordProvider.notifier).report(timing, failed: failed);
   }
 
   /// Rises with every danmaku open the room starts (a platform account change
@@ -762,6 +790,8 @@ final class RoomController extends Notifier<RoomState> {
     _requestedRoomId = roomId;
     _teardown();
     _openTiming = RoomOpenTiming(site: platform, roomId: roomId);
+    // Last visit's numbers describe last visit's room.
+    ref.read(roomOpenRecordProvider.notifier).clear();
     final epoch = _openEpoch;
     ref.read(roomSuperChatsProvider.notifier).clear();
     final settings = ref.read(playbackSettingsProvider);

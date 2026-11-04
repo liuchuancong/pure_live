@@ -59,6 +59,7 @@ final class RoomDetailsPanel extends ConsumerWidget {
         _State(room: room),
         if (title.isNotEmpty) Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
         _Figures(room: room),
+        const _OpenStages(),
         if (notice.isNotEmpty) _TextSection(label: t.room.notice, text: notice),
         if (introduction.isNotEmpty && introduction != notice)
           _TextSection(label: t.room.introduction, text: introduction),
@@ -260,6 +261,70 @@ final class _Figures extends StatelessWidget {
       ],
     );
   }
+}
+
+/// How the last entry into this room went, stage by stage.
+///
+/// The room writes a `room-open` line to the log when an entry ends; these are
+/// the same numbers where a viewer can actually read them, because "it opens
+/// slowly" is four different faults and only the numbers say which. A stage the
+/// entry never reached is left out rather than shown as a zero: zero reads as
+/// "that step was fast" when it means "we never got there".
+final class _OpenStages extends ConsumerWidget {
+  const _OpenStages();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final record = ref.watch(roomOpenRecordProvider);
+    if (record == null) return const SizedBox.shrink();
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final rows = [
+      for (final stage in record.stages)
+        if (stage.took case final took?) (_stageLabel(t, stage.name), took.inMilliseconds),
+    ];
+    return DsListSection(
+      header: Text('${t.room.openStages} · ${t.room.openStagesTotal(value: record.total.inMilliseconds)}'),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s4,
+            children: [
+              for (final (label, milliseconds) in rows)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                    Text(
+                      t.room.openStageValue(value: milliseconds),
+                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text)),
+                    ),
+                  ],
+                ),
+              if (record.failed)
+                Text(t.room.openStagesFailed, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The stage's name in the viewer's language. A key with no row here shows
+  /// its own name rather than being labelled as some other stage.
+  static String _stageLabel(Translations t, String name) => switch (name) {
+    'detail' => t.room.openStageDetail,
+    'qualities' => t.room.openStageQualities,
+    'lines' => t.room.openStageLines,
+    'request' => t.room.openStageRequest,
+    'firstFrame' => t.room.openStageFirstFrame,
+    'playing' => t.room.openStagePlaying,
+    'chat' => t.room.openStageChat,
+    _ => name,
+  };
 }
 
 /// Notice or introduction: a titled card whose text wraps in full.

@@ -6406,6 +6406,39 @@ class Translations$room$zh_CN {
 	/// zh-CN: '在新窗口打开'
 	String get openInNewWindow => '在新窗口打开';
 
+	/// zh-CN: '进房耗时'
+	String get openStages => '进房耗时';
+
+	/// zh-CN: '共 {value} 毫秒'
+	String openStagesTotal({required Object value}) => '共 ${value} 毫秒';
+
+	/// zh-CN: '这次进房以失败结束'
+	String get openStagesFailed => '这次进房以失败结束';
+
+	/// zh-CN: '{value} 毫秒'
+	String openStageValue({required Object value}) => '${value} 毫秒';
+
+	/// zh-CN: '房间信息'
+	String get openStageDetail => '房间信息';
+
+	/// zh-CN: '画质列表'
+	String get openStageQualities => '画质列表';
+
+	/// zh-CN: '线路地址'
+	String get openStageLines => '线路地址';
+
+	/// zh-CN: '交给播放器'
+	String get openStageRequest => '交给播放器';
+
+	/// zh-CN: '首帧'
+	String get openStageFirstFrame => '首帧';
+
+	/// zh-CN: '开始播放'
+	String get openStagePlaying => '开始播放';
+
+	/// zh-CN: '弹幕握手'
+	String get openStageChat => '弹幕握手';
+
 	/// zh-CN: '投屏'
 	String get cast => '投屏';
 
@@ -15584,6 +15617,17 @@ extension on Translations {
 			'room.pipOn' => '画中画',
 			'room.pipOff' => '退出画中画',
 			'room.openInNewWindow' => '在新窗口打开',
+			'room.openStages' => '进房耗时',
+			'room.openStagesTotal' => ({required Object value}) => '共 ${value} 毫秒',
+			'room.openStagesFailed' => '这次进房以失败结束',
+			'room.openStageValue' => ({required Object value}) => '${value} 毫秒',
+			'room.openStageDetail' => '房间信息',
+			'room.openStageQualities' => '画质列表',
+			'room.openStageLines' => '线路地址',
+			'room.openStageRequest' => '交给播放器',
+			'room.openStageFirstFrame' => '首帧',
+			'room.openStagePlaying' => '开始播放',
+			'room.openStageChat' => '弹幕握手',
 			'room.cast' => '投屏',
 			'room.castTitle' => '投屏到设备',
 			'room.castSearching' => '正在搜索附近的设备',
@@ -15929,6 +15973,8 @@ extension on Translations {
 			'settings.refreshRateFailed' => '刷新率读取失败',
 			'settings.refreshRateApplyFailed' => '刷新率请求未生效',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
+			_ => null,
+		} ?? switch (path) {
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
@@ -15940,8 +15986,6 @@ extension on Translations {
 			'settings.sitesResetDesc' => '显示、顺序与首选平台都回到应用自带的默认。',
 			'settings.sitesGroupList' => '平台',
 			'settings.sitesColumnPlatform' => '平台',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesColumnId' => '标识',
 			'settings.sitesColumnShown' => '显示',
 			'settings.aboutVersion' => '版本',
@@ -16443,6 +16487,8 @@ extension on Translations {
 			'settings.audioOutputNull' => 'null（不输出声音，静音调试）',
 			'settings.videoSync' => '视频同步模式 (--video-sync)',
 			'settings.videoSyncDesc' => '跟随音频时钟或显示刷新；显示重采样最平滑但更吃 GPU。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.videoSyncAudio' => '音频时钟（mpv 默认）',
 			'settings.videoSyncDisplayResample' => '显示重采样（最平滑，吃 GPU）',
 			'settings.videoSyncDisplayResampleVdrop' => '显示重采样 + 视频丢帧',
@@ -16454,8 +16500,6 @@ extension on Translations {
 			'settings.interpolation' => '运动插帧',
 			'settings.interpolationDesc' => '--interpolation：配合「显示重采样」，平移更顺滑，更耗 GPU。',
 			'settings.scaleKernel' => '缩放算法',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
@@ -16957,6 +17001,8 @@ extension on Translations {
 			'settings.roomCardSettingsDescription' => '版式固定，这里只选显示哪些信息；所有设备共用这一套。',
 			'settings.roomCardPreview' => '卡片预览',
 			'settings.roomCardPreviewTitle' => '今晚八点，一起聊聊新番和游戏',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardPreviewAnchor' => '夜色电台',
 			'settings.roomCardPreviewArea' => '游戏分区',
 			'settings.roomCardPreviewHint' => '改动会立即反映在这张卡片上。',
@@ -16968,8 +17014,6 @@ extension on Translations {
 			'settings.roomCardShowTitle' => '标题',
 			'settings.roomCardShowCoverTitle' => '房间分区',
 			'settings.roomCardShowStatus' => '直播状态',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardShowAvatar' => '主播头像',
 			'settings.roomCardShowAnchor' => '主播名称',
 			'settings.roomCardShowPlatform' => '平台显示',
@@ -17471,6 +17515,8 @@ extension on Translations {
 			'vod.pgcTv' => '电视剧',
 			'vod.pgcVariety' => '综艺',
 			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.episodes' => '选集',
 			'vod.following' => '已追',
 			'vod.pictureOnly' => '仅画面',
@@ -17482,8 +17528,6 @@ extension on Translations {
 			'vod.sortStow' => '收藏多',
 			'vod.duration' => '时长',
 			'vod.durationAny' => '全部时长',
-			_ => null,
-		} ?? switch (path) {
 			'vod.durationUnder10' => '10 分钟以下',
 			'vod.duration10to30' => '10–30 分钟',
 			'vod.duration30to60' => '30–60 分钟',

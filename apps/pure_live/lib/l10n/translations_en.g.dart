@@ -2266,6 +2266,17 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get pipOn => 'Picture-in-picture';
 	@override String get pipOff => 'Leave picture-in-picture';
 	@override String get openInNewWindow => 'Open in a new window';
+	@override String get openStages => 'How the entry went';
+	@override String openStagesTotal({required Object value}) => '${value} ms in all';
+	@override String get openStagesFailed => 'This entry ended in an error';
+	@override String openStageValue({required Object value}) => '${value} ms';
+	@override String get openStageDetail => 'Room info';
+	@override String get openStageQualities => 'Quality list';
+	@override String get openStageLines => 'Stream lines';
+	@override String get openStageRequest => 'Handed to the player';
+	@override String get openStageFirstFrame => 'First frame';
+	@override String get openStagePlaying => 'Playing';
+	@override String get openStageChat => 'Chat handshake';
 	@override String get cast => 'Cast';
 	@override String get castTitle => 'Cast to a device';
 	@override String get castSearching => 'Looking for devices nearby';
@@ -6861,6 +6872,17 @@ extension on TranslationsEn {
 			'room.pipOn' => 'Picture-in-picture',
 			'room.pipOff' => 'Leave picture-in-picture',
 			'room.openInNewWindow' => 'Open in a new window',
+			'room.openStages' => 'How the entry went',
+			'room.openStagesTotal' => ({required Object value}) => '${value} ms in all',
+			'room.openStagesFailed' => 'This entry ended in an error',
+			'room.openStageValue' => ({required Object value}) => '${value} ms',
+			'room.openStageDetail' => 'Room info',
+			'room.openStageQualities' => 'Quality list',
+			'room.openStageLines' => 'Stream lines',
+			'room.openStageRequest' => 'Handed to the player',
+			'room.openStageFirstFrame' => 'First frame',
+			'room.openStagePlaying' => 'Playing',
+			'room.openStageChat' => 'Chat handshake',
 			'room.cast' => 'Cast',
 			'room.castTitle' => 'Cast to a device',
 			'room.castSearching' => 'Looking for devices nearby',
@@ -7206,6 +7228,8 @@ extension on TranslationsEn {
 			'settings.refreshRateFailed' => 'The refresh rate could not be read',
 			'settings.refreshRateApplyFailed' => 'The refresh-rate request did not take effect',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '${count} displays detected',
+			_ => null,
+		} ?? switch (path) {
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
@@ -7217,8 +7241,6 @@ extension on TranslationsEn {
 			'settings.sitesResetDesc' => 'Visibility, order and the preferred platform all return to what this build ships with.',
 			'settings.sitesGroupList' => 'Platforms',
 			'settings.sitesColumnPlatform' => 'Platform',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesColumnId' => 'Id',
 			'settings.sitesColumnShown' => 'Shown',
 			'settings.aboutVersion' => 'Version',
@@ -7720,6 +7742,8 @@ extension on TranslationsEn {
 			'settings.audioOutputNull' => 'null (no audio, silent debugging)',
 			'settings.videoSync' => 'Video sync mode (--video-sync)',
 			'settings.videoSyncDesc' => 'Sync to the audio clock or the display; resampling is smoothest but costs GPU.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.videoSyncAudio' => 'Audio clock (mpv default)',
 			'settings.videoSyncDisplayResample' => 'Display resample (smoothest, GPU heavy)',
 			'settings.videoSyncDisplayResampleVdrop' => 'Display resample + vdrop',
@@ -7731,8 +7755,6 @@ extension on TranslationsEn {
 			'settings.interpolation' => 'Motion interpolation',
 			'settings.interpolationDesc' => '--interpolation: with display resampling, pans look smoother at a GPU cost.',
 			'settings.scaleKernel' => 'Scale kernel',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
 			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
@@ -8234,6 +8256,8 @@ extension on TranslationsEn {
 			'settings.roomCardSettingsDescription' => 'The card and list row have fixed designs; choose which details they show. Every device shares this one set.',
 			'settings.roomCardPreview' => 'Card preview',
 			'settings.roomCardPreviewTitle' => 'Late-night anime and games',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardPreviewAnchor' => 'Night Radio',
 			'settings.roomCardPreviewArea' => 'Gaming',
 			'settings.roomCardPreviewHint' => 'Changes show up in this card at once.',
@@ -8245,8 +8269,6 @@ extension on TranslationsEn {
 			'settings.roomCardShowTitle' => 'Title',
 			'settings.roomCardShowCoverTitle' => 'Room area',
 			'settings.roomCardShowStatus' => 'Live state',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardShowAvatar' => 'Anchor avatar',
 			'settings.roomCardShowAnchor' => 'Anchor name',
 			'settings.roomCardShowPlatform' => 'Platform',
@@ -8748,6 +8770,8 @@ extension on TranslationsEn {
 			'vod.pgcTv' => 'TV series',
 			'vod.pgcVariety' => 'Variety',
 			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.episodes' => 'Episodes',
 			'vod.following' => 'Following',
 			'vod.pictureOnly' => 'Picture only',
@@ -8759,8 +8783,6 @@ extension on TranslationsEn {
 			'vod.sortStow' => 'Most favourited',
 			'vod.duration' => 'Length',
 			'vod.durationAny' => 'Any length',
-			_ => null,
-		} ?? switch (path) {
 			'vod.durationUnder10' => 'Under 10 min',
 			'vod.duration10to30' => '10–30 min',
 			'vod.duration30to60' => '30–60 min',
