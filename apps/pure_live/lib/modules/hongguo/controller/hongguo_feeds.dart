@@ -379,13 +379,19 @@ HongguoSearchState _searchState({
 );
 
 /// The station's search: the app's own endpoint (the richer one), paged by
-/// the tab's cursor; the website's page answers the first page whenever the
-/// app endpoint cannot. Suggestions ride the platform's word list once the
+/// the tab's cursor; the website's page answers that query's pages whenever
+/// the app endpoint cannot. Suggestions ride the platform's word list once the
 /// typing pauses, and a newer query always wins.
 final class HongguoSearchController extends Notifier<HongguoSearchState> {
   int _generation = 0;
   int _suggestGeneration = 0;
   Timer? _suggestTimer;
+
+  /// Whether this query walked onto the website's search page. The walk stays
+  /// there for the rest of that query's pages — asking the endpoint that just
+  /// refused again per page would pay a dead round trip and then report a
+  /// failure the paged fallback could answer — and a fresh ask resets it.
+  bool _websiteTrack = false;
 
   @override
   HongguoSearchState build() {
@@ -438,7 +444,7 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
   void clearHistory() {
     state = _copy(history: const []);
     try {
-      unawaited(StoragePrefs.remove(_kHistoryKey));
+      unawaited(StoragePrefs.remove(_kHistoryKey).catchError((Object _) => false));
     } on Object {
       // A closed store loses the history; nothing else is affected.
     }
@@ -457,6 +463,22 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
     }
   }
 
+  /// [held] with the series from [page] it does not show yet.
+  ///
+  /// The website's result pages repeat a row across pages now and then
+  /// (measured: page 3 replayed one of the thirty already walked), and a
+  /// listing that shows the same drama twice reads as a broken walk rather
+  /// than a platform quirk. The page counter still moves by what the platform
+  /// served, so a fully duplicate page simply asks for the next one.
+  static List<HongguoSeries> _appended(List<HongguoSeries> held, List<HongguoSeries> page) {
+    final seen = {for (final series in held) series.seriesId};
+    return [
+      ...held,
+      for (final series in page)
+        if (seen.add(series.seriesId)) series,
+    ];
+  }
+
   Future<void> _load(String query, HongguoGenre genre, HongguoSearchCursor? cursor, List<HongguoSeries> held) async {
     final generation = ++_generation;
     final history = cursor == null ? _remember(query) : state.history;
@@ -469,45 +491,76 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
       loading: true,
       history: history,
     );
+    // A fresh ask — first page or a retry — tries the app endpoint again, so a
+    // station that comes back is picked up without leaving the viewer stuck on
+    // the fallback for the rest of the run.
+    if (cursor == null) _websiteTrack = false;
+    if (_websiteTrack) {
+      await _loadWebsite(query, genre, cursor?.page ?? 1, held, generation, history);
+      return;
+    }
     try {
       final result = await ref.read(hongguoClientProvider).appSearch(query, cursor: cursor, genre: genre);
       if (generation != _generation) return;
       state = _searchState(
         query: query,
         genre: genre,
-        items: [...held, ...result.items],
+        items: _appended(held, result.items),
         cursor: result.next,
         hasMore: result.hasMore,
         history: history,
       );
     } on Object catch (error) {
-      // The website's page covers a first page the app endpoint could not
-      // serve; deeper pages simply report the app endpoint's failure.
-      if (cursor == null) {
-        try {
-          final fallback = await ref.read(hongguoClientProvider).websiteSearch(query);
-          if (generation != _generation) return;
-          state = _searchState(
-            query: query,
-            genre: genre,
-            items: fallback.items,
-            cursor: const HongguoSearchCursor(page: 2),
-            hasMore: fallback.hasMore,
-            history: history,
-          );
-          return;
-        } on Object {
-          // Falls through with the app endpoint's own words below.
-        }
-      }
       if (generation != _generation) return;
+      // The website's page answers what the app endpoint could not, and it is
+      // paged too (measured: pages 1/2/3 each serve ten distinct series), so
+      // the walk moves there instead of paying a refused round trip per page
+      // and then reporting a failure the fallback could have answered.
+      _websiteTrack = true;
+      await _loadWebsite(query, genre, cursor?.page ?? 1, held, generation, history, appFailure: error);
+    }
+  }
+
+  /// One page of the website's own search result.
+  ///
+  /// The trade to know about: the website answers a word across every shelf —
+  /// its rows carry tag strings, not the app's `short_play`/`comic_series`
+  /// kind — so a shelf picked by the viewer is not honoured while this track
+  /// serves. That was already true of the first page the app endpoint could
+  /// not serve; extending it is the choice, and the app endpoint's shelf
+  /// filter returns as soon as a fresh ask reaches it.
+  Future<void> _loadWebsite(
+    String query,
+    HongguoGenre genre,
+    int page,
+    List<HongguoSeries> held,
+    int generation,
+    List<String> history, {
+    Object? appFailure,
+  }) async {
+    final cursor = HongguoSearchCursor(page: page);
+    try {
+      final fallback = await ref.read(hongguoClientProvider).websiteSearch(query, page: page);
+      if (generation != _generation) return;
+      state = _searchState(
+        query: query,
+        genre: genre,
+        items: _appended(held, fallback.items),
+        cursor: HongguoSearchCursor(page: page + 1),
+        hasMore: fallback.hasMore,
+        history: history,
+      );
+    } on Object catch (error) {
+      if (generation != _generation) return;
+      // Both doors refused: the words the viewer's own shelf endpoint gave are
+      // the more useful of the two, since that is the one the page names.
       state = _searchState(
         query: query,
         genre: genre,
         items: held,
         cursor: cursor,
         history: history,
-        error: hongguoFailureText(error),
+        error: hongguoFailureText(appFailure ?? error),
       );
     }
   }
@@ -536,7 +589,7 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
   List<String> _remember(String query) {
     final history = [query, ...state.history.where((word) => word != query)].take(kHongguoHistoryCount).toList();
     try {
-      unawaited(StoragePrefs.setString(_kHistoryKey, jsonEncode(history)));
+      unawaited(StoragePrefs.setString(_kHistoryKey, jsonEncode(history)).catchError((Object _) => false));
     } on Object {
       // A closed store keeps the history for this run only.
     }
