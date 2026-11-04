@@ -15,6 +15,7 @@ import 'package:pure_live/app/providers/network/github_mirror_provider.dart' sho
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection, settingsChildrenOf;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
@@ -65,10 +66,6 @@ const List<double> _kPlaybackRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
 /// `1x` and 1.25 reads `1.25x`.
 String _playbackRateLabel(double rate) => '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 2)}x';
 
-/// Which half of the module's own settings page is showing: what a song is
-/// asked for and how the list behaves, or the sound's own equaliser.
-enum MusicSettingsTab { playback, effects }
-
 /// The music module's own settings, the way lx-music lays its rail out:
 /// the source a song is asked from, the rendition asked of it, the list
 /// behaviours and the reset — with the equaliser behind a second segment
@@ -76,23 +73,26 @@ enum MusicSettingsTab { playback, effects }
 /// their sections. The other pages (sources, download, lyrics…) still sit
 /// beside it as their own rows.
 final class MusicSettingsPane extends ConsumerStatefulWidget {
-  /// The pane shown under Settings → Music. [initialTab] is how a search hit
-  /// or a stored deep link opens the page on the equaliser half.
-  const MusicSettingsPane({this.initialTab = MusicSettingsTab.playback, super.key});
+  /// The pane shown under Settings → Music. [initialSection] is how a search
+  /// hit or a stored deep link opens the page on the equaliser half.
+  const MusicSettingsPane({this.initialSection = SettingsSection.music, super.key});
 
-  /// The half the page opens on.
-  final MusicSettingsTab initialTab;
+  /// The section the page opens on: this page's own body or one it carries.
+  final SettingsSection initialSection;
 
   @override
   ConsumerState<MusicSettingsPane> createState() => _MusicSettingsPaneState();
 }
 
 final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
-  late MusicSettingsTab _tab = widget.initialTab;
+  late SettingsSection _section = widget.initialSection;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    // The page's own half plus the sections it carries; their labels are the
+    // segment names, so a tab and the page it opens cannot drift apart.
+    final sections = [SettingsSection.music, ...settingsChildrenOf(SettingsSection.music)];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -103,18 +103,15 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
           alignment: AlignmentDirectional.centerStart,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: DsSegmentedControl<MusicSettingsTab>(
-              value: _tab,
+            child: DsSegmentedControl<SettingsSection>(
+              value: _section,
               semanticLabel: t.settings.navMusic,
-              segments: [
-                DsSegment(value: MusicSettingsTab.playback, label: Text(t.settings.navMusicPlay)),
-                DsSegment(value: MusicSettingsTab.effects, label: Text(t.settings.navMusicEq)),
-              ],
-              onChanged: (value) => setState(() => _tab = value),
+              segments: [for (final section in sections) DsSegment(value: section, label: Text(section.label(t)))],
+              onChanged: (value) => setState(() => _section = value),
             ),
           ),
         ),
-        if (_tab == MusicSettingsTab.effects) const MusicEqPane() else _playbackSection(context, ref),
+        if (_section == SettingsSection.musicEq) const MusicEqPane() else _playbackSection(context, ref),
       ],
     );
   }
@@ -1066,28 +1063,24 @@ final class MusicDownloadPane extends ConsumerWidget {
   }
 }
 
-/// Which half of the lyric page is showing: the line the player draws, and
-/// the window that draws it on the desktop.
-enum MusicLyricTab { player, desktop }
-
 /// The lyric page: which secondary tracks a line shows, and the viewer's
 /// delay — lx-music's 歌词设置 — with the floating desktop window's own half
 /// behind a second segment, the way the live module's danmaku page carries
 /// its four.
 final class MusicLyricPane extends ConsumerStatefulWidget {
-  /// The pane shown under Settings → Music → 歌词. [initialTab] is how a
+  /// The pane shown under Settings → Music → 歌词. [initialSection] is how a
   /// search hit or a stored deep link opens the page on its other half.
-  const MusicLyricPane({this.initialTab = MusicLyricTab.player, super.key});
+  const MusicLyricPane({this.initialSection = SettingsSection.musicLyric, super.key});
 
-  /// The half the page opens on.
-  final MusicLyricTab initialTab;
+  /// The section the page opens on: the player's line or the desktop window.
+  final SettingsSection initialSection;
 
   @override
   ConsumerState<MusicLyricPane> createState() => _MusicLyricPaneState();
 }
 
 final class _MusicLyricPaneState extends ConsumerState<MusicLyricPane> {
-  late MusicLyricTab _tab = widget.initialTab;
+  late SettingsSection _section = widget.initialSection;
 
   static const List<int> _offsets = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
   static const List<int> _fontScales = [100, 120, 140, 160, 180, 200];
@@ -1101,6 +1094,7 @@ final class _MusicLyricPaneState extends ConsumerState<MusicLyricPane> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final sections = [SettingsSection.musicLyric, ...settingsChildrenOf(SettingsSection.musicLyric)];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -1111,18 +1105,18 @@ final class _MusicLyricPaneState extends ConsumerState<MusicLyricPane> {
           alignment: AlignmentDirectional.centerStart,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: DsSegmentedControl<MusicLyricTab>(
-              value: _tab,
+            child: DsSegmentedControl<SettingsSection>(
+              value: _section,
               semanticLabel: t.settings.navMusicLyric,
-              segments: [
-                DsSegment(value: MusicLyricTab.player, label: Text(t.settings.navMusicLyric)),
-                DsSegment(value: MusicLyricTab.desktop, label: Text(t.settings.navMusicDesktopLyric)),
-              ],
-              onChanged: (value) => setState(() => _tab = value),
+              segments: [for (final section in sections) DsSegment(value: section, label: Text(section.label(t)))],
+              onChanged: (value) => setState(() => _section = value),
             ),
           ),
         ),
-        if (_tab == MusicLyricTab.desktop) const _DesktopLyricSection() else _playerSection(context, ref),
+        if (_section == SettingsSection.musicDesktopLyric)
+          const _DesktopLyricSection()
+        else
+          _playerSection(context, ref),
       ],
     );
   }

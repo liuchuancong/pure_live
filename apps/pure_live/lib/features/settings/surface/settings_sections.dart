@@ -293,6 +293,12 @@ enum SettingsSection {
     SettingsSection.backgroundColors ||
     SettingsSection.backgroundDevice ||
     SettingsSection.backgroundDownloads => SettingsSection.background,
+    // The sound effects chain is a segment of the music page and the desktop
+    // lyric one of the lyric page's tabs: neither takes an entry of its own,
+    // but each deep link opens the page that carries it, so that is who they
+    // name as parent.
+    SettingsSection.musicEq => SettingsSection.music,
+    SettingsSection.musicDesktopLyric => SettingsSection.musicLyric,
     SettingsSection.accounts => SettingsSection.sites,
     SettingsSection.sitesDisplay => SettingsSection.sites,
     // The probe reads the same platforms the display row lists, so its entry
@@ -388,6 +394,11 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.followTags,
   ],
   SettingsSection.browsing => const [SettingsSection.audience],
+  // The equaliser is the music page's second segment and the desktop window
+  // the lyric page's: the panes build their segments out of this table, so
+  // the tab a deep link opens and the section it names are one and the same.
+  SettingsSection.music => const [SettingsSection.musicEq],
+  SettingsSection.musicLyric => const [SettingsSection.musicDesktopLyric],
   SettingsSection.nav => const [SettingsSection.navHomeMenu, SettingsSection.navToolOrder],
   SettingsSection.danmaku => const [SettingsSection.danmakuDisplay, SettingsSection.shield],
   SettingsSection.picture => const [SettingsSection.floatingWindow],
