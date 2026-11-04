@@ -1324,17 +1324,17 @@ final class _TaskCard extends ConsumerWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.typography.caption.copyWith(color: colors.textMuted),
                                     ),
-                                  Wrap(
-                                    spacing: DsSpace.s6,
-                                    runSpacing: DsSpace.s4,
-                                    children: [
-                                      _TagChip(text: platformName, icon: platformIcon),
-                                      for (final tag in tags) _TagChip(text: tag),
-                                    ],
-                                  ),
                                 ],
                               ),
                             ),
+                          ],
+                        ),
+                        Wrap(
+                          spacing: DsSpace.s6,
+                          runSpacing: DsSpace.s4,
+                          children: [
+                            _TagChip(text: platformName, icon: platformIcon),
+                            for (final tag in tags) _TagChip(text: tag),
                           ],
                         ),
                       ],
