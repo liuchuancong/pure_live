@@ -255,3 +255,9 @@ headers=[origin, referer, user-agent, accept, accept-language, x-requested-with]
    我改的两行**留在工作区**没提交；getter 已在 HEAD（`34578f23c`），所以谁先把这些文件提交进去都不会编不过。下轮开工先 `git status` 看这四个位置还在不在别人手里，不在就把这两处补完。
 3. **Bigo 的加扰问题还等一个决定**（证据与两条路见上一节）。要点没变：包侧已有 `BigoHlsProtection.seed/transform`，缺的是"谁来逐段还原"。**没有选之前我不擅自新增一个媒体子系统，也不擅自砍掉一个平台**——参考侧的做法（`record.md:39`）是本平台干脆不给 `LivePlayUrlResolution.lines`，由 `BigoHlsInput` 自己开环回中继，直连 11 次只成 1 次、不解扰 0/2。选 1 我就照这个契约加"这行要先解扰"的表达并接 bigo；选 2 我就让它带原因失败。
 4. 顺手记一条与本车道有关的**接口事实**（免得下轮又当新发现）：`LiveHotProvider` 由 34 站中的 **0** 个实现，热门实际一律走 `LiveDiscoveryProvider.getRecommendedRooms`；`toolbox_controllers.dart:246` 的 hot 分支恒为 null（能正确退回 discovery，所以不是 bug，是冗余接口）。删公开接口是包侧决定。
+
+## 本轮（2026-11-05 第三次续）：P39 进房行加上"走哪条路出去"
+
+| P39 | `bd54f39e4` | 进房诊断 | `room-open` 多了 `proxy=direct\|system\|manual`（`RoomOpenProxy` 自带 token，纯类可测），详情的「进房耗时」抬头跟着显示 `不使用代理/跟随系统代理/手动代理`（复用网络页现成三串，不再造第三套词）。**动机**：站点探针记录说 5 站（youtube/twitch/picarto/17live/steambroadcast）只有开 `127.0.0.1:7890` 才通，而 `app proxy.mode` 默认 `off`（`reference-pure-live-live-site-health`）——同一个 detail=10s 的数字，两种病因、两种修法，光看分段量不出来。新例 1 条：`flutter test test/live` 54 绿中 53（唯一红仍是录像 lane 那条）。|
+
+同时复核：**`displayLabel` 的四处仍然落不了地**——`player_surface.dart`、`room_page.dart`、`room_switcher.dart` 此刻都带着别人未入库的 hunk（`controller.open(known: room)` 一族），本轮新提交没有碰这三个文件；Bigo 中继的 1/2 选择继续等点名，我不擅自新增媒体子系统，也不擅自砍平台。
