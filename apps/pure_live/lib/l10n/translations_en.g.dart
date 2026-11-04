@@ -2219,6 +2219,10 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get roomArea => 'Area';
 	@override String get statCodec => 'Codec';
 	@override String droppedFramesNote({required Object count}) => '${count} frames dropped';
+	@override String get details => 'Details';
+	@override String get detailsTitle => 'Recording details';
+	@override String get detailsMetrics => 'Recording';
+	@override String get detailsLocation => 'File';
 }
 
 // Path: room
@@ -6786,6 +6790,10 @@ extension on TranslationsEn {
 			'recorder.roomArea' => 'Area',
 			'recorder.statCodec' => 'Codec',
 			'recorder.droppedFramesNote' => ({required Object count}) => '${count} frames dropped',
+			'recorder.details' => 'Details',
+			'recorder.detailsTitle' => 'Recording details',
+			'recorder.detailsMetrics' => 'Recording',
+			'recorder.detailsLocation' => 'File',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7176,12 +7184,12 @@ extension on TranslationsEn {
 			'settings.themeSeedDynamic' => 'Follow the system\'s dynamic colour',
 			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
 			'settings.dynamicColor' => 'Dynamic colour',
+			_ => null,
+		} ?? switch (path) {
 			'settings.dynamicColorDescription' => 'Builds the theme from the wallpaper or accent colour.',
 			'settings.themeColorTitle' => 'Accent colour',
 			'settings.themeColorPresets' => 'Presets',
 			'settings.themeColorCustom' => 'Custom colour',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeColorHex' => 'Hex colour',
 			'settings.themeColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
 			'settings.themeColorHue' => 'Hue',
@@ -7690,12 +7698,12 @@ extension on TranslationsEn {
 			'settings.scaleHermite' => 'Hermite (soft)',
 			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
 			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleNearest' => 'Nearest (blocky)',
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
 			'settings.deinterlaceDesc' => 'Live sources are progressive; only old TV signals or captures need it.',
 			'settings.deinterlaceAuto' => 'Auto',
-			_ => null,
-		} ?? switch (path) {
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
 			'settings.hwdecCodecs' => 'Hardware codecs',
@@ -8204,12 +8212,12 @@ extension on TranslationsEn {
 			'settings.backgroundCopyAddress' => 'Copy address',
 			'settings.backgroundDownloadFailed' => 'Download failed',
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheRefreshThumbnailsDesc' => 'Clears cover, avatar and icon caches.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
 			'settings.storageFolderDefaultLabel' => 'Default',
 			'settings.storageFolderCustomLabel' => 'Custom',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderPickFailed' => 'Could not select a download folder',
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
@@ -8718,12 +8726,12 @@ extension on TranslationsEn {
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',
+			_ => null,
+		} ?? switch (path) {
 			'vod.mute' => 'Mute',
 			'vod.unmute' => 'Unmute',
 			'vod.volume' => 'Volume',
 			'vod.quality' => 'Quality',
-			_ => null,
-		} ?? switch (path) {
 			'vod.speed' => 'Speed',
 			'vod.fullscreen' => 'Fullscreen',
 			'vod.exitFullscreen' => 'Exit fullscreen',

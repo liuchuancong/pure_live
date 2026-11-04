@@ -6282,6 +6282,18 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '丢帧 {count} 帧'
 	String droppedFramesNote({required Object count}) => '丢帧 ${count} 帧';
+
+	/// zh-CN: '详情'
+	String get details => '详情';
+
+	/// zh-CN: '录制详情'
+	String get detailsTitle => '录制详情';
+
+	/// zh-CN: '录制数据'
+	String get detailsMetrics => '录制数据';
+
+	/// zh-CN: '文件'
+	String get detailsLocation => '文件';
 }
 
 // Path: room
@@ -15435,6 +15447,10 @@ extension on Translations {
 			'recorder.roomArea' => '分区',
 			'recorder.statCodec' => '编码',
 			'recorder.droppedFramesNote' => ({required Object count}) => '丢帧 ${count} 帧',
+			'recorder.details' => '详情',
+			'recorder.detailsTitle' => '录制详情',
+			'recorder.detailsMetrics' => '录制数据',
+			'recorder.detailsLocation' => '文件',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15825,12 +15841,12 @@ extension on Translations {
 			'settings.themeSeedDynamic' => '跟随系统动态取色',
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
+			_ => null,
+		} ?? switch (path) {
 			'settings.dynamicColorDescription' => '用系统壁纸或强调色生成主题。',
 			'settings.themeColorTitle' => '主题色',
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeColorHex' => '十六进制颜色',
 			'settings.themeColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.themeColorHue' => '色相',
@@ -16339,12 +16355,12 @@ extension on Translations {
 			'settings.scaleHermite' => 'Hermite（柔和）',
 			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleNearest' => '最近邻（块状）',
 			'settings.deinterlace' => '反交错 (--deinterlace)',
 			'settings.deinterlaceDesc' => '直播源多为逐行，保持自动；老电视或采集卡才需要。',
 			'settings.deinterlaceAuto' => '自动',
-			_ => null,
-		} ?? switch (path) {
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围',
@@ -16853,12 +16869,12 @@ extension on Translations {
 			'settings.backgroundCopyAddress' => '复制地址',
 			'settings.backgroundDownloadFailed' => '下载失败',
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
 			'settings.storageFolderDefaultLabel' => '默认',
 			'settings.storageFolderCustomLabel' => '自定义',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderPickFailed' => '无法选择下载目录',
 			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
@@ -17367,12 +17383,12 @@ extension on Translations {
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',
+			_ => null,
+		} ?? switch (path) {
 			'vod.mute' => '静音',
 			'vod.unmute' => '取消静音',
 			'vod.volume' => '音量',
 			'vod.quality' => '清晰度',
-			_ => null,
-		} ?? switch (path) {
 			'vod.speed' => '倍速',
 			'vod.fullscreen' => '全屏',
 			'vod.exitFullscreen' => '退出全屏',

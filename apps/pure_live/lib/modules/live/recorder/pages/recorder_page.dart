@@ -853,51 +853,114 @@ String? resolutionOf(String quality) {
   return match == null ? null : '${match.group(1)}P';
 }
 
-/// One figure of the card's strip: the value over the word that names it.
-final class _StatBlock extends StatelessWidget {
-  const _StatBlock({required this.label, required this.value, this.note = '', this.emphasis = false});
+/// Everything the card no longer draws: the take's figures, where its file is
+/// and the room's check cadence. A panel on a window, a sheet on a phone.
+final class _TaskDetailsPanel extends ConsumerWidget {
+  const _TaskDetailsPanel({required this.task, required this.room, required this.platformName});
 
-  final String label;
-  final String value;
-
-  /// A second, quieter line under the word: the container and the file count,
-  /// the resolution behind a quality name.
-  final String note;
-  final bool emphasis;
+  final RecordingTask task;
+  final LiveRoom? room;
+  final String platformName;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography
-              .numeric(theme.typography.title)
-              .copyWith(color: emphasis ? colors.accent : colors.text, fontWeight: FontWeight.w600),
-        ),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
-        ),
-        if (note.isNotEmpty)
-          Text(
-            note,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final liveElapsed = task.isRunning
+        ? DateTime.now().difference(task.startedAt)
+        : (task.durationMs > 0 ? Duration(milliseconds: task.durationMs) : Duration.zero);
+    final size = task.bytes > 0 ? formatRecordingBytes(task.bytes) : t.recorder.statSavedEmpty;
+    final bitrate = task.bytes > 0 && liveElapsed.inSeconds > 0 ? formatRecordingBitrate(task.bytes, liveElapsed) : '—';
+    final fps = task.frameRate > 0 ? task.frameRate : task.liveFps;
+    final profile = task.videoHeight > 0
+        ? '${task.videoHeight}P${fps > 0 ? ' ${fps.round()} FPS' : ''}'
+        : (resolutionOf(task.quality) ?? (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest));
+    final resolution = task.videoWidth > 0 && task.videoHeight > 0 ? '${task.videoWidth} × ${task.videoHeight}' : '';
+    final codec = [
+      if (task.videoCodec.isNotEmpty) task.videoCodec.toUpperCase(),
+      if (task.audioCodec.isNotEmpty) task.audioCodec.toUpperCase(),
+    ].join(' · ');
+    final saved = (task.filePath ?? '').trim();
+    return DsPanel(
+      title: Text(t.recorder.detailsTitle),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s16,
+        children: [
+          DsListSection(
+            header: Text(t.recorder.detailsMetrics),
+            children: [
+              DsListRow(
+                title: Text(t.recorder.columnDuration),
+                detail: Text(liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—'),
+              ),
+              DsListRow(title: Text(t.recorder.columnBitrate), detail: Text(bitrate)),
+              DsListRow(
+                title: Text(t.recorder.statProfile),
+                detail: Text(
+                  [profile, if (resolution.isNotEmpty) resolution].where((part) => part.isNotEmpty).join(' · '),
+                ),
+              ),
+              if (codec.isNotEmpty) DsListRow(title: Text(t.recorder.statCodec), detail: Text(codec)),
+              DsListRow(
+                title: Text(t.recorder.statSaved),
+                detail: Text(savingNote(task: task, size: size, empty: t.recorder.statSavedEmpty)),
+              ),
+              if (task.droppedFrames > 0)
+                DsListRow(
+                  title: Text(t.recorder.stateRecording),
+                  detail: Text(t.recorder.droppedFramesNote(count: task.droppedFrames)),
+                ),
+            ],
           ),
-      ],
+          DsListSection(
+            header: Text(t.recorder.detailsLocation),
+            children: [
+              DsListRow(
+                title: Text(t.recorder.saveLocation),
+                detail: Text(saved.isEmpty ? t.recorder.saveDirTitle : saved),
+              ),
+              if (task.endedAt != null || task.bytes > 0)
+                DsListRow(
+                  title: Text(t.recorder.statLatest),
+                  detail: Text(t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt))),
+                ),
+            ],
+          ),
+          DsListSection(
+            header: Text(t.recorder.liveCheckGroup),
+            children: [
+              DsListRow(
+                title: Text(t.recorder.roomCheckTitle),
+                trailing: DsSwitch(
+                  value: task.enabled,
+                  onChanged: (value) =>
+                      unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
+                  semanticLabel: t.recorder.roomCheckTitle,
+                ),
+              ),
+              DsListRow(
+                title: Text(t.recorder.liveCheckSecondsTitle),
+                detail: Text(t.recorder.checkEvery(seconds: task.checkSeconds)),
+              ),
+              DsListRow(
+                title: Text(t.recorder.statProfile),
+                detail: Text(task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
+}
+
+/// How the saved file reads in the panel: its size, then the container and the
+/// segment count while the take is still being written.
+String savingNote({required RecordingTask task, required String size, required String empty}) {
+  final container = task.container.toUpperCase();
+  if (task.bytes <= 0) return empty;
+  if (task.isRunning && task.segments > 0) return '$size · $container · ${task.segments}';
+  return container.isEmpty ? size : '$size · $container';
 }
 
 /// One small word on the card's header: the platform with its mark, or a
@@ -1067,11 +1130,6 @@ final class _TaskCard extends ConsumerWidget {
     final paused = !task.enabled && !processing;
     final area = (room?.area?.areaName ?? '').trim();
     final liveElapsed = task.isRunning ? DateTime.now().difference(task.startedAt) : elapsed;
-    final figuresDuration = liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—';
-    final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
-    final figuresBitrate = task.bytes > 0 && liveElapsed.inSeconds > 0
-        ? formatRecordingBitrate(task.bytes, liveElapsed)
-        : '—';
     final segmentSeconds = ref.watch(recordingSettingsProvider).segmentSeconds;
     final segmentMinutes = segmentSeconds <= 0 ? 0 : (segmentSeconds / 60).ceil();
     final segment = liveElapsed <= Duration.zero || segmentMinutes <= 0
@@ -1221,178 +1279,101 @@ final class _TaskCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  DsBadge(label: Text(statusText), status: statusTone),
-                  if (statusNote.isNotEmpty)
-                    Flexible(
-                      child: Text(
+              () {
+                Widget watch() => DsSwitch(
+                  value: task.enabled,
+                  onChanged: (value) => onToggleWatch(),
+                  semanticLabel: t.recorder.roomCheckTitle,
+                );
+                Widget details() => DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.info, size: 14),
+                  onPressed: () => unawaited(
+                    showDsPanel<void>(
+                      context: context,
+                      builder: (context) => _TaskDetailsPanel(task: task, room: room, platformName: platformName),
+                    ),
+                  ),
+                  child: Text(t.recorder.details),
+                );
+                Widget menu() => _TaskMenu(
+                  task: task,
+                  hasFile: saved.isNotEmpty,
+                  onOpen: onOpen,
+                  onStop: onStop,
+                  onToggleWatch: onToggleWatch,
+                  onDelete: onDelete,
+                  onSchedule: onSchedule,
+                  onCancelProcessing: onCancelProcessing,
+                  onStartNow: onStartNow,
+                  onRetryJoin: onRetryJoin,
+                  onPreview: onPreview,
+                  onPlayExternal: onPlayExternal,
+                );
+                final badge = DsBadge(label: Text(statusText), status: statusTone);
+                final note = statusNote.isEmpty
+                    ? null
+                    : Text(
                         statusNote,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      );
+                final controls = Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s8,
+                  children: [watch(), details(), action, menu()],
+                );
+                // A phone stacks the verbs under the state instead of squeezing
+                // four controls beside it.
+                if (width < 620) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s8,
+                    children: [
+                      Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          badge,
+                          if (note != null) Flexible(child: note),
+                        ],
                       ),
-                    ),
-                  const Spacer(),
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    semanticLabel: t.recorder.roomSettings,
-                    onPressed: onSchedule,
-                    icon: const DsIcon(DsIcons.settings, size: 14),
-                  ),
-                  action,
-                  _TaskMenu(
-                    task: task,
-                    hasFile: saved.isNotEmpty,
-                    onOpen: onOpen,
-                    onStop: onStop,
-                    onToggleWatch: onToggleWatch,
-                    onDelete: onDelete,
-                    onSchedule: onSchedule,
-                    onCancelProcessing: onCancelProcessing,
-                    onStartNow: onStartNow,
-                    onRetryJoin: onRetryJoin,
-                    onPreview: onPreview,
-                    onPlayExternal: onPlayExternal,
-                  ),
-                ],
-              ),
-              ColoredBox(color: colors.border, child: const SizedBox(height: 1)),
-              Wrap(
-                spacing: DsSpace.s32,
-                runSpacing: DsSpace.s12,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: _StatBlock(
-                      label: recording ? t.recorder.statThisTask : t.recorder.statLastTask,
-                      value: figuresDuration,
-                      emphasis: recording,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 130,
-                    child: _StatBlock(
-                      label: recording ? t.recorder.statLiveBitrate : t.recorder.statLastBitrate,
-                      value: figuresBitrate,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: _StatBlock(
-                      label: t.recorder.statProfile,
-                      value: task.videoHeight > 0
-                          ? '${task.videoHeight}P${(task.frameRate > 0 ? task.frameRate : task.liveFps) > 0 ? ' ${(task.frameRate > 0 ? task.frameRate : task.liveFps).round()} FPS' : ''}'
-                          : (resolutionOf(task.quality) ??
-                                (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest)),
-                      note: task.videoWidth > 0 && task.videoHeight > 0
-                          ? '${task.videoWidth} × ${task.videoHeight}'
-                          : (resolutionOf(task.quality) == null
-                                ? ''
-                                : (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest)),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 130,
-                    child: _StatBlock(
-                      label: t.recorder.statCodec,
-                      value: task.videoCodec.isEmpty ? '—' : task.videoCodec.toUpperCase(),
-                      note: task.audioCodec.isEmpty ? '' : task.audioCodec.toUpperCase(),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: _StatBlock(
-                      label: t.recorder.statSaved,
-                      value: figuresSize == '—' ? t.recorder.statSavedEmpty : figuresSize,
-                      // The count is the live take's segment count; a joined
-                      // take is one file, whatever the last tick counted.
-                      note: recording && task.segments > 0
-                          ? '${task.container.toUpperCase()} · ${task.segments} 个文件'
-                          : task.container.toUpperCase(),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 190,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 2,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: DsSpace.s6,
-                          children: [
-                            Text(
-                              t.recorder.roomCheckTitle,
-                              style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
-                            ),
-                            DsSwitch(
-                              value: task.enabled,
-                              onChanged: (value) => onToggleWatch(),
-                              semanticLabel: t.recorder.roomCheckTitle,
-                            ),
-                          ],
-                        ),
-                        Text(
-                          task.enabled ? t.recorder.statCheckOn : t.recorder.statCheckOff,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              ColoredBox(color: colors.border, child: const SizedBox(height: 1)),
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  DsIcon(DsIcons.folderOpen, size: 14, color: colors.textSubtle),
-                  Flexible(
-                    child: Text(
-                      saved.isEmpty ? t.recorder.saveDirTitle : saved,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (task.state == RecordingTaskState.recording && onStop == null)
-                    Text(
-                      t.recorder.stateRecordingElsewhere,
-                      style: theme.typography.caption.copyWith(color: colors.warning.text),
-                    )
-                  else if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
-                    Flexible(
-                      child: Text(
-                        task.errorText.trim(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.danger.text),
-                      ),
-                    )
-                  else if (!processing && task.warning.isNotEmpty)
-                    Flexible(
-                      child: Text(
-                        _warningLabel(t, task.warning),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.warning.text),
-                      ),
-                    )
-                  else if (task.droppedFrames > 0)
-                    // A dropped frame is the encoder telling the viewer the
-                    // take is missing pictures it should have.
-                    Text(
-                      t.recorder.droppedFramesNote(count: task.droppedFrames),
-                      style: theme.typography.caption.copyWith(color: colors.warning.text),
-                    ),
-                ],
-              ),
+                      Align(alignment: AlignmentDirectional.centerEnd, child: controls),
+                    ],
+                  );
+                }
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    badge,
+                    if (note != null) Flexible(child: note),
+                    const Spacer(),
+                    controls,
+                  ],
+                );
+              }(),
+              if (task.state == RecordingTaskState.recording && onStop == null)
+                Text(
+                  t.recorder.stateRecordingElsewhere,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.warning.text),
+                )
+              else if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
+                Text(
+                  task.errorText.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.danger.text),
+                )
+              else if (!processing && task.warning.isNotEmpty)
+                Text(
+                  _warningLabel(t, task.warning),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.warning.text),
+                ),
               if (processing) ...[
                 DsProgressBar(
                   value: task.postProcessingProgress >= 0 ? task.postProcessingProgress.clamp(0.0, 1.0) : null,

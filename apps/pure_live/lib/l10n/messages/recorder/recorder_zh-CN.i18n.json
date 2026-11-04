@@ -317,5 +317,9 @@
   "saveLocation": "保存位置",
   "roomArea": "分区",
   "statCodec": "编码",
-  "droppedFramesNote": "丢帧 {count} 帧"
+  "droppedFramesNote": "丢帧 {count} 帧",
+  "details": "详情",
+  "detailsTitle": "录制详情",
+  "detailsMetrics": "录制数据",
+  "detailsLocation": "文件"
 }
