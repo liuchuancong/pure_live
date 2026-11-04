@@ -4214,6 +4214,9 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get cardDuration => 'Duration';
 	@override String get cardUploader => 'Uploader';
 	@override String get cardSeasonState => 'Update state';
+	@override String get cardPreviewTitle => 'Remastered in 4K: the song that looped all summer';
+	@override String get cardPreviewUploader => 'Still cutting at four in the morning';
+	@override String get cardPreviewState => 'Updated to episode 12';
 	@override String get playbackReset => 'Restore default playback';
 	@override String get playbackResetDesc => 'Normal speed, the next part when one ends, details shown.';
 	@override String get personalTitle => 'My videos';
@@ -8696,6 +8699,9 @@ extension on TranslationsEn {
 		} ?? switch (path) {
 			'vod.cardUploader' => 'Uploader',
 			'vod.cardSeasonState' => 'Update state',
+			'vod.cardPreviewTitle' => 'Remastered in 4K: the song that looped all summer',
+			'vod.cardPreviewUploader' => 'Still cutting at four in the morning',
+			'vod.cardPreviewState' => 'Updated to episode 12',
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'vod.personalTitle' => 'My videos',

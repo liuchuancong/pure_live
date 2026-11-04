@@ -7,9 +7,9 @@ import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/vod/controller/vod_card_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart';
+import 'package:pure_live/modules/vod/pages/vod_card_preview_page.dart' show showVodCardPreview;
 
 /// The Bilibili station's own settings: the Bilibili account the station
 /// reads (and only that account — the live platforms' sign-ins stay in the
@@ -141,8 +141,6 @@ final class VodInterfacePane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(vodPlaybackSettingsProvider);
     final controller = ref.read(vodPlaybackSettingsProvider.notifier);
-    final card = ref.watch(vodCardSettingsProvider);
-    final cardController = ref.read(vodCardSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -171,24 +169,17 @@ final class VodInterfacePane extends ConsumerWidget {
           ],
         ),
         DsListSection(
-          header: Text(t.vod.cardElements),
           children: [
-            for (final (element, icon, label) in <(VodCardElement, DsIconData, String)>[
-              (VodCardElement.plays, DsIcons.play, t.vod.cardPlays),
-              (VodCardElement.danmaku, DsIcons.captions, t.vod.cardDanmaku),
-              (VodCardElement.duration, DsIcons.clock, t.vod.cardDuration),
-              (VodCardElement.uploader, DsIcons.user, t.vod.cardUploader),
-              (VodCardElement.seasonState, DsIcons.info, t.vod.cardSeasonState),
-              (VodCardElement.seasonScore, DsIcons.star, t.vod.score),
-            ])
-              SettingsConfigRow(
-                leading: DsIcon(icon),
-                title: label,
-                control: DsSwitch(
-                  value: card.shows(element),
-                  onChanged: (value) => unawaited(cardController.setElement(element, visible: value)),
-                ),
-              ),
+            // The row opens the card's own page — the two samples at a feed's
+            // width — rather than a list of switches beside the rest, the way
+            // the browsing settings hand their room card over.
+            DsListRow(
+              leading: const DsIcon(DsIcons.idCard),
+              title: Text(t.vod.cardElements),
+              description: Text(t.settings.roomCardPreviewHint),
+              showChevron: true,
+              onPressed: () => unawaited(showVodCardPreview(context)),
+            ),
           ],
         ),
       ],

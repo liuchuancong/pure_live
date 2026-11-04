@@ -12142,6 +12142,15 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '更新状态'
 	String get cardSeasonState => '更新状态';
 
+	/// zh-CN: '【4K 修复】完整版：这一首循环了整个夏天'
+	String get cardPreviewTitle => '【4K 修复】完整版：这一首循环了整个夏天';
+
+	/// zh-CN: '凌晨四点还在剪片的人'
+	String get cardPreviewUploader => '凌晨四点还在剪片的人';
+
+	/// zh-CN: '更新至第 12 话'
+	String get cardPreviewState => '更新至第 12 话';
+
 	/// zh-CN: '恢复默认播放行为'
 	String get playbackReset => '恢复默认播放行为';
 
@@ -17285,6 +17294,9 @@ extension on Translations {
 		} ?? switch (path) {
 			'vod.cardUploader' => 'UP 主',
 			'vod.cardSeasonState' => '更新状态',
+			'vod.cardPreviewTitle' => '【4K 修复】完整版：这一首循环了整个夏天',
+			'vod.cardPreviewUploader' => '凌晨四点还在剪片的人',
+			'vod.cardPreviewState' => '更新至第 12 话',
 			'vod.playbackReset' => '恢复默认播放行为',
 			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'vod.personalTitle' => '我的视频',
