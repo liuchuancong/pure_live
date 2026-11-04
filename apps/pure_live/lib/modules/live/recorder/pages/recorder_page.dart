@@ -1276,6 +1276,14 @@ final class _TaskCard extends ConsumerWidget {
               Row(spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
             ],
           );
+          // The verbs, then the room's watch switch under them: the right edge
+          // of the card holds what the viewer can do with the room.
+          final side = Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: DsSpace.s8,
+            children: [controls, watch()],
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s12,
@@ -1347,7 +1355,7 @@ final class _TaskCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  if (width >= 620) ...[const SizedBox(width: DsSpace.s16), controls],
+                  if (width >= 620) ...[const SizedBox(width: DsSpace.s16), side],
                 ],
               ),
               if (width < 620) ...[
@@ -1358,16 +1366,13 @@ final class _TaskCard extends ConsumerWidget {
                     if (note != null) Flexible(child: note),
                   ],
                 ),
-                Align(alignment: AlignmentDirectional.centerEnd, child: watch()),
-                Align(alignment: AlignmentDirectional.centerEnd, child: controls),
+                Align(alignment: AlignmentDirectional.centerEnd, child: side),
               ] else
                 Row(
                   spacing: DsSpace.s8,
                   children: [
                     badge,
                     if (note != null) Flexible(child: note),
-                    const Spacer(),
-                    watch(),
                   ],
                 ),
               if (task.state == RecordingTaskState.recording && onStop == null)
