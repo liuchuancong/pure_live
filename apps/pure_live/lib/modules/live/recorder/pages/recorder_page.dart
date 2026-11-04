@@ -359,7 +359,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 spacing: DsSpace.s8,
                 children: [
                   Align(alignment: AlignmentDirectional.centerStart, child: switchRow),
-                  if (files) Align(alignment: AlignmentDirectional.centerEnd, child: toolbar),
+                  if (files) const Align(alignment: AlignmentDirectional.centerEnd, child: toolbar),
                 ],
               );
             }
