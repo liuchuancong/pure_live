@@ -1206,6 +1206,71 @@ final class _TaskCard extends ConsumerWidget {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final (coverWidth, coverHeight) = width >= 560 ? (132.0, 74.0) : (96.0, 54.0);
+          Widget watch() => Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s8,
+            children: [
+              Text(t.recorder.roomCheckTitle, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+              DsSwitch(
+                value: task.enabled,
+                onChanged: (value) => onToggleWatch(),
+                semanticLabel: t.recorder.roomCheckTitle,
+              ),
+            ],
+          );
+          Widget details() => DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.info, size: 14),
+            onPressed: () => unawaited(
+              showDsPanel<void>(
+                context: context,
+                builder: (context) => _TaskDetailsPanel(task: task, room: room, platformName: platformName),
+              ),
+            ),
+            child: Text(t.recorder.details),
+          );
+          Widget play() => DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.playCircle, size: 14),
+            onPressed: onPreview ?? onPlayExternal,
+            child: Text(t.recorder.playRecording),
+          );
+          Widget menu() => _TaskMenu(
+            task: task,
+            hasFile: saved.isNotEmpty,
+            onOpen: onOpen,
+            onStop: onStop,
+            onToggleWatch: onToggleWatch,
+            onDelete: onDelete,
+            onSchedule: onSchedule,
+            onCancelProcessing: onCancelProcessing,
+            onStartNow: onStartNow,
+            onRetryJoin: onRetryJoin,
+            onPreview: onPreview,
+            onPlayExternal: onPlayExternal,
+          );
+          final badge = DsBadge(label: Text(statusText), status: statusTone);
+          final note = statusNote.isEmpty
+              ? null
+              : Text(
+                  statusNote,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                );
+          // Three verbs and the menu in two rows of two, the phase's own
+          // verb first: what the row does leads, what it shows follows.
+          Widget cell(Widget child) => SizedBox(width: 112, child: child);
+          final controls = Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s8,
+            children: [
+              Row(spacing: DsSpace.s8, children: [cell(action), cell(details())]),
+              Row(spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
+            ],
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s12,
@@ -1269,103 +1334,28 @@ final class _TaskCard extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  if (width >= 620) ...[const SizedBox(width: DsSpace.s16), controls],
                 ],
               ),
-              () {
-                Widget watch() => Row(
-                  mainAxisSize: MainAxisSize.min,
+              if (width < 620) ...[
+                Row(
                   spacing: DsSpace.s8,
                   children: [
-                    Text(t.recorder.roomCheckTitle, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    DsSwitch(
-                      value: task.enabled,
-                      onChanged: (value) => onToggleWatch(),
-                      semanticLabel: t.recorder.roomCheckTitle,
-                    ),
+                    badge,
+                    if (note != null) Flexible(child: note),
                   ],
-                );
-                Widget details() => DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.info, size: 14),
-                  onPressed: () => unawaited(
-                    showDsPanel<void>(
-                      context: context,
-                      builder: (context) => _TaskDetailsPanel(task: task, room: room, platformName: platformName),
-                    ),
-                  ),
-                  child: Text(t.recorder.details),
-                );
-                Widget play() => DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.playCircle, size: 14),
-                  onPressed: onPreview ?? onPlayExternal,
-                  child: Text(t.recorder.playRecording),
-                );
-                Widget menu() => _TaskMenu(
-                  task: task,
-                  hasFile: saved.isNotEmpty,
-                  onOpen: onOpen,
-                  onStop: onStop,
-                  onToggleWatch: onToggleWatch,
-                  onDelete: onDelete,
-                  onSchedule: onSchedule,
-                  onCancelProcessing: onCancelProcessing,
-                  onStartNow: onStartNow,
-                  onRetryJoin: onRetryJoin,
-                  onPreview: onPreview,
-                  onPlayExternal: onPlayExternal,
-                );
-                final badge = DsBadge(label: Text(statusText), status: statusTone);
-                final note = statusNote.isEmpty
-                    ? null
-                    : Text(
-                        statusNote,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                      );
-                // Three verbs and the menu in two rows of two, the phase's own
-                // verb first: what the row does leads, what it shows follows.
-                Widget cell(Widget child) => SizedBox(width: 112, child: child);
-                final controls = Column(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s8,
-                  children: [
-                    Row(spacing: DsSpace.s8, children: [cell(action), cell(details())]),
-                    Row(spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
-                  ],
-                );
-                // A phone stacks the verbs and keeps the switch in the middle
-                // of its own line.
-                if (width < 620) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s8,
-                    children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          badge,
-                          if (note != null) Flexible(child: note),
-                        ],
-                      ),
-                      Center(child: watch()),
-                      Align(alignment: AlignmentDirectional.centerEnd, child: controls),
-                    ],
-                  );
-                }
-                return Row(
+                ),
+                Center(child: watch()),
+                Align(alignment: AlignmentDirectional.centerEnd, child: controls),
+              ] else
+                Row(
                   spacing: DsSpace.s8,
                   children: [
                     badge,
                     if (note != null) Flexible(child: note),
                     Expanded(child: Center(child: watch())),
-                    controls,
                   ],
-                );
-              }(),
+                ),
               if (task.state == RecordingTaskState.recording && onStop == null)
                 Text(
                   t.recorder.stateRecordingElsewhere,
