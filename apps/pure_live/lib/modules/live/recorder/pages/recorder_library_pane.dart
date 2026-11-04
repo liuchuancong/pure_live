@@ -2,7 +2,6 @@ import 'dart:async' show unawaited;
 import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -67,7 +66,7 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
   /// rather than a list of site ids, because the sites grow and IPTV does not.
   final Set<String> excludedPlatforms;
 
-  /// The row menu's word for going to where the take was made. The live centre
+  /// The card's word for going to where the take was made. The live centre
   /// says 进入直播间; a module whose rooms are channels says its own, and the
   /// library has no opinion — null falls back to the recorder's wording.
   final String? openRoomLabel;
@@ -270,7 +269,9 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                         selected: _selected,
                         onSelect: _toggle,
                         onPlay: () => _play(take),
-                        menu: _takeMenu(take),
+                        onOpenRoom: take.task == null ? null : () => widget.onOpenRoom(take),
+                        onDelete: () => unawaited(_confirmDeleteTake(take)),
+                        openRoomLabel: widget.openRoomLabel ?? t.recorder.openRoom,
                         platformName: widget.platformName,
                       ),
                 ]),
@@ -295,34 +296,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     // player's next and previous walk the library in its own order.
     final filter = ref.read(recorderLibraryFilterProvider);
     widget.onPlay(filter.sort.sorted(narrowLibraryTakes(_all, filter)), take);
-  }
-
-  /// The row menu: the room it came from, its path and the delete. Playing and
-  /// the folder are the card's own verbs, so the menu does not repeat them.
-  List<Widget> _takeMenu(RecordingTake take) {
-    final t = context.t;
-    final task = take.task;
-    return [
-      if (task != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(widget.openRoomLabel ?? t.recorder.openRoom),
-          onPressed: () => widget.onOpenRoom(take),
-        ),
-      if (take.filePath case final file?)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.copy),
-          label: Text(t.recorder.copyPath),
-          onPressed: () => unawaited(_copy(file)),
-        ),
-      const DsMenuDivider(),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.trash2),
-        label: Text(t.recorder.delete),
-        destructive: true,
-        onPressed: () => unawaited(_confirmDeleteTake(take)),
-      ),
-    ];
   }
 
   // -- actions --------------------------------------------------------------
@@ -383,12 +356,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       await store.setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
     }
     return removed;
-  }
-
-  Future<void> _copy(String path) async {
-    await Clipboard.setData(ClipboardData(text: path));
-    if (!mounted) return;
-    showDsToast(context: context, title: context.t.common.copied);
   }
 }
 
@@ -691,17 +658,18 @@ final class _DayHeader extends StatelessWidget {
   }
 }
 
-/// One take as the subscription cards draw a room: the cover with its length,
-/// the avatar and the room's name over the take's own line, the facts as small
-/// chips, the state's badge with the selection at its end, and the verbs at the
-/// header's right.
+/// One take as the subscription cards draw a room: the selection, the cover
+/// with its length, the avatar and the room's name over the take's own line,
+/// the facts as small chips, and the four verbs at the header's right.
 final class _TakeRow extends StatelessWidget {
   const _TakeRow({
     required this.take,
     required this.selected,
     required this.onSelect,
     required this.onPlay,
-    required this.menu,
+    required this.onOpenRoom,
+    required this.onDelete,
+    required this.openRoomLabel,
     required this.platformName,
   });
 
@@ -709,7 +677,13 @@ final class _TakeRow extends StatelessWidget {
   final Set<String> selected;
   final ValueChanged<RecordingTake> onSelect;
   final VoidCallback onPlay;
-  final List<Widget> menu;
+  final VoidCallback? onOpenRoom;
+  final VoidCallback onDelete;
+
+  /// The pane's word for going to the room, so a channel library names its
+  /// own page instead of a live room.
+  final String openRoomLabel;
+
   final String Function(String platformId) platformName;
 
   @override
@@ -747,43 +721,58 @@ final class _TakeRow extends StatelessWidget {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final (coverWidth, coverHeight) = width >= 560 ? (132.0, 74.0) : (96.0, 54.0);
-          Widget cell(Widget child) => SizedBox(width: 112, child: child);
-          final verbs = Row(
+          // Four verbs in two rows of two, the same shape the subscription
+          // cards use: what the take does first, what it names second.
+          Widget cell(Widget child) => SizedBox(width: 124, child: child);
+          final verbs = Column(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
             children: [
-              cell(
-                DsButton(
-                  variant: DsButtonVariant.primary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.play, size: 14),
-                  onPressed: ok ? onPlay : null,
-                  child: Text(t.recorder.playRecording),
-                ),
-              ),
-              cell(
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.folderOpen, size: 14),
-                  onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
-                  child: Text(t.recorder.openFolder),
-                ),
-              ),
-              cell(
-                DsMenuAnchor(
-                  align: DsAlign.end,
-                  semanticLabel: t.recorder.menuMore,
-                  items: menu,
-                  builder: (context, controller, _) => DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    semanticLabel: t.recorder.menuMore,
-                    leading: const DsIcon(DsIcons.chevronDown, size: 14),
-                    onPressed: controller.toggle,
-                    child: Text(t.common.more),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  cell(
+                    DsButton(
+                      variant: DsButtonVariant.primary,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.play, size: 14),
+                      onPressed: ok ? onPlay : null,
+                      child: Text(t.recorder.playRecording),
+                    ),
                   ),
-                ),
+                  cell(
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.externalLink, size: 14),
+                      onPressed: onOpenRoom,
+                      child: Text(openRoomLabel),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  cell(
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.folderOpen, size: 14),
+                      onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
+                      child: Text(t.recorder.openFolder),
+                    ),
+                  ),
+                  cell(
+                    DsButton(
+                      variant: DsButtonVariant.dangerSoft,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.trash2, size: 14),
+                      onPressed: onDelete,
+                      child: Text(t.recorder.delete),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -800,6 +789,7 @@ final class _TakeRow extends StatelessWidget {
                 Row(
                   spacing: DsSpace.s16,
                   children: [
+                    DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: _TakeCover(take: take, width: coverWidth, height: coverHeight),
@@ -854,16 +844,6 @@ final class _TakeRow extends StatelessWidget {
                       ),
                     ),
                     if (width >= 620) ...[const SizedBox(width: DsSpace.s16), verbs],
-                  ],
-                ),
-                Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
-                    DsBadge(
-                      label: Text(ok ? t.recorder.stateSaved : t.recorder.stateUnplayable),
-                      status: ok ? DsStatus.success : DsStatus.neutral,
-                    ),
                   ],
                 ),
                 if (width < 620) Align(alignment: AlignmentDirectional.centerEnd, child: verbs),
