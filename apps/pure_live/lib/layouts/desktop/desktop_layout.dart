@@ -32,6 +32,11 @@ import 'package:pure_live/shared/shared.dart';
 /// module mark and the rail's items read at one weight.
 const DsSidebarItemStyle _collapsedItem = DsSidebarItemStyle(height: 40, iconSize: 24);
 
+/// The head's search field: comfortable at 320 wide, still readable at 160.
+/// Below that the row shows the magnifier instead.
+const double _kToolbarSearchWidth = 320;
+const double _kToolbarSearchMinWidth = 160;
+
 /// The desktop layout, following the v4 navigation design: the self-drawn
 /// title bar above ([WindowTitleBar] — its left corner holds the app icon
 /// that hovers into the sidebar toggle, and the back and forward arrows
@@ -411,15 +416,18 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
     // A width remembered from a wider window yields to the content's
     // floor until the window grows again.
     final sidebarWidth = sidebarStyle.width!;
-    // The toolbar search is 320 wide; below this floor it would squeeze the
-    // breadcrumb instead of sharing the row, so it gives way first.
-    // Only a page with a list of its own to search gets the field at all.
+    // The toolbar search is comfortable at 320 and still reads at 160; it
+    // gives way to the magnifier only when the row cannot fit both it and a
+    // readable breadcrumb (32 of head padding, ~220 for the trail). Only a
+    // page with a list of its own to search gets the field at all.
     final pageSearch = _pageSearch(t);
+    final headWidth = MediaQuery.sizeOf(context).width - sidebarWidth;
+    final searchFieldWidth = math.min(_kToolbarSearchWidth, headWidth - 32 - 220);
     final showToolbarSearch =
         !widget.tv &&
         widget.settingsSection == null &&
         pageSearch != null &&
-        MediaQuery.sizeOf(context).width - sidebarWidth >= 640;
+        searchFieldWidth >= _kToolbarSearchMinWidth;
     final items = <Widget>[
       for (final (index, group) in widget.menuGroups.indexed) ...[
         // In settings the groups earn their names (the reference's areas);
@@ -568,7 +576,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                 if (showToolbarSearch) ...[
                                   const SizedBox(width: DsSpace.s16),
                                   SizedBox(
-                                    width: 320,
+                                    width: searchFieldWidth,
                                     // The toolbar search searches what the
                                     // viewer is browsing (see [_pageSearch]).
                                     // Keyed by the page: a word typed on one
