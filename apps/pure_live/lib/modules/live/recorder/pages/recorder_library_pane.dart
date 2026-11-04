@@ -412,12 +412,11 @@ Future<void> playRecordingTake(
   );
 }
 
-/// The library's own controls: one entry to its conditions, the folder the
-/// takes sit in, and the refresh that walks the tree again.
+/// The library's own controls: the order, the folder the takes sit in, and the
+/// refresh that walks the tree again.
 ///
-/// A wide window says what each verb does; a small one keeps the two it needs
-/// most — the filter and the refresh — as glyphs, the same fold every other
-/// page makes when its header line runs out of room.
+/// A wide window says what each verb does; a small one keeps them as glyphs,
+/// the same fold every other page makes when its header line runs out of room.
 final class RecorderLibraryToolbar extends ConsumerWidget {
   /// The toolbar over the module's takes.
   const RecorderLibraryToolbar({super.key});
@@ -427,30 +426,42 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
     final t = context.t;
     final library = ref.watch(recordingLibraryProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
+    final controller = ref.read(recorderLibraryFilterProvider.notifier);
     final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
-    void open() => unawaited(showRecordingLibraryFilter(context, ref));
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
       children: [
-        // A wide window says what the entry is; a small one spends its room on
-        // the list and lets the funnel glyph answer for it.
-        if (compact)
-          DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: open,
-            icon: const DsIcon(DsIcons.filter, size: 16),
-            semanticLabel: t.recorder.filterLabel,
-          )
-        else
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            leading: const DsIcon(DsIcons.filter, size: 14),
-            onPressed: open,
-            child: Text(t.recorder.filterLabel),
-          ),
+        // The order reads straight from this menu: it was the filter's only
+        // condition, so a panel in between only added a step.
+        DsMenuAnchor(
+          semanticLabel: t.recorder.filterLabel,
+          align: DsAlign.end,
+          items: [
+            ..._sortItems(context, ref),
+            const DsMenuDivider(),
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.x),
+              label: Text(t.recorder.filterClear),
+              onPressed: controller.reset,
+            ),
+          ],
+          builder: (context, menu, _) => compact
+              ? DsButton.icon(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: menu.toggle,
+                  icon: const DsIcon(DsIcons.filter, size: 16),
+                  semanticLabel: t.recorder.filterLabel,
+                )
+              : DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.filter, size: 14),
+                  onPressed: menu.toggle,
+                  child: Text(t.recorder.filterLabel),
+                ),
+        ),
         if (!compact)
           DsButton.icon(
             variant: DsButtonVariant.secondary,
@@ -479,9 +490,9 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
   }
 }
 
-/// The library's verbs folded into one menu for a phone: the filter, the
-/// folder and the walk-again refresh, so the page switch keeps the header
-/// line to itself instead of stacking a second band of buttons under it.
+/// The library's verbs folded into one menu for a phone: the order, the folder
+/// and the walk-again refresh, so the page switch keeps the header line to
+/// itself instead of stacking a second band of buttons under it.
 final class RecorderLibraryToolbarMore extends ConsumerWidget {
   /// Creates the compact toolbar.
   const RecorderLibraryToolbarMore({super.key});
@@ -495,11 +506,8 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
       semanticLabel: t.common.more,
       align: DsAlign.end,
       items: [
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.filter),
-          label: Text(t.recorder.filterLabel),
-          onPressed: () => unawaited(showRecordingLibraryFilter(context, ref)),
-        ),
+        ..._sortItems(context, ref),
+        const DsMenuDivider(),
         DsMenuItem(
           leading: const DsIcon(DsIcons.folderOpen),
           label: Text(t.recorder.openFolder),
@@ -527,62 +535,22 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
   }
 }
 
-/// The library's conditions, behind the toolbar's one entry: the order the days
-/// are read in.
-///
-/// The panel edits the provider rather than a local copy, so the list under it
-/// answers while the panel is still open — the conditions are few enough that a
-/// separate 应用 step would only hide what each one just did.
-Future<void> showRecordingLibraryFilter(BuildContext context, WidgetRef ref) =>
-    showDsPanel<void>(context: context, builder: (panelContext) => const _LibraryFilterPanel());
-
-final class _LibraryFilterPanel extends ConsumerWidget {
-  const _LibraryFilterPanel();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final filter = ref.watch(recorderLibraryFilterProvider);
-    final controller = ref.read(recorderLibraryFilterProvider.notifier);
-    final section = recorderPanelSectionStyle(context);
-    return DsPanel(
-      // The clearing verb lives beside the title, at the panel's top end.
-      title: Row(
-        children: [
-          Expanded(child: Text(t.recorder.filterTitle)),
-          DsButton(
-            variant: DsButtonVariant.ghost,
-            size: DsSize.sm,
-            onPressed: controller.reset,
-            child: Text(t.recorder.filterClear),
-          ),
-        ],
+/// The order's choices as menu items, the current one checked.
+List<Widget> _sortItems(BuildContext context, WidgetRef ref) {
+  final t = context.t;
+  final filter = ref.watch(recorderLibraryFilterProvider);
+  final controller = ref.read(recorderLibraryFilterProvider.notifier);
+  return [
+    for (final order in RecorderLibrarySort.values)
+      DsMenuItem(
+        label: Text(recorderLibrarySortLabel(t, order)),
+        checked: filter.sort == order,
+        onPressed: () => controller.setSort(order),
       ),
-      child: DsListSection(
-        style: section,
-        header: Text(t.recorder.sortLabel),
-        children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s8),
-            child: DsSelect<RecorderLibrarySort>(
-              value: filter.sort,
-              onChanged: (order) {
-                if (order != null) controller.setSort(order);
-              },
-              semanticLabel: t.recorder.sortLabel,
-              options: [
-                for (final order in RecorderLibrarySort.values)
-                  DsSelectOption(value: order, label: recorderLibrarySortLabel(t, order)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  ];
 }
 
-/// The order's own word, said the same way in the panel and in the list.
+/// The order's own word, said the same way in the menu and in the list.
 String recorderLibrarySortLabel(Translations t, RecorderLibrarySort order) => switch (order) {
   RecorderLibrarySort.newest => t.recorder.sortNewest,
   RecorderLibrarySort.oldest => t.recorder.sortOldest,
