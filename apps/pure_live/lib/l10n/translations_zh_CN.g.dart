@@ -6403,6 +6403,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '退出画中画'
 	String get pipOff => '退出画中画';
 
+	/// zh-CN: '在新窗口打开'
+	String get openInNewWindow => '在新窗口打开';
+
 	/// zh-CN: '投屏'
 	String get cast => '投屏';
 
@@ -15580,6 +15583,7 @@ extension on Translations {
 			'room.windowFullscreenOff' => '退出窗口全屏',
 			'room.pipOn' => '画中画',
 			'room.pipOff' => '退出画中画',
+			'room.openInNewWindow' => '在新窗口打开',
 			'room.cast' => '投屏',
 			'room.castTitle' => '投屏到设备',
 			'room.castSearching' => '正在搜索附近的设备',
@@ -15936,9 +15940,9 @@ extension on Translations {
 			'settings.sitesResetDesc' => '显示、顺序与首选平台都回到应用自带的默认。',
 			'settings.sitesGroupList' => '平台',
 			'settings.sitesColumnPlatform' => '平台',
-			'settings.sitesColumnId' => '标识',
 			_ => null,
 		} ?? switch (path) {
+			'settings.sitesColumnId' => '标识',
 			'settings.sitesColumnShown' => '显示',
 			'settings.aboutVersion' => '版本',
 			'settings.aboutProject' => '项目主页',
@@ -16450,9 +16454,9 @@ extension on Translations {
 			'settings.interpolation' => '运动插帧',
 			'settings.interpolationDesc' => '--interpolation：配合「显示重采样」，平移更顺滑，更耗 GPU。',
 			'settings.scaleKernel' => '缩放算法',
-			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
@@ -16964,9 +16968,9 @@ extension on Translations {
 			'settings.roomCardShowTitle' => '标题',
 			'settings.roomCardShowCoverTitle' => '房间分区',
 			'settings.roomCardShowStatus' => '直播状态',
-			'settings.roomCardShowAvatar' => '主播头像',
 			_ => null,
 		} ?? switch (path) {
+			'settings.roomCardShowAvatar' => '主播头像',
 			'settings.roomCardShowAnchor' => '主播名称',
 			'settings.roomCardShowPlatform' => '平台显示',
 			'settings.roomCardShowAudience' => '热度',
@@ -17478,9 +17482,9 @@ extension on Translations {
 			'vod.sortStow' => '收藏多',
 			'vod.duration' => '时长',
 			'vod.durationAny' => '全部时长',
-			'vod.durationUnder10' => '10 分钟以下',
 			_ => null,
 		} ?? switch (path) {
+			'vod.durationUnder10' => '10 分钟以下',
 			'vod.duration10to30' => '10–30 分钟',
 			'vod.duration30to60' => '30–60 分钟',
 			'vod.durationOver60' => '60 分钟以上',

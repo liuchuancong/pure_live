@@ -1510,6 +1510,15 @@ List<Widget> roomMenuItems(
         ),
       );
   final pipOn = ref.watch(roomPresentationProvider) == PresentationMode.pip;
+  // Whether this host can put the room in a window of its own: a desktop shell
+  // that runs secondary windows, the viewer's rooms-in-windows habit left on,
+  // and a page that is not itself one of those windows — raising the window the
+  // room already lives in would be a verb that does nothing.
+  final offersRoomWindow =
+      ref.read(roomLeaveProvider) == null &&
+      ref.watch(secondaryWindowsProvider) != null &&
+      ref.watch(roomWindowsProvider) &&
+      ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;
   final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
   final sleepRunning = sleepMinutes != null;
   final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
@@ -1558,6 +1567,23 @@ List<Widget> roomMenuItems(
           leading: const DsIcon(DsIcons.pictureInPicture),
           label: Text(pipOn ? t.room.pipOff : t.room.pipOn),
           onPressed: () => unawaited(toggleRoomPip(context, ref)),
+        ),
+      // The room in a window of its own: the desktop's way to watch two rooms
+      // at once, and the list the room came from goes with it so the new
+      // window's portrait swipe has the same neighbours. A room that already
+      // has its window is raised to the front rather than opened twice.
+      if (detail != null && offersRoomWindow)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.appWindow),
+          label: Text(t.room.openInNewWindow),
+          onPressed: () => unawaited(
+            openRoom(
+              context,
+              platform: detail.ref.platform,
+              roomId: detail.ref.roomId,
+              playlist: ref.read(roomPlaylistProvider)?.rooms,
+            ),
+          ),
         ),
       if (line != null)
         DsMenuItem(

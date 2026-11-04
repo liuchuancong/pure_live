@@ -2265,6 +2265,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get windowFullscreenOff => 'Leave window fullscreen';
 	@override String get pipOn => 'Picture-in-picture';
 	@override String get pipOff => 'Leave picture-in-picture';
+	@override String get openInNewWindow => 'Open in a new window';
 	@override String get cast => 'Cast';
 	@override String get castTitle => 'Cast to a device';
 	@override String get castSearching => 'Looking for devices nearby';
@@ -6859,6 +6860,7 @@ extension on TranslationsEn {
 			'room.windowFullscreenOff' => 'Leave window fullscreen',
 			'room.pipOn' => 'Picture-in-picture',
 			'room.pipOff' => 'Leave picture-in-picture',
+			'room.openInNewWindow' => 'Open in a new window',
 			'room.cast' => 'Cast',
 			'room.castTitle' => 'Cast to a device',
 			'room.castSearching' => 'Looking for devices nearby',
@@ -7215,9 +7217,9 @@ extension on TranslationsEn {
 			'settings.sitesResetDesc' => 'Visibility, order and the preferred platform all return to what this build ships with.',
 			'settings.sitesGroupList' => 'Platforms',
 			'settings.sitesColumnPlatform' => 'Platform',
-			'settings.sitesColumnId' => 'Id',
 			_ => null,
 		} ?? switch (path) {
+			'settings.sitesColumnId' => 'Id',
 			'settings.sitesColumnShown' => 'Shown',
 			'settings.aboutVersion' => 'Version',
 			'settings.aboutProject' => 'Project home',
@@ -7729,9 +7731,9 @@ extension on TranslationsEn {
 			'settings.interpolation' => 'Motion interpolation',
 			'settings.interpolationDesc' => '--interpolation: with display resampling, pans look smoother at a GPU cost.',
 			'settings.scaleKernel' => 'Scale kernel',
-			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
 			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
@@ -8243,9 +8245,9 @@ extension on TranslationsEn {
 			'settings.roomCardShowTitle' => 'Title',
 			'settings.roomCardShowCoverTitle' => 'Room area',
 			'settings.roomCardShowStatus' => 'Live state',
-			'settings.roomCardShowAvatar' => 'Anchor avatar',
 			_ => null,
 		} ?? switch (path) {
+			'settings.roomCardShowAvatar' => 'Anchor avatar',
 			'settings.roomCardShowAnchor' => 'Anchor name',
 			'settings.roomCardShowPlatform' => 'Platform',
 			'settings.roomCardShowAudience' => 'Heat',
@@ -8757,9 +8759,9 @@ extension on TranslationsEn {
 			'vod.sortStow' => 'Most favourited',
 			'vod.duration' => 'Length',
 			'vod.durationAny' => 'Any length',
-			'vod.durationUnder10' => 'Under 10 min',
 			_ => null,
 		} ?? switch (path) {
+			'vod.durationUnder10' => 'Under 10 min',
 			'vod.duration10to30' => '10–30 min',
 			'vod.duration30to60' => '30–60 min',
 			'vod.durationOver60' => 'Over 60 min',
