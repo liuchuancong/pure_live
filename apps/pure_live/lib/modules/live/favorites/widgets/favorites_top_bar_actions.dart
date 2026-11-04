@@ -35,10 +35,18 @@ final class FavoritesTopBarActions extends ConsumerWidget {
       return site == null ? id : localizedSiteName(site);
     }
 
+    // Search, refresh, more — the order the bar reads from its start.
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
       children: [
+        DsButton.icon(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          semanticLabel: t.favorites.refresh,
+          onPressed: () => ref.read(followsPageRefreshProvider.notifier).run(),
+          icon: const DsIcon(DsIcons.refreshCw, size: 16),
+        ),
         PlatformToolbarMore(
           platforms: [kAllPlatforms, ...tabs],
           current: platform,
@@ -49,13 +57,6 @@ final class FavoritesTopBarActions extends ConsumerWidget {
             context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
           ),
           triggerVariant: DsButtonVariant.secondary,
-        ),
-        DsButton.icon(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          semanticLabel: t.favorites.refresh,
-          onPressed: () => ref.read(followsPageRefreshProvider.notifier).run(),
-          icon: const DsIcon(DsIcons.refreshCw, size: 16),
         ),
       ],
     );

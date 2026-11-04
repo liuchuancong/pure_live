@@ -8,6 +8,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
+import 'package:pure_live/shared/widgets/choice_dialog.dart' show showChoiceDialog;
 
 /// The special scope meaning "every platform" — the platform tabs' first
 /// entry on the pages that offer one (follows, search).
@@ -228,15 +229,24 @@ final class PlatformToolbarMore extends ConsumerWidget {
       items: [
         ...items,
         if (items.isNotEmpty) const DsMenuDivider(),
+        // One entry, one popup: the layout pick is a choice, not two rows to
+        // scan and a check to compare.
         DsMenuItem(
-          label: Text(t.common.layoutGrid),
-          checked: layout == CardLayout.grid,
-          onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(CardLayout.grid)),
-        ),
-        DsMenuItem(
-          label: Text(t.common.layoutList),
-          checked: layout == CardLayout.list,
-          onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(CardLayout.list)),
+          leading: const DsIcon(DsIcons.layoutGrid),
+          label: Text(t.common.layout),
+          onPressed: () => unawaited(
+            showChoiceDialog<CardLayout>(
+              context: context,
+              title: t.common.layout,
+              value: layout,
+              options: [
+                DsSelectOption(value: CardLayout.grid, label: t.common.layoutGrid),
+                DsSelectOption(value: CardLayout.list, label: t.common.layoutList),
+              ],
+            ).then((picked) {
+              if (picked != null) unawaited(ref.read(browseLayoutProvider.notifier).set(picked));
+            }),
+          ),
         ),
         if (platforms.isNotEmpty) ...[
           const DsMenuDivider(),
