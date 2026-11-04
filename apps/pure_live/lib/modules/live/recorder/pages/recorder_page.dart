@@ -350,7 +350,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             );
-            final toolbar = RecorderLibraryToolbar(takes: libraryTakes, platformName: _platformName);
+            const toolbar = RecorderLibraryToolbar();
             // A phone stacks the files verbs under the switch instead of
             // squeezing them onto one line.
             if (narrow) {

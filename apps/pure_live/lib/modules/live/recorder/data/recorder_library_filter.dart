@@ -28,25 +28,16 @@ enum RecorderLibrarySort {
   }
 }
 
-/// How the library is narrowed: whether a row must hold something playable,
-/// and the order the days are read in.
+/// How the library is read: the order the days are in.
 final class RecorderLibraryFilter {
-  /// The untouched library: every file, newest first.
-  const RecorderLibraryFilter({this.playableOnly = false, this.sort = RecorderLibrarySort.newest});
-
-  /// Whether a row must hold something a player opens.
-  final bool playableOnly;
+  /// The untouched library: newest first.
+  const RecorderLibraryFilter({this.sort = RecorderLibrarySort.newest});
 
   /// The order the list reads in.
   final RecorderLibrarySort sort;
 
-  /// Whether anything but the order is holding the library down — what makes
-  /// the toolbar's entry read as engaged.
-  bool get narrowed => playableOnly;
-
-  /// The filter with the given parts replaced.
-  RecorderLibraryFilter copyWith({bool? playableOnly, RecorderLibrarySort? sort}) =>
-      RecorderLibraryFilter(playableOnly: playableOnly ?? this.playableOnly, sort: sort ?? this.sort);
+  /// The filter with the order replaced.
+  RecorderLibraryFilter copyWith({RecorderLibrarySort? sort}) => RecorderLibraryFilter(sort: sort ?? this.sort);
 }
 
 /// The library's narrowing, shared by the toolbar that edits it and the pane
@@ -54,9 +45,6 @@ final class RecorderLibraryFilter {
 final class RecorderLibraryFilterController extends Notifier<RecorderLibraryFilter> {
   @override
   RecorderLibraryFilter build() => const RecorderLibraryFilter();
-
-  /// Requires a row to hold something playable.
-  void setPlayableOnly({required bool value}) => state = state.copyWith(playableOnly: value);
 
   /// Reorders the list.
   void setSort(RecorderLibrarySort value) => state = state.copyWith(sort: value);
