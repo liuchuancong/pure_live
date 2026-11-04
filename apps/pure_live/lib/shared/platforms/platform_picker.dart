@@ -52,8 +52,12 @@ final class PlatformWallButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DsButton(
+    // The same square, secondary icon button as the toolbar's refresh: a text
+    // button's padding would make the chevron a wide bar beside it.
+    return DsButton.icon(
       variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: context.t.common.switchPlatform,
       onPressed: () => unawaited(
         showPlatformPickerPanel(
           context,
@@ -66,7 +70,7 @@ final class PlatformWallButton extends StatelessWidget {
           countOf: countOf,
         ),
       ),
-      child: const DsIcon(DsIcons.chevronDown, size: 16),
+      icon: const DsIcon(DsIcons.chevronDown, size: 16),
     );
   }
 }
