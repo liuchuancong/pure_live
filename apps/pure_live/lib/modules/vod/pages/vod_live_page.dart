@@ -141,6 +141,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
           // switch the grid below already honours, and the reload — on a narrow
           // window the two controls fold into the more at the page's end.
           child: VodFeedToolbar(
+            owner: NavigationItem.vodLive,
             tabs: Text(
               t.vod.liveRecommendTitle,
               maxLines: 1,

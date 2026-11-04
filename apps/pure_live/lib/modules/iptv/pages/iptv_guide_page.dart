@@ -182,30 +182,44 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
         : groups.selectedGroup != null
         ? t.iptv.zapperEmptyGroup
         : null;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
-        DsSpace.s16,
-        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
-        DsSpace.s16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 2,
-            children: [
-              Text(t.common.moduleIptv, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
-              Text(t.iptv.guideTitle, style: theme.typography.display.copyWith(color: colors.text)),
-              Text(
-                t.iptv.channelCount(count: channels.length),
-                style: theme.typography.body.copyWith(color: colors.textMuted),
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The page's one tool line, the live module's measure: the count it
+        // answers with; the guide's own verbs live in its panel head.
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+          child: SizedBox(
+            height: 44,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: t.iptv.guideTitle,
+                      style: theme.typography.labelStrong.copyWith(color: colors.text),
+                    ),
+                    TextSpan(
+                      text: '  ·  ',
+                      style: theme.typography.small.copyWith(color: colors.textSubtle),
+                    ),
+                    TextSpan(
+                      text: t.iptv.channelCount(count: channels.length),
+                      style: theme.typography.small.copyWith(color: colors.textMuted),
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
+            ),
           ),
-          Expanded(
+        ),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s16),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // A single group has nothing to choose, and a window that
@@ -273,8 +287,8 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
               },
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

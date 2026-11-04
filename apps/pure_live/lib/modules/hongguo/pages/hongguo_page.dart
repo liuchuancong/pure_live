@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:pure_live/app/app.dart' show RouteNames, browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
@@ -16,7 +18,8 @@ import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show H
 import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show HongguoCardMenu, hongguoSeriesOpenable;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid, avatarInitials, feedGutter;
+import 'package:pure_live/shared/shared.dart'
+    show LiveWindow, NavigationItem, PagedCardGrid, avatarInitials, feedGutter;
 
 /// The page's own left and right margin, asked rather than written again:
 /// `LiveWindow.pageInset` is one number for the whole app (16 while the window
@@ -107,79 +110,26 @@ final class _HongguoPageState extends ConsumerState<HongguoPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The module's mark and name belong to the shell's head (its breadcrumb);
+    // every view starts on its own tool line, the live module's shape.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s12, _hongguoPageInset(context), DsSpace.s8),
-          child: const _ModuleHeader(),
-        ),
         Expanded(
-          child: switch (_view) {
-            HongguoView.home => _HomeView(onGo: (view) => setState(() => _view = view)),
-            HongguoView.find => const _FindView(),
-            HongguoView.rank => const _RankView(),
-            HongguoView.favorites => const _FavoritesView(),
-            HongguoView.history => const _HistoryView(),
-            HongguoView.reservations => const _ReservationsView(),
-            HongguoView.account => _AccountView(onGo: (view) => setState(() => _view = view)),
-            HongguoView.search => const _SearchView(),
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// The module's mark: the drama glyph in a tinted tile, the station's name,
-/// and one line on what feeds it — the account's nickname once signed in.
-final class _ModuleHeader extends ConsumerWidget {
-  const _ModuleHeader();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final t = context.t;
-    final account = ref.watch(hongguoAccountProvider);
-    // The header names the viewer once the profile lands; until then (or
-    // when it names nobody) the bare words stand alone — a separator with
-    // nothing after it reads as a broken line.
-    final nickname = (account.profile?.nickname ?? '').trim();
-    return Row(
-      spacing: DsSpace.s12,
-      children: [
-        Container(
-          width: theme.sizes.md,
-          height: theme.sizes.md,
-          decoration: DsBoxDecoration(
-            color: colors.accentTint,
-            borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
-          ),
-          child: Center(
-            child: DsIcon(DsIcons.drama, size: theme.sizes.iconMd, color: colors.accentText),
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s3,
-            children: [
-              Text(
-                t.hongguo.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-              Text(
-                account.signedIn
-                    ? (nickname.isEmpty ? t.hongguo.accountSignedInAs : '${t.hongguo.accountSignedInAs} · $nickname')
-                    : t.hongguo.tagline,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            ],
+          child: Padding(
+            // The head line names the view; the view's own row keeps the live
+            // module's top measure under it.
+            padding: const EdgeInsets.only(top: DsSpace.s12),
+            child: switch (_view) {
+              HongguoView.home => _HomeView(onGo: (view) => setState(() => _view = view)),
+              HongguoView.find => const _FindView(),
+              HongguoView.rank => const _RankView(),
+              HongguoView.favorites => const _FavoritesView(),
+              HongguoView.history => const _HistoryView(),
+              HongguoView.reservations => const _ReservationsView(),
+              HongguoView.account => _AccountView(onGo: (view) => setState(() => _view = view)),
+              HongguoView.search => const _SearchView(),
+            },
           ),
         ),
       ],
@@ -364,8 +314,9 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
           // already is.
           SizedBox(
             height: 44,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
+            child: Builder(
+              builder: (context) {
+                final narrow = PageLayoutScope.isNarrow(context);
                 final tabs = DsTabs<String>(
                   value: genre?.name ?? '',
                   onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
@@ -378,38 +329,23 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 // A genre is the only shelf that carries topics; 推荐 has no
                 // condition to set, so it gets no entry that cannot answer.
                 final openTopics = genre == null || themeRow == null ? null : () => _openThemes(genre, themeRow);
-                // A small screen keeps the genre bar alone and puts the one
-                // condition behind a more icon, as the live feeds do theirs.
-                if (LiveWindow.stacksToolbar(constraints.maxWidth)) {
-                  return Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(child: tabs),
-                      if (genre != null)
-                        HongguoToolbarMore(
-                          items: [
-                            DsMenuItem(
-                              leading: const DsIcon(DsIcons.listFilter),
-                              label: Text(t.hongguo.filter),
-                              onPressed: openTopics,
-                            ),
-                          ],
-                        ),
-                    ],
-                  );
-                }
-                return Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: tabs),
-                    if (genre != null)
-                      DsButton(
+                final filter = genre == null
+                    ? null
+                    : DsButton(
                         size: DsSize.sm,
                         variant: DsButtonVariant.secondary,
                         leading: const DsIcon(DsIcons.listFilter, size: 14),
                         onPressed: openTopics,
                         child: Text(t.hongguo.filter),
-                      ),
+                      );
+                // A narrow page keeps the genre bar alone and hands the one
+                // condition to the shell's head line, as the live feeds do.
+                if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoHome, [?filter]);
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    if (!narrow) ?filter,
                   ],
                 );
               },
@@ -688,8 +624,9 @@ final class _FindViewState extends ConsumerState<_FindView> {
               // replaced left a new shelf an empty pane.
               SizedBox(
                 height: 44,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
+                child: Builder(
+                  builder: (context) {
+                    final narrow = PageLayoutScope.isNarrow(context);
                     final tabs = DsTabs<HongguoGenre>(
                       value: _genre,
                       onChanged: (genre) {
@@ -701,36 +638,21 @@ final class _FindViewState extends ConsumerState<_FindView> {
                       tabs: [for (final genre in HongguoGenre.values) DsTab(value: genre, label: Text(genre.label(t)))],
                     );
                     final openFilters = groups.isEmpty ? null : () => unawaited(_openFilters(groups));
-                    // The shelf bar is the narrow screen's one line: the
-                    // conditions go behind a more icon with the rest.
-                    if (LiveWindow.stacksToolbar(constraints.maxWidth)) {
-                      return Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(child: tabs),
-                          HongguoToolbarMore(
-                            items: [
-                              DsMenuItem(
-                                leading: const DsIcon(DsIcons.listFilter),
-                                label: Text(t.hongguo.filter),
-                                onPressed: openFilters,
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
+                    final filter = DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.listFilter, size: 14),
+                      onPressed: openFilters,
+                      child: Text(t.hongguo.filter),
+                    );
+                    // The shelf bar is the narrow page's one line: the
+                    // conditions ride the shell's head, as the live feeds'.
+                    if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoFind, [filter]);
                     return Row(
                       spacing: DsSpace.s8,
                       children: [
                         Expanded(child: tabs),
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.secondary,
-                          leading: const DsIcon(DsIcons.listFilter, size: 14),
-                          onPressed: openFilters,
-                          child: Text(t.hongguo.filter),
-                        ),
+                        if (!narrow) filter,
                       ],
                     );
                   },
@@ -913,8 +835,9 @@ final class _RankViewState extends ConsumerState<_RankView> {
               // has not read yet is opened on the pick, as the shelf bars do.
               SizedBox(
                 height: 44,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
+                child: Builder(
+                  builder: (context) {
+                    final narrow = PageLayoutScope.isNarrow(context);
                     final tabs = DsTabs<HongguoWebsiteBoard>(
                       value: _board,
                       onChanged: (board) {
@@ -934,52 +857,30 @@ final class _RankViewState extends ConsumerState<_RankView> {
                     final openTopicsEntry = topics.isEmpty ? null : () => unawaited(_openTopics(_board, topics));
                     final reading = held.loading || held.renewing;
                     void readAgain() => unawaited(controller.refresh(_board));
-                    // A small screen keeps the boards' bar and the reload it
-                    // answers with; the topic the board is thinned to goes
-                    // behind the more icon, as the live feeds' wall does.
-                    if (LiveWindow.stacksToolbar(constraints.maxWidth)) {
-                      return Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(child: tabs),
-                          DsButton.icon(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            semanticLabel: reading ? t.hongguo.rankReading : t.hongguo.refresh,
-                            loading: reading,
-                            onPressed: reading ? null : readAgain,
-                            icon: const DsIcon(DsIcons.refreshCw, size: 16),
-                          ),
-                          HongguoToolbarMore(
-                            items: [
-                              DsMenuItem(
-                                leading: const DsIcon(DsIcons.listFilter),
-                                label: Text(t.hongguo.filter),
-                                onPressed: openTopicsEntry,
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
+                    final filter = DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.listFilter, size: 14),
+                      onPressed: openTopicsEntry,
+                      child: Text(t.hongguo.filter),
+                    );
+                    final refresh = DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                      onPressed: reading ? null : readAgain,
+                      child: Text(reading ? t.hongguo.rankReading : t.hongguo.refresh),
+                    );
+                    // A narrow page keeps the boards' bar alone; the reload
+                    // and the topic ride the shell's head, as the live feeds'.
+                    if (narrow) {
+                      publishPageHeadActions(context, ref, NavigationItem.hongguoRank, [refresh, filter]);
                     }
                     return Row(
                       spacing: DsSpace.s8,
                       children: [
                         Expanded(child: tabs),
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.secondary,
-                          leading: const DsIcon(DsIcons.listFilter, size: 14),
-                          onPressed: openTopicsEntry,
-                          child: Text(t.hongguo.filter),
-                        ),
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.secondary,
-                          leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                          onPressed: reading ? null : readAgain,
-                          child: Text(reading ? t.hongguo.rankReading : t.hongguo.refresh),
-                        ),
+                        if (!narrow) ...[filter, refresh],
                       ],
                     );
                   },
@@ -1153,19 +1054,10 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                 },
               ),
               if (!_account)
-                Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _favoritesStatus(t, library),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: DsTheme.of(context).typography.caption
-                            .copyWith(color: DsTheme.colorsOf(context).textMuted),
-                      ),
-                    ),
-                    DsButton(
+                Builder(
+                  builder: (context) {
+                    final narrow = PageLayoutScope.isNarrow(context);
+                    final check = DsButton(
                       size: DsSize.sm,
                       variant: DsButtonVariant.secondary,
                       leading: const DsIcon(DsIcons.refreshCw, size: 14),
@@ -1173,8 +1065,26 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                           ? null
                           : () => unawaited(ref.read(hongguoLibraryProvider.notifier).checkUpdates(force: true)),
                       child: Text(t.hongguo.favoriteCheck),
-                    ),
-                  ],
+                    );
+                    // The shelf's one verb rides the shell's head on a narrow
+                    // page, the live module's phone rule.
+                    if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoFavorites, [check]);
+                    return Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _favoritesStatus(t, library),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTheme.of(context).typography.caption
+                                .copyWith(color: DsTheme.colorsOf(context).textMuted),
+                          ),
+                        ),
+                        if (!narrow) check,
+                      ],
+                    );
+                  },
                 ),
             ],
           ),
@@ -1320,58 +1230,76 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                 },
               ),
               if (!_account)
-                Wrap(
-                  spacing: DsSpace.s8,
-                  runSpacing: DsSpace.s8,
-                  children: [
-                    DsChip(
-                      label: Text(t.hongguo.filterAll),
-                      selected: _watched == 0,
-                      onChanged: (_) => setState(() => _watched = 0),
-                    ),
-                    DsChip(
-                      label: Text(t.hongguo.historyFilterWatched),
-                      selected: _watched == 1,
-                      onChanged: (_) => setState(() => _watched = 1),
-                    ),
-                    DsChip(
-                      label: Text(t.hongguo.historyFilterUnwatched),
-                      selected: _watched == 2,
-                      onChanged: (_) => setState(() => _watched = 2),
-                    ),
-                    if (library.history.isNotEmpty) ...[
-                      if (_managing) ...[
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.secondary,
-                          leading: const DsIcon(DsIcons.trash2, size: 14),
-                          onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(t)),
-                          child: Text(t.hongguo.historyManageDeleteCount(count: _selected.length)),
-                        ),
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.ghost,
-                          onPressed: _leaveManaging,
-                          child: Text(t.hongguo.historyManageDone),
-                        ),
-                      ] else ...[
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.ghost,
-                          leading: const DsIcon(DsIcons.listChecks, size: 14),
-                          onPressed: () => setState(() => _managing = true),
-                          child: Text(t.hongguo.historyManage),
-                        ),
-                        DsButton(
-                          size: DsSize.sm,
-                          variant: DsButtonVariant.ghost,
-                          leading: const DsIcon(DsIcons.trash2, size: 14),
-                          onPressed: () => unawaited(_clearHistory(t)),
-                          child: Text(t.hongguo.historyClear),
-                        ),
+                Builder(
+                  builder: (context) {
+                    final narrow = PageLayoutScope.isNarrow(context);
+                    final actions = <Widget>[
+                      if (library.history.isNotEmpty) ...[
+                        if (_managing) ...[
+                          DsButton(
+                            size: DsSize.sm,
+                            variant: DsButtonVariant.secondary,
+                            leading: const DsIcon(DsIcons.trash2, size: 14),
+                            onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(t)),
+                            child: Text(t.hongguo.historyManageDeleteCount(count: _selected.length)),
+                          ),
+                          DsButton(
+                            size: DsSize.sm,
+                            variant: DsButtonVariant.ghost,
+                            onPressed: _leaveManaging,
+                            child: Text(t.hongguo.historyManageDone),
+                          ),
+                        ] else ...[
+                          DsButton(
+                            size: DsSize.sm,
+                            variant: DsButtonVariant.ghost,
+                            leading: const DsIcon(DsIcons.listChecks, size: 14),
+                            onPressed: () => setState(() => _managing = true),
+                            child: Text(t.hongguo.historyManage),
+                          ),
+                          DsButton(
+                            size: DsSize.sm,
+                            variant: DsButtonVariant.ghost,
+                            leading: const DsIcon(DsIcons.trash2, size: 14),
+                            onPressed: () => unawaited(_clearHistory(t)),
+                            child: Text(t.hongguo.historyClear),
+                          ),
+                        ],
                       ],
-                    ],
-                  ],
+                    ];
+                    // The chips stay content (they thin the list); the shelf's
+                    // verbs ride the shell's head on a narrow page.
+                    if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoHistory, actions);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s8,
+                      children: [
+                        Wrap(
+                          spacing: DsSpace.s8,
+                          runSpacing: DsSpace.s8,
+                          children: [
+                            DsChip(
+                              label: Text(t.hongguo.filterAll),
+                              selected: _watched == 0,
+                              onChanged: (_) => setState(() => _watched = 0),
+                            ),
+                            DsChip(
+                              label: Text(t.hongguo.historyFilterWatched),
+                              selected: _watched == 1,
+                              onChanged: (_) => setState(() => _watched = 1),
+                            ),
+                            DsChip(
+                              label: Text(t.hongguo.historyFilterUnwatched),
+                              selected: _watched == 2,
+                              onChanged: (_) => setState(() => _watched = 2),
+                            ),
+                          ],
+                        ),
+                        if (!narrow && actions.isNotEmpty)
+                          Wrap(spacing: DsSpace.s8, runSpacing: DsSpace.s8, children: actions),
+                      ],
+                    );
+                  },
                 ),
             ],
           ),

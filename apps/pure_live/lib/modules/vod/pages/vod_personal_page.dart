@@ -259,6 +259,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
           // scope reads from this head instead of adding a second tab row that
           // pushes the list down.
           child: VodFeedToolbar(
+            owner: NavigationItem.vodPersonal,
             tabs: DsTabs<VodPersonalTab>(
               value: _tab,
               onChanged: (tab) => setState(() => _tab = tab),

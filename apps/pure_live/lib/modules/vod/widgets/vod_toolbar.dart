@@ -5,7 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart' show browseLayoutProvider;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart' show CardLayout, ChromeIconButton, LayoutToggle, LiveWindow;
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/shared/shared.dart'
+    show CardLayout, ChromeIconButton, LayoutToggle, NavigationItem, showActionsPanel;
 
 /// The content tabs a feed page wears in [VodFeedToolbar]: the toolbar's row
 /// is 44 tall, the bar starts at the page's own inset, and the hairline would
@@ -35,22 +38,28 @@ final class VodFeedAction {
 
 /// The video station's feed toolbar: its tabs at the head's start, the feed's
 /// own controls at its end — the card/list switch, the page's actions and a
-/// reload while the window holds them, and on a narrow window the tabs alone
-/// plus one more icon carrying the same actions. The same morphology the hot
-/// rooms page uses, so a feed the viewer can restyle is a feed that offers the
-/// restyle.
+/// reload while the window holds them. A narrow page keeps its tabs alone and
+/// hands the verbs to the shell's head line (the live module's phone rule):
+/// the reload rides there as itself, everything else — the layout, the page's
+/// own actions — behind one labelled 更多 that opens a panel, never a glyph
+/// drop-down.
 final class VodFeedToolbar extends ConsumerWidget {
   /// The toolbar over [tabs]; [onRefresh] reloads the feed shown and is null
   /// on a page that has nothing to reload yet, [showLayout] is false on a grid
   /// that has no second form, and [actions] are the page's own head-end
   /// actions — its condition entry, its cleanup — which sit before the reload.
   const VodFeedToolbar({
+    required this.owner,
     required this.tabs,
     required this.onRefresh,
     this.showLayout = true,
     this.actions = const <VodFeedAction>[],
     super.key,
   });
+
+  /// The menu entry this page is standing in for: the shell shows the head
+  /// verbs only under the entry that published them.
+  final NavigationItem owner;
 
   /// The page's tab row.
   final Widget tabs;
@@ -76,62 +85,84 @@ final class VodFeedToolbar extends ConsumerWidget {
     final layouts = showLayout
         ? <(String, CardLayout)>[(t.common.layoutGrid, CardLayout.grid), (t.common.layoutList, CardLayout.list)]
         : const <(String, CardLayout)>[];
+    final narrow = PageLayoutScope.isNarrow(context);
+    final refresh = onRefresh == null
+        ? null
+        : DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: t.vod.refresh,
+            onPressed: () => unawaited(onRefresh!()),
+            icon: const DsIcon(DsIcons.refreshCw, size: 16),
+          );
+    final more = head.isEmpty && layouts.isEmpty
+        ? null
+        : DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: t.common.more,
+            leading: const DsIcon(DsIcons.chevronDown, size: 14),
+            child: Text(t.common.more),
+            onPressed: () => unawaited(
+              showActionsPanel(
+                context,
+                title: t.common.more,
+                children: [
+                  if (head.isNotEmpty)
+                    DsListSection(
+                      children: [
+                        for (final action in head)
+                          DsListRow(
+                            leading: DsIcon(action.icon, size: 16),
+                            title: Text(action.label),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              action.onPressed();
+                            },
+                          ),
+                      ],
+                    ),
+                  if (layouts.isNotEmpty)
+                    DsListSection(
+                      header: Text(t.common.layout),
+                      children: [
+                        for (final (label, value) in layouts)
+                          DsListRow(
+                            title: Text(label),
+                            trailing: ref.watch(browseLayoutProvider) == value
+                                ? const DsIcon(DsIcons.check, size: 16)
+                                : null,
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              unawaited(ref.read(browseLayoutProvider.notifier).set(value));
+                            },
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          );
+    if (narrow) publishPageHeadActions(context, ref, owner, [?refresh, ?more]);
     return SizedBox(
       height: 44,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
-            return Row(
-              children: [
-                Expanded(child: tabs),
-                if (layouts.isNotEmpty) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
-                for (final action in head) ...[
-                  const SizedBox(width: DsSpace.s8),
-                  ChromeIconButton(
-                    icon: action.icon,
-                    semanticLabel: action.label,
-                    tooltip: action.label,
-                    onPressed: action.onPressed,
-                    size: 36,
-                  ),
-                ],
-              ],
-            );
-          }
-          if (head.isEmpty && layouts.isEmpty) return tabs;
-          return Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(child: tabs),
-              DsMenuAnchor(
-                semanticLabel: t.common.more,
-                align: DsAlign.end,
-                items: [
-                  for (final (index, action) in head.indexed) ...[
-                    if (index > 0) const DsMenuDivider(),
-                    DsMenuItem(leading: DsIcon(action.icon), label: Text(action.label), onPressed: action.onPressed),
-                  ],
-                  if (layouts.isNotEmpty) ...[
-                    const DsMenuDivider(),
-                    for (final (label, value) in layouts)
-                      DsMenuItem(
-                        label: Text(label),
-                        checked: ref.watch(browseLayoutProvider) == value,
-                        onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(value)),
-                      ),
-                  ],
-                ],
-                builder: (context, controller, _) => DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  semanticLabel: t.common.more,
-                  onPressed: controller.open,
-                  icon: const DsIcon(DsIcons.ellipsisVertical),
-                ),
+      child: Row(
+        children: [
+          Expanded(child: tabs),
+          if (!narrow) ...[
+            if (layouts.isNotEmpty) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
+            for (final action in head) ...[
+              const SizedBox(width: DsSpace.s8),
+              ChromeIconButton(
+                icon: action.icon,
+                semanticLabel: action.label,
+                tooltip: action.label,
+                onPressed: action.onPressed,
+                size: 36,
               ),
             ],
-          );
-        },
+          ],
+        ],
       ),
     );
   }

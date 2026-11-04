@@ -8,6 +8,8 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
@@ -15,7 +17,7 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_tag_edit.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
 
 /// 本地音乐: the folders the viewer added, the files they hold, and the way
 /// to add or drop a folder.
@@ -141,6 +143,32 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
     final player = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouritesController = ref.read(musicFavouritesProvider.notifier);
+    final actions = <Widget>[
+      MusicToolAction(
+        label: _selecting ? t.music.selectionCancel : t.music.selectionStart,
+        icon: _selecting ? DsIcons.x : DsIcons.listChecks,
+        available: state.tracks.isNotEmpty,
+        onPressed: () => _setSelecting(selecting: !_selecting),
+      ),
+      MusicToolAction(
+        label: t.music.localRescan,
+        icon: DsIcons.refreshCw,
+        // The download folder is always scanned, so there is always a folder
+        // to read again.
+        available: true,
+        onPressed: state.loading ? null : () => unawaited(controller.rescan()),
+      ),
+      MusicToolAction(
+        label: t.music.localAddFolder,
+        icon: DsIcons.folderPlus,
+        available: true,
+        onPressed: () => unawaited(_addFolder(context)),
+      ),
+    ];
+    // A narrow page hands the folder verbs to the shell's head, the live
+    // module's phone rule; the hint line keeps the row.
+    final narrow = PageLayoutScope.isNarrow(context);
+    if (narrow) publishPageHeadActions(context, ref, NavigationItem.musicLocal, actions);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -157,26 +185,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                   style: theme.typography.caption.copyWith(color: colors.textSubtle),
                 ),
               ),
-              MusicToolAction(
-                label: _selecting ? t.music.selectionCancel : t.music.selectionStart,
-                icon: _selecting ? DsIcons.x : DsIcons.listChecks,
-                available: state.tracks.isNotEmpty,
-                onPressed: () => _setSelecting(selecting: !_selecting),
-              ),
-              MusicToolAction(
-                label: t.music.localRescan,
-                icon: DsIcons.refreshCw,
-                // The download folder is always scanned, so there is always a
-                // folder to read again.
-                available: true,
-                onPressed: state.loading ? null : () => unawaited(controller.rescan()),
-              ),
-              MusicToolAction(
-                label: t.music.localAddFolder,
-                icon: DsIcons.folderPlus,
-                available: true,
-                onPressed: () => unawaited(_addFolder(context)),
-              ),
+              if (!narrow) ...actions,
             ],
           ),
         ),

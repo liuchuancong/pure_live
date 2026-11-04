@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/layout/window_breakpoints.dart' show LiveWindow;
+import 'package:pure_live/shared/widgets/action_panel.dart';
 import 'package:pure_live/shared/widgets/download_details.dart';
 
 /// Whether the file a finished download names is still on disk.
@@ -165,30 +167,44 @@ final class DownloadQueueHeader extends StatelessWidget {
             ),
             search,
             if (compact)
-              DsMenuAnchor(
-                align: DsAlign.end,
+              // A phone's verbs are a 弹窗 behind a labelled button, not a
+              // glyph drop-down — the rule the live module's pages follow.
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
                 semanticLabel: t.common.more,
-                items: [
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.filter),
-                    label: Text(filterLabel),
-                    trailing: filterActive ? const DsIcon(DsIcons.check, size: 14) : null,
-                    onPressed: onFilter,
+                leading: const DsIcon(DsIcons.chevronDown, size: 14),
+                child: Text(t.common.more),
+                onPressed: () => unawaited(
+                  showActionsPanel(
+                    context,
+                    title: t.common.more,
+                    children: [
+                      DsListSection(
+                        children: [
+                          DsListRow(
+                            leading: const DsIcon(DsIcons.filter, size: 16),
+                            title: Text(filterLabel),
+                            trailing: filterActive ? const DsIcon(DsIcons.check, size: 14) : null,
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              onFilter();
+                            },
+                          ),
+                          for (final action in live)
+                            DsListRow(
+                              leading: DsIcon(action.icon, size: 16),
+                              title: Text(action.label),
+                              destructive: action.destructive,
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                action.onPressed!();
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
-                  for (final action in live)
-                    DsMenuItem(
-                      leading: DsIcon(action.icon),
-                      label: Text(action.label),
-                      destructive: action.destructive,
-                      onPressed: action.onPressed,
-                    ),
-                ],
-                builder: (context, controller, _) => DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  onPressed: controller.toggle,
-                  icon: const DsIcon(DsIcons.ellipsisVertical),
-                  semanticLabel: t.common.more,
                 ),
               )
             else ...[

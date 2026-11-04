@@ -146,6 +146,7 @@ final class _VodPageState extends ConsumerState<VodPage> {
           // reload alone; the two feeds that switch between cards and rows
           // offer the switch where the viewer is looking at them.
           child: VodFeedToolbar(
+            owner: NavigationItem.vod,
             tabs: DsTabs<VodTab>(
               value: _tab,
               onChanged: _selectTab,

@@ -172,6 +172,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
           // the result kinds at its start, the condition entry and the reload
           // at its end — and on a narrow window one more icon for both.
           child: VodFeedToolbar(
+            owner: NavigationItem.vodSearch,
             tabs: DsTabs<VodSearchKind>(
               value: _kind,
               onChanged: _selectKind,

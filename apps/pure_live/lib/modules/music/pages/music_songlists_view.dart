@@ -7,9 +7,10 @@ import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
@@ -26,7 +27,7 @@ import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, NavigationItem, cachedImage;
 
 final class MusicPlaylistsView extends ConsumerStatefulWidget {
   const MusicPlaylistsView({this.initialOnlineOpen, super.key});
@@ -533,7 +534,25 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
     );
 
     // One toolbar row, the areas page's measure: the tabs take the leftover
-    // width, the count and the verbs close the row.
+    // width, the count and the verbs close the row. A narrow page keeps the
+    // tabs and the count alone and hands the two verbs to the shell's head,
+    // the live module's phone rule.
+    final narrow = PageLayoutScope.isNarrow(context);
+    final importButton = DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: const DsIcon(DsIcons.arrowDownToLine, size: 16),
+      onPressed: () => unawaited(_import()),
+      child: Text(t.music.playlistImport),
+    );
+    final createButton = DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: const DsIcon(DsIcons.plus, size: 16),
+      onPressed: () => unawaited(_create()),
+      child: Text(t.music.playlistCreate),
+    );
+    if (narrow) publishPageHeadActions(context, ref, NavigationItem.musicSonglist, [importButton, createButton]);
     final Widget toolbar = SizedBox(
       height: 44,
       child: Padding(
@@ -547,20 +566,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                 t.music.playlistsCount(count: playlists.length),
                 style: theme.typography.caption.copyWith(color: colors.textSubtle),
               ),
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              leading: const DsIcon(DsIcons.arrowDownToLine, size: 16),
-              onPressed: () => unawaited(_import()),
-              child: Text(t.music.playlistImport),
-            ),
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              leading: const DsIcon(DsIcons.plus, size: 16),
-              onPressed: () => unawaited(_create()),
-              child: Text(t.music.playlistCreate),
-            ),
+            if (!narrow) ...[importButton, createButton],
           ],
         ),
       ),

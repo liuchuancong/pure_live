@@ -2,13 +2,9 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_downloads.dart'
-    show musicDownloadsActive, musicDownloadsProvider;
 import 'package:pure_live/modules/music/controller/music_hotkeys.dart' show musicHotkeyBindings;
 import 'package:pure_live/modules/music/controller/music_open_api.dart' show musicOpenApiProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart' show musicSearchHandoffProvider;
-import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/music_sync_server.dart' show musicSyncServerProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
 import 'package:pure_live/modules/music/pages/music_charts_view.dart';
@@ -19,7 +15,6 @@ import 'package:pure_live/modules/music/pages/music_local_view.dart';
 import 'package:pure_live/modules/music/pages/music_mine_view.dart';
 import 'package:pure_live/modules/music/pages/music_recommend_view.dart';
 import 'package:pure_live/modules/music/pages/music_songlists_view.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// The music module's views. The reference's rail — 推荐 / 精选 / 搜索 / 歌单 /
 /// 排行榜 / 我的列表 — is what the module's menu lists, and the app's own
@@ -150,115 +145,56 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
     ref
       ..watch(musicOpenApiProvider)
       ..watch(musicSyncServerProvider);
-    // The module's header keeps the page's gutter, the live module's measure.
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    // The module's mark and name belong to the shell's head (its breadcrumb);
+    // every view starts on its own tool line, the live module's shape.
     return CallbackShortcuts(
       bindings: musicHotkeyBindings(ref),
       child: Focus(
         autofocus: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8), child: const _ModuleHeader()),
-            Expanded(
-              child: switch (_view) {
-                MusicView.recommend => MusicRecommendView(
-                  onSearch: (word) => setState(() {
-                    _pendingSearch = word;
-                    _view = MusicView.library;
-                  }),
-                  onOpenPlaylist: (info) => setState(() {
-                    _openFeatured = info;
-                    _view = MusicView.featured;
-                  }),
-                  onOpenFeatured: () => setState(() => _view = MusicView.featured),
-                  onOpenBoard: (id) => setState(() {
-                    _catalogId = id;
-                    _view = MusicView.toplists;
-                  }),
-                ),
-                MusicView.featured => MusicFeaturedView(
-                  initialOnlineOpen: _openFeatured,
-                  onOpened: () => _openFeatured = null,
-                ),
-                MusicView.library => MusicLibraryView(
-                  search: _search,
-                  initialQuery: _pendingSearch,
-                  onQueryUsed: () => _pendingSearch = null,
-                  onOpenSonglist: (info) => setState(() {
-                    _view = MusicView.songlists;
-                    _openSonglist = info;
-                  }),
-                ),
-                MusicView.songlists => MusicPlaylistsView(initialOnlineOpen: _openSonglist),
-                MusicView.toplists => MusicChartsView(
-                  catalogId: _catalogId,
-                  onCatalog: (id) => setState(() => _catalogId = id),
-                ),
-                MusicView.mine => const MusicMineView(),
-                MusicView.local => const MusicLocalView(),
-                MusicView.downloads => const MusicDownloadsView(),
-              },
+        // The head line names the view; the view's own row keeps the live
+        // module's top measure under it.
+        child: Padding(
+          padding: const EdgeInsets.only(top: DsSpace.s12),
+          child: switch (_view) {
+            MusicView.recommend => MusicRecommendView(
+              onSearch: (word) => setState(() {
+                _pendingSearch = word;
+                _view = MusicView.library;
+              }),
+              onOpenPlaylist: (info) => setState(() {
+                _openFeatured = info;
+                _view = MusicView.featured;
+              }),
+              onOpenFeatured: () => setState(() => _view = MusicView.featured),
+              onOpenBoard: (id) => setState(() {
+                _catalogId = id;
+                _view = MusicView.toplists;
+              }),
             ),
-          ],
+            MusicView.featured => MusicFeaturedView(
+              initialOnlineOpen: _openFeatured,
+              onOpened: () => _openFeatured = null,
+            ),
+            MusicView.library => MusicLibraryView(
+              search: _search,
+              initialQuery: _pendingSearch,
+              onQueryUsed: () => _pendingSearch = null,
+              onOpenSonglist: (info) => setState(() {
+                _view = MusicView.songlists;
+                _openSonglist = info;
+              }),
+            ),
+            MusicView.songlists => MusicPlaylistsView(initialOnlineOpen: _openSonglist),
+            MusicView.toplists => MusicChartsView(
+              catalogId: _catalogId,
+              onCatalog: (id) => setState(() => _catalogId = id),
+            ),
+            MusicView.mine => const MusicMineView(),
+            MusicView.local => const MusicLocalView(),
+            MusicView.downloads => const MusicDownloadsView(),
+          },
         ),
       ),
-    );
-  }
-}
-
-/// The module's mark: the music note in a tinted tile, the module's name,
-/// and one line on what feeds it — the imported lx sources, or the built-in
-/// lx-music channel when none are imported.
-final class _ModuleHeader extends ConsumerWidget {
-  const _ModuleHeader();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final t = context.t;
-    final sources = ref.watch(musicSourcesProvider).where((source) => source.enabled).length;
-    final active = musicDownloadsActive(ref.watch(musicDownloadsProvider));
-    return Row(
-      spacing: DsSpace.s12,
-      children: [
-        Container(
-          width: theme.sizes.md,
-          height: theme.sizes.md,
-          decoration: DsBoxDecoration(
-            color: colors.accentTint,
-            borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
-          ),
-          child: Center(
-            child: DsIcon(DsIcons.music, size: theme.sizes.iconMd, color: colors.accentText),
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s3,
-            children: [
-              Text(
-                t.music.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-              Text(
-                active > 0
-                    ? t.music.downloadsActive(count: active)
-                    : sources == 0
-                    ? t.music.tagline
-                    : t.music.sourcesReady(count: sources),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

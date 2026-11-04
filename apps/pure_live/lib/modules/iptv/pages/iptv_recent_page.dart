@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart'
     show IptvBrowseSettings, iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
@@ -14,7 +16,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvNowCell;
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem, showActionsPanel;
 
 /// One watched channel and the record that says when.
 typedef _Watched = ({IptvRecentEntry entry, IptvChannel channel});
@@ -131,7 +133,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _RecentHeader(
+        _RecentToolbar(
           filter: filter,
           showing: shown.length,
           onSelectGroup: (group) => setState(() => _group = group),
@@ -282,12 +284,13 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
   }
 }
 
-/// The page's head: the module above the page's own name and the count the
-/// filter makes, with the group's one entry and the clearing at its end. The
-/// wide window sets them beside the name; a narrower one takes the line below
-/// it rather than squeezing the name out.
-final class _RecentHeader extends StatelessWidget {
-  const _RecentHeader({
+/// The page's one tool line: the count the filter makes at its start, the
+/// open-channel verb, the group's entry and the clearing at its end. A narrow
+/// page keeps the count alone and hands the verbs to the shell's head — the
+/// filter entry among them, since narrowing is a filter and filters travel
+/// with the rest of the head's verbs.
+final class _RecentToolbar extends ConsumerWidget {
+  const _RecentToolbar({
     required this.filter,
     required this.showing,
     required this.onSelectGroup,
@@ -312,76 +315,109 @@ final class _RecentHeader extends StatelessWidget {
   final VoidCallback? onClear;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final heading = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        Text(t.common.moduleIptv, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
-        Text(t.iptv.recentTitle, style: theme.typography.display.copyWith(color: colors.text)),
-        Text(
-          t.iptv.recentCount(count: showing),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.body.copyWith(color: colors.textMuted),
-        ),
-      ],
-    );
+    final narrow = PageLayoutScope.isNarrow(context);
     // One group in the archive is nothing to choose; the rows would only be
     // narrowed to the list they already are.
-    final actions = Wrap(
-      spacing: DsSpace.s8,
-      runSpacing: DsSpace.s8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        // The verb the rows themselves answer with, given to the page once so
-        // reading the archive is not the only thing one can do here. The guide
-        // page names entering a channel's live picture the same way.
-        if (onResume != null)
-          DsButton(
+    final groupEntry = filter.groups.length > 1 ? IptvGroupEntry(filter: filter, onSelect: onSelectGroup) : null;
+    final resume = onResume == null
+        ? null
+        : DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
             onPressed: onResume,
             leading: const DsIcon(DsIcons.play, size: 15),
             child: Text(t.iptv.openChannel),
-          ),
-        if (filter.groups.length > 1) IptvGroupEntry(filter: filter, onSelect: onSelectGroup),
-        if (onClear != null)
-          DsButton(
+          );
+    final clear = onClear == null
+        ? null
+        : DsButton(
             variant: DsButtonVariant.dangerSoft,
             size: DsSize.sm,
             onPressed: onClear,
             leading: const DsIcon(DsIcons.trash2, size: 15),
             child: Text(t.iptv.recentClear),
-          ),
-      ],
+          );
+    final more = DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: t.common.more,
+      leading: const DsIcon(DsIcons.chevronDown, size: 14),
+      child: Text(t.common.more),
+      onPressed: () => unawaited(
+        showActionsPanel(
+          context,
+          title: t.common.more,
+          children: [
+            DsListSection(
+              children: [
+                if (onResume != null)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.play, size: 16),
+                    title: Text(t.iptv.openChannel),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      onResume!();
+                    },
+                  ),
+                if (onClear != null)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.trash2, size: 16),
+                    title: Text(t.iptv.recentClear),
+                    destructive: true,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      onClear!();
+                    },
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
+    if (narrow) {
+      publishPageHeadActions(context, ref, NavigationItem.iptvRecent, [?groupEntry, more]);
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = LiveWindow.isExpanded(constraints.maxWidth);
         final inset = LiveWindow.pageInset(constraints.maxWidth);
         return Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s4),
-          child: wide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(child: heading),
-                    const SizedBox(width: DsSpace.s16),
-                    actions,
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: DsSpace.s12,
-                  children: [
-                    heading,
-                    Align(alignment: AlignmentDirectional.centerStart, child: actions),
-                  ],
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+          child: SizedBox(
+            height: 44,
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: t.iptv.recentTitle,
+                          style: theme.typography.labelStrong.copyWith(color: colors.text),
+                        ),
+                        TextSpan(
+                          text: '  ·  ',
+                          style: theme.typography.small.copyWith(color: colors.textSubtle),
+                        ),
+                        TextSpan(
+                          text: t.iptv.recentCount(count: showing),
+                          style: theme.typography.small.copyWith(color: colors.textMuted),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                if (!narrow) ...[?resume, ?groupEntry, ?clear],
+              ],
+            ),
+          ),
         );
       },
     );

@@ -266,10 +266,11 @@ NavigationItem defaultNavigationItemFor(AppModule module) => navigationOf(module
 /// page differ only in where that page opens — the station's own tabs, the
 /// IPTV module's surfaces, the music module's lists.
 final Map<NavigationItem, Widget Function()> kModulePages = {
-  NavigationItem.channels: IptvPage.new,
+  NavigationItem.channels: () => const IptvPage(owner: NavigationItem.channels),
   NavigationItem.iptvGuide: IptvGuidePage.new,
-  NavigationItem.iptvSources: () => const IptvPage(initialView: IptvView.sources),
-  NavigationItem.iptvFavorites: () => const IptvPage(initialScope: IptvChannelScope.favourites),
+  NavigationItem.iptvSources: () => const IptvPage(owner: NavigationItem.iptvSources, initialView: IptvView.sources),
+  NavigationItem.iptvFavorites: () =>
+      const IptvPage(owner: NavigationItem.iptvFavorites, initialScope: IptvChannelScope.favourites),
   NavigationItem.iptvRecent: IptvRecentPage.new,
   NavigationItem.vod: VodPage.new,
   NavigationItem.vodLive: VodLivePage.new,

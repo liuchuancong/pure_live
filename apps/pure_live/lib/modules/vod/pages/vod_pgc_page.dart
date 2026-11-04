@@ -91,6 +91,7 @@ final class _VodPgcPageState extends ConsumerState<VodPgcPage> {
           // The cinema grid is posters alone — one form, so no layout switch
           // beside its tabs, only the reload the other feeds offer.
           child: VodFeedToolbar(
+            owner: NavigationItem.vodPgc,
             tabs: DsTabs<int>(
               value: _type,
               onChanged: _select,

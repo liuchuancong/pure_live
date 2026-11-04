@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:pure_live/app/app.dart' show RouteNames, SettingsSectionRoute;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
 
 /// The IPTV module's own recording centre: the channels this module recorded,
 /// and nothing else.
@@ -38,28 +40,36 @@ final class IptvRecordingsPage extends ConsumerWidget {
         if (task.platform == kIptvRecordingPlatform && _needsRow(task)) task,
     ];
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    // The shell's one width decision: a narrow page hands its single verb to
+    // the head line, the live module's phone rule.
+    final narrow = PageLayoutScope.isNarrow(context);
+    // The recorder's limits, naming template and folder are one set of rules
+    // for both modules, so this opens the page the live centre opens rather
+    // than a second copy of the same choices.
+    final settings = DsButton(
+      variant: narrow ? DsButtonVariant.secondary : DsButtonVariant.ghost,
+      size: DsSize.sm,
+      leading: const DsIcon(DsIcons.settings, size: 16),
+      onPressed: () => _openSettings(context, ref),
+      child: Text(t.recorder.settingsOpen),
+    );
+    if (narrow) publishPageHeadActions(context, ref, NavigationItem.record, [settings]);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, 0),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              Expanded(
-                child: Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
-              ),
-              // The recorder's limits, naming template and folder are one set of
-              // rules for both modules, so this opens the page the live centre
-              // opens rather than a second copy of the same choices.
-              DsButton(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.settings, size: 16),
-                onPressed: () => _openSettings(context, ref),
-                child: Text(t.recorder.settingsOpen),
-              ),
-            ],
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+          child: SizedBox(
+            height: 44,
+            child: Row(
+              spacing: DsSpace.s12,
+              children: [
+                Expanded(
+                  child: Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
+                ),
+                if (!narrow) settings,
+              ],
+            ),
           ),
         ),
         if (attention.isNotEmpty)

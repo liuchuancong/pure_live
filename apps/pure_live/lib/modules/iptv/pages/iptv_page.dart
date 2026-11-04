@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
@@ -36,17 +38,23 @@ enum IptvView {
 
 /// The IPTV module's entry page.
 ///
-/// A page header names the open surface and its counts, with the imports
-/// beside it. The channel surface is the reference's two panes: the library's
-/// groups down the first column, and the channels of the open group as a
-/// resource table — logo, group, what is on now with its progress, the
-/// favourite heart and the player action. A window too narrow for the column
-/// keeps the same group list behind one line over the table, and the table
-/// itself stacks its rows instead of scrolling sideways. The source surface
-/// keeps the same table language over the playlists and guides.
+/// The page opens on the live module's own tool line: what the surface holds
+/// at its start, its verbs at the end, and on a narrow page the verbs ride the
+/// shell's head instead (the phone rule every module follows). The channel
+/// surface is the reference's two panes: the library's groups down the first
+/// column, and the channels of the open group as a resource table — logo,
+/// group, what is on now with its progress, the favourite heart and the
+/// player action. A window too narrow for the column keeps the same group list
+/// behind one line over the table, and the table itself stacks its rows
+/// instead of scrolling sideways. The source surface keeps the same table
+/// language over the playlists and guides.
 final class IptvPage extends ConsumerStatefulWidget {
   /// The IPTV module's channels page, opening on [initialView].
-  const IptvPage({this.initialView = IptvView.channels, this.initialScope, super.key});
+  const IptvPage({required this.owner, this.initialView = IptvView.channels, this.initialScope, super.key});
+
+  /// The menu entry this page is standing in for: the shell shows the head
+  /// verbs only under the entry that published them.
+  final NavigationItem owner;
 
   /// The surface the page opens on.
   final IptvView initialView;
@@ -147,14 +155,75 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
             guides: epg.sources.length,
             channels: sources.channelCount,
           );
+    // The shell's one width decision: on a narrow page the imports ride the
+    // shell's head line, the rule the live module's pages follow.
+    final narrow = PageLayoutScope.isNarrow(context);
+    void importPlaylist() => unawaited(runIptvPlaylistImport(context));
+    void importGuide() => unawaited(runIptvGuideImport(context));
+    final more = DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: t.common.more,
+      leading: const DsIcon(DsIcons.chevronDown, size: 14),
+      child: Text(t.common.more),
+      onPressed: () => unawaited(
+        showActionsPanel(
+          context,
+          title: t.common.more,
+          children: [
+            DsListSection(
+              children: [
+                DsListRow(
+                  leading: const DsIcon(DsIcons.plus, size: 16),
+                  title: Text(t.iptv.importPlaylist),
+                  onPressed: blocked
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                          importPlaylist();
+                        },
+                ),
+                DsListRow(
+                  leading: const DsIcon(DsIcons.calendarClock, size: 16),
+                  title: Text(t.iptv.importGuide),
+                  onPressed: blocked
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                          importGuide();
+                        },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (narrow) publishPageHeadActions(context, ref, widget.owner, [more]);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _IptvHeader(
+        _IptvToolbar(
           title: title,
           description: description,
-          onImportPlaylist: blocked ? null : () => unawaited(runIptvPlaylistImport(context)),
-          onImportGuide: blocked ? null : () => unawaited(runIptvGuideImport(context)),
+          actions: narrow
+              ? null
+              : [
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: blocked ? null : importPlaylist,
+                    leading: const DsIcon(DsIcons.plus, size: 15),
+                    child: Text(t.iptv.importPlaylist),
+                  ),
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: blocked ? null : importGuide,
+                    leading: const DsIcon(DsIcons.calendarClock, size: 15),
+                    child: Text(t.iptv.importGuide),
+                  ),
+                ],
         ),
         Expanded(
           child: switch (_view) {
@@ -167,81 +236,58 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   }
 }
 
-/// The surface's head: the module above the page's own name, the counts
-/// under it, and the imports at the end. A narrow window stacks the actions
-/// under the title instead of squeezing them. The module's menu, not this
-/// header, moves between the surfaces.
-final class _IptvHeader extends StatelessWidget {
-  const _IptvHeader({
-    required this.title,
-    required this.description,
-    required this.onImportPlaylist,
-    required this.onImportGuide,
-  });
+/// The surface's one tool line: what the surface holds at its start, the
+/// imports at its end. The module and page names belong to the shell's head
+/// (its breadcrumb), so the line carries the facts only this page answers.
+final class _IptvToolbar extends StatelessWidget {
+  const _IptvToolbar({required this.title, required this.description, required this.actions});
 
   final String title;
   final String description;
-  final VoidCallback? onImportPlaylist;
-  final VoidCallback? onImportGuide;
+
+  /// Null on a narrow page: the verbs ride the shell's head there.
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final heading = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        Text(t.common.moduleIptv, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
-        Text(title, style: theme.typography.display.copyWith(color: colors.text)),
-        Text(description, style: theme.typography.body.copyWith(color: colors.textMuted)),
-      ],
-    );
-    final actions = Wrap(
-      spacing: DsSpace.s8,
-      runSpacing: DsSpace.s8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          onPressed: onImportPlaylist,
-          leading: const DsIcon(DsIcons.plus, size: 15),
-          child: Text(t.iptv.importPlaylist),
-        ),
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          onPressed: onImportGuide,
-          leading: const DsIcon(DsIcons.calendarClock, size: 15),
-          child: Text(t.iptv.importGuide),
-        ),
-      ],
-    );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = LiveWindow.isExpanded(constraints.maxWidth);
         final inset = LiveWindow.pageInset(constraints.maxWidth);
         return Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s4),
-          child: wide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(child: heading),
-                    const SizedBox(width: DsSpace.s16),
-                    actions,
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: DsSpace.s12,
-                  children: [
-                    heading,
-                    Align(alignment: AlignmentDirectional.centerStart, child: actions),
-                  ],
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+          child: SizedBox(
+            height: 44,
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: title,
+                          style: theme.typography.labelStrong.copyWith(color: colors.text),
+                        ),
+                        TextSpan(
+                          text: '  ·  ',
+                          style: theme.typography.small.copyWith(color: colors.textSubtle),
+                        ),
+                        TextSpan(
+                          text: description,
+                          style: theme.typography.small.copyWith(color: colors.textMuted),
+                        ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                ...?actions,
+              ],
+            ),
+          ),
         );
       },
     );

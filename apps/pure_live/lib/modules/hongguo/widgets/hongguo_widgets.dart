@@ -1016,35 +1016,6 @@ final class HongguoProgressStripe extends StatelessWidget {
   }
 }
 
-/// The one control a narrow shelf bar keeps after its tabs: the page's own
-/// actions — the condition entry and the reload a wide row draws as named
-/// buttons — folded into a menu at the row's end, the way the live feeds fold
-/// their layout switch and platform wall. A page that has nothing to fold
-/// draws its tabs alone rather than a button that opens an empty menu.
-final class HongguoToolbarMore extends StatelessWidget {
-  const HongguoToolbarMore({required this.items, super.key});
-
-  /// The page's actions, in the order they stand at the wide row's end.
-  final List<Widget> items;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return DsMenuAnchor(
-      semanticLabel: t.common.more,
-      align: DsAlign.end,
-      items: items,
-      builder: (context, controller, _) => DsButton.icon(
-        variant: DsButtonVariant.ghost,
-        size: DsSize.sm,
-        semanticLabel: t.common.more,
-        onPressed: controller.open,
-        icon: const DsIcon(DsIcons.ellipsisVertical),
-      ),
-    );
-  }
-}
-
 /// One shelf of the station's home: its name with the way to the whole list
 /// beside it, and as many posters as a single row holds. The station's own
 /// page is built this way — a row per subject, the rest one click away.

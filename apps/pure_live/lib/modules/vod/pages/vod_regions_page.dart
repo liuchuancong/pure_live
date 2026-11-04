@@ -129,6 +129,7 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: VodFeedToolbar(
+            owner: NavigationItem.vodRegions,
             tabs: DsTabs<VodRegionChannel>(
               value: _channel,
               onChanged: _select,
