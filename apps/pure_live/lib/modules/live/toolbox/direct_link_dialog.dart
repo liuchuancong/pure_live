@@ -107,7 +107,7 @@ final class _DirectLinkDialogState extends ConsumerState<DirectLinkDialog> {
                 },
                 options: [
                   for (final (index, quality) in widget.qualities.indexed)
-                    DsSelectOption(value: index, label: quality.label),
+                    DsSelectOption(value: index, label: quality.displayLabel),
                 ],
                 semanticLabel: t.toolbox.linkDirectQuality,
               ),

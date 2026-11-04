@@ -53,4 +53,14 @@ abstract class LivePlayQuality implements Built<LivePlayQuality, LivePlayQuality
 
   /// The declared codec, when the platform says so.
   LiveStreamCodec? get codec;
+
+  /// The name as a control should show it.
+  ///
+  /// An answer the platform did not confirm carries the reference's `?`: the
+  /// tier asked for may not be the tier served — an anonymous request is
+  /// silently downgraded — and a name that promises more than the picture
+  /// gives is a claim the viewer can only disprove by squinting. Comparison
+  /// and storage keep using [label], so the mark never becomes part of the
+  /// tier's identity.
+  String get displayLabel => isPlaybackUnconfirmed ? '$label?' : label;
 }
