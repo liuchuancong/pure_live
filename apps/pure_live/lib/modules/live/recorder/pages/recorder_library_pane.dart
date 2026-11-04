@@ -400,7 +400,7 @@ Future<void> playRecordingTake(
         id: file,
         title: candidate.roomTitle,
         path: file,
-        groupPath: p.join(root, candidate.day, candidate.platformFolder, candidate.roomFolder),
+        groupPath: p.join(root, candidate.kind, candidate.day, candidate.platformFolder, candidate.roomFolder),
         groupLabel: [
           candidate.dayTitle(today: t.history.today, yesterday: t.history.yesterday),
           platformName(candidate.platformId),

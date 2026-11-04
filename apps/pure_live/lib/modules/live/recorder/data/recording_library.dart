@@ -6,7 +6,8 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart' show appPathsProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart' show playableFileAt;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
-import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show RecordingTask, RecordingTaskState;
+import 'package:pure_live/modules/live/recorder/data/recording_task.dart'
+    show RecordingTask, RecordingTaskState, kIptvRecordingKind, kLiveRecordingKind, recordingKindOf;
 
 /// The folder-name marker the recorder leaves in the root it owns; it is not a
 /// take and never belongs in the library.
@@ -77,6 +78,11 @@ final class RecordingTake {
     if (stamp.year == before.year && stamp.month == before.month && stamp.day == before.day) return yesterday;
     return day;
   }
+
+  /// The tree this take lives under — `live` for a room, `iptv` for a
+  /// channel. Legacy takes filed before the split report the kind their
+  /// platform implies, which is the tree a re-file would use.
+  String get kind => recordingKindOf(platformId);
 
   /// The site id, when the store's row still says so; an orphan take whose row
   /// was deleted keeps only the folder's name.
@@ -193,35 +199,48 @@ final class RecordingLibraryController extends AsyncNotifier<List<RecordingTake>
         ): task,
     };
     final takes = <RecordingTake>[];
-    await for (final dayEntry in root.list(followLinks: false)) {
-      if (dayEntry is! Directory) continue;
-      final dayName = p.basename(dayEntry.path);
-      if (dayName == _kManagedRootMarker) continue;
-      // The recorder's tree: a day holds platforms, a platform holds rooms, a
-      // room holds takes. Anything else under the root is walked as one folder
-      // of takes instead of being dropped.
-      if (_isDayFolder(dayName)) {
-        await for (final platformEntry in dayEntry.list(followLinks: false)) {
-          if (platformEntry is! Directory) continue;
-          final platformFolder = p.basename(platformEntry.path);
-          await for (final roomEntry in platformEntry.list(followLinks: false)) {
-            if (roomEntry is! Directory) continue;
-            await _collectTakes(
-              roomEntry,
-              day: dayName,
-              platformFolder: platformFolder,
-              roomFolder: p.basename(roomEntry.path),
-              byFolderKey: byFolderKey,
-              takes: takes,
-            );
-          }
+    // A day holds platforms, a platform holds rooms, a room holds takes.
+    Future<void> walkDay(Directory dayFolder, String dayName) async {
+      await for (final platformEntry in dayFolder.list(followLinks: false)) {
+        if (platformEntry is! Directory) continue;
+        final platformFolder = p.basename(platformEntry.path);
+        await for (final roomEntry in platformEntry.list(followLinks: false)) {
+          if (roomEntry is! Directory) continue;
+          await _collectTakes(
+            roomEntry,
+            day: dayName,
+            platformFolder: platformFolder,
+            roomFolder: p.basename(roomEntry.path),
+            byFolderKey: byFolderKey,
+            takes: takes,
+          );
         }
+      }
+    }
+
+    await for (final entry in root.list(followLinks: false)) {
+      if (entry is! Directory) continue;
+      final name = p.basename(entry.path);
+      if (name == _kManagedRootMarker) continue;
+      // The recorder's tree today: a kind (`live` / `iptv`) holds the days,
+      // then platforms, rooms and takes. The older flat tree started at the
+      // day; both are read, so nothing already filed disappears from the
+      // list after the split. Anything else under the root is walked as one
+      // folder of takes instead of being dropped.
+      if (_isKindFolder(name)) {
+        await for (final dayEntry in entry.list(followLinks: false)) {
+          if (dayEntry is! Directory) continue;
+          final dayName = p.basename(dayEntry.path);
+          if (_isDayFolder(dayName)) await walkDay(dayEntry, dayName);
+        }
+      } else if (_isDayFolder(name)) {
+        await walkDay(entry, name);
       } else {
         await _collectTakes(
-          dayEntry,
+          entry,
           day: '',
           platformFolder: '',
-          roomFolder: dayName,
+          roomFolder: name,
           byFolderKey: byFolderKey,
           takes: takes,
         );
@@ -320,6 +339,9 @@ String _folderKey(String platformFolder, String roomFolder) => '$platformFolder/
 
 /// Whether [name] is one of the recorder's day folders.
 bool _isDayFolder(String name) => RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(name);
+
+/// Whether [name] is one of the two kind folders the recorder files under.
+bool _isKindFolder(String name) => name == kLiveRecordingKind || name == kIptvRecordingKind;
 
 /// A day stamp for media the tree did not file by day.
 String _dayOf(DateTime moment) {

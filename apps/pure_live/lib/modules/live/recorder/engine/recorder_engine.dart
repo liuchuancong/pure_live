@@ -1597,16 +1597,18 @@ final class RecorderEngine {
   }
 
   /// The folder a finished take lives in, relative to the managed root: the
-  /// day the take began, then the platform, then the room — a month of
-  /// recordings reads as a calendar, a day as the rooms taken that day, and
-  /// a room's takes sit together under it. Each part is made filesystem-safe
-  /// the way the take's own name is; a part that comes out empty is skipped
-  /// rather than producing an empty folder level.
+  /// kind (live rooms and IPTV channels are two trees), the day the take
+  /// began, then the platform, then the room — a month of recordings reads as
+  /// a calendar, a day as the rooms taken that day, and a room's takes sit
+  /// together under it. Each part is made filesystem-safe the way the take's
+  /// own name is; a part that comes out empty is skipped rather than
+  /// producing an empty folder level.
   String _desiredTakeFolder(RecordingTask task, {DateTime? at}) {
     final now = at ?? DateTime.now();
     String two(int value) => value.toString().padLeft(2, '0');
     final day = '${now.year}-${two(now.month)}-${two(now.day)}';
     final parts = [
+      recordingKindOf(task.platform),
       day,
       FfmpegRecordArguments.safeFilePrefix(task.platform),
       FfmpegRecordArguments.safeFilePrefix(task.roomId),

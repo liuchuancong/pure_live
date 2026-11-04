@@ -32,11 +32,21 @@ enum RecordingTaskState {
 /// A room kept for recording and its last session's facts.
 /// The platform id an IPTV recording is filed under.
 ///
-/// It is also the second folder of a take (`<root>/<day>/iptv/<channel>/<take>/`),
-/// which is what lets the live centre and the IPTV one each list their own
+/// It is what lets the live centre and the IPTV one each list their own
 /// recordings out of the single tree the recorder writes. Both sides name it
 /// through this constant so the two lists cannot drift apart by spelling.
 const String kIptvRecordingPlatform = 'iptv';
+
+/// The two kinds of take, written as two separate trees under the recording
+/// root: `<root>/live/<day>/<site>/<room>/<take>` and
+/// `<root>/iptv/<day>/iptv/<channel>/<take>`. A viewer opening the folder in
+/// their file manager finds either without filtering, and the library reads
+/// both (plus the older flat tree) the same way.
+const String kLiveRecordingKind = 'live';
+const String kIptvRecordingKind = 'iptv';
+
+/// The kind folder a take of [platform] is written under.
+String recordingKindOf(String platform) => platform == kIptvRecordingPlatform ? kIptvRecordingKind : kLiveRecordingKind;
 
 /// The warning a take's row carries once its file is gone — deleted from the
 /// player or from the library. The row keeps naming the folder, and this is how
