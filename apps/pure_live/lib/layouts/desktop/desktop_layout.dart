@@ -187,6 +187,12 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   }
 
   void _focusSearch() {
+    // A narrow head draws no field (it keeps a magnifier instead), so the
+    // shortcut opens the search page rather than focusing nothing.
+    if (_searchFocus.context == null) {
+      widget.onMenu(NavigationItem.search);
+      return;
+    }
     _searchFocus.requestFocus();
   }
 
@@ -582,6 +588,23 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                         pageSearch.take(word);
                                       },
                                     ),
+                                  ),
+                                ],
+                                // A narrow head cannot hold the 320-wide
+                                // field; the magnifier opens the app's search
+                                // page rather than taking search away with
+                                // the room.
+                                if (!showToolbarSearch &&
+                                    !widget.tv &&
+                                    widget.settingsSection == null &&
+                                    pageSearch != null) ...[
+                                  const SizedBox(width: DsSpace.s8),
+                                  DsButton.icon(
+                                    variant: DsButtonVariant.secondary,
+                                    size: DsSize.sm,
+                                    semanticLabel: t.navigation.search,
+                                    onPressed: () => widget.onMenu(NavigationItem.search),
+                                    icon: const DsIcon(DsIcons.search, size: 16),
                                   ),
                                 ],
                                 // A page's own head action rides this row:

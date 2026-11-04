@@ -218,15 +218,16 @@ final class MobileLayout extends ConsumerWidget {
         centerTitle: false,
         actions: [
           // Search stays pinned to the top bar on every page, so the drawer
-          // can stay shut for the one destination a viewer reaches most.
-          ChromeIconButton(
-            size: 48,
-            iconSize: 20,
-            icon: DsIcons.search,
+          // can stay shut for the one destination a viewer reaches most. It
+          // wears the same outlined button as the page's own verbs beside it.
+          DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
             semanticLabel: t.navigation.search,
-            tooltip: t.navigation.search,
             onPressed: () => onSelected(NavigationItem.search),
+            icon: const DsIcon(DsIcons.search, size: 16),
           ),
+          const SizedBox(width: DsSpace.s8),
           // The log console's settings gear and the favorites' refresh ride
           // the top bar, the same corner the desktop's head rows give them.
           if (selected == NavigationItem.logs) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
