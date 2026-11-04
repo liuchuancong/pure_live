@@ -1159,9 +1159,9 @@ final class _TaskCard extends ConsumerWidget {
     final audience = _audienceOf(room);
     final tags = [
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
-      if (area.isNotEmpty) area,
       if (audience.isNotEmpty) audience,
       if (task.videoCodec.isNotEmpty) task.videoCodec.toUpperCase(),
+      '${t.recorder.roomArea} ${task.roomId}',
     ];
     final Widget action = processing
         ? DsButton(
@@ -1294,20 +1294,9 @@ final class _TaskCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: DsSpace.s4,
                       children: [
-                        Wrap(
-                          spacing: DsSpace.s6,
-                          runSpacing: DsSpace.s4,
-                          children: [
-                            _TagChip(text: platformName, icon: platformIcon),
-                            for (final tag in tags) _TagChip(text: tag),
-                          ],
-                        ),
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.heading.copyWith(color: colors.text),
-                        ),
+                        // The avatar, the title and the room's own category on
+                        // one line; the tags that describe the room follow
+                        // underneath it.
                         Row(
                           spacing: DsSpace.s8,
                           children: [
@@ -1317,18 +1306,32 @@ final class _TaskCard extends ConsumerWidget {
                               size: DsSize.sm,
                               semanticLabel: anchor.isEmpty ? title : anchor,
                             ),
-                            Flexible(
+                            Expanded(
                               child: Text(
-                                anchor.isEmpty ? title : anchor,
+                                title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                style: theme.typography.heading.copyWith(color: colors.text),
                               ),
                             ),
-                            Text(
-                              '${t.recorder.roomArea} ${task.roomId}',
-                              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
+                            if ([area, anchor].where((part) => part.isNotEmpty).isNotEmpty)
+                              Flexible(
+                                child: Text(
+                                  [area, anchor].where((part) => part.isNotEmpty).join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.end,
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                ),
+                              ),
+                          ],
+                        ),
+                        Wrap(
+                          spacing: DsSpace.s6,
+                          runSpacing: DsSpace.s4,
+                          children: [
+                            _TagChip(text: platformName, icon: platformIcon),
+                            for (final tag in tags) _TagChip(text: tag),
                           ],
                         ),
                       ],
