@@ -577,7 +577,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.musicStorage, t.music.cacheSwapsClear, 'source swapped songs cache empty 缓存 换源 歌曲 清理'),
     _hit(SettingsSection.musicStorage, t.music.cacheLyricClear, 'lyric cache empty 缓存 歌词 清理'),
     _hit(SettingsSection.musicStorage, t.music.cacheOverrideClear, 'associated lyric override cache 缓存 关联 歌词 覆盖 清理'),
-    _hit(SettingsSection.music, t.music.dislikeSection, 'dislike exclude artist rule list 不喜欢 排除 屏蔽 歌手 规则'),
+    _hit(SettingsSection.musicInterface, t.music.dislikeSection, 'dislike exclude artist rule list 不喜欢 排除 屏蔽 歌手 规则'),
     _hit(SettingsSection.musicInterface, t.music.uiReset, 'display reset defaults 显示 恢复 默认 重置'),
     _hit(SettingsSection.musicStorage, t.music.playbackReset, 'playback reset defaults 播放 恢复 默认 重置'),
     // The sound effects segment.
