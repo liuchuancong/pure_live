@@ -267,6 +267,10 @@ final class RoomDanmakuPipeline {
         messageId: message.messageId,
         sentAt: message.sentAt,
         isLocal: message.isLocal,
+        // What the platform calls it decides the age the gate applies: a
+        // backlog or a resume resend is measured against the replay window,
+        // not the live one, or joining a running room shows no history.
+        replayed: message.replayed,
       ),
     );
   }
@@ -334,6 +338,10 @@ final class _ChatMirrorSink implements DanmakuSink {
           messageId: message.messageId,
           sentAt: message.sentAt,
           isLocal: message.isLocal,
+          // The list marks a re-shown line as 「之前发的」; the flag has to
+          // survive the round trip through the pipeline or the gate's replay
+          // window lets a backlog in that then claims to be live.
+          replayed: message.replayed,
         ),
       );
     }
