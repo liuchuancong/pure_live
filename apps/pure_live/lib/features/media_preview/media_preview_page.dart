@@ -785,130 +785,141 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     // The header and the list are the page's chrome, so they wear the theme's
     // ink; only the picture's own box stays dark whatever the theme is.
     final colors = DsTheme.colorsOf(context);
+    // Every verb the page owns rides the bar that names the file, at every
+    // width: the phone used to leave the danmaku verbs to the strip under the
+    // picture, which read as the top bar having lost them.
+    final size = narrow ? 32.0 : 36.0;
+    Widget button(DsIconData icon, String semanticLabel, {VoidCallback? onPressed}) =>
+        _HeaderButton(icon: icon, semanticLabel: semanticLabel, onPressed: onPressed, size: size);
+    final actions = <Widget>[
+      if (widget.items.length > 1 && !(narrow && (_listOpen || _panelOpen))) ...[
+        button(DsIcons.chevronLeft, t.common.previewPrevious, onPressed: _index > 0 ? () => _select(_index - 1) : null),
+        button(
+          DsIcons.chevronRight,
+          t.common.previewNext,
+          onPressed: _index < widget.items.length - 1 ? () => _select(_index + 1) : null,
+        ),
+      ],
+      if (narrow && !_panelOpen)
+        button(
+          _listOpen ? DsIcons.playCircle : DsIcons.listVideo,
+          _listOpen ? t.common.previewBackToStage : t.common.previewListTitle,
+          onPressed: () => setState(() => _listOpen = !_listOpen),
+        ),
+      if (item case final entry? when entry.exists) ...[
+        // The file's own verbs on the bar that names it. Hiding them in the
+        // list's row menu made the stage a viewer cannot act from: the
+        // picture on it is what they came to look at, and the moment they
+        // want another player or want it gone is here, not three taps away.
+        button(
+          DsIcons.externalLink,
+          t.common.previewOpenFile,
+          onPressed: () => unawaited(openDownloadedPath(context, entry.path)),
+        ),
+        button(DsIcons.folderOpen, t.common.previewOpenFolder, onPressed: () => unawaited(_revealFolderOf(entry.path))),
+        button(DsIcons.trash2, t.common.previewDeleteFile, onPressed: () => unawaited(_deleteAt(_index))),
+      ] else if (item != null)
+        button(DsIcons.folderOpen, t.common.previewOpenFolder, onPressed: () => unawaited(_revealFolderOf(item.path))),
+      button(
+        danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+        _danmakuLoading
+            ? t.common.previewDanmakuLoading
+            : _hasDanmaku
+            ? (danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn)
+            : t.common.previewDanmakuOff,
+        onPressed: _hasDanmaku
+            ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !danmakuVisible))
+            : null,
+      ),
+      button(
+        DsIcons.settings,
+        t.common.previewDanmakuSettings,
+        onPressed: () => setState(() => _panelOpen = !_panelOpen),
+      ),
+      DsMenuAnchor(
+        semanticLabel: t.common.previewSpeed,
+        align: DsAlign.end,
+        items: [
+          for (final value in kPreviewRates)
+            DsMenuItem(
+              label: Text(_rateLabel(value)),
+              checked: value == _rate,
+              onPressed: () => unawaited(_setRate(value)),
+            ),
+        ],
+        builder: (context, controller, _) =>
+            button(DsIcons.gauge, t.common.previewSpeed, onPressed: _handle == null ? null : controller.toggle),
+      ),
+    ];
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          DsButton.icon(
-            variant: DsButtonVariant.ghost,
-            size: DsSize.sm,
-            semanticLabel: t.common.back,
-            onPressed: () => _leave(context, immersive: false, narrow: narrow),
-            icon: DsIcon(DsIcons.chevronLeft, color: colors.text),
-          ),
-          // The page covers the shell's strip, so this bar is the window's
-          // caption: the title is the drag band, the three buttons end it.
-          Expanded(
-            child: routeCaptionTitle(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s3,
-                children: [
-                  Text(
-                    widget.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DsTheme.of(context).typography.title.copyWith(color: colors.text),
-                  ),
-                  if (item != null)
-                    Text(
-                      item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Beside the title wherever the bar can hold both; on a phone the
+          // same set folds onto a line of its own rather than falling off.
+          final inline = constraints.maxWidth >= 720;
+          final row = Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.common.back,
+                onPressed: () => _leave(context, immersive: false, narrow: narrow),
+                icon: DsIcon(DsIcons.chevronLeft, color: colors.text),
               ),
-            ),
-          ),
-          if (widget.items.length > 1 && !(narrow && (_listOpen || _panelOpen))) ...[
-            _HeaderButton(
-              icon: DsIcons.chevronLeft,
-              semanticLabel: t.common.previewPrevious,
-              onPressed: _index > 0 ? () => _select(_index - 1) : null,
-            ),
-            _HeaderButton(
-              icon: DsIcons.chevronRight,
-              semanticLabel: t.common.previewNext,
-              onPressed: _index < widget.items.length - 1 ? () => _select(_index + 1) : null,
-            ),
-          ],
-          if (narrow && !_panelOpen)
-            _HeaderButton(
-              icon: _listOpen ? DsIcons.playCircle : DsIcons.listVideo,
-              semanticLabel: _listOpen ? t.common.previewBackToStage : t.common.previewListTitle,
-              onPressed: () => setState(() => _listOpen = !_listOpen),
-            ),
-          if (item case final entry? when entry.exists) ...[
-            // The file's own verbs on the bar that names it. Hiding them in the
-            // list's row menu made the stage a viewer cannot act from: the
-            // picture on it is what they came to look at, and the moment they
-            // want another player or want it gone is here, not three taps away.
-            _HeaderButton(
-              icon: DsIcons.externalLink,
-              semanticLabel: t.common.previewOpenFile,
-              onPressed: () => unawaited(openDownloadedPath(context, entry.path)),
-            ),
-            _HeaderButton(
-              icon: DsIcons.folderOpen,
-              semanticLabel: t.common.previewOpenFolder,
-              onPressed: () => unawaited(_revealFolderOf(entry.path)),
-            ),
-            _HeaderButton(
-              icon: DsIcons.trash2,
-              semanticLabel: t.common.previewDeleteFile,
-              onPressed: () => unawaited(_deleteAt(_index)),
-            ),
-          ] else if (item != null)
-            _HeaderButton(
-              icon: DsIcons.folderOpen,
-              semanticLabel: t.common.previewOpenFolder,
-              onPressed: () => unawaited(_revealFolderOf(item.path)),
-            ),
-          // A wide window puts the danmaku verbs on the bar that names the
-          // file; the phone keeps them in the strip under the picture, where a
-          // thumb reaches them.
-          if (!narrow) ...[
-            _HeaderButton(
-              icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-              semanticLabel: _danmakuLoading
-                  ? t.common.previewDanmakuLoading
-                  : _hasDanmaku
-                  ? (danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn)
-                  : t.common.previewDanmakuOff,
-              onPressed: _hasDanmaku
-                  ? () => unawaited(
-                      ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !danmakuVisible),
-                    )
-                  : null,
-            ),
-            _HeaderButton(
-              icon: DsIcons.settings,
-              semanticLabel: t.common.previewDanmakuSettings,
-              onPressed: () => setState(() => _panelOpen = !_panelOpen),
-            ),
-            DsMenuAnchor(
-              semanticLabel: t.common.previewSpeed,
-              align: DsAlign.end,
-              items: [
-                for (final value in kPreviewRates)
-                  DsMenuItem(
-                    label: Text(_rateLabel(value)),
-                    checked: value == _rate,
-                    onPressed: () => unawaited(_setRate(value)),
+              // The page covers the shell's strip, so this bar is the window's
+              // caption: the title is the drag band, the three buttons end it.
+              Expanded(
+                child: routeCaptionTitle(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: DsSpace.s3,
+                    children: [
+                      Text(
+                        widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: DsTheme.of(context).typography.title.copyWith(color: colors.text),
+                      ),
+                      if (item != null)
+                        Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                    ],
                   ),
-              ],
-              builder: (context, controller, _) => _HeaderButton(
-                icon: DsIcons.gauge,
-                semanticLabel: t.common.previewSpeed,
-                onPressed: _handle == null ? null : controller.toggle,
+                ),
               ),
-            ),
-          ],
-          RouteCaptionTail(ink: colors.text),
-        ],
+              if (inline)
+                Wrap(
+                  spacing: DsSpace.s4,
+                  runSpacing: DsSpace.s4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: actions,
+                ),
+              RouteCaptionTail(ink: colors.text),
+            ],
+          );
+          if (inline) return row;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s4,
+            children: [
+              row,
+              Wrap(
+                spacing: DsSpace.s4,
+                runSpacing: DsSpace.s4,
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: actions,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1104,7 +1115,10 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     if (immersive || _theater) return stack;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [Expanded(child: stack), _controlDock(t, compact: compact)],
+      children: [
+        Expanded(child: stack),
+        _controlDock(t, compact: compact),
+      ],
     );
   }
 
@@ -1130,18 +1144,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     final handle = _handle;
     final fit = ref.watch(playbackSettingsProvider.select((settings) => settings.fit));
     final pip = ref.watch(roomPresentationProvider) == PresentationMode.pip;
-    Widget circle(
-      DsIconData icon,
-      String semanticLabel, {
-      VoidCallback? onPressed,
-      bool selected = false,
-    }) => SettingsPreviewCircleButton(
-      icon: icon,
-      semanticLabel: semanticLabel,
-      selected: selected,
-      onSurface: onSurface,
-      onPressed: onPressed,
-    );
+    Widget circle(DsIconData icon, String semanticLabel, {VoidCallback? onPressed, bool selected = false}) =>
+        SettingsPreviewCircleButton(
+          icon: icon,
+          semanticLabel: semanticLabel,
+          selected: selected,
+          onSurface: onSurface,
+          onPressed: onPressed,
+        );
     return [
       if (!compact)
         SizedBox(
@@ -1267,7 +1277,6 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// second line instead of squeezing the seek bar.
   Widget _controlDock(Translations t, {required bool compact}) {
     final colors = DsTheme.colorsOf(context);
-    final narrow = MediaQuery.sizeOf(context).width < _inlineWidth;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -1286,8 +1295,9 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             has: _hasDanmaku,
             loading: _danmakuLoading,
             immersive: false,
-            // A wide header carries the danmaku verbs; a phone keeps them here.
-            withDanmaku: narrow,
+            // The header carries the danmaku verbs at every width; the strip
+            // keeps the engine's own, so no button is said twice.
+            withDanmaku: false,
             onSurface: true,
           ),
         ),
@@ -1572,11 +1582,15 @@ final class _Splitter extends StatelessWidget {
 
 /// One icon in the preview's header.
 final class _HeaderButton extends StatelessWidget {
-  const _HeaderButton({required this.icon, required this.semanticLabel, this.onPressed});
+  const _HeaderButton({required this.icon, required this.semanticLabel, this.onPressed, this.size = 36});
 
   final DsIconData icon;
   final String semanticLabel;
   final VoidCallback? onPressed;
+
+  /// The button's square; a phone's folded line uses a tighter one so the set
+  /// still fits a thumb-wide bar.
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -1587,13 +1601,13 @@ final class _HeaderButton extends StatelessWidget {
       builder: (context, states, _) {
         final hovered = states.contains(WidgetState.hovered);
         return Container(
-          width: 36,
-          height: 36,
+          width: size,
+          height: size,
           decoration: BoxDecoration(shape: BoxShape.circle, color: hovered ? colors.hover : null),
           child: Center(
             child: DsIcon(
               icon,
-              size: 18,
+              size: size / 2,
               color: onPressed == null
                   ? colors.textSubtle
                   : hovered
