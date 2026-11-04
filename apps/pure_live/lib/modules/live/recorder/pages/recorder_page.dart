@@ -98,12 +98,23 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     if (event is! PointerDownEvent) return;
     final result = HitTestResult();
     RendererBinding.instance.hitTestInView(result, event.position, event.viewId);
+    final renders = result.path.map((entry) => entry.target.runtimeType.toString()).toList();
+    // Only a click that lands on a modal barrier is worth dumping the tree
+    // for; every other click is the page's own.
+    final barrier = renders.contains('RenderBlockSemantics') && renders.contains('RenderSemanticsGestureHandler');
+    if (!barrier) return;
+    const keywords = ['Dialog', 'Panel', 'Modal', 'Update', 'Download', 'Sheet', 'Tooltip', 'Menu', 'Route', 'Barrier'];
+    final found = <String>{};
+    void visit(Element element) {
+      final type = element.widget.runtimeType.toString();
+      if (keywords.any(type.contains)) found.add(type);
+      element.visitChildren(visit);
+    }
+
+    WidgetsBinding.instance.rootElement?.visitChildren(visit);
     appLog
         .forCategory('tap-probe')
-        .info(
-          'down ${event.position} kind=${event.kind} -> '
-          '${result.path.map((entry) => entry.target.runtimeType).join(' > ')}',
-        );
+        .info('barrier click at ${event.position} :: ${found.join(', ')} :: ${renders.join(' > ')}');
   }
 
   @override
