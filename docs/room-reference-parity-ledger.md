@@ -23,7 +23,8 @@
 - [ ] **T17 桌面"在新窗口打开这间房"缺失**。参考 `room_menu_button.dart:166,357-359` 走 `DesktopWindow.openNewWindow`；我们有房间窗口（`room_opener.dart:46`）但房间菜单没有这一行。
 - [x] **T18 被掩码名之外的一条：登录提示是常驻条**（P27 做完）。参考在列表上方常驻 `ChatNameHintBar` 并带登录按钮（`chat_list.dart:421-433,603-649`）；我们一次 toast 过完就没了（`controller/room_controller.dart:1646`）⇒ 错过了就只能等下一次连接。
 - [x] **T19 满屏钟与电量**（P29 做完）。参考底条每分钟重画时钟/电量（`bar_parts.dart:22-144`）。桌面价值低（系统托盘已有），手机价值高：留到最后。
-- [ ] **已判定不平**：参考的本地"+1/存为常用语"回放体系（`message_panel.dart:219-341`）——我们的发送框真发（`room_chat.dart:360+`），这是两套子系统的边界，不是缺功能；参考的投屏只有 Android（`player_controls.dart:177`），我们桌面也有（此项我们更强）。
+- [x] **T20 竖屏滑动换直播间是个打不开的功能**（P30 做完）。第三次对照发现的不是"参考有我们缺"，而是我们自己有读没人喂：`portraitSwipeSwitchProvider` 只有 room_page 在读（`room_page.dart:889`），全仓没有任何设置行调它的 `set()`，默认 false ⇒ 这条手势对所有人都不存在。补法：开关接进"画面"页那组 room-only 行（与布局模式/自动全屏同段）并登记进设置搜索目录；再按参考的 `PortraitEntryHint`（`bar_parts.dart:340-395`）在进入竖屏全屏时把这条看不见的手势说一次（3 s 后淡掉，reduce-motion 直接消失），且只在开关为真时画——教一条已被关掉的手势比不教更糟。
+- [ ] **已判定不平**：参考的本地"+1/存为常用语"回放体系（`message_panel.dart:219-341`）——我们的发送框真发（`room_chat.dart:360+`），这是两套子系统的边界，不是缺功能；参考的投屏只有 Android（`player_controls.dart:177`），我们桌面也有（此项我们更强）；参考的横屏底条对 iptv 源挂"节目单"入口（`player_controls.dart:405-415` `showIptvGuide`），而我们的直播间从不装 iptv 频道（`modules/live/**` 内没有 `SiteIds.iptv`；iptv 走 `modules/iptv/pages/iptv_play_page.dart` 与 `iptv_guide_page.dart`）⇒ 模块边界，不是缺入口。
 
 ## 已修（本轮线，全部已推送）
 
@@ -60,6 +61,7 @@
 | P27 | `6899475a4` | 登录提示 | T18：房间说"你看到的名字全是被打了码的"或"Twitch 的 cookie 被拒了"时，不再丢一枚 toast，而是在它影响的聊天列上方挂一条常驻条（`roomChatNoticeProvider` + `_ChatNoticeBar`），条上直接给「Cookie 登录」入口（`showAccountSignInAlternative(..., exit: AccountQrExit.cookiePage)`）与"我知道了"。toast  Shape 不对的原因：提示出现时人正在看画面，而修复是去登录页花一分钟，不是一瞥。条在下一次连接不再像登录死了时自己消失（`_installDanmaku` 清），换房/`_teardown` 也清 ⇒ 旧抱怨不会活得比造成它的那次登录长；同一房同一句话重复上抛不改状态（不闪烁）。 |
 | P28 | `30ab1e8e0` | 锁定全屏 | T15：满屏右侧中一枚锁（`PlayerGlassPill` + `PlayerBarButton`，50×50，图标 `lock`/`unlock`，新串 `room.lockControls`/`room.unlockControls`）。锁上后：条与唤醒条与码率面板都不画、滚轮调音量/上下半拖动/单击/双击暂停/点弹幕全部吞掉、录制标只留数字（`onStop` 交 null，控件不能长得一样却按下去没反应）；解锁键在锁上后常驻（房间掉线/失败也还在，否则满屏没有门可开）；`didUpdateWidget` 在退出全屏时释放锁（参考同规则，否则锁键会飘在页面自己的画面上而手势还关着）。`immersive`＝`ownsWindow \|\| 竖屏全屏`，与参考 `arrangement != inline` 同一档。**门里没有的一条**：本 app 没有任何测试泵过 `PlayerSurface`（它要播放器 handle 与整张房间 provider 图），所以锁的判据只过编译与既有测试，行为待真机。 |
 | P29 | `ec577f210` | 钟与电量 | T19：满屏顶条在返回键右侧加一枚玻璃条（钟 + 电量图标 + 百分数）。钟按「分钟翻牌」定时重画（不是 60 s 周期：21:04:30 开的会在 21:05:00 还写 21:04 半分钟），电量读一次然后每分钟一次；`PlatformBatteryService.readLevel()` 回 -1 就是"这台机器没有电池"，那种机器不画任何数字（画 0 会被读成快没电的笔记本）。门：只给 `immersive`（`_PlayerTopBar.fullscreen`），页面内不画——页头那条系统标题栏本来就有时间。图标按档取 `batteryEmpty/Low/Medium/High`，数字用 `typography.numeric`。 |
+| P30 | `2bbdf6c26` | 竖屏手势 | T20：`portraitSwipeSwitchProvider` 之前只有读者没有写者（全仓没有一行设置调它的 `set()`，默认 false）⇒ "上下滑画面中段换直播间"这条手势对所有人都等于不存在。开关进"画面"页 room-only 段（`playback_panes.dart`，紧跟自动全屏），同步进设置搜索目录；进入竖屏全屏时按参考 `PortraitEntryHint` 给一条 3 s 后淡掉的玻璃提示（`_PortraitSwipeHint`，reduce-motion 用 `Duration.zero`），并且只在 `swipeSwitch && mobile` 为真时画——提示不能教一条被关掉的手势。`_buildPortraitFullscreen` 因此多了 `canSwipeRooms`，与 `onPortraitSwipe` 用同一个判据，两处不会各说一遍。 |
 
 ## 已核对为持平或更强（别重做，附证据）
 
@@ -122,3 +124,5 @@
 - 2026-11-04 P28：T15 勾提（锁定全屏）。门：app `dart analyze lib` 0 issues、`dart format` 只点 player_surface.dart（0 changed）、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`，不是本轮改的）。运行期未验证：锁只在真全屏里看得出——误触滚轮不该改音量、锁上后录制标不该能停。新串两枚（`room.lockControls`/`room.unlockControls`）经 `dart run slang`（在 apps/pure_live 跑）生成；生成文件里 4 处 `settings.*`/`vod.*` 行只是换了 switch 分桶位置（字节相同），是生成器自己的产物，不是别人 lane 的内容改动。剩下 T17（新窗口，窗口层还没有"按路由开一扇"的能力，别挂打不开的门）、T19（钟与电量，价值最低）。
 
 - 2026-11-04 P29：T19 勾提（满屏钟与电量）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`，不是本轮改的）、`dart format` 只点 player_surface.dart。运行期未验证：桌面机 readLevel 应回 -1（于是只画钟），手机要真机才看得出百分数与每分钟一跳。新队列只剩 T17（"在新窗口打开这间房"）——窗口层现在只有 `secondaryWindowsProvider.open(role: WindowRole.panel)`，没有按路由开一扇的能力，先把能力做出来再挂门，别挂打不开的门。本轮另外落地的还有 P28（T15 锁定全屏）与 P27（T18 常驻登录提示条），三条都只过静态门，真机观感交用户。
+
+- 2026-11-04 P30：第三次对照（参考 `player_controls.dart` 底条动词清单 → 我们的条/菜单；`bar_parts.dart` 竖屏提示 → 我们的竖屏全屏）。新发现一条真缺口并已补（T20：竖屏滑动换直播间有读无写 + 无可教手势的提示），另外把参考给 iptv 源挂"节目单"那条判成模块边界（我们的直播间不装 iptv 频道，iptv 有自己的播放页与节目单页）。门：app `dart analyze lib` 0 issues、`flutter test test/features` 12 绿、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点本轮三个 dart 文件。运行期未验证：提示要真在手机上开开关才看得见（默认关）。队列剩 T17（新窗口——先给窗口层加"按路由开一扇"的能力，别挂打不开的门）。
