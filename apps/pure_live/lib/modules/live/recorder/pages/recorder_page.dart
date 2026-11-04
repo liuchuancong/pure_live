@@ -1276,9 +1276,7 @@ final class _TaskCard extends ConsumerWidget {
             onDelete: onDelete,
             onSchedule: onSchedule,
             onCancelProcessing: onCancelProcessing,
-            onStartNow: onStartNow,
             onRetryJoin: onRetryJoin,
-            onPreview: onPreview,
             onPlayExternal: onPlayExternal,
           );
           final badge = DsBadge(label: Text(statusText), status: statusTone);
@@ -1496,9 +1494,7 @@ final class _TaskMenu extends StatelessWidget {
     required this.onToggleWatch,
     this.onStop,
     this.onCancelProcessing,
-    this.onStartNow,
     this.onRetryJoin,
-    this.onPreview,
     this.onPlayExternal,
   });
 
@@ -1520,16 +1516,9 @@ final class _TaskMenu extends StatelessWidget {
   /// Cancels a running join/transcode, null when there is none.
   final VoidCallback? onCancelProcessing;
 
-  /// Starts a waiting/stopped task now, null while it is already running.
-  final VoidCallback? onStartNow;
-
   /// Re-runs the post-recording steps on a take the app never finished, null
   /// while the task is being captured or finished.
   final VoidCallback? onRetryJoin;
-
-  /// Opens the built-in preview over the centre's finished takes, null when
-  /// this card's take is not one of them.
-  final VoidCallback? onPreview;
 
   /// Hands this take to the system's own player, null under the same rule.
   final VoidCallback? onPlayExternal;
@@ -1550,24 +1539,12 @@ final class _TaskMenu extends StatelessWidget {
       ),
       items: [
         DsMenuItem(leading: const DsIcon(DsIcons.externalLink), label: Text(t.recorder.openRoom), onPressed: onOpen),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.calendarClock),
-          label: Text(t.recorder.roomSettings),
-          onPressed: onSchedule,
-        ),
-        if (onStartNow case final start?)
-          DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.recorder.startNow), onPressed: start),
+        DsMenuItem(leading: const DsIcon(DsIcons.settings), label: Text(t.navigation.settings), onPressed: onSchedule),
         if (hasFile)
           DsMenuItem(
             leading: const DsIcon(DsIcons.folderOpen),
             label: Text(t.recorder.openFolder),
             onPressed: () => unawaited(_openFolder(context)),
-          ),
-        if (onPreview case final preview?)
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.playCircle),
-            label: Text(t.recorder.previewRecording),
-            onPressed: preview,
           ),
         if (onPlayExternal case final play?)
           DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.recorder.playRecording), onPressed: play),
