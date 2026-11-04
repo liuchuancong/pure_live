@@ -551,6 +551,10 @@ final class RoomController extends Notifier<RoomState> {
 
   /// The open room's minute re-read; cancelled with the room.
   Timer? _detailRefresh;
+
+  /// The timer that re-reads the plan when the platform's own address lease
+  /// says it has to be rebuilt. See [RoomController._armLeaseRenewal].
+  Timer? _leaseRenewal;
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
 
@@ -803,6 +807,8 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> selectLine(int index) async {
     state = _with(lineIndex: index);
     await _playback?.switchLine(index);
+    // Each line carries its own lease, so the timer is the new line's.
+    _armLeaseRenewal();
   }
 
   /// The recovery button: the live controller's retry.
@@ -1246,6 +1252,9 @@ final class RoomController extends Notifier<RoomState> {
             _pipeline?.bind(handle);
             unawaited(_applyAudioPreferences(handle));
             unawaited(_applyEnginePreferences(handle));
+            // The line the engine actually took may not be the one asked for;
+            // its lease is the one that has to be watched.
+            _armLeaseRenewal();
           });
           await playback.play(
             LiveSourceRequest(
@@ -1261,9 +1270,46 @@ final class RoomController extends Notifier<RoomState> {
             ),
             preferredBackend: ref.read(playerKernelBackendProvider).id,
           );
+          _armLeaseRenewal();
         },
       ),
     );
+  }
+
+  /// Re-reads the plan when the platform said its address must be rebuilt.
+  ///
+  /// A handful of platforms hand out a stream URL with a deadline and say the
+  /// connection has to be rebuilt rather than resumed — chzzk, Douyu, FC2 and
+  /// PandaLive among them, each through its own lease. Until now that notice
+  /// went unread: the room kept playing until the address actually died and the
+  /// engine's recovery asked for a fresh plan, which is a stall the platform had
+  /// already announced. Re-opening at the lease's own moment turns that stall
+  /// into a seam no one sees.
+  ///
+  /// Nothing else is armed, and that is deliberate. A stream that can resume —
+  /// an FLV whose signature expires while the socket stays up — is left alone,
+  /// because re-opening it on a timer manufactures exactly the gap this change
+  /// exists to close.
+  void _armLeaseRenewal() {
+    _leaseRenewal?.cancel();
+    _leaseRenewal = null;
+    final room = state.room;
+    final capability = _playbackCapabilityOf(room);
+    if (room == null || capability == null) return;
+    final lines = state.lines;
+    if (lines.isEmpty) return;
+    final index = state.lineIndex.clamp(0, lines.length - 1);
+    final lease = lines[index].lease;
+    if (lease == null || !lease.requiresReconnect) return;
+    final epoch = _openEpoch;
+    final wait = lease.refreshAt.difference(DateTime.now());
+    // A lease already past — a late answer, a clock that moved — is re-read on
+    // the next beat rather than looping here.
+    final delay = wait < const Duration(seconds: 5) ? const Duration(seconds: 5) : wait;
+    _leaseRenewal = Timer(delay, () {
+      if (!ref.mounted || epoch != _openEpoch) return;
+      unawaited(_startPlayback(capability, room));
+    });
   }
 
   /// Feeds the stream's own shape to the presentation drivers.
@@ -1648,6 +1694,8 @@ final class RoomController extends Notifier<RoomState> {
     _geometry = null;
     _detailRefresh?.cancel();
     _detailRefresh = null;
+    _leaseRenewal?.cancel();
+    _leaseRenewal = null;
     final session = _session;
     _session = null;
     _playback = null;
