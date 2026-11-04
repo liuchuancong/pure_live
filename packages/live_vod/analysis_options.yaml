@@ -5,6 +5,7 @@ formatter:
 
 analyzer:
   exclude:
+    - "lib/src/grpc/gen/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "build/**"

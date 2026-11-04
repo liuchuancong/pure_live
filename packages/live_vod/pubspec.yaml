@@ -9,7 +9,10 @@ environment:
 
 dependencies:
   crypto: ^3.0.6
+  fixnum: ^1.1.1
+  grpc: ^5.2.0
   live_net:
+  protobuf: ^6.1.0
 
 dev_dependencies:
   test: ^1.26.0

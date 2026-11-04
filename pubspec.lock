@@ -1303,6 +1303,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.2"
+  google_cloud:
+    dependency: transitive
+    description:
+      name: google_cloud
+      sha256: b385e20726ef5315d302c5933bfb728103116c5be2d3d17094b01a82da538c1f
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.0"
   google_fonts:
     dependency: transitive
     description:
@@ -1311,6 +1319,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.0.0"
+  google_identity_services_web:
+    dependency: transitive
+    description:
+      name: google_identity_services_web
+      sha256: "5d187c46dc59e02646e10fe82665fc3884a9b71bc1c90c2b8b749316d33ee454"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.3+1"
+  googleapis_auth:
+    dependency: transitive
+    description:
+      name: googleapis_auth
+      sha256: e15d48204e2f3c852dc1091a49705a163a8ba5897823f9abe1c0795e512357c4
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.5"
   graphs:
     dependency: transitive
     description:
@@ -1319,6 +1343,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  grpc:
+    dependency: transitive
+    description:
+      name: grpc
+      sha256: "0cde49bc17f6b1e96c374ad1b5d389816cc8ade2015f24294eaa76193de87090"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.0"
   heic_native:
     dependency: transitive
     description:
@@ -2125,6 +2157,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
+      sha256: "13b6717366aa7ec3792dd62c19c7d33a785708224365f2db23c5ca01f1c1a0f2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.0"
   pub_semver:
     dependency: transitive
     description:
