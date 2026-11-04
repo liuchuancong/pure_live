@@ -135,17 +135,28 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
   /// back down. Null is everything seen.
   String? _boundaryId;
 
+  /// How many messages arrived while the viewer was reading away from the
+  /// bottom. The boundary line says *where* they stopped; this says how much
+  /// passed and carries the press that takes them back.
+  int _unseen = 0;
+
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_atBottom);
     // Arrivals while the viewer is away set the boundary once — the oldest
-    // unseen message — and a return to the bottom clears it.
+    // unseen message — and are counted on every burst until they come back
+    // down; a list that stays put adds nothing to read.
     ref.listenManual(roomChatProvider, (previous, next) {
       if (!mounted || previous == null || next.length <= previous.length) return;
       final away = _scroll.hasClients && _scroll.offset > 40;
-      if (!away || _boundaryId != null) return;
-      setState(() => _boundaryId = next.last.messageId);
+      if (!away) return;
+      // The feed is capped, so a burst can push the oldest talk out; the count
+      // is of what arrived, not of what still has a row to read.
+      setState(() {
+        _unseen += next.length - previous.length;
+        _boundaryId ??= next.last.messageId;
+      });
     });
   }
 
@@ -157,8 +168,23 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
   }
 
   void _atBottom() {
-    if (_boundaryId == null && _scroll.offset <= 2) return;
-    if (_scroll.offset <= 2 && _boundaryId != null) setState(() => _boundaryId = null);
+    if (_boundaryId == null && _unseen == 0) return;
+    if (_scroll.offset > 2) return;
+    setState(() {
+      _boundaryId = null;
+      _unseen = 0;
+    });
+  }
+
+  /// The floating count's press: back to the newest line. The list is reversed,
+  /// so the bottom is offset zero, and the listener clears the count on the way.
+  void _toBottom() {
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    if (_boundaryId == null && _unseen == 0) return;
+    setState(() {
+      _boundaryId = null;
+      _unseen = 0;
+    });
   }
 
   @override
@@ -259,39 +285,67 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
       RoomChatStatus.failed => (words: t.room.danmakuConnectFailed(reason: standing.error ?? ''), busy: false),
       _ => null,
     };
-    if (trouble == null) return list;
+    if (trouble == null) return _withJumpToBottom(context, list);
     final colors = DsTheme.colorsOf(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return _withJumpToBottom(
+      context,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, 0),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                if (trouble.busy)
+                  const DsSpinner(style: DsSpinnerStyle(size: 14))
+                else
+                  DsIcon(DsIcons.cloudOff, size: 14, color: colors.warning.text),
+                Expanded(
+                  child: Text(
+                    trouble.words,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DsTheme.of(context).typography.small.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                if (!trouble.busy)
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(ref.read(roomProvider.notifier).retryChat()),
+                    child: Text(t.common.retry),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(child: list),
+        ],
+      ),
+    );
+  }
+
+  /// The feed with the floating unread count over it, when there is one.
+  ///
+  /// The boundary line inside the list says *where* the viewer stopped; it says
+  /// nothing about how much went past, and leaves no way back down but dragging.
+  /// The count and the press are the missing half.
+  Widget _withJumpToBottom(BuildContext context, Widget feed) {
+    if (_unseen <= 0) return feed;
+    final words = context.t.room.newMessagesCount(count: _unseen);
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, 0),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              if (trouble.busy)
-                const DsSpinner(style: DsSpinnerStyle(size: 14))
-              else
-                DsIcon(DsIcons.cloudOff, size: 14, color: colors.warning.text),
-              Expanded(
-                child: Text(
-                  trouble.words,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: DsTheme.of(context).typography.small.copyWith(color: colors.textMuted),
-                ),
-              ),
-              if (!trouble.busy)
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(ref.read(roomProvider.notifier).retryChat()),
-                  child: Text(t.common.retry),
-                ),
-            ],
+        feed,
+        PositionedDirectional(
+          bottom: DsSpace.s12,
+          end: DsSpace.s12,
+          child: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: _toBottom,
+            child: Text(words),
           ),
         ),
-        Expanded(child: list),
       ],
     );
   }

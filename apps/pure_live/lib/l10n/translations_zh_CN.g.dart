@@ -6889,6 +6889,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '以下为新消息'
 	String get newMessagesBelow => '以下为新消息';
 
+	/// zh-CN: '{count} 条新消息'
+	String newMessagesCount({required Object count}) => '${count} 条新消息';
+
 	/// zh-CN: '比例'
 	String get fitShort => '比例';
 }
@@ -15649,6 +15652,7 @@ extension on Translations {
 			'room.tabSettings' => '设置',
 			'room.tabShield' => '屏蔽',
 			'room.newMessagesBelow' => '以下为新消息',
+			'room.newMessagesCount' => ({required Object count}) => '${count} 条新消息',
 			'room.fitShort' => '比例',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
@@ -15843,9 +15847,9 @@ extension on Translations {
 			'settings.themeSeedSystem' => '跟随系统取色',
 			'settings.themeSeedDescription' => '用于按钮、选中态和强调色。',
 			'settings.themeSeedDynamic' => '跟随系统动态取色',
-			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '用系统壁纸或强调色生成主题。',
 			'settings.themeColorTitle' => '主题色',
@@ -16357,9 +16361,9 @@ extension on Translations {
 			'settings.scaleCatmullRom' => 'Catmull-Rom',
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite（柔和）',
-			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			'settings.scaleNearest' => '最近邻（块状）',
 			'settings.deinterlace' => '反交错 (--deinterlace)',
@@ -16871,9 +16875,9 @@ extension on Translations {
 			'settings.backgroundCopyColor' => '复制色值',
 			'settings.backgroundCopyGradient' => '复制渐变',
 			'settings.backgroundCopyAddress' => '复制地址',
-			'settings.backgroundDownloadFailed' => '下载失败',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundDownloadFailed' => '下载失败',
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
@@ -17385,9 +17389,9 @@ extension on Translations {
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
-			'vod.play' => '播放',
 			_ => null,
 		} ?? switch (path) {
+			'vod.play' => '播放',
 			'vod.pause' => '暂停',
 			'vod.mute' => '静音',
 			'vod.unmute' => '取消静音',

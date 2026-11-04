@@ -193,5 +193,6 @@
   "tabSettings": "设置",
   "tabShield": "屏蔽",
   "newMessagesBelow": "以下为新消息",
+  "newMessagesCount": "{count} 条新消息",
   "fitShort": "比例"
 }

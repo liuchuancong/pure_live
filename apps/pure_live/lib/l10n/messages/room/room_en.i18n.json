@@ -193,5 +193,6 @@
   "tabSettings": "Settings",
   "tabShield": "Shield",
   "newMessagesBelow": "New messages below",
+  "newMessagesCount": "{count} new messages",
   "fitShort": "Fit"
 }

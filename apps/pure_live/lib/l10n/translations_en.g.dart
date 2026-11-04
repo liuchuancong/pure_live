@@ -2427,6 +2427,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get tabSettings => 'Settings';
 	@override String get tabShield => 'Shield';
 	@override String get newMessagesBelow => 'New messages below';
+	@override String newMessagesCount({required Object count}) => '${count} new messages';
 	@override String get fitShort => 'Fit';
 }
 
@@ -6990,6 +6991,7 @@ extension on TranslationsEn {
 			'room.tabSettings' => 'Settings',
 			'room.tabShield' => 'Shield',
 			'room.newMessagesBelow' => 'New messages below',
+			'room.newMessagesCount' => ({required Object count}) => '${count} new messages',
 			'room.fitShort' => 'Fit',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
@@ -7184,9 +7186,9 @@ extension on TranslationsEn {
 			'settings.themeSeedSystem' => 'Follow the system accent',
 			'settings.themeSeedDescription' => 'Drives buttons, selection and emphasis.',
 			'settings.themeSeedDynamic' => 'Follow the system\'s dynamic colour',
-			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
 			'settings.dynamicColor' => 'Dynamic colour',
 			'settings.dynamicColorDescription' => 'Builds the theme from the wallpaper or accent colour.',
 			'settings.themeColorTitle' => 'Accent colour',
@@ -7698,9 +7700,9 @@ extension on TranslationsEn {
 			'settings.scaleCatmullRom' => 'Catmull-Rom',
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite (soft)',
-			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
 			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
 			'settings.scaleNearest' => 'Nearest (blocky)',
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
@@ -8212,9 +8214,9 @@ extension on TranslationsEn {
 			'settings.backgroundCopyColor' => 'Copy color value',
 			'settings.backgroundCopyGradient' => 'Copy gradient',
 			'settings.backgroundCopyAddress' => 'Copy address',
-			'settings.backgroundDownloadFailed' => 'Download failed',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundDownloadFailed' => 'Download failed',
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			'settings.cacheRefreshThumbnailsDesc' => 'Clears cover, avatar and icon caches.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
@@ -8726,9 +8728,9 @@ extension on TranslationsEn {
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
-			'vod.play' => 'Play',
 			_ => null,
 		} ?? switch (path) {
+			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',
 			'vod.mute' => 'Mute',
 			'vod.unmute' => 'Unmute',
