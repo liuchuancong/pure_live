@@ -2368,6 +2368,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get orientationUpdated => 'Picture orientation updated';
 	@override String get portraitFullscreen => 'Portrait full screen';
 	@override String get portraitFullscreenExit => 'Exit portrait full screen';
+	@override String get portraitSwipeHint => 'In the portrait full screen · swipe up or down for another room';
 	@override String get giftLineSent => 'sent';
 	@override String giftLineSentTo({required Object name}) => 'sent ${name}';
 	@override String get giftLineGifted => 'gifted';
@@ -3532,6 +3533,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get windowsPipMinHeightDesc => 'Smallest height the compact window can be dragged to, range 60–240; applies only while compact and restores the app window\'s normal floor on exit.';
 	@override String get fullscreenDefault => 'Auto Full Screen';
 	@override String get fullscreenDefaultDesc => 'When enter live play, auto into full screen';
+	@override String get portraitSwipeSwitch => 'Swipe between rooms in portrait';
+	@override String get portraitSwipeSwitchDesc => 'In the portrait full screen, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.';
 	@override String get keepScreenOn => 'Keep the screen awake while playing';
 	@override String get keepScreenOnDesc => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.';
 	@override String get controlsAutoHide => 'Controls auto-hide';
@@ -6959,6 +6962,7 @@ extension on TranslationsEn {
 			'room.orientationUpdated' => 'Picture orientation updated',
 			'room.portraitFullscreen' => 'Portrait full screen',
 			'room.portraitFullscreenExit' => 'Exit portrait full screen',
+			'room.portraitSwipeHint' => 'In the portrait full screen · swipe up or down for another room',
 			'room.giftLineSent' => 'sent',
 			'room.giftLineSentTo' => ({required Object name}) => 'sent ${name}',
 			'room.giftLineGifted' => 'gifted',
@@ -7212,9 +7216,9 @@ extension on TranslationsEn {
 			'settings.sitesGroupList' => 'Platforms',
 			'settings.sitesColumnPlatform' => 'Platform',
 			'settings.sitesColumnId' => 'Id',
-			'settings.sitesColumnShown' => 'Shown',
 			_ => null,
 		} ?? switch (path) {
+			'settings.sitesColumnShown' => 'Shown',
 			'settings.aboutVersion' => 'Version',
 			'settings.aboutProject' => 'Project home',
 			'settings.aboutLicense' => 'Licences',
@@ -7726,9 +7730,9 @@ extension on TranslationsEn {
 			'settings.interpolationDesc' => '--interpolation: with display resampling, pans look smoother at a GPU cost.',
 			'settings.scaleKernel' => 'Scale kernel',
 			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
-			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
@@ -8109,6 +8113,8 @@ extension on TranslationsEn {
 			'settings.windowsPipMinHeightDesc' => 'Smallest height the compact window can be dragged to, range 60–240; applies only while compact and restores the app window\'s normal floor on exit.',
 			'settings.fullscreenDefault' => 'Auto Full Screen',
 			'settings.fullscreenDefaultDesc' => 'When enter live play, auto into full screen',
+			'settings.portraitSwipeSwitch' => 'Swipe between rooms in portrait',
+			'settings.portraitSwipeSwitchDesc' => 'In the portrait full screen, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.',
 			'settings.keepScreenOn' => 'Keep the screen awake while playing',
 			'settings.keepScreenOnDesc' => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.',
 			'settings.controlsAutoHide' => 'Controls auto-hide',
@@ -8238,11 +8244,11 @@ extension on TranslationsEn {
 			'settings.roomCardShowCoverTitle' => 'Room area',
 			'settings.roomCardShowStatus' => 'Live state',
 			'settings.roomCardShowAvatar' => 'Anchor avatar',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardShowAnchor' => 'Anchor name',
 			'settings.roomCardShowPlatform' => 'Platform',
 			'settings.roomCardShowAudience' => 'Heat',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardReplay' => 'Replay',
 			'settings.roomCardResetCurrent' => 'Restore the default details',
 			'settings.roomCardResetConfirmTitle' => 'Restore the default details?',
@@ -8752,11 +8758,11 @@ extension on TranslationsEn {
 			'vod.duration' => 'Length',
 			'vod.durationAny' => 'Any length',
 			'vod.durationUnder10' => 'Under 10 min',
+			_ => null,
+		} ?? switch (path) {
 			'vod.duration10to30' => '10–30 min',
 			'vod.duration30to60' => '30–60 min',
 			'vod.durationOver60' => 'Over 60 min',
-			_ => null,
-		} ?? switch (path) {
 			'vod.related' => 'Related',
 			'vod.changeRelated' => 'Shuffle',
 			'vod.expand' => 'More',

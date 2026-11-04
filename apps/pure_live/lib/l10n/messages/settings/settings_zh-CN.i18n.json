@@ -1040,6 +1040,8 @@
   "windowsPipMinHeightDesc": "小窗最小高度，60–240；离开小窗后恢复常规下限。",
   "fullscreenDefault": "自动全屏",
   "fullscreenDefaultDesc": "当进入直播播放页，自动进入全屏",
+  "portraitSwipeSwitch": "竖屏全屏滑动换直播间",
+  "portraitSwipeSwitchDesc": "在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。",
   "keepScreenOn": "播放时保持屏幕常亮",
   "keepScreenOnDesc": "房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。",
   "controlsAutoHide": "控制条自动隐藏",

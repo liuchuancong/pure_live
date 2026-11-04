@@ -134,6 +134,7 @@
   "orientationUpdated": "画面方向已更新",
   "portraitFullscreen": "竖屏全屏",
   "portraitFullscreenExit": "退出竖屏全屏",
+  "portraitSwipeHint": "已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间",
   "giftLineSent": "送出",
   "giftLineSentTo": "送给 {name}",
   "giftLineGifted": "赠送",

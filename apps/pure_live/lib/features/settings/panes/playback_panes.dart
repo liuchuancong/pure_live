@@ -27,6 +27,7 @@ import 'package:pure_live/features/settings/playback/playback_settings_providers
         playbackSettingsProvider;
 import 'package:pure_live/features/settings/playback/portrait_settings_providers.dart'
     show PortraitLayoutMode, portraitLayoutModeProvider;
+import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
@@ -356,10 +357,11 @@ final class PicturePane extends ConsumerWidget {
     final settings = ref.watch(playbackSettingsProvider);
     final portraitLayout = ref.watch(portraitLayoutModeProvider);
     final controller = ref.read(playbackSettingsProvider.notifier);
-    // Three of this page's rows belong to the live room alone — how a portrait
-    // stream shares the room page, the room's habit of opening fullscreen, and
-    // the window a room leaves behind — and the control bar's hide delay is not
-    // read by the IPTV page, which keeps its bars up. The other modules reach
+    // Four of this page's rows belong to the live room alone — how a portrait
+    // stream shares the room page, the room's habit of opening fullscreen, the
+    // portrait fullscreen's swipe between rooms, and the window a room leaves
+    // behind. The control bar's hide delay is not read by the IPTV page, which
+    // keeps its bars up. The other modules reach
     // this page from their own settings; a row they never read would be a knob
     // that turns nothing, the fault the music module's engine page had.
     final module = ref.watch(selectedModuleProvider);
@@ -410,6 +412,18 @@ final class PicturePane extends ConsumerWidget {
                 control: DsSwitch(
                   value: settings.fullscreenDefault,
                   onChanged: (value) => unawaited(controller.setFullscreenDefault(value: value)),
+                ),
+              ),
+              // The gesture the portrait fullscreen cannot show: without this
+              // row the swipe is a feature nobody can turn on, and the room
+              // page reads it on every entry.
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.arrowLeftRight),
+                title: t.settings.portraitSwipeSwitch,
+                description: t.settings.portraitSwipeSwitchDesc,
+                control: DsSwitch(
+                  value: ref.watch(portraitSwipeSwitchProvider),
+                  onChanged: (value) => unawaited(ref.read(portraitSwipeSwitchProvider.notifier).set(value: value)),
                 ),
               ),
             ],

@@ -1040,6 +1040,8 @@
   "windowsPipMinHeightDesc": "Smallest height the compact window can be dragged to, range 60–240; applies only while compact and restores the app window's normal floor on exit.",
   "fullscreenDefault": "Auto Full Screen",
   "fullscreenDefaultDesc": "When enter live play, auto into full screen",
+  "portraitSwipeSwitch": "Swipe between rooms in portrait",
+  "portraitSwipeSwitchDesc": "In the portrait full screen, swiping up or down over the picture's middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.",
   "keepScreenOn": "Keep the screen awake while playing",
   "keepScreenOnDesc": "Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.",
   "controlsAutoHide": "Controls auto-hide",

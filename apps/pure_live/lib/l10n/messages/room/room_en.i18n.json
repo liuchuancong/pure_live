@@ -134,6 +134,7 @@
   "orientationUpdated": "Picture orientation updated",
   "portraitFullscreen": "Portrait full screen",
   "portraitFullscreenExit": "Exit portrait full screen",
+  "portraitSwipeHint": "In the portrait full screen · swipe up or down for another room",
   "giftLineSent": "sent",
   "giftLineSentTo": "sent {name}",
   "giftLineGifted": "gifted",

@@ -6712,6 +6712,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '退出竖屏全屏'
 	String get portraitFullscreenExit => '退出竖屏全屏';
 
+	/// zh-CN: '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间'
+	String get portraitSwipeHint => '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间';
+
 	/// zh-CN: '送出'
 	String get giftLineSent => '送出';
 
@@ -10167,6 +10170,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '当进入直播播放页，自动进入全屏'
 	String get fullscreenDefaultDesc => '当进入直播播放页，自动进入全屏';
+
+	/// zh-CN: '竖屏全屏滑动换直播间'
+	String get portraitSwipeSwitch => '竖屏全屏滑动换直播间';
+
+	/// zh-CN: '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。'
+	String get portraitSwipeSwitchDesc => '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。';
 
 	/// zh-CN: '播放时保持屏幕常亮'
 	String get keepScreenOn => '播放时保持屏幕常亮';
@@ -15674,6 +15683,7 @@ extension on Translations {
 			'room.orientationUpdated' => '画面方向已更新',
 			'room.portraitFullscreen' => '竖屏全屏',
 			'room.portraitFullscreenExit' => '退出竖屏全屏',
+			'room.portraitSwipeHint' => '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间',
 			'room.giftLineSent' => '送出',
 			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
 			'room.giftLineGifted' => '赠送',
@@ -15927,9 +15937,9 @@ extension on Translations {
 			'settings.sitesGroupList' => '平台',
 			'settings.sitesColumnPlatform' => '平台',
 			'settings.sitesColumnId' => '标识',
-			'settings.sitesColumnShown' => '显示',
 			_ => null,
 		} ?? switch (path) {
+			'settings.sitesColumnShown' => '显示',
 			'settings.aboutVersion' => '版本',
 			'settings.aboutProject' => '项目主页',
 			'settings.aboutLicense' => '开源许可',
@@ -16441,9 +16451,9 @@ extension on Translations {
 			'settings.interpolationDesc' => '--interpolation：配合「显示重采样」，平移更顺滑，更耗 GPU。',
 			'settings.scaleKernel' => '缩放算法',
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
-			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
@@ -16824,6 +16834,8 @@ extension on Translations {
 			'settings.windowsPipMinHeightDesc' => '小窗最小高度，60–240；离开小窗后恢复常规下限。',
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
+			'settings.portraitSwipeSwitch' => '竖屏全屏滑动换直播间',
+			'settings.portraitSwipeSwitchDesc' => '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
 			'settings.controlsAutoHide' => '控制条自动隐藏',
@@ -16953,11 +16965,11 @@ extension on Translations {
 			'settings.roomCardShowCoverTitle' => '房间分区',
 			'settings.roomCardShowStatus' => '直播状态',
 			'settings.roomCardShowAvatar' => '主播头像',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardShowAnchor' => '主播名称',
 			'settings.roomCardShowPlatform' => '平台显示',
 			'settings.roomCardShowAudience' => '热度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardReplay' => '回放',
 			'settings.roomCardResetCurrent' => '恢复默认显示',
 			'settings.roomCardResetConfirmTitle' => '恢复默认显示？',
@@ -17467,11 +17479,11 @@ extension on Translations {
 			'vod.duration' => '时长',
 			'vod.durationAny' => '全部时长',
 			'vod.durationUnder10' => '10 分钟以下',
+			_ => null,
+		} ?? switch (path) {
 			'vod.duration10to30' => '10–30 分钟',
 			'vod.duration30to60' => '30–60 分钟',
 			'vod.durationOver60' => '60 分钟以上',
-			_ => null,
-		} ?? switch (path) {
 			'vod.related' => '相关推荐',
 			'vod.changeRelated' => '换一换',
 			'vod.expand' => '展开',
