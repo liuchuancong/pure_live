@@ -62,7 +62,7 @@ final class RecordingTaskRepository {
   /// [takeDirectory] is the folder the capture writes into, stored from the
   /// first byte: a process that dies mid-take leaves a row that still names
   /// where its segments are, so the next start can finish them.
-  Future<void> setRunning(String id, {String? takeDirectory}) async {
+  Future<void> setRunning(String id, {String? takeDirectory, String? container}) async {
     final stored = store.get(id);
     if (stored == null) return;
     final task = RecordingTask.fromJson(stored);
@@ -77,6 +77,7 @@ final class RecordingTaskRepository {
         anchorName: task.anchorName,
         anchorAvatarUrl: task.anchorAvatarUrl,
         coverUrl: task.coverUrl,
+        container: container ?? task.container,
         state: RecordingTaskState.recording,
         startedAt: DateTime.now().toUtc(),
         filePath: takeDirectory,
@@ -193,10 +194,10 @@ final class RecordingTaskRepository {
   /// Puts the running session's [bytes] and media time on the task without
   /// touching its state or start: the engine's progress line, written on its
   /// own clock. A task never stored is a no-op.
-  Future<void> setProgress(String id, int bytes, {int durationMs = 0}) async {
+  Future<void> setProgress(String id, int bytes, {int durationMs = 0, int? segments}) async {
     final stored = store.get(id);
     if (stored == null) return;
-    await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes, durationMs: durationMs));
+    await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes, durationMs: durationMs, segments: segments));
   }
 }
 
@@ -305,10 +306,10 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
   }
 
   /// Marks the task behind [id] as recording (a new session starts).
-  Future<void> setRunning(String id, {String? takeDirectory}) async {
+  Future<void> setRunning(String id, {String? takeDirectory, String? container}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setRunning(id, takeDirectory: takeDirectory);
+    await repository.setRunning(id, takeDirectory: takeDirectory, container: container);
   }
 
   /// Turns the watch switch of the task behind [id] on or off.
@@ -342,10 +343,10 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
 
   /// Puts the running session's [bytes] and media time on the task (the
   /// engine's progress).
-  Future<void> setProgress(String id, int bytes, {int durationMs = 0}) async {
+  Future<void> setProgress(String id, int bytes, {int durationMs = 0, int? segments}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setProgress(id, bytes, durationMs: durationMs);
+    await repository.setProgress(id, bytes, durationMs: durationMs, segments: segments);
   }
 }
 

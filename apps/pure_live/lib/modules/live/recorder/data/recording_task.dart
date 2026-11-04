@@ -61,6 +61,8 @@ final class RecordingTask {
     this.anchorName = '',
     this.anchorAvatarUrl = '',
     this.coverUrl = '',
+    this.container = '',
+    this.segments = 0,
     this.endedAt,
     this.filePath,
     this.bytes = 0,
@@ -97,6 +99,8 @@ final class RecordingTask {
       anchorName: map['anchorName'] as String? ?? '',
       anchorAvatarUrl: map['anchorAvatarUrl'] as String? ?? '',
       coverUrl: map['coverUrl'] as String? ?? '',
+      container: map['container'] as String? ?? '',
+      segments: (map['segments'] as num?)?.toInt() ?? 0,
       state: RecordingTaskState.fromJson(map['state']),
       startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
@@ -152,6 +156,14 @@ final class RecordingTask {
 
   /// The room's cover, cached with the same snapshot.
   final String coverUrl;
+
+  /// The container the take is written in (`mp4`, `ts`), as the settings chose
+  /// it when the take started.
+  final String container;
+
+  /// The video files the take's folder holds so far: segments while it is
+  /// written, one file once it is joined.
+  final int segments;
 
   /// How often this room's live check runs, in seconds (10–300).
   ///
@@ -303,6 +315,8 @@ final class RecordingTask {
     'anchorName': anchorName,
     'anchorAvatarUrl': anchorAvatarUrl,
     'coverUrl': coverUrl,
+    'container': container,
+    'segments': segments,
     'state': state.toJson(),
     'startedAt': startedAt.toUtc().toIso8601String(),
     'endedAt': endedAt?.toUtc().toIso8601String(),
@@ -334,6 +348,8 @@ final class RecordingTask {
     String? anchorName,
     String? anchorAvatarUrl,
     String? coverUrl,
+    String? container,
+    int? segments,
     RecordingTaskState? state,
     DateTime? startedAt,
     DateTime? endedAt,
@@ -363,6 +379,8 @@ final class RecordingTask {
       anchorName: anchorName ?? this.anchorName,
       anchorAvatarUrl: anchorAvatarUrl ?? this.anchorAvatarUrl,
       coverUrl: coverUrl ?? this.coverUrl,
+      container: container ?? this.container,
+      segments: segments ?? this.segments,
       state: state ?? this.state,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,

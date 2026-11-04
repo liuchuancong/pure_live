@@ -846,12 +846,23 @@ final class _LiveClockState extends State<_LiveClock> {
   Widget build(BuildContext context) => widget.child;
 }
 
+/// The resolution a quality name carries ("1080P", "原画 1080p"), or null when
+/// the name says nothing a viewer can measure.
+String? resolutionOf(String quality) {
+  final match = RegExp(r'(\d{3,4})\s*[pP]').firstMatch(quality);
+  return match == null ? null : '${match.group(1)}P';
+}
+
 /// One figure of the card's strip: the value over the word that names it.
 final class _StatBlock extends StatelessWidget {
-  const _StatBlock({required this.label, required this.value, this.emphasis = false});
+  const _StatBlock({required this.label, required this.value, this.note = '', this.emphasis = false});
 
   final String label;
   final String value;
+
+  /// A second, quieter line under the word: the container and the file count,
+  /// the resolution behind a quality name.
+  final String note;
   final bool emphasis;
 
   @override
@@ -877,6 +888,13 @@ final class _StatBlock extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
         ),
+        if (note.isNotEmpty)
+          Text(
+            note,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.caption.copyWith(color: colors.textSubtle, fontSize: 11),
+          ),
       ],
     );
   }
@@ -1261,17 +1279,27 @@ final class _TaskCard extends ConsumerWidget {
                     ),
                   ),
                   SizedBox(
-                    width: 130,
+                    width: 150,
                     child: _StatBlock(
                       label: t.recorder.statProfile,
-                      value: task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest,
+                      value:
+                          resolutionOf(task.quality) ??
+                          (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
+                      note: resolutionOf(task.quality) == null
+                          ? ''
+                          : (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
                     ),
                   ),
                   SizedBox(
-                    width: 150,
+                    width: 160,
                     child: _StatBlock(
                       label: t.recorder.statSaved,
                       value: figuresSize == '—' ? t.recorder.statSavedEmpty : figuresSize,
+                      // The count is the live take's segment count; a joined
+                      // take is one file, whatever the last tick counted.
+                      note: recording && task.segments > 0
+                          ? '${task.container.toUpperCase()} · ${task.segments} 个文件'
+                          : task.container.toUpperCase(),
                     ),
                   ),
                   SizedBox(

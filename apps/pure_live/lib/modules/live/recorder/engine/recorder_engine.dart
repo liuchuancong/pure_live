@@ -418,15 +418,22 @@ final class RecorderEngine {
     }
   }
 
-  /// The bytes a take's folder holds so far: the segments FFmpeg is writing,
-  /// summed for a backend that has not reported a figure yet.
-  static Future<int> _directoryBytes(Directory directory) async {
-    var total = 0;
+  /// The bytes and video files a take's folder holds so far: the segments
+  /// FFmpeg is writing, summed for a backend that has not reported a figure
+  /// yet.
+  static Future<({int bytes, int files})> _directoryStats(Directory directory) async {
+    var bytes = 0;
+    var files = 0;
     try {
-      await for (final entity in directory.list(recursive: true, followLinks: false)) {
+      await for (final entity in directory.list(followLinks: false)) {
         if (entity is! File) continue;
+        final name = entity.path.toLowerCase();
+        if (!name.endsWith('.ts') && !name.endsWith('.mp4') && !name.endsWith('.m4s') && !name.endsWith('.mkv')) {
+          continue;
+        }
+        files++;
         try {
-          total += await entity.length();
+          bytes += await entity.length();
         } on FileSystemException {
           // A segment rotating under the walk is simply not counted this tick.
         }
@@ -434,7 +441,7 @@ final class RecorderEngine {
     } on FileSystemException {
       // A folder removed under the walk answers what it managed to read.
     }
-    return total;
+    return (bytes: bytes, files: files);
   }
 
   static int _sizeOf(File file) {
@@ -596,7 +603,11 @@ final class RecorderEngine {
       return 'cannot start: ${_errorOf(error)}';
     }
 
-    await repo.setRunning(task.id, takeDirectory: root);
+    await repo.setRunning(
+      task.id,
+      takeDirectory: root,
+      container: settings.container == RecordingFileContainer.mp4 ? 'mp4' : 'ts',
+    );
     // The store's running entry is the session's truth, including the start
     // the repository stamped; a later join guards its file update on it.
     session
@@ -819,12 +830,15 @@ final class RecorderEngine {
     // "nothing recorded yet". The folder and the wall clock answer instead,
     // so a running row shows its size and rate from the first tick.
     var bytes = state.bytesWritten;
-    // While the backend has not answered a size there is nothing to report but
-    // the folder itself; a take holds a handful of segments, so a scan a
-    // second costs less than a row that shows nothing for ten.
-    if (bytes <= 0) {
-      final directory = _takeDirectoryOf(session.task.filePath);
-      if (directory != null && directory.existsSync()) bytes = await _directoryBytes(directory);
+    var files = session.task.segments;
+    // The folder answers the size and the file count: a backend that has not
+    // reported a size leaves nothing to show otherwise, and the count is what
+    // tells a viewer how many segments the take has written.
+    final directory = _takeDirectoryOf(session.task.filePath);
+    if (directory != null && directory.existsSync()) {
+      final stats = await _directoryStats(directory);
+      if (bytes <= 0) bytes = stats.bytes;
+      files = stats.files;
     }
     var durationMs = state.duration.inMilliseconds;
     if (durationMs <= 0) durationMs = DateTime.now().difference(session.videoStartedAt).inMilliseconds;
@@ -838,7 +852,7 @@ final class RecorderEngine {
         .._persistedBytes = bytes
         .._persistedDurationMs = durationMs;
       final repo = _ref.read(recordingRepositoryProvider).value;
-      await repo?.setProgress(taskId, bytes, durationMs: durationMs);
+      await repo?.setProgress(taskId, bytes, durationMs: durationMs, segments: files);
     }
     if (session.capBytes > 0 && bytes >= session.capBytes) await stop(taskId);
     // A take that outlives the free-space check at start is caught here: once
