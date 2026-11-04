@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/account/account_pane.dart' show AccountQrExit, showAccountSignInAlternative;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
@@ -129,6 +130,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
               _ChatTab.danmaku => const Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _ChatNoticeBar(),
                   Expanded(child: _ChatFeed()),
                   _ChatComposer(),
                 ],
@@ -140,6 +142,54 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The room's standing word about its own chat login, above the list it
+/// concerns.
+///
+/// A toast is the wrong shape for this: the viewer is looking at the picture
+/// when the room notices that every name arrives masked, and the fix is a
+/// minute at the sign-in page, not a glance. The bar stays until the next
+/// connection stops looking like a dead login, or until they say they have
+/// seen it.
+final class _ChatNoticeBar extends ConsumerWidget {
+  const _ChatNoticeBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notice = ref.watch(roomChatNoticeProvider);
+    if (notice == null) return const SizedBox.shrink();
+    final t = context.t;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s12, 0),
+      child: DsAlert(
+        status: DsStatus.warning,
+        announce: true,
+        title: Text(notice.text),
+        action: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s4,
+          children: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.xs,
+              onPressed: () => unawaited(
+                showAccountSignInAlternative(context, siteId: notice.siteId, exit: AccountQrExit.cookiePage),
+              ),
+              child: Text(t.account.cookieLogin),
+            ),
+            DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.xs,
+              icon: const DsIcon(DsIcons.close, size: 14),
+              semanticLabel: t.common.close,
+              onPressed: () => ref.read(roomChatNoticeProvider.notifier).clear(),
+            ),
+          ],
+        ),
       ),
     );
   }

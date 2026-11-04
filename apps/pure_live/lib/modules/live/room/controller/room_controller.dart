@@ -532,6 +532,41 @@ final class RoomHintController extends Notifier<RoomHint?> {
 /// The open room's one-line hints.
 final roomHintProvider = NotifierProvider<RoomHintController, RoomHint?>(RoomHintController.new);
 
+/// What the room's chat column keeps on screen about its own login: the words
+/// and the platform whose sign-in would fix them.
+typedef RoomChatNotice = ({String siteId, String text});
+
+/// The login notice the chat column wears.
+///
+/// Not a toast: a viewer who is watching the picture when the room says "your
+/// cookie is dead" has usually missed the toast by the time they look back at
+/// the chat, and the fix — a minute at the sign-in page — is worth more than
+/// the second a toast stays up. The reference keeps a bar above the list for
+/// the same reason. It is set where the room can actually tell (a refused
+/// Twitch cookie, a Bilibili socket that only sees masked names) and it goes
+/// away on its own when the next connection stops looking like that, so an
+/// old complaint cannot outlive the login that caused it.
+final class RoomChatNoticeController extends Notifier<RoomChatNotice?> {
+  @override
+  RoomChatNotice? build() => null;
+
+  /// Raises the notice for [siteId] with [text].
+  void show(String siteId, String text) {
+    final current = state;
+    if (current != null && current.siteId == siteId && current.text == text) return;
+    state = (siteId: siteId, text: text);
+  }
+
+  /// Takes it away: the viewer said they saw it, or a new connection proved the
+  /// login good.
+  void clear() => state = null;
+}
+
+/// The open room's standing login notice.
+final roomChatNoticeProvider = NotifierProvider<RoomChatNoticeController, RoomChatNotice?>(
+  RoomChatNoticeController.new,
+);
+
 /// One open live room: its detail, its play plan, the playback over
 /// media_core's live controller, and the danmaku session beside it.
 ///
@@ -1468,6 +1503,10 @@ final class RoomController extends Notifier<RoomState> {
     _namedChats = 0;
     _nameHintShown = false;
     _twitchRefusalShown = false;
+    // The next connection either shows full names — in which case the notice
+    // was about a login that has since been fixed — or re-raises it once the
+    // masked run is long enough. Either way an old one must not stay up.
+    if (ref.mounted) ref.read(roomChatNoticeProvider.notifier).clear();
     // A chat that got in spends its retries again from zero.
     _chatAttempts = 0;
     // The pipeline (the flying layer over the site session) starts with
@@ -1620,7 +1659,8 @@ final class RoomController extends Notifier<RoomState> {
     if (_twitchRefusalShown || message.text != _twitchCookieRefusalText) return;
     if (!ref.mounted) return;
     _twitchRefusalShown = true;
-    ref.read(roomHintProvider.notifier).show(l10n.t.room.twitchCookieExpired);
+    final siteId = state.room?.ref.platform ?? SiteIds.twitch;
+    ref.read(roomChatNoticeProvider.notifier).show(siteId, l10n.t.room.twitchCookieExpired);
   }
 
   /// B06: what Bilibili's names say about this connection. A guest's socket
@@ -1643,8 +1683,11 @@ final class RoomController extends Notifier<RoomState> {
     _nameHintShown = true;
     if (!ref.mounted) return;
     final signedIn = ref.read(accountsProvider).credentials[SiteIds.bilibili] != null;
-    final hint = signedIn ? l10n.t.room.bilibiliLoginExpired : l10n.t.room.bilibiliGuestNames;
-    ref.read(roomHintProvider.notifier).show(hint);
+    // Both readings end in the same place: a sign-in, or a cookie worth
+    // pasting. The words differ because what the viewer has to do differs.
+    final signedInText = l10n.t.room.bilibiliLoginExpired;
+    final guestText = l10n.t.room.bilibiliGuestNames;
+    ref.read(roomChatNoticeProvider.notifier).show(SiteIds.bilibili, signedIn ? signedInText : guestText);
   }
 
   /// Sends the paid messages to the board: the platform's own super chats
@@ -1745,6 +1788,7 @@ final class RoomController extends Notifier<RoomState> {
     _geometry = null;
     _detailRefresh?.cancel();
     _detailRefresh = null;
+    if (ref.mounted) ref.read(roomChatNoticeProvider.notifier).clear();
     _leaseRenewal?.cancel();
     _leaseRenewal = null;
     _chatRetry?.cancel();
