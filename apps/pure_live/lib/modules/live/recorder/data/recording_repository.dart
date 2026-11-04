@@ -191,6 +191,24 @@ final class RecordingTaskRepository {
     return true;
   }
 
+  /// Records the shape of the take the probe found, guarded by the session's
+  /// start like every other late write: a new take of the same room must not
+  /// inherit an older take's resolution.
+  Future<bool> setVideo(
+    String id, {
+    required DateTime expectedStartedAt,
+    required int width,
+    required int height,
+    required double frameRate,
+  }) async {
+    final stored = store.get(id);
+    if (stored == null) return false;
+    final task = RecordingTask.fromJson(stored);
+    if (!task.startedAt.isAtSameMomentAs(expectedStartedAt)) return false;
+    await save(task.copyWith(videoWidth: width, videoHeight: height, frameRate: frameRate));
+    return true;
+  }
+
   /// Puts the running session's [bytes] and media time on the task without
   /// touching its state or start: the engine's progress line, written on its
   /// own clock. A task never stored is a no-op.
@@ -339,6 +357,25 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
     await repository.setEnded(id, RecordingTaskState.failed, filePath: filePath, bytes: bytes, errorText: errorText);
+  }
+
+  /// Records the take's probed resolution and frame rate.
+  Future<void> setVideo(
+    String id, {
+    required DateTime expectedStartedAt,
+    required int width,
+    required int height,
+    required double frameRate,
+  }) async {
+    final repository = ref.read(recordingRepositoryProvider).value;
+    if (repository == null) return;
+    await repository.setVideo(
+      id,
+      expectedStartedAt: expectedStartedAt,
+      width: width,
+      height: height,
+      frameRate: frameRate,
+    );
   }
 
   /// Puts the running session's [bytes] and media time on the task (the

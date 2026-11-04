@@ -1279,15 +1279,18 @@ final class _TaskCard extends ConsumerWidget {
                     ),
                   ),
                   SizedBox(
-                    width: 150,
+                    width: 160,
                     child: _StatBlock(
                       label: t.recorder.statProfile,
-                      value:
-                          resolutionOf(task.quality) ??
-                          (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
-                      note: resolutionOf(task.quality) == null
-                          ? ''
-                          : (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest),
+                      value: task.videoHeight > 0
+                          ? '${task.videoHeight}P${task.frameRate > 0 ? ' ${task.frameRate.round()} FPS' : ''}'
+                          : (resolutionOf(task.quality) ??
+                                (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest)),
+                      note: task.videoWidth > 0 && task.videoHeight > 0
+                          ? '${task.videoWidth} × ${task.videoHeight}'
+                          : (resolutionOf(task.quality) == null
+                                ? ''
+                                : (task.quality.isNotEmpty ? task.quality : t.recorder.qualityBest)),
                     ),
                   ),
                   SizedBox(

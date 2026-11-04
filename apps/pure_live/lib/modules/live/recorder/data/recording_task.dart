@@ -63,6 +63,9 @@ final class RecordingTask {
     this.coverUrl = '',
     this.container = '',
     this.segments = 0,
+    this.videoWidth = 0,
+    this.videoHeight = 0,
+    this.frameRate = 0,
     this.endedAt,
     this.filePath,
     this.bytes = 0,
@@ -101,6 +104,9 @@ final class RecordingTask {
       coverUrl: map['coverUrl'] as String? ?? '',
       container: map['container'] as String? ?? '',
       segments: (map['segments'] as num?)?.toInt() ?? 0,
+      videoWidth: (map['videoWidth'] as num?)?.toInt() ?? 0,
+      videoHeight: (map['videoHeight'] as num?)?.toInt() ?? 0,
+      frameRate: (map['frameRate'] as num?)?.toDouble() ?? 0,
       state: RecordingTaskState.fromJson(map['state']),
       startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
@@ -164,6 +170,16 @@ final class RecordingTask {
   /// The video files the take's folder holds so far: segments while it is
   /// written, one file once it is joined.
   final int segments;
+
+  /// The captured video's pixel width, probed from the first segment (0 until
+  /// the probe answers).
+  final int videoWidth;
+
+  /// The captured video's pixel height (0 until the probe answers).
+  final int videoHeight;
+
+  /// The captured video's frames per second (0 until the probe answers).
+  final double frameRate;
 
   /// How often this room's live check runs, in seconds (10–300).
   ///
@@ -317,6 +333,9 @@ final class RecordingTask {
     'coverUrl': coverUrl,
     'container': container,
     'segments': segments,
+    'videoWidth': videoWidth,
+    'videoHeight': videoHeight,
+    'frameRate': frameRate,
     'state': state.toJson(),
     'startedAt': startedAt.toUtc().toIso8601String(),
     'endedAt': endedAt?.toUtc().toIso8601String(),
@@ -350,6 +369,9 @@ final class RecordingTask {
     String? coverUrl,
     String? container,
     int? segments,
+    int? videoWidth,
+    int? videoHeight,
+    double? frameRate,
     RecordingTaskState? state,
     DateTime? startedAt,
     DateTime? endedAt,
@@ -381,6 +403,9 @@ final class RecordingTask {
       coverUrl: coverUrl ?? this.coverUrl,
       container: container ?? this.container,
       segments: segments ?? this.segments,
+      videoWidth: videoWidth ?? this.videoWidth,
+      videoHeight: videoHeight ?? this.videoHeight,
+      frameRate: frameRate ?? this.frameRate,
       state: state ?? this.state,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,

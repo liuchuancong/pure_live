@@ -129,6 +129,13 @@ final class _LiveRecording {
   /// Progress ticks between free-space probes; sixty one-second ticks are a
   /// minute.
   int diskTicks = 0;
+
+  /// Whether the take's video shape has been probed, and whether a probe is in
+  /// flight. The probe reads one closed segment, so it answers after the first
+  /// segment lands and never again for this take.
+  bool videoProbed = false;
+  bool videoProbing = false;
+  int videoTries = 0;
   bool diskChecking = false;
   bool _settling = false;
 
@@ -415,6 +422,46 @@ final class RecorderEngine {
       return found.isEmpty ? null : found.first;
     } on FileSystemException {
       return null;
+    }
+  }
+
+  /// Reads the take's first closed segment and records its pixel size and
+  /// frame rate on the task. Best effort: a segment still being written may
+  /// answer nothing, and the next tick tries again up to a handful of times.
+  Future<void> _probeVideo(_LiveRecording session, Directory? directory) async {
+    if (directory == null) return;
+    String? path;
+    try {
+      await for (final entity in directory.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final name = entity.path.toLowerCase();
+        if (!name.endsWith('.ts') && !name.endsWith('.mp4') && !name.endsWith('.m4s')) continue;
+        path = entity.path;
+        break;
+      }
+    } on FileSystemException {
+      return;
+    }
+    if (path == null) return;
+    session
+      ..videoProbing = true
+      ..videoTries += 1;
+    try {
+      final info = await const FfmpegVideoProbe().videoOf(path);
+      if (info == null) return;
+      session
+        ..videoProbed = true
+        ..task = session.task.copyWith(videoWidth: info.width, videoHeight: info.height, frameRate: info.frameRate);
+      final repo = _ref.read(recordingRepositoryProvider).value;
+      await repo?.setVideo(
+        session.task.id,
+        expectedStartedAt: session.task.startedAt,
+        width: info.width,
+        height: info.height,
+        frameRate: info.frameRate,
+      );
+    } finally {
+      session.videoProbing = false;
     }
   }
 
@@ -839,6 +886,11 @@ final class RecorderEngine {
       final stats = await _directoryStats(directory);
       if (bytes <= 0) bytes = stats.bytes;
       files = stats.files;
+    }
+    // The video's shape comes from one closed segment; the probe runs beside
+    // the tick so the size and the clock never wait for FFprobe.
+    if (!session.videoProbed && !session.videoProbing && session.videoTries < 5) {
+      unawaited(_probeVideo(session, directory));
     }
     var durationMs = state.duration.inMilliseconds;
     if (durationMs <= 0) durationMs = DateTime.now().difference(session.videoStartedAt).inMilliseconds;
