@@ -447,18 +447,19 @@ final class RecorderEngine {
       ..videoProbing = true
       ..videoTries += 1;
     try {
-      final info = await const FfmpegVideoProbe().videoOf(path);
-      if (info == null) return;
+      final info = await const FFprobeKitFfmpegProbe().infoOf(path);
+      final video = info?.video;
+      if (video == null || video.width <= 0 || video.height <= 0) return;
       session
         ..videoProbed = true
-        ..task = session.task.copyWith(videoWidth: info.width, videoHeight: info.height, frameRate: info.frameRate);
+        ..task = session.task.copyWith(videoWidth: video.width, videoHeight: video.height, frameRate: video.frameRate);
       final repo = _ref.read(recordingRepositoryProvider).value;
       await repo?.setVideo(
         session.task.id,
         expectedStartedAt: session.task.startedAt,
-        width: info.width,
-        height: info.height,
-        frameRate: info.frameRate,
+        width: video.width,
+        height: video.height,
+        frameRate: video.frameRate,
       );
     } finally {
       session.videoProbing = false;
