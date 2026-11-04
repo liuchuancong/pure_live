@@ -788,7 +788,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     // Every verb the page owns rides the bar that names the file, at every
     // width: the phone used to leave the danmaku verbs to the strip under the
     // picture, which read as the top bar having lost them.
-    final size = narrow ? 32.0 : 36.0;
+    final size = narrow ? 30.0 : 36.0;
     Widget button(DsIconData icon, String semanticLabel, {VoidCallback? onPressed}) =>
         _HeaderButton(icon: icon, semanticLabel: semanticLabel, onPressed: onPressed, size: size);
     final actions = <Widget>[
@@ -818,6 +818,16 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         ),
         button(DsIcons.folderOpen, t.common.previewOpenFolder, onPressed: () => unawaited(_revealFolderOf(entry.path))),
         button(DsIcons.trash2, t.common.previewDeleteFile, onPressed: () => unawaited(_deleteAt(_index))),
+        // 投屏 of the file itself rides the head with the file's other verbs. A
+        // renderer cannot read this disk, but the DLNA backend serves the path
+        // over the LAN through its own media server, so a finished take casts
+        // the way a stream does.
+        button(
+          DsIcons.cast,
+          t.room.cast,
+          onPressed: () =>
+              unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
+        ),
       ] else if (item != null)
         button(DsIcons.folderOpen, t.common.previewOpenFolder, onPressed: () => unawaited(_revealFolderOf(item.path))),
       button(
@@ -1235,16 +1245,16 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         selected: ref.watch(playerStatsVisibleProvider),
         onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       ),
-      // 投屏 of the file itself. A renderer cannot read this disk, but the
-      // DLNA backend serves the path over the LAN through its own media server,
-      // so a finished take casts the way a stream does.
-      if (_current case final entry? when entry.exists)
-        circle(
-          DsIcons.cast,
-          t.room.cast,
-          onPressed: () =>
-              unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
-        ),
+      // The head carries 投屏 while it is drawn; once the picture owns the
+      // window there is no head left, so the bar keeps the verb.
+      if (immersive)
+        if (_current case final entry? when entry.exists)
+          circle(
+            DsIcons.cast,
+            t.room.cast,
+            onPressed: () =>
+                unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
+          ),
       // The theatre needs the list column to float, which a narrow window has
       // no room for and a window the picture already owns does not need.
       if (!compact && !immersive)
