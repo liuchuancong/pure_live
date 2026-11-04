@@ -27,6 +27,7 @@ import 'package:pure_live/modules/live/recorder/engine/recording_chat_writer.dar
 import 'package:pure_live/modules/live/recorder/engine/recording_claim.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_finalize_lock.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_take_move.dart';
+import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart' show resolveRecordableStream;
 import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/danmaku/danmaku.dart' show danmakuSaveFormatsProvider;
 
@@ -130,6 +131,12 @@ final class _LiveRecording {
   int diskTicks = 0;
   bool diskChecking = false;
   bool _settling = false;
+
+  /// Which of the quality's lines the next re-opening tries. A re-opening that
+  /// left nothing behind means that line answers for nobody and another is
+  /// worth trying; an address that simply expired wrote a whole run of
+  /// segments first, so its line is asked again.
+  int lineOffset = 0;
 
   Future<void> quiet() async {
     _quieted = true;
@@ -462,18 +469,11 @@ final class RecorderEngine {
 
   /// Starts capturing the room [task] names at [line]'s address.
   ///
-  /// [refreshUrl] may re-mint the address when the stream drops and the
-  /// old one has expired; null keeps re-opening the same address. The
-  /// line's headers ride the recording — most platforms answer 403
-  /// without their referer. Returns null when the capture began, and the
-  /// engine's own words when it did not.
-  Future<String?> start(
-    RecordingTask task,
-    LivePlayLine line, {
-    Future<String?> Function()? refreshUrl,
-    LiveRoom? room,
-    LiveDanmakuProvider? danmaku,
-  }) async {
+  /// The line's headers ride the recording — most platforms answer 403 without
+  /// their referer — and [_refreshTake] re-mints the address from the room
+  /// every time FFmpeg has to open the source again. Returns null when the
+  /// capture began, and the engine's own words when it did not.
+  Future<String?> start(RecordingTask task, LivePlayLine line, {LiveRoom? room, LiveDanmakuProvider? danmaku}) async {
     if (_sessions.containsKey(task.id)) return 'already recording';
     // The permission prompt belongs to the action that needs it.
     unawaited(requestUserNotificationPermission());
@@ -524,7 +524,7 @@ final class RecorderEngine {
     final backend = FfmpegRecordingBackend(
       outputDirectory: root,
       diskSpace: FfmpegDiskSpace.probe,
-      urlRefresher: refreshUrl == null ? null : (source) async => await refreshUrl() ?? source.value,
+      urlRefresher: (_) => _refreshTake(task.id),
       config: FfmpegRecordConfig(
         filePrefix: take,
         // The capture name stays ASCII; the notification names the room, which
@@ -584,7 +584,7 @@ final class RecorderEngine {
           type: RecordingSourceType.network,
           value: line.url,
           id: task.id,
-          headers: {...line.headers.toMap(), 'Proxy-Authorization': ?_proxyAuthorization()},
+          headers: _sourceHeaders(line),
         ),
       );
     } on Object catch (error) {
@@ -1557,6 +1557,52 @@ final class RecorderEngine {
       return null;
     }
     return null;
+  }
+
+  /// The headers an address is played with: the line's own, plus the proxy's
+  /// credential, which is the channel FFmpeg does send to it.
+  Map<String, String> _sourceHeaders(LivePlayLine line) => {
+    ...line.headers.toMap(),
+    'Proxy-Authorization': ?_proxyAuthorization(),
+  };
+
+  /// The take's own re-mint, asked for every time FFmpeg has to open the source
+  /// again.
+  ///
+  /// A live room's address is signed and short-lived: the one the take began
+  /// with is dead by the next expiry, and re-opening that is a retry which
+  /// cannot succeed. The room is asked again instead, at the task's own quality.
+  ///
+  /// A re-opening that left nothing behind says the line, not the address, is
+  /// what answers for nobody, so the room's other lines are tried in turn,
+  /// wrapping to the platform's first. A null answer stops the backend burning
+  /// the attempts it has left on a stream it cannot reach; the room's live check
+  /// picks the subscription up for the next broadcast.
+  Future<RefreshedSource?> _refreshTake(String taskId) async {
+    final session = _sessions[taskId];
+    if (session == null) return null;
+    final task = session.task;
+    // The backend's state still names the attempt that just ended: a line that
+    // played for an hour before its signature expired reports the bytes it
+    // wrote, and one refused before it sent a packet reports nothing.
+    if (session.backend.state.bytesWritten <= 0) session.lineOffset++;
+    final site = _ref.read(sitesProvider).getById(task.platform);
+    if (site == null) return null;
+    try {
+      final stream = await resolveRecordableStream(
+        site: site,
+        platform: task.platform,
+        roomId: task.roomId,
+        qualityLabel: task.quality,
+        lineOffset: session.lineOffset,
+      );
+
+      return (url: stream.line.url, headers: _sourceHeaders(stream.line));
+    } on Object {
+      // Nothing usable came back — no detail, no quality, no line, or the
+      // streamer stopped; this take has no address to be re-opened with.
+      return null;
+    }
   }
 
   Future<String?>? _caFile;

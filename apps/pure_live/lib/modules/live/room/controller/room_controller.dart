@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -32,6 +32,12 @@ const int kRoomChatLimit = 200;
 /// connection say the room is not reading chat as the account it thinks it
 /// is (the reference's `maskedChatsForExpiredLogin`).
 const int kRoomMaskedChatsForExpiredLogin = 3;
+
+/// How often an open room's display state is re-read (the reference's
+/// sixty-second detail read): long enough that a watched room never costs a
+/// platform request more than once a minute, short enough that a broadcast
+/// which ended is named before the viewer notices the picture froze.
+const Duration kRoomDetailRefreshEvery = Duration(minutes: 1);
 
 /// How the room's chat connection stands, as the chat column reads it.
 ///
@@ -462,6 +468,9 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<PlayerFailure>? _failures;
   StreamSubscription<LiveMessage>? _chat;
   StreamSubscription<GeometryState>? _geometry;
+
+  /// The open room's minute re-read; cancelled with the room.
+  Timer? _detailRefresh;
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
 
@@ -640,6 +649,7 @@ final class RoomController extends Notifier<RoomState> {
           if (epoch != _openEpoch) return;
           final room = _fillTitleFromKnown(detail);
           state = _with(room: room);
+          _armDetailRefresh();
           unawaited(_recordHistory(room));
           unawaited(_loadSuperChats(room));
           // Chat runs beside the stream, never ahead of it: one danmaku
@@ -734,7 +744,12 @@ final class RoomController extends Notifier<RoomState> {
   /// holding an offline room learns the streamer is back without losing
   /// the room's identity; a platform without a refresh read replays the
   /// detail request only when nothing is playing.
-  Future<void> refreshRoom() async {
+  ///
+  /// [reportFailure] is false for the automatic re-read: one network turn that
+  /// did not answer must not put a failure overlay over a stream that is still
+  /// playing. The viewer's own refresh press keeps the error, because there it
+  /// is the answer to what they just asked for.
+  Future<void> refreshRoom({bool reportFailure = true}) async {
     final room = state.room;
     final platform = _requestedPlatform;
     final roomId = _requestedRoomId;
@@ -746,10 +761,20 @@ final class RoomController extends Notifier<RoomState> {
     }
     final answer = await capability.getRoomForRefresh(roomId: roomId);
     if (!ref.mounted) return;
-    answer.match(
-      (error) => state = _with(error: error.message),
-      (fresh) => state = _with(room: room.mergedWith(fresh)),
-    );
+    answer.match((error) {
+      if (reportFailure) state = _with(error: error.message);
+    }, (fresh) => state = _with(room: room.mergedWith(fresh)));
+  }
+
+  /// The minute-by-minute re-read of the open room's figures, status and text.
+  ///
+  /// A room left open on a desktop is watched, not visited: without this the
+  /// title, the cover and the audience a platform rewrites mid-broadcast stay
+  /// as they were when the room was entered, and a streamer who stopped is only
+  /// learned when the viewer asks.
+  void _armDetailRefresh() {
+    _detailRefresh?.cancel();
+    _detailRefresh = Timer.periodic(kRoomDetailRefreshEvery, (_) => unawaited(refreshRoom(reportFailure: false)));
   }
 
   /// Pauses (the sleep timer's stop; never resumes a paused room).
@@ -1038,21 +1063,10 @@ final class RoomController extends Notifier<RoomState> {
       state: RecordingTaskState.stopped,
       startedAt: DateTime.now().toUtc(),
     );
-    Future<String?> refresh() async {
-      if (capability == null) return null;
-      final answer = await capability.getLines(room: room, quality: recordQuality ?? _wantedQuality);
-      final url = answer.fold((_) => null, (lines) => lines.isEmpty ? null : lines.first.url);
-      return url;
-    }
-
     final danmaku = ref.read(sitesProvider).getById(room.ref.platform)?.capability<LiveDanmakuProvider>();
-    return await engine.start(
-      task,
-      recordLine,
-      refreshUrl: capability == null ? null : refresh,
-      room: room,
-      danmaku: danmaku,
-    );
+    // The engine re-mints the room's address itself when the take drops, so the
+    // recording does not depend on this page still holding the room.
+    return await engine.start(task, recordLine, room: room, danmaku: danmaku);
   }
 
   /// Follows or unfollows the room.
@@ -1521,6 +1535,8 @@ final class RoomController extends Notifier<RoomState> {
     _failures = null;
     _chat = null;
     _geometry = null;
+    _detailRefresh?.cancel();
+    _detailRefresh = null;
     final session = _session;
     _session = null;
     _playback = null;

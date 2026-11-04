@@ -33,6 +33,11 @@ final class RecordableStream {
 /// it (otherwise its first, the platform's best), the line beside it with
 /// the headers its address needs.
 ///
+/// [lineOffset] picks which of the quality's lines the recording opens: zero
+/// is the platform's own first, and a take that keeps losing its line counts
+/// up to move off a CDN that answers for nobody. It wraps, so a room with two
+/// lines handed `5` opens its second.
+///
 /// The room's own API answers — the same call the player makes, run for the
 /// recorder so a task whose room is not the open one records the real
 /// current stream, not a stale address.
@@ -41,6 +46,7 @@ Future<RecordableStream> resolveRecordableStream({
   required String platform,
   required String roomId,
   String qualityLabel = '',
+  int lineOffset = 0,
 }) async {
   final roomProvider = site.capability<LiveRoomProvider>();
   final playbackProvider = site.capability<LivePlaybackProvider>();
@@ -59,5 +65,5 @@ Future<RecordableStream> resolveRecordableStream({
   final linesAnswer = await playbackProvider.getLines(room: room, quality: quality);
   final lines = linesAnswer.fold((_) => const <LivePlayLine>[], (answer) => answer);
   if (lines.isEmpty) throw const NoRecordableStream.noStream();
-  return RecordableStream(room: room, line: lines.first);
+  return RecordableStream(room: room, line: lines[lineOffset % lines.length]);
 }
