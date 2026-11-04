@@ -1248,12 +1248,15 @@ final class _TaskCard extends ConsumerWidget {
           // Three verbs and the menu in two rows of two, the phase's own
           // verb first: what the row does leads, what it shows follows.
           Widget cell(Widget child) => SizedBox(width: 112, child: child);
+          // The rows shrink to their cells so the block can be held to the
+          // card's right edge on a narrow window; a max-width row would fill
+          // the row and pack the cells at its start instead.
           final controls = Column(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
             children: [
-              Row(spacing: DsSpace.s8, children: [cell(action), cell(details())]),
-              Row(spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
+              Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [cell(action), cell(details())]),
+              Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
             ],
           );
           return Column(

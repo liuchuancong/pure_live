@@ -713,11 +713,14 @@ final class _TakeRow extends StatelessWidget {
           // Four verbs in two rows of two, the same shape the subscription
           // cards use: what the take does first, what it names second.
           Widget cell(Widget child) => SizedBox(width: 124, child: child);
+          // The rows shrink to their cells so the block can be held to the
+          // card's right edge on a narrow window.
           final verbs = Column(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 spacing: DsSpace.s8,
                 children: [
                   cell(
@@ -741,6 +744,7 @@ final class _TakeRow extends StatelessWidget {
                 ],
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 spacing: DsSpace.s8,
                 children: [
                   cell(
