@@ -224,3 +224,24 @@
 | repeated_filter / similarity_filter | 11 | 注释与构造写法，无语义差异 |
 
 ⇒ **第四部分（对比 live_core/live_danmaku）至此是"逐文件核过"而不是"看起来差不多"**：九个文件里没有一处判据漂移。下轮别再解剖这条线；要动过滤器族只能拿新需求来。
+
+## 已证实的功能洞：Bigo 的 HLS 今天是加扰的，我们没有中继（2026-11-05 实测）
+
+临时探针（跑完已删，规矩同 `feedback-temp-tests-delete-after-verifying`）拿一间在播 Bigo 房，按房间真实链路走 `getRecommendedRooms → getRoom → getQualities → getLines`，然后**用那行的 headers 去 GET 那条 m3u8**，回来的正文第一手证据：
+
+```
+status=200 mediaPlaylist=true protectionTag=true seed=3164316742
+head=#EXTM3U | #EXT-X-BIGO-WEB-PROTECTION:VERSION=1,SEED=3164316742 | #EXT-X-VERSION:3 | #EXT-X-MEDIA-SEQUENCE:0 | …
+segmentUri=2848450172_0&832912293&0.ts
+headers=[origin, referer, user-agent, accept, accept-language, x-requested-with]
+```
+
+- 我们的 `BigoHlsProtection` 文档早就写着"分段的前两个 TS 包各前 16 字节按 seed 的 xorshift 异或，sync 字节与 PAT/PMT 不可读；**谁播谁中继**"，包侧算法（`seed()`/`transform()`）已经齐备，`live_sites` 里也**没有任何 HTTP 中继**（全仓 grep `relay|loopback|descrambl` 只有测试用的 loopback）。
+- ⇒ **现在 Bigo 房间在我们这儿的实际行为 = 把加扰列表交给 mpv**：demuxer 找不到 TS sync byte，等于黑屏且没有任何解释。上一轮的探针显示 bigo 三段都"成功"（detail 2395/qualities 430/lines 1203）——**取到地址不等于播得出来**，这条教训写在这。
+- 参考侧对照：`live_media/lib/src/relay/{hls_relay,hls_window,loopback_relay}.dart`（约 800 行：环回 HTTP server + 分段窗口 + byte-range + per-path cookie 钩子 + `restore` 钩子 + `HlsSourceQueryPolicy`），`bigo_site.dart:62,577-590` 明写 Bigo 走中继恢复每段；niconico 用同一台中继做 per-path cookie 与 master 精确变体重写（我们 `niconico_play_parser.dart:372` 直接交 hls 地址，同样没中继——niconico 本机不可达，未实测）。
+
+**两条路（要用户点头才能动，因为这是新媒体子系统 + 架构落点）**：
+1. **做中继**：落点候选 `packages/live_sites/lib/src/common/hls_relay/`（它需要 headers/cookies 与 restore 钩子，站点侧最贴近）或 media_core 的播放器包。最小形态：给一行起一个环回端口，`/p.m3u8` 取上游列表并把相对段 URI 改写成 `/s/<n>.ts`，`/s/<n>.ts` 带上该行 headers 取段、有 seed 就 `transform`，随 take 生命周期关端口。要决定：端口安全（只 bind 127.0.0.1、随机 token 路径）、缓存与失败重试、直播窗口只保留最后 N 段、`LivePlayLine` 需要一条"这行要中继"的表达（不能让 app 猜平台）。
+2. **先诚实报错**：Bigo 行照现在返回，但房间给出可读的"此平台的 HLS 需要在本地还原，本 App 尚未实现"，别再演"能播"。代价：Bigo 从"黑屏"变成"有原因的失败"，功能面没增加。
+
+**顺手记的另一条方法论**：判断"某站能不能播"必须走到**取回播放列表/首段字节**这一层；只把三段网络调用跑绿是假阳性。
