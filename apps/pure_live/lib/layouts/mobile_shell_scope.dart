@@ -3,10 +3,11 @@ import 'package:flutter/widgets.dart';
 /// Says whether a page is hosted by the phone shell, whose top bar carries the
 /// page's verbs (search, refresh, more).
 ///
-/// A page hides its own verb row on a narrow window only when the shell really
-/// hosts it: the shell appears below the navigation breakpoint, while a page
-/// goes narrow earlier (its toolbar stacks). Between the two widths a desktop
-/// window still draws the page's own row, and it must keep its verbs.
+/// A hosted page keeps its tabs alone at any width and leaves the verbs to the
+/// bar; a desktop window (which this shell never hosts) keeps drawing its own
+/// verb row. Deciding by the shell rather than by the page's own toolbar
+/// breakpoint is what keeps the two from disagreeing about a width between
+/// their thresholds.
 final class MobileShellScope extends InheritedWidget {
   /// Marks the subtree as hosted (true) by the phone shell.
   const MobileShellScope({required this.hosted, required super.child, super.key});

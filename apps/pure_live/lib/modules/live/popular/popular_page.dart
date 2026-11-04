@@ -171,13 +171,17 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
           child: LayoutBuilder(
             builder: (context, constraints) {
               final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+              // The phone shell carries the page's verbs (search, refresh,
+              // more); wherever it hosts the page, this row keeps the tabs
+              // alone so no verb is offered twice.
+              final hosted = MobileShellScope.isHosted(context);
               final tabs = PlatformTabRow(
                 platforms: ids,
                 current: platform,
                 nameOf: _platformName,
                 semanticLabel: t.navigation.hot,
-                showPlatformWall: !narrow,
-                showLayoutToggle: !narrow,
+                showPlatformWall: !narrow && !hosted,
+                showLayoutToggle: !narrow && !hosted,
                 onManagePlatforms: managePlatforms,
                 onChanged: choosePlatform,
               );
@@ -193,7 +197,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                   spacing: DsSpace.s8,
                   children: [
                     Expanded(child: tabs),
-                    refresh,
+                    if (!hosted) refresh,
                   ],
                 );
               }

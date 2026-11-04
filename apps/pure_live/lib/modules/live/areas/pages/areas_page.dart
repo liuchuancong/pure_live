@@ -199,8 +199,9 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
             builder: (context, constraints) {
               // The platform tabs take the row's leftover width — the
               // popular page's measure — so names read whole.
+              final hosted = MobileShellScope.isHosted(context);
               if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
-                final tabs = platformTabs(withWall: true);
+                final tabs = platformTabs(withWall: !hosted);
                 return SizedBox(
                   height: 44,
                   child: Row(
@@ -208,10 +209,10 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                     children: [
                       views,
                       if (tabs != null) Expanded(child: tabs) else const Spacer(),
-                      layoutSwitch,
-                      // The row's last control, as the popular page keeps
-                      // its refresh at the end.
-                      if (inPlatformView) refreshButton,
+                      // The phone shell's top bar carries the layout pick and
+                      // the refresh; this row keeps them only off the shell.
+                      if (!hosted) layoutSwitch,
+                      if (!hosted && inPlatformView) refreshButton,
                     ],
                   ),
                 );

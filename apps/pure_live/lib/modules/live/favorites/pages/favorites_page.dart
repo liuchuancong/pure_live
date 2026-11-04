@@ -208,12 +208,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   }
 
   /// Switches the group; the slice starts on its first page.
-  void _selectGroup(LiveFollowGroup? group) =>
-      ref.read(favoritesViewProvider.notifier).selectGroup(group);
+  void _selectGroup(LiveFollowGroup? group) => ref.read(favoritesViewProvider.notifier).selectGroup(group);
 
   /// Switches the platform; the slice starts on its first page.
-  void _selectPlatform(String platform) =>
-      ref.read(favoritesViewProvider.notifier).selectPlatform(platform);
+  void _selectPlatform(String platform) => ref.read(favoritesViewProvider.notifier).selectPlatform(platform);
 
   void _jumpToTop() {
     if (_gridScroll.hasClients) _gridScroll.jumpTo(0);
@@ -338,6 +336,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     }
 
     final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
+    // The phone shell carries this page's verbs in its top bar.
+    final hosted = MobileShellScope.isHosted(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -379,7 +379,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       ],
                     ),
                   ),
-                  if (!narrow)
+                  if (!narrow && !hosted)
                     PlatformWallButton(
                       platforms: [kAllPlatforms, ...platformTabs],
                       current: platform,
@@ -394,13 +394,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       countOf: (id) =>
                           followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: group),
                     ),
-                  if (!narrow) const LayoutToggle(),
+                  if (!narrow && !hosted) const LayoutToggle(),
                   // A phone's platform menu and refresh ride the top bar with
                   // the page's own button style, so this line keeps the tabs
                   // alone. A narrow desktop window is not hosted by that shell:
                   // it keeps the same two verbs here.
-                  if (narrow && !MobileShellScope.isHosted(context)) const FavoritesTopBarActions(),
-                  if (!narrow) _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
+                  if (narrow && !hosted) const FavoritesTopBarActions(),
+                  if (!narrow && !hosted) _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
               // The platform tabs, the row under them: names and counts

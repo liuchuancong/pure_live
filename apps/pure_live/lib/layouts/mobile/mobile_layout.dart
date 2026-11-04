@@ -242,22 +242,20 @@ final class MobileLayout extends ConsumerWidget {
           // The log console's settings gear and the favorites' refresh ride
           // the top bar, the same corner the desktop's head rows give them.
           if (selected == NavigationItem.logs) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
-          // The follows and popular pages' own verbs move here when the window
-          // is narrow enough for them to drop them: the refresh and the more
-          // menu, with the pages' button style, so no verb is offered twice.
-          if (LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width)) ...[
-            if (selected == NavigationItem.hot) ...[
-              const PopularTopBarActions(),
-              const SizedBox(width: DsSpace.s4),
-            ],
-            if (selected == NavigationItem.zones) ...[
-              const AreasTopBarActions(),
-              const SizedBox(width: DsSpace.s4),
-            ],
-            if (selected == NavigationItem.favorites) ...[
-              const FavoritesTopBarActions(),
-              const SizedBox(width: DsSpace.s4),
-            ],
+          // The follows, popular and areas pages hand their verbs to this bar
+          // whenever this shell hosts them; their own rows keep the tabs
+          // alone (see MobileShellScope).
+          if (selected == NavigationItem.hot) ...[
+            const PopularTopBarActions(),
+            const SizedBox(width: DsSpace.s4),
+          ],
+          if (selected == NavigationItem.zones) ...[
+            const AreasTopBarActions(),
+            const SizedBox(width: DsSpace.s4),
+          ],
+          if (selected == NavigationItem.favorites) ...[
+            const FavoritesTopBarActions(),
+            const SizedBox(width: DsSpace.s4),
           ],
           // A window strip above this bar already carries the switch; two
           // moons stacked on a narrow desktop window would be one too many.
