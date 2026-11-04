@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart'
-    show PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
+    show PlatformBatteryService, PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveRoom, LiveStreamCodec, LiveStreamFormat;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
@@ -996,6 +996,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     onLeave: widget.onLeave,
                     onWake: _wake,
                     menuItems: widget.immersive ? widget.roomMenu : const [],
+                    fullscreen: widget.immersive,
                     // The page's own header already carries the avatar, the live
                     // ring, the counts and the title above the picture, so the
                     // strip only names the room once the chrome is gone — or on
@@ -1346,6 +1347,7 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
     required this.onLeave,
     required this.onWake,
     required this.menuItems,
+    this.fullscreen = false,
     this.identity = true,
   });
 
@@ -1357,6 +1359,11 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
 
   /// The room's own actions, shared with the page header's menu.
   final List<Widget> menuItems;
+
+  /// Whether the picture fills the window: the strip then carries the clock
+  /// and the battery, because the window's own chrome — and with it the
+  /// system's tray — is not on screen to be read.
+  final bool fullscreen;
 
   /// Whether the strip names the room. The page's own header already carries
   /// the avatar, the live ring, the counts and the title above the picture, so
@@ -1478,6 +1485,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
               PlayerGlassPill(
                 child: PlayerBarButton(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: widget.onLeave),
               ),
+              if (widget.fullscreen) const _PlayerClockBattery(),
               if (label != null)
                 Expanded(
                   child: Text(
@@ -1762,6 +1770,104 @@ String? _lineDetail(LivePlayLine line) {
   };
   return codec.isEmpty ? format : '$format · $codec';
 }
+
+/// The clock and the battery of a fullscreen strip (the reference's
+/// `PlayerClock` and `PlayerBattery`, beside its back button).
+///
+/// Fullscreen has no system bar to read: how late it is, and on a phone how
+/// long the picture has left before the battery gives out, are questions a
+/// tray answers everywhere else. The clock redraws when the minute turns and
+/// nothing else; the battery is read once and then every minute, and a machine
+/// that reports no battery at all — a desktop answers `-1` — draws no figure,
+/// rather than a 0 a viewer would read as a laptop about to die.
+final class _PlayerClockBattery extends StatefulWidget {
+  const _PlayerClockBattery();
+
+  @override
+  State<_PlayerClockBattery> createState() => _PlayerClockBatteryState();
+}
+
+final class _PlayerClockBatteryState extends State<_PlayerClockBattery> {
+  static const PlatformBatteryService _battery = PlatformBatteryService();
+
+  DateTime _now = DateTime.now();
+  int? _level;
+  Timer? _minute;
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleClock();
+    unawaited(_readBattery());
+    _poll = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(_readBattery()));
+  }
+
+  /// Fires on the minute's turn, not 60 s after the strip opened: a timer
+  /// started at 21:04:30 would otherwise still say 21:05 half a minute into
+  /// the next one.
+  void _scheduleClock() {
+    final now = DateTime.now();
+    final next = DateTime(now.year, now.month, now.day, now.hour, now.minute + 1);
+    _minute = Timer(next.difference(now) + const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+      _scheduleClock();
+    });
+  }
+
+  Future<void> _readBattery() async {
+    try {
+      final level = await _battery.readLevel();
+      if (!mounted || level < 0) return;
+      setState(() => _level = level);
+    } on Object {
+      // A platform that will not answer the call gets no figure, not a zero.
+    }
+  }
+
+  @override
+  void dispose() {
+    _minute?.cancel();
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final figure = theme.typography
+        .numeric(theme.typography.caption)
+        .copyWith(color: _onVideo, fontWeight: FontWeight.w600);
+    final level = _level;
+    String two(int value) => value.toString().padLeft(2, '0');
+    return PlayerGlassPill(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s6,
+          children: [
+            Text('${two(_now.hour)}:${two(_now.minute)}', style: figure),
+            if (level != null) ...[
+              DsIcon(_batteryGlyph(level), size: 14, color: _onVideo),
+              Text('$level%', style: figure),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The case that fits the reading: the figure carries the number, so the
+/// glyph only has to say how near either end of it the battery stands.
+DsIconData _batteryGlyph(int level) => switch (level) {
+  <= 10 => DsIcons.batteryEmpty,
+  <= 25 => DsIcons.batteryLow,
+  <= 75 => DsIcons.batteryMedium,
+  _ => DsIcons.batteryHigh,
+};
 
 /// The live pill over the picture: the red dot and the word in video ink.
 final class _VideoLiveBadge extends StatelessWidget {
