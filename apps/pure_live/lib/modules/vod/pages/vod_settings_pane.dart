@@ -7,9 +7,11 @@ import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_app_login.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart';
 import 'package:pure_live/modules/vod/pages/vod_card_preview_page.dart' show showVodCardPreview;
+import 'package:pure_live/modules/vod/widgets/vod_app_login_dialog.dart' show showVodAppLogin;
 
 /// The Bilibili station's own settings: the Bilibili account the station
 /// reads (and only that account — the live platforms' sign-ins stay in the
@@ -76,6 +78,7 @@ final class VodPlaybackPane extends ConsumerWidget {
     final settings = ref.watch(vodPlaybackSettingsProvider);
     final controller = ref.read(vodPlaybackSettingsProvider.notifier);
     final quality = ref.watch(vodQualityProvider);
+    final appSession = ref.watch(vodAppSessionProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -111,6 +114,31 @@ final class VodPlaybackPane extends ConsumerWidget {
               ],
               onChanged: (action) => unawaited(controller.setFinish(action)),
             ),
+            SettingsChoiceRow<VodApiType>(
+              leading: const DsIcon(DsIcons.globe),
+              title: t.vod.apiType,
+              description: t.vod.apiTypeDesc,
+              value: settings.apiType,
+              options: [for (final type in VodApiType.values) DsSelectOption(value: type, label: type.label)],
+              onChanged: (type) => unawaited(controller.setApiType(type)),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: DsIcon(appSession == null ? DsIcons.qrCode : DsIcons.circleUser),
+              title: Text(appSession == null ? t.vod.appLogin : t.vod.appLoggedIn(uid: '${appSession.mid}')),
+              description: Text(t.vod.appLoginDesc),
+              showChevron: true,
+              onPressed: () => unawaited(showVodAppLogin(context)),
+            ),
+            if (appSession != null)
+              DsListRow(
+                leading: const DsIcon(DsIcons.logOut),
+                title: Text(t.vod.appLogout),
+                onPressed: () => unawaited(ref.read(vodAppSessionProvider.notifier).clear()),
+              ),
           ],
         ),
         DsListSection(

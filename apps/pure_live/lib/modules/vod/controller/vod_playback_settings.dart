@@ -73,19 +73,42 @@ enum VodFinishAction {
   };
 }
 
+/// Which interface the station's playback asks: the site's REST player or
+/// the official client's gRPC channel.
+enum VodApiType {
+  /// The web player's REST answers; no sign-in needed.
+  web,
+
+  /// The app's gRPC channel; the higher tiers need the app sign-in.
+  app;
+
+  /// The row's own word.
+  String get label => switch (this) {
+    VodApiType.web => 'Web',
+    VodApiType.app => 'App',
+  };
+}
+
 /// The station's playback choices: the rate a video opens with, what
-/// happens when it ends, and whether the archive's details sit under the
-/// picture.
+/// happens when it ends, whether the archive's details sit under the
+/// picture, and which interface its playback asks.
 @immutable
 final class VodPlaybackSettings {
   /// Creates the playback choices.
-  const VodPlaybackSettings({required this.speed, required this.finish, required this.showDetails});
+  const VodPlaybackSettings({
+    required this.speed,
+    required this.finish,
+    required this.showDetails,
+    required this.apiType,
+  });
 
-  /// The reference's defaults: normal speed, the next part, details shown.
+  /// The reference's defaults: normal speed, the next part, details shown,
+  /// the web interface.
   static const VodPlaybackSettings standard = VodPlaybackSettings(
     speed: VodSpeedChoice.normal,
     finish: VodFinishAction.nextPart,
     showDetails: true,
+    apiType: VodApiType.web,
   );
 
   /// The rate a video opens with.
@@ -97,25 +120,38 @@ final class VodPlaybackSettings {
   /// Whether the uploader, the counts and the description are drawn.
   final bool showDetails;
 
+  /// The interface playback asks.
+  final VodApiType apiType;
+
   /// A copy with selected fields replaced.
-  VodPlaybackSettings copyWith({VodSpeedChoice? speed, VodFinishAction? finish, bool? showDetails}) =>
-      VodPlaybackSettings(
-        speed: speed ?? this.speed,
-        finish: finish ?? this.finish,
-        showDetails: showDetails ?? this.showDetails,
-      );
+  VodPlaybackSettings copyWith({
+    VodSpeedChoice? speed,
+    VodFinishAction? finish,
+    bool? showDetails,
+    VodApiType? apiType,
+  }) => VodPlaybackSettings(
+    speed: speed ?? this.speed,
+    finish: finish ?? this.finish,
+    showDetails: showDetails ?? this.showDetails,
+    apiType: apiType ?? this.apiType,
+  );
 }
 
 /// The keys the three choices are kept under.
 const String kVodSpeedPrefsKey = 'vod.playback.speed';
 const String kVodFinishPrefsKey = 'vod.playback.finish';
 const String kVodShowDetailsPrefsKey = 'vod.playback.showDetails';
+const String kVodApiTypePrefsKey = 'vod.playback.apiType';
 
 /// Owns the station's playback choices.
 final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> {
   @override
-  VodPlaybackSettings build() =>
-      VodPlaybackSettings(speed: _readSpeed(), finish: _readFinish(), showDetails: _readDetails());
+  VodPlaybackSettings build() => VodPlaybackSettings(
+    speed: _readSpeed(),
+    finish: _readFinish(),
+    showDetails: _readDetails(),
+    apiType: _readApiType(),
+  );
 
   static VodSpeedChoice _readSpeed() {
     try {
@@ -137,6 +173,18 @@ final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> 
       // A closed store keeps the default.
     }
     return VodFinishAction.nextPart;
+  }
+
+  static VodApiType _readApiType() {
+    try {
+      final name = StoragePrefs.getString(kVodApiTypePrefsKey);
+      for (final type in VodApiType.values) {
+        if (type.name == name) return type;
+      }
+    } on Object {
+      // A closed store keeps the default.
+    }
+    return VodApiType.web;
   }
 
   static bool _readDetails() {
@@ -177,12 +225,23 @@ final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> 
     }
   }
 
+  /// Sets the interface playback asks.
+  Future<void> setApiType(VodApiType type) async {
+    state = state.copyWith(apiType: type);
+    try {
+      await StoragePrefs.setString(kVodApiTypePrefsKey, type.name);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
   /// Back to the reference's defaults.
   Future<void> reset() async {
     state = VodPlaybackSettings.standard;
     await setSpeed(VodSpeedChoice.normal);
     await setFinish(VodFinishAction.nextPart);
     await setShowDetails(value: true);
+    await setApiType(VodApiType.web);
   }
 }
 

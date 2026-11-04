@@ -4352,6 +4352,18 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get episodesPrevious => 'Previous group';
 	@override String get episodesNext => 'Next group';
 	@override String get episodesJump => 'Jump to episode';
+	@override String get apiType => 'Interface';
+	@override String get apiTypeDesc => 'Web uses the site\'s player; App uses the official client channel and needs the app scan sign-in for the higher tiers.';
+	@override String get appLogin => 'App sign-in';
+	@override String get appLoginDesc => 'Gets the access key the App interface speaks; without it the App interface serves a lower ladder.';
+	@override String get appLoginTitle => 'App sign-in';
+	@override String get appLoginHint => 'Scan with the Bilibili mobile app';
+	@override String get appLoginScanned => 'Scanned — confirm on your phone';
+	@override String get appLoginExpired => 'The code expired — try again';
+	@override String appLoginFailed({required Object message}) => 'Sign-in failed: ${message}';
+	@override String get appLoginDone => 'App interface signed in';
+	@override String appLoggedIn({required Object uid}) => 'App interface signed in (UID ${uid})';
+	@override String get appLogout => 'Sign out of the app interface';
 }
 
 // Path: wallpaper
@@ -8879,6 +8891,18 @@ extension on TranslationsEn {
 			'vod.episodesPrevious' => 'Previous group',
 			'vod.episodesNext' => 'Next group',
 			'vod.episodesJump' => 'Jump to episode',
+			'vod.apiType' => 'Interface',
+			'vod.apiTypeDesc' => 'Web uses the site\'s player; App uses the official client channel and needs the app scan sign-in for the higher tiers.',
+			'vod.appLogin' => 'App sign-in',
+			'vod.appLoginDesc' => 'Gets the access key the App interface speaks; without it the App interface serves a lower ladder.',
+			'vod.appLoginTitle' => 'App sign-in',
+			'vod.appLoginHint' => 'Scan with the Bilibili mobile app',
+			'vod.appLoginScanned' => 'Scanned — confirm on your phone',
+			'vod.appLoginExpired' => 'The code expired — try again',
+			'vod.appLoginFailed' => ({required Object message}) => 'Sign-in failed: ${message}',
+			'vod.appLoginDone' => 'App interface signed in',
+			'vod.appLoggedIn' => ({required Object uid}) => 'App interface signed in (UID ${uid})',
+			'vod.appLogout' => 'Sign out of the app interface',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

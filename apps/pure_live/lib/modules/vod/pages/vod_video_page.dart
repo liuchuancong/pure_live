@@ -19,6 +19,7 @@ import 'package:media_core_danmaku/media_core_danmaku.dart' show BarrageItemMapp
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
@@ -387,7 +388,21 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       }
     }
     try {
-      var info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
+      // The interface the station asks: the app's gRPC channel when the
+      // viewer chose it and signed in, the web REST answer otherwise. An app
+      // refusal falls back to the web request rather than failing the part.
+      final appClient = ref.read(vodAppClientProvider);
+      final aid = _detail?.aid ?? 0;
+      VodPlayInfo info;
+      if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null && aid > 0) {
+        try {
+          info = await appClient.playUgc(aid: aid, cid: part.cid, qn: qn ?? _qn);
+        } on Object {
+          info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
+        }
+      } else {
+        info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
+      }
       if (!mounted || _disposed) return;
       final existing = _handle;
       final handle =

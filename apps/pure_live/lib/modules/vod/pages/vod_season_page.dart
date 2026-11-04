@@ -10,10 +10,11 @@ import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
-import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart' show vodPlaybackSettingsProvider;
+import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart' show VodApiType, vodPlaybackSettingsProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart' show vodDashSourceOf;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonHead, vodDurationText;
@@ -149,9 +150,23 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       }
     }
     try {
-      var info = await ref
-          .read(vodClientProvider)
-          .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, qn: qn ?? _qn);
+      // The app interface's PGC service when the viewer chose it and signed
+      // in; a refusal falls back to the web endpoint.
+      final appClient = ref.read(vodAppClientProvider);
+      VodPlayInfo info;
+      if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null) {
+        try {
+          info = await appClient.playPgc(epid: episode.id, cid: episode.cid, qn: qn ?? _qn);
+        } on Object {
+          info = await ref
+              .read(vodClientProvider)
+              .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, qn: qn ?? _qn);
+        }
+      } else {
+        info = await ref
+            .read(vodClientProvider)
+            .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, qn: qn ?? _qn);
+      }
       if (!mounted || _disposed) return;
       final kernel = ref.read(playerKernelProvider);
       final handle =

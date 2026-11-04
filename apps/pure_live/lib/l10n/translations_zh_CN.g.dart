@@ -12555,6 +12555,42 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '跳转集数'
 	String get episodesJump => '跳转集数';
+
+	/// zh-CN: '接口类型'
+	String get apiType => '接口类型';
+
+	/// zh-CN: 'Web 用网页取流；App 走官方客户端通道，需要 App 扫码登录才有高画质。'
+	String get apiTypeDesc => 'Web 用网页取流；App 走官方客户端通道，需要 App 扫码登录才有高画质。';
+
+	/// zh-CN: 'App 扫码登录'
+	String get appLogin => 'App 扫码登录';
+
+	/// zh-CN: '为 App 接口获取 access_key；未登录时 App 接口只给较低画质。'
+	String get appLoginDesc => '为 App 接口获取 access_key；未登录时 App 接口只给较低画质。';
+
+	/// zh-CN: 'App 扫码登录'
+	String get appLoginTitle => 'App 扫码登录';
+
+	/// zh-CN: '用哔哩哔哩手机客户端扫码'
+	String get appLoginHint => '用哔哩哔哩手机客户端扫码';
+
+	/// zh-CN: '已扫码，请在手机上确认'
+	String get appLoginScanned => '已扫码，请在手机上确认';
+
+	/// zh-CN: '二维码已过期，请重试'
+	String get appLoginExpired => '二维码已过期，请重试';
+
+	/// zh-CN: '登录失败：{message}'
+	String appLoginFailed({required Object message}) => '登录失败：${message}';
+
+	/// zh-CN: 'App 接口已登录'
+	String get appLoginDone => 'App 接口已登录';
+
+	/// zh-CN: '已登录 App 接口（UID {uid}）'
+	String appLoggedIn({required Object uid}) => '已登录 App 接口（UID ${uid}）';
+
+	/// zh-CN: '退出 App 登录'
+	String get appLogout => '退出 App 登录';
 }
 
 // Path: wallpaper
@@ -17558,6 +17594,18 @@ extension on Translations {
 			'vod.episodesPrevious' => '上一组',
 			'vod.episodesNext' => '下一组',
 			'vod.episodesJump' => '跳转集数',
+			'vod.apiType' => '接口类型',
+			'vod.apiTypeDesc' => 'Web 用网页取流；App 走官方客户端通道，需要 App 扫码登录才有高画质。',
+			'vod.appLogin' => 'App 扫码登录',
+			'vod.appLoginDesc' => '为 App 接口获取 access_key；未登录时 App 接口只给较低画质。',
+			'vod.appLoginTitle' => 'App 扫码登录',
+			'vod.appLoginHint' => '用哔哩哔哩手机客户端扫码',
+			'vod.appLoginScanned' => '已扫码，请在手机上确认',
+			'vod.appLoginExpired' => '二维码已过期，请重试',
+			'vod.appLoginFailed' => ({required Object message}) => '登录失败：${message}',
+			'vod.appLoginDone' => 'App 接口已登录',
+			'vod.appLoggedIn' => ({required Object uid}) => '已登录 App 接口（UID ${uid}）',
+			'vod.appLogout' => '退出 App 登录',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',
