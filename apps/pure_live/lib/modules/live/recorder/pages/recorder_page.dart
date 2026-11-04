@@ -1298,7 +1298,6 @@ final class _TaskCard extends ConsumerWidget {
                         // one line; the tags that describe the room follow
                         // underneath it.
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: DsSpace.s8,
                           children: [
                             DsAvatar(
@@ -1325,17 +1324,17 @@ final class _TaskCard extends ConsumerWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.typography.caption.copyWith(color: colors.textMuted),
                                     ),
+                                  Wrap(
+                                    spacing: DsSpace.s6,
+                                    runSpacing: DsSpace.s4,
+                                    children: [
+                                      _TagChip(text: platformName, icon: platformIcon),
+                                      for (final tag in tags) _TagChip(text: tag),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                        Wrap(
-                          spacing: DsSpace.s6,
-                          runSpacing: DsSpace.s4,
-                          children: [
-                            _TagChip(text: platformName, icon: platformIcon),
-                            for (final tag in tags) _TagChip(text: tag),
                           ],
                         ),
                       ],
