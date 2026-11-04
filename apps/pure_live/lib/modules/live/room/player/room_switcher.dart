@@ -61,8 +61,10 @@ List<LiveRoom> roomSwipeList({
 /// Opens the room switcher over [current]: the followed rooms on air, the
 /// watch history and followed replays, in the grid or list style. A pick
 /// replaces the room page, so going back does not return to the old room.
-Future<void> showRoomSwitcher(BuildContext context, {required LiveRoom current}) =>
-    showDsDialog<void>(context: context, builder: (context) => _RoomSwitcherDialog(current: current));
+Future<void> showRoomSwitcher(BuildContext context, {required LiveRoom current}) => showDsDialog<void>(
+  context: context,
+  builder: (context) => _RoomSwitcherDialog(current: current),
+);
 
 final class _RoomSwitcherDialog extends ConsumerStatefulWidget {
   const _RoomSwitcherDialog({required this.current});
@@ -148,10 +150,7 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
             Expanded(
               child: rooms.isEmpty
                   ? Center(
-                      child: Text(
-                        t.room.switchEmpty,
-                        style: theme.typography.body.copyWith(color: colors.textMuted),
-                      ),
+                      child: Text(t.room.switchEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
                     )
                   : layout == RoomSwitcherLayout.grid
                   ? GridView.builder(
@@ -163,19 +162,15 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
                         mainAxisSpacing: DsSpace.s8,
                       ),
                       itemCount: rooms.length,
-                      itemBuilder: (context, index) => _SwitcherCard(
-                        room: rooms[index],
-                        onPressed: () => _open(rooms[index]),
-                      ),
+                      itemBuilder: (context, index) =>
+                          _SwitcherCard(room: rooms[index], onPressed: () => _open(rooms[index])),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.all(DsSpace.s4),
                       itemCount: rooms.length,
                       separatorBuilder: (_, _) => DsLine(color: colors.border),
-                      itemBuilder: (context, index) => _SwitcherRow(
-                        room: rooms[index],
-                        onPressed: () => _open(rooms[index]),
-                      ),
+                      itemBuilder: (context, index) =>
+                          _SwitcherRow(room: rooms[index], onPressed: () => _open(rooms[index])),
                     ),
             ),
           ],
@@ -195,9 +190,7 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
   void _open(LiveRoom room) {
     final router = ref.read(appRouterProvider);
     Navigator.of(context).pop();
-    unawaited(
-      router.pushReplacement(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
-    );
+    unawaited(router.pushReplacement(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location));
   }
 }
 

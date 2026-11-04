@@ -1,6 +1,11 @@
 import 'dart:async' show Timer;
 
+import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/features/settings/playback/playback_settings_providers.dart'
+    show asmrSleepDurationLabel, kAsmrSleepMinuteChoices;
+import 'package:pure_live/l10n/translations.dart';
 
 /// What the sleep timer holds: the remaining whole minutes and the moment
 /// it ends (UTC), or a zero state when it is off.
@@ -74,3 +79,43 @@ final class SleepTimerController extends Notifier<SleepTimerState> {
 /// The open room's sleep timer (one room plays at a time; the route owns
 /// the page).
 final sleepTimerProvider = NotifierProvider<SleepTimerController, SleepTimerState>(SleepTimerController.new);
+
+/// The sleep timer's own choices, built once for every surface that offers
+/// them: the room page's chip folds them into its hover menu, and the room's
+/// actions list — the only way to these verbs while the picture owns the
+/// window — opens them as a panel.
+///
+/// A running timer leads with the way to stop it, because that is the question
+/// a viewer who already set one is asking.
+List<Widget> roomSleepTimerChoices(BuildContext context, WidgetRef ref) {
+  final t = context.t;
+  final running = ref.read(sleepTimerProvider).minutes != null;
+  return [
+    if (running)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.timerOff),
+        label: Text(t.room.sleepOff),
+        onPressed: () => ref.read(sleepTimerProvider.notifier).start(null),
+      ),
+    for (final minutes in kAsmrSleepMinuteChoices)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.moon),
+        label: Text(asmrSleepDurationLabel(minutes)),
+        onPressed: () => ref.read(sleepTimerProvider.notifier).start(minutes),
+      ),
+  ];
+}
+
+/// The choices as a panel, for the surfaces that carry actions in a list
+/// rather than a hover menu.
+Future<void> showRoomSleepTimer(BuildContext context, WidgetRef ref) => showDsPanel<void>(
+  context: context,
+  builder: (panelContext) => DsPanel(
+    title: Text(panelContext.t.room.sleep),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s4,
+      children: roomSleepTimerChoices(panelContext, ref),
+    ),
+  ),
+);

@@ -1465,6 +1465,8 @@ List<Widget> roomMenuItems(
         ),
       );
   final pipOn = ref.watch(roomPresentationProvider) == PresentationMode.pip;
+  final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
+  final sleepRunning = sleepMinutes != null;
   final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
   final external =
       detail != null &&
@@ -1550,6 +1552,14 @@ List<Widget> roomMenuItems(
           label: Text(t.room.autoRecordOn),
           onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
         ),
+      // The chip that carries this sits in the page header, and the header is
+      // gone the moment the picture owns the window — which is exactly when a
+      // viewer is most likely to want the room to stop on its own.
+      DsMenuItem(
+        leading: DsIcon(sleepRunning ? DsIcons.timer : DsIcons.moon),
+        label: Text(sleepRunning ? '${t.room.sleep} · ${asmrSleepDurationLabel(sleepMinutes)}' : t.room.sleep),
+        onPressed: () => unawaited(showRoomSleepTimer(context, ref)),
+      ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.activity),
         label: Text(t.room.statsToggle),
@@ -1956,17 +1966,9 @@ final class _SleepChip extends ConsumerWidget {
           );
         },
       ),
-      items: [
-        if (running)
-          DsMenuItem(label: Text(t.room.sleepOff), onPressed: () => ref.read(sleepTimerProvider.notifier).start(null)),
-        // The settings page's own duration presets, read through the shared
-        // list: one set of choices, one wording.
-        for (final minutes in kAsmrSleepMinuteChoices)
-          DsMenuItem(
-            label: Text(asmrSleepDurationLabel(minutes)),
-            onPressed: () => ref.read(sleepTimerProvider.notifier).start(minutes),
-          ),
-      ],
+      // The shared list, so the room's own menu and this chip can never offer
+      // two different sets of minutes.
+      items: roomSleepTimerChoices(context, ref),
     );
   }
 }
