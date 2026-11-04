@@ -1175,9 +1175,9 @@ final class _TaskCard extends ConsumerWidget {
         ? DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
-            leading: const DsIcon(DsIcons.pause, size: 14),
-            onPressed: onToggleWatch,
-            child: Text(t.recorder.pauseWatch),
+            leading: const DsIcon(DsIcons.squareStop, size: 14),
+            onPressed: onStop,
+            child: Text(t.recorder.stop),
           )
         : failed
         ? DsButton(
@@ -1187,20 +1187,12 @@ final class _TaskCard extends ConsumerWidget {
             onPressed: onStartNow,
             child: Text(t.common.retry),
           )
-        : paused
-        ? DsButton(
-            variant: DsButtonVariant.primary,
-            size: DsSize.sm,
-            leading: const DsIcon(DsIcons.play, size: 14),
-            onPressed: onToggleWatch,
-            child: Text(t.recorder.resumeWatch),
-          )
         : DsButton(
             variant: DsButtonVariant.primary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.play, size: 14),
             onPressed: onStartNow,
-            child: Text(t.recorder.startNow),
+            child: Text(t.recorder.startRecording),
           );
     final saved = (task.filePath ?? '').trim();
     return DsCard(
@@ -1280,10 +1272,17 @@ final class _TaskCard extends ConsumerWidget {
                 ],
               ),
               () {
-                Widget watch() => DsSwitch(
-                  value: task.enabled,
-                  onChanged: (value) => onToggleWatch(),
-                  semanticLabel: t.recorder.roomCheckTitle,
+                Widget watch() => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s8,
+                  children: [
+                    Text(t.recorder.roomCheckTitle, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                    DsSwitch(
+                      value: task.enabled,
+                      onChanged: (value) => onToggleWatch(),
+                      semanticLabel: t.recorder.roomCheckTitle,
+                    ),
+                  ],
                 );
                 Widget details() => DsButton(
                   variant: DsButtonVariant.secondary,
@@ -1296,6 +1295,13 @@ final class _TaskCard extends ConsumerWidget {
                     ),
                   ),
                   child: Text(t.recorder.details),
+                );
+                Widget play() => DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.playCircle, size: 14),
+                  onPressed: onPreview ?? onPlayExternal,
+                  child: Text(t.recorder.playRecording),
                 );
                 Widget menu() => _TaskMenu(
                   task: task,
@@ -1323,10 +1329,10 @@ final class _TaskCard extends ConsumerWidget {
                 final controls = Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s8,
-                  children: [watch(), details(), action, menu()],
+                  children: [details(), play(), action, menu()],
                 );
-                // A phone stacks the verbs under the state instead of squeezing
-                // four controls beside it.
+                // A phone stacks the verbs and keeps the switch in the middle
+                // of its own line.
                 if (width < 620) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1339,6 +1345,7 @@ final class _TaskCard extends ConsumerWidget {
                           if (note != null) Flexible(child: note),
                         ],
                       ),
+                      Center(child: watch()),
                       Align(alignment: AlignmentDirectional.centerEnd, child: controls),
                     ],
                   );
@@ -1348,7 +1355,7 @@ final class _TaskCard extends ConsumerWidget {
                   children: [
                     badge,
                     if (note != null) Flexible(child: note),
-                    const Spacer(),
+                    Expanded(child: Center(child: watch())),
                     controls,
                   ],
                 );
@@ -1509,7 +1516,7 @@ final class _TaskMenu extends StatelessWidget {
         variant: DsButtonVariant.secondary,
         size: DsSize.sm,
         semanticLabel: t.recorder.menuMore,
-        leading: const DsIcon(DsIcons.ellipsis, size: 14),
+        leading: const DsIcon(DsIcons.chevronDown, size: 14),
         onPressed: controller.toggle,
         child: Text(t.common.more),
       ),

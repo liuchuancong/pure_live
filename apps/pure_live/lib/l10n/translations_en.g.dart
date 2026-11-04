@@ -2223,6 +2223,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get detailsTitle => 'Recording details';
 	@override String get detailsMetrics => 'Recording';
 	@override String get detailsLocation => 'File';
+	@override String get startRecording => 'Start recording';
 }
 
 // Path: room
@@ -6794,6 +6795,7 @@ extension on TranslationsEn {
 			'recorder.detailsTitle' => 'Recording details',
 			'recorder.detailsMetrics' => 'Recording',
 			'recorder.detailsLocation' => 'File',
+			'recorder.startRecording' => 'Start recording',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7183,9 +7185,9 @@ extension on TranslationsEn {
 			'settings.themeSeedDescription' => 'Drives buttons, selection and emphasis.',
 			'settings.themeSeedDynamic' => 'Follow the system\'s dynamic colour',
 			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
-			'settings.dynamicColor' => 'Dynamic colour',
 			_ => null,
 		} ?? switch (path) {
+			'settings.dynamicColor' => 'Dynamic colour',
 			'settings.dynamicColorDescription' => 'Builds the theme from the wallpaper or accent colour.',
 			'settings.themeColorTitle' => 'Accent colour',
 			'settings.themeColorPresets' => 'Presets',
@@ -7697,9 +7699,9 @@ extension on TranslationsEn {
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite (soft)',
 			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
-			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
 			'settings.scaleNearest' => 'Nearest (blocky)',
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
 			'settings.deinterlaceDesc' => 'Live sources are progressive; only old TV signals or captures need it.',
@@ -8211,9 +8213,9 @@ extension on TranslationsEn {
 			'settings.backgroundCopyGradient' => 'Copy gradient',
 			'settings.backgroundCopyAddress' => 'Copy address',
 			'settings.backgroundDownloadFailed' => 'Download failed',
-			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			_ => null,
 		} ?? switch (path) {
+			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			'settings.cacheRefreshThumbnailsDesc' => 'Clears cover, avatar and icon caches.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
 			'settings.storageFolderDefaultLabel' => 'Default',
@@ -8725,9 +8727,9 @@ extension on TranslationsEn {
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
-			'vod.pause' => 'Pause',
 			_ => null,
 		} ?? switch (path) {
+			'vod.pause' => 'Pause',
 			'vod.mute' => 'Mute',
 			'vod.unmute' => 'Unmute',
 			'vod.volume' => 'Volume',

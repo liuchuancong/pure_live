@@ -321,5 +321,6 @@
   "details": "Details",
   "detailsTitle": "Recording details",
   "detailsMetrics": "Recording",
-  "detailsLocation": "File"
+  "detailsLocation": "File",
+  "startRecording": "Start recording"
 }

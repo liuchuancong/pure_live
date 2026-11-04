@@ -6294,6 +6294,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '文件'
 	String get detailsLocation => '文件';
+
+	/// zh-CN: '开始录制'
+	String get startRecording => '开始录制';
 }
 
 // Path: room
@@ -15451,6 +15454,7 @@ extension on Translations {
 			'recorder.detailsTitle' => '录制详情',
 			'recorder.detailsMetrics' => '录制数据',
 			'recorder.detailsLocation' => '文件',
+			'recorder.startRecording' => '开始录制',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15840,9 +15844,9 @@ extension on Translations {
 			'settings.themeSeedDescription' => '用于按钮、选中态和强调色。',
 			'settings.themeSeedDynamic' => '跟随系统动态取色',
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
-			'settings.dynamicColor' => '动态取色',
 			_ => null,
 		} ?? switch (path) {
+			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '用系统壁纸或强调色生成主题。',
 			'settings.themeColorTitle' => '主题色',
 			'settings.themeColorPresets' => '预设颜色',
@@ -16354,9 +16358,9 @@ extension on Translations {
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite（柔和）',
 			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
-			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			'settings.scaleNearest' => '最近邻（块状）',
 			'settings.deinterlace' => '反交错 (--deinterlace)',
 			'settings.deinterlaceDesc' => '直播源多为逐行，保持自动；老电视或采集卡才需要。',
@@ -16868,9 +16872,9 @@ extension on Translations {
 			'settings.backgroundCopyGradient' => '复制渐变',
 			'settings.backgroundCopyAddress' => '复制地址',
 			'settings.backgroundDownloadFailed' => '下载失败',
-			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			_ => null,
 		} ?? switch (path) {
+			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
 			'settings.storageFolderDefaultLabel' => '默认',
@@ -17382,9 +17386,9 @@ extension on Translations {
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
-			'vod.pause' => '暂停',
 			_ => null,
 		} ?? switch (path) {
+			'vod.pause' => '暂停',
 			'vod.mute' => '静音',
 			'vod.unmute' => '取消静音',
 			'vod.volume' => '音量',

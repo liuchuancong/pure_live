@@ -321,5 +321,6 @@
   "details": "详情",
   "detailsTitle": "录制详情",
   "detailsMetrics": "录制数据",
-  "detailsLocation": "文件"
+  "detailsLocation": "文件",
+  "startRecording": "开始录制"
 }
