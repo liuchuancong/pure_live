@@ -82,9 +82,27 @@ RoomState _initial({bool audioOnly = false}) => (
 /// order runs the viewer's own blocks first (gate → policy → repeated →
 /// similarity → sink), and the policy normalizes entries once, so matching
 /// is case-insensitive for free. An off master switch means no policy.
-DanmakuFilterPolicy _shieldPolicyFor(ShieldRules rules) => rules.enabled
-    ? DanmakuFilterPolicy(blockedUsers: rules.users, blockedKeywords: rules.keywords)
-    : DanmakuFilterPolicy.none;
+///
+/// A word written `/…/` is an expression, and the site package owns that
+/// format: it decides which word is one and refuses the ones whose time grows
+/// exponentially with the text, because the filter runs on the UI isolate for
+/// every message. So the split happens here and the compiled form is handed
+/// down, rather than the engine learning to read the viewer's list. Before this
+/// the same list blocked a line in the recorder's sidecar and did nothing over
+/// the picture, which reads as a shield that only works on files.
+DanmakuFilterPolicy _shieldPolicyFor(ShieldRules rules) {
+  if (!rules.enabled) return DanmakuFilterPolicy.none;
+  final words = <String>[];
+  final patterns = <RegExp>[];
+  for (final word in rules.keywords) {
+    if (!DanmakuBlockPattern.isPattern(word)) {
+      words.add(word);
+      continue;
+    }
+    if (DanmakuBlockPattern.compile(word) case final pattern?) patterns.add(pattern);
+  }
+  return DanmakuFilterPolicy(blockedUsers: rules.users, blockedKeywords: words, blockedPatterns: patterns);
+}
 
 /// The controller config for the viewer's fuzzy and repeated filter rules.
 /// The gate and timing values stay media_core's tuned defaults.

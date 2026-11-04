@@ -11452,8 +11452,8 @@ class Translations$shield$zh_CN {
 	/// zh-CN: '用户'
 	String get usersTitle => '用户';
 
-	/// zh-CN: '输入要屏蔽的关键词'
-	String get keywordFieldHint => '输入要屏蔽的关键词';
+	/// zh-CN: '输入要屏蔽的关键词，/…/ 是正则'
+	String get keywordFieldHint => '输入要屏蔽的关键词，/…/ 是正则';
 
 	/// zh-CN: '输入要屏蔽的用户名'
 	String get userFieldHint => '输入要屏蔽的用户名';
@@ -11523,6 +11523,12 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '隐藏疑似机器人弹幕，可能误伤普通聊天。'
 	String get douyuSuspectedDescription => '隐藏疑似机器人弹幕，可能误伤普通聊天。';
+
+	/// zh-CN: '这条正则太长、写错或跑不动，不能用'
+	String get patternRejected => '这条正则太长、写错或跑不动，不能用';
+
+	/// zh-CN: '这条正则逐条匹配太慢，会拖住消息过滤'
+	String get patternTooSlow => '这条正则逐条匹配太慢，会拖住消息过滤';
 }
 
 // Path: sites
@@ -17170,7 +17176,7 @@ extension on Translations {
 			'shield.repeatWindow' => '合并时间',
 			'shield.keywordsTitle' => '关键词',
 			'shield.usersTitle' => '用户',
-			'shield.keywordFieldHint' => '输入要屏蔽的关键词',
+			'shield.keywordFieldHint' => '输入要屏蔽的关键词，/…/ 是正则',
 			'shield.userFieldHint' => '输入要屏蔽的用户名',
 			'shield.add' => '添加',
 			'shield.keywordsEmpty' => '还没有屏蔽关键词',
@@ -17194,6 +17200,8 @@ extension on Translations {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} 字',
 			'shield.douyuSuspected' => '过滤斗鱼机器弹幕',
 			'shield.douyuSuspectedDescription' => '隐藏疑似机器人弹幕，可能误伤普通聊天。',
+			'shield.patternRejected' => '这条正则太长、写错或跑不动，不能用',
+			'shield.patternTooSlow' => '这条正则逐条匹配太慢，会拖住消息过滤',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -17387,10 +17395,10 @@ extension on Translations {
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
-			'vod.description' => '简介',
-			'vod.noDescription' => '这个视频没有简介。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.description' => '简介',
+			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',
 			'vod.mute' => '静音',

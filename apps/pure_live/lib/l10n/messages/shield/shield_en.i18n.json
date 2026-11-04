@@ -20,7 +20,7 @@
   "repeatWindow": "Merge window",
   "keywordsTitle": "Keywords",
   "usersTitle": "Users",
-  "keywordFieldHint": "Type a keyword to block",
+  "keywordFieldHint": "Type a keyword to block — /…/ is a regular expression",
   "userFieldHint": "Type a user name to block",
   "add": "Add",
   "keywordsEmpty": "No blocked keywords yet",
@@ -43,5 +43,7 @@
   "blockLongLengthDescription": "10–100; an emoticon counts as one.",
   "blockLongLengthValue": "{count: int} characters",
   "douyuSuspected": "Filter Douyu bots",
-  "douyuSuspectedDescription": "Hides suspected bot chat; ordinary chat may suffer."
+  "douyuSuspectedDescription": "Hides suspected bot chat; ordinary chat may suffer.",
+  "patternRejected": "That pattern is too long, malformed, or unsafe to run",
+  "patternTooSlow": "That pattern is too slow to run on every message"
 }

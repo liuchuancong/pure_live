@@ -20,7 +20,7 @@
   "repeatWindow": "合并时间",
   "keywordsTitle": "关键词",
   "usersTitle": "用户",
-  "keywordFieldHint": "输入要屏蔽的关键词",
+  "keywordFieldHint": "输入要屏蔽的关键词，/…/ 是正则",
   "userFieldHint": "输入要屏蔽的用户名",
   "add": "添加",
   "keywordsEmpty": "还没有屏蔽关键词",
@@ -43,5 +43,7 @@
   "blockLongLengthDescription": "10–100 字，表情算一个字。",
   "blockLongLengthValue": "{count: int} 字",
   "douyuSuspected": "过滤斗鱼机器弹幕",
-  "douyuSuspectedDescription": "隐藏疑似机器人弹幕，可能误伤普通聊天。"
+  "douyuSuspectedDescription": "隐藏疑似机器人弹幕，可能误伤普通聊天。",
+  "patternRejected": "这条正则太长、写错或跑不动，不能用",
+  "patternTooSlow": "这条正则逐条匹配太慢，会拖住消息过滤"
 }

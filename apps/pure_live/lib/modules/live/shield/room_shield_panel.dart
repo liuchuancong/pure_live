@@ -41,6 +41,7 @@ final class RoomShieldPanel extends ConsumerWidget {
           entries: rules.keywords,
           emptyText: t.shield.keywordsEmpty,
           fieldHint: t.shield.keywordFieldHint,
+          acceptsPatterns: true,
           onAdd: (value) => ref.read(shieldRulesProvider.notifier).addKeyword(value),
           onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
           onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
@@ -288,6 +289,7 @@ final class _TagList extends ConsumerWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onClear,
+    this.acceptsPatterns = false,
   });
 
   final DsIconData icon;
@@ -295,6 +297,9 @@ final class _TagList extends ConsumerWidget {
   final List<String> entries;
   final String emptyText;
   final String fieldHint;
+
+  /// Whether a `/…/` word means a regular expression in this list.
+  final bool acceptsPatterns;
   final Future<bool> Function(String value) onAdd;
   final Future<void> Function(String value) onRemove;
   final Future<void> Function() onClear;
@@ -341,6 +346,7 @@ final class _TagList extends ConsumerWidget {
           ),
         ShieldAddField(
           fieldHint: fieldHint,
+          acceptsPatterns: acceptsPatterns,
           onAdd: onAdd,
           padding: const EdgeInsetsDirectional.only(top: DsSpace.s8),
         ),

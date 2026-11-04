@@ -3966,7 +3966,7 @@ class _Translations$shield$en extends Translations$shield$zh_CN {
 	@override String get repeatWindow => 'Merge window';
 	@override String get keywordsTitle => 'Keywords';
 	@override String get usersTitle => 'Users';
-	@override String get keywordFieldHint => 'Type a keyword to block';
+	@override String get keywordFieldHint => 'Type a keyword to block — /…/ is a regular expression';
 	@override String get userFieldHint => 'Type a user name to block';
 	@override String get add => 'Add';
 	@override String get keywordsEmpty => 'No blocked keywords yet';
@@ -3990,6 +3990,8 @@ class _Translations$shield$en extends Translations$shield$zh_CN {
 	@override String blockLongLengthValue({required int count}) => '${count} characters';
 	@override String get douyuSuspected => 'Filter Douyu bots';
 	@override String get douyuSuspectedDescription => 'Hides suspected bot chat; ordinary chat may suffer.';
+	@override String get patternRejected => 'That pattern is too long, malformed, or unsafe to run';
+	@override String get patternTooSlow => 'That pattern is too slow to run on every message';
 }
 
 // Path: sites
@@ -8509,7 +8511,7 @@ extension on TranslationsEn {
 			'shield.repeatWindow' => 'Merge window',
 			'shield.keywordsTitle' => 'Keywords',
 			'shield.usersTitle' => 'Users',
-			'shield.keywordFieldHint' => 'Type a keyword to block',
+			'shield.keywordFieldHint' => 'Type a keyword to block — /…/ is a regular expression',
 			'shield.userFieldHint' => 'Type a user name to block',
 			'shield.add' => 'Add',
 			'shield.keywordsEmpty' => 'No blocked keywords yet',
@@ -8533,6 +8535,8 @@ extension on TranslationsEn {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} characters',
 			'shield.douyuSuspected' => 'Filter Douyu bots',
 			'shield.douyuSuspectedDescription' => 'Hides suspected bot chat; ordinary chat may suffer.',
+			'shield.patternRejected' => 'That pattern is too long, malformed, or unsafe to run',
+			'shield.patternTooSlow' => 'That pattern is too slow to run on every message',
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
@@ -8726,10 +8730,10 @@ extension on TranslationsEn {
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
-			'vod.description' => 'Description',
-			'vod.noDescription' => 'This video has no description.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.description' => 'Description',
+			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',
 			'vod.mute' => 'Mute',

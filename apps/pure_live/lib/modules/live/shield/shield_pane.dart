@@ -85,6 +85,7 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
             entries: rules.keywords,
             fieldHint: t.shield.keywordFieldHint,
             emptyText: t.shield.keywordsEmpty,
+            acceptsPatterns: true,
             onAdd: (value) => ref.read(shieldRulesProvider.notifier).addKeyword(value),
             onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
             onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
@@ -284,6 +285,7 @@ final class _ShieldList extends ConsumerWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onClear,
+    this.acceptsPatterns = false,
   });
 
   /// The list's icon (a keyword's funnel, a user's person).
@@ -297,6 +299,9 @@ final class _ShieldList extends ConsumerWidget {
 
   /// The add field's placeholder.
   final String fieldHint;
+
+  /// Whether a `/…/` word means a regular expression in this list.
+  final bool acceptsPatterns;
 
   /// What an empty list says.
   final String emptyText;
@@ -318,6 +323,7 @@ final class _ShieldList extends ConsumerWidget {
       children: [
         ShieldAddField(
           fieldHint: fieldHint,
+          acceptsPatterns: acceptsPatterns,
           onAdd: onAdd,
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
           // Clearing the whole list sits beside the add button: both are
