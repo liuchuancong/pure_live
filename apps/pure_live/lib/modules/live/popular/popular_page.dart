@@ -9,9 +9,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/layouts/mobile_shell_scope.dart';
 import 'package:pure_live/modules/live/popular/popular_controller.dart';
-import 'package:pure_live/modules/live/popular/popular_top_bar_actions.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/modules/live/popular/room_card_menu.dart';
 import 'package:pure_live/modules/live/search/search.dart';
@@ -158,67 +156,26 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
 
     void managePlatforms() =>
         unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location));
-    // The feed's own reload: the shown platform's first page, asked again.
-    final loadingFeed = ref.watch(popularCatalogProvider.select((catalog) => catalog[platform]?.loading ?? false));
-    void refreshFeed() => unawaited(ref.read(popularCatalogProvider.notifier).refresh(platform));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          // A small screen keeps the tab bar alone and puts the
-          // layout and the platform wall behind one more icon.
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
-              // The phone shell carries the page's verbs (search, refresh,
-              // more); wherever it hosts the page, this row keeps the tabs
-              // alone so no verb is offered twice.
-              final hosted = MobileShellScope.isHosted(context);
-              final tabs = PlatformTabRow(
-                platforms: ids,
-                current: platform,
-                nameOf: _platformName,
-                semanticLabel: t.navigation.hot,
-                showPlatformWall: !narrow && !hosted,
-                showLayoutToggle: !narrow && !hosted,
-                onManagePlatforms: managePlatforms,
-                onChanged: choosePlatform,
-              );
-              final refresh = DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.common.refresh,
-                onPressed: loadingFeed ? null : refreshFeed,
-                icon: const DsIcon(DsIcons.refreshCw, size: 16),
-              );
-              if (!narrow) {
-                return Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: tabs),
-                    if (!hosted) refresh,
-                  ],
-                );
-              }
-              // A phone's refresh and platform menu ride the top bar with the
-              // page's button style (see PopularTopBarActions), so this line
-              // keeps the tabs alone. A narrow desktop window is not hosted by
-              // that shell: it keeps the same two verbs here.
-              if (!MobileShellScope.isHosted(context)) {
-                return SizedBox(
-                  height: 44,
-                  child: Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(child: tabs),
-                      const PopularTopBarActions(),
-                    ],
-                  ),
-                );
-              }
-              return SizedBox(height: 44, child: tabs);
-            },
+          // The tabs alone: the platform wall, the layout and the refresh are
+          // this page's verbs, and the shell's head line carries them (see
+          // PopularTopBarActions) at every width.
+          child: SizedBox(
+            height: 44,
+            child: PlatformTabRow(
+              platforms: ids,
+              current: platform,
+              nameOf: _platformName,
+              semanticLabel: t.navigation.hot,
+              showPlatformWall: false,
+              showLayoutToggle: false,
+              onManagePlatforms: managePlatforms,
+              onChanged: choosePlatform,
+            ),
           ),
         ),
         Expanded(

@@ -6,23 +6,14 @@ import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/layouts/desktop/desktop_layout.dart';
+import 'package:pure_live/layouts/app_shell.dart';
 import 'package:pure_live/layouts/location_breadcrumb.dart';
-import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
 import 'package:pure_live/modules/music/widgets/music_now_playing_bar.dart' show MusicNowPlayingBar;
 import 'package:pure_live/shared/shared.dart';
-import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
 // No `show` clause: a wrapped import is what the save-time import
 // organizer kept breaking apart.
-
-/// Resolves [width] to the package's breakpoint scale: the last
-/// breakpoint whose minimum width the window meets.
-TailwindBreakpoint _breakpointOf(double width) => TailwindBreakpoint.values.lastWhere(
-  (breakpoint) => width >= breakpoint.breakpoint,
-  orElse: () => TailwindBreakpoint.xs,
-);
 
 /// The branches the router built, in branch order — the index a
 /// destination maps to when its page exists.
@@ -141,16 +132,9 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
     final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
     final tv = formFactor == FormFactor.tv;
-    // Only a TV keeps the desktop shell at every width: a remote's D-pad
-    // starts on the sidebar, and its canvas is never thumb-sized. Every
-    // other platform follows the window — a Windows window dragged under
-    // the bottom-bar breakpoint gets the mobile shell, whose top bar still
-    // carries the caption strip and the window controls.
-    final desktopShell = tv;
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
     final homeMenu = ref.watch(navMenuProvider);
@@ -394,41 +378,28 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
           )
         : page;
 
-    // A TV keeps the desktop shell even on a narrow logical canvas: the
-    // drawer and bottom bar belong to thumbs, and this shell's sidebar is
-    // what a remote starts on. Every other platform hands the width to the
-    // gate, so a Windows window shrunk past it lands on the mobile shell.
-    if (breakpoint.index < kBottomBarBreakpoint.index && !desktopShell) {
-      return MobileLayout(
-        content: shownContent,
-        module: module,
-        selected: selected,
-        onSelected: handleSelected,
-        onModuleSelected: selectModule,
-        // The shell's surface can be a settings section too — a desktop window
-        // shrunk under the breakpoint keeps the pane in place rather than
-        // pushing it — so the same path the desktop head shows names the
-        // settings trail here.
-        breadcrumb: LocationBreadcrumb(
-          module: module,
-          selected: selected,
-          settings: inSettings ? settingsSection : null,
-          categoryKey: inSettings && !settingsStacked ? settingsCategory : null,
-          sectionOpen: inSettings && sectionOpen && !settingsStacked,
-        ),
-        // A section opened in place steps back through its own tree, the
-        // desktop rule; the trail behind it still moves the page. Stacked
-        // pages sit above the shell and carry their own back.
-        canBack: _cursor > 0 || (inSettings && sectionOpen && !settingsStacked),
-        onBack: goBack,
-        homeMenuItems: homeMenu,
-        badges: badges,
-      );
-    }
-    return DesktopLayout(
+    return AppShell(
       content: shownContent,
       module: module,
+      selected: selected,
+      onSelected: handleSelected,
       onModuleSelected: selectModule,
+      // The where-am-I path: the settings surface names its section and, where
+      // the shell keeps the pane in place, its category too.
+      breadcrumb: LocationBreadcrumb(
+        module: module,
+        selected: selected,
+        settings: inSettings ? settingsSection : null,
+        categoryKey: inSettings && !settingsStacked ? settingsCategory : null,
+        sectionOpen: inSettings && sectionOpen && !settingsStacked,
+      ),
+      // A settings section page can step up even when the destination trail has
+      // nothing behind it.
+      canBack: _cursor > 0 || (inSettings && sectionOpen),
+      onBack: goBack,
+      canForward: _cursor < _trail.length - 1,
+      onForward: goForward,
+      onBackToApp: () => handleSelected(_lastAppItem ?? defaultNavigationItemFor(AppModule.live)),
       menuGroups: menuGroups,
       menuGroupLabels: menuGroupLabels,
       menuValue: menuValue,
@@ -437,9 +408,8 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       settingsSection: inSettings ? settingsSection : null,
       settingsCategoryKey: inSettings ? settingsCategory : null,
       settingsSectionOpen: inSettings && sectionOpen,
-      onBackToApp: () => handleSelected(_lastAppItem ?? defaultNavigationItemFor(AppModule.live)),
-      // The toggle rules; a window crossing under the breakpoint folds
-      // the sidebar once (didChangeDependencies), never outvoting this.
+      // The toggle rules; a window crossing under the breakpoint folds the
+      // sidebar once (didChangeDependencies), never outvoting this.
       expanded: (tv && ref.watch(tvMenuExpandedProvider)) || sidebar.expanded,
       sidebarWidth: sidebar.width,
       onToggleSidebar: () {
@@ -450,12 +420,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         }
       },
       onSidebarWidthChanged: ref.read(sidebarProvider.notifier).setWidth,
-      // A settings section page can step up even when the destination trail
-      // has nothing behind it.
-      canBack: _cursor > 0 || (inSettings && sectionOpen),
-      canForward: _cursor < _trail.length - 1,
-      onBack: goBack,
-      onForward: goForward,
+      homeMenuItems: homeMenu,
       tv: tv,
     );
   }

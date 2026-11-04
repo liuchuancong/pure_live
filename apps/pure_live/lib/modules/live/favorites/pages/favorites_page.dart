@@ -8,14 +8,12 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/layouts/mobile_shell_scope.dart';
 import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_refresh_handoff.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_view.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
-import 'package:pure_live/modules/live/favorites/widgets/favorites_top_bar_actions.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
 
@@ -335,9 +333,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       );
     }
 
-    final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
-    // The phone shell carries this page's verbs in its top bar.
-    final hosted = MobileShellScope.isHosted(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -347,10 +342,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              // One toolbar line level with the categories: the group
-              // tabs, then the platform row's controls — the wall chevron
-              // and the grid switch (a small screen folds those two into
-              // its 更多) — and the refresh at the end.
+              // The group tabs alone: the platform wall, the layout and the
+              // refresh are this page's verbs, and the shell's head line
+              // carries them (see FavoritesTopBarActions) at every width.
               Row(
                 spacing: DsSpace.s8,
                 children: [
@@ -379,28 +373,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       ],
                     ),
                   ),
-                  if (!narrow && !hosted)
-                    PlatformWallButton(
-                      platforms: [kAllPlatforms, ...platformTabs],
-                      current: platform,
-                      nameOf: _platformName,
-                      iconOf: (id) => id == kAllPlatforms
-                          ? null
-                          : localizedSiteIcon(ref.watch(sitesProvider).getById(id), size: 32),
-                      onChanged: _selectPlatform,
-                      onManagePlatforms: () => unawaited(
-                        context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-                      ),
-                      countOf: (id) =>
-                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: group),
-                    ),
-                  if (!narrow && !hosted) const LayoutToggle(),
-                  // A phone's platform menu and refresh ride the top bar with
-                  // the page's own button style, so this line keeps the tabs
-                  // alone. A narrow desktop window is not hosted by that shell:
-                  // it keeps the same two verbs here.
-                  if (narrow && !hosted) const FavoritesTopBarActions(),
-                  if (!narrow && !hosted) _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
               // The platform tabs, the row under them: names and counts
@@ -556,26 +528,6 @@ final class _EmptySlice extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The header's refresh button: a spinner while the refresh runs.
-final class _RefreshButton extends StatelessWidget {
-  const _RefreshButton({required this.refreshing, required this.onRefresh});
-
-  final bool refreshing;
-  final Future<void> Function() onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      semanticLabel: context.t.favorites.refresh,
-      loading: refreshing,
-      onPressed: refreshing ? null : () => unawaited(onRefresh()),
-      icon: DsIcon(DsIcons.refreshCw, size: DsTheme.of(context).sizes.iconSm),
     );
   }
 }
