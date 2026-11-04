@@ -128,6 +128,9 @@ final class KwMusicSource extends LxPlatformSource
             ),
       ],
       total: total,
+      // An answer with no rows is the end of this list, whatever the count
+      // above claims: the gateways report a ceiling, not what they will send.
+      hasMore: raw.isNotEmpty,
     );
   }
 
@@ -223,7 +226,8 @@ final class KwMusicSource extends LxPlatformSource
       ) as Map<String, Object?>;
       final data = json['data'];
       if (json['code'] != 200 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
-      return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: _intOf(data['total']) ?? 0);
+      final lists = _plazaPlaylistsOf(data['data']);
+      return MusicPlaylistPage(items: lists, total: _intOf(data['total']) ?? 0, hasMore: lists.isNotEmpty);
     }
     // The other digests are the 专题 pages: the qz gateway answers grouped
     // rows the reference flattens without a total.
@@ -232,7 +236,11 @@ final class KwMusicSource extends LxPlatformSource
         Uri.http('mobileinterfaces.kuwo.cn', '/er.s', {'type': 'get_pc_qz_data', 'f': 'web', 'id': id, 'prod': 'pc'}),
       ),
     ) as Object?;
-    return MusicPlaylistPage(items: _qzPlaylistsOf(body is List ? body : const <Object?>[]), total: 1000);
+    final lists = _qzPlaylistsOf(body is List ? body : const <Object?>[]);
+    // The 专题 flow answers one grouped payload with no count, so a page that
+    // thinned out to nothing is the end; the old `total: 1000` only made the
+    // browser ask again past it.
+    return MusicPlaylistPage(items: lists, total: lists.length, hasMore: lists.isNotEmpty);
   }
 
   /// The tag's request halves — the reference splits the `id-digest` pair the
@@ -261,7 +269,8 @@ final class KwMusicSource extends LxPlatformSource
     ) as Map<String, Object?>;
     final data = json['data'];
     if (json['code'] != 200 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
-    return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: _intOf(data['total']) ?? 0);
+    final lists = _plazaPlaylistsOf(data['data']);
+    return MusicPlaylistPage(items: lists, total: _intOf(data['total']) ?? 0, hasMore: lists.isNotEmpty);
   }
 
   /// Kuwo's `r.s` answers some `ft` values as a Python repr — a dict of

@@ -311,7 +311,11 @@ final class KgMusicSource extends LxPlatformSource
                 trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
               ),
       ],
+      // The gateway reports 480 for every keyword — the page it will let you
+      // reach, not how many lists match — so a short answer is the only honest
+      // end of the road.
       total: total,
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 
@@ -367,7 +371,10 @@ final class KgMusicSource extends LxPlatformSource
               trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
             ),
       ],
+      // getSpecial answers rows and a status and nothing else: no count, so
+      // the page says only whether this one came back full.
       total: 0,
+      hasMore: raw.isNotEmpty,
     );
   }
 

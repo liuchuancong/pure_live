@@ -356,6 +356,9 @@ final class TxMusicSource extends LxPlatformSource
             if (entry is Map && entry['basic'] is Map) _playlistOf((entry['basic'] as Map).cast<String, Object?>()),
       ],
       total: total,
+      // A page that came back with no rows is the end, whatever the count
+      // above claims.
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 
@@ -384,6 +387,7 @@ final class TxMusicSource extends LxPlatformSource
               _playlistOf(((entry['Playlist'] as Map)['basic'] as Map).cast<String, Object?>()),
       ],
       total: (feed['FromLimit'] as num?)?.toInt() ?? 0,
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 
@@ -475,6 +479,7 @@ final class TxMusicSource extends LxPlatformSource
               ),
       ],
       total: total,
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 

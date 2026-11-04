@@ -581,6 +581,10 @@ final class _SonglistResultsState extends ConsumerState<_SonglistResults> {
     final loading = pages.any((page) => page.isLoading);
     final error = pages.where((page) => page.hasError).firstOrNull;
     final total = pages.lastOrNull?.value?.total ?? 0;
+    // The source's word and its count both have to allow another page: an
+    // empty answer ends the road, and a platform that repeats its last window
+    // is stopped by the count it did report.
+    final statedMore = pages.lastOrNull?.value?.hasMore;
     if (!loading && items.isEmpty) {
       return Center(
         child: DsEmptyState(
@@ -606,7 +610,7 @@ final class _SonglistResultsState extends ConsumerState<_SonglistResults> {
     return MusicPlaylistGrid<MusicPlaylistInfo>(
       items: items,
       isLoading: loading,
-      hasMore: items.length < total,
+      hasMore: (statedMore ?? true) && (total == 0 || items.length < total),
       onLoadMore: () async {
         setState(() => _page += 1);
       },

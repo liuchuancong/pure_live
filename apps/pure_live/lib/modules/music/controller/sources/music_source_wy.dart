@@ -198,6 +198,8 @@ final class WyMusicSource extends LxPlatformSource
             if (entry is Map) _playlistOf(entry.cast<String, Object?>()),
       ],
       total: total,
+      // A page with no rows ends the list, whatever the reported count says.
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 
@@ -224,6 +226,7 @@ final class WyMusicSource extends LxPlatformSource
             if (entry is Map) _playlistOf(entry.cast<String, Object?>()),
       ],
       total: count,
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 

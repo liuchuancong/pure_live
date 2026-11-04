@@ -55,13 +55,22 @@ int? playsFromFormattedCount(String text) {
 /// One page of the online playlist lists.
 final class MusicPlaylistPage {
   /// A page.
-  const MusicPlaylistPage({required this.items, required this.total});
+  ///
+  /// [hasMore] is what the gateway said about the next page, for the platforms
+  /// that answer no honest total: kugou's board gives only rows, its list
+  /// search reports a paging ceiling rather than a count, and migu's recommend
+  /// feed answers whole columns regardless. Null when the source did not say,
+  /// which leaves the browser to the total it was given.
+  const MusicPlaylistPage({required this.items, required this.total, this.hasMore});
 
   /// The playlists on this page.
   final List<MusicPlaylistInfo> items;
 
   /// The total across pages.
   final int total;
+
+  /// Whether another page is worth asking for; null when the source is silent.
+  final bool? hasMore;
 }
 
 /// One sort tab of the plaza (排序 tab) — the reference's `sortList` rows;

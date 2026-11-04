@@ -316,7 +316,9 @@ final class MgMusicSource extends LxPlatformSource
         }
       }
     }
-    return MusicPlaylistPage(items: items, total: 0);
+    // The plaza's columns carry no count at all; an answer that came back with
+    // rows is the only signal that another page is worth asking for.
+    return MusicPlaylistPage(items: items, total: 0, hasMore: items.isNotEmpty);
   }
 
   /// The tag pages nest playlists at any depth under `contents`.
@@ -409,6 +411,8 @@ final class MgMusicSource extends LxPlatformSource
               ),
       ],
       total: total,
+      // A page with no rows ends the list, whatever the reported count says.
+      hasMore: raw is List && raw.isNotEmpty,
     );
   }
 

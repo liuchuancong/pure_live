@@ -195,6 +195,11 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
     final loading = pages.any((page) => page.isLoading);
     final error = pages.where((page) => page.hasError).firstOrNull;
     final total = pages.lastOrNull?.value?.total ?? 0;
+    // Both signals have to agree before the grid asks again: the source's word
+    // on whether its answer ran out, and the count it gave — netease hands the
+    // same window back past its own horizon, so an empty page alone would keep
+    // appending duplicates.
+    final statedMore = pages.lastOrNull?.value?.hasMore;
 
     // The reference's 打开歌单: a pasted link or bare id opens the
     // playlist's detail on the current source. A source that cannot serve the
@@ -321,7 +326,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               (_, _, _, true, _) || (_, _, _, false, false) => MusicPlaylistGrid<MusicPlaylistInfo>(
                 items: items,
                 isLoading: loading,
-                hasMore: items.length < total,
+                hasMore: (statedMore ?? true) && (total == 0 || items.length < total),
                 onLoadMore: () async {
                   setState(() => _page += 1);
                 },
