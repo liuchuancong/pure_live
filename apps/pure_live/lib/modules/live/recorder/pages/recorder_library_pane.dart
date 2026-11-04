@@ -479,8 +479,56 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
   }
 }
 
-/// The library's conditions, behind the toolbar's one entry: whether a row must
-/// hold something playable and the order the days are read in.
+/// The library's verbs folded into one menu for a phone: the filter, the
+/// folder and the walk-again refresh, so the page switch keeps the header
+/// line to itself instead of stacking a second band of buttons under it.
+final class RecorderLibraryToolbarMore extends ConsumerWidget {
+  /// Creates the compact toolbar.
+  const RecorderLibraryToolbarMore({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final library = ref.watch(recordingLibraryProvider);
+    final root = ref.watch(appPathsProvider).recordings.path;
+    return DsMenuAnchor(
+      semanticLabel: t.common.more,
+      align: DsAlign.end,
+      items: [
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.filter),
+          label: Text(t.recorder.filterLabel),
+          onPressed: () => unawaited(showRecordingLibraryFilter(context, ref)),
+        ),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.folderOpen),
+          label: Text(t.recorder.openFolder),
+          onPressed: () => unawaited(openDownloadedPath(context, root)),
+        ),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.refresh),
+          label: Text(t.recorder.refresh),
+          onPressed: library.isLoading
+              ? null
+              : () {
+                  ref.read(recordingCoversProvider.notifier).resetAttempts();
+                  unawaited(ref.read(recordingLibraryProvider.notifier).refresh());
+                },
+        ),
+      ],
+      builder: (context, controller, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.sm,
+        semanticLabel: t.common.more,
+        onPressed: controller.open,
+        icon: const DsIcon(DsIcons.ellipsisVertical),
+      ),
+    );
+  }
+}
+
+/// The library's conditions, behind the toolbar's one entry: the order the days
+/// are read in.
 ///
 /// The panel edits the provider rather than a local copy, so the list under it
 /// answers while the panel is still open — the conditions are few enough that a

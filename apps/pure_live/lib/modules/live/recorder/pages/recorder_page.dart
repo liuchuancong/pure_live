@@ -351,16 +351,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ],
             );
             const toolbar = RecorderLibraryToolbar();
-            // A phone stacks the files verbs under the switch instead of
-            // squeezing them onto one line.
+            // A phone keeps the switch alone on the line and folds the files
+            // verbs into one more menu, the way the popular page folds its
+            // layout and platform wall.
             if (narrow) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              return Row(
                 spacing: DsSpace.s8,
-                children: [
-                  Align(alignment: AlignmentDirectional.centerStart, child: switchRow),
-                  if (files) const Align(alignment: AlignmentDirectional.centerEnd, child: toolbar),
-                ],
+                children: [switchRow, const Spacer(), if (files) const RecorderLibraryToolbarMore()],
               );
             }
             return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar]);
