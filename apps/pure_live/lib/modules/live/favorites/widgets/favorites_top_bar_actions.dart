@@ -8,9 +8,9 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
+import 'package:pure_live/modules/live/favorites/data/favorites_refresh_handoff.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_view.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
-import 'package:pure_live/modules/live/favorites/pages/favorites_page.dart' show followsPageRefreshProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// The follows page's verbs in the phone's top bar: the platform menu and the
@@ -53,9 +53,8 @@ final class FavoritesTopBarActions extends ConsumerWidget {
           nameOf: nameOf,
           countOf: (id) => followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: view.group),
           onChanged: ref.read(favoritesViewProvider.notifier).selectPlatform,
-          onManagePlatforms: () => unawaited(
-            context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-          ),
+          onManagePlatforms: () =>
+              unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
           triggerVariant: DsButtonVariant.secondary,
         ),
       ],

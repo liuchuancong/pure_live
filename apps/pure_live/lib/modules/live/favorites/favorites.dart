@@ -6,6 +6,7 @@ export 'alerts/live_alert_events.dart';
 export 'alerts/live_alerts.dart';
 export 'data/favorite_rules.dart';
 export 'data/favorites_inline_search.dart';
+export 'data/favorites_refresh_handoff.dart';
 export 'data/favorites_view.dart';
 export 'data/follow_repository.dart';
 export 'data/follow_tags.dart';

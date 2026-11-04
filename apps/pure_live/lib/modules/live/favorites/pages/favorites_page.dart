@@ -8,11 +8,14 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/mobile_shell_scope.dart';
 import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart';
+import 'package:pure_live/modules/live/favorites/data/favorites_refresh_handoff.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_view.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
+import 'package:pure_live/modules/live/favorites/widgets/favorites_top_bar_actions.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
 
@@ -22,26 +25,6 @@ import 'package:pure_live/shared/shared.dart';
 /// button over the visible slice with its progress bar, and the followed
 /// rooms as the shared room card — its own tags on the list rows — with the
 /// reference's pager under them once they fill more than one page.
-/// The favorites page's own refresh, offered to the phone's top bar: the
-/// page hands its visible-slice refresh in, the bar presses it on the
-/// viewer's behalf. Null while the page is away, and the button using it
-/// then has nothing to press.
-final followsPageRefreshProvider = NotifierProvider<FavoritesPageRefresh, void Function()?>(FavoritesPageRefresh.new);
-
-/// The handoff's state holder.
-final class FavoritesPageRefresh extends Notifier<void Function()?> {
-  @override
-  void Function()? build() => null;
-
-  /// The page publishes itself after the first frame; a stale closure is
-  /// harmless — it checks its own mounted state first.
-  void Function()? get handler => state;
-  set handler(void Function()? value) => state = value;
-
-  /// Runs the page's refresh when there is one.
-  void run() => state?.call();
-}
-
 final class FavoritesPage extends ConsumerStatefulWidget {
   /// The favorites page.
   const FavoritesPage({super.key});
@@ -414,7 +397,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                   if (!narrow) const LayoutToggle(),
                   // A phone's platform menu and refresh ride the top bar with
                   // the page's own button style, so this line keeps the tabs
-                  // alone and no verb is offered twice.
+                  // alone. A narrow desktop window is not hosted by that shell:
+                  // it keeps the same two verbs here.
+                  if (narrow && !MobileShellScope.isHosted(context)) const FavoritesTopBarActions(),
                   if (!narrow) _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),

@@ -9,7 +9,9 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/mobile_shell_scope.dart';
 import 'package:pure_live/modules/live/popular/popular_controller.dart';
+import 'package:pure_live/modules/live/popular/popular_top_bar_actions.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/modules/live/popular/room_card_menu.dart';
 import 'package:pure_live/modules/live/search/search.dart';
@@ -197,7 +199,20 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
               }
               // A phone's refresh and platform menu ride the top bar with the
               // page's button style (see PopularTopBarActions), so this line
-              // keeps the tabs alone and no verb is offered twice.
+              // keeps the tabs alone. A narrow desktop window is not hosted by
+              // that shell: it keeps the same two verbs here.
+              if (!MobileShellScope.isHosted(context)) {
+                return SizedBox(
+                  height: 44,
+                  child: Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(child: tabs),
+                      const PopularTopBarActions(),
+                    ],
+                  ),
+                );
+              }
               return SizedBox(height: 44, child: tabs);
             },
           ),

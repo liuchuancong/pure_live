@@ -3,10 +3,12 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/settings/settings.dart' show sitesDisplayProvider, sitesOrderProvider;
+import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/settings.dart'
+    show SettingsSection, sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/areas/controllers/areas_controller.dart';
-import 'package:pure_live/modules/live/areas/pages/areas_page.dart' show showAreasPlatformWall, showAreasSearchPanel;
 import 'package:pure_live/shared/shared.dart';
 
 /// The areas page's verbs in the phone's top bar: the refresh and the more
@@ -56,9 +58,8 @@ final class AreasTopBarActions extends ConsumerWidget {
             DsMenuItem(
               leading: const DsIcon(DsIcons.search),
               label: Text(t.areas.searchHint),
-              onPressed: () => unawaited(
-                showAreasSearchPanel(context, initial: ref.read(areasInlineSearchProvider) ?? ''),
-              ),
+              onPressed: () =>
+                  unawaited(showAreasSearchPanel(context, initial: ref.read(areasInlineSearchProvider) ?? '')),
             ),
             const DsMenuDivider(),
             DsMenuItem(
@@ -108,6 +109,93 @@ final class AreasTopBarActions extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The narrow toolbar's search: a wide window types into the title bar's
+/// field, here the menu opens the same word's field over the catalogue.
+Future<void> showAreasSearchPanel(BuildContext context, {String initial = ''}) => showDsPanel<void>(
+  context: context,
+  builder: (_) => _AreaSearchPanel(initial: initial),
+);
+
+/// The narrow toolbar's way to the platform wall — the panel the wide row's
+/// chevron opens.
+Future<void> showAreasPlatformWall(BuildContext context, WidgetRef ref) {
+  final sites = ref.read(sitesProvider);
+  return showPlatformPickerPanel(
+    context,
+    platforms: ref.read(areasCatalogProvider.notifier).platformIds(),
+    current: ref.read(areasSiteProvider),
+    nameOf: (id) {
+      final site = sites.getById(id);
+      return site == null ? id : localizedSiteName(site);
+    },
+    iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
+    onManagePlatforms: () =>
+        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
+    onChanged: (id) {
+      ref.read(areasSiteProvider.notifier).selected = id;
+      unawaited(ref.read(areasCatalogProvider.notifier).open(id));
+    },
+  );
+}
+
+/// The narrow toolbar's areas search: the word hands the page its own
+/// filtered catalogue, as the title bar's field does on a wide window.
+final class _AreaSearchPanel extends ConsumerStatefulWidget {
+  const _AreaSearchPanel({required this.initial});
+
+  /// The word already being searched, so the field starts where the page is.
+  final String initial;
+
+  @override
+  ConsumerState<_AreaSearchPanel> createState() => _AreaSearchPanelState();
+}
+
+final class _AreaSearchPanelState extends ConsumerState<_AreaSearchPanel> {
+  late final TextEditingController _field = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final word = _field.text.trim();
+    ref.read(areasInlineSearchProvider.notifier).search(word.isEmpty ? null : word);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsPanel(
+      title: Text(t.areas.searchHint),
+      footer: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        spacing: DsSpace.s8,
+        children: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () {
+              ref.read(areasInlineSearchProvider.notifier).clear();
+              Navigator.of(context).pop();
+            },
+            child: Text(t.areas.backToBrowse),
+          ),
+          DsButton(onPressed: _submit, child: Text(t.areas.search)),
+        ],
+      ),
+      child: DsSearchField(
+        controller: _field,
+        autofocus: true,
+        placeholder: t.areas.searchHint,
+        semanticLabel: t.areas.searchHint,
+        onSubmitted: (_) => _submit(),
+      ),
     );
   }
 }

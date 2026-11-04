@@ -8,6 +8,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
+import 'package:pure_live/layouts/mobile_shell_scope.dart';
 import 'package:pure_live/layouts/page_inline_search.dart';
 import 'package:pure_live/modules/live/areas/areas.dart' show AreasTopBarActions;
 import 'package:pure_live/modules/live/favorites/favorites.dart' show FavoritesTopBarActions;
@@ -346,17 +347,23 @@ final class MobileLayout extends ConsumerWidget {
           );
         },
       ),
-      body: glass && atTab
-          ? MediaQuery(
-              // Scrolled content must be able to clear the floating capsule
-              // (the reference's GlassBarInset): the bar's reach plus the
-              // system strip, handed down as the bottom padding pages add.
-              data: MediaQuery.of(context).copyWith(
-                padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
-              ),
-              child: content,
-            )
-          : content,
+      // The pages under this shell let their own verb rows go in favour of
+      // the top bar; the scope is how they know the shell really is hosting
+      // them (a narrow desktop window is not).
+      body: MobileShellScope(
+        hosted: true,
+        child: glass && atTab
+            ? MediaQuery(
+                // Scrolled content must be able to clear the floating capsule
+                // (the reference's GlassBarInset): the bar's reach plus the
+                // system strip, handed down as the bottom padding pages add.
+                data: MediaQuery.of(context).copyWith(
+                  padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
+                ),
+                child: content,
+              )
+            : content,
+      ),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
