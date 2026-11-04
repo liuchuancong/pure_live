@@ -427,7 +427,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         cell: _taskStateCell,
         width: const DsTableColumnWidth.intrinsic(min: 104),
       ),
-      if (width >= 1180)
+      if (width >= 900)
         DsTableColumn<RecordingTask>(
           id: 'bitrate',
           label: t.recorder.columnBitrate,
@@ -439,7 +439,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           numeric: true,
           width: const DsTableColumnWidth.intrinsic(min: 92),
         ),
-      if (width >= 860)
+      if (width >= 800)
         DsTableColumn<RecordingTask>(
           id: 'size',
           label: t.recorder.columnSize,
@@ -448,7 +448,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           numeric: true,
           width: const DsTableColumnWidth.intrinsic(min: 88),
         ),
-      if (width >= 860)
+      if (width >= 800)
         DsTableColumn<RecordingTask>(
           id: 'duration',
           label: t.recorder.columnDuration,
@@ -501,11 +501,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       spacing: DsSpace.s8,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           child: DsImage(
             image: cover.isEmpty ? null : cachedImage(cover),
-            width: 64,
-            height: 36,
+            width: 96,
+            height: 54,
             semanticLabel: title,
             fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
           ),
@@ -513,7 +513,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         DsAvatar(
           initials: avatarInitials(anchor.isEmpty ? title : anchor),
           image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-          size: DsSize.sm,
+          size: DsSize.md,
           semanticLabel: anchor.isEmpty ? title : anchor,
         ),
         Expanded(
@@ -527,11 +527,18 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.bodyStrong.copyWith(color: colors.text),
               ),
+              if (anchor.isNotEmpty)
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
               Text(
                 '${_platformName(task.platform)} · ${task.roomId}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                style: theme.typography.caption.copyWith(color: colors.textSubtle),
               ),
             ],
           ),
@@ -733,7 +740,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                             // A phone keeps the cards; from a small window up
                             // the same information is a table, and the columns
                             // that fit are the columns it shows.
-                            if (constraints.maxWidth < 700) {
+                            if (constraints.maxWidth < 760) {
                               return SingleChildScrollView(
                                 padding: const EdgeInsets.only(bottom: DsSpace.s8),
                                 child: Column(
@@ -747,7 +754,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                               padding: const EdgeInsets.only(bottom: DsSpace.s8),
                               child: DsTable<RecordingTask>(
                                 semanticLabel: t.recorder.tabTasks,
-                                style: const DsTableStyle(rowHeight: 64),
+                                style: const DsTableStyle(rowHeight: 78),
                                 columns: _taskColumns(context, rooms, constraints.maxWidth),
                                 rows: attention,
                                 rowKey: (task) => task.id,
