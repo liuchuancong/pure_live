@@ -1,3 +1,4 @@
+import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -153,7 +154,7 @@ abstract final class BilibiliPlayParser {
     }
     return [
       for (final qn in codes.toList()..sort((a, b) => b.compareTo(a)))
-        LivePlayQuality.of(label: names[qn] ?? (qn == 10000 ? '源' : '$qn'), qualityId: '$qn', platformOrder: qn),
+        LivePlayQuality.of(label: _qnLabel(names, qn), qualityId: '$qn', platformOrder: qn),
     ];
   }
 
@@ -234,7 +235,7 @@ abstract final class BilibiliPlayParser {
   /// reporting the delivered quality.
   static LivePlayQuality qualityOf(Map<String, dynamic> data, int qn) {
     final names = _qnNames(_playurl(data));
-    return LivePlayQuality.of(label: names[qn] ?? (qn == 10000 ? '源' : '$qn'), qualityId: '$qn', platformOrder: qn);
+    return LivePlayQuality.of(label: _qnLabel(names, qn), qualityId: '$qn', platformOrder: qn);
   }
 
   /// The lease of a media URL received at [issuedAt], from its `expires`
@@ -271,6 +272,13 @@ abstract final class BilibiliPlayParser {
       if (jsonObject(raw) case final map? when jsonInt(map['qn']) != null && jsonString(map['desc']) != null)
         jsonInt(map['qn'])!: jsonString(map['desc'])!,
   };
+
+  /// The name of one `qn`: the platform's own word for it, then the house
+  /// name of the code (`20000` is `4K`, `30000` `杜比`), and only for a code
+  /// nobody names does the number itself show, as `清晰度 6000` rather than a
+  /// bare `6000` the viewer cannot tell from a bitrate.
+  static String _qnLabel(Map<int, String> names, int qn) =>
+      names[qn] ?? (qn == 10000 ? '源' : LiveQualityLabel.normalize(platform: 'bilibili', rawLabel: '', id: qn));
 
   static Iterable<_CodecEntry> _codecs(Map<String, dynamic> playurl) sync* {
     for (final stream in jsonList(playurl['stream'])) {

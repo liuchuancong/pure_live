@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:live_sites/src/common/hls/hls_master.dart';
+import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -329,13 +330,18 @@ abstract final class NiconicoPlayParser {
   }
 
   /// The [variants] as qualities, best first: the id is `WxH@BANDWIDTH` (a
-  /// re-read master names the same variant), the label the resolution.
+  /// re-read master names the same variant), the label that resolution turned
+  /// into a tier name (`720P 清晰`).
   static List<LivePlayQuality> qualities(List<NiconicoVariant> variants) {
     final total = variants.length;
     return [
       for (final (index, variant) in variants.indexed)
         LivePlayQuality.of(
-          label: '${variant.width}x${variant.height}',
+          label: LiveQualityLabel.normalize(
+            platform: 'niconico',
+            rawLabel: '',
+            resolution: '${variant.width}x${variant.height}',
+          ),
           qualityId: '${variant.width}x${variant.height}@${variant.bandwidth}',
           platformOrder: total - index,
           codec: variant.codec,

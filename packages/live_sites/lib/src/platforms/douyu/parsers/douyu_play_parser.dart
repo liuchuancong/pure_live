@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/infer_stream_format.dart';
@@ -197,14 +198,20 @@ abstract final class DouyuPlayParser {
       for (final (index, item) in items.indexed)
         if (jsonInt(item['rate']) case final rate? when seen.add(rate))
           LivePlayQuality.of(
-            label: jsonString(item['name']) ?? '',
+            label: LiveQualityLabel.normalize(platform: 'douyu', rawLabel: jsonString(item['name']) ?? '', id: rate),
             qualityId: '$rate',
             platformOrder: items.length - index,
           ),
     ];
     if (qualities.isNotEmpty) return qualities;
     final rate = jsonInt(data['rate']) ?? -1;
-    return [LivePlayQuality.of(label: 'default', qualityId: '$rate', platformOrder: 1)];
+    return [
+      LivePlayQuality.of(
+        label: LiveQualityLabel.normalize(platform: 'douyu', rawLabel: 'default'),
+        qualityId: '$rate',
+        platformOrder: 1,
+      ),
+    ];
   }
 
   /// CDN codes: `cdnsWithName` in order without duplicates, the answering

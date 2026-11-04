@@ -1,3 +1,4 @@
+import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
@@ -561,9 +562,10 @@ abstract final class TwitcastingRoomParser {
 
   // Streams -------------------------------------------------------------------
 
-  /// 3.x's qualities: one per tier of `tc-hls.streams`, labelled `HLS high`,
-  /// `HLS medium`, `HLS low`, best first. A channel that is not broadcasting
-  /// has none (stream-unavailable), and neither has a password-protected
+  /// 3.x's qualities: one per tier of `tc-hls.streams` (`high`, `medium`,
+  /// `low`), named as every other platform's tiers are, best first. A channel
+  /// that is not broadcasting has none (stream-unavailable), and neither has a
+  /// password-protected
   /// broadcast ([TwitcastingRoomData.secretWord], stream-unavailable naming
   /// it). A tier URL that is not an https `*.twitcasting.tv` playlist of
   /// this broadcast is left out, the other tiers still play (the unified
@@ -602,7 +604,13 @@ abstract final class TwitcastingRoomParser {
           !path.hasMatch(uri.path)) {
         continue;
       }
-      qualities.add(LivePlayQuality.of(label: 'HLS $key', qualityId: key, platformOrder: 3 - qualities.length));
+      qualities.add(
+        LivePlayQuality.of(
+          label: LiveQualityLabel.normalize(platform: 'twitcasting', rawLabel: key),
+          qualityId: key,
+          platformOrder: 3 - qualities.length,
+        ),
+      );
     }
     if (qualities.isEmpty) {
       throw TwitcastingFailure(
