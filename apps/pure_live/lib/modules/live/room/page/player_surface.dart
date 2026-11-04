@@ -209,6 +209,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   bool _controlsVisible = true;
   Timer? _hideTimer;
 
+  /// The fullscreen lock: the picture answers nothing but its own unlock
+  /// button.
+  bool _locked = false;
+
   /// A stream picker panel is open over the picture: the bars stay while it
   /// is, or the panel would vanish under the pointer that is using it.
   bool _panelOpen = false;
@@ -288,6 +292,15 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
       // A display that will not answer simply has no brightness half.
       if (mounted) setState(() => _brightnessWritable = false);
     }
+  }
+
+  @override
+  void didUpdateWidget(PlayerSurface oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The lock belongs to a picture that fills the window. Leaving fullscreen
+    // releases it, or its unlock button would go on floating over the page's
+    // own picture with the wheel, the drag and the tap switched off under it.
+    if (_locked && !widget.immersive) setState(() => _locked = false);
   }
 
   @override
@@ -511,10 +524,28 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     }
   }
 
+  /// Locks or unlocks the picture.
+  ///
+  /// Locked, the bars are gone, the picture takes no wheel, no drag, no tap
+  /// and no danmaku, and only this button stays on screen — the reference's
+  /// reason for the control: a viewer who leans on the wheel, or reaches
+  /// across the keyboard, should not be left having changed the volume or
+  /// paused the stream they were watching.
+  void _toggleLock() {
+    // An open catalogue is a control the lock is meant to put away, and it
+    // holds the bars up behind it.
+    if (!_locked) _hidePicker();
+    setState(() => _locked = !_locked);
+    _scheduleHide();
+  }
+
   /// A tap on the picture: with tap actions on, a message under the finger
   /// is held while its panel shows; a tap that hits nothing — or every tap
   /// with the switch off — wakes or dismisses the bars as before.
   Future<void> _onPictureTap() async {
+    // Locked, the picture answers nothing: a tap must neither open the
+    // message under the finger nor bring the bars back.
+    if (_locked) return;
     if (_openPicker != null) {
       // The catalogue is the thing the viewer is done with; a tap on the
       // picture closes it the way tapping anywhere else would.
@@ -537,6 +568,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   /// A long press pins the message under the finger and opens the same
   /// actions as a tap; empty space keeps the normal controls behaviour.
   Future<void> _onPictureLongPress() async {
+    if (_locked) return;
     if (!ref.read(danmakuLongPressInteractionProvider)) {
       _releaseDanmaku();
       return;
@@ -582,6 +614,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   /// switch may own the press: a long press still targets its message with
   /// tap actions off.
   void _holdDanmaku(PointerDownEvent event) {
+    if (_locked) return;
     if (_holdOrigin != null) return;
     if (!ref.read(danmakuTapInteractionProvider) && !ref.read(danmakuLongPressInteractionProvider)) return;
     _holdOrigin = event.position;
@@ -720,7 +753,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // bar that disappeared with the play button left the viewer with no way back
     // on a touch screen — the picture would be paused and silent of controls.
     final barOverPicture = picture.kind == RoomPictureKind.none || picture.kind == RoomPictureKind.paused;
-    final showBar = handle != null && barOverPicture && (_controlsVisible || !playing);
+    // Locked, no bar is drawn: the lock's whole word is that the picture is
+    // not to be adjusted, and a bar that stayed up under the lock would offer
+    // the adjustments anyway.
+    final showBar = handle != null && barOverPicture && !_locked && (_controlsVisible || !playing);
     _watchTransport(handle);
     ref.listen(roomProvider.select((state) => state.playback.playing), (previous, next) {
       if (next) {
@@ -798,6 +834,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               if (barOverPicture)
                 Listener(
                   onPointerSignal: (event) {
+                    if (_locked) return;
                     if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
                       _wheelVolume(event.scrollDelta.dy);
                     }
@@ -816,6 +853,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     onLongPressCancel: _releaseDanmaku,
                     onDoubleTap: () {
                       _releaseDanmaku();
+                      if (_locked) return;
                       if (mini) {
                         widget.onLeave();
                         return;
@@ -836,6 +874,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         ? null
                         : (details) {
                             _releaseDanmaku();
+                            if (_locked) return;
                             final width = context.size?.width ?? MediaQuery.sizeOf(context).width;
                             final swipe = widget.onPortraitSwipe;
                             if (widget.portraitFullscreen &&
@@ -987,7 +1026,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                           : formatRecordingBytes(liveCapture.bytes),
                       label: context.t.room.stopRecording,
                       tv: widget.tv,
-                      onStop: () => unawaited(toggleRoomRecording(context, ref)),
+                      // Locked, it is a mark and not a switch: the figures
+                      // stay, the accidental tap that would end the take does
+                      // not. The verb is back in the bar the moment unlocks.
+                      onStop: _locked ? null : () => unawaited(toggleRoomRecording(context, ref)),
                     ),
                   ),
                 ),
@@ -1035,7 +1077,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               // bottom edge as the place to wake it from — not the shared idle
               // progress line, because a live stream has no played share to
               // draw and a line of its own would read as a timeline.
-              else if (playing && !mini && handle != null)
+              else if (playing && !mini && handle != null && !_locked)
                 Positioned(
                   bottom: widget.bottomInset,
                   left: 0,
@@ -1045,7 +1087,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               // The stream's own numbers when the viewer asked for them: a small
               // glass panel under the top bar, over the picture and out of the
               // buttons' way.
-              if (handle != null && picture.kind == RoomPictureKind.none && ref.watch(playerStatsVisibleProvider))
+              if (handle != null &&
+                  picture.kind == RoomPictureKind.none &&
+                  !_locked &&
+                  ref.watch(playerStatsVisibleProvider))
                 PositionedDirectional(
                   // The strip's own height, from the same tier that sizes it:
                   // 8 of padding, the control, 12 below it. A literal here sat
@@ -1066,6 +1111,27 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       onEnter: (_) => _pickerLeave?.cancel(),
                       onExit: (_) => _hoverPickerClose(),
                       child: _pickerPanel(context.t, picker),
+                    ),
+                  ),
+                ),
+              // The lock, on the picture's right edge (the reference's
+              // LockButton): it comes with the bars, and once it is on it is
+              // the only thing drawn — whatever the room does next. A locked
+              // picture with no unlock on it is a door bricked from inside.
+              if (widget.immersive && !mini && (_locked || showBar))
+                PositionedDirectional(
+                  end: 20,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: PlayerGlassPill(
+                      child: PlayerBarButton(
+                        icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                        label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
+                        size: 50,
+                        iconSize: 22,
+                        onPressed: _toggleLock,
+                      ),
                     ),
                   ),
                 ),

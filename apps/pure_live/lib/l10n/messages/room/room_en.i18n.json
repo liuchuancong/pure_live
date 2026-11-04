@@ -22,6 +22,8 @@
   "sendFailed": "The message failed to send",
   "fullscreenOn": "Enter fullscreen",
   "fullscreenOff": "Leave fullscreen",
+  "lockControls": "Lock the controls",
+  "unlockControls": "Unlock the controls",
   "chatTitle": "Chat",
   "danmakuOn": "Show danmaku",
   "danmakuOff": "Hide danmaku",

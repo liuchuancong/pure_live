@@ -22,6 +22,8 @@
   "sendFailed": "发送失败",
   "fullscreenOn": "进入全屏",
   "fullscreenOff": "退出全屏",
+  "lockControls": "锁定控件",
+  "unlockControls": "解锁控件",
   "chatTitle": "聊天",
   "danmakuOn": "显示弹幕",
   "danmakuOff": "隐藏弹幕",

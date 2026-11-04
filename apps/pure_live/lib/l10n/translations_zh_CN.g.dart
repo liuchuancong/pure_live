@@ -6376,6 +6376,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '退出全屏'
 	String get fullscreenOff => '退出全屏';
 
+	/// zh-CN: '锁定控件'
+	String get lockControls => '锁定控件';
+
+	/// zh-CN: '解锁控件'
+	String get unlockControls => '解锁控件';
+
 	/// zh-CN: '聊天'
 	String get chatTitle => '聊天';
 
@@ -15556,6 +15562,8 @@ extension on Translations {
 			'room.sendFailed' => '发送失败',
 			'room.fullscreenOn' => '进入全屏',
 			'room.fullscreenOff' => '退出全屏',
+			'room.lockControls' => '锁定控件',
+			'room.unlockControls' => '解锁控件',
 			'room.chatTitle' => '聊天',
 			'room.danmakuOn' => '显示弹幕',
 			'room.danmakuOff' => '隐藏弹幕',
@@ -15920,10 +15928,10 @@ extension on Translations {
 			'settings.sitesColumnPlatform' => '平台',
 			'settings.sitesColumnId' => '标识',
 			'settings.sitesColumnShown' => '显示',
-			'settings.aboutVersion' => '版本',
-			'settings.aboutProject' => '项目主页',
 			_ => null,
 		} ?? switch (path) {
+			'settings.aboutVersion' => '版本',
+			'settings.aboutProject' => '项目主页',
 			'settings.aboutLicense' => '开源许可',
 			'settings.aboutLicenseDesc' => '查看本应用使用的开源组件。',
 			'settings.themeSeed' => '主题色',
@@ -16434,10 +16442,10 @@ extension on Translations {
 			'settings.scaleKernel' => '缩放算法',
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
-			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
-			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
+			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
 			'settings.scaleSpline16' => 'Spline16（快）',
@@ -16948,10 +16956,10 @@ extension on Translations {
 			'settings.roomCardShowAnchor' => '主播名称',
 			'settings.roomCardShowPlatform' => '平台显示',
 			'settings.roomCardShowAudience' => '热度',
-			'settings.roomCardReplay' => '回放',
-			'settings.roomCardResetCurrent' => '恢复默认显示',
 			_ => null,
 		} ?? switch (path) {
+			'settings.roomCardReplay' => '回放',
+			'settings.roomCardResetCurrent' => '恢复默认显示',
 			'settings.roomCardResetConfirmTitle' => '恢复默认显示？',
 			'settings.roomCardResetConfirmBody' => '所有显示项回到默认，当前选择会丢失。',
 			'settings.backgroundPreviewMedia' => '预览',
@@ -17462,10 +17470,10 @@ extension on Translations {
 			'vod.duration10to30' => '10–30 分钟',
 			'vod.duration30to60' => '30–60 分钟',
 			'vod.durationOver60' => '60 分钟以上',
-			'vod.related' => '相关推荐',
-			'vod.changeRelated' => '换一换',
 			_ => null,
 		} ?? switch (path) {
+			'vod.related' => '相关推荐',
+			'vod.changeRelated' => '换一换',
 			'vod.expand' => '展开',
 			'vod.collapse' => '收起',
 			'vod.parts' => '分P',

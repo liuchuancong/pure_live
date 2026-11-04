@@ -2256,6 +2256,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get sendFailed => 'The message failed to send';
 	@override String get fullscreenOn => 'Enter fullscreen';
 	@override String get fullscreenOff => 'Leave fullscreen';
+	@override String get lockControls => 'Lock the controls';
+	@override String get unlockControls => 'Unlock the controls';
 	@override String get chatTitle => 'Chat';
 	@override String get danmakuOn => 'Show danmaku';
 	@override String get danmakuOff => 'Hide danmaku';
@@ -6845,6 +6847,8 @@ extension on TranslationsEn {
 			'room.sendFailed' => 'The message failed to send',
 			'room.fullscreenOn' => 'Enter fullscreen',
 			'room.fullscreenOff' => 'Leave fullscreen',
+			'room.lockControls' => 'Lock the controls',
+			'room.unlockControls' => 'Unlock the controls',
 			'room.chatTitle' => 'Chat',
 			'room.danmakuOn' => 'Show danmaku',
 			'room.danmakuOff' => 'Hide danmaku',
@@ -7209,10 +7213,10 @@ extension on TranslationsEn {
 			'settings.sitesColumnPlatform' => 'Platform',
 			'settings.sitesColumnId' => 'Id',
 			'settings.sitesColumnShown' => 'Shown',
-			'settings.aboutVersion' => 'Version',
-			'settings.aboutProject' => 'Project home',
 			_ => null,
 		} ?? switch (path) {
+			'settings.aboutVersion' => 'Version',
+			'settings.aboutProject' => 'Project home',
 			'settings.aboutLicense' => 'Licences',
 			'settings.aboutLicenseDesc' => 'The open-source packages this app builds on.',
 			'settings.themeSeed' => 'Accent colour',
@@ -7723,10 +7727,10 @@ extension on TranslationsEn {
 			'settings.scaleKernel' => 'Scale kernel',
 			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
 			'settings.scaleLanczos' => 'Lanczos (balanced)',
-			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
-			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
 			_ => null,
 		} ?? switch (path) {
+			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
+			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
 			'settings.scaleSpline16' => 'Spline16 (fast)',
@@ -8237,10 +8241,10 @@ extension on TranslationsEn {
 			'settings.roomCardShowAnchor' => 'Anchor name',
 			'settings.roomCardShowPlatform' => 'Platform',
 			'settings.roomCardShowAudience' => 'Heat',
-			'settings.roomCardReplay' => 'Replay',
-			'settings.roomCardResetCurrent' => 'Restore the default details',
 			_ => null,
 		} ?? switch (path) {
+			'settings.roomCardReplay' => 'Replay',
+			'settings.roomCardResetCurrent' => 'Restore the default details',
 			'settings.roomCardResetConfirmTitle' => 'Restore the default details?',
 			'settings.roomCardResetConfirmBody' => 'Every detail goes back to its default; the current choices are lost.',
 			'settings.backgroundPreviewMedia' => 'Preview',
@@ -8751,10 +8755,10 @@ extension on TranslationsEn {
 			'vod.duration10to30' => '10–30 min',
 			'vod.duration30to60' => '30–60 min',
 			'vod.durationOver60' => 'Over 60 min',
-			'vod.related' => 'Related',
-			'vod.changeRelated' => 'Shuffle',
 			_ => null,
 		} ?? switch (path) {
+			'vod.related' => 'Related',
+			'vod.changeRelated' => 'Shuffle',
 			'vod.expand' => 'More',
 			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
