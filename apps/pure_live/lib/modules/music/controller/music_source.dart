@@ -9,6 +9,7 @@ import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
 import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_display_lyric.dart' show DisplayLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart' show CachedLyricSource;
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart' show noteMusicSourceSilence;
 import 'package:pure_live/modules/music/controller/sources/music_source_kg.dart' show KgMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_kw.dart' show KwMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_match.dart' show findSameSong;
@@ -71,7 +72,11 @@ Future<audio.TrackSource> resolveWithToggle(
       if (source.id != swapped.sourceId) continue;
       try {
         return await source.resolveTrackSource(swapped, quality: quality);
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        // A swap is something the viewer chose on purpose. When it stops
+        // answering, the song falls back to its own source and the queue only
+        // says 不可播放 — without this line the swap looks like silence.
+        noteMusicSourceSilence('${source.id} swapped resolve', error, stackTrace);
         break;
       }
     }
@@ -80,10 +85,13 @@ Future<audio.TrackSource> resolveWithToggle(
   for (final source in sources) {
     if (source.id == track.sourceId) own = source;
   }
+  Object? ownFailure;
   try {
     return await own.resolveTrackSource(track, quality: quality);
-  } on Object {
+  } on Object catch (error, stackTrace) {
+    ownFailure = error;
     if (!allowAutoToggle) rethrow;
+    noteMusicSourceSilence('${own.id} resolve', error, stackTrace);
   }
   for (final source in sources) {
     if (source.id == track.sourceId) continue;
@@ -92,9 +100,20 @@ Future<audio.TrackSource> resolveWithToggle(
       final match = findSameSong(track, page.items);
       if (match == null) continue;
       return await source.resolveTrackSource(match, quality: quality);
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      // The walk is a search and an ask: either half can refuse, and the
+      // reason says which platform is unreachable this session.
+      noteMusicSourceSilence('${source.id} toggle resolve', error, stackTrace);
       continue;
     }
   }
-  throw StateError('no source could resolve ${track.title}');
+  // The queue's line only says nothing answered. The refusal the song's own
+  // platform gave first is the part that explains why, so it rides along —
+  // the download row prints this, and a missing script and a dead endpoint
+  // used to read the same.
+  final reason = switch (ownFailure) {
+    final StateError error => error.message,
+    final Object error => '$error',
+  };
+  throw StateError('no source could resolve ${track.title}: $reason');
 }

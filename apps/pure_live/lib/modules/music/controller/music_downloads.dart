@@ -10,6 +10,7 @@ import 'package:pure_live/modules/music/controller/music_download_settings.dart'
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicQualityOf;
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, resolveWithToggle;
+import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart' show noteMusicSourceSilence;
 
 /// The preference the download queue is kept under.
 const String kMusicDownloadsKey = 'music.downloads';
@@ -94,8 +95,10 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       if (settings.downloadEmbedLyric || settings.downloadWriteLyric) {
         try {
           lyric = await activeSource.resolveLyric(track);
-        } on Object {
-          // A song without a lyric still downloads.
+        } on Object catch (error, stackTrace) {
+          // A song without a lyric still downloads; whether the platform
+          // answered at all is the part worth keeping.
+          noteMusicSourceSilence('${activeSource.id} download lyric', error, stackTrace);
         }
       }
       final request = audio.MusicDownloadRequest.forTrack(
