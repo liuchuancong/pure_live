@@ -167,3 +167,34 @@
   - **`DsBoxDecoration does not expect to be used for clipping` 已在树里修掉**：旧日志 262/422 次（10-28 那次会话刷屏）。原因＝`Container(decoration: DsBoxDecoration…, clipBehavior: 非 none)`，`_DecorationClipper` 向装饰要 clipPath 而 `DsBoxDecoration` 拒绝（desen_ui 自己从不设 clipBehavior）。现在全仓只有三处 `clipBehavior:`（两处 `Clip.none`，`theme_pane.dart:190` 那处用的是普通 `BoxDecoration`），`multiview_page.dart:681` 还留着这条注释并把 clip 提到 `ClipRRect`。⇒ 已闭环，别当新伤再查；若真机又刷这条，先找新加的 Container+DsBoxDecoration+clip 组合。
 
 - 2026-11-05 **事故（必须记住的那条）**：P37 那笔我用 `git commit -- <我的文件>` 提交了 `room_controller.dart`，但那片刻着**别人 lane 正在写的同一文件**（`open({..., LiveRoom? known})`、`_knownRoomOf`、`_knownRooms`、首帧前的 warm 分支）。⇒ 他们的未完成改动被我署名 `746fec7d7` 提交并推送了。内容没坏（analyze 干净、测试与基线一致），但署名错了，而且已推送不能重写。**规矩升级**：`git commit -- <path>` 之前必须先 `git diff <path>` 逐 hunk 看有没有别人的改动；文件被两条 lane 同时打开时，**这笔不提交**（或等对方先落），别信"pathspec 就安全"——pathspec 只挡别的文件，挡不住同一个文件里的别人的 hunk。本轮已按新规矩把 `player_surface.dart` 的两行留在工作区不提交（那文件此刻也有别人的 hunk）。
+
+## 进房分段实测（2026-11-05，探针直跑 `createBuiltInLiveSites()`）
+
+临时 `flutter/dart test` 探针（跑完即删，规矩见 `feedback-temp-tests-delete-after-verifying`）：每站取推荐第一间的**在播**房，按房间真实的调用顺序量 `getRoom → getQualities → getLines` 三段墙钟（每段 20 s 预算，直连，不经 App 代理/cookie）。单位 ms，`sum` 为三段和（这就是"交源之前"的全部网络时间）。
+
+| 站 | detail | qualities | lines | sum |
+| --- | --- | --- | --- | --- |
+| bilibili | 168 | 92 (5档) | 91 (6线) | **351** |
+| douyu | 104 | 247 (4) | 120 (1) | **471** |
+| douyin | 648 | 1 (3) | 3 (2) | 652 |
+| huya | 398 | 118 (5) | 544 (6) | 1060 |
+| kuaishou | 423 | 557 (4) | 238 (1) | 1218 |
+| acfun | 627 | 306 (4) | 315 (1) | 1248 |
+| cc | 478 | 221 (4) | 2 | 701 |
+| soop | 957 | 1 (4) | 733 | 1691 |
+| yy | 29 | 321 (2) | 59 | 409 |
+| bigo | **2395** | 430 (1) | 1203 | **4028** |
+| liveme | 1914 | 1 (1) | 0 (2) | 1915 |
+| pandalive | 1286 | 0 (5) | 0 (1) | 1286 |
+| baidulive | 1127 | 1 (3) | 0 (4) | 1128 |
+| showroom | 1038 | 1 (4) | 0 | 1039 |
+| chzzk | 208 | 1132 (5) | 1 (2) | 1341 |
+| 其余小站 | inke 294 / jdlive 468 / kilakila 679 / kugoulive 337 / missevan 127 / sixroom 418 / weibo 140 | | | |
+
+热门为空的站（本机网络或无匿名列表，与 `reference-pure-live-live-site-health` 一致）：youtube/twitch/kick/fc2live/niconico/picarto/looklive/xiaohongshu/steambroadcast/tiktok/twitcasting/17live。
+
+**这次的结论（把两条候补降级）**：
+1. **用户主要看的站，"交源前"只有 0.35–0.5 s**（bilibili 351 / douyu 471）。⇒ 之前为"打开慢"排队的 **T24（取消被取代的在途请求）与 T25（合并三次请求）不是慢的原因**：T25 最多省 200 ms 且要动 34 站接口面；T24 只在"快速连换几间房"时有意义。**两条都不许再当作提速项来动**，要做也只能以"换房时不再抢连接"为动机、单独拿证据。
+2. 剩下的时间只能花在 **引擎侧**（create→open→首帧）或 UI 等待上；`room-open` 的 `request/firstFrame/playing` 三段能量它，但**当前盘上的 exe 早于计时**（`project-pure-live-room-open-latency` 同样记着这条）⇒ 下一轮要真数字只有一条路：重新构建并跑一次 App（`build/verify_room.py`/`drive_app.py` 已不在仓里，只剩 `scripts/sync_github_mirrors.py`）。
+3. **站点侧的真慢点有主了**：bigo 的 `getRoom` 单段 2.4 s（另加 lines 1.2 s）——这是 bigo 适配器/端点的问题，不是进房流程的问题；soop 957、chzzk  qualities 1132 同理。**归站点 lane**，别在房间线里绕。
+4. **普查顺手发现**：`LiveHotProvider` 在 34 站里**零实现**（热门实际走 `LiveDiscoveryProvider.getRecommendedRooms`）。`toolbox_controllers.dart:246` 的 `capability<LiveHotProvider>()` 分支永远是 null——它能正确退回 discovery，所以不是 bug，但这是接口冗余；删接口是包侧决定（等点名）。
