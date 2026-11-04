@@ -374,3 +374,16 @@ PLAN-CHECK huya     没有注册 resolver
 
 - **教训（度量类）**：普查"某能力哪些站有"之前，先确认**这个包里有几条路通向它**。我们弹幕 socket 有两条缝，用其中一条的配置名去数另一条，会同时造出假缺口（"15 站没心跳"）和假持平（"只有 7 站配了重连"）。
 - 结构性差异记录为**不动**：参考一份共享运行时，我们两条缝（`LiveWebSocketClient` 与 `SocketChannel`）。把 12 个自打拍子的站搬到通用客户端是一次跨 22 站的协议重构（每站的心跳是几帧、什么顺序、带不带 ticket 各不相同），没有运行期验收手段就别做——这条留给以后真出现"某站阶梯不一致"的症状时再动。
+
+## 运行期证据（2026-11-05：11-02/11-03 两份旧日志里能榨出来的东西）
+
+盘上最新的两份运行日志（`%APPDATA%\com.purelive\pure_live\debug\data\logs\2026-11-02`、`2026-11-03`，10-31 之后只有这两份，**都在 P34 计时行之前**，所以仍然没有 `room-open`）里有 **1130 条带耗时的网络应答**。把 ≥1 s 的挑出来看，**绝大多数不是进房链路**：
+
+- `raw.githubusercontent.com/.../version.json`（更新检查，1.3–8.8 s，多次）——更新 lane；
+- `bing.biturl.top`（必应壁纸，3.1–5.4 s）与 `firebase.google.com`（3.1 s）——背景/网页 lane；
+- 站点目录与搜索页（`douyu.com/japi/weblist`、`live.kuaishou.com/u/…`、17app 搜索 502）——列表页，不是房间；
+- **房间链路上只有一处慢**：`api.live.bilibili.com/.../getDanmuInfo` 一次 **3666 ms**（同一请求另两次 76 ms / 78 ms）。⇒ 这条正是 P2 从 `detail()` 里摘出去的那张"弹幕票"：它**不在首帧路径上**（`room_controller.dart:879` 起 `_openDanmaku` 是 `unawaited`），所以它慢的时候观众看到的是"画面出来了、聊天空着"，而不是"房间打不开"。`getInfoByRoom` 在这两份日志里 127–223 ms，两次以上；**没有一条证据把首帧的等待指到网络**。⇒ 第 2 部分的判断不变：欠一次带 `room-open` 的重建（`request→opened` 与 `opened→firstFrame` 才是那把尺子）。
+
+| P46 | `b7c832668` | 档位名 | `LiveQualityLabel`（`common/quality_label.dart`）**是从参考逐字搬来的，但全仓零读者、零测试**——所以条上/面板上一直在漏平台的原始词：斗鱼无 `multirates` 时写 **`default`**、有名单但某行缺 `name` 时写 **空字符串**（一档空白）、TwitCasting 写 **`HLS high/medium/low`**（别的站都写 超清/蓝光）、niconico 写 **`1280x720`**、bilibili 遇到 `g_qn_desc` 没描述的 qn 就写**光秃秃的数字**（`20000`）。四处接回共享回落（平台自己的词 → 该码的房名 → 分辨率 → 码率 → `清晰度 <id>` → 默认），douyu 的兜底是 `'default'` 这个 token 而不是硬写中文；**身份不动**：`qualityId` 一律保持原值（`'$rate'` / `high` / `WxH@bandwidth` / `'$qn'`），`isSamePlayTier` 优先按 id 比，录像订阅用的是自己的 `kPreferredResolutionChoices`，所以改名字不影响任何已存的档位选择。新 `test/common/quality_label_test.dart`（7 例，这个文件此前**一个测试都没有**）。门：live_sites `dart analyze lib test` 0 issues、`dart test` **482 绿 + 1 红**（仍是搜索 lane 在途的 `site_facts_test`）、douyu/twitcasting/niconico/bilibili 四个平台族 47 例全绿（没有一站的测试在断言旧的英文标签）；app `dart analyze lib` 0 issues、`flutter test test/live` 61 例中 60 绿（唯一红仍是录像 lane）。运行期未验：要在斗鱼 H5（无 multirates）、twitcasting、niconico 各开一次房看档位名。 |
+
+- **本车道的方法再记一条**：搬到一半的共享件比没搬更危险——它看起来已经解决了。P46 就是"参考有、我们也有文件、但没人调用"的第三例（前两例：`portraitSwipeSwitchProvider` 只有读者没有写者 T20、`LiveCookieRefusalFeed` 只有写者没有读者 P36）。普查的问法必须是**两头都数**：谁写、谁读。
