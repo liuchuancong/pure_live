@@ -288,3 +288,10 @@ PLAN-CHECK huya     没有注册 resolver
 - **纠正我自己写错的两处散文**（代码没问题，登记以防下轮照抄错事实）：注册 `LivePlaybackPlanResolver` 的是 **bilibili / cc / douyin / twitch / yy** 五站（`*_site.dart:573/416/513/650/678`），**huya 不在其中**；我在 `746fec7d7` 的提交正文里把 huya 也算进去了。
 - 探针侧的 cc/yy/twitch 超时是探针自己没包 try（推荐接口 20 s 未回），不是产品分支：房间那条路是 `resolvePlan` 失败就退回 `getLines`，正是今天的行为。
 | P40 | `da0be7760` | 门的补票 | 本车道这一路有几个行为是"只有静态门、运行期没验"的：常驻登录提示条（P27）与进房耗时记录（P35/P39）。给它们补了 `test/live/room_notice_record_test.dart`（6 例）钉住可钉的部分——**同平台同文案不再换 state 实例**（换了就是每来一轮掩码名就闪一次条）、**换平台要替换**（条上那个按钮开的必须是这一站的登录）、**新房间要清空上一间的毫秒**、发布的 stage 只列到达过的段、`proxy` 随记录一起出去。门：`dart analyze` 0 issues、`flutter test test/live` 60 例中 59 绿（新增 6；唯一红仍是录像 lane 的 `recording_schedule_test.dart`）。运行期仍未验：条要真坏 cookie、面板要真开一次房。 |
+
+## 全量测试核对（2026-11-05，跑整个 `flutter test` 而不是只看 test/live）
+
+`cd apps/pure_live && flutter test`：**324 绿 / 2 红**。本车道（test/live 里直播间相关、test/app、test/vod、test/hongguo）全绿；两条红都不是本车道造成的，且各自有明确主人，别再重新诊断：
+
+1. `test/live/recording_schedule_test.dart: only the live check moves a waiting or scheduled task` —— 已在「别人的门」一节定性：`recording_task.dart:331` 的 `needsLiveCheck => isArmed` 与它自己 `:325-330` 的注释互相矛盾，测试断言的是注释。改代码还是改注释+测试，归录像 lane。
+2. `test/music/music_pages_providers_test.dart: the providers the music pages watch all build` —— 新红，**与本车道无关**：`app/providers/boot/storage_providers.dart:10` 从 `4d8c21365`（"每个文件目录有默认值与选择"）起改成 `UnimplementedError: storagePathsProvider must be overridden at boot`，而音乐这个测试在 `:30` 用裸 `ProviderContainer()`，没有 boot 覆盖 ⇒ provider 处于 error 态。**全仓目前没有任何测试覆盖过 `storagePathsProvider`**（grep 为空），所以这不是"照抄某处现成写法"能解决的：要先定测试该注入临时目录还是让 provider 在非 boot 环境回落。归音乐/存储 lane 决定；本车道只把因果钉在这里。
