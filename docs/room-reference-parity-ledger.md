@@ -245,3 +245,13 @@ headers=[origin, referer, user-agent, accept, accept-language, x-requested-with]
 2. **先诚实报错**：Bigo 行照现在返回，但房间给出可读的"此平台的 HLS 需要在本地还原，本 App 尚未实现"，别再演"能播"。代价：Bigo 从"黑屏"变成"有原因的失败"，功能面没增加。
 
 **顺手记的另一条方法论**：判断"某站能不能播"必须走到**取回播放列表/首段字节**这一层；只把三段网络调用跑绿是假阳性。
+
+## 本轮（2026-11-05）自查：能落的都落了，剩两处被别人的在途改动卡着
+
+1. **本轮我加过的串逐条核过**（18 个键：`lockControls/unlockControls/portraitSwipeHint/openInNewWindow/cookieRefused/portraitSwipeSwitch(+Desc)/openStages(+Total/+Failed)/openStageValue/openStageDetail/Qualities/Lines/Request/FirstFrame/Playing/Chat`）：每个键在 **zh-CN 与 en 两份源里各出现 1 次**（src=2），且都至少被一处代码引用（users≥1，`portraitSwipeSwitch` 为 2：设置行 + 搜索目录）。⇒ 没有孤儿串、没有单边翻译、没有造了没接的入口。设置新行照规矩进了搜索目录。
+2. **`displayLabel` 的四处显示位本轮仍落不了地**，因为文件上挂着别人未入库的 hunk（按 P38 事故立的新规：同一文件两条 lane 在写就不提交）：
+   - `room/page/player_surface.dart:430`（画质面板条目）、`:1246`（条上画质按钮）— 该文件此刻还带别人的 `controller.open(known: room)` 改动；
+   - `multiview/multiview_page.dart:1099,1104`（格子上的档位名）— 该文件也脏。
+   我改的两行**留在工作区**没提交；getter 已在 HEAD（`34578f23c`），所以谁先把这些文件提交进去都不会编不过。下轮开工先 `git status` 看这四个位置还在不在别人手里，不在就把这两处补完。
+3. **Bigo 的加扰问题还等一个决定**（证据与两条路见上一节）。要点没变：包侧已有 `BigoHlsProtection.seed/transform`，缺的是"谁来逐段还原"。**没有选之前我不擅自新增一个媒体子系统，也不擅自砍掉一个平台**——参考侧的做法（`record.md:39`）是本平台干脆不给 `LivePlayUrlResolution.lines`，由 `BigoHlsInput` 自己开环回中继，直连 11 次只成 1 次、不解扰 0/2。选 1 我就照这个契约加"这行要先解扰"的表达并接 bigo；选 2 我就让它带原因失败。
+4. 顺手记一条与本车道有关的**接口事实**（免得下轮又当新发现）：`LiveHotProvider` 由 34 站中的 **0** 个实现，热门实际一律走 `LiveDiscoveryProvider.getRecommendedRooms`；`toolbox_controllers.dart:246` 的 hot 分支恒为 null（能正确退回 discovery，所以不是 bug，是冗余接口）。删公开接口是包侧决定。
