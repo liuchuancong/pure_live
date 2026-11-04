@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -11,17 +12,11 @@ import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/layouts/location_breadcrumb.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
+import 'package:pure_live/layouts/page_inline_search.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
-import 'package:pure_live/modules/live/history/history.dart';
-import 'package:pure_live/modules/live/multiview/multiview.dart' show multiviewSearchHandoffProvider;
 import 'package:pure_live/modules/live/popular/popular.dart';
-import 'package:pure_live/modules/live/recorder/recorder.dart' show recorderSearchHandoffProvider;
 import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
-import 'package:pure_live/modules/music/controller/music_search.dart';
-import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/shared/shared.dart';
 
 // Every import stays on one line with no `show` clause: the save-time
@@ -193,9 +188,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
 
   void _focusSearch() {
     // A narrow head draws no field (it keeps a magnifier instead), so the
-    // shortcut opens the search page rather than focusing nothing.
+    // shortcut asks for the page's word in a panel rather than focusing
+    // nothing.
     if (_searchFocus.context == null) {
-      widget.onMenu(NavigationItem.search);
+      final search = _pageSearch(context.t);
+      if (search != null) unawaited(showPageInlineSearch(context, search: search));
       return;
     }
     _searchFocus.requestFocus();
@@ -262,78 +259,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   /// screen: its own content in place, its module's own search surface
   /// when the module has one — never a cold, scopeless page elsewhere.
   ({String hint, void Function(String word) take})? _pageSearch(Translations t) {
+    // The menu's value can also be a settings category; only a page has a
+    // list to narrow.
     final page = widget.menuValue;
-    switch (widget.module) {
-      case AppModule.live:
-        // Each list page narrows its own content: the popular feed its
-        // rooms, the areas page its catalogue, the follows, the records.
-        // The recorder and the multiview act on a room instead: their word
-        // opens the room search picker and the pick becomes a task or a
-        // cell.
-        return switch (page) {
-          NavigationItem.hot => (
-            hint: t.common.searchHint,
-            take: (word) => ref.read(popularInlineSearchProvider.notifier).search(word),
-          ),
-          NavigationItem.zones => (
-            hint: t.areas.searchHint,
-            take: (word) => ref.read(areasInlineSearchProvider.notifier).search(word),
-          ),
-          NavigationItem.favorites => (
-            hint: t.common.searchHint,
-            take: (word) => ref.read(favoritesInlineSearchProvider.notifier).search(word),
-          ),
-          NavigationItem.history => (
-            hint: t.common.searchHint,
-            take: (word) => ref.read(historySearchHandoffProvider.notifier).hand(word),
-          ),
-          NavigationItem.record => (
-            hint: t.recorder.searchHint,
-            take: (word) => ref.read(recorderSearchHandoffProvider.notifier).hand(word),
-          ),
-          NavigationItem.multiview => (
-            hint: t.multiview.searchHint,
-            take: (word) => ref.read(multiviewSearchHandoffProvider.notifier).hand(word),
-          ),
-          _ => null,
-        };
-      case AppModule.iptv:
-        // The channel pages search their channels in place; the sources
-        // and the rest have no list of channels to narrow.
-        const searchable = {NavigationItem.channels, NavigationItem.iptvFavorites, NavigationItem.iptvGuide};
-        if (!searchable.contains(page)) return null;
-        return (hint: t.iptv.searchChannels, take: (word) => ref.read(iptvSearchHandoffProvider.notifier).hand(word));
-      case AppModule.vod:
-        // The station's own search page answers; it has its own field.
-        if (page == NavigationItem.vodSearch) return null;
-        return (
-          hint: t.vod.searchHint,
-          take: (word) {
-            ref.read(vodPendingSearchProvider.notifier).hand(word);
-            widget.onMenu(NavigationItem.vodSearch);
-          },
-        );
-      case AppModule.music:
-        // The library is the module's search: the page takes the word and
-        // moves there itself.
-        return (
-          hint: t.music.searchHint,
-          take: (word) {
-            ref.read(musicSearchHandoffProvider.notifier).hand(word);
-            if (page != NavigationItem.music) widget.onMenu(NavigationItem.music);
-          },
-        );
-      case AppModule.hongguo:
-        // The station's own search view answers; it has its own field.
-        if (page == NavigationItem.hongguoSearch) return null;
-        return (
-          hint: t.hongguo.searchHint,
-          take: (word) {
-            ref.read(hongguoSearchHandoffProvider.notifier).hand(word);
-            widget.onMenu(NavigationItem.hongguoSearch);
-          },
-        );
-    }
+    if (page is! NavigationItem) return null;
+    return pageInlineSearch(ref, t, widget.module, page, openPage: widget.onMenu);
   }
 
   /// One entry of either menu as the same sidebar row: a module
@@ -611,7 +541,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                     variant: DsButtonVariant.secondary,
                                     size: DsSize.sm,
                                     semanticLabel: t.navigation.search,
-                                    onPressed: () => widget.onMenu(NavigationItem.search),
+                                    onPressed: () => unawaited(showPageInlineSearch(context, search: pageSearch)),
                                     icon: const DsIcon(DsIcons.search, size: 16),
                                   ),
                                 ],

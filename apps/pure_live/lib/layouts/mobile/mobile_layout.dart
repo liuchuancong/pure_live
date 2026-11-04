@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
+import 'package:pure_live/layouts/page_inline_search.dart';
 import 'package:pure_live/modules/live/areas/areas.dart' show AreasTopBarActions;
 import 'package:pure_live/modules/live/favorites/favorites.dart' show FavoritesTopBarActions;
 import 'package:pure_live/modules/live/popular/popular.dart' show PopularTopBarActions;
@@ -143,6 +146,9 @@ final class MobileLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    // Search means the page's own list, as the desktop head's field does; a
+    // page with nothing to narrow offers no button.
+    final inlineSearch = pageInlineSearch(ref, t, module, selected, openPage: onSelected);
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     // The wallpaper sits below the Scaffold; its surface steps aside so the
@@ -219,17 +225,19 @@ final class MobileLayout extends ConsumerWidget {
             : breadcrumb,
         centerTitle: false,
         actions: [
-          // Search stays pinned to the top bar on every page, so the drawer
-          // can stay shut for the one destination a viewer reaches most. It
-          // wears the same outlined button as the page's own verbs beside it.
-          DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.navigation.search,
-            onPressed: () => onSelected(NavigationItem.search),
-            icon: const DsIcon(DsIcons.search, size: 16),
-          ),
-          const SizedBox(width: DsSpace.s8),
+          // Search narrows the page on screen, as the desktop head's field
+          // does — a panel for the word where the bar has no room for a
+          // field. It wears the same outlined button as the page's verbs.
+          if (inlineSearch case final search?) ...[
+            DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              semanticLabel: t.navigation.search,
+              onPressed: () => unawaited(showPageInlineSearch(context, search: search)),
+              icon: const DsIcon(DsIcons.search, size: 16),
+            ),
+            const SizedBox(width: DsSpace.s8),
+          ],
           // The log console's settings gear and the favorites' refresh ride
           // the top bar, the same corner the desktop's head rows give them.
           if (selected == NavigationItem.logs) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
