@@ -291,6 +291,7 @@
   "selectionRemoveDone": "Removed {count} songs",
   "downloadsActive": "Downloading {count}",
   "downloadFilterEmpty": "Nothing in this filter yet",
+  "downloadFilterEmptyDesc": "Pick another filter, or download from a song row’s menu first.",
   "downloadQueued": "Queued for download: {title}",
   "downloadDuplicate": "This song is already in the download queue",
   "downloadUnsupported": "This song has no downloadable source (a local file, or not covered by the current source)",

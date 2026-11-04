@@ -291,6 +291,7 @@
   "selectionRemoveDone": "已移除 {count} 首",
   "downloadsActive": "正在下载 {count} 首",
   "downloadFilterEmpty": "这一类还没有任务",
+  "downloadFilterEmptyDesc": "换一个筛选，或先在歌曲行的「更多」里下载。",
   "downloadQueued": "已加入下载：{title}",
   "downloadDuplicate": "这首歌已经在下载队列里",
   "downloadUnsupported": "这首歌没有可下载的音源（本地文件或当前音源未覆盖）",

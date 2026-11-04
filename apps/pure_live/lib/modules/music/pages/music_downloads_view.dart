@@ -641,14 +641,14 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   double get _inset => LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
 
   /// Nothing on screen: a filtered queue still holds tasks the viewer has to
-  /// un-tick to see, so the empty page says which of the two it is.
+  /// un-tick to see, so the empty page says which of the two it is — the same
+  /// pair the station's and the drama queue give: the line that names it, and
+  /// the verb below that undoes it.
   Widget _empty(Translations t, List<audio.MusicDownloadTask> tasks, String directory, bool filterActive) => Center(
     child: DsEmptyState(
       icon: const DsIcon(DsIcons.download),
       title: Text(tasks.isEmpty ? t.music.downloadsEmptyTitle : t.music.downloadFilterEmpty),
-      // A filtered queue still holds the rows the viewer un-ticked, which is a
-      // different silence: the 清空筛选 action below is what answers it.
-      description: tasks.isEmpty ? Text(t.music.downloadsEmptyDescription) : null,
+      description: Text(tasks.isEmpty ? t.music.downloadsEmptyDescription : t.music.downloadFilterEmptyDesc),
       actions: [
         if (filterActive)
           DsButton(
