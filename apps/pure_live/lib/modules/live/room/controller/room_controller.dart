@@ -271,6 +271,18 @@ final class RoomDanmakuPipeline {
     );
   }
 
+  /// Takes recalled lines off the flying layer.
+  ///
+  /// The engine answers for both halves of what it holds — the queued backlog
+  /// and the text already crossing the picture — so a moderator's delete
+  /// reaches a danmaku that has not arrived yet as well as one in mid-flight.
+  /// A barrage item carries the platform's message id, the sender's id and the
+  /// sender's name, which is the same three things the chat list matches on, so
+  /// the two surfaces agree on which line the platform took back.
+  void retract(LiveRetraction target) {
+    barrage.retractWhere((item) => target.matches(userId: item.userId, userName: item.userName, messageId: item.id));
+  }
+
   /// Carries playback pause/seek into the barrage engine.
   void bind(PlayerHandle handle) {
     unawaited(binding?.dispose() ?? Future<void>.value());
@@ -440,6 +452,24 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
 
     if (!state.any(belowTier)) return;
     state = state.where((message) => !belowTier(message)).toList(growable: false);
+  }
+
+  /// Takes back what the platform recalled: one line by its id, one viewer's
+  /// lines, or the room's chat.
+  ///
+  /// Only said lines are taken. A gift or a status line stays: the moderator
+  /// recalled what somebody typed, not what the room paid to show or what the
+  /// session itself announced, and removing those would silently undo two
+  /// other viewer settings.
+  void retract(LiveRetraction target) {
+    bool recalled(LiveMessage line) {
+      if (line.type != LiveMessageType.chat) return false;
+      final sender = line.sender;
+      return target.matches(userId: sender?.userId, userName: sender?.userName, messageId: line.messageId);
+    }
+
+    if (!state.any(recalled)) return;
+    state = state.where((line) => !recalled(line)).toList(growable: false);
   }
 }
 
@@ -1417,9 +1447,25 @@ final class RoomController extends Notifier<RoomState> {
   void _onSiteMessage(LiveMessage message) {
     if (message.type == LiveMessageType.notice) _onTwitchNotice(message);
     if (message.type == LiveMessageType.chat) _trackBilibiliNames(message);
+    // A retraction says nothing, so it leaves before the pipeline: the shape
+    // check would drop an empty line, the text filters have nothing to judge,
+    // and what it names is already on screen. It is an instruction about the
+    // earlier messages, and both surfaces act on it.
+    if (message.type == LiveMessageType.retraction) {
+      if (message.payload case final LiveRetraction target) _retract(target);
+      return;
+    }
     if (_shapeBlocked(message)) return;
     _collectSuperChat(message);
     _pipeline?.accept(message);
+  }
+
+  /// Applies a platform retraction: the list drops the lines it names, and the
+  /// flying layer drops them too, queued or mid-flight.
+  void _retract(LiveRetraction target) {
+    if (!ref.mounted) return;
+    ref.read(roomChatProvider.notifier).retract(target);
+    _pipeline?.retract(target);
   }
 
   /// The words Twitch's session puts on the stream when the server refused the
