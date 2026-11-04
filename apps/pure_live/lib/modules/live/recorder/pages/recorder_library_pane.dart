@@ -426,7 +426,6 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
     final t = context.t;
     final library = ref.watch(recordingLibraryProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
-    final controller = ref.read(recorderLibraryFilterProvider.notifier);
     final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -437,15 +436,7 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
         DsMenuAnchor(
           semanticLabel: t.recorder.filterLabel,
           align: DsAlign.end,
-          items: [
-            ..._sortItems(context, ref),
-            const DsMenuDivider(),
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.x),
-              label: Text(t.recorder.filterClear),
-              onPressed: controller.reset,
-            ),
-          ],
+          items: _sortItems(context, ref),
           builder: (context, menu, _) => compact
               ? DsButton.icon(
                   variant: DsButtonVariant.secondary,
