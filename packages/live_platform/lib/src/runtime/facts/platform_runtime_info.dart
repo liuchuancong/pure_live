@@ -19,6 +19,7 @@ final class PlatformRuntimeInfo {
     required this.isPackaged,
     required this.executableRoot,
     required this.appNamespace,
+    this.isDebug = false,
     this.osVersion,
     this.distributionOrigin = DistributionOrigin.undetermined,
     this.distributionConflicts = const [],
@@ -48,6 +49,12 @@ final class PlatformRuntimeInfo {
   /// The directory holding the running executable. Portable layouts put
   /// their data tree next to it; installed layouts must not write there.
   final Directory executableRoot;
+
+  /// Whether this is a debug build. A debug run keeps its data in a
+  /// `userdata` tree beside the executable instead of the OS application
+  /// directories, so a `flutter run` never reads or writes a release's
+  /// data — the same self-contained shape a portable build has.
+  final bool isDebug;
 
   /// Human-readable OS version, when the platform reported one.
   final String? osVersion;

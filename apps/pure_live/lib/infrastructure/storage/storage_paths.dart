@@ -1,12 +1,9 @@
-import 'dart:io' show Directory;
-
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
 import 'package:live_platform_path_provider/live_platform_path_provider.dart'
     show DefaultStoragePolicy, PathProviderBootstrap, StorageArea, StorageLocation, StorageManager;
 import 'package:pure_live/infrastructure/platform/os_roots.dart' show OsRoots;
-import 'package:pure_live/infrastructure/storage/debug_rooted_policy.dart' show DebugRootedPolicy;
 
 /// The app's storage paths, resolved from the deployment facts.
 ///
@@ -84,24 +81,18 @@ final class StoragePaths {
   }) async {
     final roots = await OsRoots.measure();
     final exeRoot = environment.runtime.executableRoot;
-    // A debug run beside a portable copy keeps its data in the bundle's own
-    // tree; every other debug run follows the deployment it is part of, with
-    // the OS roots already carrying the `debug` segment (OsRoots). A
-    // `flutter run` on an installed-shape machine therefore writes under
-    // `%APPDATA%\<Product>\debug`, not beside the build tree the next build
-    // wipes.
-    final policy = kDebugMode
-        ? DebugRootedPolicy(
-            inner: DefaultStoragePolicy(
-              portableRoot: exeRoot,
-              userRoot: roots.userRoot,
-              cacheRoot: roots.cacheRoot,
-              tempRoot: roots.temporaryRoot,
-              downloadsRoot: roots.downloadsRoot,
-            ),
-            executableRoot: Directory(exeRoot.path),
-          )
-        : DefaultStoragePolicy(portableRoot: exeRoot);
+    // The policy owns the deployment branches, the debug build included: a
+    // debug run resolves its storage into a `userdata` tree beside the
+    // executable (the portable shape), an installed release into the OS
+    // application directories. Passing every root lets each branch use what
+    // it is allowed to.
+    final policy = DefaultStoragePolicy(
+      portableRoot: exeRoot,
+      userRoot: roots.userRoot,
+      cacheRoot: roots.cacheRoot,
+      tempRoot: roots.temporaryRoot,
+      downloadsRoot: roots.downloadsRoot,
+    );
     final pathRuntime = await PathProviderBootstrap.init(environment: environment, policy: policy);
     final manager = pathRuntime.storage;
     // A build-time data-root override (PURE_LIVE_DATA_DIR) pins the data

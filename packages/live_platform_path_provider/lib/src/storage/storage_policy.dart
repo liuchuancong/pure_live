@@ -4,6 +4,12 @@ import 'package:live_platform/live_platform.dart' show PlatformRuntimeInfo;
 import 'package:live_platform_path_provider/src/contracts/storage_area.dart';
 import 'package:path/path.dart' as p;
 
+/// The directory a debug build keeps its storage under, beside the
+/// executable: a self-contained tree with the portable layout's shape, so a
+/// `flutter run` never reads or writes a release's data in the OS
+/// application directories.
+const String kDebugDataDirectoryName = 'userdata';
+
 /// Ordered candidate directories per storage area.
 ///
 /// The resolver tries candidates in order and keeps the first one that
@@ -102,18 +108,24 @@ final class DefaultStoragePolicy implements StoragePolicy {
 
   @override
   List<Directory> candidatesFor(StorageArea area, PlatformRuntimeInfo runtime) {
-    final portable = runtime.isPortable;
     final namespace = namespaceFor(runtime);
+    // A debug build keeps its storage beside the executable in a `userdata`
+    // tree — the portable layout's self-contained shape — whatever the
+    // deployment is, so a `flutter run` never touches a release's data and
+    // nothing lands in the OS application directories.
+    final debugRoot = runtime.isDebug && portableRoot != null
+        ? Directory(p.join(portableRoot!.path, kDebugDataDirectoryName))
+        : null;
+    final root = debugRoot ?? portableRoot;
+    final portable = runtime.isPortable || debugRoot != null;
     if (area == StorageArea.downloads) {
-      // A portable build keeps its downloads in the bundle — the medium is
-      // the point — and degrades to the user-visible OS folder only when the
-      // bundle's tree cannot host them. An installed or packaged build never
-      // writes next to its executable (Program Files, the MSIX WindowsApps
-      // root), so there the OS download folder stays first and the user's
-      // application-data tree is the last resort.
-      final bundleTree = portable
-          ? (portableRoot == null ? null : Directory(p.join(portableRoot!.path, 'downloads')))
-          : null;
+      // A portable (and a debug) build keeps its downloads in its own tree
+      // and degrades to the user-visible OS folder only when that tree
+      // cannot host them. An installed or packaged build never writes next to
+      // its executable (Program Files, the MSIX WindowsApps root), so there
+      // the OS download folder stays first and the user's application-data
+      // tree is the last resort.
+      final bundleTree = portable && root != null ? Directory(p.join(root.path, 'downloads')) : null;
       final osTree = portable || userRoot == null ? null : Directory(p.join(userRoot!.path, 'downloads'));
       return portable ? [?bundleTree, ?downloadsRoot] : [?downloadsRoot, ?osTree];
     }
@@ -127,27 +139,29 @@ final class DefaultStoragePolicy implements StoragePolicy {
       StorageArea.cache || StorageArea.temporary => false,
     };
     if (persistent) {
-      final root = portable ? portableRoot : userRoot;
+      final base = portable ? root : userRoot;
       return [
-        if (root != null)
+        if (base != null)
           switch (area) {
             // Flutter's own Windows bundle occupies `data/` next to the
             // executable (`data/flutter_assets`, `data/icudtl.dat`), so the
             // portable data area namespaces itself beneath that directory
-            // instead of writing into the runtime's files.
-            StorageArea.data => portable ? portableDataRoot(root, namespace: namespace) : installedDataRoot(root),
-            _ => Directory(p.join(root.path, _segment(area))),
+            // instead of writing into the runtime's files. A debug tree is
+            // `userdata/`, which the bundle does not occupy, but the same
+            // layout keeps one rule for every self-contained root.
+            StorageArea.data => portable ? portableDataRoot(base, namespace: namespace) : installedDataRoot(base),
+            _ => Directory(p.join(base.path, _segment(area))),
           },
       ];
     }
     return switch (area) {
       StorageArea.cache => [
-        if (portable && portableRoot != null) Directory(p.join(portableRoot!.path, 'cache')),
+        if (portable && root != null) Directory(p.join(root.path, 'cache')),
         if (!portable && cacheRoot != null) Directory(p.join(cacheRoot!.path, cacheDirectoryName(namespace))),
         if (!portable && tempRoot != null) Directory(p.join(tempRoot!.path, cacheDirectoryName(namespace))),
       ],
       StorageArea.temporary => [
-        if (portable && portableRoot != null) Directory(p.join(portableRoot!.path, 'temp')),
+        if (portable && root != null) Directory(p.join(root.path, 'temp')),
         if (!portable && tempRoot != null) Directory(p.join(tempRoot!.path, tempDirectoryName(namespace))),
       ],
       _ => const [],

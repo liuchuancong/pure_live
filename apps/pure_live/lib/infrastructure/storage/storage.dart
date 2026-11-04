@@ -3,5 +3,4 @@
 library;
 
 export 'app_paths.dart';
-export 'debug_rooted_policy.dart';
 export 'storage_paths.dart';

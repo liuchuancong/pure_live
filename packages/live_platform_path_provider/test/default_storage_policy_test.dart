@@ -23,14 +23,16 @@ void main() {
   final tempRoot = Directory('/tmp');
   final downloadsRoot = Directory('/users/x/downloads');
 
-  PlatformRuntimeInfo snapshot({required bool portable, String namespace = hostNamespace}) => PlatformRuntimeInfo(
-    kind: PlatformKind.windows,
-    formFactor: FormFactor.desktop,
-    distribution: portable ? DesktopDistribution.portable : DesktopDistribution.installed,
-    isPackaged: false,
-    executableRoot: exeRoot,
-    appNamespace: namespace,
-  );
+  PlatformRuntimeInfo snapshot({required bool portable, bool debug = false, String namespace = hostNamespace}) =>
+      PlatformRuntimeInfo(
+        kind: PlatformKind.windows,
+        formFactor: FormFactor.desktop,
+        distribution: portable ? DesktopDistribution.portable : DesktopDistribution.installed,
+        isPackaged: false,
+        executableRoot: exeRoot,
+        appNamespace: namespace,
+        isDebug: debug,
+      );
 
   List<String> paths(List<Directory> candidates) => candidates.map((directory) => directory.path).toList();
 
@@ -72,6 +74,27 @@ void main() {
     expect(paths(policy.candidatesFor(StorageArea.data, snapshot(portable: false))), [
       p.join(userRoot.path, 'data'),
     ], reason: 'the OS application-support root is already per-application');
+  });
+
+  test('a debug build roots its storage in userdata beside the executable', () {
+    final policy = DefaultStoragePolicy(portableRoot: exeRoot, userRoot: userRoot, cacheRoot: cacheRoot, tempRoot: tempRoot);
+    final debug = snapshot(portable: false, debug: true);
+
+    expect(paths(policy.candidatesFor(StorageArea.data, debug)), [
+      p.join(exeRoot.path, kDebugDataDirectoryName, 'data', hostNamespace),
+    ]);
+    expect(paths(policy.candidatesFor(StorageArea.config, debug)), [
+      p.join(exeRoot.path, kDebugDataDirectoryName, 'config'),
+    ]);
+    expect(paths(policy.candidatesFor(StorageArea.cache, debug)), [
+      p.join(exeRoot.path, kDebugDataDirectoryName, 'cache'),
+    ]);
+    for (final area in StorageArea.values) {
+      for (final candidate in policy.candidatesFor(area, debug)) {
+        expect(candidate.path, isNot(startsWith(userRoot.path)), reason: '$area');
+        expect(candidate.path, isNot(startsWith(cacheRoot.path)), reason: '$area');
+      }
+    }
   });
 
   test('a portable layout without the executable root has no persistent home', () {

@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show HttpOverrides;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
@@ -61,6 +62,9 @@ Future<Boot> bootstrap() async {
     // literal default).
     // ignore: avoid_redundant_argument_values
     formFactor: const bool.fromEnvironment('PURE_LIVE_TV') ? FormFactor.tv : null,
+    // A debug run keeps its storage in a `userdata` tree beside the
+    // executable, so it never reads or writes a release's data.
+    debug: kDebugMode,
   );
   final log = appLog;
   final bootLog = log.forCategory('boot');

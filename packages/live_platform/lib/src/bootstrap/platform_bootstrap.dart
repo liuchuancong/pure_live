@@ -41,6 +41,8 @@ abstract final class PlatformBootstrap {
   /// the read-only install resources; null disables caching. A portable
   /// verdict is cached beside the executable instead, on the medium it
   /// vouches for.
+  /// [debug] marks a debug build: its storage resolves to a `userdata` tree
+  /// beside the executable instead of the OS application directories.
   /// [packageIdentity] carries the native probe's answer (a non-null
   /// `windowsFamilyName()`); null means not probed. [formFactor] overrides
   /// the default (desktop for desktop OSes, phone for mobile) — the user's
@@ -55,6 +57,7 @@ abstract final class PlatformBootstrap {
     FormFactor? formFactor,
     Directory? claimDirectory,
     bool? packageIdentity,
+    bool debug = false,
   }) {
     // The namespace is one path segment everywhere it lands; the check
     // lives here rather than in the const constructor's assert because no
@@ -90,6 +93,7 @@ abstract final class PlatformBootstrap {
       distributionOrigin: resolution.origin,
       distributionConflicts: resolution.conflicts,
       appNamespace: appNamespace,
+      isDebug: debug,
     );
 
     return PlatformRuntime(
