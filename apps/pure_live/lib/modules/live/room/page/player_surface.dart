@@ -1526,9 +1526,17 @@ final class _PresentationCluster extends ConsumerWidget {
     // reads as "nothing is happening here" while a take is queued or unfinished.
     final pending = recording ? null : task;
     final joining = pending?.postProcessing ?? false;
+    // A joining take says how far the join got, the way the reference's badge
+    // does (合成中 45%): a join runs minutes, the strip has no progress bar,
+    // and a word alone cannot answer "is it moving or stuck".
+    String joinWord(RecordingTask take) {
+      if (take.postProcessingProgress < 0) return t.recorder.stateProcessing;
+      return '${t.recorder.stateProcessing} ${(take.postProcessingProgress.clamp(0.0, 1.0) * 100).round()}%';
+    }
+
     final pendingWord = switch (pending) {
       null => null,
-      _ when joining => t.recorder.stateProcessing,
+      final RecordingTask take when take.postProcessing => joinWord(take),
       final RecordingTask take when take.state == RecordingTaskState.waiting => t.recorder.stateWaiting,
       final RecordingTask take when take.state == RecordingTaskState.failed => t.recorder.stateFailed,
       _ => null,
