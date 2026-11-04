@@ -283,8 +283,20 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _resumeSeconds = null;
     });
     final client = ref.read(vodClientProvider);
+    final appClient = ref.read(vodAppClientProvider);
     try {
-      final detail = await client.detail(widget.bvid);
+      // The chosen interface's detail: the app's view service when it is in
+      // force, the web record otherwise; an app refusal falls back.
+      VodDetail detail;
+      if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null) {
+        try {
+          detail = await appClient.detail(bvid: widget.bvid);
+        } on Object {
+          detail = await client.detail(widget.bvid);
+        }
+      } else {
+        detail = await client.detail(widget.bvid);
+      }
       if (!mounted) return;
       setState(() {
         _detail = detail;
@@ -545,6 +557,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Future<void> _loadDanmaku(int cid) async {
     if (cid <= 0) return;
     try {
+      // Danmaku reads the web protobuf/XML track in both interfaces — the
+      // reference's own App path does the same; only the detail and the
+      // playback ladder switch.
       final xml = await ref.read(vodClientProvider).danmakuXml(cid);
       if (!mounted || _disposed || _part?.cid != cid) return;
       final entries = BilibiliDanmakuXml.decode(xml);

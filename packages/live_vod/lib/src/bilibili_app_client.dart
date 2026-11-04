@@ -8,6 +8,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
 
 import 'package:live_vod/src/grpc/gen/bilibili/app/playerunite/v1/playerunite.pbgrpc.dart' as unite;
+import 'package:live_vod/src/grpc/gen/bilibili/app/view/v1/view.pbgrpc.dart' as view;
 import 'package:live_vod/src/grpc/gen/bilibili/metadata/device/device.pb.dart' as device;
 import 'package:live_vod/src/grpc/gen/bilibili/metadata/locale/locale.pb.dart' as locale;
 import 'package:live_vod/src/grpc/gen/bilibili/metadata/metadata.pb.dart' as metadata;
@@ -155,6 +156,52 @@ final class BilibiliAppClient {
       ),
     );
     return _pgcInfoOf(reply.videoInfo);
+  }
+
+  /// One archive's detail over the app's view service — the same record the
+  /// web's `view` endpoint answers, from the app's own model.
+  Future<VodDetail> detail({int? aid, String? bvid}) async {
+    final client = view.ViewClient(_channel, options: _options);
+    final reply = await client.view(view.ViewReq(aid: aid == null ? null : Int64(aid), bvid: bvid ?? ''));
+    if (!reply.hasArc()) throw const VodFailure('the app returned no detail');
+    final arc = reply.arc;
+    final owner = arc.hasAuthor() ? arc.author : null;
+    final stat = arc.hasStat() ? arc.stat : null;
+    final parts = [
+      for (final page in reply.pages)
+        if (page.hasPage())
+          VodPart(
+            cid: page.page.cid.toInt(),
+            page: page.page.page,
+            title: page.page.part,
+            duration: page.page.duration > 0 ? Duration(seconds: page.page.duration.toInt()) : null,
+          ),
+    ];
+    return VodDetail(
+      bvid: reply.bvid.isNotEmpty ? reply.bvid : (bvid ?? ''),
+      aid: arc.aid.toInt(),
+      title: arc.title,
+      coverUrl: arc.pic.isEmpty ? null : _https(arc.pic),
+      description: arc.desc,
+      uploader: owner == null || owner.name.isEmpty ? null : owner.name,
+      uploaderMid: owner == null || owner.mid == 0 ? null : owner.mid.toInt(),
+      uploaderAvatar: owner == null || owner.face.isEmpty ? null : _https(owner.face),
+      playCount: stat?.view ?? 0,
+      danmakuCount: stat?.danmaku ?? 0,
+      likeCount: stat?.like ?? 0,
+      coinCount: stat?.coin ?? 0,
+      favoriteCount: stat?.fav ?? 0,
+      duration: arc.duration > 0 ? Duration(seconds: arc.duration.toInt()) : null,
+      parts: parts,
+      publishedAt: arc.pubdate > 0 ? DateTime.fromMillisecondsSinceEpoch(arc.pubdate.toInt() * 1000) : null,
+    );
+  }
+
+  /// The `.5.`-less scheme a protocol-relative address needs.
+  static String _https(String value) {
+    final trimmed = value.trim();
+    if (trimmed.startsWith('//')) return 'https:$trimmed';
+    return trimmed;
   }
 
   /// Closes the channel. The instance is unusable afterwards.
