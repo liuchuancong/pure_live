@@ -75,6 +75,73 @@ final class VodPart {
   final Duration? duration;
 }
 
+/// One video essence of a DASH ladder: a picture-only stream whose sound
+/// arrives as a separate [VodDashAudio] track.
+final class VodDashVideo {
+  /// One rendition.
+  const new({
+    required this.id,
+    required this.url,
+    required this.quality,
+    this.codec = '',
+    this.codecId = 0,
+    this.width,
+    this.height,
+    this.frameRate,
+    this.bandwidth,
+    this.backupUrls = const [],
+  });
+
+  /// The DASH representation id (the source's own number for the stream).
+  final int id;
+
+  /// The address the essence is fetched from.
+  final String url;
+
+  /// The quality id this rendition belongs to (Bilibili's `qn`).
+  final int quality;
+
+  /// The RFC 6381 codec string (`avc1.640032`), when the answer names one.
+  final String codec;
+
+  /// The source's codec id: 7 AVC, 12 HEVC, 13 AV1.
+  final int codecId;
+
+  /// The picture's width in pixels, when stated.
+  final int? width;
+
+  /// The picture's height in pixels, when stated.
+  final int? height;
+
+  /// Frames per second, when stated.
+  final double? frameRate;
+
+  /// Bits per second, when stated.
+  final int? bandwidth;
+
+  /// Fallback addresses, in the source's order.
+  final List<String> backupUrls;
+}
+
+/// One audio essence of a DASH ladder.
+final class VodDashAudio {
+  /// One audio track.
+  const new({required this.id, required this.url, this.bandwidth, this.backupUrls = const []});
+
+  /// The source's audio id: 30216 low, 30232 medium, 30280 high, 30250 Dolby,
+  /// 30251 FLAC.
+  final int id;
+
+  /// The address the essence is fetched from.
+  final String url;
+
+  /// Bits per second, when stated.
+  final int? bandwidth;
+
+  /// Fallback addresses, in the source's order.
+  final List<String> backupUrls;
+}
+
 /// A playable address and what it expects.
 final class VodPlayInfo {
   /// A play address.
@@ -87,7 +154,35 @@ final class VodPlayInfo {
     this.qualities = const [],
     this.servedQuality,
     this.silent = false,
+    this.videos = const [],
+    this.audios = const [],
+    this.flac,
+    this.dolby,
   });
+
+  /// The DASH ladder's video essences, when the answer carried one.
+  final List<VodDashVideo> videos;
+
+  /// The DASH ladder's standard audio essences.
+  final List<VodDashAudio> audios;
+
+  /// The lossless audio track, when the answer offered one.
+  final VodDashAudio? flac;
+
+  /// The Dolby audio track, when the answer offered one.
+  final VodDashAudio? dolby;
+
+  /// Whether the answer carries a DASH pair the player must join itself.
+  bool get hasDash => videos.isNotEmpty && (audios.isNotEmpty || flac != null || dolby != null);
+
+  /// The best standard audio track: highest bandwidth, or the only one.
+  /// FLAC and Dolby are only stood in for when no standard track exists —
+  /// every engine handles the AAC track, not every engine the exotic ones.
+  VodDashAudio? get bestAudio {
+    if (audios.isEmpty) return flac ?? dolby;
+    final sorted = [...audios]..sort((a, b) => (b.bandwidth ?? 0).compareTo(a.bandwidth ?? 0));
+    return sorted.first;
+  }
 
   /// The address handed to the player.
   final String url;

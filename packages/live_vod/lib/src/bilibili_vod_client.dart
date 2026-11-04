@@ -247,13 +247,15 @@ final class BilibiliVodClient {
     return await playPart(bvid: bvid, cid: partCid, qn: qn);
   }
 
-  /// Resolves one part's progressive address.
+  /// Resolves one part's play data.
   ///
-  /// `fnval=1` asks for the muxed mp4: picture and sound in one stream, which
-  /// a single-surface player can open. When the source only answers a DASH
-  /// ladder (some login-gated renditions) the first video rendition is returned
-  /// with [VodPlayInfo.silent] set, rather than pretending the answer has audio.
-  Future<VodPlayInfo> playPart({required String bvid, required int cid, int qn = 64}) async {
+  /// `fnval=4048` asks for the DASH ladder — every definition the session may
+  /// have, plus the sound as its own track. The muxed mp4 (`fnval=1`) tops out
+  /// at 720P for a guest, so it is only asked for when [dash] is false: an
+  /// engine that cannot join two essences, or a download that must be one
+  /// file. A DASH answer with no audio track is marked [VodPlayInfo.silent]
+  /// rather than pretending it has sound.
+  Future<VodPlayInfo> playPart({required String bvid, required int cid, int qn = 64, bool dash = true}) async {
     final play = await http.send(
       LiveRequest.custom(
         method: 'GET',
@@ -261,7 +263,7 @@ final class BilibiliVodClient {
           'bvid': bvid,
           'cid': '$cid',
           'qn': '$qn',
-          'fnval': '1',
+          'fnval': dash ? '4048' : '1',
           'fnver': '0',
           'fourk': '1',
           'platform': 'oc',
@@ -831,27 +833,53 @@ final class BilibiliVodClient {
     return index.isNotEmpty ? index : '${own['desc'] ?? ''}'.trim();
   }
 
-  /// Resolves a PGC episode's progressive address, the signed endpoint
-  /// behind the cinema player. [cid] and [aid] come from the season answer
-  /// and narrow the request to the exact episode revision.
-  Future<VodPlayInfo> pgcPlay({required int episodeId, int? cid, int? aid, int qn = 80}) async {
-    final query = await _signed({
+  /// Resolves a PGC episode's play data, the signed endpoint behind the
+  /// cinema player. [cid] and [aid] come from the season answer and narrow the
+  /// request to the exact episode revision.
+  ///
+  /// The v2 endpoint is asked first: it carries the DASH ladder the cinema's
+  /// own player uses. A refusal falls back to v1 with the same DASH flags, so
+  /// an episode that only answers the old shape still plays.
+  Future<VodPlayInfo> pgcPlay({required int episodeId, int? cid, int? aid, int qn = 80, bool dash = true}) async {
+    final fields = {
       'ep_id': '$episodeId',
       if (cid != null) 'cid': '$cid',
       if (aid != null) 'avid': '$aid',
       'qn': '$qn',
-      'fnval': '1',
+      'fnval': dash ? '4048' : '1',
       'fnver': '0',
       'fourk': '1',
-    });
-    final response = await http.send(
+    };
+    final v2 = await _signed(fields);
+    final v2Response = dash
+        ? await http.send(
+            LiveRequest.custom(
+              method: 'GET',
+              url: Uri.https('api.bilibili.com', '/pgc/player/web/v2/playurl', v2),
+              headers: {..._headers, 'referer': 'https://www.bilibili.com'},
+            ),
+          )
+        : null;
+    if (v2Response != null && v2Response.statusCode == 200) {
+      try {
+        final body = _body(v2Response);
+        final data = body['result'] ?? body['data'];
+        if (data is! Map) throw const VodFailure('the episode returned no play data');
+        final info = data['video_info'];
+        return _playInfoOf(info is Map ? info : data, qn: qn);
+      } on VodFailure {
+        // The v2 route refused the episode; the v1 route below still answers.
+      }
+    }
+    final v1 = await _signed(fields);
+    final v1Response = await http.send(
       LiveRequest.custom(
         method: 'GET',
-        url: Uri.https('api.bilibili.com', '/pgc/player/web/playurl', query),
+        url: Uri.https('api.bilibili.com', '/pgc/player/web/playurl', v1),
         headers: {..._headers, 'referer': 'https://www.bilibili.com'},
       ),
     );
-    final body = _body(response);
+    final body = _body(v1Response);
     final data = body['result'] ?? body['data'];
     if (data is! Map) throw const VodFailure('the episode returned no play data');
     return _playInfoOf(data, qn: qn);
@@ -1031,37 +1059,127 @@ final class BilibiliVodClient {
   }
 
   /// The address of a play answer's data (`x/player/playurl` or the PGC
-  /// player): the muxed `durl` when there is one, else the first DASH
-  /// rendition marked silent.
+  /// player): the muxed `durl` when there is one, else the DASH ladder the
+  /// player joins itself.
   VodPlayInfo _playInfoOf(Map<Object?, Object?> data, {required int qn}) {
     final qualities = _qualitiesOf(data);
     final served = _intOf(data['quality']) ?? qn;
     final label = _qualityLabel(qualities, served);
+    final dash = data['dash'];
+    final videos = _dashVideosOf(dash);
+    final audios = _dashAudiosOf(dash);
+    final flac = _dashSingleAudioOf(dash is Map ? dash['flac'] : null);
+    final dolby = _dashDolbyOf(dash);
     final durl = data['durl'];
     final firstPart = durl is List && durl.isNotEmpty ? durl.first : null;
     final address = firstPart is Map ? firstPart['url'] : null;
     if (address is String && address.isNotEmpty) {
-      return VodPlayInfo(url: address, headers: _headers, quality: label, qualities: qualities, servedQuality: served);
+      return VodPlayInfo(
+        url: address,
+        headers: _headers,
+        quality: label,
+        qualities: qualities,
+        servedQuality: served,
+        videos: videos,
+        audios: audios,
+        flac: flac,
+        dolby: dolby,
+      );
     }
-    final dash = data['dash'];
-    if (dash is Map) {
-      final videos = (dash['video'] as List<Object?>?) ?? const [];
-      final first = videos.isEmpty ? null : videos.first;
-      final dashAddress = first is Map ? first['baseUrl'] : null;
-      if (dashAddress is String && dashAddress.isNotEmpty) {
-        return VodPlayInfo(
-          url: dashAddress,
-          headers: _headers,
-          format: 'm4s',
-          quality: label,
-          qualities: qualities,
-          servedQuality: served,
-          silent: true,
-        );
-      }
+    if (videos.isNotEmpty) {
+      return VodPlayInfo(
+        url: videos.first.url,
+        headers: _headers,
+        format: 'm4s',
+        quality: label,
+        qualities: qualities,
+        servedQuality: served,
+        silent: audios.isEmpty && flac == null && dolby == null,
+        videos: videos,
+        audios: audios,
+        flac: flac,
+        dolby: dolby,
+      );
     }
     throw const VodFailure('the video offered no address');
   }
+
+  /// The answer's video essences, best first: quality, then bandwidth.
+  List<VodDashVideo> _dashVideosOf(Object? dash) {
+    if (dash is! Map) return const [];
+    final rows = dash['video'];
+    if (rows is! List) return const [];
+    final videos = <VodDashVideo>[];
+    for (final row in rows) {
+      if (row is! Map) continue;
+      final url = _https('${row['baseUrl'] ?? row['base_url'] ?? ''}');
+      if (!url.startsWith('http')) continue;
+      final quality = _intOf(row['id']) ?? 0;
+      videos.add(
+        VodDashVideo(
+          id: quality,
+          url: url,
+          quality: quality,
+          codec: '${row['codecs'] ?? ''}',
+          codecId: _intOf(row['codecid']) ?? 0,
+          width: _intOf(row['width']),
+          height: _intOf(row['height']),
+          frameRate: double.tryParse('${row['frameRate'] ?? ''}'),
+          bandwidth: _intOf(row['bandwidth']),
+          backupUrls: _urlListOf(row['backupUrl'] ?? row['backup_url']),
+        ),
+      );
+    }
+    videos.sort((a, b) {
+      final quality = b.quality.compareTo(a.quality);
+      return quality != 0 ? quality : (b.bandwidth ?? 0).compareTo(a.bandwidth ?? 0);
+    });
+    return videos;
+  }
+
+  /// The answer's standard audio essences.
+  List<VodDashAudio> _dashAudiosOf(Object? dash) {
+    if (dash is! Map) return const [];
+    final rows = dash['audio'];
+    if (rows is! List) return const [];
+    return [
+      for (final row in rows)
+        if (row is Map) _dashAudioOf(row),
+    ];
+  }
+
+  /// The FLAC item: `{"display": true, "audio": {...}}`.
+  VodDashAudio? _dashSingleAudioOf(Object? item) {
+    if (item is! Map) return null;
+    final audio = item['audio'];
+    if (audio is! Map) return null;
+    final track = _dashAudioOf(audio);
+    return track.id == 0 || !track.url.startsWith('http') ? null : track;
+  }
+
+  /// The Dolby item: the first entry of its `audio` list.
+  VodDashAudio? _dashDolbyOf(Object? dash) {
+    if (dash is! Map) return null;
+    final dolby = dash['dolby'];
+    if (dolby is! Map) return null;
+    final rows = dolby['audio'];
+    if (rows is! List || rows.isEmpty || rows.first is! Map) return null;
+    final track = _dashAudioOf(rows.first as Map);
+    return track.id == 0 || !track.url.startsWith('http') ? null : track;
+  }
+
+  VodDashAudio _dashAudioOf(Map<Object?, Object?> row) => VodDashAudio(
+    id: _intOf(row['id']) ?? 0,
+    url: _https('${row['baseUrl'] ?? row['base_url'] ?? ''}'),
+    bandwidth: _intOf(row['bandwidth']),
+    backupUrls: _urlListOf(row['backupUrl'] ?? row['backup_url']),
+  );
+
+  List<String> _urlListOf(Object? value) => [
+    if (value is List)
+      for (final entry in value)
+        if (entry is String && entry.startsWith('http')) entry,
+  ];
 
   Map<String, Object?> _body(LiveResponse response) {
     if (response.statusCode != 200) {

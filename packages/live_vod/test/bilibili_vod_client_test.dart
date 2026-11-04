@@ -96,6 +96,78 @@ void main() {
     expect(info.silent, isTrue);
   });
 
+  test('a DASH pair keeps its ladder and its audio, and asks fnval 4048', () async {
+    final http = _FakeHttp({
+      '/x/player/pagelist': {
+        'code': 0,
+        'data': [
+          {'cid': 7},
+        ],
+      },
+      '/x/player/playurl': {
+        'code': 0,
+        'data': {
+          'quality': 80,
+          'accept_quality': [80, 64],
+          'support_formats': [
+            {'quality': 80, 'new_description': '1080P 高清'},
+            {'quality': 64, 'new_description': '720P 准高清'},
+          ],
+          'dash': {
+            'video': [
+              {'id': 64, 'baseUrl': 'https://cdn/64-avc.m4s', 'codecid': 7, 'codecs': 'avc1.640020', 'bandwidth': 900000},
+              {'id': 80, 'baseUrl': 'https://cdn/80-avc.m4s', 'codecid': 7, 'codecs': 'avc1.640032', 'bandwidth': 1800000},
+              {'id': 80, 'baseUrl': 'https://cdn/80-hevc.m4s', 'codecid': 12, 'codecs': 'hev1.1.6.L120', 'bandwidth': 1500000},
+            ],
+            'audio': [
+              {'id': 30216, 'baseUrl': 'https://cdn/audio-low.m4s', 'bandwidth': 64000},
+              {'id': 30280, 'baseUrl': 'https://cdn/audio-high.m4s', 'bandwidth': 192000},
+            ],
+            'flac': {'display': false},
+            'dolby': {'type': 0, 'audio': null},
+          },
+        },
+      },
+    });
+
+    final info = await BilibiliVodClient(http).play(const VodVideo(id: 'BV1', title: 't'));
+
+    expect(http.asked.last.queryParameters['fnval'], '4048');
+    expect(info.hasDash, isTrue);
+    expect(info.silent, isFalse);
+    // Best definition first, then bandwidth within it.
+    expect(info.videos.first.quality, 80);
+    expect(info.videos.first.codecId, 7);
+    expect(info.videos.first.url, 'https://cdn/80-avc.m4s');
+    expect(info.bestAudio?.id, 30280);
+    expect(info.bestAudio?.url, 'https://cdn/audio-high.m4s');
+  });
+
+  test('the muxed fallback asks fnval 1', () async {
+    final http = _FakeHttp({
+      '/x/player/pagelist': {
+        'code': 0,
+        'data': [
+          {'cid': 7},
+        ],
+      },
+      '/x/player/playurl': {
+        'code': 0,
+        'data': {
+          'quality': 64,
+          'durl': [
+            {'url': 'https://cdn/muxed.mp4'},
+          ],
+        },
+      },
+    });
+
+    final info = await BilibiliVodClient(http).playPart(bvid: 'BV1', cid: 7, dash: false);
+
+    expect(http.asked.last.queryParameters['fnval'], '1');
+    expect(info.url, 'https://cdn/muxed.mp4');
+  });
+
   test('a source failure is a VodFailure with its message', () async {
     final http = _FakeHttp({
       '/x/web-interface/search/type': {'code': -412, 'message': 'request blocked'},

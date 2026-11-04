@@ -15,6 +15,7 @@ import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart' show vodPlaybackSettingsProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
+import 'package:pure_live/modules/vod/widgets/vod_media_source.dart' show vodDashSourceOf;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonHead, vodDurationText;
 import 'package:pure_live/shared/shared.dart' show LiveWindow, silencePlayer;
 
@@ -148,7 +149,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       }
     }
     try {
-      final info = await ref
+      var info = await ref
           .read(vodClientProvider)
           .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, qn: qn ?? _qn);
       if (!mounted || _disposed) return;
@@ -165,19 +166,25 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       }
       _handle = handle;
       _bind(handle);
-      final uri = Uri.parse(info.url);
-      await handle.open(
-        PlayerSource.of(
-          id: SourceId('vod:pgc:${episode.id}:${DateTime.now().microsecondsSinceEpoch}'),
-          uri: uri,
-          type: SourceType.remote,
-          protocol: SourceProtocol.fromScheme(uri.scheme),
-          format: SourceFormat.fromUri(uri),
-          headers: info.headers.isEmpty ? null : SourceHeaders(info.headers),
-          title: episode.title,
-        ),
-        autoPlay: true,
-      );
+      final dash = vodDashSourceOf(info, maxQuality: qn ?? _qn);
+      if (dash != null) {
+        try {
+          await handle.openMedia(dash, autoPlay: true);
+        // media_core signals "this engine cannot join two essences" as an
+        // UnsupportedError; the muxed request below is its handler.
+        // ignore: avoid_catching_errors
+        } on UnsupportedError {
+          // A single-URL engine: ask the muxed answer, whose sound is inside
+          // the file.
+          info = await ref
+              .read(vodClientProvider)
+              .pgcPlay(episodeId: episode.id, cid: episode.cid, aid: episode.aid, qn: qn ?? _qn, dash: false);
+          if (!mounted || _disposed) return;
+          await handle.open(_episodeSource(info, episode), autoPlay: true);
+        }
+      } else {
+        await handle.open(_episodeSource(info, episode), autoPlay: true);
+      }
       if (!mounted || _disposed) return;
       setState(() {
         _play = info;
@@ -193,6 +200,21 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         _error = failure is VodFailure ? failure.message : '$failure';
       });
     }
+  }
+
+  /// The flat source of a muxed answer: the shape a single-URL engine opens,
+  /// and the fallback when the DASH pair is unsupported.
+  PlayerSource _episodeSource(VodPlayInfo info, VodEpisode episode) {
+    final uri = Uri.parse(info.url);
+    return PlayerSource.of(
+      id: SourceId('vod:pgc:${episode.id}:${DateTime.now().microsecondsSinceEpoch}'),
+      uri: uri,
+      type: SourceType.remote,
+      protocol: SourceProtocol.fromScheme(uri.scheme),
+      format: SourceFormat.fromUri(uri),
+      headers: info.headers.isEmpty ? null : SourceHeaders(info.headers),
+      title: episode.title,
+    );
   }
 
   void _bind(PlayerHandle handle) {

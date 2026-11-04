@@ -25,6 +25,7 @@ import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/controller/vod_social.dart' show VodCommentsController, vodCommentsProvider;
+import 'package:pure_live/modules/vod/widgets/vod_media_source.dart' show vodDashSourceOf;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -386,7 +387,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       }
     }
     try {
-      final info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
+      var info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
       if (!mounted || _disposed) return;
       final existing = _handle;
       final handle =
@@ -405,19 +406,23 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _handle = handle;
       _bind(handle);
       await _applyEngineOptions(handle);
-      final uri = Uri.parse(info.url);
-      await handle.open(
-        PlayerSource.of(
-          id: SourceId('vod:${widget.bvid}:${part.cid}:${DateTime.now().microsecondsSinceEpoch}'),
-          uri: uri,
-          type: SourceType.remote,
-          protocol: SourceProtocol.fromScheme(uri.scheme),
-          format: SourceFormat.fromUri(uri),
-          headers: info.headers.isEmpty ? null : SourceHeaders(info.headers),
-          title: _detail?.title ?? part.title,
-        ),
-        autoPlay: true,
-      );
+      final dash = vodDashSourceOf(info, maxQuality: qn ?? _qn);
+      if (dash != null) {
+        try {
+          await handle.openMedia(dash, autoPlay: true);
+        // media_core signals "this engine cannot join two essences" as an
+        // UnsupportedError; the muxed request below is its handler.
+        // ignore: avoid_catching_errors
+        } on UnsupportedError {
+          // This engine joins one URL only: ask for the muxed answer, whose
+          // definition is lower but whose sound is already inside it.
+          info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn, dash: false);
+          if (!mounted || _disposed) return;
+          await handle.open(_partSource(info, part), autoPlay: true);
+        }
+      } else {
+        await handle.open(_partSource(info, part), autoPlay: true);
+      }
       await handle.setVolume(_volume);
       await handle.setMute(muted: _effectivelyMuted);
       await handle.setRate(_speed);
@@ -453,6 +458,21 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         _error = error is VodFailure ? error.message : '$error';
       });
     }
+  }
+
+  /// The flat source of a muxed answer: the shape a single-URL engine opens,
+  /// and the fallback when the DASH pair is unsupported.
+  PlayerSource _partSource(VodPlayInfo info, VodPart part) {
+    final uri = Uri.parse(info.url);
+    return PlayerSource.of(
+      id: SourceId('vod:${widget.bvid}:${part.cid}:${DateTime.now().microsecondsSinceEpoch}'),
+      uri: uri,
+      type: SourceType.remote,
+      protocol: SourceProtocol.fromScheme(uri.scheme),
+      format: SourceFormat.fromUri(uri),
+      headers: info.headers.isEmpty ? null : SourceHeaders(info.headers),
+      title: _detail?.title ?? part.title,
+    );
   }
 
   void _bind(PlayerHandle handle) {
