@@ -9,6 +9,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/popular/popular_controller.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/modules/live/popular/room_card_menu.dart';
@@ -164,11 +165,11 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          // A small screen keeps the tab bar alone and puts the
-          // layout and the platform wall behind one more icon.
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+          // The tabs stay alone when the page's width stacks its toolbar;
+          // its verbs then ride the shell's head line, the usual phone rule.
+          child: Builder(
+            builder: (context) {
+              final narrow = PageLayoutScope.isNarrow(context);
               final tabs = PlatformTabRow(
                 platforms: ids,
                 current: platform,
@@ -186,18 +187,14 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                 onPressed: loadingFeed ? null : refreshFeed,
                 icon: const DsIcon(DsIcons.refreshCw, size: 16),
               );
-              if (!narrow) {
-                return Row(
+              if (narrow) return SizedBox(height: 44, child: tabs);
+              return SizedBox(
+                height: 44,
+                child: Row(
                   spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: tabs),
-                    refresh,
-                  ],
-                );
-              }
-              // A narrow page hands its verbs to the shell's head line and
-              // keeps the tabs alone; the shell shows them where it has room.
-              return SizedBox(height: 44, child: tabs);
+                  children: [Expanded(child: tabs), refresh],
+                ),
+              );
             },
           ),
         ),

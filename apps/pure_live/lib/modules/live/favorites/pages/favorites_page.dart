@@ -8,6 +8,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_refresh_handoff.dart';
@@ -333,7 +334,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       );
     }
 
-    final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
+    // The shell decides how the page's width reads (see PageLayoutScope).
+    final narrow = PageLayoutScope.isNarrow(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

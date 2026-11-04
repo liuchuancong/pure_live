@@ -13,6 +13,7 @@ import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
 import 'package:pure_live/layouts/page_inline_search.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
@@ -384,12 +385,12 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // with a list of its own to search gets either.
     final pageSearch = _pageSearch(t);
     final headWidth = width - (narrow ? 0 : sidebarWidth);
-    // The page's own row keeps its verbs until its usable width goes under
-    // the toolbar breakpoint; then this head carries them. Both sides measure
-    // the same width (content minus the page's insets), so they cannot
-    // disagree about a window between their thresholds.
-    final hostsVerbs = LiveWindow.stacksToolbar(headWidth - 2 * LiveWindow.pageInset(width));
-    final verbs = hostsVerbs ? _pageVerbs() : const <Widget>[];
+    // The page's usable width — the content area minus the page's own insets —
+    // decided once and published to the page (see PageLayoutScope): under the
+    // toolbar breakpoint the page stacks its row and the head carries its
+    // verbs; above it the page keeps them itself.
+    final pageNarrow = LiveWindow.stacksToolbar(headWidth - 2 * LiveWindow.pageInset(width));
+    final verbs = pageNarrow ? _pageVerbs() : const <Widget>[];
     final reserve = (verbs.isEmpty ? 0.0 : 130.0) +
         (widget.selected == NavigationItem.logs ? 44.0 : 0.0) +
         (WindowChromeState.drawsStrip ? 0.0 : 48.0);
@@ -494,14 +495,17 @@ final class _AppShellState extends ConsumerState<AppShell> {
               )
             : navBar,
         drawer: _drawer(context, t, tabs, rail, wallpaper),
-        body: glass && atTab
-            ? MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
-                ),
-                child: widget.content,
-              )
-            : widget.content,
+        body: PageLayoutScope(
+          narrow: pageNarrow,
+          child: glass && atTab
+              ? MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
+                  ),
+                  child: widget.content,
+                )
+              : widget.content,
+        ),
       );
       return CallbackShortcuts(
         bindings: shortcuts,
@@ -638,7 +642,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
                               ],
                             ),
                           ),
-                          Expanded(child: widget.content),
+                          Expanded(child: PageLayoutScope(narrow: pageNarrow, child: widget.content)),
                         ],
                       ),
                     ),

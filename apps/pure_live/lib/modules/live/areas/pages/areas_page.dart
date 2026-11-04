@@ -8,6 +8,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/areas/controllers/areas_controller.dart';
 import 'package:pure_live/modules/live/areas/data/area_follow_repository.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -193,28 +194,27 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // The platform tabs take the row's leftover width — the
-              // popular page's measure — so names read whole.
-              if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
-                final tabs = platformTabs(withWall: true);
-                return SizedBox(
-                  height: 44,
-                  child: Row(
-                    spacing: DsSpace.s12,
-                    children: [
-                      views,
-                      if (tabs != null) Expanded(child: tabs) else const Spacer(),
-                      layoutSwitch,
-                      if (inPlatformView) refreshButton,
-                    ],
-                  ),
-                );
+          child: Builder(
+            builder: (context) {
+              // The shell decides how the page's width reads (PageLayoutScope):
+              // a stacked toolbar hands the verbs to the head line and keeps
+              // the tabs alone.
+              if (PageLayoutScope.isNarrow(context)) {
+                return SizedBox(height: 44, child: platformTabs(withWall: false) ?? _viewLabel(context));
               }
-              // A narrow page hands its verbs to the shell's head line and
-              // keeps the tabs alone.
-              return SizedBox(height: 44, child: platformTabs(withWall: false) ?? _viewLabel(context));
+              final tabs = platformTabs(withWall: true);
+              return SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s12,
+                  children: [
+                    views,
+                    if (tabs != null) Expanded(child: tabs) else const Spacer(),
+                    layoutSwitch,
+                    if (inPlatformView) refreshButton,
+                  ],
+                ),
+              );
             },
           ),
         ),
