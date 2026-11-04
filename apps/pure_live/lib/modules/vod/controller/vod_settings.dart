@@ -60,7 +60,7 @@ final class VodQualityController extends Notifier<VodQualityChoice> {
     if (choice == state) return;
     state = choice;
     try {
-      unawaited(StoragePrefs.setInt(_qualityPref, choice.qn));
+      unawaited(StoragePrefs.setInt(_qualityPref, choice.qn).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }

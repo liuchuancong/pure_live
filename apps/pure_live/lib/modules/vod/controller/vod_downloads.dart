@@ -238,7 +238,7 @@ final class VodDownloadSettingsController extends Notifier<int> {
     if (value == state) return;
     state = value;
     try {
-      unawaited(StoragePrefs.setInt(_kMaxConcurrent, value));
+      unawaited(StoragePrefs.setInt(_kMaxConcurrent, value).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -278,7 +278,7 @@ final class VodDownloadRetryController extends Notifier<int> {
     if (value == state) return;
     state = value;
     try {
-      unawaited(StoragePrefs.setInt(_kRetryAttempts, value));
+      unawaited(StoragePrefs.setInt(_kRetryAttempts, value).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -309,7 +309,7 @@ final class VodDownloadRetryDelayController extends Notifier<int> {
     if (!choices.contains(seconds) || seconds == state) return;
     state = seconds;
     try {
-      unawaited(StoragePrefs.setInt(_kRetryDelay, seconds));
+      unawaited(StoragePrefs.setInt(_kRetryDelay, seconds).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -346,7 +346,7 @@ final class VodDownloadQualityController extends Notifier<VodQualityChoice> {
     if (choice == state) return;
     state = choice;
     try {
-      unawaited(StoragePrefs.setInt(_kDownloadQn, choice.qn));
+      unawaited(StoragePrefs.setInt(_kDownloadQn, choice.qn).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -380,7 +380,7 @@ final class VodDownloadDanmakuController extends Notifier<bool> {
     if (value == state) return;
     state = value;
     try {
-      unawaited(StoragePrefs.setBool(_kDownloadDanmaku, value));
+      unawaited(StoragePrefs.setBool(_kDownloadDanmaku, value).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store loses it.
     }

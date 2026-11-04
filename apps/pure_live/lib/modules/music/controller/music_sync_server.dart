@@ -361,7 +361,7 @@ final class MusicSyncServer {
   String _newServerId() {
     final id = musicSyncRandomToken();
     try {
-      unawaited(StoragePrefs.setString(kMusicSyncServerIdKey, id));
+      unawaited(StoragePrefs.setString(kMusicSyncServerIdKey, id).catchError((Object _) => false));
     } on Object {
       // A preference; a closed store regenerates next boot.
     }
@@ -410,7 +410,7 @@ final class MusicSyncServer {
     if (stored != null && stored.isNotEmpty) return stored;
     final code = musicSyncGenerateAuthCode();
     try {
-      unawaited(StoragePrefs.setString(kMusicSyncServerAuthCodeKey, code));
+      unawaited(StoragePrefs.setString(kMusicSyncServerAuthCodeKey, code).catchError((Object _) => false));
     } on Object {
       // A closed store loses the code; the next read mints another.
     }
@@ -785,7 +785,7 @@ final class MusicSyncServerAuthCode extends Notifier<String> {
     final stored = StoragePrefs.getString(kMusicSyncServerAuthCodeKey);
     if (stored != null && stored.isNotEmpty) return stored;
     final code = musicSyncGenerateAuthCode();
-    unawaited(StoragePrefs.setString(kMusicSyncServerAuthCodeKey, code));
+    unawaited(StoragePrefs.setString(kMusicSyncServerAuthCodeKey, code).catchError((Object _) => false));
     return code;
   }
 
