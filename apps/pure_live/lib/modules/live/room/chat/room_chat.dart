@@ -94,6 +94,30 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
 /// The danmaku list: the pipeline's messages, newest at the bottom, the
 /// sender's name before the text in the sender's color. A long press (or a
 /// right click) opens the message's actions.
+/// The area a chat or board state is shown in: centred when it fits the column,
+/// scrollable when it does not.
+///
+/// The chat column is short on a phone and in a narrow desktop window, while a
+/// failure state is a title, the platform's own reason — an exception line that
+/// can run long — and a button. Under a plain `Center` that stack overflowed by
+/// 343 px and lost its retry button off the bottom of the panel; nothing here
+/// may be dropped, so the area gives way to scrolling instead of clipping.
+Widget _chatStateArea({required Widget child}) {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      const padding = DsSpace.s12;
+      final minHeight = constraints.hasBoundedHeight ? constraints.maxHeight - padding * 2 : 0.0;
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(padding),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: minHeight > 0 ? minHeight : 0),
+          child: Center(child: child),
+        ),
+      );
+    },
+  );
+}
+
 final class _ChatFeed extends ConsumerStatefulWidget {
   const _ChatFeed();
 
@@ -147,7 +171,7 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
       // An empty list is four different facts, and only one of them is the
       // room being quiet: the standing the controller publishes says which, so
       // a refused handshake never reads as "nobody is talking".
-      return Center(
+      return _chatStateArea(
         child: switch (standing.status) {
           RoomChatStatus.connecting => Column(
             mainAxisSize: MainAxisSize.min,
@@ -1116,7 +1140,7 @@ final class _SuperChatTab extends ConsumerWidget {
     }
     final error = board.error;
     if (error != null && board.messages.isEmpty) {
-      return Center(
+      return _chatStateArea(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.badgeDollarSign),
           title: Text(t.room.superChatFailed),
@@ -1126,7 +1150,7 @@ final class _SuperChatTab extends ConsumerWidget {
       );
     }
     if (board.messages.isEmpty) {
-      return Center(
+      return _chatStateArea(
         child: DsEmptyState(icon: const DsIcon(DsIcons.badgeDollarSign), title: Text(t.room.superChatEmpty)),
       );
     }
