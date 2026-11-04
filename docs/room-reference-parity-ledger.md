@@ -208,3 +208,19 @@
 - `test/live/recording_schedule_test.dart:97,103` 断言的正是文档那套：waiting ⇒ true、排期任务 ⇒ true。
 
 ⇒ 代码/注释/测试三者两两矛盾，改哪一边都是**录像 lane 的产品决定**（结合 `project-pure-live-recorder-subscriptions` 的"开播检测默认 false"，新语义像是刻意的：没订阅检测就不轮询）。要落新语义，需要同步改掉 `:325-330` 的注释与 `:97/:103` 两条断言；要回旧语义，就把 waiting/排期-结束两支写回 getter。我不碰他们正在编辑的文件，只把冲突点写在这里，省得每轮重新解剖一次。
+
+## 过滤器族逐文件 diff（2026-11-05，把"持平"从散文换成证据）
+
+对 `E:\study\Pure_live\packages\live_danmaku\lib\src\filters\` 的九个文件与 `packages/live_sites\lib\src\common\danmaku\filters\` 同名九个做去 import/空行后的行 diff：
+
+| 文件 | diff 行数 | 差异性质 |
+| --- | --- | --- |
+| block_pattern | **0** | 完全一致 |
+| partial_ratio | **0** | 完全一致（fuzzywuzzy 1.2.0 算法的独立实现，两边同源） |
+| message_gate | 35 | 只有模型字段名（`payload`/`sender`/`giftOrNull`/`message.text`）与具名构造写法；判据（`replayed`+`maxReplayAge`、付费卡按 `endTime` 免死、撤回目标并进键）一致 |
+| block_list | 36 | 同族字段名 + 我们把 `isMaskedName` 提为公开（P23 用） |
+| message_filter | 37 | 同族字段名；纯表情/超长判据一致 |
+| text_shape | 37 | **有意的我们更强**：`danmakuMessageShape(..., emoticonPattern:)` 钩子（T10，把内置表情表喂进判据）；正则里 `\u200d\ufe0f\u20e3` 是转义写法差异（含一条 `// ignore: valid_regexps`，因为分析器不认识 UTS#51 的 Extended_Pictographic，Dart 自己编得过也跑得对） |
+| repeated_filter / similarity_filter | 11 | 注释与构造写法，无语义差异 |
+
+⇒ **第四部分（对比 live_core/live_danmaku）至此是"逐文件核过"而不是"看起来差不多"**：九个文件里没有一处判据漂移。下轮别再解剖这条线；要动过滤器族只能拿新需求来。
