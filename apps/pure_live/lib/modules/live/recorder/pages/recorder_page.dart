@@ -1298,6 +1298,7 @@ final class _TaskCard extends ConsumerWidget {
                         // one line; the tags that describe the room follow
                         // underneath it.
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: DsSpace.s8,
                           children: [
                             DsAvatar(
@@ -1307,23 +1308,26 @@ final class _TaskCard extends ConsumerWidget {
                               semanticLabel: anchor.isEmpty ? title : anchor,
                             ),
                             Expanded(
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.heading.copyWith(color: colors.text),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: 1,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.heading.copyWith(color: colors.text),
+                                  ),
+                                  if ([area, anchor].where((part) => part.isNotEmpty).isNotEmpty)
+                                    Text(
+                                      [area, anchor].where((part) => part.isNotEmpty).join(' · '),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                    ),
+                                ],
                               ),
                             ),
-                            if ([area, anchor].where((part) => part.isNotEmpty).isNotEmpty)
-                              Flexible(
-                                child: Text(
-                                  [area, anchor].where((part) => part.isNotEmpty).join(' · '),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.end,
-                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                ),
-                              ),
                           ],
                         ),
                         Wrap(
