@@ -23,7 +23,7 @@
   "selectAll": "全选",
   "groupSummary": "{count} 个文件 · {size}",
   "emptyFinishedTitle": "已完成的录制会出现在这里",
-  "emptyDescription": "在直播间点击录制，任务会出现在这里。",
+  "emptyDescription": "在直播间的菜单里选「开播自动录」，或点下面的按钮添加一个直播间；它会一直留在这里，开播就录。",
   "qualityBest": "最佳画质",
   "startedAt": "开始于 {time}",
   "stateRecording": "录制中",

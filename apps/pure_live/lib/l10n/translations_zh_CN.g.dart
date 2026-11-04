@@ -5395,8 +5395,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '已完成的录制会出现在这里'
 	String get emptyFinishedTitle => '已完成的录制会出现在这里';
 
-	/// zh-CN: '在直播间点击录制，任务会出现在这里。'
-	String get emptyDescription => '在直播间点击录制，任务会出现在这里。';
+	/// zh-CN: '在直播间的菜单里选「开播自动录」，或点下面的按钮添加一个直播间；它会一直留在这里，开播就录。'
+	String get emptyDescription => '在直播间的菜单里选「开播自动录」，或点下面的按钮添加一个直播间；它会一直留在这里，开播就录。';
 
 	/// zh-CN: '最佳画质'
 	String get qualityBest => '最佳画质';
@@ -15056,7 +15056,7 @@ extension on Translations {
 			'recorder.selectAll' => '全选',
 			'recorder.groupSummary' => ({required Object count, required Object size}) => '${count} 个文件 · ${size}',
 			'recorder.emptyFinishedTitle' => '已完成的录制会出现在这里',
-			'recorder.emptyDescription' => '在直播间点击录制，任务会出现在这里。',
+			'recorder.emptyDescription' => '在直播间的菜单里选「开播自动录」，或点下面的按钮添加一个直播间；它会一直留在这里，开播就录。',
 			'recorder.qualityBest' => '最佳画质',
 			'recorder.startedAt' => ({required Object time}) => '开始于 ${time}',
 			'recorder.stateRecording' => '录制中',

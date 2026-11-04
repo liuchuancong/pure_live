@@ -282,8 +282,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   borderRadius: BorderRadius.circular(theme.radii.card),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(DsSpace.s12),
-                  child: DsIcon(DsIcons.video, size: 28, color: colors.accentText),
+                  padding: EdgeInsets.all(narrow ? DsSpace.s8 : DsSpace.s12),
+                  child: DsIcon(DsIcons.video, size: narrow ? 22 : 28, color: colors.accentText),
                 ),
               ),
               Expanded(
@@ -292,22 +292,34 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   spacing: 2,
                   children: [
                     Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
-                    Text(
-                      t.recorder.centerSubtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
+                    // A phone keeps the name alone: the sentence under it costs
+                    // the row the room the list needs.
+                    if (!narrow)
+                      Text(
+                        t.recorder.centerSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
                   ],
                 ),
               ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.settings, size: 16),
-                onPressed: _openSettings,
-                child: Text(t.recorder.settingsOpen),
-              ),
+              if (narrow)
+                DsButton.icon(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  semanticLabel: t.recorder.settingsOpen,
+                  onPressed: _openSettings,
+                  icon: const DsIcon(DsIcons.settings, size: 16),
+                )
+              else
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.settings, size: 16),
+                  onPressed: _openSettings,
+                  child: Text(t.recorder.settingsOpen),
+                ),
             ],
           ),
         ),
@@ -317,22 +329,31 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           // the same line: the filter and the refresh narrow what is under
           // them, so they belong to the page switch rather than to a second
           // band below it.
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              DsSegmentedControl<RecorderCenterTab>(
-                value: ref.watch(recorderCenterTabProvider),
-                onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
-                segments: [
-                  DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
-                  DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
+          child: () {
+            final files = ref.watch(recorderCenterTabProvider) == RecorderCenterTab.files;
+            final switchRow = DsSegmentedControl<RecorderCenterTab>(
+              value: ref.watch(recorderCenterTabProvider),
+              onChanged: (value) => ref.read(recorderCenterTabProvider.notifier).set(value),
+              segments: [
+                DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
+                DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
+              ],
+            );
+            final toolbar = RecorderLibraryToolbar(takes: libraryTakes, platformName: _platformName);
+            // A phone stacks the files verbs under the switch instead of
+            // squeezing them onto one line.
+            if (narrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s8,
+                children: [
+                  Align(alignment: AlignmentDirectional.centerStart, child: switchRow),
+                  if (files) toolbar,
                 ],
-              ),
-              const Spacer(),
-              if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.files)
-                RecorderLibraryToolbar(takes: libraryTakes, platformName: _platformName),
-            ],
-          ),
+              );
+            }
+            return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar]);
+          }(),
         ),
         if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
           Expanded(
@@ -342,6 +363,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               wide: wide,
               statusFilter: statusFilter,
               attention: attention,
+              total: listed.length,
               onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
               polling: polling,
               pollingBannerTasks: store.tasks.any((task) => task.needsLiveCheck),
@@ -349,6 +371,19 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             ),
           )
         else ...[
+          // The files page opens with its own total: the day groups below
+          // say per-day counts, and the page should say what the tree holds.
+          if (libraryTakes.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+              child: Text(
+                t.recorder.librarySummary(
+                  count: libraryTakes.length,
+                  size: formatRecordingBytes(libraryTakes.fold<int>(0, (sum, take) => sum + take.bytes)),
+                ),
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
+              ),
+            ),
           Expanded(
             child: RecorderLibraryPane(
               showHeading: false,
@@ -374,6 +409,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required bool wide,
     required Widget statusFilter,
     required List<RecordingTask> attention,
+    required int total,
     required VoidCallback? onStopAll,
 
     required bool polling,
@@ -381,15 +417,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required Map<String, LiveRoom> rooms,
   }) {
     final t = context.t;
-    // The tasks page reads as a worklist, not a band across the window: one
-    // 860-wide measure holds the toolbar and the rows together, lined up with
-    // the page's left edge so the filters start under the tasks/files switch.
-    // An empty page lets the measure take the whole width instead: the empty
-    // state's Center then lands on the page's centre, not the measure's.
+    // The rows take the page's whole width: the table spreads its columns
+    // across it, and the cards read as rows of one worklist instead of a
+    // column stranded in the window's left half.
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: attention.isEmpty ? double.infinity : 860),
+        constraints: const BoxConstraints(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -439,7 +473,31 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             Expanded(
               child: attention.isEmpty
                   ? Center(
-                      child: DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.recorder.emptyTitle)),
+                      child: DsEmptyState(
+                        icon: const DsIcon(DsIcons.video),
+                        title: Text(
+                          total == 0
+                              ? t.recorder.emptyTitle
+                              : t.recorder.emptyFilterTitle(status: _filterLabel(t, _filter)),
+                        ),
+                        description: total == 0 ? Text(t.recorder.emptyDescription) : null,
+                        actions: [
+                          if (total == 0)
+                            DsButton(
+                              variant: DsButtonVariant.primary,
+                              leading: const DsIcon(DsIcons.plus, size: 16),
+                              onPressed: () => unawaited(
+                                showRoomSearchPicker(
+                                  context,
+                                  query: '',
+                                  title: t.recorder.addTitle,
+                                  onPick: _addFromSearch,
+                                ),
+                              ),
+                              child: Text(t.recorder.addTitle),
+                            ),
+                        ],
+                      ),
                     )
                   : Padding(
                       padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),

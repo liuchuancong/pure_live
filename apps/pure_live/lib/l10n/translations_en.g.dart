@@ -1923,7 +1923,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get selectAll => 'Select all';
 	@override String groupSummary({required Object count, required Object size}) => '${count} files · ${size}';
 	@override String get emptyFinishedTitle => 'Finished recordings will show up here';
-	@override String get emptyDescription => 'Record from a live room; its task appears here.';
+	@override String get emptyDescription => 'Pick “Record when live” in a room’s menu, or add a room below; it stays here and records whenever it goes live.';
 	@override String get qualityBest => 'Best quality';
 	@override String startedAt({required Object time}) => 'Started at ${time}';
 	@override String get stateRecording => 'Recording';
@@ -6461,7 +6461,7 @@ extension on TranslationsEn {
 			'recorder.selectAll' => 'Select all',
 			'recorder.groupSummary' => ({required Object count, required Object size}) => '${count} files · ${size}',
 			'recorder.emptyFinishedTitle' => 'Finished recordings will show up here',
-			'recorder.emptyDescription' => 'Record from a live room; its task appears here.',
+			'recorder.emptyDescription' => 'Pick “Record when live” in a room’s menu, or add a room below; it stays here and records whenever it goes live.',
 			'recorder.qualityBest' => 'Best quality',
 			'recorder.startedAt' => ({required Object time}) => 'Started at ${time}',
 			'recorder.stateRecording' => 'Recording',

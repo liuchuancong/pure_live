@@ -23,7 +23,7 @@
   "selectAll": "Select all",
   "groupSummary": "{count} files · {size}",
   "emptyFinishedTitle": "Finished recordings will show up here",
-  "emptyDescription": "Record from a live room; its task appears here.",
+  "emptyDescription": "Pick “Record when live” in a room’s menu, or add a room below; it stays here and records whenever it goes live.",
   "qualityBest": "Best quality",
   "startedAt": "Started at {time}",
   "stateRecording": "Recording",
