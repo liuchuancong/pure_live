@@ -45,5 +45,6 @@
   "douyuSuspected": "过滤斗鱼机器弹幕",
   "douyuSuspectedDescription": "隐藏疑似机器人弹幕，可能误伤普通聊天。",
   "patternRejected": "这条正则太长、写错或跑不动，不能用",
-  "patternTooSlow": "这条正则逐条匹配太慢，会拖住消息过滤"
+  "patternTooSlow": "这条正则逐条匹配太慢，会拖住消息过滤",
+  "blockedThisStream": "本场已屏蔽 {count} 条"
 }

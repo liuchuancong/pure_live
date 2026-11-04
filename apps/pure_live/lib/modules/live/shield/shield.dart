@@ -3,6 +3,7 @@
 library;
 
 export 'danmaku_filter_settings.dart';
+export 'room_shield_count.dart';
 export 'room_shield_panel.dart';
 export 'shield_add_field.dart';
 export 'shield_pane.dart';

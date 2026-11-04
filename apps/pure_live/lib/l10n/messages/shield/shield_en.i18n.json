@@ -45,5 +45,6 @@
   "douyuSuspected": "Filter Douyu bots",
   "douyuSuspectedDescription": "Hides suspected bot chat; ordinary chat may suffer.",
   "patternRejected": "That pattern is too long, malformed, or unsafe to run",
-  "patternTooSlow": "That pattern is too slow to run on every message"
+  "patternTooSlow": "That pattern is too slow to run on every message",
+  "blockedThisStream": "{count} hidden by your shield this stream"
 }

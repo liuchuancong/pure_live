@@ -3992,6 +3992,7 @@ class _Translations$shield$en extends Translations$shield$zh_CN {
 	@override String get douyuSuspectedDescription => 'Hides suspected bot chat; ordinary chat may suffer.';
 	@override String get patternRejected => 'That pattern is too long, malformed, or unsafe to run';
 	@override String get patternTooSlow => 'That pattern is too slow to run on every message';
+	@override String blockedThisStream({required Object count}) => '${count} hidden by your shield this stream';
 }
 
 // Path: sites
@@ -8537,6 +8538,7 @@ extension on TranslationsEn {
 			'shield.douyuSuspectedDescription' => 'Hides suspected bot chat; ordinary chat may suffer.',
 			'shield.patternRejected' => 'That pattern is too long, malformed, or unsafe to run',
 			'shield.patternTooSlow' => 'That pattern is too slow to run on every message',
+			'shield.blockedThisStream' => ({required Object count}) => '${count} hidden by your shield this stream',
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
@@ -8729,9 +8731,9 @@ extension on TranslationsEn {
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
-			'vod.favorites' => 'Favourites',
 			_ => null,
 		} ?? switch (path) {
+			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',

@@ -11529,6 +11529,9 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '这条正则逐条匹配太慢，会拖住消息过滤'
 	String get patternTooSlow => '这条正则逐条匹配太慢，会拖住消息过滤';
+
+	/// zh-CN: '本场已屏蔽 {count} 条'
+	String blockedThisStream({required Object count}) => '本场已屏蔽 ${count} 条';
 }
 
 // Path: sites
@@ -17202,6 +17205,7 @@ extension on Translations {
 			'shield.douyuSuspectedDescription' => '隐藏疑似机器人弹幕，可能误伤普通聊天。',
 			'shield.patternRejected' => '这条正则太长、写错或跑不动，不能用',
 			'shield.patternTooSlow' => '这条正则逐条匹配太慢，会拖住消息过滤',
+			'shield.blockedThisStream' => ({required Object count}) => '本场已屏蔽 ${count} 条',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -17394,9 +17398,9 @@ extension on Translations {
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
-			'vod.favorites' => '收藏',
 			_ => null,
 		} ?? switch (path) {
+			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',

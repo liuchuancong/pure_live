@@ -1,6 +1,7 @@
 import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart' show DanmakuTextShape, LiveMessage, danmakuMessageShape, danmakuShapeBlocked;
+import 'package:live_sites/live_sites.dart'
+    show DanmakuTextShape, LiveMessage, danmakuMessageShape, danmakuShapeBlocked;
 import 'package:live_storage/live_storage.dart';
 
 /// The fuzzy half of the room danmaku filter: whether a line that closely
@@ -200,10 +201,7 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     similarityMaxCacheSize: state.similarityMaxCacheSize,
     blockEmoteOnly: state.blockEmoteOnly,
     blockLong: state.blockLong,
-    blockLongLength: value.clamp(
-      DanmakuFilterRange.blockLongLengthMin,
-      DanmakuFilterRange.blockLongLengthMax,
-    ),
+    blockLongLength: value.clamp(DanmakuFilterRange.blockLongLengthMin, DanmakuFilterRange.blockLongLengthMax),
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
   ));
 
@@ -237,8 +235,7 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
   }
 }
 
-int _inRange(int? value, int fallback, int min, int max) =>
-    value == null ? fallback : value.clamp(min, max);
+int _inRange(int? value, int fallback, int min, int max) => value == null ? fallback : value.clamp(min, max);
 
 /// The room danmaku's fuzzy filter rules.
 final danmakuFilterProvider = NotifierProvider<DanmakuFilterController, DanmakuFilterRules>(
@@ -266,7 +263,5 @@ bool danmakuShapeBlockedByRules(LiveMessage message, DanmakuFilterRules rules) =
 /// switched on for, and the length limit counts six characters for one
 /// emoticon. The catalogue is the app's, so the reading is here rather than in
 /// the package; a catalogue that has not loaded leaves the plain reading.
-DanmakuTextShape _shapeAsDrawn(LiveMessage message) => danmakuMessageShape(
-  message,
-  emoticonPattern: EmojiAtlas.instance.regex,
-);
+DanmakuTextShape _shapeAsDrawn(LiveMessage message) =>
+    danmakuMessageShape(message, emoticonPattern: EmojiAtlas.instance.regex);

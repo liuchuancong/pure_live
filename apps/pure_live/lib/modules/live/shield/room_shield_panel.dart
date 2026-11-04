@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
+import 'package:pure_live/modules/live/shield/room_shield_count.dart';
 import 'package:pure_live/modules/live/shield/shield_add_field.dart';
 import 'package:pure_live/modules/live/shield/shield_repository.dart';
 
@@ -26,9 +27,13 @@ final class RoomShieldPanel extends ConsumerWidget {
     final filter = ref.watch(danmakuFilterProvider);
     final filterController = ref.read(danmakuFilterProvider.notifier);
     final repeat = ref.watch(danmakuRepeatProvider);
+    final hidden = ref.watch(roomShieldCountProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s16),
       children: [
+        // The room's own number comes first, so the rules under it read as the
+        // reason it moved.
+        _ShieldSessionCount(count: hidden),
         _ShieldSwitch(
           label: t.shield.enabled,
           description: t.shield.enabledDescription,
@@ -145,6 +150,32 @@ final class RoomShieldPanel extends ConsumerWidget {
 }
 
 /// A section's title line: the icon, the words and the entry count.
+/// 「本场已屏蔽 N 条」: what the viewer's own shield hid during this
+/// visit — a blocked name or word, an emoticon-only line, one over the length
+/// limit. A duplicate or a collapsed repeat is not in it, or the line would
+/// measure the room rather than the shield.
+///
+/// Counted and never stored: the next room starts at zero, because the number
+/// answers a question about what was just watched.
+final class _ShieldSessionCount extends StatelessWidget {
+  const _ShieldSessionCount({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: DsSpace.s6),
+      child: Text(
+        context.t.shield.blockedThisStream(count: count),
+        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+      ),
+    );
+  }
+}
+
 final class _ShieldHeader extends StatelessWidget {
   const _ShieldHeader({required this.title, this.icon, this.count = 0, this.trailing});
 

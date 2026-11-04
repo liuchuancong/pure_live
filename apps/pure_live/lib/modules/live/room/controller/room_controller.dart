@@ -144,6 +144,7 @@ final class RoomDanmakuPipeline {
     required DanmakuRepeatSettings repeat,
     required bool Function() showFixedTop,
     required bool Function() showFixedBottom,
+    required this.onShielded,
   }) : barrage = RoomBarrageController() {
     chatGifts = GiftChatFilter(clock: DateTime.now)..aboveTier = chatGiftsAboveTier();
     danmaku = DanmakuController(
@@ -156,6 +157,10 @@ final class RoomDanmakuPipeline {
       config: _danmakuConfigFor(filter, repeat),
       policy: _shieldPolicyFor(shield),
     );
+    // The shield's own verdicts are the ones the room counts: a duplicate or a
+    // collapsed repeat is the room's traffic, not something the viewer asked
+    // never to see.
+    danmaku.onSuppressed = (_, _) => onShielded();
     giftFlights = GiftFlights(
       clock: DateTime.now,
       // Read per gift, so the switch bites the very next one; a gift that
@@ -185,6 +190,10 @@ final class RoomDanmakuPipeline {
   /// Whether the chat list keeps only valuable gifts (read per gift, so the
   /// switch bites the very next one).
   final bool Function() chatGiftsAboveTier;
+
+  /// Says that the viewer's shield hid a message; the room's
+  /// 「本场已屏蔽 {count} 条」 counts these.
+  final void Function() onShielded;
 
   /// Whether the platform's valuable gifts fly over the picture (read per
   /// gift, like the chat switch).
@@ -703,6 +712,7 @@ final class RoomController extends Notifier<RoomState> {
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
     _preparedHandle = null;
     ref.read(roomChatProvider.notifier).clear();
+    ref.read(roomShieldCountProvider.notifier).reset();
     final site = ref.read(sitesProvider).getById(platform);
     final roomProvider = site?.capability<LiveRoomProvider>();
     final playbackProvider = site?.capability<LivePlaybackProvider>();
@@ -924,6 +934,7 @@ final class RoomController extends Notifier<RoomState> {
     _teardown();
     state = _initial();
     ref.read(roomChatProvider.notifier).clear();
+    ref.read(roomShieldCountProvider.notifier).reset();
     ref.read(roomSuperChatsProvider.notifier).clear();
   }
 
@@ -943,6 +954,7 @@ final class RoomController extends Notifier<RoomState> {
       if (state.room?.identityKey != leavingKey) return;
       state = _initial();
       ref.read(roomChatProvider.notifier).clear();
+      ref.read(roomShieldCountProvider.notifier).reset();
       ref.read(roomSuperChatsProvider.notifier).clear();
     });
   }
@@ -1376,6 +1388,7 @@ final class RoomController extends Notifier<RoomState> {
       repeat: ref.read(danmakuRepeatProvider),
       showFixedTop: () => ref.read(danmakuFixedTopProvider),
       showFixedBottom: () => ref.read(danmakuFixedBottomProvider),
+      onShielded: _countShielded,
     );
     _pipeline = pipeline;
     await pipeline.start(platform: room.ref.platform, roomId: room.ref.roomId);
@@ -1481,7 +1494,10 @@ final class RoomController extends Notifier<RoomState> {
       if (message.payload case final LiveRetraction target) _retract(target);
       return;
     }
-    if (_shapeBlocked(message)) return;
+    if (_shapeBlocked(message)) {
+      _countShielded();
+      return;
+    }
     _collectSuperChat(message);
     _pipeline?.accept(message);
   }
@@ -1569,6 +1585,12 @@ final class RoomController extends Notifier<RoomState> {
   /// change on the shield page bites the very next line. The viewer's own
   /// echo is never blocked.
   bool _shapeBlocked(LiveMessage message) => danmakuShapeBlockedByRules(message, ref.read(danmakuFilterProvider));
+
+  /// One more line the viewer's shield hid, for 「本场已屏蔽 N 条」.
+  void _countShielded() {
+    if (!ref.mounted) return;
+    ref.read(roomShieldCountProvider.notifier).add();
+  }
 
   Future<void> _recordHistory(LiveRoom room) async {
     await ref.read(historyProvider.notifier).record(room);
