@@ -138,9 +138,10 @@ final class RecordingLiveMonitor {
   /// re-arm the clock.
   static String _monitorKey(RecordingTasksState state) => [
     for (final task in state.tasks)
-      if (task.state == RecordingTaskState.waiting || task.scheduleEnabled)
+      if (task.isArmed || task.scheduleEnabled)
         [
           task.id,
+          task.enabled,
           task.state.name,
           task.startedAt.toUtc().toIso8601String(),
           task.scheduleEnabled,
@@ -160,10 +161,9 @@ final class RecordingLiveMonitor {
   bool get _shouldRun {
     final polling = _ref.read(recordingSettingsProvider).schedule.pollingEnabled;
     for (final task in _ref.read(recordingTasksProvider).tasks) {
-      if (polling && task.state == RecordingTaskState.waiting) return true;
+      if (polling && task.isArmed && task.isWithinSchedule(DateTime.now())) return true;
       if (!task.scheduleEnabled) continue;
       if (task.state == RecordingTaskState.recording && task.stopAtWindowEnd) return true;
-      if (polling && task.state == RecordingTaskState.stopped && !task.postProcessing) return true;
     }
     return false;
   }
@@ -191,7 +191,7 @@ final class RecordingLiveMonitor {
         .tasks
         .any(
           (task) =>
-              (task.state == RecordingTaskState.waiting && task.isWithinSchedule(now)) ||
+              (task.isArmed && task.isWithinSchedule(now)) ||
               (task.state == RecordingTaskState.recording && task.stopAtWindowEnd),
         );
     if (busy) {
@@ -272,18 +272,21 @@ final class RecordingLiveMonitor {
       final startable = <RecordingTask>[];
       for (final task in tasks) {
         if (engine.isRecording(task.id) || task.postProcessing) continue;
+        // A paused subscription is not watched: its last take stays with it.
+        if (!task.enabled) continue;
         final window = task.currentWindowStart(now);
         if (task.state == RecordingTaskState.waiting) {
           if (task.scheduleEnabled && window == null) continue;
           startable.add(task);
           continue;
         }
-        if (task.state == RecordingTaskState.stopped && task.canRearmAt(now)) {
-          // The next window opened and this task has not recorded in it yet:
-          // re-arm the waiting state (which also says so in the task list).
-          final waiting = task.copyWith(state: RecordingTaskState.waiting);
-          await notifier.add(waiting);
-          startable.add(waiting);
+        // A settled (or failed) session keeps the room watched: the row is a
+        // subscription, so its next live check begins the next take. A
+        // scheduled room only re-arms inside its window, and only once per
+        // window.
+        if (task.state == RecordingTaskState.stopped || task.state == RecordingTaskState.failed) {
+          if (task.scheduleEnabled && !task.canRearmAt(now)) continue;
+          startable.add(task);
         }
       }
 
@@ -321,9 +324,15 @@ final class RecordingLiveMonitor {
           continue;
         }
         // The task may have been removed or started while the platform
-        // answered; only a task still waiting is started here.
+        // answered. A settled row is re-armed to waiting here, only once the
+        // room has answered with a live stream, so a room that stays offline
+        // writes nothing to the store on every tick.
         final current = _ref.read(recordingTasksProvider).tasks.where((item) => item.id == task.id).firstOrNull;
-        if (current?.state != RecordingTaskState.waiting) continue;
+        if (current == null || !current.enabled) continue;
+        if (current.state != RecordingTaskState.waiting) {
+          if (current.state != RecordingTaskState.stopped && current.state != RecordingTaskState.failed) continue;
+          await notifier.add(current.copyWith(state: RecordingTaskState.waiting));
+        }
         if (!_ref.read(recordingSettingsProvider).schedule.pollingEnabled) return;
         _failures.remove(task.id);
         try {

@@ -56,20 +56,32 @@ enum _RecorderFilter {
   all,
   recording,
   waiting,
+  paused,
   failed;
 
   /// Whether [task] belongs under this filter.
+  ///
+  /// The list is subscriptions: a room stays under 等待 even after its last
+  /// take was saved, because the live check keeps watching it. 已暂停 is the
+  /// room whose switch is off, and 失败 is a watched room whose last take
+  /// could not be made.
   bool matches(RecordingTask task) => switch (this) {
     all => true,
     recording => task.state == RecordingTaskState.recording || task.postProcessing,
-    waiting => task.state == RecordingTaskState.waiting,
-    failed => task.state == RecordingTaskState.failed,
+    waiting =>
+      task.enabled &&
+          !task.postProcessing &&
+          task.state != RecordingTaskState.recording &&
+          task.state != RecordingTaskState.failed,
+    paused => !task.enabled,
+    failed => task.enabled && task.state == RecordingTaskState.failed,
   };
 
   /// The section's icon.
   DsIconData get icon => switch (this) {
     all || recording => DsIcons.disc3,
     waiting => DsIcons.clock,
+    paused => DsIcons.pause,
     failed => DsIcons.circleAlert,
   };
 }
@@ -197,7 +209,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // A chip's count is a count of the rows that chip can show — the tasks the
     // page still owns. Counting every stored row instead would print a number
     // the list under it never reaches, because a saved take lives in the library.
-    final listed = liveTasks.where(_isTaskRow).toList();
+    final listed = liveTasks;
     final counts = <_RecorderFilter, int>{
       for (final filter in _RecorderFilter.values) filter: listed.where(filter.matches).length,
     };
@@ -207,13 +219,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final recording = [
       for (final task in liveTasks)
         if (task.state == RecordingTaskState.recording) task,
-    ];
-    final settled = [
-      for (final task in liveTasks)
-        if (!task.postProcessing &&
-            task.state != RecordingTaskState.recording &&
-            task.state != RecordingTaskState.waiting)
-          task,
     ];
     // What the page still owns as a task: a capture running, a room waiting to
     // go live, a session that failed, a join still going — and a saved row whose
@@ -226,7 +231,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final attention = [
       for (final task in listed)
         if (_filter.matches(task)) task,
-    ];
+    ]..sort(_subscriptionOrder);
     final statusFilter = DsTabs<_RecorderFilter>(
       value: _filter,
       semanticLabel: t.recorder.filterLabel,
@@ -321,7 +326,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               statusFilter: statusFilter,
               attention: attention,
               onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
-              onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
               polling: polling,
               pollingBannerTasks: store.tasks.any((task) => task.needsLiveCheck),
               rooms: rooms,
@@ -354,7 +358,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required Widget statusFilter,
     required List<RecordingTask> attention,
     required VoidCallback? onStopAll,
-    required VoidCallback? onClearFinished,
 
     required bool polling,
     required bool pollingBannerTasks,
@@ -382,7 +385,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 spacing: DsSpace.s8,
                 children: [
                   Expanded(child: statusFilter),
-                  _BatchMenu(onStopAll: onStopAll, onClearFinished: onClearFinished),
+                  _BatchMenu(onStopAll: onStopAll),
                 ],
               ),
             ),
@@ -624,7 +627,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           hasFile: (task.filePath ?? '').trim().isNotEmpty,
           onOpen: callbacks.onOpen,
           onStop: callbacks.onStop,
-          onCancelWaiting: callbacks.onCancelWaiting,
+          onToggleWatch: callbacks.onToggleWatch,
           onDelete: callbacks.onDelete,
           onSchedule: callbacks.onSchedule,
           onCancelProcessing: callbacks.onCancelProcessing,
@@ -646,9 +649,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
           : () => unawaited(_openPreview(task)),
       onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
-      onCancelWaiting: task.state == RecordingTaskState.waiting
-          ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
-          : null,
+      onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
       onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
       onSchedule: () => unawaited(_editSchedule(task)),
       onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
@@ -665,18 +666,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 
   /// The rows the task strip still lists. A saved take with a file on disk
-  /// belongs to the library, which shows every take rather than the store's one
-  /// row per room; a saved row whose file is gone stays here because the library
-  /// has nothing to show and the row is the way to rejoin or to drop it.
-  /// No disk probe here: the page rebuilds on every progress tick of a running
-  /// capture, so this reads only what the row already says — its state, whether
-  /// a join is still going, and the warning a deleted file left behind.
-  bool _isTaskRow(RecordingTask task) =>
-      task.state != RecordingTaskState.stopped ||
-      task.postProcessing ||
-      task.warning == kRecordingFileDeletedWarning ||
-      (task.filePath ?? '').trim().isEmpty;
-
   /// One task as its card, with the actions that depend on the store's answer.
   List<Widget> _taskCards(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
     final engine = ref.read(recorderEngineProvider);
@@ -691,9 +680,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
             : () => unawaited(_openPreview(task)),
         onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
-        onCancelWaiting: task.state == RecordingTaskState.waiting
-            ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
-            : null,
+        onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
         onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
         onSchedule: () => unawaited(_editSchedule(task)),
         onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
@@ -723,6 +710,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     if (row == null) return;
     await openRoom(context, platform: row.platform, roomId: row.roomId);
   }
+
+  /// Turns a room's watch switch on or off. A take already running is left to
+  /// its own stop: pausing decides whether the next live check begins one.
+  Future<void> _setWatched(RecordingTask task, {required bool watched}) =>
+      ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: watched);
 
   /// Ends a running capture; its finished segments stay, and the task's
   /// saved state arrives through the store the page already watches.
@@ -885,38 +877,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     );
   }
 
-  /// Drops the rows a session already settled, leaving every file where it is.
-  ///
-  /// The list of a recorder that ran for a month is mostly history; the take is
-  /// the thing worth keeping, the card is not. A take still being joined and a
-  /// room still being watched are never in this group (the caller filters them),
-  /// and removing a row touches no media.
-  Future<void> _clearFinished(List<RecordingTask> settled) async {
-    final t = context.t;
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.recorder.clearSettledTitle,
-      description: t.recorder.clearSettledBody(count: settled.length),
-      confirmLabel: t.recorder.clearSettled,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
-    );
-    if (!confirmed || !mounted) return;
-    final notifier = ref.read(recordingTasksProvider.notifier);
-    var removed = 0;
-    for (final task in settled) {
-      await notifier.remove(task.id);
-      removed++;
-    }
-    if (!mounted) return;
-    showDsToast(
-      context: context,
-      title: t.recorder.clearSettledDone(count: removed),
-      status: DsStatus.success,
-    );
-  }
-
   /// Starts a waiting/stopped task now, ignoring its schedule window.
   ///
   /// This is the manual override a viewer uses when they know the room is live:
@@ -1011,8 +971,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
 /// them between the card list and the table.
 typedef _TaskCallbacks = ({
   VoidCallback onOpen,
+  VoidCallback onToggleWatch,
   VoidCallback? onStop,
-  VoidCallback? onCancelWaiting,
   VoidCallback onDelete,
   VoidCallback onSchedule,
   VoidCallback? onStartNow,
@@ -1022,11 +982,27 @@ typedef _TaskCallbacks = ({
   VoidCallback? onPlayExternal,
 });
 
+/// The list's order: a room being recorded first, then a room being finished,
+/// then the ones waiting for their next live stream, then a failed last take,
+/// and the paused rooms last. Ties keep the newest session on top.
+int _subscriptionOrder(RecordingTask a, RecordingTask b) {
+  int rank(RecordingTask task) {
+    if (task.postProcessing || task.state == RecordingTaskState.recording) return 0;
+    if (!task.enabled) return 3;
+    if (task.state == RecordingTaskState.failed) return 2;
+    return 1;
+  }
+
+  final byRank = rank(a).compareTo(rank(b));
+  return byRank != 0 ? byRank : b.startedAt.compareTo(a.startedAt);
+}
+
 /// A filter's word, without its count.
 String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
   _RecorderFilter.all => t.recorder.filterAll,
   _RecorderFilter.recording => t.recorder.filterRecording,
   _RecorderFilter.waiting => t.recorder.filterWaiting,
+  _RecorderFilter.paused => t.recorder.filterPaused,
   _RecorderFilter.failed => t.recorder.filterFailed,
 };
 
@@ -1046,8 +1022,8 @@ final class _TaskCard extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     required this.onSchedule,
+    required this.onToggleWatch,
     this.onStop,
-    this.onCancelWaiting,
     this.onCancelProcessing,
     this.onStartNow,
     this.onRetryJoin,
@@ -1075,8 +1051,8 @@ final class _TaskCard extends StatelessWidget {
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
 
-  /// Takes a waiting task out of the live check, null for other states.
-  final VoidCallback? onCancelWaiting;
+  /// Pauses or resumes the room's watch switch.
+  final VoidCallback onToggleWatch;
 
   /// Cancels a running join/transcode, null when there is none.
   final VoidCallback? onCancelProcessing;
@@ -1106,12 +1082,18 @@ final class _TaskCard extends StatelessWidget {
     final title = storedTitle.isNotEmpty ? storedTitle : (roomTitle.isNotEmpty ? roomTitle : task.roomId);
     final audience = _audienceOf(room);
     final cover = room?.content.coverUrl.trim() ?? '';
+    // A room that has already recorded keeps its last take's moment on the
+    // card; a fresh subscription has none to name.
+    final hasLastRun = task.endedAt != null || task.bytes > 0;
     final meta = [
       platformName,
       if (audience.isNotEmpty) audience,
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
       if (task.scheduleEnabled) _scheduleSummary(t, task),
-      t.recorder.startedAt(time: formatRecordingMoment(task.startedAt)),
+      if (task.isRunning)
+        t.recorder.startedAt(time: formatRecordingMoment(task.startedAt))
+      else if (hasLastRun)
+        t.recorder.lastRecordingAt(time: formatRecordingMoment(task.endedAt ?? task.startedAt)),
     ].join(' · ');
     // Media time is what the take actually captured; a running session that
     // has not reported yet falls back to the wall clock since it started.
@@ -1235,12 +1217,18 @@ final class _TaskCard extends StatelessWidget {
                           ? t.recorder.stateProcessing
                           : _fileDeleted
                           ? t.recorder.stateFileDeleted
+                          : !task.enabled
+                          ? t.recorder.statePaused
+                          : task.state == RecordingTaskState.stopped
+                          ? t.recorder.stateWaiting
                           : stateLabel(t, task.state),
                     ),
                     status: task.postProcessing
                         ? DsStatus.info
-                        : _fileDeleted
+                        : _fileDeleted || !task.enabled
                         ? DsStatus.neutral
+                        : task.state == RecordingTaskState.stopped
+                        ? DsStatus.warning
                         : stateStatus(task.state),
                   ),
                   Text(
@@ -1261,7 +1249,7 @@ final class _TaskCard extends StatelessWidget {
                 hasFile: (task.filePath ?? '').trim().isNotEmpty,
                 onOpen: onOpen,
                 onStop: onStop,
-                onCancelWaiting: onCancelWaiting,
+                onToggleWatch: onToggleWatch,
                 onDelete: onDelete,
                 onSchedule: onSchedule,
                 onCancelProcessing: onCancelProcessing,
@@ -1313,20 +1301,17 @@ final class _TaskCard extends StatelessWidget {
 /// by the live check when it goes on air, and forcing one that is offline is
 /// what each card's 「立即开录」 exists for.
 final class _BatchMenu extends StatelessWidget {
-  const _BatchMenu({this.onStopAll, this.onClearFinished});
+  const _BatchMenu({this.onStopAll});
 
   /// Stops the captures now running; null when none are.
   final VoidCallback? onStopAll;
-
-  /// Drops the rows a session already settled; null when there are none.
-  final VoidCallback? onClearFinished;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    if (onStopAll == null && onClearFinished == null) return const SizedBox.shrink();
+    if (onStopAll == null) return const SizedBox.shrink();
     return DsMenuAnchor(
       semanticLabel: t.recorder.batchMenu,
       align: DsAlign.end,
@@ -1353,13 +1338,6 @@ final class _BatchMenu extends StatelessWidget {
             destructive: true,
             onPressed: stop,
           ),
-        if (onClearFinished case final clear?)
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.trash2),
-            label: Text(t.recorder.clearSettled),
-            destructive: true,
-            onPressed: clear,
-          ),
       ],
     );
   }
@@ -1375,8 +1353,8 @@ final class _TaskMenu extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     required this.onSchedule,
+    required this.onToggleWatch,
     this.onStop,
-    this.onCancelWaiting,
     this.onCancelProcessing,
     this.onStartNow,
     this.onRetryJoin,
@@ -1396,8 +1374,8 @@ final class _TaskMenu extends StatelessWidget {
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
 
-  /// Takes a waiting task out of the live check, null for other states.
-  final VoidCallback? onCancelWaiting;
+  /// Pauses or resumes the room's watch switch.
+  final VoidCallback onToggleWatch;
 
   /// Cancels a running join/transcode, null when there is none.
   final VoidCallback? onCancelProcessing;
@@ -1473,8 +1451,11 @@ final class _TaskMenu extends StatelessWidget {
           DsMenuItem(leading: const DsIcon(DsIcons.x), label: Text(t.recorder.cancelProcessing), onPressed: cancel),
         if (onRetryJoin case final retry?)
           DsMenuItem(leading: const DsIcon(DsIcons.merge), label: Text(t.recorder.retryJoin), onPressed: retry),
-        if (onCancelWaiting case final cancel?)
-          DsMenuItem(leading: const DsIcon(DsIcons.clock), label: Text(t.room.autoRecordOff), onPressed: cancel),
+        DsMenuItem(
+          leading: DsIcon(task.enabled ? DsIcons.pause : DsIcons.play),
+          label: Text(task.enabled ? t.recorder.pauseWatch : t.recorder.resumeWatch),
+          onPressed: onToggleWatch,
+        ),
         const DsMenuDivider(),
         DsMenuItem(
           leading: const DsIcon(DsIcons.trash2),

@@ -1409,6 +1409,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
 	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
 	@override String get downloadFilterEmpty => 'Nothing in this filter yet';
+	@override String get downloadFilterEmptyDesc => 'Pick another filter, or download from a song row’s menu first.';
 	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
 	@override String get downloadUnsupported => 'This song has no downloadable source (a local file, or not covered by the current source)';
@@ -1903,9 +1904,9 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get tabFinished => 'Finished';
 	@override String get clearFinished => 'Clear finished';
 	@override String get removeTask => 'Remove this task';
-	@override String get emptyTitle => 'No recording tasks yet';
-	@override String get centerSubtitle => 'Manage recording tasks and files, with preview and playback';
-	@override String get tabTasks => 'Tasks';
+	@override String get emptyTitle => 'No rooms are being watched yet';
+	@override String get centerSubtitle => 'Manage the rooms you record and their files, with preview and playback';
+	@override String get tabTasks => 'Subscriptions';
 	@override String get tabFiles => 'Files';
 	@override String get statRecording => 'Recording';
 	@override String get statWaiting => 'Waiting';
@@ -1927,7 +1928,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get qualityBest => 'Best quality';
 	@override String startedAt({required Object time}) => 'Started at ${time}';
 	@override String get stateRecording => 'Recording';
-	@override String get stateStopped => 'Stopped';
+	@override String get stateStopped => 'Paused';
 	@override String get stateFailed => 'Failed';
 	@override String get settingsTitle => 'Recording';
 	@override String get saveDirTitle => 'Save directory';
@@ -2120,7 +2121,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get cacheTitle => 'Recording cache';
 	@override String get liveCheckGroup => 'Live check';
 	@override String get enablePolling => 'Enable live detection';
-	@override String get enablePollingDesc => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.';
+	@override String get enablePollingDesc => 'Checks every watched room for a live stream automatically; add a room with “Record when live” in the room’s more menu. Off, the list never starts a take on its own — “Start now” still works.';
 	@override String get pollingOff => 'Live check is off; waiting and scheduled tasks will not start automatically.';
 	@override String get pollingEnable => 'Turn on';
 	@override String pollingEnabledToast({required Object seconds}) => 'Live check turned on (every ${seconds} s)';
@@ -2143,8 +2144,8 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get checkBackoffDesc => 'Stretch the interval after repeated failures so the platform is not polled too often.';
 	@override String get maxCheckSecondsTitle => 'Maximum check interval (seconds)';
 	@override String get maxCheckSecondsDesc => 'The ceiling the stretched interval approaches, 60–3600 seconds.';
-	@override String get autoStartOnBoot => 'Resume pending recordings on launch';
-	@override String get autoStartOnBootDesc => 'Turn tasks still marked recording after an interrupted process into waiting tasks for the live check — with the live check off, one check runs at launch; stopped and finished tasks keep their state. Off, an interrupted row stays “recording” and has to be deleted and added again.';
+	@override String get autoStartOnBoot => 'Check watched rooms on launch';
+	@override String get autoStartOnBootDesc => 'At launch, every watched room is checked once (even with live polling off) and an interrupted take is finished and resumed. Off, nothing is checked until the next live check.';
 	@override String get stateRecordingElsewhere => 'This window is not writing it: if another window is recording, that one owns it; otherwise the last process was interrupted — delete the task and add it again.';
 	@override String get scheduleMenu => 'Schedule window';
 	@override String get scheduleTitle => 'Schedule window';
@@ -2187,6 +2188,11 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get addAlreadyRecording => 'This room is already being recorded';
 	@override String get stateFileDeleted => 'File deleted';
 	@override String get warningFileDeleted => 'The video was deleted from the preview; the chat files and segments in the take folder remain';
+	@override String get filterPaused => 'Paused';
+	@override String get statePaused => 'Paused';
+	@override String get pauseWatch => 'Pause watching';
+	@override String get resumeWatch => 'Resume watching';
+	@override String lastRecordingAt({required Object time}) => 'Last recorded ${time}';
 }
 
 // Path: room
@@ -5973,6 +5979,7 @@ extension on TranslationsEn {
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
 			'music.downloadFilterEmpty' => 'Nothing in this filter yet',
+			'music.downloadFilterEmptyDesc' => 'Pick another filter, or download from a song row’s menu first.',
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
@@ -6116,9 +6123,9 @@ extension on TranslationsEn {
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
 			'music.desktopLyricStrokeNone' => 'None',
-			'music.desktopLyricColorBlack' => 'Black',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
@@ -6433,9 +6440,9 @@ extension on TranslationsEn {
 			'recorder.tabFinished' => 'Finished',
 			'recorder.clearFinished' => 'Clear finished',
 			'recorder.removeTask' => 'Remove this task',
-			'recorder.emptyTitle' => 'No recording tasks yet',
-			'recorder.centerSubtitle' => 'Manage recording tasks and files, with preview and playback',
-			'recorder.tabTasks' => 'Tasks',
+			'recorder.emptyTitle' => 'No rooms are being watched yet',
+			'recorder.centerSubtitle' => 'Manage the rooms you record and their files, with preview and playback',
+			'recorder.tabTasks' => 'Subscriptions',
 			'recorder.tabFiles' => 'Files',
 			'recorder.statRecording' => 'Recording',
 			'recorder.statWaiting' => 'Waiting',
@@ -6457,7 +6464,7 @@ extension on TranslationsEn {
 			'recorder.qualityBest' => 'Best quality',
 			'recorder.startedAt' => ({required Object time}) => 'Started at ${time}',
 			'recorder.stateRecording' => 'Recording',
-			'recorder.stateStopped' => 'Stopped',
+			'recorder.stateStopped' => 'Paused',
 			'recorder.stateFailed' => 'Failed',
 			'recorder.settingsTitle' => 'Recording',
 			'recorder.saveDirTitle' => 'Save directory',
@@ -6630,9 +6637,9 @@ extension on TranslationsEn {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
-			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
@@ -6652,7 +6659,7 @@ extension on TranslationsEn {
 			'recorder.cacheTitle' => 'Recording cache',
 			'recorder.liveCheckGroup' => 'Live check',
 			'recorder.enablePolling' => 'Enable live detection',
-			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
+			'recorder.enablePollingDesc' => 'Checks every watched room for a live stream automatically; add a room with “Record when live” in the room’s more menu. Off, the list never starts a take on its own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
 			'recorder.pollingEnable' => 'Turn on',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
@@ -6675,8 +6682,8 @@ extension on TranslationsEn {
 			'recorder.checkBackoffDesc' => 'Stretch the interval after repeated failures so the platform is not polled too often.',
 			'recorder.maxCheckSecondsTitle' => 'Maximum check interval (seconds)',
 			'recorder.maxCheckSecondsDesc' => 'The ceiling the stretched interval approaches, 60–3600 seconds.',
-			'recorder.autoStartOnBoot' => 'Resume pending recordings on launch',
-			'recorder.autoStartOnBootDesc' => 'Turn tasks still marked recording after an interrupted process into waiting tasks for the live check — with the live check off, one check runs at launch; stopped and finished tasks keep their state. Off, an interrupted row stays “recording” and has to be deleted and added again.',
+			'recorder.autoStartOnBoot' => 'Check watched rooms on launch',
+			'recorder.autoStartOnBootDesc' => 'At launch, every watched room is checked once (even with live polling off) and an interrupted take is finished and resumed. Off, nothing is checked until the next live check.',
 			'recorder.stateRecordingElsewhere' => 'This window is not writing it: if another window is recording, that one owns it; otherwise the last process was interrupted — delete the task and add it again.',
 			'recorder.scheduleMenu' => 'Schedule window',
 			'recorder.scheduleTitle' => 'Schedule window',
@@ -6719,6 +6726,11 @@ extension on TranslationsEn {
 			'recorder.addAlreadyRecording' => 'This room is already being recorded',
 			'recorder.stateFileDeleted' => 'File deleted',
 			'recorder.warningFileDeleted' => 'The video was deleted from the preview; the chat files and segments in the take folder remain',
+			'recorder.filterPaused' => 'Paused',
+			'recorder.statePaused' => 'Paused',
+			'recorder.pauseWatch' => 'Pause watching',
+			'recorder.resumeWatch' => 'Resume watching',
+			'recorder.lastRecordingAt' => ({required Object time}) => 'Last recorded ${time}',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7139,14 +7151,14 @@ extension on TranslationsEn {
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
 			'settings.liveAlert' => 'Live alerts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveAlertDesc' => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.',
 			'settings.liveAlertTags' => 'Alert tags',
 			'settings.liveAlertTagsDesc' => 'Only these tags\' follows notify; no tag covers every follow.',
 			'settings.liveAlertTagsAll' => 'All follows',
 			'settings.liveAlertTagsNone' => 'No tags yet; alerts cover every follow.',
 			'settings.liveAlertTagCount' => ({required Object selected}) => '${selected} selected',
-			_ => null,
-		} ?? switch (path) {
 			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
@@ -7653,14 +7665,14 @@ extension on TranslationsEn {
 			'settings.playerGuideIntro' => 'The kernel options in this guide apply to the mpv engine; start with a preset and tune advanced options only when the picture still misbehaves.',
 			'settings.playerGuideManualTitle' => 'Player manual: mpv official docs',
 			'settings.playerGuideManualHint' => 'Start with the symptom table; the basics chapter explains each setting.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideChapterConcepts' => 'Core concepts',
 			'settings.playerGuideChapterPresets' => 'One-click presets',
 			'settings.playerGuideChapterPictureSync' => 'Picture & sync',
 			'settings.playerGuideChapterQuality' => 'Quality enhancement',
 			'settings.playerGuideChapterAudio' => 'Audio',
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
@@ -8167,14 +8179,14 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_es' => 'Spanish',
 			'settings.twitchLanguage_pt' => 'Portuguese',
 			'settings.twitchLanguage_de' => 'German',
 			'settings.twitchLanguage_fr' => 'French',
 			'settings.twitchLanguage_ru' => 'Russian',
 			'settings.twitchLanguage_it' => 'Italian',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_th' => 'Thai',
 			'settings.twitchLanguage_vi' => 'Vietnamese',
 			'settings.twitchLanguage_id' => 'Indonesian',
@@ -8681,14 +8693,14 @@ extension on TranslationsEn {
 			'vod.cardElements' => 'Card information',
 			'vod.cardPlays' => 'Play count',
 			'vod.cardDanmaku' => 'Danmaku count',
+			_ => null,
+		} ?? switch (path) {
 			'vod.cardDuration' => 'Duration',
 			'vod.cardUploader' => 'Uploader',
 			'vod.cardSeasonState' => 'Update state',
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'vod.personalTitle' => 'My videos',
-			_ => null,
-		} ?? switch (path) {
 			'vod.personalToView' => 'Watch later',
 			'vod.personalHistory' => 'History',
 			'vod.personalFavourites' => 'Favourites',

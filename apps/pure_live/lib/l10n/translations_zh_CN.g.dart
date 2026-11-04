@@ -3925,6 +3925,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '这一类还没有任务'
 	String get downloadFilterEmpty => '这一类还没有任务';
 
+	/// zh-CN: '换一个筛选，或先在歌曲行的「更多」里下载。'
+	String get downloadFilterEmptyDesc => '换一个筛选，或先在歌曲行的「更多」里下载。';
+
 	/// zh-CN: '已加入下载：{title}'
 	String downloadQueued({required Object title}) => '已加入下载：${title}';
 
@@ -5335,14 +5338,14 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '删除这条任务'
 	String get removeTask => '删除这条任务';
 
-	/// zh-CN: '还没有录制任务'
-	String get emptyTitle => '还没有录制任务';
+	/// zh-CN: '还没有监控的直播间'
+	String get emptyTitle => '还没有监控的直播间';
 
-	/// zh-CN: '管理直播间录制任务与录制文件，支持预览与播放'
-	String get centerSubtitle => '管理直播间录制任务与录制文件，支持预览与播放';
+	/// zh-CN: '管理监控的直播间与录制文件，支持预览与播放'
+	String get centerSubtitle => '管理监控的直播间与录制文件，支持预览与播放';
 
-	/// zh-CN: '录制任务'
-	String get tabTasks => '录制任务';
+	/// zh-CN: '录制订阅'
+	String get tabTasks => '录制订阅';
 
 	/// zh-CN: '录制文件'
 	String get tabFiles => '录制文件';
@@ -5407,8 +5410,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '录制中'
 	String get stateRecording => '录制中';
 
-	/// zh-CN: '已停止'
-	String get stateStopped => '已停止';
+	/// zh-CN: '已暂停'
+	String get stateStopped => '已暂停';
 
 	/// zh-CN: '失败'
 	String get stateFailed => '失败';
@@ -5986,8 +5989,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '启用开播检测'
 	String get enablePolling => '启用开播检测';
 
-	/// zh-CN: '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。'
-	String get enablePollingDesc => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。';
+	/// zh-CN: '自动检查每个监控的直播间是否开播；在直播间菜单里选「开播自动录」加入。关掉后监控列表不会自动开录，仍可手动「立即开录」。'
+	String get enablePollingDesc => '自动检查每个监控的直播间是否开播；在直播间菜单里选「开播自动录」加入。关掉后监控列表不会自动开录，仍可手动「立即开录」。';
 
 	/// zh-CN: '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。'
 	String get pollingOff => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。';
@@ -6055,11 +6058,11 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '退避后的间隔上限，60–3600 秒。'
 	String get maxCheckSecondsDesc => '退避后的间隔上限，60–3600 秒。';
 
-	/// zh-CN: '应用启动时恢复待录任务'
-	String get autoStartOnBoot => '应用启动时恢复待录任务';
+	/// zh-CN: '开机后立即检查监控的直播间'
+	String get autoStartOnBoot => '开机后立即检查监控的直播间';
 
-	/// zh-CN: '把中断时仍在录制的任务恢复为等待开播（开播检测关着时会立即补查一次）；已停止的保持原状。关闭时，中断的那条会停在「录制中」，需要删除后重新添加。'
-	String get autoStartOnBootDesc => '把中断时仍在录制的任务恢复为等待开播（开播检测关着时会立即补查一次）；已停止的保持原状。关闭时，中断的那条会停在「录制中」，需要删除后重新添加。';
+	/// zh-CN: '应用启动时，把所有正在监控的直播间检查一轮（开播检测关着时也会补查一次），并恢复上次中断的录制。关闭时不开机检查，等下一次开播检测再开始。'
+	String get autoStartOnBootDesc => '应用启动时，把所有正在监控的直播间检查一轮（开播检测关着时也会补查一次），并恢复上次中断的录制。关闭时不开机检查，等下一次开播检测再开始。';
 
 	/// zh-CN: '本窗口没有在写这条：另一个窗口在录时由它负责；若都不是，说明上次中断了，删除任务再重新添加即可。'
 	String get stateRecordingElsewhere => '本窗口没有在写这条：另一个窗口在录时由它负责；若都不是，说明上次中断了，删除任务再重新添加即可。';
@@ -6186,6 +6189,21 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '视频文件已在预览中删除；任务目录里的弹幕与分段仍保留'
 	String get warningFileDeleted => '视频文件已在预览中删除；任务目录里的弹幕与分段仍保留';
+
+	/// zh-CN: '已暂停'
+	String get filterPaused => '已暂停';
+
+	/// zh-CN: '已暂停'
+	String get statePaused => '已暂停';
+
+	/// zh-CN: '暂停监控'
+	String get pauseWatch => '暂停监控';
+
+	/// zh-CN: '恢复监控'
+	String get resumeWatch => '恢复监控';
+
+	/// zh-CN: '上次录制于 {time}'
+	String lastRecordingAt({required Object time}) => '上次录制于 ${time}';
 }
 
 // Path: room
@@ -14552,6 +14570,7 @@ extension on Translations {
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
 			'music.downloadFilterEmpty' => '这一类还没有任务',
+			'music.downloadFilterEmptyDesc' => '换一个筛选，或先在歌曲行的「更多」里下载。',
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
@@ -14695,9 +14714,9 @@ extension on Translations {
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
 			'music.desktopLyricStrokeNone' => '无',
-			'music.desktopLyricColorBlack' => '黑色',
 			_ => null,
 		} ?? switch (path) {
+			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
@@ -15012,9 +15031,9 @@ extension on Translations {
 			'recorder.tabFinished' => '已完成',
 			'recorder.clearFinished' => '清空已完成',
 			'recorder.removeTask' => '删除这条任务',
-			'recorder.emptyTitle' => '还没有录制任务',
-			'recorder.centerSubtitle' => '管理直播间录制任务与录制文件，支持预览与播放',
-			'recorder.tabTasks' => '录制任务',
+			'recorder.emptyTitle' => '还没有监控的直播间',
+			'recorder.centerSubtitle' => '管理监控的直播间与录制文件，支持预览与播放',
+			'recorder.tabTasks' => '录制订阅',
 			'recorder.tabFiles' => '录制文件',
 			'recorder.statRecording' => '正在录制',
 			'recorder.statWaiting' => '等待中',
@@ -15036,7 +15055,7 @@ extension on Translations {
 			'recorder.qualityBest' => '最佳画质',
 			'recorder.startedAt' => ({required Object time}) => '开始于 ${time}',
 			'recorder.stateRecording' => '录制中',
-			'recorder.stateStopped' => '已停止',
+			'recorder.stateStopped' => '已暂停',
 			'recorder.stateFailed' => '失败',
 			'recorder.settingsTitle' => '录制',
 			'recorder.saveDirTitle' => '保存目录',
@@ -15209,9 +15228,9 @@ extension on Translations {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
-			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
 			'recorder.transcodeTitle' => '合并后转码',
@@ -15231,7 +15250,7 @@ extension on Translations {
 			'recorder.cacheTitle' => '录制缓存',
 			'recorder.liveCheckGroup' => '开播检测',
 			'recorder.enablePolling' => '启用开播检测',
-			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。',
+			'recorder.enablePollingDesc' => '自动检查每个监控的直播间是否开播；在直播间菜单里选「开播自动录」加入。关掉后监控列表不会自动开录，仍可手动「立即开录」。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。',
 			'recorder.pollingEnable' => '打开',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
@@ -15254,8 +15273,8 @@ extension on Translations {
 			'recorder.checkBackoffDesc' => '连续失败越多，下一次检测间隔越长，避免频繁请求平台。',
 			'recorder.maxCheckSecondsTitle' => '最大检测间隔（秒）',
 			'recorder.maxCheckSecondsDesc' => '退避后的间隔上限，60–3600 秒。',
-			'recorder.autoStartOnBoot' => '应用启动时恢复待录任务',
-			'recorder.autoStartOnBootDesc' => '把中断时仍在录制的任务恢复为等待开播（开播检测关着时会立即补查一次）；已停止的保持原状。关闭时，中断的那条会停在「录制中」，需要删除后重新添加。',
+			'recorder.autoStartOnBoot' => '开机后立即检查监控的直播间',
+			'recorder.autoStartOnBootDesc' => '应用启动时，把所有正在监控的直播间检查一轮（开播检测关着时也会补查一次），并恢复上次中断的录制。关闭时不开机检查，等下一次开播检测再开始。',
 			'recorder.stateRecordingElsewhere' => '本窗口没有在写这条：另一个窗口在录时由它负责；若都不是，说明上次中断了，删除任务再重新添加即可。',
 			'recorder.scheduleMenu' => '定时窗口',
 			'recorder.scheduleTitle' => '定时窗口',
@@ -15298,6 +15317,11 @@ extension on Translations {
 			'recorder.addAlreadyRecording' => '这个房间已在录制中',
 			'recorder.stateFileDeleted' => '文件已删除',
 			'recorder.warningFileDeleted' => '视频文件已在预览中删除；任务目录里的弹幕与分段仍保留',
+			'recorder.filterPaused' => '已暂停',
+			'recorder.statePaused' => '已暂停',
+			'recorder.pauseWatch' => '暂停监控',
+			'recorder.resumeWatch' => '恢复监控',
+			'recorder.lastRecordingAt' => ({required Object time}) => '上次录制于 ${time}',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15718,14 +15742,14 @@ extension on Translations {
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveAlertDesc' => '关注的主播开播时发系统通知；运行时每 15 分钟检查。',
 			'settings.liveAlertTags' => '提醒标签',
 			'settings.liveAlertTagsDesc' => '只提醒带有所选标签的关注；不选则覆盖全部关注。',
 			'settings.liveAlertTagsAll' => '全部关注',
 			'settings.liveAlertTagsNone' => '还没有标签；提醒将覆盖全部关注。',
 			'settings.liveAlertTagCount' => ({required Object selected}) => '已选 ${selected} 个',
-			_ => null,
-		} ?? switch (path) {
 			'settings.liveAlertFallbackTitle' => ({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
@@ -16232,14 +16256,14 @@ extension on Translations {
 			'settings.playerGuideIntro' => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。',
 			'settings.playerGuideManualTitle' => '播放手册：mpv 官方文档',
 			'settings.playerGuideManualHint' => '遇到问题先看「症状对照」；设置含义查「基础概念」。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideChapterConcepts' => '基础概念',
 			'settings.playerGuideChapterPresets' => '一键播放方案',
 			'settings.playerGuideChapterPictureSync' => '画面与同步',
 			'settings.playerGuideChapterQuality' => '画质增强',
 			'settings.playerGuideChapterAudio' => '声音',
 			'settings.playerGuideChapterSymptoms' => '症状对照',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
@@ -16746,14 +16770,14 @@ extension on Translations {
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_es' => '西班牙语',
 			'settings.twitchLanguage_pt' => '葡萄牙语',
 			'settings.twitchLanguage_de' => '德语',
 			'settings.twitchLanguage_fr' => '法语',
 			'settings.twitchLanguage_ru' => '俄语',
 			'settings.twitchLanguage_it' => '意大利语',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_th' => '泰语',
 			'settings.twitchLanguage_vi' => '越南语',
 			'settings.twitchLanguage_id' => '印度尼西亚语',
@@ -17260,14 +17284,14 @@ extension on Translations {
 			'vod.cardElements' => '卡片显示项',
 			'vod.cardPlays' => '播放量',
 			'vod.cardDanmaku' => '弹幕数',
+			_ => null,
+		} ?? switch (path) {
 			'vod.cardDuration' => '时长',
 			'vod.cardUploader' => 'UP 主',
 			'vod.cardSeasonState' => '更新状态',
 			'vod.playbackReset' => '恢复默认播放行为',
 			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'vod.personalTitle' => '我的视频',
-			_ => null,
-		} ?? switch (path) {
 			'vod.personalToView' => '稍后再看',
 			'vod.personalHistory' => '历史',
 			'vod.personalFavourites' => '收藏',

@@ -44,6 +44,17 @@ final class RecordingTaskRepository {
     await store.deleteAll(store.keys);
   }
 
+  /// Turns the watch switch of the task behind [id].
+  ///
+  /// The session in flight is not touched: pausing a room stops future live
+  /// checks, and a take already running is ended by its own stop. A task never
+  /// stored is a no-op.
+  Future<void> setEnabled(String id, {required bool enabled}) async {
+    final stored = store.get(id);
+    if (stored == null) return;
+    await save(RecordingTask.fromJson(stored).copyWith(enabled: enabled));
+  }
+
   /// Marks the task behind [id] as recording: a new session starts now, and
   /// the last one's facts (file, size, error) are cleared with it. A task
   /// never stored is a no-op — the engine adds its stub first.
@@ -62,6 +73,7 @@ final class RecordingTaskRepository {
         roomId: task.roomId,
         roomTitle: task.roomTitle,
         quality: task.quality,
+        enabled: task.enabled,
         state: RecordingTaskState.recording,
         startedAt: DateTime.now().toUtc(),
         filePath: takeDirectory,
@@ -294,6 +306,13 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
     await repository.setRunning(id, takeDirectory: takeDirectory);
+  }
+
+  /// Turns the watch switch of the task behind [id] on or off.
+  Future<void> setEnabled(String id, {required bool enabled}) async {
+    final repository = ref.read(recordingRepositoryProvider).value;
+    if (repository == null) return;
+    await repository.setEnabled(id, enabled: enabled);
   }
 
   /// Marks the task behind [id] as ended with its file saved; [warning] is

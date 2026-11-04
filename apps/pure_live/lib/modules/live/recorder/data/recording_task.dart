@@ -54,6 +54,7 @@ final class RecordingTask {
     required this.state,
     required this.startedAt,
     this.quality = '',
+    this.enabled = true,
     this.endedAt,
     this.filePath,
     this.bytes = 0,
@@ -83,6 +84,7 @@ final class RecordingTask {
       roomId: map['roomId'] as String? ?? '',
       roomTitle: map['roomTitle'] as String? ?? '',
       quality: map['quality'] as String? ?? '',
+      enabled: map['enabled'] as bool? ?? true,
       state: RecordingTaskState.fromJson(map['state']),
       startedAt: DateTime.tryParse(map['startedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
@@ -127,6 +129,13 @@ final class RecordingTask {
   /// The quality id the task asks the platform for ('' = the platform's
   /// best, the reference's default).
   final String quality;
+
+  /// Whether this room is still watched.
+  ///
+  /// The row is a subscription, not a session: it outlives every take, and
+  /// this switch is what pauses or resumes the watching. A paused row keeps
+  /// its last take's facts and its place in the list.
+  final bool enabled;
 
   /// Where the task's last session left it.
   final RecordingTaskState state;
@@ -207,14 +216,23 @@ final class RecordingTask {
   /// Whether the engine would be capturing this task right now.
   bool get isRunning => state == RecordingTaskState.recording;
 
+  /// Whether the live check keeps this room watched: on, and with no session
+  /// owning it. Every settled session keeps its row armed, so a room recorded
+  /// once stays a subscription and is begun again the next time it goes live.
+  bool get isArmed =>
+      enabled &&
+      !postProcessing &&
+      (state == RecordingTaskState.waiting ||
+          state == RecordingTaskState.stopped ||
+          state == RecordingTaskState.failed);
+
   /// Whether only the live check can move this task forward.
   ///
   /// A waiting room is begun when it goes on air, and a scheduled task that has
   /// ended waits for its next window to re-arm it; with the live check switched
   /// off neither happens on its own, and the recorder page says so. Anything
   /// capturing, or finished without a schedule, is not waiting on the check.
-  bool get needsLiveCheck =>
-      state == RecordingTaskState.waiting || (scheduleEnabled && state == RecordingTaskState.stopped);
+  bool get needsLiveCheck => isArmed;
 
   /// The folder the take lives in, read back from [filePath] — which is the
   /// joined file once the post-recording steps wrote one, and the take's own
@@ -243,6 +261,7 @@ final class RecordingTask {
     'roomId': roomId,
     'roomTitle': roomTitle,
     'quality': quality,
+    'enabled': enabled,
     'state': state.toJson(),
     'startedAt': startedAt.toUtc().toIso8601String(),
     'endedAt': endedAt?.toUtc().toIso8601String(),
@@ -267,6 +286,7 @@ final class RecordingTask {
     String? roomId,
     String? roomTitle,
     String? quality,
+    bool? enabled,
     RecordingTaskState? state,
     DateTime? startedAt,
     DateTime? endedAt,
@@ -289,6 +309,7 @@ final class RecordingTask {
       roomId: roomId ?? this.roomId,
       roomTitle: roomTitle ?? this.roomTitle,
       quality: quality ?? this.quality,
+      enabled: enabled ?? this.enabled,
       state: state ?? this.state,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,
