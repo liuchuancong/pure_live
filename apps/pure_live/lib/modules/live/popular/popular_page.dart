@@ -156,26 +156,49 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
 
     void managePlatforms() =>
         unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location));
+    // The feed's own reload: the shown platform's first page, asked again.
+    final loadingFeed = ref.watch(popularCatalogProvider.select((catalog) => catalog[platform]?.loading ?? false));
+    void refreshFeed() => unawaited(ref.read(popularCatalogProvider.notifier).refresh(platform));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          // The tabs alone: the platform wall, the layout and the refresh are
-          // this page's verbs, and the shell's head line carries them (see
-          // PopularTopBarActions) at every width.
-          child: SizedBox(
-            height: 44,
-            child: PlatformTabRow(
-              platforms: ids,
-              current: platform,
-              nameOf: _platformName,
-              semanticLabel: t.navigation.hot,
-              showPlatformWall: false,
-              showLayoutToggle: false,
-              onManagePlatforms: managePlatforms,
-              onChanged: choosePlatform,
-            ),
+          // A small screen keeps the tab bar alone and puts the
+          // layout and the platform wall behind one more icon.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+              final tabs = PlatformTabRow(
+                platforms: ids,
+                current: platform,
+                nameOf: _platformName,
+                semanticLabel: t.navigation.hot,
+                showPlatformWall: !narrow,
+                showLayoutToggle: !narrow,
+                onManagePlatforms: managePlatforms,
+                onChanged: choosePlatform,
+              );
+              final refresh = DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                semanticLabel: t.common.refresh,
+                onPressed: loadingFeed ? null : refreshFeed,
+                icon: const DsIcon(DsIcons.refreshCw, size: 16),
+              );
+              if (!narrow) {
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    refresh,
+                  ],
+                );
+              }
+              // A narrow page hands its verbs to the shell's head line and
+              // keeps the tabs alone; the shell shows them where it has room.
+              return SizedBox(height: 44, child: tabs);
+            },
           ),
         ),
         Expanded(

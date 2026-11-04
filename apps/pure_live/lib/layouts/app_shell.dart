@@ -384,7 +384,12 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // with a list of its own to search gets either.
     final pageSearch = _pageSearch(t);
     final headWidth = width - (narrow ? 0 : sidebarWidth);
-    final verbs = _pageVerbs();
+    // The page's own row keeps its verbs until its usable width goes under
+    // the toolbar breakpoint; then this head carries them. Both sides measure
+    // the same width (content minus the page's insets), so they cannot
+    // disagree about a window between their thresholds.
+    final hostsVerbs = LiveWindow.stacksToolbar(headWidth - 2 * LiveWindow.pageInset(width));
+    final verbs = hostsVerbs ? _pageVerbs() : const <Widget>[];
     final reserve = (verbs.isEmpty ? 0.0 : 130.0) +
         (widget.selected == NavigationItem.logs ? 44.0 : 0.0) +
         (WindowChromeState.drawsStrip ? 0.0 : 48.0);

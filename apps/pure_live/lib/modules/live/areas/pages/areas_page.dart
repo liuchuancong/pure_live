@@ -125,18 +125,45 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
       value: view,
       onChanged: (picked) => ref.read(areasViewProvider.notifier).selected = picked,
     );
+    // The catalogue's tile form: the poster with the picture above its
+    // name, or the row with the picture beside it. The areas page's own
+    // pair of shapes, so the platform row adds no second layout switch.
+    final tileLayout = ref.watch(areaLayoutProvider);
+    // The tile layout switch in the feed pages' own shape: 16px glyphs
+    // under a tooltip, the popular page's LayoutToggle look — the areas
+    // pair of layouts bound to the areas preference.
+    final layoutSwitch = DsTooltip(
+      message: t.common.layout,
+      child: DsSegmentedControl<AreaCardLayout>(
+        value: tileLayout,
+        onChanged: (layout) => unawaited(ref.read(areaLayoutProvider.notifier).set(layout)),
+        semanticLabel: t.common.layout,
+        segments: [
+          DsSegment(
+            value: AreaCardLayout.tile,
+            icon: const DsIcon(DsIcons.layoutGrid, size: 16),
+            semanticLabel: t.areas.iconTop,
+          ),
+          DsSegment(
+            value: AreaCardLayout.row,
+            icon: const DsIcon(DsIcons.layoutList, size: 16),
+            semanticLabel: t.areas.iconLeft,
+          ),
+        ],
+      ),
+    );
     // The platform tabs; the wide row keeps the platform wall chevron at
     // their end, the narrow toolbar leaves it to the page's menu.
-    Widget? platformTabs() => view == AreasView.platform && ids.isNotEmpty
+    Widget? platformTabs({required bool withWall}) => view == AreasView.platform && ids.isNotEmpty
         ? PlatformTabRow(
             platforms: ids,
             current: platform,
             nameOf: _platformName,
             semanticLabel: t.areas.allAreas,
-            // The layout, the wall and the refresh are the page's verbs: the
-            // shell's head line carries them (see AreasTopBarActions).
+            // The catalogue's own layout switch is the page's, so the row
+            // keeps its two controls here: the tabs and the platform wall.
             showLayoutToggle: false,
-            showPlatformWall: false,
+            showPlatformWall: withWall,
             // The panel's way to the hide/reorder setting.
             onManagePlatforms: () =>
                 unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
@@ -146,6 +173,21 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
             },
           )
         : null;
+    // The catalogue's reload: the shown platform's areas, asked again — the
+    // popular page's head button, this page's own.
+    final inPlatformView = view == AreasView.platform;
+    // The followed view keeps its own empty/loading shapes, so only the
+    // platform view's catalogue load greys this button.
+    final loadingCatalog =
+        inPlatformView && ref.watch(areasCatalogProvider.select((catalog) => catalog[platform]?.loading ?? false));
+    void refreshCatalog() => unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
+    final refreshButton = DsButton.icon(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: t.common.refresh,
+      onPressed: loadingCatalog ? null : refreshCatalog,
+      icon: const DsIcon(DsIcons.refreshCw, size: 16),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -153,23 +195,26 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
-              if (narrow) {
-                // A phone keeps the bar's room for the tabs; the view switch
-                // is one more-menu step (see AreasTopBarActions).
-                return SizedBox(height: 44, child: platformTabs() ?? _viewLabel(context));
+              // The platform tabs take the row's leftover width — the
+              // popular page's measure — so names read whole.
+              if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
+                final tabs = platformTabs(withWall: true);
+                return SizedBox(
+                  height: 44,
+                  child: Row(
+                    spacing: DsSpace.s12,
+                    children: [
+                      views,
+                      if (tabs != null) Expanded(child: tabs) else const Spacer(),
+                      layoutSwitch,
+                      if (inPlatformView) refreshButton,
+                    ],
+                  ),
+                );
               }
-              final tabs = platformTabs();
-              return SizedBox(
-                height: 44,
-                child: Row(
-                  spacing: DsSpace.s12,
-                  children: [
-                    views,
-                    if (tabs != null) Expanded(child: tabs) else const Spacer(),
-                  ],
-                ),
-              );
+              // A narrow page hands its verbs to the shell's head line and
+              // keeps the tabs alone.
+              return SizedBox(height: 44, child: platformTabs(withWall: false) ?? _viewLabel(context));
             },
           ),
         ),

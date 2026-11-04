@@ -333,6 +333,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       );
     }
 
+    final narrow = LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -342,9 +343,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              // The group tabs alone: the platform wall, the layout and the
-              // refresh are this page's verbs, and the shell's head line
-              // carries them (see FavoritesTopBarActions) at every width.
+              // One toolbar line level with the categories: the group
+              // tabs, then the platform row's controls — the wall chevron
+              // and the grid switch (a small screen folds those two into
+              // its 更多) — and the refresh at the end.
               Row(
                 spacing: DsSpace.s8,
                 children: [
@@ -373,6 +375,23 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       ],
                     ),
                   ),
+                  if (!narrow)
+                    PlatformWallButton(
+                      platforms: [kAllPlatforms, ...platformTabs],
+                      current: platform,
+                      nameOf: _platformName,
+                      iconOf: (id) => id == kAllPlatforms
+                          ? null
+                          : localizedSiteIcon(ref.watch(sitesProvider).getById(id), size: 32),
+                      onChanged: _selectPlatform,
+                      onManagePlatforms: () => unawaited(
+                        context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                      ),
+                      countOf: (id) =>
+                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: group),
+                    ),
+                  if (!narrow) const LayoutToggle(),
+                  if (!narrow) _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
               // The platform tabs, the row under them: names and counts
@@ -528,6 +547,26 @@ final class _EmptySlice extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The header's refresh button: a spinner while the refresh runs.
+final class _RefreshButton extends StatelessWidget {
+  const _RefreshButton({required this.refreshing, required this.onRefresh});
+
+  final bool refreshing;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return DsButton.icon(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: context.t.favorites.refresh,
+      loading: refreshing,
+      onPressed: refreshing ? null : () => unawaited(onRefresh()),
+      icon: DsIcon(DsIcons.refreshCw, size: DsTheme.of(context).sizes.iconSm),
     );
   }
 }
