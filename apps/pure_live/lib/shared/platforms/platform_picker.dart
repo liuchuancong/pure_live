@@ -189,7 +189,6 @@ final class PlatformToolbarMore extends ConsumerWidget {
     this.onManagePlatforms,
     this.countOf,
     this.items = const [],
-    this.triggerVariant = DsButtonVariant.ghost,
     super.key,
   });
 
@@ -213,10 +212,6 @@ final class PlatformToolbarMore extends ConsumerWidget {
 
   /// The page's own menu items, above the shared choices.
   final List<Widget> items;
-
-  /// The trigger's look: a bare glyph by default, an outlined button where it
-  /// sits beside other toolbar buttons.
-  final DsButtonVariant triggerVariant;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -268,12 +263,13 @@ final class PlatformToolbarMore extends ConsumerWidget {
           ),
         ],
       ],
-      builder: (context, controller, _) => DsButton.icon(
-        variant: triggerVariant,
+      builder: (context, controller, _) => DsButton(
+        variant: DsButtonVariant.secondary,
         size: DsSize.sm,
         semanticLabel: t.common.more,
+        leading: const DsIcon(DsIcons.chevronDown, size: 14),
         onPressed: controller.open,
-        icon: const DsIcon(DsIcons.ellipsisVertical),
+        child: Text(t.common.more),
       ),
     );
   }

@@ -57,7 +57,6 @@ final class PopularTopBarActions extends ConsumerWidget {
           onManagePlatforms: () => unawaited(
             context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
           ),
-          triggerVariant: DsButtonVariant.secondary,
         ),
       ],
     );

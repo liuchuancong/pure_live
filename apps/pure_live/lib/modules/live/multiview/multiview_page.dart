@@ -231,13 +231,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         for (final arrangement in MultiviewLayout.values)
           DsSegment(
             value: arrangement,
-            label: Text(switch (arrangement) {
-              MultiviewLayout.single => '1×1',
-              MultiviewLayout.dual => '1×2',
-              MultiviewLayout.quad => '2×2',
-              MultiviewLayout.focus => '1+3',
-              MultiviewLayout.strip => '1×4',
-            }),
+            label: Text(_arrangementLabel(arrangement)),
           ),
       ],
       value: wall.layout,
@@ -271,11 +265,60 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           onPressed: () => unawaited(controls.togglePauseAll()),
         ),
     ];
-    // A stacked toolbar hands the wall's switches to the shell's head line;
-    // the arrangement control is the page's own and stays.
-    final narrow = PageLayoutScope.isNarrow(context);
-    if (narrow) publishPageHeadActions(context, ref, switches);
-    final inline = narrow ? const <Widget>[] : switches;
+    // A stacked toolbar hands everything to the shell's head line as one
+    // labelled more menu: the arrangements, then the wall's switches. The
+    // page keeps only the wall below.
+    if (PageLayoutScope.isNarrow(context)) {
+      void chooseLayout(MultiviewLayout arrangement) {
+        setState(() => _swapSource = null);
+        unawaited(ref.read(multiviewProvider.notifier).setLayout(arrangement));
+      }
+
+      void toggleMute() {
+        if (globallyMuted) {
+          unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+        } else {
+          controls.toggleMuteAll();
+        }
+      }
+
+      publishPageHeadActions(context, ref, [
+        DsMenuAnchor(
+          semanticLabel: t.common.more,
+          align: DsAlign.end,
+          items: [
+            for (final arrangement in MultiviewLayout.values)
+              DsMenuItem(
+                label: Text(_arrangementLabel(arrangement)),
+                checked: wall.layout == arrangement,
+                onPressed: () => chooseLayout(arrangement),
+              ),
+            const DsMenuDivider(),
+            DsMenuItem(
+              leading: DsIcon(wallMuted ? DsIcons.volumeOff : DsIcons.volume),
+              label: Text(wallMuted ? t.multiview.unmuteAll : t.multiview.muteAll),
+              onPressed: toggleMute,
+            ),
+            if (activePanes.isNotEmpty)
+              DsMenuItem(
+                leading: DsIcon(anyPlaying ? DsIcons.pause : DsIcons.play),
+                label: Text(anyPlaying ? t.multiview.pauseAll : t.multiview.resumeAll),
+                onPressed: () => unawaited(controls.togglePauseAll()),
+              ),
+          ],
+          builder: (context, controller, _) => DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: t.common.more,
+            leading: const DsIcon(DsIcons.chevronDown, size: 14),
+            onPressed: controller.open,
+            child: Text(t.common.more),
+          ),
+        ),
+      ]);
+      return const SizedBox.shrink();
+    }
+    final inline = switches;
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 560) {
@@ -1451,3 +1494,12 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
     return site == null ? platform : localizedSiteName(site);
   }
 }
+
+/// The arrangement's own word on the toolbar and in the more menu.
+String _arrangementLabel(MultiviewLayout arrangement) => switch (arrangement) {
+  MultiviewLayout.single => '1×1',
+  MultiviewLayout.dual => '1×2',
+  MultiviewLayout.quad => '2×2',
+  MultiviewLayout.focus => '1+3',
+  MultiviewLayout.strip => '1×4',
+};

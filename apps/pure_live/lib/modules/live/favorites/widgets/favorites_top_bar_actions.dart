@@ -55,7 +55,6 @@ final class FavoritesTopBarActions extends ConsumerWidget {
           onChanged: ref.read(favoritesViewProvider.notifier).selectPlatform,
           onManagePlatforms: () =>
               unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
-          triggerVariant: DsButtonVariant.secondary,
         ),
       ],
     );

@@ -696,12 +696,13 @@ final class _Header extends ConsumerWidget {
               onPressed: busy || !canClear ? null : onClear,
             ),
           ],
-          builder: (context, controller, _) => DsButton.icon(
-            variant: DsButtonVariant.ghost,
+          builder: (context, controller, _) => DsButton(
+            variant: DsButtonVariant.secondary,
             size: DsSize.sm,
             semanticLabel: t.common.more,
+            leading: const DsIcon(DsIcons.chevronDown, size: 14),
             onPressed: controller.open,
-            icon: const DsIcon(DsIcons.ellipsisVertical),
+            child: Text(t.common.more),
           ),
         );
         // A stacked toolbar hands the filter and the rest to the shell's head

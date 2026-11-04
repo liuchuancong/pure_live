@@ -100,12 +100,13 @@ final class AreasTopBarActions extends ConsumerWidget {
               ),
             ],
           ],
-          builder: (context, controller, _) => DsButton.icon(
+          builder: (context, controller, _) => DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
             semanticLabel: t.common.more,
+            leading: const DsIcon(DsIcons.chevronDown, size: 14),
             onPressed: controller.open,
-            icon: const DsIcon(DsIcons.ellipsisVertical),
+            child: Text(t.common.more),
           ),
         ),
       ],

@@ -9,6 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/search/search_controller.dart';
 import 'package:pure_live/modules/live/search/web_search_page.dart' show WebSearchRequest;
@@ -95,6 +96,32 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final word = draft.trim();
     if (word.isNotEmpty) unawaited(ref.read(searchHistoryProvider.notifier).commit(word));
     unawaited(ref.read(searchProvider.notifier).search(draft));
+  }
+
+  /// A phone asks for the result's conditions in a panel; a wider window
+  /// keeps them in the field row's popover.
+  void _openFilterPanel() {
+    unawaited(
+      showDsPanel<void>(
+        context: context,
+        builder: (context) => DsPanel(
+          title: Text(context.t.search.filterTitle),
+          child: _SearchFilterPanel(
+            sort: _sort,
+            options: [
+              for (final sort in _SearchSort.values) DsSelectOption(value: sort, label: _sortLabel(context, sort)),
+            ],
+            includeOffline: _includeOffline,
+            onSortChanged: (sort) => setState(() => _sort = sort),
+            onIncludeOfflineChanged: (value) => setState(() => _includeOffline = value),
+            onReset: () => setState(() {
+              _sort = _SearchSort.smart;
+              _includeOffline = true;
+            }),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Takes a completion: it becomes the field's text and the query at once.
@@ -190,7 +217,16 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               // The result's own conditions sit behind one button, the kit's
               // filter-button pattern, so the field row stays two controls.
               if (_showFilters(search))
-                DsPopover(
+                if (PageLayoutScope.isNarrow(context))
+                  DsButton.icon(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    semanticLabel: context.t.search.filterTitle,
+                    onPressed: _openFilterPanel,
+                    icon: const DsIcon(DsIcons.slidersHorizontal, size: 16),
+                  )
+                else
+                  DsPopover(
                   align: DsAlign.end,
                   semanticLabel: context.t.search.filterTitle,
                   style: const DsPopoverStyle(width: 264),
