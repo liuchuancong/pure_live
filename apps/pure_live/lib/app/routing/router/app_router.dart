@@ -156,7 +156,7 @@ final class PopularRoute extends GoRouteData with $PopularRoute {
   const PopularRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const PopularPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: PopularPage());
 }
 
 /// The zones branch's screen.
@@ -165,7 +165,7 @@ final class ZonesRoute extends GoRouteData with $ZonesRoute {
   const ZonesRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const AreasPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: AreasPage());
 }
 
 /// The live branch's screen.
@@ -174,7 +174,8 @@ final class LiveRoute extends GoRouteData with $LiveRoute {
   const LiveRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const _DestinationPlaceholder(item: NavigationItem.live);
+  Widget build(BuildContext context, GoRouterState state) =>
+      const PageSurface(child: _DestinationPlaceholder(item: NavigationItem.live));
 }
 
 /// The favorites branch's screen.
@@ -183,7 +184,7 @@ final class FavoritesRoute extends GoRouteData with $FavoritesRoute {
   const FavoritesRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const FavoritesPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: FavoritesPage());
 }
 
 /// The history branch's screen.
@@ -192,7 +193,7 @@ final class HistoryRoute extends GoRouteData with $HistoryRoute {
   const HistoryRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const HistoryPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: HistoryPage());
 }
 
 /// The search branch's screen.
@@ -201,7 +202,7 @@ final class SearchRoute extends GoRouteData with $SearchRoute {
   const SearchRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const SearchPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: SearchPage());
 }
 
 /// The multi-view branch's screen.
@@ -210,7 +211,7 @@ final class MultiviewRoute extends GoRouteData with $MultiviewRoute {
   const MultiviewRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const MultiviewPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: MultiviewPage());
 }
 
 /// The recording branch's screen.
@@ -219,7 +220,7 @@ final class RecorderRoute extends GoRouteData with $RecorderRoute {
   const RecorderRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const RecorderPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: RecorderPage());
 }
 
 /// The toolbox branch's screen.
@@ -228,7 +229,7 @@ final class ToolboxRoute extends GoRouteData with $ToolboxRoute {
   const ToolboxRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const ToolboxPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: ToolboxPage());
 }
 
 /// The log console branch's screen.
@@ -237,7 +238,7 @@ final class LogsRoute extends GoRouteData with $LogsRoute {
   const LogsRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const LogsPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: LogsPage());
 }
 
 /// The settings branch's screen.
@@ -246,7 +247,7 @@ final class SettingsRoute extends GoRouteData with $SettingsRoute {
   const SettingsRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const SettingsPage();
+  Widget build(BuildContext context, GoRouterState state) => const PageSurface(child: SettingsPage());
 }
 
 /// One settings section as its own pushed route: the phone's settings menu
@@ -263,7 +264,7 @@ final class SettingsSectionRoute extends GoRouteData with $SettingsSectionRoute 
   @override
   Widget build(BuildContext context, GoRouterState state) {
     final parsed = SettingsSection.of(section) ?? SettingsSection.theme;
-    return _SettingsSectionScreen(section: parsed);
+    return PageSurface(child: _SettingsSectionScreen(section: parsed));
   }
 }
 
@@ -492,7 +493,8 @@ GoRouter buildAppRouter({
       // section pages above it.
       GoRoute(
         path: RouteNames.settingsCategory,
-        builder: (context, state) => _SettingsCategoryScreen(category: state.pathParameters['category']!),
+        builder: (context, state) =>
+            PageSurface(child: _SettingsCategoryScreen(category: state.pathParameters['category']!)),
       ),
       GoRoute(
         path: RouteNames.iptvPlay,

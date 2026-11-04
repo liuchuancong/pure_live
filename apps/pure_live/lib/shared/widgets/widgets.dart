@@ -8,5 +8,6 @@ export 'cover_fallback.dart';
 export 'download_details.dart';
 export 'download_format.dart';
 export 'download_workspace.dart';
+export 'page_surface.dart';
 export 'pull_to_refresh.dart';
 export 'scroll_edge_controls.dart';

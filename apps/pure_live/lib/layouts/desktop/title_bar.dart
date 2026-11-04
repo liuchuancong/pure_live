@@ -153,7 +153,7 @@ final class WindowChromeFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!WindowChromeState.drawsStrip) return child;
+    if (!WindowChromeState.drawsStrip) return PageSurface(child: child);
     // The strip swaps for an empty slot rather than going away: keeping the
     // Column shape steady means a player route moving in or out of an
     // immersive mode keeps its element depth (and, with the player's own
@@ -163,7 +163,7 @@ final class WindowChromeFrame extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (enabled) const WindowCaptionBar() else const SizedBox.shrink(),
-        Expanded(child: child),
+        Expanded(child: PageSurface(child: child)),
       ],
     );
   }

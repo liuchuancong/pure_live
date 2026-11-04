@@ -3,8 +3,6 @@ import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
-import 'package:flutter/gestures.dart' show GestureBinding, HitTestResult, PointerDownEvent, PointerEvent;
-import 'package:flutter/rendering.dart' show RendererBinding;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -82,58 +80,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   @override
   void initState() {
     super.initState();
-    // TEMP: logs the hit path of every pointer down so the layer that answers
-    // a click on the page's empty space with the Windows alert beep can be
-    // named. Removed once that layer is fixed.
-    GestureBinding.instance.pointerRouter.addGlobalRoute(_probePointerDown);
     // The toolbar's word opens the room search picker over this page: a
     // room found there becomes a task. The listener catches a word handed
     // while the page is showing; the post-frame take catches one handed as
     // the page arrives.
     ref.listenManual(recorderSearchHandoffProvider, (_, _) => _takeHandoff());
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
-  }
-
-  void _probePointerDown(PointerEvent event) {
-    if (event is! PointerDownEvent) return;
-    final result = HitTestResult();
-    RendererBinding.instance.hitTestInView(result, event.position, event.viewId);
-    final renders = result.path.map((entry) => entry.target.runtimeType.toString()).toList();
-    // Only a click that lands on a modal barrier is worth dumping the tree
-    // for; every other click is the page's own.
-    final barrier = renders.contains('RenderBlockSemantics') && renders.contains('RenderSemanticsGestureHandler');
-    if (!barrier) return;
-    final routes = <ModalRoute<Object?>>[];
-    final pages = <ModalRoute<Object?>, List<String>>{};
-    void visit(Element element) {
-      final route = ModalRoute.of(element);
-      if (route != null && !routes.contains(route)) {
-        routes.add(route);
-        final chain = <String>[];
-        element.visitAncestorElements((ancestor) {
-          chain.add(ancestor.widget.runtimeType.toString());
-          return chain.length < 3;
-        });
-        pages[route] = [element.widget.runtimeType.toString(), ...chain];
-      }
-      element.visitChildren(visit);
-    }
-
-    WidgetsBinding.instance.rootElement?.visitChildren(visit);
-    for (final route in routes) {
-      appLog
-          .forCategory('tap-probe')
-          .info(
-            'route ${route.runtimeType} name=${route.settings.name} dismissible=${route.barrierDismissible} '
-            'current=${route.isCurrent} first=${route.isFirst} page=${pages[route]?.join(' < ')}',
-          );
-    }
-  }
-
-  @override
-  void dispose() {
-    GestureBinding.instance.pointerRouter.removeGlobalRoute(_probePointerDown);
-    super.dispose();
   }
 
   void _takeHandoff() {
