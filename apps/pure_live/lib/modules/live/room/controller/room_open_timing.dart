@@ -68,6 +68,7 @@ final class RoomOpenTiming {
   DateTime? _qualities;
   DateTime? _lines;
   DateTime? _requested;
+  DateTime? _opened;
   DateTime? _firstFrame;
   DateTime? _playing;
   DateTime? _chat;
@@ -83,6 +84,15 @@ final class RoomOpenTiming {
 
   /// T4: the source reached the engine (`play` returned).
   void markRequested() => _requested ??= _now();
+
+  /// T4b: the engine says it holds an opened input.
+  ///
+  /// This one is in the log and not on the panel, because the two numbers it
+  /// separates are different faults: time between the ask and this mark is the
+  /// CDN, the DNS and the probe, and time between it and the first frame is
+  /// decoding. A viewer reading the panel does not need that split, the next
+  /// fix does.
+  void markOpened() => _opened ??= _now();
 
   /// T5: the engine reported a picture with a size in it.
   void markFirstFrame() => _firstFrame ??= _now();
@@ -129,11 +139,15 @@ final class RoomOpenTiming {
         ? 'playing'
         : 'incomplete'}',
     for (final stage in stages) '${stage.name}=${stage.took?.inMilliseconds ?? '-'}',
+    'opened=${_opened == null || _requested == null ? '-' : _opened!.difference(_requested!).inMilliseconds}',
     'total=${total.inMilliseconds}',
   ].join(' ');
 
   /// Every mark, so a stage can start at the last one reached before it.
-  List<DateTime?> get _marks => [_detail, _qualities, _lines, _requested, _firstFrame, _playing];
+  /// `opened` counts even though it is not its own stage on the panel: the
+  /// first frame should be measured from the engine holding the input, not
+  /// from the moment the ask was made.
+  List<DateTime?> get _marks => [_detail, _qualities, _lines, _requested, _opened, _firstFrame, _playing];
 
   Duration? _took(DateTime? at) {
     if (at == null) return null;

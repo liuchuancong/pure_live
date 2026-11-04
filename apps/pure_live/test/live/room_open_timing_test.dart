@@ -76,6 +76,22 @@ void main() {
     expect(timing.markPlaying(), isFalse);
   });
 
+  test('the log splits the CDN time from the decoder time', () {
+    final timing = _timing(site: 'bilibili', roomId: '5')
+      ..markDetail()
+      ..markQualities()
+      ..markLines()
+      ..markRequested()
+      ..markOpened()
+      ..markFirstFrame()
+      ..markPlaying();
+
+    // `opened` is measured from the hand-off to the engine, so the wait for a
+    // signed URL to answer is not charged to decoding.
+    expect(timing.line(), contains('opened=100'));
+    expect(timing.line(), contains('firstFrame=100'));
+  });
+
   test('a stage marked twice keeps its first mark', () {
     final timing = _timing(site: 'bilibili', roomId: '1')
       ..markDetail()

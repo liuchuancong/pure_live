@@ -1440,6 +1440,9 @@ final class RoomController extends Notifier<RoomState> {
     final playback = _playback ??= _openSession(capability, room);
     _states ??= playback.onStateChanged.listen((playback_) {
       state = _with(playback: playback_);
+      // The engine holding an opened input is the split between the CDN's
+      // time and the decoder's; see RoomOpenTiming.markOpened.
+      if (playback_.ready) _openTiming?.markOpened();
       // The entry's line is written the first time the room says it is
       // playing, which is the number the viewer waits for.
       if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
