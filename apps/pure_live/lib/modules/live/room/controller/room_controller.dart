@@ -1440,9 +1440,11 @@ final class RoomController extends Notifier<RoomState> {
     final playback = _playback ??= _openSession(capability, room);
     _states ??= playback.onStateChanged.listen((playback_) {
       state = _with(playback: playback_);
-      // The engine holding an opened input is the split between the CDN's
-      // time and the decoder's; see RoomOpenTiming.markOpened.
-      if (playback_.ready) _openTiming?.markOpened();
+      // The engine holding an opened input - the split between the CDN's time
+      // and the decoder's. `ready` alone is not it: the adapter is ready once
+      // it is initialised, before any media; `hasSource` is set when the open
+      // returns. See RoomOpenTiming.markOpened.
+      if (playback_.ready && playback_.hasSource) _openTiming?.markOpened();
       // The entry's line is written the first time the room says it is
       // playing, which is the number the viewer waits for.
       if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
@@ -1465,6 +1467,10 @@ final class RoomController extends Notifier<RoomState> {
       // its lease is the one that has to be watched.
       _armLeaseRenewal();
     });
+    // Marked before the wait: `play` returns once the engine has opened the
+    // input, so asking and hearing about it are the two ends of the segment
+    // `opened` then splits.
+    _openTiming?.markRequested();
     await playback.play(
       LiveSourceRequest(
         sources: roomSourcesOf(
@@ -1479,7 +1485,6 @@ final class RoomController extends Notifier<RoomState> {
       ),
       preferredBackend: ref.read(playerKernelBackendProvider).id,
     );
-    _openTiming?.markRequested();
     _armLeaseRenewal();
   }
 

@@ -82,16 +82,16 @@ final class RoomOpenTiming {
   /// T3: the play lines came back.
   void markLines() => _lines ??= _now();
 
-  /// T4: the source reached the engine (`play` returned).
+  /// T4: the ask was made — the source was handed to the engine.
   void markRequested() => _requested ??= _now();
 
-  /// T4b: the engine says it holds an opened input.
+  /// T4b: the engine reports an input it has opened.
   ///
   /// This one is in the log and not on the panel, because the two numbers it
-  /// separates are different faults: time between the ask and this mark is the
-  /// CDN, the DNS and the probe, and time between it and the first frame is
-  /// decoding. A viewer reading the panel does not need that split, the next
-  /// fix does.
+  /// separates are different faults: the wait between the ask and this mark is
+  /// the CDN, the DNS and the probe, and the wait between it and the first
+  /// frame is decoding. A viewer reading the panel does not need that split;
+  /// the next fix does.
   void markOpened() => _opened ??= _now();
 
   /// T5: the engine reported a picture with a size in it.
