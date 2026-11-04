@@ -20,6 +20,7 @@ export 'pages/hongguo_player_page.dart';
 export 'pages/hongguo_series_page.dart';
 export 'pages/hongguo_settings_pane.dart';
 export 'widgets/hongguo_card_menu.dart';
+export 'widgets/hongguo_card_preview.dart';
 export 'widgets/hongguo_comment_panel.dart';
 export 'widgets/hongguo_danmaku_layer.dart';
 export 'widgets/hongguo_episode_shelf.dart';

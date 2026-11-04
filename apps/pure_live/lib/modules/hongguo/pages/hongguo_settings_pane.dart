@@ -8,12 +8,12 @@ import 'package:pure_live/features/settings/surface/settings_child_entry.dart' s
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart' show hongguoClientProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart'
     show HongguoDanmakuDensity, hongguoDanmakuSettingsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderLessonsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart';
+import 'package:pure_live/modules/hongguo/widgets/hongguo_card_preview.dart' show showHongguoCardPreview;
 
 /// The station's own settings, split the way every module's are: the
 /// rendition an episode opens with on its own page, the poster card's pieces,
@@ -100,17 +100,14 @@ final class HongguoSettingsPane extends ConsumerWidget {
   }
 }
 
-/// What the poster card draws: one switch per piece, the way the room card's
-/// pane lays its own out — the element set drives the rows, so a piece added
-/// to the card cannot arrive without a switch.
+/// What the poster card draws: one entry to the page that shows the card and
+/// carries a switch for every piece, the way the room card's pane does.
 final class HongguoInterfacePane extends ConsumerWidget {
   const HongguoInterfacePane({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final card = ref.watch(hongguoCardSettingsProvider);
-    final cardController = ref.read(hongguoCardSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -131,50 +128,27 @@ final class HongguoInterfacePane extends ConsumerWidget {
             ),
           ],
         ),
+        // The card's own page opens from here, so the section carries the entry
+        // the way this pane's other entries do — without a heading that repeats
+        // what the page's own switch list is called.
         DsListSection(
-          header: Text(t.settings.hongguoCardVisibleContent),
           children: [
-            for (final element in HongguoCardElement.values)
-              SettingsConfigRow(
-                leading: DsIcon(_elementIcon(element)),
-                title: _elementLabel(t, element),
-                control: DsSwitch(
-                  value: card.shows(element),
-                  onChanged: (value) => unawaited(cardController.setElement(element, visible: value)),
-                  semanticLabel: _elementLabel(t, element),
-                ),
-              ),
+            // The row opens the card's own page — the poster sample at a wall's
+            // size, with the piece switches beside it — rather than a second
+            // copy of those switches here, where they could not be seen.
+            DsListRow(
+              leading: const DsIcon(DsIcons.idCard),
+              title: Text(t.settings.hongguoCardSettingsTitle),
+              description: Text(t.settings.hongguoCardPreviewHint),
+              showChevron: true,
+              onPressed: () => unawaited(showHongguoCardPreview(context)),
+            ),
           ],
         ),
       ],
     );
   }
 }
-
-/// The switch's glyph for one card piece, drawn like the piece it stands for.
-DsIconData _elementIcon(HongguoCardElement element) => switch (element) {
-  HongguoCardElement.rank => DsIcons.trophy,
-  HongguoCardElement.coverTags => DsIcons.badge,
-  HongguoCardElement.today => DsIcons.calendar,
-  HongguoCardElement.score => DsIcons.star,
-  HongguoCardElement.episodes => DsIcons.listVideo,
-  HongguoCardElement.favorite => DsIcons.heart,
-  HongguoCardElement.hot => DsIcons.flame,
-  HongguoCardElement.category => DsIcons.tag,
-  HongguoCardElement.meta => DsIcons.info,
-};
-
-String _elementLabel(Translations t, HongguoCardElement element) => switch (element) {
-  HongguoCardElement.rank => t.settings.hongguoCardRank,
-  HongguoCardElement.coverTags => t.settings.hongguoCardTags,
-  HongguoCardElement.today => t.settings.hongguoCardToday,
-  HongguoCardElement.score => t.settings.hongguoCardScore,
-  HongguoCardElement.episodes => t.settings.hongguoCardEpisodes,
-  HongguoCardElement.favorite => t.settings.hongguoCardFavorite,
-  HongguoCardElement.hot => t.settings.hongguoCardHot,
-  HongguoCardElement.category => t.settings.hongguoCardCategory,
-  HongguoCardElement.meta => t.settings.hongguoCardMeta,
-};
 
 /// The danmaku the station's player draws: on or off, and the look it takes.
 final class HongguoDanmakuPane extends ConsumerWidget {

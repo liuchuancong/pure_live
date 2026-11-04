@@ -34,6 +34,12 @@ const double kHongguoSeriesCardInfoExtent = kRoomCardInfoExtent;
 /// under it and takes the height the name block leaves.
 const double kHongguoSeriesTileAspect = 0.62;
 
+/// The height a poster tile of [width] stands at: the card's own measure, stated
+/// once because both of its homes and the card preview need the same number — the
+/// cover takes whatever the fixed name block leaves, so a caller that knows the
+/// width knows the height.
+double hongguoSeriesTileHeight(double width) => width / kHongguoSeriesTileAspect;
+
 /// The list layout's row height: the room card's own list measure, which this
 /// module's rows keep and the grids that host them hand them. A row built by
 /// hand — the shelf's, the board's — lands on it through [kHongguoSeriesRowPosterHeight]
@@ -170,7 +176,19 @@ String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoS
 final class HongguoSeriesCard extends ConsumerWidget {
   /// The card for [series]; [onOpen] opens its page. [watched] is the local
   /// shelf's row for the same series, drawn as the cover's state.
-  const HongguoSeriesCard({required this.series, this.onOpen, this.favoritable = false, this.watched, super.key});
+  ///
+  /// [poster] replaces the series' own picture and [favorited] states the kept
+  /// mark without a shelf lookup — the card preview's sample, which must draw
+  /// both while never rewriting this device's library.
+  const HongguoSeriesCard({
+    required this.series,
+    this.onOpen,
+    this.favoritable = false,
+    this.watched,
+    this.poster,
+    this.favorited,
+    super.key,
+  });
 
   /// The series shown.
   final HongguoSeries series;
@@ -184,6 +202,13 @@ final class HongguoSeriesCard extends ConsumerWidget {
 
   /// Where this device left the series; null when it never opened it.
   final HongguoWatchProgress? watched;
+
+  /// The picture over [HongguoSeries.cover], when a caller brings one.
+  final ImageProvider<Object>? poster;
+
+  /// Whether the title reads as kept, decided by the caller: null asks this
+  /// device's shelf, and a state given here draws the heart inert.
+  final bool? favorited;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -217,8 +242,15 @@ final class HongguoSeriesCard extends ConsumerWidget {
         : null;
     final favored =
         visibility.shows(HongguoCardElement.favorite) &&
-        favoritable &&
-        ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
+        (favorited ?? (favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId)));
+    // A kept state the caller gave is the sample's own: a heart that wrote would
+    // rewrite this device's library from a settings page.
+    final onUnfavorite = favorited == null
+        ? () {
+            final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
+            showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
+          }
+        : null;
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -262,11 +294,11 @@ final class HongguoSeriesCard extends ConsumerWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (series.cover.isEmpty)
+                      if (poster == null && series.cover.isEmpty)
                         fallback
                       else
                         DsImage(
-                          image: hongguoCoverImage(series.cover),
+                          image: poster ?? hongguoCoverImage(series.cover),
                           aspectRatio: 3 / 4,
                           semanticLabel: series.title,
                           fallback: fallback,
@@ -304,7 +336,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
                               // The heart is the kept state, not an offer: an
                               // unkept title leaves the corner to the state, the
                               // way an unfollowed room leaves it to nothing.
-                              if (favored) _FavoriteHeartButton(series: series),
+                              if (favored) _FavoriteHeartButton(onPressed: onUnfavorite),
                             ],
                           ),
                         ),
@@ -571,20 +603,19 @@ final class _CoverMark extends StatelessWidget {
 }
 
 /// The card's kept state at the cover's corner: the red heart the room card's
-/// follow button is, and the press takes the title off the shelf.
-final class _FavoriteHeartButton extends ConsumerWidget {
-  const _FavoriteHeartButton({required this.series});
+/// follow button is, and the press takes the title off the shelf. A null
+/// [onPressed] draws it inert, which is how the card preview shows the mark.
+final class _FavoriteHeartButton extends StatelessWidget {
+  const _FavoriteHeartButton({required this.onPressed});
 
-  final HongguoSeries series;
+  /// Takes the title off this device's shelf; null leaves the mark inert.
+  final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = context.t;
     return DsButton.icon(
-      onPressed: () {
-        final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
-        showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
-      },
+      onPressed: onPressed,
       semanticLabel: t.hongguo.unfavorite,
       size: DsSize.xs,
       variant: DsButtonVariant.ghost,
@@ -608,11 +639,15 @@ final class _FavoriteHeartButton extends ConsumerWidget {
 /// The poster both list rows lead with: the series' own picture at the row's
 /// measure, read through [hongguoCoverImage] like every other face of it — the
 /// station's covers are HEIC behind a path-bound URL, and a row that asked for
-/// the bare link would show a blank.
+/// the bare link would show a blank. [poster] replaces that picture for a caller
+/// that brings its own, the card preview's sample.
 final class _RowPoster extends StatelessWidget {
-  const _RowPoster({required this.series});
+  const _RowPoster({required this.series, this.poster});
 
   final HongguoSeries series;
+
+  /// The picture over [HongguoSeries.cover], when a caller brings one.
+  final ImageProvider<Object>? poster;
 
   @override
   Widget build(BuildContext context) {
@@ -625,10 +660,10 @@ final class _RowPoster extends StatelessWidget {
         aspectRatio: 3 / 4,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(theme.radii.control(width)),
-          child: series.cover.isEmpty
+          child: poster == null && series.cover.isEmpty
               ? fallback
               : DsImage(
-                  image: hongguoCoverImage(series.cover),
+                  image: poster ?? hongguoCoverImage(series.cover),
                   aspectRatio: 3 / 4,
                   semanticLabel: series.title,
                   fallback: fallback,
@@ -667,6 +702,7 @@ final class HongguoSeriesRow extends ConsumerWidget {
     this.withEpisodeCount = true,
     this.watched,
     this.note,
+    this.poster,
     super.key,
   });
 
@@ -690,6 +726,9 @@ final class HongguoSeriesRow extends ConsumerWidget {
   /// button that reserves it.
   final Widget? trailing;
 
+  /// The picture over [HongguoSeries.cover], when a caller brings one.
+  final ImageProvider<Object>? poster;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
@@ -708,7 +747,7 @@ final class HongguoSeriesRow extends ConsumerWidget {
           child: Row(
             spacing: DsSpace.s12,
             children: [
-              _RowPoster(series: series),
+              _RowPoster(series: series, poster: poster),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1087,7 +1126,7 @@ final class HongguoShelf extends ConsumerWidget {
             // The shelf's posters take the poster walls' measure, so the same
             // card never draws two shapes; the height is stated because the
             // cover takes whatever the fixed name block leaves it.
-            final cardHeight = cardWidth / kHongguoSeriesTileAspect;
+            final cardHeight = hongguoSeriesTileHeight(cardWidth);
             if (error != null && items.isEmpty) {
               return Row(
                 spacing: DsSpace.s12,

@@ -10768,6 +10768,39 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '信息行'
 	String get hongguoCardMeta => '信息行';
 
+	/// zh-CN: '剧集卡片'
+	String get hongguoCardSettingsTitle => '剧集卡片';
+
+	/// zh-CN: '卡片预览'
+	String get hongguoCardPreview => '卡片预览';
+
+	/// zh-CN: '改动会立即反映在这张卡片上。'
+	String get hongguoCardPreviewHint => '改动会立即反映在这张卡片上。';
+
+	/// zh-CN: '恢复默认显示'
+	String get hongguoCardResetCurrent => '恢复默认显示';
+
+	/// zh-CN: '恢复默认显示？'
+	String get hongguoCardResetConfirmTitle => '恢复默认显示？';
+
+	/// zh-CN: '所有显示项回到默认，当前选择会丢失。'
+	String get hongguoCardResetConfirmBody => '所有显示项回到默认，当前选择会丢失。';
+
+	/// zh-CN: '重逢在长街尽头'
+	String get hongguoCardPreviewTitle => '重逢在长街尽头';
+
+	/// zh-CN: '玄幻 / 逆袭'
+	String get hongguoCardPreviewCategory => '玄幻 / 逆袭';
+
+	/// zh-CN: '1.2万人在看'
+	String get hongguoCardPreviewHot => '1.2万人在看';
+
+	/// zh-CN: '离家十年的女儿回到小镇，在长街尽头遇见了旧日的邻居。'
+	String get hongguoCardPreviewIntro => '离家十年的女儿回到小镇，在长街尽头遇见了旧日的邻居。';
+
+	/// zh-CN: '独播'
+	String get hongguoCardPreviewTag => '独播';
+
 	/// zh-CN: '最高'
 	String get hongguoQualityBest => '最高';
 
@@ -16789,6 +16822,17 @@ extension on Translations {
 			'settings.hongguoCardHot' => '封面热度',
 			'settings.hongguoCardCategory' => '封面分类',
 			'settings.hongguoCardMeta' => '信息行',
+			'settings.hongguoCardSettingsTitle' => '剧集卡片',
+			'settings.hongguoCardPreview' => '卡片预览',
+			'settings.hongguoCardPreviewHint' => '改动会立即反映在这张卡片上。',
+			'settings.hongguoCardResetCurrent' => '恢复默认显示',
+			'settings.hongguoCardResetConfirmTitle' => '恢复默认显示？',
+			'settings.hongguoCardResetConfirmBody' => '所有显示项回到默认，当前选择会丢失。',
+			'settings.hongguoCardPreviewTitle' => '重逢在长街尽头',
+			'settings.hongguoCardPreviewCategory' => '玄幻 / 逆袭',
+			'settings.hongguoCardPreviewHot' => '1.2万人在看',
+			'settings.hongguoCardPreviewIntro' => '离家十年的女儿回到小镇，在长街尽头遇见了旧日的邻居。',
+			'settings.hongguoCardPreviewTag' => '独播',
 			'settings.hongguoQualityBest' => '最高',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
@@ -17222,6 +17266,8 @@ extension on Translations {
 			'vod.playbackReset' => '恢复默认播放行为',
 			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'vod.personalTitle' => '我的视频',
+			_ => null,
+		} ?? switch (path) {
 			'vod.personalToView' => '稍后再看',
 			'vod.personalHistory' => '历史',
 			'vod.personalFavourites' => '收藏',
@@ -17233,8 +17279,6 @@ extension on Translations {
 			'vod.signInNeededDescription' => '这个列表在你登录的 Bilibili 账号上。',
 			'vod.toViewEmptyTitle' => '稍后再看是空的',
 			'vod.toViewEmptyDescription' => '在 Bilibili 上标记「稍后再看」的视频会出现在这里。',
-			_ => null,
-		} ?? switch (path) {
 			'vod.followingEmptyTitle' => '还没有追番',
 			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			'vod.comments' => '评论',

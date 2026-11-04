@@ -3732,6 +3732,17 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoCardHot => 'Cover heat';
 	@override String get hongguoCardCategory => 'Cover category';
 	@override String get hongguoCardMeta => 'Listing line';
+	@override String get hongguoCardSettingsTitle => 'Series cards';
+	@override String get hongguoCardPreview => 'Card preview';
+	@override String get hongguoCardPreviewHint => 'Changes show up in this card at once.';
+	@override String get hongguoCardResetCurrent => 'Restore the default details';
+	@override String get hongguoCardResetConfirmTitle => 'Restore the default details?';
+	@override String get hongguoCardResetConfirmBody => 'Every detail goes back to its default; the current choices are lost.';
+	@override String get hongguoCardPreviewTitle => 'Reunion at the End of the Street';
+	@override String get hongguoCardPreviewCategory => 'Fantasy / Comeback';
+	@override String get hongguoCardPreviewHot => '12.0k watching';
+	@override String get hongguoCardPreviewIntro => 'A daughter returns to her town ten years after leaving it and meets an old neighbour at the end of the street.';
+	@override String get hongguoCardPreviewTag => 'Exclusive';
 	@override String get hongguoQualityBest => 'Best';
 	@override String get hongguoQuality1080 => '1080P';
 	@override String get hongguoQuality720 => '720P';
@@ -8232,6 +8243,17 @@ extension on TranslationsEn {
 			'settings.hongguoCardHot' => 'Cover heat',
 			'settings.hongguoCardCategory' => 'Cover category',
 			'settings.hongguoCardMeta' => 'Listing line',
+			'settings.hongguoCardSettingsTitle' => 'Series cards',
+			'settings.hongguoCardPreview' => 'Card preview',
+			'settings.hongguoCardPreviewHint' => 'Changes show up in this card at once.',
+			'settings.hongguoCardResetCurrent' => 'Restore the default details',
+			'settings.hongguoCardResetConfirmTitle' => 'Restore the default details?',
+			'settings.hongguoCardResetConfirmBody' => 'Every detail goes back to its default; the current choices are lost.',
+			'settings.hongguoCardPreviewTitle' => 'Reunion at the End of the Street',
+			'settings.hongguoCardPreviewCategory' => 'Fantasy / Comeback',
+			'settings.hongguoCardPreviewHot' => '12.0k watching',
+			'settings.hongguoCardPreviewIntro' => 'A daughter returns to her town ten years after leaving it and meets an old neighbour at the end of the street.',
+			'settings.hongguoCardPreviewTag' => 'Exclusive',
 			'settings.hongguoQualityBest' => 'Best',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
@@ -8665,6 +8687,8 @@ extension on TranslationsEn {
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'vod.personalTitle' => 'My videos',
+			_ => null,
+		} ?? switch (path) {
 			'vod.personalToView' => 'Watch later',
 			'vod.personalHistory' => 'History',
 			'vod.personalFavourites' => 'Favourites',
@@ -8676,8 +8700,6 @@ extension on TranslationsEn {
 			'vod.signInNeededDescription' => 'This list lives on your Bilibili account.',
 			'vod.toViewEmptyTitle' => 'Watch later is empty',
 			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
-			_ => null,
-		} ?? switch (path) {
 			'vod.followingEmptyTitle' => 'Nothing followed yet',
 			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			'vod.comments' => 'Comments',
