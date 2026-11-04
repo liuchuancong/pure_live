@@ -24,7 +24,7 @@
 | `LiveDanmakuProvider` | `LiveDanmaku` 注册表 | 28/28（无弹幕的 6 站与参考一致） |
 | `LiveLinkResolver` | `LiveSiteLinks` | 34/34 |
 | `LiveAuthCapability` | 平台账号 9 家（cookie / 扫码） | 9/9（bilibili、cc、douyin、douyu、huya、kuaishou、soop、twitch、yy） |
-| `LiveCookieRefusalFeed` | `LiveSiteCookieRefusals`（仅 Twitch 实现：过期 cookie 被拒后匿名继续） | 1/34：twitch（`cookieRefusals` 广播流；播放令牌先带会话、被拒后匿名重取，同一 cookie 只报一次）；App 尚未消费 |
+| `LiveCookieRefusalFeed` | `LiveSiteCookieRefusals`（仅 Twitch 实现：过期 cookie 被拒后匿名继续） | 1/34：twitch（`cookieRefusals` 广播流；播放令牌先带会话、被拒后匿名重取，同一 cookie 只报一次）；App 已消费（2026-11-05：直播间在 `open()` 订 `cookieRefusals`、随房取消，收到时上常驻提示条并给该站的 Cookie 入口；此前 app 只逐字比对聊天通知的文本，播放令牌被拒时什么都不说） |
 | `LiveSuperChatFeed` | `getSuperChatMessage` 有真实看板的仅 bilibili、huya | 2/2：huya、bilibili（2026-10-27 接线） |
 | `LiveStatusCheck` | 34 站均实现 `getLiveStatus` | **34/34**（2026-10-27 第二批完成） |
 | `LiveRoomRefresh` | 34 站均实现 `LiveSiteRoomRefresher` | **34/34**（历史刷新全平台可用） |
