@@ -507,6 +507,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         onOpen: playableFileAt(task.filePath) == null
             ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
             : () => unawaited(_openPreview(task)),
+        // The menu's room entry always opens the room, never the take.
+        onOpenRoom: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
         onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
         onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
         onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
@@ -1029,6 +1031,7 @@ final class _TaskCard extends ConsumerWidget {
     required this.room,
     required this.platformName,
     required this.onOpen,
+    required this.onOpenRoom,
     required this.onDelete,
     required this.onSchedule,
     required this.onToggleWatch,
@@ -1048,8 +1051,12 @@ final class _TaskCard extends ConsumerWidget {
   /// The task's platform's display name (the page resolves it).
   final String platformName;
 
-  /// Opens the room.
+  /// The card's own press: plays the take, or opens the room when there is
+  /// nothing playable to open.
   final VoidCallback onOpen;
+
+  /// Opens the room the task records, whatever the take's state.
+  final VoidCallback onOpenRoom;
 
   /// Drops the task (the menu has confirmed it).
   final VoidCallback onDelete;
@@ -1230,7 +1237,7 @@ final class _TaskCard extends ConsumerWidget {
           Widget menu() => _TaskMenu(
             task: task,
             hasFile: saved.isNotEmpty,
-            onOpen: onOpen,
+            onOpenRoom: onOpenRoom,
             onStop: onStop,
             onDelete: onDelete,
             onSchedule: onSchedule,
@@ -1449,7 +1456,7 @@ final class _TaskMenu extends StatelessWidget {
   const _TaskMenu({
     required this.task,
     required this.hasFile,
-    required this.onOpen,
+    required this.onOpenRoom,
     required this.onDelete,
     required this.onSchedule,
     this.onStop,
@@ -1462,7 +1469,9 @@ final class _TaskMenu extends StatelessWidget {
   /// Whether the task has a saved file (so a folder to open).
   final bool hasFile;
 
-  final VoidCallback onOpen;
+  /// Opens the room the task records.
+  final VoidCallback onOpenRoom;
+
   final VoidCallback onDelete;
   final VoidCallback onSchedule;
 
@@ -1491,7 +1500,11 @@ final class _TaskMenu extends StatelessWidget {
         child: Text(t.common.more),
       ),
       items: [
-        DsMenuItem(leading: const DsIcon(DsIcons.externalLink), label: Text(t.recorder.openRoom), onPressed: onOpen),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.externalLink),
+          label: Text(t.recorder.openRoom),
+          onPressed: onOpenRoom,
+        ),
         if (hasFile)
           DsMenuItem(
             leading: const DsIcon(DsIcons.folderOpen),
