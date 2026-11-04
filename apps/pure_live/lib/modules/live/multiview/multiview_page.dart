@@ -282,37 +282,55 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         }
       }
 
-      publishPageHeadActions(context, ref, [
-        DsMenuAnchor(
+      publishPageHeadActions(context, ref, NavigationItem.multiview, [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
           semanticLabel: t.common.more,
-          align: DsAlign.end,
-          items: [
-            for (final arrangement in MultiviewLayout.values)
-              DsMenuItem(
-                label: Text(_arrangementLabel(arrangement)),
-                checked: wall.layout == arrangement,
-                onPressed: () => chooseLayout(arrangement),
-              ),
-            const DsMenuDivider(),
-            DsMenuItem(
-              leading: DsIcon(wallMuted ? DsIcons.volumeOff : DsIcons.volume),
-              label: Text(wallMuted ? t.multiview.unmuteAll : t.multiview.muteAll),
-              onPressed: toggleMute,
+          leading: const DsIcon(DsIcons.chevronDown, size: 14),
+          child: Text(t.common.more),
+          onPressed: () => unawaited(
+            showActionsPanel(
+              context,
+              title: t.common.more,
+              children: [
+                DsListSection(
+                  header: Text(t.multiview.layoutLabel),
+                  children: [
+                    for (final arrangement in MultiviewLayout.values)
+                      DsListRow(
+                        title: Text(_arrangementLabel(arrangement)),
+                        trailing: wall.layout == arrangement ? const DsIcon(DsIcons.check, size: 16) : null,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          chooseLayout(arrangement);
+                        },
+                      ),
+                  ],
+                ),
+                DsListSection(
+                  children: [
+                    DsListRow(
+                      leading: DsIcon(wallMuted ? DsIcons.volumeOff : DsIcons.volume),
+                      title: Text(wallMuted ? t.multiview.unmuteAll : t.multiview.muteAll),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        toggleMute();
+                      },
+                    ),
+                    if (activePanes.isNotEmpty)
+                      DsListRow(
+                        leading: DsIcon(anyPlaying ? DsIcons.pause : DsIcons.play),
+                        title: Text(anyPlaying ? t.multiview.pauseAll : t.multiview.resumeAll),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          unawaited(controls.togglePauseAll());
+                        },
+                      ),
+                  ],
+                ),
+              ],
             ),
-            if (activePanes.isNotEmpty)
-              DsMenuItem(
-                leading: DsIcon(anyPlaying ? DsIcons.pause : DsIcons.play),
-                label: Text(anyPlaying ? t.multiview.pauseAll : t.multiview.resumeAll),
-                onPressed: () => unawaited(controls.togglePauseAll()),
-              ),
-          ],
-          builder: (context, controller, _) => DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.common.more,
-            leading: const DsIcon(DsIcons.chevronDown, size: 14),
-            onPressed: controller.open,
-            child: Text(t.common.more),
           ),
         ),
       ]);

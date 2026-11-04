@@ -187,7 +187,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               if (!narrow) return tabs;
               // A stacked toolbar hands the platform menu to the shell's head
               // line; this row keeps the scope tabs alone.
-              publishPageHeadActions(context, ref, [
+              publishPageHeadActions(context, ref, NavigationItem.search, [
                 PlatformToolbarMore(
                   platforms: platforms,
                   current: scope,

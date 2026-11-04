@@ -29,28 +29,13 @@ final pageHeadActionsProvider = NotifierProvider<PageHeadActionsController, Page
 /// Publishes the page's narrow-mode verbs after the frame: a provider write
 /// during build is rejected, and the page republishes on every rebuild, so a
 /// one-frame delay is invisible.
-void publishPageHeadActions(BuildContext context, WidgetRef ref, List<Widget> actions) {
-  final owner = PageOwnerScope.ownerOf(context);
-  if (owner == null) return;
+///
+/// [owner] is the page's own destination — not the shell's current selection:
+/// the router keeps every branch mounted, and an off-screen page that
+/// republishes its verbs must still name itself, so the shell can hide them.
+void publishPageHeadActions(BuildContext context, WidgetRef ref, NavigationItem owner, List<Widget> actions) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (!context.mounted) return;
     ref.read(pageHeadActionsProvider.notifier).publish(owner, actions);
   });
-}
-
-/// Names the destination the page below belongs to, so a page's published
-/// verbs are only shown while that page is the one on screen.
-final class PageOwnerScope extends InheritedWidget {
-  /// Publishes [owner] to the page below.
-  const PageOwnerScope({required this.owner, required super.child, super.key});
-
-  /// The destination on screen.
-  final NavigationItem owner;
-
-  /// The destination [context]'s page belongs to, or null outside the shell.
-  static NavigationItem? ownerOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<PageOwnerScope>()?.owner;
-
-  @override
-  bool updateShouldNotify(PageOwnerScope oldWidget) => oldWidget.owner != owner;
 }

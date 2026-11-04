@@ -2,6 +2,7 @@
 /// download queue's parts and the scroll pair every page carries.
 library;
 
+export 'action_panel.dart';
 export 'choice_dialog.dart';
 export 'chrome_icon_button.dart';
 export 'cover_fallback.dart';

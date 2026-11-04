@@ -661,53 +661,86 @@ final class _Header extends ConsumerWidget {
           onPressed: total == 0 && !filtering ? null : onOpenFilter,
           child: Text(t.history.filter),
         );
-        // The small screen's menu: everything the wide row shows beside the
-        // count, the card/row switch included.
-        final more = DsMenuAnchor(
+        // The small screen's verbs: everything the wide row shows beside the
+        // count, behind one panel (a 弹窗, not a drop-down).
+        final more = DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
           semanticLabel: t.common.more,
-          align: DsAlign.end,
-          items: [
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.refreshCw, size: 16),
-              label: Text(t.history.refresh),
-              onPressed: busy || total == 0 ? null : onRefresh,
+          leading: const DsIcon(DsIcons.chevronDown, size: 14),
+          child: Text(t.common.more),
+          onPressed: () => unawaited(
+            showActionsPanel(
+              context,
+              title: t.common.more,
+              children: [
+                DsListSection(
+                  children: [
+                    DsListRow(
+                      leading: const DsIcon(DsIcons.refreshCw, size: 16),
+                      title: Text(t.history.refresh),
+                      onPressed: busy || total == 0
+                          ? null
+                          : () {
+                              Navigator.of(context).pop();
+                              onRefresh();
+                            },
+                    ),
+                    DsListRow(
+                      leading: const DsIcon(DsIcons.settings, size: 16),
+                      title: Text(t.navigation.settings),
+                      onPressed: busy
+                          ? null
+                          : () {
+                              Navigator.of(context).pop();
+                              onEditLimit();
+                            },
+                    ),
+                  ],
+                ),
+                DsListSection(
+                  header: Text(t.common.layout),
+                  children: [
+                    DsListRow(
+                      title: Text(t.common.layoutGrid),
+                      trailing: layout == CardLayout.grid ? const DsIcon(DsIcons.check, size: 16) : null,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        chooseLayout(CardLayout.grid);
+                      },
+                    ),
+                    DsListRow(
+                      title: Text(t.common.layoutList),
+                      trailing: layout == CardLayout.list ? const DsIcon(DsIcons.check, size: 16) : null,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        chooseLayout(CardLayout.list);
+                      },
+                    ),
+                  ],
+                ),
+                DsListSection(
+                  children: [
+                    DsListRow(
+                      leading: const DsIcon(DsIcons.trash2, size: 16),
+                      title: Text(t.history.clear),
+                      destructive: true,
+                      onPressed: busy || !canClear
+                          ? null
+                          : () {
+                              Navigator.of(context).pop();
+                              onClear();
+                            },
+                    ),
+                  ],
+                ),
+              ],
             ),
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.settings, size: 16),
-              label: Text(t.navigation.settings),
-              onPressed: onEditLimit,
-            ),
-            const DsMenuDivider(),
-            DsMenuItem(
-              label: Text(t.common.layoutGrid),
-              checked: layout == CardLayout.grid,
-              onPressed: () => chooseLayout(CardLayout.grid),
-            ),
-            DsMenuItem(
-              label: Text(t.common.layoutList),
-              checked: layout == CardLayout.list,
-              onPressed: () => chooseLayout(CardLayout.list),
-            ),
-            const DsMenuDivider(),
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.trash2, size: 16),
-              label: Text(t.history.clear),
-              destructive: true,
-              onPressed: busy || !canClear ? null : onClear,
-            ),
-          ],
-          builder: (context, controller, _) => DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.common.more,
-            leading: const DsIcon(DsIcons.chevronDown, size: 14),
-            onPressed: controller.open,
-            child: Text(t.common.more),
           ),
         );
         // A stacked toolbar hands the filter and the rest to the shell's head
         // line; this row keeps the count alone.
-        if (narrow) publishPageHeadActions(context, ref, [filter, more]);
+        if (narrow) publishPageHeadActions(context, ref, NavigationItem.history, [filter, more]);
         return Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
           child: SizedBox(

@@ -509,17 +509,14 @@ final class _AppShellState extends ConsumerState<AppShell> {
         drawer: _drawer(context, t, tabs, rail, wallpaper),
         body: PageLayoutScope(
           narrow: pageNarrow,
-          child: PageOwnerScope(
-            owner: widget.selected,
-            child: glass && atTab
+          child: glass && atTab
               ? MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
                   ),
                   child: widget.content,
                 )
-                : widget.content,
-          ),
+              : widget.content,
         ),
       );
       return CallbackShortcuts(
@@ -658,10 +655,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
                             ),
                           ),
                           Expanded(
-                            child: PageLayoutScope(
-                              narrow: pageNarrow,
-                              child: PageOwnerScope(owner: widget.selected, child: widget.content),
-                            ),
+                            child: PageLayoutScope(narrow: pageNarrow, child: widget.content),
                           ),
                         ],
                       ),

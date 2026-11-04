@@ -19,7 +19,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, avatarInitials, cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, avatarInitials, cachedImage, showActionsPanel;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -493,35 +493,58 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
     final t = context.t;
     final library = ref.watch(recordingLibraryProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
-    return DsMenuAnchor(
+    final filter = ref.watch(recorderLibraryFilterProvider);
+    final controller = ref.read(recorderLibraryFilterProvider.notifier);
+    return DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
       semanticLabel: t.common.more,
-      align: DsAlign.end,
-      items: [
-        ..._sortItems(context, ref),
-        const DsMenuDivider(),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.folderOpen),
-          label: Text(t.recorder.openFolder),
-          onPressed: () => unawaited(openDownloadedPath(context, root)),
+      leading: const DsIcon(DsIcons.chevronDown, size: 14),
+      child: Text(t.common.more),
+      onPressed: () => unawaited(
+        showActionsPanel(
+          context,
+          title: t.common.more,
+          children: [
+            DsListSection(
+              header: Text(t.recorder.sortLabel),
+              children: [
+                for (final order in RecorderLibrarySort.values)
+                  DsListRow(
+                    title: Text(recorderLibrarySortLabel(t, order)),
+                    trailing: filter.sort == order ? const DsIcon(DsIcons.check, size: 16) : null,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      controller.setSort(order);
+                    },
+                  ),
+              ],
+            ),
+            DsListSection(
+              children: [
+                DsListRow(
+                  leading: const DsIcon(DsIcons.folderOpen, size: 16),
+                  title: Text(t.recorder.openFolder),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    unawaited(openDownloadedPath(context, root));
+                  },
+                ),
+                DsListRow(
+                  leading: const DsIcon(DsIcons.refresh, size: 16),
+                  title: Text(t.recorder.refresh),
+                  onPressed: library.isLoading
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                          ref.read(recordingCoversProvider.notifier).resetAttempts();
+                          unawaited(ref.read(recordingLibraryProvider.notifier).refresh());
+                        },
+                ),
+              ],
+            ),
+          ],
         ),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.refresh),
-          label: Text(t.recorder.refresh),
-          onPressed: library.isLoading
-              ? null
-              : () {
-                  ref.read(recordingCoversProvider.notifier).resetAttempts();
-                  unawaited(ref.read(recordingLibraryProvider.notifier).refresh());
-                },
-        ),
-      ],
-      builder: (context, controller, _) => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        semanticLabel: t.common.more,
-        leading: const DsIcon(DsIcons.chevronDown, size: 14),
-        onPressed: controller.open,
-        child: Text(t.common.more),
       ),
     );
   }

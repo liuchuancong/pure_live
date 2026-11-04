@@ -349,7 +349,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             // A stacked toolbar hands the settings and the files verbs to the
             // shell's head line; this row keeps the page switch alone.
             if (narrow) {
-              publishPageHeadActions(context, ref, [
+              publishPageHeadActions(context, ref, NavigationItem.record, [
                 DsButton.icon(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,

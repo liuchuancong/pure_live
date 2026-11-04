@@ -51,62 +51,86 @@ final class AreasTopBarActions extends ConsumerWidget {
               : () => unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider))),
           icon: const DsIcon(DsIcons.refreshCw, size: 16),
         ),
-        DsMenuAnchor(
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
           semanticLabel: t.common.more,
-          align: DsAlign.end,
-          items: [
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.search),
-              label: Text(t.areas.searchHint),
-              onPressed: () =>
-                  unawaited(showAreasSearchPanel(context, initial: ref.read(areasInlineSearchProvider) ?? '')),
-            ),
-            const DsMenuDivider(),
-            DsMenuItem(
-              label: Text(t.areas.viewPlatform),
-              checked: view == AreasView.platform,
-              onPressed: () => viewController.selected = AreasView.platform,
-            ),
-            DsMenuItem(
-              label: Text(t.areas.viewFollowed),
-              checked: view == AreasView.followed,
-              onPressed: () => viewController.selected = AreasView.followed,
-            ),
-            const DsMenuDivider(),
-            // One entry, one popup, as the shared platform menu does.
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.layoutGrid),
-              label: Text(t.common.layout),
-              onPressed: () => unawaited(
-                showChoiceDialog<AreaCardLayout>(
-                  context: context,
-                  title: t.common.layout,
-                  value: tileLayout,
-                  options: [
-                    DsSelectOption(value: AreaCardLayout.tile, label: t.areas.iconTop),
-                    DsSelectOption(value: AreaCardLayout.row, label: t.areas.iconLeft),
+          leading: const DsIcon(DsIcons.chevronDown, size: 14),
+          child: Text(t.common.more),
+          onPressed: () => unawaited(
+            showActionsPanel(
+              context,
+              title: t.common.more,
+              children: [
+                DsListSection(
+                  children: [
+                    DsListRow(
+                      leading: const DsIcon(DsIcons.search, size: 16),
+                      title: Text(t.areas.searchHint),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        unawaited(
+                          showAreasSearchPanel(context, initial: ref.read(areasInlineSearchProvider) ?? ''),
+                        );
+                      },
+                    ),
                   ],
-                ).then((picked) {
-                  if (picked != null) unawaited(layoutController.set(picked));
-                }),
-              ),
+                ),
+                DsListSection(
+                  children: [
+                    DsListRow(
+                      title: Text(t.areas.viewPlatform),
+                      trailing: view == AreasView.platform ? const DsIcon(DsIcons.check, size: 16) : null,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        viewController.selected = AreasView.platform;
+                      },
+                    ),
+                    DsListRow(
+                      title: Text(t.areas.viewFollowed),
+                      trailing: view == AreasView.followed ? const DsIcon(DsIcons.check, size: 16) : null,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        viewController.selected = AreasView.followed;
+                      },
+                    ),
+                  ],
+                ),
+                DsListSection(
+                  children: [
+                    DsListRow(
+                      leading: const DsIcon(DsIcons.layoutGrid, size: 16),
+                      title: Text(t.common.layout),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        unawaited(
+                          showChoiceDialog<AreaCardLayout>(
+                            context: context,
+                            title: t.common.layout,
+                            value: tileLayout,
+                            options: [
+                              DsSelectOption(value: AreaCardLayout.tile, label: t.areas.iconTop),
+                              DsSelectOption(value: AreaCardLayout.row, label: t.areas.iconLeft),
+                            ],
+                          ).then((picked) {
+                            if (picked != null) unawaited(layoutController.set(picked));
+                          }),
+                        );
+                      },
+                    ),
+                    if (ids.isNotEmpty)
+                      DsListRow(
+                        leading: const DsIcon(DsIcons.antenna, size: 16),
+                        title: Text(t.common.switchPlatform),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          unawaited(showAreasPlatformWall(context, ref));
+                        },
+                      ),
+                  ],
+                ),
+              ],
             ),
-            if (ids.isNotEmpty) ...[
-              const DsMenuDivider(),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.antenna),
-                label: Text(t.common.switchPlatform),
-                onPressed: () => unawaited(showAreasPlatformWall(context, ref)),
-              ),
-            ],
-          ],
-          builder: (context, controller, _) => DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.common.more,
-            leading: const DsIcon(DsIcons.chevronDown, size: 14),
-            onPressed: controller.open,
-            child: Text(t.common.more),
           ),
         ),
       ],

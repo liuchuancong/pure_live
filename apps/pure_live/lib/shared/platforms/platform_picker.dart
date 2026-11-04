@@ -8,6 +8,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
+import 'package:pure_live/shared/widgets/action_panel.dart' show showActionsPanel;
 import 'package:pure_live/shared/widgets/choice_dialog.dart' show showChoiceDialog;
 
 /// The special scope meaning "every platform" — the platform tabs' first
@@ -176,11 +177,10 @@ final class PlatformTabRow extends ConsumerWidget {
 }
 
 /// The one control a narrow toolbar keeps after its platform tabs: the
-/// page's own secondary actions ([items]) first, then the layout choice and
-/// the way to the platform wall — what the wide row draws as its chevron and
-/// its layout switch.
+/// layout choice and the way to the platform wall — what the wide row draws
+/// as its chevron and its layout switch — in one panel.
 final class PlatformToolbarMore extends ConsumerWidget {
-  /// The menu; [items] lead it, the layout and the wall follow.
+  /// The 更多 button: the layout pick and the wall live in its panel.
   const PlatformToolbarMore({
     required this.platforms,
     required this.current,
@@ -188,7 +188,6 @@ final class PlatformToolbarMore extends ConsumerWidget {
     required this.onChanged,
     this.onManagePlatforms,
     this.countOf,
-    this.items = const [],
     super.key,
   });
 
@@ -210,66 +209,69 @@ final class PlatformToolbarMore extends ConsumerWidget {
   /// A platform's own count, shown under its name in the wall.
   final int? Function(String id)? countOf;
 
-  /// The page's own menu items, above the shared choices.
-  final List<Widget> items;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final layout = ref.watch(browseLayoutProvider);
     final sites = ref.watch(sitesProvider);
-    return DsMenuAnchor(
+    // A 弹窗, not a drop-down: the layout pick and the wall live in a panel.
+    return DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
       semanticLabel: t.common.more,
-      align: DsAlign.end,
-      items: [
-        ...items,
-        if (items.isNotEmpty) const DsMenuDivider(),
-        // One entry, one popup: the layout pick is a choice, not two rows to
-        // scan and a check to compare.
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.layoutGrid),
-          label: Text(t.common.layout),
-          onPressed: () => unawaited(
-            showChoiceDialog<CardLayout>(
-              context: context,
-              title: t.common.layout,
-              value: layout,
-              options: [
-                DsSelectOption(value: CardLayout.grid, label: t.common.layoutGrid),
-                DsSelectOption(value: CardLayout.list, label: t.common.layoutList),
+      leading: const DsIcon(DsIcons.chevronDown, size: 14),
+      child: Text(t.common.more),
+      onPressed: () => unawaited(
+        showActionsPanel(
+          context,
+          title: t.common.more,
+          children: [
+            DsListSection(
+              children: [
+                DsListRow(
+                  leading: const DsIcon(DsIcons.layoutGrid, size: 16),
+                  title: Text(t.common.layout),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    unawaited(
+                      showChoiceDialog<CardLayout>(
+                        context: context,
+                        title: t.common.layout,
+                        value: layout,
+                        options: [
+                          DsSelectOption(value: CardLayout.grid, label: t.common.layoutGrid),
+                          DsSelectOption(value: CardLayout.list, label: t.common.layoutList),
+                        ],
+                      ).then((picked) {
+                        if (picked != null) unawaited(ref.read(browseLayoutProvider.notifier).set(picked));
+                      }),
+                    );
+                  },
+                ),
+                if (platforms.isNotEmpty)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.antenna, size: 16),
+                    title: Text(t.common.switchPlatform),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      unawaited(
+                        showPlatformPickerPanel(
+                          context,
+                          platforms: platforms,
+                          current: current,
+                          nameOf: nameOf,
+                          iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
+                          onChanged: onChanged,
+                          onManagePlatforms: onManagePlatforms,
+                          countOf: countOf,
+                        ),
+                      );
+                    },
+                  ),
               ],
-            ).then((picked) {
-              if (picked != null) unawaited(ref.read(browseLayoutProvider.notifier).set(picked));
-            }),
-          ),
-        ),
-        if (platforms.isNotEmpty) ...[
-          const DsMenuDivider(),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.antenna),
-            label: Text(t.common.switchPlatform),
-            onPressed: () => unawaited(
-              showPlatformPickerPanel(
-                context,
-                platforms: platforms,
-                current: current,
-                nameOf: nameOf,
-                iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
-                onChanged: onChanged,
-                onManagePlatforms: onManagePlatforms,
-                countOf: countOf,
-              ),
             ),
-          ),
-        ],
-      ],
-      builder: (context, controller, _) => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        semanticLabel: t.common.more,
-        leading: const DsIcon(DsIcons.chevronDown, size: 14),
-        onPressed: controller.open,
-        child: Text(t.common.more),
+          ],
+        ),
       ),
     );
   }
