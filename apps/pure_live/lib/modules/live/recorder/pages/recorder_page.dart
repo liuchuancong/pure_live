@@ -1281,7 +1281,6 @@ final class _TaskCard extends ConsumerWidget {
             spacing: DsSpace.s12,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: DsSpace.s16,
                 children: [
                   ClipRRect(
