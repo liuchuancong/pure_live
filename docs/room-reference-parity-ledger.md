@@ -148,3 +148,11 @@
 - 2026-11-05 P32：T17 勾提（房间菜单开自己的窗口）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点 room_page.dart（0 changed）。这一轮把自己上一条误判写进台账了：T17 曾被记成"要先给窗口层加按路由开一扇的能力"，实际 `openRoom` 早就这么开，缺的只是房间菜单那一行——以后判"能力不存在"必须先读完那条现成路径再落字。第三次审计的队列（T13–T22）至此全部勾完。
 
 - 2026-11-05 P33 + 第四次对照：把参考 `live_core`/`live_danmaku` 逐文件过了一遍（过滤器九件、exact_websocket、表情库形态、HLS 两件、错误分类），结论都写进上表——我们要么齐要么更强（表情是单张精灵图集，不是每平台 JSON+散图）。唯一真缺口是房间自己拿不到直链，已补（T23/P33）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例中 47 绿（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点 room_page.dart（0 changed）。运行期未验证：直链弹窗要真站点才看得见线列表；新窗口那行要桌面多窗口真机验。**本轮又自己犯了同一种编辑事故两次**：拿"别行的开头"当 old_string 去插行（把 T20 前半截吃掉）、以及替换时漏掉一条守卫行与造出一行重复 T5——都已当场修回。规矩：**插行用整行唯一尾串；改完立刻 grep 计数复核，别只看工具说成功**。
+
+## 进房耗时（第五次，2026-11-05：先量，再谈快）
+
+- 2026-11-05 P34（`c3bc627b3`）：把参考 `live_player/lib/src/timing.dart` 的 `StartupMarks`/`PlaybackTiming` 抄成我们自己的 `RoomOpenTiming`（`modules/live/room/controller/room_open_timing.dart`）。一条 `room-open site=… room=… result=… detail=… qualities=… lines=… request=… firstFrame=… playing=… chat=… total=…`（毫秒，缺的段落打 `-`），写在 `appLog.forCategory('room')`。**为什么先做这个**：这轮翻遍盘上日志，最新的 `pure_live.log` 是 10-28 的（`apps/pure_live/build/windows/x64/runner/Debug/pure_live_debug/data/logs/`），11-03 之后没有新日志 ⇒ 没有任何当期数字能证明"慢在哪一段"。"打开慢"是一个症状压着四个不同病灶（详情/画质/线路/引擎到首帧），每个的修法不同（超时、缓存、换线、探针预算），没有数字就又是猜。**规矩**：下次用户报"慢"，先 grep `room-open`，按段的毫秒数定病灶，别再回炉 P1/P2 已修过的两条真因（`project-pure-live-room-open-latency`）。
+- 门：app `dart analyze lib` 0 issues、`flutter test test/live` 53 例中 52 绿（新增 5 例 `room_open_timing_test.dart`；唯一红仍是录像 lane 的 `recording_schedule_test.dart`）、`dart format` 只点本轮三个文件。
+- **下一轮的两条候补（都要先有 `room-open` 数字才动）**：
+  - T24 抢占的在途请求不取消：参考把 `CancelToken` 塞进发现过程（`live_core/live_site.dart:575` `LiveQualityDiscoveryScope`），我们靠 epoch 把迟到答案丢掉但请求仍在跑——快速连续换房时，上一间的详情/画质/线路还在占连接与 DNS。若数字显示 `qualities`/`lines` 段在大、且用户是连换几间房，再考虑把取消信号接进 `getRoom/getQualities/getLines`（那是 34 站的接口面，别无证据动）。
+  - T25 三次串行请求：`getRoom → getQualities → getLines` 是三次网络往返才交源（参考同样两次 `getRoomDetail → discover → _openQuality`）。要合并必须先证明本站两个调用打的是同一端点且第二个不依赖第一个的字段（bilibili 的"双 playinfo 是 API 固有"已经判过一次，别再当成免费午餐）。
