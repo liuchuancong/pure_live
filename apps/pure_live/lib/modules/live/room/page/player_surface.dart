@@ -972,6 +972,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   child: PlayerGlassPill(
                     child: RecordingIndicator(
                       startedAt: liveCapture?.startedAt,
+                      figures: liveCapture == null || liveCapture.bytes <= 0
+                          ? null
+                          : formatRecordingBytes(liveCapture.bytes),
                       label: context.t.room.stopRecording,
                       tv: widget.tv,
                       onStop: () => unawaited(toggleRoomRecording(context, ref)),
@@ -1516,9 +1519,24 @@ final class _PresentationCluster extends ConsumerWidget {
     final pipAvailable = room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
     final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, detail);
     final recording = task?.state == RecordingTaskState.recording;
+    // A take that is not writing is still a fact about this room: a subscription
+    // armed and waiting for its streamer, a capture whose segments are still
+    // being joined, and a take that ended in failure. None of them had a word on
+    // the bar, which showed the plain record button instead — the strip that
+    // reads as "nothing is happening here" while a take is queued or unfinished.
+    final pending = recording ? null : task;
+    final joining = pending?.postProcessing ?? false;
+    final pendingWord = switch (pending) {
+      null => null,
+      _ when joining => t.recorder.stateProcessing,
+      final RecordingTask take when take.state == RecordingTaskState.waiting => t.recorder.stateWaiting,
+      final RecordingTask take when take.state == RecordingTaskState.failed => t.recorder.stateFailed,
+      _ => null,
+    };
     // What the strip has room for. A narrow tier with nothing running shows no
-    // cluster at all — an empty glass pill would be a hole in the strip.
-    final showRecord = recording || (!narrow && line != null);
+    // cluster at all — an empty glass pill would be a hole in the strip — and a
+    // word is wider than the icon it replaces, so it waits for room.
+    final showRecord = recording || (!narrow && (line != null || pendingWord != null));
     final showPip = !narrow && pipAvailable;
     // Casting needs a stream to cast at, and the narrow tier has no room for
     // the verb: the line is what the picker is aimed at.
@@ -1573,18 +1591,27 @@ final class _PresentationCluster extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: tv ? DsSpace.s8 : DsSpace.s4,
         children: [
-          if (recording)
+          if (recording || pendingWord != null)
             RecordingIndicator(
-              startedAt: task?.startedAt,
+              startedAt: recording ? task?.startedAt : null,
               showTimer: !narrow,
+              // The take's size beside its clock: a growing number is the only
+              // proof that a capture is still writing, and the engine's own
+              // progress write is what makes it move once a second.
+              figures: task == null || !recording || task.bytes <= 0 ? null : formatRecordingBytes(task.bytes),
+              word: pendingWord,
               // The TV tier grows every control on the bar; the indicator is
               // one of them, or it reads as a smudge from the sofa (§10.5).
               tv: tv,
-              label: t.room.stopRecording,
-              onStop: () {
-                onWake();
-                unawaited(toggleRoomRecording(context, ref));
-              },
+              label: recording ? t.room.stopRecording : t.room.record,
+              // A joining take has nothing to press: starting again now would
+              // answer a question the viewer did not ask.
+              onStop: joining
+                  ? null
+                  : () {
+                      onWake();
+                      unawaited(toggleRoomRecording(context, ref));
+                    },
             )
           else if (showRecord)
             PlayerBarButton(
@@ -1967,6 +1994,7 @@ final class _ControlBar extends ConsumerWidget {
                   const SizedBox(width: DsSpace.s4),
                   RecordingIndicator(
                     startedAt: recordingTask.startedAt,
+                    figures: recordingTask.bytes <= 0 ? null : formatRecordingBytes(recordingTask.bytes),
                     tv: tv,
                     label: t.room.stopRecording,
                     onStop: () {
