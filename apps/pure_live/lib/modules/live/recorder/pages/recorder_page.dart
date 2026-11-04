@@ -19,6 +19,7 @@ import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_library_filter.dart' show scopeLibraryTakes;
+import 'package:pure_live/modules/live/recorder/data/recorder_platform_filter.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_search_handoff.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart';
@@ -240,7 +241,16 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // A chip's count is a count of the rows that chip can show — the tasks the
     // page still owns. Counting every stored row instead would print a number
     // the list under it never reaches, because a saved take lives in the library.
-    final listed = liveTasks;
+    // One platform cuts both lists — the subscriptions here and the files
+    // pane below — through the centre's own filter.
+    final platformFilter = ref.watch(recorderPlatformFilterProvider);
+    final listed = platformFilter == kAllPlatforms
+        ? liveTasks
+        : [
+            for (final task in liveTasks)
+              if (task.platform == platformFilter) task,
+          ];
+    final taskPlatforms = recorderPlatformsOf(liveTasks.map((task) => task.platform), _platformName);
     final counts = <_RecorderFilter, int>{
       for (final filter in _RecorderFilter.values) filter: listed.where(filter.matches).length,
     };
@@ -278,9 +288,19 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // The files page's toolbar answers for this module's half of the shared
     // tree, so the takes it counts and filters are the same cut the pane under
     // it lists.
-    final libraryTakes = scopeLibraryTakes(
+    final scopedLibraryTakes = scopeLibraryTakes(
       ref.watch(recordingLibraryProvider).value ?? const <RecordingTake>[],
       excluded: const {kIptvRecordingPlatform},
+    );
+    final libraryTakes = platformFilter == kAllPlatforms
+        ? scopedLibraryTakes
+        : [
+            for (final take in scopedLibraryTakes)
+              if (take.platformId == platformFilter) take,
+          ];
+    final filePlatforms = recorderPlatformsOf(
+      scopedLibraryTakes.map((take) => take.platformId),
+      _platformName,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -345,7 +365,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             );
-            const toolbar = RecorderLibraryToolbar();
+            final toolbar = RecorderLibraryToolbar(platforms: filePlatforms, nameOf: _platformName);
             // A stacked toolbar hands the settings and the files verbs to the
             // shell's head line; this row keeps the page switch alone.
             if (narrow) {
@@ -357,7 +377,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   onPressed: _openSettings,
                   icon: const DsIcon(DsIcons.settings, size: 16),
                 ),
-                if (files) const RecorderLibraryToolbarMore(),
+                if (files) RecorderLibraryToolbarMore(platforms: filePlatforms, nameOf: _platformName),
               ]);
               return Row(spacing: DsSpace.s8, children: [switchRow]);
             }
@@ -370,6 +390,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               inset: inset,
               narrow: narrow,
               statusFilter: statusFilter,
+              platforms: taskPlatforms,
+              nameOf: _platformName,
               attention: attention,
               total: listed.length,
               onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
@@ -411,6 +433,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required double inset,
     required bool narrow,
     required Widget statusFilter,
+    required List<String> platforms,
+    required String Function(String id) nameOf,
     required List<RecordingTask> attention,
     required int total,
     required VoidCallback? onStopAll,
@@ -437,6 +461,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 spacing: DsSpace.s8,
                 children: [
                   Expanded(child: statusFilter),
+                  RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: narrow),
                   _BatchMenu(onStopAll: onStopAll),
                 ],
               ),

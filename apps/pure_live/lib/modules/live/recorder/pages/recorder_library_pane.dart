@@ -5,13 +5,14 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/app/app.dart' show appPathsProvider;
+import 'package:pure_live/app/app.dart' show appPathsProvider, sitesProvider;
 import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/media_preview/media_preview_page.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_library_filter.dart'
     show RecorderLibrarySort, recorderLibraryFilterProvider, scopeLibraryTakes;
+import 'package:pure_live/modules/live/recorder/data/recorder_platform_filter.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_covers.dart' show recordingCoversProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
@@ -19,7 +20,8 @@ import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, avatarInitials, cachedImage, showActionsPanel;
+import 'package:pure_live/shared/shared.dart'
+    show LiveWindow, avatarInitials, cachedImage, kAllPlatforms, localizedSiteIcon, showActionsPanel, showPlatformPickerPanel;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -101,12 +103,22 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     return recordingTakeOfDay(day).dayTitle(today: t.history.today, yesterday: t.history.yesterday);
   }
 
-  /// The tree this pane owns: every take, cut down to the module's platforms.
-  List<RecordingTake> get _all => scopeLibraryTakes(
-    ref.read(recordingLibraryProvider).value ?? const [],
-    platforms: widget.platforms,
-    excluded: widget.excludedPlatforms,
-  );
+  /// The tree this pane owns: every take, cut down to the module's platforms
+  /// and to the centre's platform filter.
+  List<RecordingTake> get _all {
+    final scoped = scopeLibraryTakes(
+      ref.read(recordingLibraryProvider).value ?? const [],
+      platforms: widget.platforms,
+      excluded: widget.excludedPlatforms,
+    );
+    final filter = ref.read(recorderPlatformFilterProvider);
+    return filter == kAllPlatforms
+        ? scoped
+        : [
+            for (final take in scoped)
+              if (take.platformId == filter) take,
+          ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,11 +126,19 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     final library = ref.watch(recordingLibraryProvider);
-    final takes = scopeLibraryTakes(
+    final scoped = scopeLibraryTakes(
       library.value ?? const <RecordingTake>[],
       platforms: widget.platforms,
       excluded: widget.excludedPlatforms,
     );
+    // The centre's platform filter cuts both lists the same way.
+    final platformFilter = ref.watch(recorderPlatformFilterProvider);
+    final takes = platformFilter == kAllPlatforms
+        ? scoped
+        : [
+            for (final take in scoped)
+              if (take.platformId == platformFilter) take,
+          ];
     final filter = ref.watch(recorderLibraryFilterProvider);
     final filtered = filter.sort.sorted(takes);
     final width = MediaQuery.sizeOf(context).width;
@@ -140,7 +160,13 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
         if (widget.showToolbar)
           Padding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, 0),
-            child: const Align(alignment: AlignmentDirectional.centerEnd, child: RecorderLibraryToolbar()),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: RecorderLibraryToolbar(
+                platforms: recorderPlatformsOf(scoped.map((take) => take.platformId), widget.platformName),
+                nameOf: widget.platformName,
+              ),
+            ),
           ),
         Expanded(
           child: switch ((library.isLoading && takes.isEmpty, library.hasError)) {
@@ -418,8 +444,15 @@ Future<void> playRecordingTake(
 /// A wide window says what each verb does; a small one keeps them as glyphs,
 /// the same fold every other page makes when its header line runs out of room.
 final class RecorderLibraryToolbar extends ConsumerWidget {
-  /// The toolbar over the module's takes.
-  const RecorderLibraryToolbar({super.key});
+  /// The toolbar over the module's takes; [platforms] feed the platform
+  /// filter, named by [nameOf].
+  const RecorderLibraryToolbar({required this.platforms, required this.nameOf, super.key});
+
+  /// The site ids the list holds.
+  final List<String> platforms;
+
+  /// A site id's display name.
+  final String Function(String id) nameOf;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -431,6 +464,7 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
       children: [
+        RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
         // The order reads straight from this menu: it was the filter's only
         // condition, so a panel in between only added a step.
         DsMenuAnchor(
@@ -485,8 +519,15 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
 /// and the walk-again refresh, so the page switch keeps the header line to
 /// itself instead of stacking a second band of buttons under it.
 final class RecorderLibraryToolbarMore extends ConsumerWidget {
-  /// Creates the compact toolbar.
-  const RecorderLibraryToolbarMore({super.key});
+  /// Creates the compact toolbar; [platforms] feed the platform filter, named
+  /// by [nameOf].
+  const RecorderLibraryToolbarMore({required this.platforms, required this.nameOf, super.key});
+
+  /// The site ids the list holds.
+  final List<String> platforms;
+
+  /// A site id's display name.
+  final String Function(String id) nameOf;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -506,6 +547,34 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
           context,
           title: t.common.more,
           children: [
+            DsListSection(
+              children: [
+                DsListRow(
+                  leading: const DsIcon(DsIcons.antenna, size: 16),
+                  title: Text(t.recorder.filterPlatformGroup),
+                  detail: Text(
+                    switch (ref.watch(recorderPlatformFilterProvider)) {
+                      final id when id != kAllPlatforms => nameOf(id),
+                      _ => t.recorder.filterAll,
+                    },
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    unawaited(
+                      showPlatformPickerPanel(
+                        context,
+                        platforms: [kAllPlatforms, ...platforms],
+                        current: ref.read(recorderPlatformFilterProvider),
+                        nameOf: (id) => id == kAllPlatforms ? t.recorder.filterAll : nameOf(id),
+                        iconOf: (id) =>
+                            id == kAllPlatforms ? null : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
+                        onChanged: (id) => ref.read(recorderPlatformFilterProvider.notifier).selected = id,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
             DsListSection(
               header: Text(t.recorder.sortLabel),
               children: [

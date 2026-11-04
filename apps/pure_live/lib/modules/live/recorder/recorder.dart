@@ -7,6 +7,7 @@
 library;
 
 export 'data/recorder_library_filter.dart';
+export 'data/recorder_platform_filter.dart';
 export 'data/recorder_search_handoff.dart';
 export 'data/recording_covers.dart';
 export 'data/recording_library.dart';

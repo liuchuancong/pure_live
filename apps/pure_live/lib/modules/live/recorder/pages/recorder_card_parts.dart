@@ -1,5 +1,10 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/app.dart' show sitesProvider;
+import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/recorder/data/recorder_platform_filter.dart';
+import 'package:pure_live/shared/shared.dart' show kAllPlatforms, localizedSiteIcon, showPlatformPickerPanel;
 
 /// The blank an opening CJK punctuation leaves before its ink.
 ///
@@ -67,4 +72,67 @@ final class RecorderTagChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The recorder centre's platform filter: the current site's name (or 全部),
+/// opening the platform wall. Both lists — the subscriptions and the recorded
+/// files — read the same choice.
+final class RecorderPlatformFilterButton extends ConsumerWidget {
+  /// Creates the filter; [platforms] are the site ids the list holds, named by
+  /// [nameOf]. A compact button shows the glyph alone.
+  const RecorderPlatformFilterButton({
+    required this.platforms,
+    required this.nameOf,
+    this.compact = false,
+    super.key,
+  });
+
+  /// The site ids the list holds.
+  final List<String> platforms;
+
+  /// A site id's display name.
+  final String Function(String id) nameOf;
+
+  /// Whether the button shows the glyph alone (a phone's row).
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final chosen = ref.watch(recorderPlatformFilterProvider);
+    final current = platforms.contains(chosen) ? chosen : kAllPlatforms;
+    final label = current == kAllPlatforms ? t.recorder.filterAll : nameOf(current);
+    void open() => showPlatformPickerPanel(
+      context,
+      platforms: [kAllPlatforms, ...platforms],
+      current: current,
+      nameOf: (id) => id == kAllPlatforms ? t.recorder.filterAll : nameOf(id),
+      iconOf: (id) => id == kAllPlatforms ? null : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
+      onChanged: (id) => ref.read(recorderPlatformFilterProvider.notifier).selected = id,
+    );
+
+    if (compact) {
+      return DsButton.icon(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: '${t.recorder.filterPlatformGroup}, $label',
+        onPressed: open,
+        icon: const DsIcon(DsIcons.antenna, size: 16),
+      );
+    }
+    return DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: '${t.recorder.filterPlatformGroup}, $label',
+      leading: const DsIcon(DsIcons.antenna, size: 14),
+      onPressed: open,
+      child: Text(label),
+    );
+  }
+}
+
+/// The site ids a list holds, in display-name order.
+List<String> recorderPlatformsOf(Iterable<String> ids, String Function(String id) nameOf) {
+  final unique = ids.toList()..sort((a, b) => nameOf(a).compareTo(nameOf(b)));
+  return unique;
 }
