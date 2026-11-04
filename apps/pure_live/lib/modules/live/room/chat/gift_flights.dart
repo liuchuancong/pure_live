@@ -160,6 +160,7 @@ final class GiftFlights {
       userName: name.isEmpty ? null : name,
     );
   }
+
 }
 
 /// One combo on its way: the newest message and its gift, when it came,

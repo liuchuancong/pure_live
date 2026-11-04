@@ -42,7 +42,8 @@ bool giftComboRestarted(int? running, LiveGift gift) {
 
 /// Whether [gift] is the platform's summary of a combo: it carries the
 /// combo key and its running count is its own count.
-bool giftIsComboSummary(LiveGift gift) => gift.combo.comboKey.trim().isNotEmpty && gift.combo.comboTotal == gift.count;
+bool giftIsComboSummary(LiveGift gift) =>
+    gift.combo.comboKey.trim().isNotEmpty && gift.combo.comboTotal == gift.count;
 
 /// The value of [count] gifts like [gift], in its unit.
 double? giftValueOfCount(LiveGift gift, int count) {
@@ -58,7 +59,9 @@ double? giftValueOfCount(LiveGift gift, int count) {
 LiveGiftTier giftLineTier(LiveGift gift) {
   final shown = giftShownCount(gift);
   final unitPrice = gift.value.unitPrice;
-  final total = shown != gift.count && unitPrice != null && unitPrice > 0 ? unitPrice * shown : gift.value.totalValue;
+  final total = shown != gift.count && unitPrice != null && unitPrice > 0
+      ? unitPrice * shown
+      : gift.value.totalValue;
   return giftShownTier(gift.value.unit, total);
 }
 
