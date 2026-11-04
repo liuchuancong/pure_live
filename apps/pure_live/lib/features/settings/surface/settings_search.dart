@@ -349,9 +349,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.recording, t.recorder.cacheLimit, 'recording cache cap MB size 录制 缓存 上限 大小 自动 删除 录像'),
     _hit(SettingsSection.recording, t.recorder.cacheSize, 'recording cache size 录制 缓存 大小'),
     _hit(SettingsSection.recording, t.recorder.cacheClear, 'recording cache clear delete 录制 缓存 清理 删除'),
-    _hit(SettingsSection.recording, t.recorder.liveCheckSecondsTitle, 'recording live check interval poll 录制 开播 检测 间隔'),
-    _hit(SettingsSection.recording, t.recorder.checkBackoff, 'recording polling backoff retry 录制 轮询 退避'),
-    _hit(SettingsSection.recording, t.recorder.maxCheckSecondsTitle, 'recording max check interval 录制 最大 检测 间隔'),
     _hit(SettingsSection.recording, t.recorder.autoStartOnBoot, 'recording resume boot startup 录制 恢复 开机 启动'),
     _hit(
       SettingsSection.recording,

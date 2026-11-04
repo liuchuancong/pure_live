@@ -2196,6 +2196,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get columnStatus => 'State';
 	@override String panelRecorded({required Object value}) => 'Saved ${value}';
 	@override String segmentProgress({required Object count, required Object minutes}) => 'Part ${count} · every ${minutes} min';
+	@override String get roomSettings => 'Room settings';
 }
 
 // Path: room
@@ -6740,6 +6741,7 @@ extension on TranslationsEn {
 			'recorder.columnStatus' => 'State',
 			'recorder.panelRecorded' => ({required Object value}) => 'Saved ${value}',
 			'recorder.segmentProgress' => ({required Object count, required Object minutes}) => 'Part ${count} · every ${minutes} min',
+			'recorder.roomSettings' => 'Room settings',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7156,9 +7158,9 @@ extension on TranslationsEn {
 			'settings.languageSystem' => 'Follow the system',
 			'settings.languageSimplifiedChinese' => 'Simplified Chinese',
 			'settings.languageEnglish' => 'English',
-			'settings.refreshGroup' => 'Refresh',
 			_ => null,
 		} ?? switch (path) {
+			'settings.refreshGroup' => 'Refresh',
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
 			'settings.liveAlert' => 'Live alerts',
@@ -7670,9 +7672,9 @@ extension on TranslationsEn {
 			'settings.playerGuide' => 'Player guide',
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
-			'settings.playerGuideSubtitle' => 'Glossary · Platform picks · Symptom table',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideSubtitle' => 'Glossary · Platform picks · Symptom table',
 			'settings.playerGuideIntro' => 'The kernel options in this guide apply to the mpv engine; start with a preset and tune advanced options only when the picture still misbehaves.',
 			'settings.playerGuideManualTitle' => 'Player manual: mpv official docs',
 			'settings.playerGuideManualHint' => 'Start with the symptom table; the basics chapter explains each setting.',
@@ -8184,9 +8186,9 @@ extension on TranslationsEn {
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
-			'settings.twitchLanguage_zh' => 'Chinese',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_zh' => 'Chinese',
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',
@@ -8698,9 +8700,9 @@ extension on TranslationsEn {
 			'vod.showDetails' => 'Show video details',
 			'vod.showDetailsDesc' => 'Off hides the uploader, stats and description.',
 			'vod.showFeedBanner' => 'Home head picture',
-			'vod.showFeedBannerDesc' => 'The first pick of Recommended and Popular drawn at head size above the feed.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.showFeedBannerDesc' => 'The first pick of Recommended and Popular drawn at head size above the feed.',
 			'vod.cardElements' => 'Card information',
 			'vod.cardPlays' => 'Play count',
 			'vod.cardDanmaku' => 'Danmaku count',

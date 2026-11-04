@@ -143,6 +143,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             anchorName: anchorName,
             anchorAvatarUrl: avatarUrl,
             coverUrl: coverUrl,
+            checkSeconds: settings.schedule.liveCheckSeconds,
+            checkBackoff: settings.schedule.checkBackoffEnabled,
+            maxCheckSeconds: settings.schedule.maxCheckSeconds,
             state: RecordingTaskState.stopped,
             startedAt: now,
           ) ??
@@ -155,6 +158,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             anchorName: anchorName,
             anchorAvatarUrl: avatarUrl,
             coverUrl: coverUrl,
+            checkSeconds: settings.schedule.liveCheckSeconds,
+            checkBackoff: settings.schedule.checkBackoffEnabled,
+            maxCheckSeconds: settings.schedule.maxCheckSeconds,
             state: RecordingTaskState.stopped,
             startedAt: now,
           );
@@ -172,6 +178,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           anchorName: anchorName,
           anchorAvatarUrl: avatarUrl,
           coverUrl: coverUrl,
+          checkSeconds: settings.schedule.liveCheckSeconds,
+          checkBackoff: settings.schedule.checkBackoffEnabled,
+          maxCheckSeconds: settings.schedule.maxCheckSeconds,
           state: RecordingTaskState.waiting,
           startedAt: now,
         ) ??
@@ -184,6 +193,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           anchorName: anchorName,
           anchorAvatarUrl: avatarUrl,
           coverUrl: coverUrl,
+          checkSeconds: settings.schedule.liveCheckSeconds,
+          checkBackoff: settings.schedule.checkBackoffEnabled,
+          maxCheckSeconds: settings.schedule.maxCheckSeconds,
           state: RecordingTaskState.waiting,
           startedAt: now,
         );
@@ -804,6 +816,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             scheduleStartMinutes: draft.start,
             scheduleEndMinutes: draft.end,
             stopAtWindowEnd: draft.stopAtEnd,
+            checkSeconds: draft.checkSeconds,
+            checkBackoff: draft.checkBackoff,
+            maxCheckSeconds: draft.maxCheckSeconds,
           ),
         );
     if (!mounted) return;
@@ -1433,7 +1448,7 @@ final class _TaskMenu extends StatelessWidget {
         DsMenuItem(leading: const DsIcon(DsIcons.externalLink), label: Text(t.recorder.openRoom), onPressed: onOpen),
         DsMenuItem(
           leading: const DsIcon(DsIcons.calendarClock),
-          label: Text(t.recorder.scheduleMenu),
+          label: Text(t.recorder.roomSettings),
           onPressed: onSchedule,
         ),
         if (onStartNow case final start?)
@@ -2168,42 +2183,6 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           value: settings.schedule.pollingEnabled,
           onChanged: (value) => controller.pollingEnabled = value,
         ),
-        // The schedule belongs to the switch above it: with polling off
-        // there is no interval to set, so these follow it in and out.
-        if (settings.schedule.pollingEnabled) ...[
-          _RecordSlider(
-            icon: DsIcons.timer,
-            title: t.recorder.liveCheckSecondsTitle,
-            description: t.recorder.liveCheckSecondsDesc,
-            detail: t.recorder.seconds(count: settings.schedule.liveCheckSeconds),
-            value: settings.schedule.liveCheckSeconds.toDouble(),
-            min: 10,
-            max: 300,
-            divisions: 29,
-            onChanged: (value) => controller.liveCheckSeconds = value.round(),
-            semanticLabel: t.recorder.liveCheckSecondsTitle,
-          ),
-          _RecordSwitch(
-            icon: DsIcons.activity,
-            title: t.recorder.checkBackoff,
-            description: t.recorder.checkBackoffDesc,
-            value: settings.schedule.checkBackoffEnabled,
-            onChanged: (value) => controller.checkBackoffEnabled = value,
-          ),
-          if (settings.schedule.checkBackoffEnabled)
-            _RecordSlider(
-              icon: DsIcons.hourglass,
-              title: t.recorder.maxCheckSecondsTitle,
-              description: t.recorder.maxCheckSecondsDesc,
-              detail: t.recorder.seconds(count: settings.schedule.maxCheckSeconds),
-              value: settings.schedule.maxCheckSeconds.toDouble(),
-              min: 60,
-              max: 3600,
-              divisions: 59,
-              onChanged: (value) => controller.maxCheckSeconds = (value / 60).round() * 60,
-              semanticLabel: t.recorder.maxCheckSecondsTitle,
-            ),
-        ],
         _RecordSwitch(
           icon: DsIcons.power,
           title: t.recorder.autoStartOnBoot,
@@ -2669,7 +2648,16 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
 }
 
 /// The window a schedule editor returns; applied to the task on Confirm.
-typedef _ScheduleDraft = ({bool enabled, Set<int> days, int start, int end, bool stopAtEnd});
+typedef _ScheduleDraft = ({
+  bool enabled,
+  Set<int> days,
+  int start,
+  int end,
+  bool stopAtEnd,
+  int checkSeconds,
+  bool checkBackoff,
+  int maxCheckSeconds,
+});
 
 /// The take's schedule editor: a switch, weekday chips, two time pickers and
 /// the window-end policy. A dialog because it is a short form, not a page.
@@ -2688,6 +2676,9 @@ final class _ScheduleDialogState extends State<_ScheduleDialog> {
   late int _start = widget.task.scheduleStartMinutes;
   late int _end = widget.task.scheduleEndMinutes;
   late bool _stopAtEnd = widget.task.stopAtWindowEnd;
+  late int _checkSeconds = widget.task.checkSeconds;
+  late bool _checkBackoff = widget.task.checkBackoff;
+  late int _maxCheckSeconds = widget.task.maxCheckSeconds;
 
   static DsTime _timeOf(int minutes) {
     final value = minutes.clamp(0, 1439);
@@ -2710,7 +2701,7 @@ final class _ScheduleDialogState extends State<_ScheduleDialog> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     return DsDialog(
-      title: Text(t.recorder.scheduleTitle),
+      title: Text(t.recorder.roomSettings),
       icon: const DsIcon(DsIcons.calendarClock),
       style: const DsDialogStyle(width: 460),
       description: Column(
@@ -2828,6 +2819,43 @@ final class _ScheduleDialogState extends State<_ScheduleDialog> {
               semanticLabel: t.recorder.scheduleStopAtEnd,
             ),
           ),
+          // The room's own live-check cadence: one weekly show and one
+          // all-day room should not share an interval.
+          _RecordSlider(
+            icon: DsIcons.timer,
+            title: t.recorder.liveCheckSecondsTitle,
+            description: t.recorder.liveCheckSecondsDesc,
+            detail: t.recorder.seconds(count: _checkSeconds),
+            value: _checkSeconds.toDouble(),
+            min: 10,
+            max: 300,
+            divisions: 29,
+            onChanged: (value) => setState(() => _checkSeconds = value.round()),
+            semanticLabel: t.recorder.liveCheckSecondsTitle,
+          ),
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.activity),
+            title: t.recorder.checkBackoff,
+            description: t.recorder.checkBackoffDesc,
+            control: DsSwitch(
+              value: _checkBackoff,
+              onChanged: (value) => setState(() => _checkBackoff = value),
+              semanticLabel: t.recorder.checkBackoff,
+            ),
+          ),
+          if (_checkBackoff)
+            _RecordSlider(
+              icon: DsIcons.hourglass,
+              title: t.recorder.maxCheckSecondsTitle,
+              description: t.recorder.maxCheckSecondsDesc,
+              detail: t.recorder.seconds(count: _maxCheckSeconds),
+              value: _maxCheckSeconds.toDouble(),
+              min: 60,
+              max: 3600,
+              divisions: 59,
+              onChanged: (value) => setState(() => _maxCheckSeconds = (value / 60).round() * 60),
+              semanticLabel: t.recorder.maxCheckSecondsTitle,
+            ),
         ],
       ),
       actions: [
@@ -2837,9 +2865,16 @@ final class _ScheduleDialogState extends State<_ScheduleDialog> {
           child: Text(t.common.cancel),
         ),
         DsButton(
-          onPressed: () =>
-              Navigator.of(context)
-                  .pop((enabled: _enabled, days: _days, start: _start, end: _end, stopAtEnd: _stopAtEnd)),
+          onPressed: () => Navigator.of(context).pop((
+            enabled: _enabled,
+            days: _days,
+            start: _start,
+            end: _end,
+            stopAtEnd: _stopAtEnd,
+            checkSeconds: _checkSeconds,
+            checkBackoff: _checkBackoff,
+            maxCheckSeconds: _maxCheckSeconds,
+          )),
           child: Text(t.common.confirm),
         ),
       ],

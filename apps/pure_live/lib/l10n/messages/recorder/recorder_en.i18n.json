@@ -294,5 +294,6 @@
   "lastRecordingAt": "Last recorded {time}",
   "columnStatus": "State",
   "panelRecorded": "Saved {value}",
-  "segmentProgress": "Part {count} · every {minutes} min"
+  "segmentProgress": "Part {count} · every {minutes} min",
+  "roomSettings": "Room settings"
 }

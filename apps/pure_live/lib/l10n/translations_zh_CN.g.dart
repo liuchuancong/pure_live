@@ -6213,6 +6213,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '第 {count} 段 · 每 {minutes} 分钟一段'
 	String segmentProgress({required Object count, required Object minutes}) => '第 ${count} 段 · 每 ${minutes} 分钟一段';
+
+	/// zh-CN: '房间设置'
+	String get roomSettings => '房间设置';
 }
 
 // Path: room
@@ -15343,6 +15346,7 @@ extension on Translations {
 			'recorder.columnStatus' => '状态',
 			'recorder.panelRecorded' => ({required Object value}) => '已录 ${value}',
 			'recorder.segmentProgress' => ({required Object count, required Object minutes}) => '第 ${count} 段 · 每 ${minutes} 分钟一段',
+			'recorder.roomSettings' => '房间设置',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15759,9 +15763,9 @@ extension on Translations {
 			'settings.languageSystem' => '跟随系统',
 			'settings.languageSimplifiedChinese' => '简体中文',
 			'settings.languageEnglish' => 'English',
-			'settings.refreshGroup' => '刷新',
 			_ => null,
 		} ?? switch (path) {
+			'settings.refreshGroup' => '刷新',
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
@@ -16273,9 +16277,9 @@ extension on Translations {
 			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
-			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
 			'settings.playerGuideIntro' => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。',
 			'settings.playerGuideManualTitle' => '播放手册：mpv 官方文档',
 			'settings.playerGuideManualHint' => '遇到问题先看「症状对照」；设置含义查「基础概念」。',
@@ -16787,9 +16791,9 @@ extension on Translations {
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
-			'settings.twitchLanguage_zh' => '中文',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_zh' => '中文',
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
@@ -17301,9 +17305,9 @@ extension on Translations {
 			'vod.showDetails' => '显示视频详情',
 			'vod.showDetailsDesc' => '关闭后隐藏 UP 主、数据和简介。',
 			'vod.showFeedBanner' => '首页头图',
-			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
 			'vod.cardElements' => '卡片显示项',
 			'vod.cardPlays' => '播放量',
 			'vod.cardDanmaku' => '弹幕数',

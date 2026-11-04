@@ -4,13 +4,11 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveDanmakuProvider;
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart'
     show RecordingTasksState, recordingRepositoryProvider, recordingTasksProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_schedule.dart';
-import 'package:pure_live/modules/live/recorder/data/recording_settings.dart'
-    show RecordingSettings, recordingSettingsProvider;
+import 'package:pure_live/modules/live/recorder/data/recording_settings.dart' show recordingSettingsProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show RecordingTask, RecordingTaskState;
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/modules/live/recorder/engine/recording_claim.dart';
@@ -35,15 +33,7 @@ const Duration _kLiveCheckTimeout = Duration(seconds: 20);
 final class RecordingLiveMonitor {
   RecordingLiveMonitor(this._ref) {
     _ref.listen(
-      recordingSettingsProvider.select((settings) {
-        final schedule = settings.schedule;
-        return (
-          schedule.pollingEnabled,
-          schedule.liveCheckSeconds,
-          schedule.checkBackoffEnabled,
-          schedule.maxCheckSeconds,
-        );
-      }),
+      recordingSettingsProvider.select((settings) => settings.schedule.pollingEnabled),
       (previous, next) => _arm(immediate: true),
     );
     unawaited(_recoverInterrupted());
@@ -145,6 +135,9 @@ final class RecordingLiveMonitor {
           task.state.name,
           task.startedAt.toUtc().toIso8601String(),
           task.scheduleEnabled,
+          task.checkSeconds,
+          task.checkBackoff,
+          task.maxCheckSeconds,
           task.scheduleDays.join(','),
           task.scheduleStartMinutes,
           task.scheduleEndMinutes,
@@ -180,7 +173,6 @@ final class RecordingLiveMonitor {
       _timer = null;
       return;
     }
-    final settings = _ref.read(recordingSettingsProvider);
     // A task that is actually waiting or being watched for a window end needs
     // the live-check cadence. A schedule that is merely far in the future does
     // not: a minute is enough to notice its next opening without waking the
@@ -195,7 +187,14 @@ final class RecordingLiveMonitor {
               (task.state == RecordingTaskState.recording && task.stopAtWindowEnd),
         );
     if (busy) {
-      final tick = math.min(15, math.max(5, settings.schedule.liveCheckSeconds));
+      // The clock wakes for the fastest armed room; each room still waits its
+      // own interval before it is checked again.
+      final fastest = _ref
+          .read(recordingTasksProvider)
+          .tasks
+          .where((task) => task.isArmed && task.isWithinSchedule(now))
+          .fold<int>(15, (value, task) => math.min(value, task.checkSeconds));
+      final tick = math.min(15, math.max(5, fastest));
       _timer = Timer.periodic(Duration(seconds: tick), (_) => unawaited(_tick()));
     } else {
       // Only future windows are left: sleep until the nearest one, capped at
@@ -221,13 +220,13 @@ final class RecordingLiveMonitor {
     if (immediate) unawaited(_tick());
   }
 
-  /// The wait one task's next check owes, applying the optional backoff.
-  Duration _delayFor(String id, RecordingSettings settings) {
-    final schedule = settings.schedule;
-    if (!schedule.checkBackoffEnabled) return Duration(seconds: schedule.liveCheckSeconds);
-    final failures = _failures[id] ?? 0;
-    final stretched = schedule.liveCheckSeconds * math.pow(2, failures).toInt();
-    return Duration(seconds: math.min(stretched, schedule.maxCheckSeconds));
+  /// The wait one task's next check owes: the room's own interval, stretched
+  /// by its failures when its backoff is on.
+  Duration _delayFor(RecordingTask task) {
+    if (!task.checkBackoff) return Duration(seconds: task.checkSeconds);
+    final failures = _failures[task.id] ?? 0;
+    final stretched = task.checkSeconds * math.pow(2, failures).toInt();
+    return Duration(seconds: math.min(stretched, task.maxCheckSeconds));
   }
 
   void _stop() {
@@ -301,7 +300,7 @@ final class RecordingLiveMonitor {
         if (!_ref.read(recordingSettingsProvider).schedule.pollingEnabled && !force) return;
         if (engine.isRecording(task.id)) continue;
         final last = _lastChecked[task.id];
-        if (last != null && now.difference(last) < _delayFor(task.id, settings)) continue;
+        if (last != null && now.difference(last) < _delayFor(task)) continue;
         _lastChecked[task.id] = now;
         final site = _ref.read(sitesProvider).getById(task.platform);
         if (site == null) continue;

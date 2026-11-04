@@ -55,6 +55,9 @@ final class RecordingTask {
     required this.startedAt,
     this.quality = '',
     this.enabled = true,
+    this.checkSeconds = 60,
+    this.checkBackoff = true,
+    this.maxCheckSeconds = 3600,
     this.anchorName = '',
     this.anchorAvatarUrl = '',
     this.coverUrl = '',
@@ -88,6 +91,9 @@ final class RecordingTask {
       roomTitle: map['roomTitle'] as String? ?? '',
       quality: map['quality'] as String? ?? '',
       enabled: map['enabled'] as bool? ?? true,
+      checkSeconds: ((map['checkSeconds'] as num?)?.toInt() ?? 60).clamp(10, 300),
+      checkBackoff: map['checkBackoff'] as bool? ?? true,
+      maxCheckSeconds: ((map['maxCheckSeconds'] as num?)?.toInt() ?? 3600).clamp(60, 3600),
       anchorName: map['anchorName'] as String? ?? '',
       anchorAvatarUrl: map['anchorAvatarUrl'] as String? ?? '',
       coverUrl: map['coverUrl'] as String? ?? '',
@@ -146,6 +152,18 @@ final class RecordingTask {
 
   /// The room's cover, cached with the same snapshot.
   final String coverUrl;
+
+  /// How often this room's live check runs, in seconds (10–300).
+  ///
+  /// The cadence belongs to the room: a room watched for one weekly show and
+  /// a room watched all day should not share one interval.
+  final int checkSeconds;
+
+  /// Whether this room's failed checks back off exponentially.
+  final bool checkBackoff;
+
+  /// The ceiling the backoff may reach, in seconds (60–3600).
+  final int maxCheckSeconds;
 
   /// Whether this room is still watched.
   ///
@@ -279,6 +297,9 @@ final class RecordingTask {
     'roomTitle': roomTitle,
     'quality': quality,
     'enabled': enabled,
+    'checkSeconds': checkSeconds,
+    'checkBackoff': checkBackoff,
+    'maxCheckSeconds': maxCheckSeconds,
     'anchorName': anchorName,
     'anchorAvatarUrl': anchorAvatarUrl,
     'coverUrl': coverUrl,
@@ -307,6 +328,9 @@ final class RecordingTask {
     String? roomTitle,
     String? quality,
     bool? enabled,
+    int? checkSeconds,
+    bool? checkBackoff,
+    int? maxCheckSeconds,
     String? anchorName,
     String? anchorAvatarUrl,
     String? coverUrl,
@@ -333,6 +357,9 @@ final class RecordingTask {
       roomTitle: roomTitle ?? this.roomTitle,
       quality: quality ?? this.quality,
       enabled: enabled ?? this.enabled,
+      checkSeconds: checkSeconds ?? this.checkSeconds,
+      checkBackoff: checkBackoff ?? this.checkBackoff,
+      maxCheckSeconds: maxCheckSeconds ?? this.maxCheckSeconds,
       anchorName: anchorName ?? this.anchorName,
       anchorAvatarUrl: anchorAvatarUrl ?? this.anchorAvatarUrl,
       coverUrl: coverUrl ?? this.coverUrl,
