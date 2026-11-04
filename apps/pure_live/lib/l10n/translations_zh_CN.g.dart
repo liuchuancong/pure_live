@@ -6216,6 +6216,33 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '房间设置'
 	String get roomSettings => '房间设置';
+
+	/// zh-CN: '开播检测'
+	String get tabCheck => '开播检测';
+
+	/// zh-CN: '全部'
+	String get checkFilterAll => '全部';
+
+	/// zh-CN: '已开启'
+	String get checkFilterOn => '已开启';
+
+	/// zh-CN: '未开启'
+	String get checkFilterOff => '未开启';
+
+	/// zh-CN: '启用开播检测'
+	String get roomCheckTitle => '启用开播检测';
+
+	/// zh-CN: '开启后按设定的间隔检查这个直播间，开播时自动开始录制。'
+	String get roomCheckDesc => '开启后按设定的间隔检查这个直播间，开播时自动开始录制。';
+
+	/// zh-CN: '每 {seconds} 秒'
+	String checkEvery({required Object seconds}) => '每 ${seconds} 秒';
+
+	/// zh-CN: '还没有直播间'
+	String get emptyCheckTitle => '还没有直播间';
+
+	/// zh-CN: '在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。'
+	String get emptyCheckDescription => '在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。';
 }
 
 // Path: room
@@ -15347,6 +15374,15 @@ extension on Translations {
 			'recorder.panelRecorded' => ({required Object value}) => '已录 ${value}',
 			'recorder.segmentProgress' => ({required Object count, required Object minutes}) => '第 ${count} 段 · 每 ${minutes} 分钟一段',
 			'recorder.roomSettings' => '房间设置',
+			'recorder.tabCheck' => '开播检测',
+			'recorder.checkFilterAll' => '全部',
+			'recorder.checkFilterOn' => '已开启',
+			'recorder.checkFilterOff' => '未开启',
+			'recorder.roomCheckTitle' => '启用开播检测',
+			'recorder.roomCheckDesc' => '开启后按设定的间隔检查这个直播间，开播时自动开始录制。',
+			'recorder.checkEvery' => ({required Object seconds}) => '每 ${seconds} 秒',
+			'recorder.emptyCheckTitle' => '还没有直播间',
+			'recorder.emptyCheckDescription' => '在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15754,6 +15790,8 @@ extension on Translations {
 			'settings.corners' => '圆角',
 			'settings.cornersStandard' => '标准',
 			'settings.cornersSharp' => '锐利',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cornersSoft' => '柔和',
 			'settings.cornersPill' => '胶囊',
 			'settings.density' => '控件密度',
@@ -15763,8 +15801,6 @@ extension on Translations {
 			'settings.languageSystem' => '跟随系统',
 			'settings.languageSimplifiedChinese' => '简体中文',
 			'settings.languageEnglish' => 'English',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshGroup' => '刷新',
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
@@ -16268,6 +16304,8 @@ extension on Translations {
 			'settings.forceDestroy' => '播放器强制销毁',
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
+			_ => null,
+		} ?? switch (path) {
 			'settings.mpvReset' => '恢复播放内核默认设置',
 			'settings.mpvResetDesc' => '恢复本页设置，首选清晰度不受影响。',
 			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR：关\n• 播放器强制销毁：开\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
@@ -16277,8 +16315,6 @@ extension on Translations {
 			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
 			'settings.playerGuideIntro' => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。',
 			'settings.playerGuideManualTitle' => '播放手册：mpv 官方文档',
@@ -16782,6 +16818,8 @@ extension on Translations {
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
 			'settings.chatListSpacingCompact' => '紧凑',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
@@ -16791,8 +16829,6 @@ extension on Translations {
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_zh' => '中文',
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
@@ -17296,6 +17332,8 @@ extension on Translations {
 			'vod.up' => 'UP主',
 			'vod.openingSpeed' => '默认倍速',
 			'vod.openingSpeedDesc' => '打开视频时的倍速；播放器菜单只改当前视频。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.finishAction' => '播放结束动作',
 			'vod.finishActionDesc' => '一集播完之后做什么。',
 			'vod.finishPause' => '停在最后一帧',
@@ -17305,8 +17343,6 @@ extension on Translations {
 			'vod.showDetails' => '显示视频详情',
 			'vod.showDetailsDesc' => '关闭后隐藏 UP 主、数据和简介。',
 			'vod.showFeedBanner' => '首页头图',
-			_ => null,
-		} ?? switch (path) {
 			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
 			'vod.cardElements' => '卡片显示项',
 			'vod.cardPlays' => '播放量',

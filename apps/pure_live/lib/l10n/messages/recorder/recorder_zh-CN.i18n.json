@@ -295,5 +295,14 @@
   "columnStatus": "状态",
   "panelRecorded": "已录 {value}",
   "segmentProgress": "第 {count} 段 · 每 {minutes} 分钟一段",
-  "roomSettings": "房间设置"
+  "roomSettings": "房间设置",
+  "tabCheck": "开播检测",
+  "checkFilterAll": "全部",
+  "checkFilterOn": "已开启",
+  "checkFilterOff": "未开启",
+  "roomCheckTitle": "启用开播检测",
+  "roomCheckDesc": "开启后按设定的间隔检查这个直播间，开播时自动开始录制。",
+  "checkEvery": "每 {seconds} 秒",
+  "emptyCheckTitle": "还没有直播间",
+  "emptyCheckDescription": "在直播间菜单里选「开播自动录」，或在上面的「录制订阅」里添加一个。"
 }

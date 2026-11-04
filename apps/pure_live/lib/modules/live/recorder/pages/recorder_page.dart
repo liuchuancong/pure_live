@@ -88,6 +88,7 @@ enum _RecorderFilter {
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
   _RecorderFilter _filter = _RecorderFilter.all;
+  _CheckFilter _checkFilter = _CheckFilter.all;
 
   @override
   void initState() {
@@ -347,6 +348,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               segments: [
                 DsSegment(value: RecorderCenterTab.tasks, label: Text(t.recorder.tabTasks)),
                 DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
+                DsSegment(value: RecorderCenterTab.check, label: Text(t.recorder.tabCheck)),
               ],
             );
             final toolbar = RecorderLibraryToolbar(takes: libraryTakes, platformName: _platformName);
@@ -365,7 +367,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar]);
           }(),
         ),
-        if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
+        if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.check)
+          Expanded(
+            child: _checkBody(inset: inset, rooms: rooms),
+          )
+        else if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
           Expanded(
             child: _tasksBody(
               inset: inset,
@@ -404,6 +410,79 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  /// The live-check page: every room with its detection switch, grouped by
+  /// whether that switch is on. The categories are the page's own — nothing
+  /// here belongs to another tab.
+  Widget _checkBody({required double inset, required Map<String, LiveRoom> rooms}) {
+    final t = context.t;
+    final tasks =
+        [
+          for (final task in ref.watch(recordingTasksProvider).tasks)
+            if (task.platform != kIptvRecordingPlatform) task,
+        ]..sort((a, b) {
+          if (a.enabled != b.enabled) return a.enabled ? -1 : 1;
+          return a.roomTitle.toLowerCase().compareTo(b.roomTitle.toLowerCase());
+        });
+    final counts = <_CheckFilter, int>{
+      for (final filter in _CheckFilter.values) filter: tasks.where(filter.matches).length,
+    };
+    final shown = [
+      for (final task in tasks)
+        if (_checkFilter.matches(task)) task,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+          child: DsTabs<_CheckFilter>(
+            value: _checkFilter,
+            semanticLabel: t.recorder.tabCheck,
+            style: const DsTabsStyle(padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
+            onChanged: (value) => setState(() => _checkFilter = value),
+            tabs: [
+              for (final filter in _CheckFilter.values)
+                DsTab(value: filter, label: Text(_checkFilterLabel(t, filter)), count: counts[filter] ?? 0),
+            ],
+          ),
+        ),
+        Expanded(
+          child: shown.isEmpty
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.radar),
+                    title: Text(
+                      tasks.isEmpty
+                          ? t.recorder.emptyCheckTitle
+                          : t.recorder.emptyFilterTitle(status: _checkFilterLabel(t, _checkFilter)),
+                    ),
+                    description: tasks.isEmpty ? Text(t.recorder.emptyCheckDescription) : null,
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s8,
+                    children: [
+                      for (final task in shown)
+                        _CheckRow(
+                          task: task,
+                          room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
+                          platformName: _platformName(task.platform),
+                          interval: t.recorder.checkEvery(seconds: task.checkSeconds),
+                          onChanged: (value) =>
+                              unawaited(ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: value)),
+                          onEdit: () => unawaited(_editSchedule(task)),
+                        ),
+                    ],
+                  ),
+                ),
+        ),
       ],
     );
   }
@@ -779,6 +858,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         .read(recordingTasksProvider.notifier)
         .add(
           task.copyWith(
+            enabled: draft.check,
             scheduleEnabled: draft.enabled,
             scheduleDays: days.isEmpty ? const [1, 2, 3, 4, 5, 6, 7] : days,
             scheduleStartMinutes: draft.start,
@@ -906,6 +986,119 @@ int _subscriptionOrder(RecordingTask a, RecordingTask b) {
 
   final byRank = rank(a).compareTo(rank(b));
   return byRank != 0 ? byRank : b.startedAt.compareTo(a.startedAt);
+}
+
+/// The live-check page's categories: every room, the watched ones, and the
+/// ones whose switch is still off.
+enum _CheckFilter {
+  all,
+  on,
+  off;
+
+  bool matches(RecordingTask task) => switch (this) {
+    all => true,
+    on => task.enabled,
+    off => !task.enabled,
+  };
+}
+
+String _checkFilterLabel(Translations t, _CheckFilter filter) => switch (filter) {
+  _CheckFilter.all => t.recorder.checkFilterAll,
+  _CheckFilter.on => t.recorder.checkFilterOn,
+  _CheckFilter.off => t.recorder.checkFilterOff,
+};
+
+/// One room on the live-check page: its identity, its interval, and the
+/// switch that decides whether the check runs.
+final class _CheckRow extends StatelessWidget {
+  const _CheckRow({
+    required this.task,
+    required this.room,
+    required this.platformName,
+    required this.interval,
+    required this.onChanged,
+    required this.onEdit,
+  });
+
+  final RecordingTask task;
+  final LiveRoom? room;
+  final String platformName;
+  final String interval;
+  final ValueChanged<bool> onChanged;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    final liveAnchor = (room?.anchor?.name ?? '').trim();
+    final anchor = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
+    final title = task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId;
+    final liveCover = (room?.content.coverUrl ?? '').trim();
+    final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
+    final liveAvatar = (room?.anchor?.avatarUrl ?? '').trim();
+    final avatarUrl = liveAvatar.isNotEmpty ? liveAvatar : task.anchorAvatarUrl.trim();
+    return DsCard(
+      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+      child: Row(
+        spacing: DsSpace.s12,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: DsImage(
+              image: cover.isEmpty ? null : cachedImage(cover),
+              width: 96,
+              height: 54,
+              semanticLabel: title,
+              fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Row(
+                  spacing: DsSpace.s6,
+                  children: [
+                    DsAvatar(
+                      initials: avatarInitials(anchor.isEmpty ? title : anchor),
+                      image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                      size: DsSize.sm,
+                      semanticLabel: anchor.isEmpty ? title : anchor,
+                    ),
+                    Expanded(
+                      child: Text(
+                        anchor.isEmpty ? title : anchor,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '$platformName · $title',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          Text(interval, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+          DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: context.t.recorder.roomSettings,
+            onPressed: onEdit,
+            icon: const DsIcon(DsIcons.settings, size: 14),
+          ),
+          DsSwitch(value: task.enabled, onChanged: onChanged, semanticLabel: context.t.recorder.roomCheckTitle),
+        ],
+      ),
+    );
+  }
 }
 
 /// A filter's word, without its count.
@@ -2603,6 +2796,7 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
 
 /// The window a schedule editor returns; applied to the task on Confirm.
 typedef _ScheduleDraft = ({
+  bool check,
   bool enabled,
   Set<int> days,
   int start,
@@ -2630,6 +2824,7 @@ final class _RoomSettingsPanelState extends State<_RoomSettingsPanel> {
   late int _start = widget.task.scheduleStartMinutes;
   late int _end = widget.task.scheduleEndMinutes;
   late bool _stopAtEnd = widget.task.stopAtWindowEnd;
+  late bool _check = widget.task.enabled;
   late int _checkSeconds = widget.task.checkSeconds;
   late bool _checkBackoff = widget.task.checkBackoff;
   late int _maxCheckSeconds = widget.task.maxCheckSeconds;
@@ -2669,6 +2864,7 @@ final class _RoomSettingsPanelState extends State<_RoomSettingsPanel> {
           Expanded(
             child: DsButton(
               onPressed: () => Navigator.of(context).pop((
+                check: _check,
                 enabled: _enabled,
                 days: _days,
                 start: _start,
@@ -2687,6 +2883,16 @@ final class _RoomSettingsPanelState extends State<_RoomSettingsPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
         children: [
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.radar),
+            title: t.recorder.roomCheckTitle,
+            description: t.recorder.roomCheckDesc,
+            control: DsSwitch(
+              value: _check,
+              onChanged: (value) => setState(() => _check = value),
+              semanticLabel: t.recorder.roomCheckTitle,
+            ),
+          ),
           SettingsConfigRow(
             leading: const DsIcon(DsIcons.clock),
             title: t.recorder.scheduleEnableTitle,

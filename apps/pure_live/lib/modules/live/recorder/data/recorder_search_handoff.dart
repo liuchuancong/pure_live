@@ -26,7 +26,7 @@ final recorderSearchHandoffProvider = NotifierProvider<RecorderSearchHandoffCont
 
 /// The centre's page on screen: the tasks being managed, or the files they
 /// produced.
-enum RecorderCenterTab { tasks, files }
+enum RecorderCenterTab { tasks, files, check }
 
 /// The centre's own page, published for the shell's toolbar.
 final recorderCenterTabProvider = NotifierProvider<RecorderCenterTabController, RecorderCenterTab>(

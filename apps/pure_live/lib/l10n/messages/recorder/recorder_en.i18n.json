@@ -295,5 +295,14 @@
   "columnStatus": "State",
   "panelRecorded": "Saved {value}",
   "segmentProgress": "Part {count} · every {minutes} min",
-  "roomSettings": "Room settings"
+  "roomSettings": "Room settings",
+  "tabCheck": "Live check",
+  "checkFilterAll": "All",
+  "checkFilterOn": "On",
+  "checkFilterOff": "Off",
+  "roomCheckTitle": "Watch for a live start",
+  "roomCheckDesc": "Checks this room at its interval and starts recording when it goes live.",
+  "checkEvery": "Every {seconds}s",
+  "emptyCheckTitle": "No rooms yet",
+  "emptyCheckDescription": "Pick “Record when live” in a room’s menu, or add one under Subscriptions."
 }

@@ -2197,6 +2197,15 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String panelRecorded({required Object value}) => 'Saved ${value}';
 	@override String segmentProgress({required Object count, required Object minutes}) => 'Part ${count} · every ${minutes} min';
 	@override String get roomSettings => 'Room settings';
+	@override String get tabCheck => 'Live check';
+	@override String get checkFilterAll => 'All';
+	@override String get checkFilterOn => 'On';
+	@override String get checkFilterOff => 'Off';
+	@override String get roomCheckTitle => 'Watch for a live start';
+	@override String get roomCheckDesc => 'Checks this room at its interval and starts recording when it goes live.';
+	@override String checkEvery({required Object seconds}) => 'Every ${seconds}s';
+	@override String get emptyCheckTitle => 'No rooms yet';
+	@override String get emptyCheckDescription => 'Pick “Record when live” in a room’s menu, or add one under Subscriptions.';
 }
 
 // Path: room
@@ -6742,6 +6751,15 @@ extension on TranslationsEn {
 			'recorder.panelRecorded' => ({required Object value}) => 'Saved ${value}',
 			'recorder.segmentProgress' => ({required Object count, required Object minutes}) => 'Part ${count} · every ${minutes} min',
 			'recorder.roomSettings' => 'Room settings',
+			'recorder.tabCheck' => 'Live check',
+			'recorder.checkFilterAll' => 'All',
+			'recorder.checkFilterOn' => 'On',
+			'recorder.checkFilterOff' => 'Off',
+			'recorder.roomCheckTitle' => 'Watch for a live start',
+			'recorder.roomCheckDesc' => 'Checks this room at its interval and starts recording when it goes live.',
+			'recorder.checkEvery' => ({required Object seconds}) => 'Every ${seconds}s',
+			'recorder.emptyCheckTitle' => 'No rooms yet',
+			'recorder.emptyCheckDescription' => 'Pick “Record when live” in a room’s menu, or add one under Subscriptions.',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7149,6 +7167,8 @@ extension on TranslationsEn {
 			'settings.corners' => 'Corners',
 			'settings.cornersStandard' => 'Standard',
 			'settings.cornersSharp' => 'Sharp',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cornersSoft' => 'Soft',
 			'settings.cornersPill' => 'Pill',
 			'settings.density' => 'Control density',
@@ -7158,8 +7178,6 @@ extension on TranslationsEn {
 			'settings.languageSystem' => 'Follow the system',
 			'settings.languageSimplifiedChinese' => 'Simplified Chinese',
 			'settings.languageEnglish' => 'English',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshGroup' => 'Refresh',
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
@@ -7663,6 +7681,8 @@ extension on TranslationsEn {
 			'settings.forceDestroy' => 'Force Stop Player',
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
 			'settings.mpvAdvanced' => 'mpv advanced',
+			_ => null,
+		} ?? switch (path) {
 			'settings.mpvReset' => 'Restore the player defaults',
 			'settings.mpvResetDesc' => 'Restores this page; the preferred quality stays.',
 			'settings.mpvResetConfirm' => 'These go back to their defaults:\n• Hardware decoding: on\n• Compatibility mode, RTX VSR: off\n• Force Stop Player: on\n• Custom drivers: off; the three drivers: default\nThe preferred quality in Video stays.',
@@ -7672,8 +7692,6 @@ extension on TranslationsEn {
 			'settings.playerGuide' => 'Player guide',
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideSubtitle' => 'Glossary · Platform picks · Symptom table',
 			'settings.playerGuideIntro' => 'The kernel options in this guide apply to the mpv engine; start with a preset and tune advanced options only when the picture still misbehaves.',
 			'settings.playerGuideManualTitle' => 'Player manual: mpv official docs',
@@ -8177,6 +8195,8 @@ extension on TranslationsEn {
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
 			'settings.chatListSpacingCompact' => 'Compact',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => 'Standard',
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
@@ -8186,8 +8206,6 @@ extension on TranslationsEn {
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_zh' => 'Chinese',
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
@@ -8691,6 +8709,8 @@ extension on TranslationsEn {
 			'vod.up' => 'Uploader',
 			'vod.openingSpeed' => 'Opening speed',
 			'vod.openingSpeedDesc' => 'Speed a video opens with; the in-player menu only changes this one.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.finishAction' => 'When a part ends',
 			'vod.finishActionDesc' => 'What happens after the last frame of a part.',
 			'vod.finishPause' => 'Stay on the last frame',
@@ -8700,8 +8720,6 @@ extension on TranslationsEn {
 			'vod.showDetails' => 'Show video details',
 			'vod.showDetailsDesc' => 'Off hides the uploader, stats and description.',
 			'vod.showFeedBanner' => 'Home head picture',
-			_ => null,
-		} ?? switch (path) {
 			'vod.showFeedBannerDesc' => 'The first pick of Recommended and Popular drawn at head size above the feed.',
 			'vod.cardElements' => 'Card information',
 			'vod.cardPlays' => 'Play count',
