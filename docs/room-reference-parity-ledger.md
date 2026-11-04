@@ -317,3 +317,13 @@ PLAN-CHECK huya     没有注册 resolver
 3. `force-seekable: yes` 服务的是时移/回看_seek_；我们的直播线不做 forward seek（`selectLine`/`retry` 重开，不 seek）。
 4. `protocol_whitelist` 是**收紧**：抄一份显式白名单等于把"今天能播、名单里没有"的协议判死，而我们没有任何一站需要它。要加必须拿具体失败协议来证。
 5. **留给真数字的口子**：等 `room-open` 行给出 `request→firstFrame` 很大（比如 >1.5 s）时，唯一值得先试的是把 `demuxer-max-bytes`/`cache-secs` 调小（少攒就早播），并且要 A/B 出前后中位数——不是照抄 2 秒 readahead。
+
+## 发弹幕能力普查（2026-11-05，防止下轮去"补 34 个发送器"）
+
+怀疑过一条大缺口，实测**不是**缺口，证据钉在这里：
+
+- `LiveDanmakuSending`（`live_sites/lib/src/capabilities/live_danmaku_sending.dart`）在**全包 0 个实现者**（grep 整个 `packages/` + 引擎仓 `media_core/packages/` 都只命中定义文件）。
+- 因此 `room_controller.dart:1181 canSendDanmaku` 恒为 false，`sendDanmaku` 走不进发送分支。
+- 但界面**没有因此挂死门**：聊天列的发送框在 `room_chat.dart:480` 就 `ref.watch(...canSendDanmaku)` 并据此不渲染输入框与「发送」按钮，所以看不到一个永远发不出去的框（`sendFailed` 那条 toast 也就只会出现在真失败时）。
+- **与参考对齐**：参考的 `live_danmaku` 里根本没有"发直播弹幕"这件事——`sender.dart` 是 `DanmakuSender{avatar}`（"这条消息是谁发的"，B06），不是发送器；它真正的发送实现只在 `live_vod/ugc_api.dart`（**视频**弹幕）。参考房间条上那个输入框是 `LocalDanmakuComposer`，属于已判定不平的本地 +1/常用语子系统（见"已判定不平"），并不发平台。
+- ⇒ 结论：**这是双方共同的能力边界，不是我们缺的功能**。以后要真做发直播弹幕，是从零按站点接（每站一套签名/凭证/风控），属于逐站点新功能，不属于本对照车道；接口已经在那儿，第一个实现者一接，`canSendDanmaku` 与发送框会自动亮起（不需要再改房间）。
