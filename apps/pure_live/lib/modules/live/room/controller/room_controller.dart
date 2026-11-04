@@ -610,6 +610,10 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<LiveMessage>? _chat;
   StreamSubscription<GeometryState>? _geometry;
 
+  /// The platform's own "the stored cookie was refused" events, for the site
+  /// this room was opened from; cancelled with the room.
+  StreamSubscription<void>? _cookieRefusals;
+
   /// The open room's minute re-read; cancelled with the room.
   Timer? _detailRefresh;
 
@@ -663,12 +667,10 @@ final class RoomController extends Notifier<RoomState> {
 
   /// The names this danmaku connection has seen on Bilibili: masked ones
   /// (a guest's view) and full ones, with the hint raised once per connection
-  /// ([_nameHintShown]). The Twitch cookie refusal gets the same one-per
-  /// connection treatment ([_twitchRefusalShown]).
+  /// ([_nameHintShown]).
   int _maskedChats = 0;
   int _namedChats = 0;
   bool _nameHintShown = false;
-  bool _twitchRefusalShown = false;
 
   LivePlayQuality? _wantedQuality;
 
@@ -813,6 +815,13 @@ final class RoomController extends Notifier<RoomState> {
       _reportOpenTiming(failed: true);
       return;
     }
+    // B-7: the platform says in its own words when it threw the stored cookie
+    // out and carried on anonymously. That is a typed event from the site, so
+    // the room listens to it instead of recognising the chat's notice by its
+    // exact sentence — the socket's notice only told about the danmaku, and a
+    // refused playback cookie said nothing to the viewer at all.
+    final refusals = site.capability<LiveCookieRefusalFeed>();
+    _cookieRefusals = refusals?.cookieRefusals.listen((_) => _onCookieRefused(platform));
     final roomAnswer = await roomProvider.getRoom(roomId);
     unawaited(
       roomAnswer.match(
@@ -1568,7 +1577,6 @@ final class RoomController extends Notifier<RoomState> {
     _maskedChats = 0;
     _namedChats = 0;
     _nameHintShown = false;
-    _twitchRefusalShown = false;
     // The next connection either shows full names — in which case the notice
     // was about a login that has since been fixed — or re-raises it once the
     // masked run is long enough. Either way an old one must not stay up.
@@ -1686,7 +1694,6 @@ final class RoomController extends Notifier<RoomState> {
   /// policy slot, ahead of the duplicate and similarity filters — so a
   /// shielded viewer's paid super chat still reaches the board.
   void _onSiteMessage(LiveMessage message) {
-    if (message.type == LiveMessageType.notice) _onTwitchNotice(message);
     if (message.type == LiveMessageType.chat) _trackBilibiliNames(message);
     // A retraction says nothing, so it leaves before the pipeline: the shape
     // check would drop an empty line, the text filters have nothing to judge,
@@ -1712,21 +1719,13 @@ final class RoomController extends Notifier<RoomState> {
     _pipeline?.retract(target);
   }
 
-  /// The words Twitch's session puts on the stream when the server refused the
-  /// stored chat login and the danmaku went on anonymously; the package owns
-  /// them, so they are matched as a marker and said again in the viewer's own
-  /// language. Built once, because every message reads it.
-  static final String _twitchCookieRefusalText = TwitchDanmakuCodec.cookieExpiredNotice().text;
-
-  /// B-7: Twitch is the one platform that reports a refused cookie. The
-  /// session tells once per connection, and the room says it once too — the
-  /// chat keeps running, anonymously.
-  void _onTwitchNotice(LiveMessage message) {
-    if (_twitchRefusalShown || message.text != _twitchCookieRefusalText) return;
+  /// The notice a refused cookie earns: the standing bar over the column it
+  /// concerns, with the way to renew it. The site reports each cookie once, so
+  /// this is not a toast to count down — and the chat keeps running,
+  /// anonymously, which is why the room does not fail.
+  void _onCookieRefused(String siteId) {
     if (!ref.mounted) return;
-    _twitchRefusalShown = true;
-    final siteId = state.room?.ref.platform ?? SiteIds.twitch;
-    ref.read(roomChatNoticeProvider.notifier).show(siteId, l10n.t.room.twitchCookieExpired);
+    ref.read(roomChatNoticeProvider.notifier).show(siteId, l10n.t.room.cookieRefused);
   }
 
   /// B06: what Bilibili's names say about this connection. A guest's socket
@@ -1850,6 +1849,8 @@ final class RoomController extends Notifier<RoomState> {
     unawaited(_failures?.cancel() ?? Future<void>.value());
     unawaited(_chat?.cancel() ?? Future<void>.value());
     unawaited(_geometry?.cancel() ?? Future<void>.value());
+    unawaited(_cookieRefusals?.cancel() ?? Future<void>.value());
+    _cookieRefusals = null;
     _states = null;
     _handles = null;
     _failures = null;

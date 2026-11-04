@@ -2438,7 +2438,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get switchLive => 'Live';
 	@override String get switchShowGrid => 'Show as grid';
 	@override String get switchShowList => 'Show as list';
-	@override String get twitchCookieExpired => 'Twitch\'s cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie';
+	@override String get cookieRefused => 'The platform refused the stored cookie and plays on anonymously; renew it on the account page';
 	@override String get bilibiliGuestNames => 'Connected as a guest — Bilibili chat hides the full nicknames';
 	@override String get bilibiliLoginExpired => 'Your Bilibili login looks expired — every nickname is masked; please sign in again';
 	@override String danmakuConnectFailed({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected';
@@ -3936,8 +3936,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get lanSyncScopePlaybackDesc => 'Player and live room preferences.';
 	@override String get lanSyncScopeDanmaku => 'Danmaku';
 	@override String get lanSyncScopeDanmakuDesc => 'Danmaku display and filter preferences.';
-	@override String get lanSyncScopeMusic => 'Music';
+	@override String get lanSyncScopeMusic => 'Music player';
 	@override String get lanSyncScopeMusicDesc => 'Music player preferences.';
+	@override String get lanSyncScopeMusicLibrary => 'Music library';
+	@override String get lanSyncScopeMusicLibraryDesc => 'Playlists, favourites, recent plays, dislike rules and linked lyrics.';
 	@override String get lanSyncScopeRecorder => 'Recorder';
 	@override String get lanSyncScopeRecorderDesc => 'Recorder preferences.';
 	@override String get lanSyncScopeModules => 'Modules';
@@ -7044,7 +7046,7 @@ extension on TranslationsEn {
 			'room.switchLive' => 'Live',
 			'room.switchShowGrid' => 'Show as grid',
 			'room.switchShowList' => 'Show as list',
-			'room.twitchCookieExpired' => 'Twitch\'s cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie',
+			'room.cookieRefused' => 'The platform refused the stored cookie and plays on anonymously; renew it on the account page',
 			'room.bilibiliGuestNames' => 'Connected as a guest — Bilibili chat hides the full nicknames',
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
 			'room.danmakuConnectFailed' => ({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected',
@@ -8530,8 +8532,10 @@ extension on TranslationsEn {
 			'settings.lanSyncScopePlaybackDesc' => 'Player and live room preferences.',
 			'settings.lanSyncScopeDanmaku' => 'Danmaku',
 			'settings.lanSyncScopeDanmakuDesc' => 'Danmaku display and filter preferences.',
-			'settings.lanSyncScopeMusic' => 'Music',
+			'settings.lanSyncScopeMusic' => 'Music player',
 			'settings.lanSyncScopeMusicDesc' => 'Music player preferences.',
+			'settings.lanSyncScopeMusicLibrary' => 'Music library',
+			'settings.lanSyncScopeMusicLibraryDesc' => 'Playlists, favourites, recent plays, dislike rules and linked lyrics.',
 			'settings.lanSyncScopeRecorder' => 'Recorder',
 			'settings.lanSyncScopeRecorderDesc' => 'Recorder preferences.',
 			'settings.lanSyncScopeModules' => 'Modules',
@@ -8768,10 +8772,10 @@ extension on TranslationsEn {
 			'vod.pgcDocumentary' => 'Documentaries',
 			'vod.pgcGuochuang' => 'Guochuang',
 			'vod.pgcTv' => 'TV series',
-			'vod.pgcVariety' => 'Variety',
-			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.pgcVariety' => 'Variety',
+			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
 			'vod.episodes' => 'Episodes',
 			'vod.following' => 'Following',
 			'vod.pictureOnly' => 'Picture only',

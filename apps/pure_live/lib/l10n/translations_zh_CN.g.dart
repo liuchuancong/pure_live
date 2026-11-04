@@ -6922,8 +6922,8 @@ class Translations$room$zh_CN {
 	/// zh-CN: '切换为列表'
 	String get switchShowList => '切换为列表';
 
-	/// zh-CN: 'Twitch Cookie 已失效，弹幕改为匿名接收；请重新填写。'
-	String get twitchCookieExpired => 'Twitch Cookie 已失效，弹幕改为匿名接收；请重新填写。';
+	/// zh-CN: '平台拒绝了存下的 Cookie，已改为匿名继续；请到账号页重新填写'
+	String get cookieRefused => '平台拒绝了存下的 Cookie，已改为匿名继续；请到账号页重新填写';
 
 	/// zh-CN: '当前以访客身份连接，B 站弹幕不会显示完整昵称'
 	String get bilibiliGuestNames => '当前以访客身份连接，B 站弹幕不会显示完整昵称';
@@ -11380,11 +11380,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '弹幕显示与过滤的偏好。'
 	String get lanSyncScopeDanmakuDesc => '弹幕显示与过滤的偏好。';
 
-	/// zh-CN: '音乐'
-	String get lanSyncScopeMusic => '音乐';
+	/// zh-CN: '音乐播放器'
+	String get lanSyncScopeMusic => '音乐播放器';
 
 	/// zh-CN: '音乐播放器的偏好。'
 	String get lanSyncScopeMusicDesc => '音乐播放器的偏好。';
+
+	/// zh-CN: '音乐曲库'
+	String get lanSyncScopeMusicLibrary => '音乐曲库';
+
+	/// zh-CN: '歌单、收藏、最近播放、不喜欢规则与关联歌词。'
+	String get lanSyncScopeMusicLibraryDesc => '歌单、收藏、最近播放、不喜欢规则与关联歌词。';
 
 	/// zh-CN: '录制'
 	String get lanSyncScopeRecorder => '录制';
@@ -15789,7 +15795,7 @@ extension on Translations {
 			'room.switchLive' => '直播中',
 			'room.switchShowGrid' => '切换为网格',
 			'room.switchShowList' => '切换为列表',
-			'room.twitchCookieExpired' => 'Twitch Cookie 已失效，弹幕改为匿名接收；请重新填写。',
+			'room.cookieRefused' => '平台拒绝了存下的 Cookie，已改为匿名继续；请到账号页重新填写',
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
 			'room.danmakuConnectFailed' => ({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响',
@@ -17275,8 +17281,10 @@ extension on Translations {
 			'settings.lanSyncScopePlaybackDesc' => '播放器与直播间的偏好。',
 			'settings.lanSyncScopeDanmaku' => '弹幕',
 			'settings.lanSyncScopeDanmakuDesc' => '弹幕显示与过滤的偏好。',
-			'settings.lanSyncScopeMusic' => '音乐',
+			'settings.lanSyncScopeMusic' => '音乐播放器',
 			'settings.lanSyncScopeMusicDesc' => '音乐播放器的偏好。',
+			'settings.lanSyncScopeMusicLibrary' => '音乐曲库',
+			'settings.lanSyncScopeMusicLibraryDesc' => '歌单、收藏、最近播放、不喜欢规则与关联歌词。',
 			'settings.lanSyncScopeRecorder' => '录制',
 			'settings.lanSyncScopeRecorderDesc' => '录制器的偏好。',
 			'settings.lanSyncScopeModules' => '模块',
@@ -17513,10 +17521,10 @@ extension on Translations {
 			'vod.pgcDocumentary' => '纪录片',
 			'vod.pgcGuochuang' => '国创',
 			'vod.pgcTv' => '电视剧',
-			'vod.pgcVariety' => '综艺',
-			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.pgcVariety' => '综艺',
+			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',
 			'vod.episodes' => '选集',
 			'vod.following' => '已追',
 			'vod.pictureOnly' => '仅画面',
