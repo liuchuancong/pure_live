@@ -10,6 +10,7 @@ export 'chat/room_chat.dart';
 export 'chat/room_message_actions.dart';
 export 'chat/room_super_chats.dart';
 export 'controller/room_controller.dart';
+export 'controller/room_open_timing.dart';
 export 'page/audio_only_cover.dart';
 export 'page/player_surface.dart';
 export 'page/room_details.dart';

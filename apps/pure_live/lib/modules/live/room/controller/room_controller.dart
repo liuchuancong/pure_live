@@ -22,6 +22,7 @@ import 'package:pure_live/modules/live/room/chat/gift_flights.dart' show GiftFli
 import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTier;
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
+import 'package:pure_live/modules/live/room/controller/room_open_timing.dart' show RoomOpenTiming;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
 
@@ -608,6 +609,19 @@ final class RoomController extends Notifier<RoomState> {
   /// The danmaku path has the same gate in [_danmakuCurrent].
   int _openEpoch = 0;
 
+  /// The stopwatch of the entry now in flight, reported once when its picture
+  /// arrives or fails and dropped when the viewer leaves before then: "the
+  /// room is slow" is four different faults, and only the numbers say which.
+  RoomOpenTiming? _openTiming;
+
+  /// Writes the entry's line to the log and stops measuring it.
+  void _reportOpenTiming({bool failed = false}) {
+    final timing = _openTiming;
+    if (timing == null) return;
+    _openTiming = null;
+    appLog.forCategory('room').info(timing.line(failed: failed));
+  }
+
   /// Rises with every danmaku open the room starts (a platform account change
   /// re-opens it); an answer that arrives after a newer open, a room switch
   /// or a close installs nothing.
@@ -747,6 +761,7 @@ final class RoomController extends Notifier<RoomState> {
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
     _teardown();
+    _openTiming = RoomOpenTiming(site: platform, roomId: roomId);
     final epoch = _openEpoch;
     ref.read(roomSuperChatsProvider.notifier).clear();
     final settings = ref.read(playbackSettingsProvider);
@@ -765,16 +780,20 @@ final class RoomController extends Notifier<RoomState> {
     final playbackProvider = site?.capability<LivePlaybackProvider>();
     if (site == null || roomProvider == null || playbackProvider == null) {
       state = _with(error: 'the site has no room or playback capability');
+      _reportOpenTiming(failed: true);
       return;
     }
     final roomAnswer = await roomProvider.getRoom(roomId);
     unawaited(
       roomAnswer.match(
         (error) async {
-          if (epoch == _openEpoch) state = _with(error: error.message);
+          if (epoch != _openEpoch) return;
+          state = _with(error: error.message);
+          _reportOpenTiming(failed: true);
         },
         (detail) async {
           if (epoch != _openEpoch) return;
+          _openTiming?.markDetail();
           final room = _fillTitleFromKnown(detail);
           state = _with(room: room);
           _armDetailRefresh();
@@ -796,10 +815,13 @@ final class RoomController extends Notifier<RoomState> {
           unawaited(
             qualitiesAnswer.match(
               (error) async {
-                if (epoch == _openEpoch) state = _with(error: error.message);
+                if (epoch != _openEpoch) return;
+                state = _with(error: error.message);
+                _reportOpenTiming(failed: true);
               },
               (qualities) async {
                 if (epoch != _openEpoch) return;
+                _openTiming?.markQualities();
                 _wantedQuality = _pickQuality(qualities);
                 state = _with(qualities: qualities, quality: _wantedQuality);
                 await _startPlayback(playbackProvider, room);
@@ -1269,21 +1291,29 @@ final class RoomController extends Notifier<RoomState> {
     unawaited(
       linesAnswer.match(
         (error) async {
-          if (epoch == _openEpoch) state = _with(error: error.message);
+          if (epoch != _openEpoch) return;
+          state = _with(error: error.message);
+          _reportOpenTiming(failed: true);
         },
         (lines) async {
           if (epoch != _openEpoch) return;
           if (lines.isEmpty) {
             state = _with(lines: const [], error: 'the room has nothing to play');
+            _reportOpenTiming(failed: true);
             return;
           }
+          _openTiming?.markLines();
           state = _with(lines: lines);
           final playback = _playback ??= _openSession(capability, room);
           _states ??= playback.onStateChanged.listen((playback_) {
             state = _with(playback: playback_);
+            // The entry's line is written the first time the room says it is
+            // playing, which is the number the viewer waits for.
+            if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
           });
           _failures ??= playback.onError.listen((failure) {
             state = _with(error: failure.message ?? failure.code.name);
+            _reportOpenTiming(failed: true);
           });
           _handles ??= playback.onHandleChanged.listen((handle) {
             _lastHandle = handle;
@@ -1313,6 +1343,7 @@ final class RoomController extends Notifier<RoomState> {
             ),
             preferredBackend: ref.read(playerKernelBackendProvider).id,
           );
+          _openTiming?.markRequested();
           _armLeaseRenewal();
         },
       ),
@@ -1369,6 +1400,8 @@ final class RoomController extends Notifier<RoomState> {
     _geometry = handle.geometryController.state.listen((state) {
       final size = state.geometry.videoSize;
       if (size.width <= 0 || size.height <= 0) return;
+      // The first size the engine reports is the first frame the viewer sees.
+      _openTiming?.markFirstFrame();
       ref.read(fullscreenDriverProvider).onVideoSize(size.width, size.height);
       ref.read(pipDriverProvider).onVideoSize(size.width, size.height);
     });
@@ -1497,6 +1530,9 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     _danmaku = session;
+    // The chat's handshake is over: it runs beside the picture, but its wait
+    // is the number a viewer most often reads as "the room is slow".
+    _openTiming?.markChat();
     // The name and cookie hints are per connection: a masked run before a
     // login change must not silence the one after it.
     _maskedChats = 0;
@@ -1776,6 +1812,9 @@ final class RoomController extends Notifier<RoomState> {
     _openEpoch++;
     _danmakuEpoch++;
     _danmakuOpeningEpoch = null;
+    // An entry the viewer left before its picture arrived reports nothing:
+    // its numbers describe a wait nobody sat through.
+    _openTiming = null;
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_handles?.cancel() ?? Future<void>.value());
     unawaited(_failures?.cancel() ?? Future<void>.value());
