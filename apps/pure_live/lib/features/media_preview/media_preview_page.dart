@@ -781,6 +781,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
 
   Widget _header(Translations t, {required bool narrow}) {
     final item = _current;
+    final danmakuVisible = ref.watch(playbackSettingsProvider.select((settings) => settings.danmakuVisible));
     // The header and the list are the page's chrome, so they wear the theme's
     // ink; only the picture's own box stays dark whatever the theme is.
     final colors = DsTheme.colorsOf(context);
@@ -866,6 +867,46 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               semanticLabel: t.common.previewOpenFolder,
               onPressed: () => unawaited(_revealFolderOf(item.path)),
             ),
+          // A wide window puts the danmaku verbs on the bar that names the
+          // file; the phone keeps them in the strip under the picture, where a
+          // thumb reaches them.
+          if (!narrow) ...[
+            _HeaderButton(
+              icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+              semanticLabel: _danmakuLoading
+                  ? t.common.previewDanmakuLoading
+                  : _hasDanmaku
+                  ? (danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn)
+                  : t.common.previewDanmakuOff,
+              onPressed: _hasDanmaku
+                  ? () => unawaited(
+                      ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !danmakuVisible),
+                    )
+                  : null,
+            ),
+            _HeaderButton(
+              icon: DsIcons.settings,
+              semanticLabel: t.common.previewDanmakuSettings,
+              onPressed: () => setState(() => _panelOpen = !_panelOpen),
+            ),
+            DsMenuAnchor(
+              semanticLabel: t.common.previewSpeed,
+              align: DsAlign.end,
+              items: [
+                for (final value in kPreviewRates)
+                  DsMenuItem(
+                    label: Text(_rateLabel(value)),
+                    checked: value == _rate,
+                    onPressed: () => unawaited(_setRate(value)),
+                  ),
+              ],
+              builder: (context, controller, _) => _HeaderButton(
+                icon: DsIcons.gauge,
+                semanticLabel: t.common.previewSpeed,
+                onPressed: _handle == null ? null : controller.toggle,
+              ),
+            ),
+          ],
           RouteCaptionTail(ink: colors.text),
         ],
       ),
@@ -1009,14 +1050,19 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               )
             : null,
         barLeading: _barLeading(t, immersive: immersive),
-        barActions: _barActions(
-          t,
-          compact: compact,
-          visible: visible,
-          has: _hasDanmaku,
-          loading: _danmakuLoading,
-          immersive: immersive,
-        ),
+        // The picture's own bar carries the transport; the page's verbs sit in
+        // the themed dock under it, or in this bar once the picture owns the
+        // window and there is no dock to hold them.
+        barActions: immersive || _theater
+            ? _barActions(
+                t,
+                compact: compact,
+                visible: visible,
+                has: _hasDanmaku,
+                loading: _danmakuLoading,
+                immersive: immersive,
+              )
+            : const [],
       ),
     );
     // The numbers sit over the picture, not in the bar: they are read against
@@ -1037,7 +1083,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           child: PlayerVolumeHud(value: value),
         ),
     ];
-    return Listener(
+    final stack = Listener(
       onPointerSignal: (signal) {
         if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
       },
@@ -1050,6 +1096,15 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
         child: Stack(fit: StackFit.expand, children: layers),
       ),
+    );
+    // A window that still draws the page keeps its verbs in the themed strip
+    // under the picture; a picture that owns the window carries them itself.
+    // The theatre floats the list over the picture's end edge, so its strip
+    // would sit under that panel: the picture's own bar carries the verbs there.
+    if (immersive || _theater) return stack;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [Expanded(child: stack), _controlDock(t, compact: compact)],
     );
   }
 
@@ -1069,10 +1124,24 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     required bool has,
     required bool loading,
     required bool immersive,
+    bool withDanmaku = true,
+    bool onSurface = false,
   }) {
     final handle = _handle;
     final fit = ref.watch(playbackSettingsProvider.select((settings) => settings.fit));
     final pip = ref.watch(roomPresentationProvider) == PresentationMode.pip;
+    Widget circle(
+      DsIconData icon,
+      String semanticLabel, {
+      VoidCallback? onPressed,
+      bool selected = false,
+    }) => SettingsPreviewCircleButton(
+      icon: icon,
+      semanticLabel: semanticLabel,
+      selected: selected,
+      onSurface: onSurface,
+      onPressed: onPressed,
+    );
     return [
       if (!compact)
         SizedBox(
@@ -1083,63 +1152,60 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
           ),
         ),
-      SettingsPreviewCircleButton(
-        icon: has && visible ? DsIcons.captions : DsIcons.captionsOff,
-        semanticLabel: loading
-            ? t.common.previewDanmakuLoading
-            : has
-            ? (visible ? t.vod.danmakuOff : t.vod.danmakuOn)
-            : t.common.previewDanmakuOff,
-        selected: has && visible,
-        onPressed: has
-            ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
-            : null,
-      ),
-      // The panel takes the list's place; once the picture owns the window
-      // there is no list to take, so the button steps out rather than opening
-      // something nothing can show.
-      if (!immersive)
-        SettingsPreviewCircleButton(
-          icon: DsIcons.settings,
-          semanticLabel: t.common.previewDanmakuSettings,
-          selected: _panelOpen,
-          onPressed: () => setState(() => _panelOpen = !_panelOpen),
+      if (withDanmaku) ...[
+        circle(
+          has && visible ? DsIcons.captions : DsIcons.captionsOff,
+          loading
+              ? t.common.previewDanmakuLoading
+              : has
+              ? (visible ? t.vod.danmakuOff : t.vod.danmakuOn)
+              : t.common.previewDanmakuOff,
+          selected: has && visible,
+          onPressed: has
+              ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
+              : null,
         ),
-      // The engine's own verbs, at the bar's end the room's bar puts them. Each
-      // is the page's for this visit: a viewer who chose 1.5× or 音频模式 keeps it
-      // into the next entry rather than re-choosing it for every file.
-      DsMenuAnchor(
-        semanticLabel: t.common.previewSpeed,
-        align: DsAlign.end,
-        items: [
-          for (final value in kPreviewRates)
-            DsMenuItem(
-              label: Text(_rateLabel(value)),
-              checked: value == _rate,
-              onPressed: () => unawaited(_setRate(value)),
-            ),
-        ],
-        builder: (context, controller, _) => SettingsPreviewCircleButton(
-          icon: DsIcons.gauge,
+        // The panel takes the list's place; once the picture owns the window
+        // there is no list to take, so the button steps out rather than
+        // opening something nothing can show.
+        if (!immersive)
+          circle(
+            DsIcons.settings,
+            t.common.previewDanmakuSettings,
+            selected: _panelOpen,
+            onPressed: () => setState(() => _panelOpen = !_panelOpen),
+          ),
+        // The engine's own verbs: a viewer who chose 1.5× or 音频模式 keeps it
+        // into the next entry rather than re-choosing it for every file.
+        DsMenuAnchor(
           semanticLabel: t.common.previewSpeed,
-          selected: _rate != 1,
-          onPressed: handle == null ? null : controller.toggle,
+          align: DsAlign.end,
+          items: [
+            for (final value in kPreviewRates)
+              DsMenuItem(
+                label: Text(_rateLabel(value)),
+                checked: value == _rate,
+                onPressed: () => unawaited(_setRate(value)),
+              ),
+          ],
+          builder: (context, controller, _) => circle(
+            DsIcons.gauge,
+            t.common.previewSpeed,
+            selected: _rate != 1,
+            onPressed: handle == null ? null : controller.toggle,
+          ),
         ),
-      ),
-      SettingsPreviewCircleButton(
-        icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
-        semanticLabel: t.room.audioOnlyMode,
+      ],
+      circle(
+        _audioOnly ? DsIcons.headphones : DsIcons.music2,
+        t.room.audioOnlyMode,
         selected: _audioOnly,
         onPressed: handle == null ? null : () => unawaited(_setAudioOnly(!_audioOnly)),
       ),
       // A kernel that cannot hand a frame back loses the button rather than
       // offering one that only toasts a failure.
       if (handle?.canCaptureScreenshot ?? false)
-        SettingsPreviewCircleButton(
-          icon: DsIcons.camera,
-          semanticLabel: t.room.screenshot,
-          onPressed: () => unawaited(_screenshot()),
-        ),
+        circle(DsIcons.camera, t.room.screenshot, onPressed: () => unawaited(_screenshot())),
       DsMenuAnchor(
         semanticLabel: t.room.fitShort,
         align: DsAlign.end,
@@ -1151,15 +1217,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               onPressed: () => unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option)),
             ),
         ],
-        builder: (context, controller, _) => SettingsPreviewCircleButton(
-          icon: DsIcons.aspectRatio,
-          semanticLabel: t.room.fitShort,
-          onPressed: controller.toggle,
-        ),
+        builder: (context, controller, _) => circle(DsIcons.aspectRatio, t.room.fitShort, onPressed: controller.toggle),
       ),
-      SettingsPreviewCircleButton(
-        icon: DsIcons.activity,
-        semanticLabel: t.room.statsToggle,
+      circle(
+        DsIcons.activity,
+        t.room.statsToggle,
         selected: ref.watch(playerStatsVisibleProvider),
         onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       ),
@@ -1167,39 +1229,70 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       // DLNA backend serves the path over the LAN through its own media server,
       // so a finished take casts the way a stream does.
       if (_current case final entry? when entry.exists)
-        SettingsPreviewCircleButton(
-          icon: DsIcons.cast,
-          semanticLabel: t.room.cast,
+        circle(
+          DsIcons.cast,
+          t.room.cast,
           onPressed: () =>
               unawaited(showCastUriDialog(context, url: File(entry.path).uri.toString(), title: entry.title)),
         ),
-      // The theatre is this page's own arrangement, so the page decides where it
-      // exists: it needs the list column to float, which a narrow window has no
-      // room for and a window the picture already owns does not need.
+      // The theatre needs the list column to float, which a narrow window has
+      // no room for and a window the picture already owns does not need.
       if (!compact && !immersive)
-        SettingsPreviewCircleButton(
-          icon: DsIcons.layoutHeaderSidebarRight,
-          semanticLabel: _theater ? t.room.theaterOff : t.room.theaterOn,
+        circle(
+          DsIcons.layoutHeaderSidebarRight,
+          _theater ? t.room.theaterOff : t.room.theaterOn,
           selected: _theater,
           onPressed: () => setState(() => _theater = !_theater),
         ),
-      // The window's own verbs, at the bar's end the room's bar puts them:
-      // the compact window only where the platform offers one, and the
-      // fullscreen button doubles as the way back out.
+      // The window's own verbs: the compact window only where the platform
+      // offers one, and the fullscreen button doubles as the way back out.
       if (handle != null && _presentation.pipAvailable)
-        SettingsPreviewCircleButton(
-          icon: pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
-          semanticLabel: pip ? t.room.pipOff : t.vod.pip,
+        circle(
+          pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+          pip ? t.room.pipOff : t.vod.pip,
           selected: pip,
           onPressed: () => unawaited(_togglePip()),
         ),
-      SettingsPreviewCircleButton(
-        icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
-        semanticLabel: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
+      circle(
+        immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
+        immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
         selected: immersive,
         onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
       ),
     ];
+  }
+
+  /// The page's verbs under the picture on the theme's own surface: a light
+  /// window gets a light strip, and a narrow one lets the controls wrap onto a
+  /// second line instead of squeezing the seek bar.
+  Widget _controlDock(Translations t, {required bool compact}) {
+    final colors = DsTheme.colorsOf(context);
+    final narrow = MediaQuery.sizeOf(context).width < _inlineWidth;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+        child: Wrap(
+          spacing: DsSpace.s8,
+          runSpacing: DsSpace.s8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: _barActions(
+            t,
+            compact: compact,
+            visible: ref.watch(playbackSettingsProvider.select((settings) => settings.danmakuVisible)),
+            has: _hasDanmaku,
+            loading: _danmakuLoading,
+            immersive: false,
+            // A wide header carries the danmaku verbs; a phone keeps them here.
+            withDanmaku: narrow,
+            onSurface: true,
+          ),
+        ),
+      ),
+    );
   }
 
   /// The entry's neighbours on the bar's left, where a player keeps them: the

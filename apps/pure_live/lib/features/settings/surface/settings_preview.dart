@@ -465,3 +465,48 @@ final class SettingsPreviewBar extends StatelessWidget {
     );
   }
 }
+
+/// The bar a player puts under its picture: the controls on one band (wrapped
+/// onto a second line when the width cannot hold them) and the seek line under
+/// them. The gradient and the padding are [SettingsPreviewBar]'s; the two-band
+/// layout is what a bar with a transport needs.
+final class SettingsPreviewTransportBar extends StatelessWidget {
+  /// The bar over [controls] and [transport].
+  const SettingsPreviewTransportBar({required this.controls, required this.transport, super.key});
+
+  /// The buttons: laid left to right, wrapped onto another line when needed.
+  final List<Widget> controls;
+
+  /// The seek row: the clock, the slider and the total.
+  final Widget transport;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x00000000), Color(0xB3000000)],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s4,
+          children: [
+            Wrap(
+              spacing: DsSpace.s4,
+              runSpacing: DsSpace.s6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: controls,
+            ),
+            transport,
+          ],
+        ),
+      ),
+    );
+  }
+}

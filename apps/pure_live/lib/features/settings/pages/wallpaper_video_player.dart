@@ -17,7 +17,7 @@ import 'package:media_core/media_core.dart'
         SourceType;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
 import 'package:pure_live/features/settings/surface/settings_preview.dart'
-    show SettingsPreviewBar, SettingsPreviewCircleButton;
+    show SettingsPreviewCircleButton, SettingsPreviewTransportBar;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The clip's own stage: the app's media_core player with the reference
@@ -349,8 +349,8 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
               // idle pointer does.
               onEnter: (_) => _hideTimer?.cancel(),
               onExit: (_) => _scheduleHideBar(),
-              child: SettingsPreviewBar(
-                children: [
+              child: SettingsPreviewTransportBar(
+                controls: [
                   ...widget.barLeading,
                   SettingsPreviewCircleButton(
                     icon: _playing ? DsIcons.pause : DsIcons.play,
@@ -363,37 +363,41 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                     onPressed: () => unawaited(_toggleMute()),
                   ),
                   const SizedBox(width: DsSpace.s4),
-                  SizedBox(
-                    width: 44,
-                    child: Text(
-                      _clock(_dragValue == null ? _position : total * _barValue),
-                      style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
-                    ),
-                  ),
-                  Expanded(
-                    child: DsSlider(
-                      value: _barValue,
-                      semanticLabel: t.settings.backgroundVideo,
-                      onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
-                      onChangeEnd: total <= Duration.zero
-                          ? null
-                          : (value) {
-                              setState(() => _dragValue = null);
-                              unawaited(_seekTo(value));
-                            },
-                    ),
-                  ),
-                  SizedBox(
-                    width: 44,
-                    child: Text(
-                      _clock(total),
-                      textAlign: TextAlign.end,
-                      style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
-                    ),
-                  ),
-                  const SizedBox(width: DsSpace.s4),
                   ...widget.barActions,
                 ],
+                transport: Row(
+                  spacing: DsSpace.s4,
+                  children: [
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        _clock(_dragValue == null ? _position : total * _barValue),
+                        style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
+                      ),
+                    ),
+                    Expanded(
+                      child: DsSlider(
+                        value: _barValue,
+                        semanticLabel: t.settings.backgroundVideo,
+                        onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
+                        onChangeEnd: total <= Duration.zero
+                            ? null
+                            : (value) {
+                                setState(() => _dragValue = null);
+                                unawaited(_seekTo(value));
+                              },
+                      ),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        _clock(total),
+                        textAlign: TextAlign.end,
+                        style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
