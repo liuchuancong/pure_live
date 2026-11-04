@@ -1409,7 +1409,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
 	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
 	@override String get downloadFilterEmpty => 'Nothing in this filter yet';
-	@override String get downloadFilterEmptyDesc => 'Pick another filter, or download from a song row’s menu first.';
 	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
 	@override String get downloadUnsupported => 'This song has no downloadable source (a local file, or not covered by the current source)';
@@ -5979,7 +5978,6 @@ extension on TranslationsEn {
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
 			'music.downloadFilterEmpty' => 'Nothing in this filter yet',
-			'music.downloadFilterEmptyDesc' => 'Pick another filter, or download from a song row’s menu first.',
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
@@ -6123,9 +6121,9 @@ extension on TranslationsEn {
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
 			'music.desktopLyricStrokeNone' => 'None',
+			'music.desktopLyricColorBlack' => 'Black',
 			_ => null,
 		} ?? switch (path) {
-			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
@@ -6637,9 +6635,9 @@ extension on TranslationsEn {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
+			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			_ => null,
 		} ?? switch (path) {
-			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
 			'recorder.transcodeTitle' => 'Re-encode after joining',
@@ -7151,9 +7149,9 @@ extension on TranslationsEn {
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
 			'settings.liveAlert' => 'Live alerts',
+			'settings.liveAlertDesc' => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.',
 			_ => null,
 		} ?? switch (path) {
-			'settings.liveAlertDesc' => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.',
 			'settings.liveAlertTags' => 'Alert tags',
 			'settings.liveAlertTagsDesc' => 'Only these tags\' follows notify; no tag covers every follow.',
 			'settings.liveAlertTagsAll' => 'All follows',
@@ -7665,9 +7663,9 @@ extension on TranslationsEn {
 			'settings.playerGuideIntro' => 'The kernel options in this guide apply to the mpv engine; start with a preset and tune advanced options only when the picture still misbehaves.',
 			'settings.playerGuideManualTitle' => 'Player manual: mpv official docs',
 			'settings.playerGuideManualHint' => 'Start with the symptom table; the basics chapter explains each setting.',
+			'settings.playerGuideChapterConcepts' => 'Core concepts',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuideChapterConcepts' => 'Core concepts',
 			'settings.playerGuideChapterPresets' => 'One-click presets',
 			'settings.playerGuideChapterPictureSync' => 'Picture & sync',
 			'settings.playerGuideChapterQuality' => 'Quality enhancement',
@@ -8179,9 +8177,9 @@ extension on TranslationsEn {
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',
+			'settings.twitchLanguage_es' => 'Spanish',
 			_ => null,
 		} ?? switch (path) {
-			'settings.twitchLanguage_es' => 'Spanish',
 			'settings.twitchLanguage_pt' => 'Portuguese',
 			'settings.twitchLanguage_de' => 'German',
 			'settings.twitchLanguage_fr' => 'French',
@@ -8693,9 +8691,9 @@ extension on TranslationsEn {
 			'vod.cardElements' => 'Card information',
 			'vod.cardPlays' => 'Play count',
 			'vod.cardDanmaku' => 'Danmaku count',
+			'vod.cardDuration' => 'Duration',
 			_ => null,
 		} ?? switch (path) {
-			'vod.cardDuration' => 'Duration',
 			'vod.cardUploader' => 'Uploader',
 			'vod.cardSeasonState' => 'Update state',
 			'vod.playbackReset' => 'Restore default playback',
