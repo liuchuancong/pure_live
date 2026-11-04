@@ -939,14 +939,16 @@ final class RoomController extends Notifier<RoomState> {
   }
 
   /// Switches the quality: the plan is re-read at the new quality and
-  /// playback starts over from its first line.
+  /// playback starts over from its first line - unless the platform answers
+  /// with the media that is already playing, which is a tier it cannot serve
+  /// (see [isSamePlayPlan]); then only the label moves.
   Future<void> selectQuality(LivePlayQuality quality) async {
     final room = state.room;
     final playbackProvider = _playbackCapabilityOf(room);
     if (room == null || playbackProvider == null) return;
     _wantedQuality = quality;
     state = _with(quality: quality, lineIndex: 0);
-    await _startPlayback(playbackProvider, room);
+    await _startPlayback(playbackProvider, room, keepPlayingWhenUnchanged: true);
   }
 
   /// Moves playback to the line at [index] without re-reading the plan.
@@ -1418,7 +1420,11 @@ final class RoomController extends Notifier<RoomState> {
     standby.keep(session);
   }
 
-  Future<void> _startPlayback(LivePlaybackProvider capability, LiveRoom room) async {
+  Future<void> _startPlayback(
+    LivePlaybackProvider capability,
+    LiveRoom room, {
+    bool keepPlayingWhenUnchanged = false,
+  }) async {
     final epoch = _openEpoch;
     final resolved = await _resolveLines(capability, room);
     if (resolved.error case final error?) {
@@ -1438,6 +1444,14 @@ final class RoomController extends Notifier<RoomState> {
     // The platform's own word about what it served outranks the tier the room
     // asked for.
     if (resolved.served case final served?) _showServedQuality(served);
+    // A tier the platform cannot serve comes back as the media already
+    // loaded: Steam lists one quality per variant of its master and answers
+    // every one with the master itself, because its variants carry no audio
+    // of their own. Re-opening that would cost the viewer a re-buffer for a
+    // label, so the ask stops here. Only a quality change may say this: a
+    // lease rebuild asks for a fresh address and has to reach the engine
+    // even when the platform answers with the old one.
+    if (keepPlayingWhenUnchanged && state.playback.playing && isSamePlayPlan(state.lines, lines)) return;
     _openTiming?.markLines();
     state = _with(lines: lines);
     final playback = _playback ??= _openSession(capability, room);

@@ -89,3 +89,24 @@ extension LivePlayLineGeometry on LivePlayLine {
   /// The declared aspect ratio from [geometry], or null when undeclared.
   double? get declaredAspectRatio => geometry.declaredAspectRatio;
 }
+
+/// Whether [asked] asks the player for media [loaded] already holds: the same
+/// lines, in the same order, at the same addresses with the same headers.
+///
+/// A platform can name more tiers than it can serve. Steam lists one quality
+/// per variant of its HLS master and hands back that same master for every
+/// one of them, because its variant playlists carry no audio of their own, so
+/// the answer to a tier change is a plan with nothing new in it. The room
+/// compares plans with this so a label change never costs a running stream
+/// its buffer.
+///
+/// A renewed lease on the same address counts as the same media: the timer
+/// that watches it is re-armed by the caller, not by a re-open.
+bool isSamePlayPlan(List<LivePlayLine> loaded, List<LivePlayLine> asked) {
+  if (loaded.length != asked.length) return false;
+  for (final (index, line) in asked.indexed) {
+    final held = loaded[index];
+    if (held.url != line.url || held.format != line.format || held.headers != line.headers) return false;
+  }
+  return true;
+}
