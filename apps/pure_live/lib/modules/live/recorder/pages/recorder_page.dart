@@ -1326,10 +1326,16 @@ final class _TaskCard extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.textSubtle),
                       );
-                final controls = Row(
+                // Three verbs and the menu in two rows of two, the phase's own
+                // verb first: what the row does leads, what it shows follows.
+                Widget cell(Widget child) => SizedBox(width: 112, child: child);
+                final controls = Column(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s8,
-                  children: [details(), play(), action, menu()],
+                  children: [
+                    Row(spacing: DsSpace.s8, children: [cell(action), cell(details())]),
+                    Row(spacing: DsSpace.s8, children: [cell(play()), cell(menu())]),
+                  ],
                 );
                 // A phone stacks the verbs and keeps the switch in the middle
                 // of its own line.
