@@ -6502,6 +6502,21 @@ class Translations$room$zh_CN {
 	/// zh-CN: '录制操作失败'
 	String get recordFailed => '录制操作失败';
 
+	/// zh-CN: '录制'
+	String get tabRecording => '录制';
+
+	/// zh-CN: '第 {index: int} 段 · 每 {minutes: int} 分钟一段'
+	String recordSegment({required int index, required int minutes}) => '第 ${index} 段 · 每 ${minutes} 分钟一段';
+
+	/// zh-CN: '已录 {size: String}'
+	String recordSize({required String size}) => '已录 ${size}';
+
+	/// zh-CN: '弹幕 {count: int} 条'
+	String recordDanmakuCount({required int count}) => '弹幕 ${count} 条';
+
+	/// zh-CN: '这个房间现在没在录制'
+	String get recordIdle => '这个房间现在没在录制';
+
 	/// zh-CN: '开播自动录'
 	String get autoRecordOn => '开播自动录';
 
@@ -15535,6 +15550,11 @@ extension on Translations {
 			'room.recordStarted' => '开始录制',
 			'room.recordStopped' => '录制已停止',
 			'room.recordFailed' => '录制操作失败',
+			'room.tabRecording' => '录制',
+			'room.recordSegment' => ({required int index, required int minutes}) => '第 ${index} 段 · 每 ${minutes} 分钟一段',
+			'room.recordSize' => ({required String size}) => '已录 ${size}',
+			'room.recordDanmakuCount' => ({required int count}) => '弹幕 ${count} 条',
+			'room.recordIdle' => '这个房间现在没在录制',
 			'room.autoRecordOn' => '开播自动录',
 			'room.autoRecordOff' => '取消开播自动录',
 			'room.autoRecordArmed' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）；开播后自动录制',
@@ -15854,13 +15874,13 @@ extension on Translations {
 			'settings.sitesColumnShown' => '显示',
 			'settings.aboutVersion' => '版本',
 			'settings.aboutProject' => '项目主页',
+			_ => null,
+		} ?? switch (path) {
 			'settings.aboutLicense' => '开源许可',
 			'settings.aboutLicenseDesc' => '查看本应用使用的开源组件。',
 			'settings.themeSeed' => '主题色',
 			'settings.themeSeedSystem' => '跟随系统取色',
 			'settings.themeSeedDescription' => '用于按钮、选中态和强调色。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeSeedDynamic' => '跟随系统动态取色',
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
@@ -16368,13 +16388,13 @@ extension on Translations {
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
 			'settings.scaleSpline16' => 'Spline16（快）',
 			'settings.scaleCatmullRom' => 'Catmull-Rom',
 			'settings.scaleMitchell' => 'Mitchell',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleHermite' => 'Hermite（柔和）',
 			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
@@ -16882,13 +16902,13 @@ extension on Translations {
 			'settings.roomCardShowAudience' => '热度',
 			'settings.roomCardReplay' => '回放',
 			'settings.roomCardResetCurrent' => '恢复默认显示',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardResetConfirmTitle' => '恢复默认显示？',
 			'settings.roomCardResetConfirmBody' => '所有显示项回到默认，当前选择会丢失。',
 			'settings.backgroundPreviewMedia' => '预览',
 			'settings.backgroundCopyColor' => '复制色值',
 			'settings.backgroundCopyGradient' => '复制渐变',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundCopyAddress' => '复制地址',
 			'settings.backgroundDownloadFailed' => '下载失败',
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
@@ -17396,13 +17416,13 @@ extension on Translations {
 			'vod.collapse' => '收起',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
+			_ => null,
+		} ?? switch (path) {
 			'vod.score' => '评分',
 			'vod.danmakuOn' => '显示弹幕',
 			'vod.danmakuOff' => '隐藏弹幕',
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
-			_ => null,
-		} ?? switch (path) {
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',

@@ -2298,6 +2298,11 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get recordStarted => 'Recording started';
 	@override String get recordStopped => 'Recording stopped';
 	@override String get recordFailed => 'The recording action failed';
+	@override String get tabRecording => 'Recording';
+	@override String recordSegment({required int index, required int minutes}) => 'Segment ${index} · one every ${minutes} min';
+	@override String recordSize({required String size}) => '${size} recorded';
+	@override String recordDanmakuCount({required int count}) => '${count} danmaku';
+	@override String get recordIdle => 'This room is not being recorded';
 	@override String get autoRecordOn => 'Record when live';
 	@override String get autoRecordOff => 'Stop waiting for live';
 	@override String autoRecordArmed({required Object seconds}) => 'Live check is on (every ${seconds} s); recording starts when the room goes live';
@@ -6866,6 +6871,11 @@ extension on TranslationsEn {
 			'room.recordStarted' => 'Recording started',
 			'room.recordStopped' => 'Recording stopped',
 			'room.recordFailed' => 'The recording action failed',
+			'room.tabRecording' => 'Recording',
+			'room.recordSegment' => ({required int index, required int minutes}) => 'Segment ${index} · one every ${minutes} min',
+			'room.recordSize' => ({required String size}) => '${size} recorded',
+			'room.recordDanmakuCount' => ({required int count}) => '${count} danmaku',
+			'room.recordIdle' => 'This room is not being recorded',
 			'room.autoRecordOn' => 'Record when live',
 			'room.autoRecordOff' => 'Stop waiting for live',
 			'room.autoRecordArmed' => ({required Object seconds}) => 'Live check is on (every ${seconds} s); recording starts when the room goes live',
@@ -7185,13 +7195,13 @@ extension on TranslationsEn {
 			'settings.sitesColumnShown' => 'Shown',
 			'settings.aboutVersion' => 'Version',
 			'settings.aboutProject' => 'Project home',
+			_ => null,
+		} ?? switch (path) {
 			'settings.aboutLicense' => 'Licences',
 			'settings.aboutLicenseDesc' => 'The open-source packages this app builds on.',
 			'settings.themeSeed' => 'Accent colour',
 			'settings.themeSeedSystem' => 'Follow the system accent',
 			'settings.themeSeedDescription' => 'Drives buttons, selection and emphasis.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeSeedDynamic' => 'Follow the system\'s dynamic colour',
 			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
 			'settings.dynamicColor' => 'Dynamic colour',
@@ -7699,13 +7709,13 @@ extension on TranslationsEn {
 			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
 			'settings.scaleSpline16' => 'Spline16 (fast)',
 			'settings.scaleCatmullRom' => 'Catmull-Rom',
 			'settings.scaleMitchell' => 'Mitchell',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleHermite' => 'Hermite (soft)',
 			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
 			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
@@ -8213,13 +8223,13 @@ extension on TranslationsEn {
 			'settings.roomCardShowAudience' => 'Heat',
 			'settings.roomCardReplay' => 'Replay',
 			'settings.roomCardResetCurrent' => 'Restore the default details',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardResetConfirmTitle' => 'Restore the default details?',
 			'settings.roomCardResetConfirmBody' => 'Every detail goes back to its default; the current choices are lost.',
 			'settings.backgroundPreviewMedia' => 'Preview',
 			'settings.backgroundCopyColor' => 'Copy color value',
 			'settings.backgroundCopyGradient' => 'Copy gradient',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundCopyAddress' => 'Copy address',
 			'settings.backgroundDownloadFailed' => 'Download failed',
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
@@ -8727,13 +8737,13 @@ extension on TranslationsEn {
 			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
+			_ => null,
+		} ?? switch (path) {
 			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
-			_ => null,
-		} ?? switch (path) {
 			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',

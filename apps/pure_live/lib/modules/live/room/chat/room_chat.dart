@@ -15,17 +15,18 @@ import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
+import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// The room's chat column: four tabs, as the reference's `ChatPanel` has —
-/// the danmaku list with its composer, the super chats where the platform
-/// keeps a board, the flying layer's own settings, and the shield's lists.
-/// The tab is the panel's own state; a narrow column scrolls its bar rather
-/// than cutting a label.
-enum _ChatTab { danmaku, superChats, settings, shield }
+/// The room's chat column: five tabs — the danmaku list with its composer, the
+/// super chats where the platform keeps a board, this room's own recording
+/// figures, the flying layer's settings, and the shield's lists. The tab is the
+/// panel's own state; a narrow column scrolls its bar rather than cutting a
+/// label.
+enum _ChatTab { danmaku, superChats, recording, settings, shield }
 
 /// The chat column under (or beside) the picture.
 final class RoomChatPanel extends ConsumerStatefulWidget {
@@ -66,6 +67,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             tabs: [
               DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
               DsTab(value: _ChatTab.superChats, label: Text(t.room.tabSuperChats)),
+              DsTab(value: _ChatTab.recording, label: Text(t.room.tabRecording)),
               DsTab(value: _ChatTab.settings, label: Text(t.room.tabSettings)),
               DsTab(value: _ChatTab.shield, label: Text(t.room.tabShield)),
             ],
@@ -81,6 +83,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
                 ],
               ),
               _ChatTab.superChats => const _SuperChatTab(),
+              _ChatTab.recording => const RoomRecordTab(),
               _ChatTab.settings => const _RoomDanmakuSettings(),
               _ChatTab.shield => const _ShieldTab(),
             },

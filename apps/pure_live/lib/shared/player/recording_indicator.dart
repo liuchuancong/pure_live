@@ -62,6 +62,19 @@ final class RecordingIndicator extends StatefulWidget {
   /// would vanish next to 48 px buttons.
   final bool tv;
 
+  /// `mm:ss` under the hour and `h:mm:ss` past it: three hours of recording
+  /// must not read as 180 minutes.
+  ///
+  /// Public because the room's own recording panel counts the same take with
+  /// the same words; one clock format, two surfaces.
+  static String formatElapsed(Duration since) {
+    String two(int value) => value.toString().padLeft(2, '0');
+    final hours = since.inHours;
+    final minutes = two(since.inMinutes % 60);
+    final seconds = two(since.inSeconds % 60);
+    return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
+  }
+
   @override
   State<RecordingIndicator> createState() => _RecordingIndicatorState();
 }
@@ -106,15 +119,6 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
     super.dispose();
   }
 
-  /// `mm:ss` under the hour and `h:mm:ss` past it: three hours of recording
-  /// must not read as 180 minutes.
-  static String _elapsed(Duration since) {
-    String two(int value) => value.toString().padLeft(2, '0');
-    final hours = since.inHours;
-    final minutes = two(since.inMinutes % 60);
-    final seconds = two(since.inSeconds % 60);
-    return hours > 0 ? '$hours:$minutes:$seconds' : '$minutes:$seconds';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +155,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
             ),
           if (widget.showTimer && startedAt != null)
             Text(
-              _elapsed(DateTime.now().difference(startedAt)),
+              RecordingIndicator.formatElapsed(DateTime.now().difference(startedAt)),
               style: theme.typography.numeric(
                 (widget.tv ? theme.typography.label : theme.typography.caption).copyWith(
                   color: playerInk,

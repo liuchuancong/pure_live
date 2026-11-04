@@ -277,6 +277,14 @@ final class RecorderEngine {
   /// Whether the task behind [taskId] is being captured right now.
   bool isRecording(String taskId) => _sessions.containsKey(taskId);
 
+  /// How many chat lines the take of [taskId] has written into its sidecar.
+  ///
+  /// Null when that room is not being captured, or is captured without a chat
+  /// file (`recordDanmaku` off, or a platform with no chat). The room's card
+  /// leaves the figure out in that case rather than saying zero, which would
+  /// read as a capture that lost every line it was given.
+  int? chatEntries(String taskId) => _sessions[taskId]?.chat?.count;
+
   /// How many captures this engine is writing right now.
   int get activeRecordingCount => _sessions.length;
 
