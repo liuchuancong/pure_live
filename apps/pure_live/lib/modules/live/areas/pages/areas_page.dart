@@ -25,11 +25,8 @@ final class AreasPage extends ConsumerStatefulWidget {
 }
 
 /// The two views the segmented control switches between.
-enum _AreasView { platform, followed }
 
 final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBindingObserver {
-  _AreasView _view = _AreasView.platform;
-
   /// When the viewer last left the app, so a long absence refreshes on return.
   DateTime? _backgroundedAt;
 
@@ -98,7 +95,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     // A word from the toolbar searches this page's areas, which the
     // platform view carries.
     ref.listenManual(areasInlineSearchProvider, (_, word) {
-      if (word != null && _view != _AreasView.platform) setState(() => _view = _AreasView.platform);
+      if (word != null) ref.read(areasViewProvider.notifier).selected = AreasView.platform;
     });
   }
 
@@ -106,6 +103,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   Widget build(BuildContext context) {
     final t = context.t;
     final platform = ref.watch(areasSiteProvider);
+    final view = ref.watch(areasViewProvider);
     // The platform list and its order are settings this page follows live:
     // watching the notifier alone would leave the tabs stale until another
     // rebuild.
@@ -119,13 +117,13 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     if (ids.isNotEmpty && !ids.contains(platform)) _schedulePlatformFallback();
     final query = ref.watch(areasInlineSearchProvider);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final views = DsSegmentedControl<_AreasView>(
+    final views = DsSegmentedControl<AreasView>(
       segments: [
-        DsSegment(value: _AreasView.platform, label: Text(t.areas.viewPlatform)),
-        DsSegment(value: _AreasView.followed, label: Text(t.areas.viewFollowed)),
+        DsSegment(value: AreasView.platform, label: Text(t.areas.viewPlatform)),
+        DsSegment(value: AreasView.followed, label: Text(t.areas.viewFollowed)),
       ],
-      value: _view,
-      onChanged: (view) => setState(() => _view = view),
+      value: view,
+      onChanged: (picked) => ref.read(areasViewProvider.notifier).selected = picked,
     );
     // The catalogue's tile form: the poster with the picture above its
     // name, or the row with the picture beside it. The areas page's own
@@ -156,7 +154,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     );
     // The platform tabs; the wide row keeps the platform wall chevron at
     // their end, the narrow toolbar leaves it to the page's menu.
-    Widget? platformTabs({required bool withWall}) => _view == _AreasView.platform && ids.isNotEmpty
+    Widget? platformTabs({required bool withWall}) => view == AreasView.platform && ids.isNotEmpty
         ? PlatformTabRow(
             platforms: ids,
             current: platform,
@@ -175,59 +173,9 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
             },
           )
         : null;
-    // The narrow toolbar's second half: the view switch, the layout and the
-    // platform wall live in this menu there, not as controls in the bar.
-    final moreMenu = DsMenuAnchor(
-      semanticLabel: t.common.more,
-      align: DsAlign.end,
-      items: [
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.search),
-          label: Text(t.areas.searchHint),
-          onPressed: () => unawaited(_openAreaSearch()),
-        ),
-        const DsMenuDivider(),
-        DsMenuItem(
-          label: Text(t.areas.viewPlatform),
-          checked: _view == _AreasView.platform,
-          onPressed: () => setState(() => _view = _AreasView.platform),
-        ),
-        DsMenuItem(
-          label: Text(t.areas.viewFollowed),
-          checked: _view == _AreasView.followed,
-          onPressed: () => setState(() => _view = _AreasView.followed),
-        ),
-        const DsMenuDivider(),
-        DsMenuItem(
-          label: Text(t.areas.iconTop),
-          checked: tileLayout == AreaCardLayout.tile,
-          onPressed: () => unawaited(ref.read(areaLayoutProvider.notifier).set(AreaCardLayout.tile)),
-        ),
-        DsMenuItem(
-          label: Text(t.areas.iconLeft),
-          checked: tileLayout == AreaCardLayout.row,
-          onPressed: () => unawaited(ref.read(areaLayoutProvider.notifier).set(AreaCardLayout.row)),
-        ),
-        if (ids.isNotEmpty) ...[
-          const DsMenuDivider(),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.antenna),
-            label: Text(t.common.switchPlatform),
-            onPressed: () => unawaited(_openPlatformWall()),
-          ),
-        ],
-      ],
-      builder: (context, controller, _) => DsButton.icon(
-        variant: DsButtonVariant.ghost,
-        size: DsSize.sm,
-        semanticLabel: t.common.more,
-        onPressed: controller.open,
-        icon: const DsIcon(DsIcons.ellipsisVertical),
-      ),
-    );
     // The catalogue's reload: the shown platform's areas, asked again — the
     // popular page's head button, this page's own.
-    final inPlatformView = _view == _AreasView.platform;
+    final inPlatformView = view == AreasView.platform;
     // The followed view keeps its own empty/loading shapes, so only the
     // platform view's catalogue load greys this button.
     final loadingCatalog =
@@ -266,24 +214,18 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                   ),
                 );
               }
-              // A small screen keeps the platform tab bar alone and puts the
-              // rest behind one more icon at its end.
+              // A phone's refresh, search and more ride the top bar with the
+              // page's button style (see AreasTopBarActions), so this line
+              // keeps the tabs alone and no verb is offered twice.
               return SizedBox(
                 height: 44,
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: platformTabs(withWall: false) ?? _viewLabel(context)),
-                    if (inPlatformView) refreshButton,
-                    moreMenu,
-                  ],
-                ),
+                child: platformTabs(withWall: false) ?? _viewLabel(context),
               );
             },
           ),
         ),
         Expanded(
-          child: _view == _AreasView.platform
+          child: view == AreasView.platform
               ? (ids.isEmpty
                     ? Center(
                         child: DsEmptyState(
@@ -323,10 +265,11 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   /// the followed view, or a catalogue with no visible platform.
   Widget _viewLabel(BuildContext context) {
     final t = context.t;
+    final view = ref.watch(areasViewProvider);
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: Text(
-        _view == _AreasView.followed ? t.areas.viewFollowed : t.areas.viewPlatform,
+        view == AreasView.followed ? t.areas.viewFollowed : t.areas.viewPlatform,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: DsTheme.of(context).typography.body.copyWith(color: DsTheme.colorsOf(context).text),
@@ -334,34 +277,33 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     );
   }
 
-  /// The narrow toolbar's search: a wide window types into the title bar's
-  /// field, here the menu opens the same word's field over the catalogue.
-  Future<void> _openAreaSearch() => showDsPanel<void>(
-    context: context,
-    builder: (_) => _AreaSearchPanel(initial: ref.read(areasInlineSearchProvider) ?? ''),
-  );
+}
 
-  /// The narrow toolbar's way to the platform wall — the panel the wide
-  /// row's chevron opens.
-  Future<void> _openPlatformWall() {
-    final sites = ref.read(sitesProvider);
-    return showPlatformPickerPanel(
-      context,
-      platforms: ref.read(areasCatalogProvider.notifier).platformIds(),
-      current: ref.read(areasSiteProvider),
-      nameOf: (id) {
-        final site = sites.getById(id);
-        return site == null ? id : localizedSiteName(site);
-      },
-      iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
-      onManagePlatforms: () =>
-          unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
-      onChanged: (id) {
-        ref.read(areasSiteProvider.notifier).selected = id;
-        unawaited(ref.read(areasCatalogProvider.notifier).open(id));
-      },
-    );
-  }
+/// The narrow toolbar's search: a wide window types into the title bar's
+/// field, here the menu opens the same word's field over the catalogue.
+Future<void> showAreasSearchPanel(BuildContext context, {String initial = ''}) =>
+    showDsPanel<void>(context: context, builder: (_) => _AreaSearchPanel(initial: initial));
+
+/// The narrow toolbar's way to the platform wall — the panel the wide row's
+/// chevron opens.
+Future<void> showAreasPlatformWall(BuildContext context, WidgetRef ref) {
+  final sites = ref.read(sitesProvider);
+  return showPlatformPickerPanel(
+    context,
+    platforms: ref.read(areasCatalogProvider.notifier).platformIds(),
+    current: ref.read(areasSiteProvider),
+    nameOf: (id) {
+      final site = sites.getById(id);
+      return site == null ? id : localizedSiteName(site);
+    },
+    iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
+    onManagePlatforms: () =>
+        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
+    onChanged: (id) {
+      ref.read(areasSiteProvider.notifier).selected = id;
+      unawaited(ref.read(areasCatalogProvider.notifier).open(id));
+    },
+  );
 }
 
 /// The narrow toolbar's areas search: the word hands the page its own

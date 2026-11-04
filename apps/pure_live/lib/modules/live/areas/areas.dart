@@ -7,3 +7,4 @@ export 'controllers/areas_controller.dart';
 export 'data/area_follow_repository.dart';
 export 'pages/area_rooms_page.dart';
 export 'pages/areas_page.dart';
+export 'widgets/areas_top_bar_actions.dart';

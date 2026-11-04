@@ -6,6 +6,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
+import 'package:pure_live/modules/live/areas/areas.dart' show AreasTopBarActions;
 import 'package:pure_live/modules/live/favorites/favorites.dart' show FavoritesTopBarActions;
 import 'package:pure_live/modules/live/popular/popular.dart' show PopularTopBarActions;
 import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
@@ -238,6 +239,10 @@ final class MobileLayout extends ConsumerWidget {
           if (LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width)) ...[
             if (selected == NavigationItem.hot) ...[
               const PopularTopBarActions(),
+              const SizedBox(width: DsSpace.s4),
+            ],
+            if (selected == NavigationItem.zones) ...[
+              const AreasTopBarActions(),
               const SizedBox(width: DsSpace.s4),
             ],
             if (selected == NavigationItem.favorites) ...[

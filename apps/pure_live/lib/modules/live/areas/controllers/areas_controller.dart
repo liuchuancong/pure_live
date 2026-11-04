@@ -153,3 +153,23 @@ final class AreasInlineSearchController extends Notifier<String?> {
 final areasInlineSearchProvider = NotifierProvider<AreasInlineSearchController, String?>(
   AreasInlineSearchController.new,
 );
+
+/// The areas page's two views: the platform catalogue, or the followed rooms
+/// grouped by area.
+enum AreasView { platform, followed }
+
+/// The areas view, readable above the page: a phone's top bar offers the more
+/// menu, and the menu's view switch has to reach the page.
+final class AreasViewController extends Notifier<AreasView> {
+  @override
+  AreasView build() => AreasView.platform;
+
+  /// The shown view.
+  AreasView get selected => state;
+
+  /// Shows [value].
+  set selected(AreasView value) => state = value;
+}
+
+/// The areas page's shown view.
+final areasViewProvider = NotifierProvider<AreasViewController, AreasView>(AreasViewController.new);
