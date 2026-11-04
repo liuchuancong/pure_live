@@ -890,6 +890,7 @@ final class _Figure extends StatelessWidget {
         Text(
           value,
           maxLines: 1,
+          softWrap: false,
           overflow: TextOverflow.ellipsis,
           style: theme.typography
               .numeric(theme.typography.caption)
@@ -1249,7 +1250,7 @@ final class _TaskCard extends ConsumerWidget {
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s8, DsSpace.s8),
                   child: Row(
-                    spacing: DsSpace.s12,
+                    spacing: DsSpace.s20,
                     children: [
                       coverTile,
                       identity(width),
@@ -1257,6 +1258,7 @@ final class _TaskCard extends ConsumerWidget {
                         Expanded(
                           flex: 3,
                           child: Row(
+                            spacing: DsSpace.s32,
                             children: [
                               Expanded(
                                 child: _Figure(label: t.recorder.columnBitrate, value: figuresBitrate),

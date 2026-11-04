@@ -921,5 +921,8 @@ final class _TakeCoverState extends ConsumerState<_TakeCover> {
 String formatRecordingBitrate(int bytes, Duration duration) {
   if (bytes <= 0 || duration.inSeconds <= 0) return '';
   final kbps = bytes * 8 / duration.inSeconds;
+  // A wide take passes a gigabit a second; four digits of Mbps read worse
+  // than the unit above them.
+  if (kbps >= 1000000) return '${(kbps / 1000000).toStringAsFixed(1)} Gbps';
   return kbps >= 1000 ? '${(kbps / 1000).toStringAsFixed(1)} Mbps' : '${kbps.round()} kbps';
 }
