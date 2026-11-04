@@ -6,7 +6,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
-import 'package:pure_live/modules/live/favorites/favorites.dart' show followsPageRefreshProvider;
+import 'package:pure_live/modules/live/favorites/favorites.dart' show FavoritesTopBarActions;
 import 'package:pure_live/modules/live/toolbox/toolbox_page.dart' show LogsSettingsButton;
 import 'package:pure_live/shared/shared.dart';
 
@@ -220,12 +220,12 @@ final class MobileLayout extends ConsumerWidget {
           // The log console's settings gear and the favorites' refresh ride
           // the top bar, the same corner the desktop's head rows give them.
           if (selected == NavigationItem.logs) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
-          if (selected == NavigationItem.favorites) ...[
-            IconButton(
-              tooltip: t.favorites.refresh,
-              onPressed: ref.read(followsPageRefreshProvider.notifier).run,
-              icon: DsIcon(DsIcons.refreshCw, size: 20, color: colors.text),
-            ),
+          // The follows page's own verbs move here when the window is narrow
+          // enough for it to drop them: the platform menu and the refresh,
+          // with the page's button style, so the refresh is not offered twice.
+          if (selected == NavigationItem.favorites &&
+              LiveWindow.stacksToolbar(MediaQuery.sizeOf(context).width)) ...[
+            const FavoritesTopBarActions(),
             const SizedBox(width: DsSpace.s4),
           ],
           // A window strip above this bar already carries the switch; two

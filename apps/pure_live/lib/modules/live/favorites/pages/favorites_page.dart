@@ -10,6 +10,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart';
+import 'package:pure_live/modules/live/favorites/data/favorites_view.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
@@ -50,13 +51,6 @@ final class FavoritesPage extends ConsumerStatefulWidget {
 }
 
 final class _FavoritesPageState extends ConsumerState<FavoritesPage> with WidgetsBindingObserver {
-  /// The group shown; null is every group.
-  LiveFollowGroup? _group;
-
-  /// The platform shown ([kAllPlatforms] for all); local like the
-  /// reference's — what a follow list shows depends on what is followed.
-  String _platform = kAllPlatforms;
-
   /// Whether a refresh is running: the header's button spins.
   bool _refreshing = false;
 
@@ -99,6 +93,11 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     // The toolbar's word narrows the shown follows in place; a new word
     // restarts the slice at its top.
     ref.listenManual(favoritesInlineSearchProvider, (_, _) {
+      if (mounted) _jumpToTop();
+    });
+    // The group and the platform can now change from the phone's top bar as
+    // well as from this page; either way a new slice starts at its top.
+    ref.listenManual(favoritesViewProvider, (_, _) {
       if (mounted) _jumpToTop();
     });
     _syncTimer();
@@ -159,9 +158,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
   /// The platform shown, falling back to "all" when its last follow left.
   String _visiblePlatform(List<LiveRoom> rooms) {
-    if (_platform == kAllPlatforms) return kAllPlatforms;
+    final platform = ref.read(favoritesViewProvider).platform;
+    if (platform == kAllPlatforms) return kAllPlatforms;
     final platforms = followPlatformTabs(rooms, ref.read(sitesDisplayProvider.notifier).visibleIds());
-    return platforms.contains(_platform) ? _platform : kAllPlatforms;
+    return platforms.contains(platform) ? platform : kAllPlatforms;
   }
 
   /// Refreshes the visible platform and group (the reference's
@@ -170,11 +170,12 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// would leave the empty state's button dead.
   Future<void> _runRefresh() async {
     final rooms = ref.read(followsProvider).rooms;
+    final group = ref.read(favoritesViewProvider).group;
     final platform = _visiblePlatform(rooms);
     final scope = platform == kAllPlatforms ? null : platform;
     final slice = [
       for (final room in rooms)
-        if (onFollowPlatform(room, scope) && (_group == null || followGroupOf(room) == _group)) room,
+        if (onFollowPlatform(room, scope) && (group == null || followGroupOf(room) == group)) room,
     ];
     final targets = slice.isEmpty
         ? [
@@ -223,19 +224,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     setState(() => _progress = total == 0 ? 1 : done / total);
   }
 
-  /// Switches the group: a new slice starts on its first page.
-  void _selectGroup(LiveFollowGroup? group) {
-    if (_group == group) return;
-    setState(() => _group = group);
-    _jumpToTop();
-  }
+  /// Switches the group; the slice starts on its first page.
+  void _selectGroup(LiveFollowGroup? group) =>
+      ref.read(favoritesViewProvider.notifier).selectGroup(group);
 
-  /// Switches the platform: a new slice starts on its first page.
-  void _selectPlatform(String platform) {
-    if (_platform == platform) return;
-    setState(() => _platform = platform);
-    _jumpToTop();
-  }
+  /// Switches the platform; the slice starts on its first page.
+  void _selectPlatform(String platform) =>
+      ref.read(favoritesViewProvider.notifier).selectPlatform(platform);
 
   void _jumpToTop() {
     if (_gridScroll.hasClients) _gridScroll.jumpTo(0);
@@ -314,7 +309,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     }
 
     final platformTabs = followPlatformTabs(follows.rooms, ref.read(sitesDisplayProvider.notifier).visibleIds());
-    final platform = platformTabs.contains(_platform) ? _platform : kAllPlatforms;
+    final view = ref.watch(favoritesViewProvider);
+    final group = view.group;
+    final platform = platformTabs.contains(view.platform) ? view.platform : kAllPlatforms;
     final scope = platform == kAllPlatforms ? null : platform;
     final tags = ref.watch(followTagsProvider);
     // A tag removed while selected falls back to every tag rather than
@@ -331,7 +328,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final rooms = [
       for (final room in follows.rooms)
         if (onFollowPlatform(room, scope) &&
-            (_group == null || followGroupOf(room) == _group) &&
+            (group == null || followGroupOf(room) == group) &&
             (selectedTag == null || room.local.tagIds.contains(selectedTag)) &&
             followMatchesQuery(room, query))
           room,
@@ -343,7 +340,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     // rather than a number the viewer sets. A new slice (group, platform,
     // tag or word) is a new feed, starting on its first page.
     final pageSize = roomFeedRequestSize(platform);
-    final sliceKey = ValueKey('follows-$platform-${_group?.name}-$selectedTag-$query');
+    final sliceKey = ValueKey('follows-$platform-${group?.name}-$selectedTag-$query');
 
     Widget cardFor(LiveRoom room, {bool listRow = false}) {
       final names = [for (final id in room.local.tagIds) ?tagNames[id]];
@@ -376,7 +373,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                 children: [
                   Expanded(
                     child: DsTabs<LiveFollowGroup?>(
-                      value: _group,
+                      value: group,
                       onChanged: _selectGroup,
                       tabs: [
                         // The reference's order: live, replay, offline, all.
@@ -412,22 +409,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                         context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
                       ),
                       countOf: (id) =>
-                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: group),
                     ),
                   if (!narrow) const LayoutToggle(),
-                  if (narrow)
-                    PlatformToolbarMore(
-                      platforms: [kAllPlatforms, ...platformTabs],
-                      current: platform,
-                      nameOf: _platformName,
-                      countOf: (id) =>
-                          followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
-                      onChanged: _selectPlatform,
-                      onManagePlatforms: () => unawaited(
-                        context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-                      ),
-                    ),
-                  _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
+                  // A phone's platform menu and refresh ride the top bar with
+                  // the page's own button style, so this line keeps the tabs
+                  // alone and no verb is offered twice.
+                  if (!narrow) _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
               // The platform tabs, the row under them: names and counts
@@ -437,7 +425,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                 current: platform,
                 nameOf: _platformName,
                 semanticLabel: t.navigation.favorites,
-                countOf: (id) => followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                countOf: (id) => followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: group),
                 showPlatformWall: false,
                 showLayoutToggle: false,
                 onManagePlatforms: () =>
@@ -497,7 +485,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                       )
                     : Center(
                         child: _EmptySlice(
-                          group: _group,
+                          group: group,
                           offlineCount: counts[LiveFollowGroup.offline] ?? 0,
                           refreshing: _refreshing,
                           onShowOffline: () => _selectGroup(LiveFollowGroup.offline),
