@@ -20,8 +20,10 @@ import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_room_parser.d
 /// Bilibili's rooms: the WBI-signed detail by any id the user knows (a short
 /// id stays the card's identity), and the ranked list as the directory.
 ///
-/// The canonical long id every stream, danmaku and super-chat request needs,
-/// and the room's danmaku credentials, ride in its [RoomRuntime] handles.
+/// The canonical long id every stream and super-chat request needs rides in the
+/// room's [RoomRuntime] handle. Its danmaku credentials do not: Bilibili mints
+/// them with a second signed request, and the chat session asks for a fresh one
+/// for itself, so reading them here would only hold up the room's own answer.
 final class BilibiliRoomProvider implements LiveRoomProvider {
   /// Serves [site]; [discovery] answers the directory page (the same ranked
   /// list the discovery feed shows).
@@ -56,13 +58,11 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
   }
 
   /// The room at [roomId] (its identity stays the id as asked for), with its
-  /// long id and its danmaku credentials.
+  /// long id in the runtime handle.
   Future<LiveRoom> detail(String roomId) async {
     final read = await _read(roomId);
-    final danmaku = await _danmaku(read.longId);
     return read.room.rebuild(
-      (b) =>
-          b..runtime = RoomRuntime.of(streamHandle: BilibiliRoomData(read.longId), danmakuHandle: danmaku).toBuilder(),
+      (b) => b..runtime = RoomRuntime.of(streamHandle: BilibiliRoomData(read.longId)).toBuilder(),
     );
   }
 
@@ -83,17 +83,6 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
     final longId = result.value.longId;
     site.rememberLongId(id, longId);
     return (room: result.value.room, longId: longId);
-  }
-
-  /// The room's danmaku credentials: the detail comes first, so one quick
-  /// discovery is all it waits for; when that fails the room still opens with
-  /// an empty token, which the session reports rather than joins.
-  Future<BilibiliDanmakuArgs> _danmaku(String longId) async {
-    try {
-      return await site.danmakuArgs(longId, maxAttempts: 1);
-    } on BilibiliFailure {
-      return await site.emptyDanmakuArgs(longId);
-    }
   }
 
   /// The super chats of [roomId] (`av/v1/SuperChat/getMessageList`, asked with
