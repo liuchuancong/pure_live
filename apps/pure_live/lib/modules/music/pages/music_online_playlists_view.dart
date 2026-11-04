@@ -174,8 +174,9 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
     final order = _order ?? sorts.firstOrNull?.id ?? '';
     final tagGroups = tree.value ?? const <MusicPlaylistTagGroup>[];
     final hotValues = [
-      for (final name in hotTags.value ?? const <String>[])
-        if (name.trim().isNotEmpty) MusicPlaylistTag(id: name.trim(), name: name.trim()),
+      // The platform's own pair: the chip shows the name, the page asks by id.
+      for (final tag in hotTags.value ?? const <MusicPlaylistTag>[])
+        if (tag.name.trim().isNotEmpty && tag.id.isNotEmpty) tag,
     ];
     final chips = _group.isEmpty
         ? hotValues

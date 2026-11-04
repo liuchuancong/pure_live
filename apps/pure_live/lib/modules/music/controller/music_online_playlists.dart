@@ -9,6 +9,7 @@ import 'package:pure_live/modules/music/controller/sources/online_playlist_model
     show
         MusicPlaylistInfo,
         MusicPlaylistPage,
+        MusicPlaylistTag,
         MusicPlaylistTagGroup,
         MusicPlazaSort,
         OnlinePlaylists,
@@ -26,9 +27,9 @@ typedef MusicOnlinePlaylistDetail = (MusicPlaylistInfo, List<audio.MusicTrack>);
 /// source directly: `musicSourceProvider` hands out the platform under its
 /// lyric wrappers, which carry the [audio.MusicSource] contract and nothing
 /// beside it — read directly, a full plaza would look like a source with none.
-final musicOnlineHotTagsProvider = FutureProvider<List<String>>((ref) async {
+final musicOnlineHotTagsProvider = FutureProvider<List<MusicPlaylistTag>>((ref) async {
   final plaza = musicCapabilityOf<OnlinePlaylists>(ref.watch(musicSourceProvider));
-  if (plaza == null) return const <String>[];
+  if (plaza == null) return const <MusicPlaylistTag>[];
   return await plaza.hotTags();
 });
 

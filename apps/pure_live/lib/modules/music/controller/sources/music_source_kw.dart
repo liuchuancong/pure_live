@@ -134,15 +134,10 @@ final class KwMusicSource extends LxPlatformSource
   /// The plaza pages 36 lists a page — the reference's `limit_list`.
   static const int _plazaLimit = 36;
 
-  /// The hot tags' request halves, keyed by shown name — the reference's
-  /// hot tags carry `id-digest` pairs while the browser passes bare names.
-  final Map<String, (String, String)> _hotTagIds = <String, (String, String)>{};
-
-  /// The online playlists (在线歌单): Kuwo's pc classify plaza — the hot
-  /// tags, the tag tree, the pages and the digest-dispatched detail
-  /// lx-music's kw `songList` rides.
+  /// Kuwo's hot plaza tags, from its pc classify `getRcmTagList` — the set the
+  /// online-playlist browser starts from.
   @override
-  Future<List<String>> hotTags() async {
+  Future<List<MusicPlaylistTag>> hotTags() async {
     final json = jsonDecode(
       await getText(
         Uri.http('wapi.kuwo.cn', '/api/pc/classify/playlist/getRcmTagList', {
@@ -154,17 +149,14 @@ final class KwMusicSource extends LxPlatformSource
     ) as Map<String, Object?>;
     final data = json['data'];
     final raw = data is List && data.isNotEmpty && data.first is Map ? (data.first as Map)['data'] : null;
-    _hotTagIds.clear();
-    if (raw is! List) return const <String>[];
-    final names = <String>[];
-    for (final entry in raw) {
-      if (entry is! Map) continue;
-      final name = '${entry['name'] ?? ''}'.trim();
-      if (name.isEmpty) continue;
-      _hotTagIds[name] = ('${entry['id'] ?? ''}', '${entry['digest'] ?? ''}');
-      names.add(name);
-    }
-    return names;
+    if (raw is! List) return const <MusicPlaylistTag>[];
+    // Kuwo's listing call takes the tag's `id-digest` pair, so that is the
+    // tag's request half; the name is only what the chip shows.
+    return [
+      for (final entry in raw)
+        if (entry is Map && '${entry['name'] ?? ''}'.trim().isNotEmpty)
+          MusicPlaylistTag(id: '${entry['id'] ?? ''}-${entry['digest'] ?? ''}', name: '${entry['name'] ?? ''}'.trim()),
+    ];
   }
 
   /// The plaza's category tree — the reference's `getTagList`, each tag's
@@ -213,7 +205,7 @@ final class KwMusicSource extends LxPlatformSource
   @override
   Future<MusicPlaylistPage> playlists({String tag = '', String order = 'new', int page = 1, int pageSize = 30}) async {
     if (tag.trim().isEmpty) return await _recommendPage(order: order, page: page);
-    final resolved = await _resolveTag(tag);
+    final resolved = _resolveTag(tag);
     if (resolved == null) return const MusicPlaylistPage(items: [], total: 0);
     final (id, digest) = resolved;
     if (digest == '10000') {
@@ -243,14 +235,13 @@ final class KwMusicSource extends LxPlatformSource
     return MusicPlaylistPage(items: _qzPlaylistsOf(body is List ? body : const <Object?>[]), total: 1000);
   }
 
-  /// The tag's request halves — the reference splits the `id-digest` pair;
-  /// a bare hot-tag name re-joins through the getRcmTagList map.
-  Future<(String, String)?> _resolveTag(String tag) async {
+  /// The tag's request halves — the reference splits the `id-digest` pair the
+  /// plaza's tags are keyed by, and a tag that carries no digest is not one
+  /// this call can answer.
+  (String, String)? _resolveTag(String tag) {
     final trimmed = tag.trim();
     final dash = trimmed.indexOf('-');
-    if (dash > 0) return (trimmed.substring(0, dash), trimmed.substring(dash + 1));
-    if (!_hotTagIds.containsKey(trimmed) && _hotTagIds.isEmpty) await hotTags();
-    return _hotTagIds[trimmed];
+    return dash > 0 ? (trimmed.substring(0, dash), trimmed.substring(dash + 1)) : null;
   }
 
   /// The recommend flow — the reference's getRcmPlayList, the only page the

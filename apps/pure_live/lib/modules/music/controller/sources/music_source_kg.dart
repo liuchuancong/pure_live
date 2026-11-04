@@ -201,7 +201,7 @@ final class KgMusicSource extends LxPlatformSource
   /// the mobile song_v2 pages with the gateway enrichment lx-music's kg
   /// `songList` rides. JSON throughout, signed with the sorted-params MD5.
   @override
-  Future<List<String>> hotTags() async {
+  Future<List<MusicPlaylistTag>> hotTags() async {
     try {
       final json = jsonDecode(
         await getText(
@@ -209,37 +209,43 @@ final class KgMusicSource extends LxPlatformSource
         ),
       ) as Map<String, Object?>;
       final data = json['data'];
-      if (data is! Map) return const <String>[];
-      final tags = <String>[];
+      if (data is! Map) return const <MusicPlaylistTag>[];
+      final tags = <MusicPlaylistTag>[];
+      void add(String id, String name) {
+        if (id.isEmpty || name.isEmpty) return;
+        if (tags.any((tag) => tag.id == id)) return;
+        tags.add(MusicPlaylistTag(id: id, name: name));
+      }
+
       // `hotTag` is the platform's own short list, and it is a map of index →
-      // row (`{"0":{special_name:"经典"…},"1":…}`), not a list — reading every
-      // `data` value as a list is what made this answer nothing.
+      // row (`{"0":{special_name:"经典",special_id:"12"…},"1":…}`), not a list —
+      // reading every `data` value as a list is what made this answer nothing.
+      // The plaza's `c=` parameter wants that `special_id`, so the name alone
+      // could label a chip but never filter one.
       final hot = data['hotTag'];
       if (hot is Map) {
         for (final row in hot.values) {
           if (row is! Map) continue;
-          final name = '${row['special_name'] ?? ''}'.trim();
-          if (name.isNotEmpty && !tags.contains(name)) tags.add(name);
+          add('${row['special_id'] ?? ''}'.trim(), '${row['special_name'] ?? ''}'.trim());
         }
       }
       final tagids = data['tagids'];
       if (tags.isEmpty && tagids is Map) {
-        // The category tree carries the same names; use it when the short
-        // list says nothing.
+        // The category tree carries the same tags with their own ids; use it
+        // when the short list says nothing.
         for (final bucket in tagids.values) {
           final raw = bucket is Map ? bucket['data'] : null;
           if (raw is! List) continue;
           for (final tag in raw) {
             if (tag is! Map) continue;
-            final name = '${tag['name'] ?? ''}'.trim();
-            if (name.isNotEmpty && !tags.contains(name)) tags.add(name);
+            add('${tag['id'] ?? ''}'.trim(), '${tag['name'] ?? ''}'.trim());
           }
         }
       }
       return tags;
     } on Object catch (error, stackTrace) {
       noteMusicSourceSilence('kg hotTags', error, stackTrace);
-      return const <String>[];
+      return const <MusicPlaylistTag>[];
     }
   }
 
@@ -301,7 +307,7 @@ final class KgMusicSource extends LxPlatformSource
                 name: '${entry['specialname'] ?? ''}',
                 cover: '${entry['imgurl'] ?? entry['img'] ?? ''}'.replaceFirst('{size}', '240'),
                 author: '${entry['nickname'] ?? ''}',
-                playCount: (entry['playcount'] as num?)?.toInt() ?? 0,
+                playCount: _playsOf(entry['playcount']),
                 trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
               ),
       ],
@@ -357,7 +363,7 @@ final class KgMusicSource extends LxPlatformSource
               // The board row's figure arrives already formatted — `1718.4万`
               // — while the search rows and the list's own page give a plain
               // number; both land in the same field.
-              playCount: playsFromFormattedCount('${entry['total_play_count'] ?? ''}') ?? 0,
+              playCount: _playsOf(playsFromFormattedCount('${entry['total_play_count'] ?? ''}')),
               trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
             ),
       ],
@@ -653,6 +659,19 @@ final class KgMusicSource extends LxPlatformSource
     );
   }
 
+  /// A list's play figure, or nothing when the gateway answers its sentinel.
+  ///
+  /// The end of an unsigned 32-bit count is what these endpoints hand back in
+  /// place of a number they do not have: raw as `4294967295` on the list's own
+  /// page, and already rounded into the platform's units as `4294967.0万` on
+  /// the boards — the same figure, so one threshold under both covers it. A
+  /// card that prints either claims forty-three billion plays for a list of
+  /// forty songs.
+  static int _playsOf(Object? raw) {
+    final count = (raw as num?)?.toInt() ?? 0;
+    return count >= 4294967000 ? 0 : count;
+  }
+
   /// A KuGou picture address, with the `{size}` placeholder the API leaves in
   /// the URL resolved to the size these pages ask for.
   static Uri? _pictureOf(Object? raw) {
@@ -689,7 +708,7 @@ final class KgMusicSource extends LxPlatformSource
       name: '${data['specialname'] ?? data['name'] ?? ''}',
       cover: '${data['imgurl'] ?? data['img'] ?? ''}'.replaceFirst('{size}', '240'),
       author: '${data['nickname'] ?? data['list_create_username'] ?? ''}',
-      playCount: (data['playcount'] as num?)?.toInt() ?? 0,
+      playCount: _playsOf(data['playcount']),
       trackCount: ((data['songcount'] ?? data['count']) as num?)?.toInt() ?? 0,
     );
   }

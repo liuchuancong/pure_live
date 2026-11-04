@@ -273,16 +273,19 @@ final class TxMusicSource extends LxPlatformSource
   /// The online playlists (在线歌单): the PC plaza's categories and the
   /// detail call lx-music's tx `songList` rides.
   @override
-  Future<List<String>> hotTags() async {
+  Future<List<MusicPlaylistTag>> hotTags() async {
     try {
       final html = await getText(Uri.https('c.y.qq.com', '/node/pc/wk_v15/category_playlist.html'));
+      // The anchor carries the category id the plaza filters by and its words
+      // for the chip; both halves belong to one tag.
       return [
         for (final match in RegExp(r'data-id="(\w+)">(.+?)</a>').allMatches(html))
-          if (match[2] != null && match[2]!.trim().isNotEmpty) match[2]!.trim(),
+          if ((match[1] ?? '').isNotEmpty && (match[2] ?? '').trim().isNotEmpty)
+            MusicPlaylistTag(id: match[1]!, name: match[2]!.trim()),
       ];
     } on Object catch (error, stackTrace) {
       noteMusicSourceSilence('tx hotTags', error, stackTrace);
-      return const <String>[];
+      return const <MusicPlaylistTag>[];
     }
   }
 

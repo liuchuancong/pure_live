@@ -80,8 +80,13 @@ final class MusicPlazaSort {
 /// The online-playlist capability (在线歌单) a platform source can carry:
 /// the hot tags, the pages under one tag, and a playlist's tracks.
 abstract mixin class OnlinePlaylists {
-  /// The hot tags; the tag set the browser starts from.
-  Future<List<String>> hotTags();
+  /// The hot tags, the set the browser starts from.
+  ///
+  /// A tag is its request half and its words together: the plaza asks most
+  /// gateways by id (kuwo by `id-digest`, kugou by `special_id`, migu by the
+  /// second of its two texts) while the viewer reads the name, so a name-only
+  /// list can label a chip but cannot filter one page.
+  Future<List<MusicPlaylistTag>> hotTags();
 
   /// The plaza's sort tabs; empty shows none — the reference's `sortList`.
   List<MusicPlazaSort> get sorts => const [];

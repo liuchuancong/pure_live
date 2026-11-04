@@ -219,7 +219,7 @@ final class MgMusicSource extends LxPlatformSource
   /// The online playlists (在线歌单): the plaza's tag list, the per-tag pages
   /// and the MIGUM3.0 playlist detail lx-music's mg `songList` rides.
   @override
-  Future<List<String>> hotTags() async {
+  Future<List<MusicPlaylistTag>> hotTags() async {
     try {
       final json = jsonDecode(
         await getText(
@@ -227,19 +227,25 @@ final class MgMusicSource extends LxPlatformSource
           headers: _plazaHeaders,
         ),
       ) as Map<String, Object?>;
-      if (json['code'] != '000000') return const <String>[];
+      if (json['code'] != '000000') return const <MusicPlaylistTag>[];
       final data = json['data'];
-      if (data is! List || data.isEmpty || data.first is! Map) return const <String>[];
+      if (data is! List || data.isEmpty || data.first is! Map) return const <MusicPlaylistTag>[];
       final content = (data.first as Map)['content'];
+      // The row's two texts come as `[name, id]` — the reference's
+      // `({ texts: [name, id] })` — and the plaza filters by the second one,
+      // so the first read of this returned ids printed as chips.
       return [
         if (content is List)
           for (final entry in content)
             if (entry is Map && entry['texts'] is List && (entry['texts'] as List).length >= 2)
-              '${(entry['texts'] as List)[1]}',
+              MusicPlaylistTag(
+                id: '${(entry['texts'] as List)[1]}'.trim(),
+                name: '${(entry['texts'] as List)[0]}'.trim(),
+              ),
       ];
     } on Object catch (error, stackTrace) {
       noteMusicSourceSilence('mg hotTags', error, stackTrace);
-      return const <String>[];
+      return const <MusicPlaylistTag>[];
     }
   }
 

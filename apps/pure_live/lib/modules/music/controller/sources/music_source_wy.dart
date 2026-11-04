@@ -130,15 +130,21 @@ final class WyMusicSource extends LxPlatformSource
   /// The viewer-browsable online playlists (在线歌单): hot tags, the pages
   /// under a tag, and one playlist's tracks. lx-music's wy `songList`.
   @override
-  Future<List<String>> hotTags() async {
+  Future<List<MusicPlaylistTag>> hotTags() async {
     final json = await _weapi('/weapi/playlist/hottags', {});
-    if (json['code'] != 200) return const <String>[];
+    if (json['code'] != 200) return const <MusicPlaylistTag>[];
     final tags = json['tags'];
+    // Netease filters its plaza by the tag's own words (`cat`), so here the
+    // request half and the shown name are the same string.
     return [
       if (tags is List)
         for (final tag in tags)
-          if (tag is Map && tag['playlistTag'] is Map) '${(tag['playlistTag'] as Map)['name'] ?? ''}',
-    ].where((name) => name.isNotEmpty).toList();
+          if (tag is Map && tag['playlistTag'] is Map)
+            MusicPlaylistTag(
+              id: '${(tag['playlistTag'] as Map)['name'] ?? ''}'.trim(),
+              name: '${(tag['playlistTag'] as Map)['name'] ?? ''}'.trim(),
+            ),
+    ].where((tag) => tag.name.isNotEmpty).toList();
   }
 
   /// The plaza's category tree — the reference's wy `getTag` on the

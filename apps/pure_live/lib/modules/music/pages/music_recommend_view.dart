@@ -27,7 +27,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 import 'package:pure_live/modules/music/controller/music_ui_settings.dart' show MusicUiElement, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistTag, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicPlaylistCard, kMusicPlaylistInfoHeight;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
@@ -85,11 +85,11 @@ final class MusicRecommendView extends ConsumerWidget {
     final settings = ref.watch(musicPlaybackSettingsProvider);
     final ui = ref.watch(musicUiSettingsProvider);
     final plaza = musicCapabilityOf<OnlinePlaylists>(ref.watch(musicSourceProvider)) != null;
-    final hotTags = ref.watch(musicOnlineHotTagsProvider).value ?? const <String>[];
+    final hotTags = ref.watch(musicOnlineHotTagsProvider).value ?? const <MusicPlaylistTag>[];
     final order = ref.watch(musicPlaylistSortsProvider).firstOrNull?.id ?? '';
     final firstTag = hotTags.firstOrNull;
     final firstPage = plaza && firstTag != null
-        ? ref.watch(musicOnlinePlaylistsProvider((tag: firstTag, order: order, page: 1)))
+        ? ref.watch(musicOnlinePlaylistsProvider((tag: firstTag.id, order: order, page: 1)))
         : null;
     final playlists = (firstPage?.value?.items ?? const <MusicPlaylistInfo>[]).take(_stripCount).toList();
     // The banner takes the plaza's hottest entry out of the strip rather than
@@ -168,7 +168,7 @@ final class MusicRecommendView extends ConsumerWidget {
               if (hero != null)
                 Padding(
                   padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, 0),
-                  child: MusicRecommendHero(info: hero, tag: firstTag, onOpen: () => onOpenPlaylist(hero)),
+                  child: MusicRecommendHero(info: hero, tag: firstTag?.name, onOpen: () => onOpenPlaylist(hero)),
                 ),
               if (strip.isNotEmpty || waitingForPlaza || plazaFailed) ...[
                 head(
@@ -219,7 +219,7 @@ final class MusicRecommendView extends ConsumerWidget {
                             final tag = firstTag;
                             ref.invalidate(musicOnlineHotTagsProvider);
                             if (tag != null) {
-                              ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, order: order, page: 1)));
+                              ref.invalidate(musicOnlinePlaylistsProvider((tag: tag.id, order: order, page: 1)));
                             }
                           },
                           child: Text(t.common.retry),
@@ -353,7 +353,7 @@ final class MusicRecommendView extends ConsumerWidget {
       final tag = (await ref.read(musicOnlineHotTagsProvider.future)).firstOrNull;
       if (tag == null) return;
       final order = ref.read(musicPlaylistSortsProvider).firstOrNull?.id ?? '';
-      await ref.read(musicOnlinePlaylistsProvider((tag: tag, order: order, page: 1)).future);
+      await ref.read(musicOnlinePlaylistsProvider((tag: tag.id, order: order, page: 1)).future);
     } on Object {
       // The plaza's own row explains a refusal; the pull ends either way.
     }
