@@ -410,6 +410,25 @@ final class RecorderEngine {
     }
   }
 
+  /// The bytes a take's folder holds so far: the segments FFmpeg is writing,
+  /// summed for a backend that has not reported a figure yet.
+  static Future<int> _directoryBytes(Directory directory) async {
+    var total = 0;
+    try {
+      await for (final entity in directory.list(recursive: true, followLinks: false)) {
+        if (entity is! File) continue;
+        try {
+          total += await entity.length();
+        } on FileSystemException {
+          // A segment rotating under the walk is simply not counted this tick.
+        }
+      }
+    } on FileSystemException {
+      // A folder removed under the walk answers what it managed to read.
+    }
+    return total;
+  }
+
   static int _sizeOf(File file) {
     try {
       return file.lengthSync();
@@ -794,8 +813,17 @@ final class RecorderEngine {
     final session = _sessions[taskId];
     if (session == null || session._settling) return;
     final state = session.backend.state;
-    final bytes = state.bytesWritten;
-    final durationMs = state.duration.inMilliseconds;
+    // The backend names bytes and media time only once it has them: a take
+    // still writing its first segment answers zero, which a list reads as
+    // "nothing recorded yet". The folder and the wall clock answer instead,
+    // so a running row shows its size and rate from the first tick.
+    var bytes = state.bytesWritten;
+    if (bytes <= 0) {
+      final directory = _takeDirectoryOf(session.task.filePath);
+      if (directory != null && directory.existsSync()) bytes = await _directoryBytes(directory);
+    }
+    var durationMs = state.duration.inMilliseconds;
+    if (durationMs <= 0) durationMs = DateTime.now().difference(session.videoStartedAt).inMilliseconds;
     if (bytes != session._persistedBytes || durationMs != session._persistedDurationMs) {
       session
         .._persistedBytes = bytes

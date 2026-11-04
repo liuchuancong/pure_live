@@ -1,4 +1,4 @@
-import 'dart:async' show TimeoutException, unawaited;
+import 'dart:async' show TimeoutException, Timer, unawaited;
 import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -498,12 +498,15 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                     )
                   : Padding(
                       padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          spacing: DsSpace.s8,
-                          children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                      child: _LiveClock(
+                        active: attention.any((task) => task.isRunning),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: DsSpace.s8,
+                            children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                          ),
                         ),
                       ),
                     ),
@@ -815,6 +818,52 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   }
 }
 
+/// Rebuilds its child every second while a take is being written: the clock
+/// and the rate move with the wall, not with the ten-second status write.
+final class _LiveClock extends StatefulWidget {
+  const _LiveClock({required this.active, required this.child});
+
+  final bool active;
+  final Widget child;
+
+  @override
+  State<_LiveClock> createState() => _LiveClockState();
+}
+
+final class _LiveClockState extends State<_LiveClock> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_LiveClock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active != widget.active) _sync();
+  }
+
+  void _sync() {
+    _timer?.cancel();
+    _timer = widget.active
+        ? Timer.periodic(const Duration(seconds: 1), (_) {
+            if (mounted) setState(() {});
+          })
+        : null;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 /// One figure of a row: the word over the number, so three of them line up
 /// without a table header.
 final class _Figure extends StatelessWidget {
@@ -973,7 +1022,6 @@ final class _TaskCard extends ConsumerWidget {
     // read while it is still writing.
     final recorded = Duration(milliseconds: task.durationMs);
     final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
-    final figuresBitrate = task.bytes > 0 && elapsed.inSeconds > 0 ? formatRecordingBitrate(task.bytes, elapsed) : '—';
     // A room that has already recorded keeps its last take's moment on the
     // card; a fresh subscription has none to name.
     final lastRun = task.isRunning || (task.endedAt == null && task.bytes == 0)
@@ -984,13 +1032,19 @@ final class _TaskCard extends ConsumerWidget {
     final recording = task.isRunning && !processing;
     final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
     final paused = !task.enabled && !processing;
-    final figuresDuration = elapsed > Duration.zero ? formatRecordingDuration(elapsed) : '—';
+    // A running take's length is the wall clock since it started, so the row
+    // ticks every second instead of waiting for the ten-second status write.
+    final liveElapsed = task.isRunning ? DateTime.now().difference(task.startedAt) : elapsed;
+    final figuresDuration = liveElapsed > Duration.zero ? formatRecordingDuration(liveElapsed) : '—';
     final figuresSize = task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—';
+    final figuresBitrate = task.bytes > 0 && liveElapsed.inSeconds > 0
+        ? formatRecordingBitrate(task.bytes, liveElapsed)
+        : '—';
     final segmentSeconds = ref.watch(recordingSettingsProvider).segmentSeconds;
     final segmentMinutes = segmentSeconds <= 0 ? 0 : (segmentSeconds / 60).ceil();
-    final segment = elapsed <= Duration.zero || segmentMinutes <= 0
+    final segment = liveElapsed <= Duration.zero || segmentMinutes <= 0
         ? ''
-        : t.recorder.segmentProgress(count: elapsed.inSeconds ~/ segmentSeconds + 1, minutes: segmentMinutes);
+        : t.recorder.segmentProgress(count: liveElapsed.inSeconds ~/ segmentSeconds + 1, minutes: segmentMinutes);
     final statusText = processing
         ? t.recorder.stateProcessing
         : recording
@@ -1052,6 +1106,7 @@ final class _TaskCard extends ConsumerWidget {
     final radius = BorderRadius.circular(theme.radii.card);
     final badge = DsBadge(label: Text(statusText), status: statusTone);
     Widget identity(double width) => Expanded(
+      flex: 5,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 2,
@@ -1097,6 +1152,15 @@ final class _TaskCard extends ConsumerWidget {
               if (audience.isNotEmpty) DsIcon(DsIcons.flame, size: 12, color: colors.textSubtle),
             ],
           ),
+          // The phase's own line — the take's segment, or when it last ran —
+          // sits with the platform, not pushed out to the row's end.
+          if (subtext.isNotEmpty)
+            Text(
+              subtext,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.textSubtle),
+            ),
           if (task.state == RecordingTaskState.recording && onStop == null)
             Text(
               t.recorder.stateRecordingElsewhere,
@@ -1129,14 +1193,6 @@ final class _TaskCard extends ConsumerWidget {
         ],
       ),
     );
-    Widget subline() => subtext.isEmpty
-        ? const SizedBox.shrink()
-        : Text(
-            subtext,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          );
     Widget menu() => _TaskMenu(
       task: task,
       hasFile: (task.filePath ?? '').trim().isNotEmpty,
@@ -1163,7 +1219,7 @@ final class _TaskCard extends ConsumerWidget {
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 final compact = width < 720;
-                final (coverWidth, coverHeight) = compact ? (88.0, 50.0) : (120.0, 68.0);
+                final (coverWidth, coverHeight) = compact ? (112.0, 63.0) : (160.0, 90.0);
                 final coverTile = ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: DsImage(
@@ -1184,15 +1240,7 @@ final class _TaskCard extends ConsumerWidget {
                       spacing: DsSpace.s8,
                       children: [
                         Row(spacing: DsSpace.s12, children: [coverTile, identity(width), menu()]),
-                        Row(
-                          spacing: DsSpace.s8,
-                          children: [
-                            badge,
-                            Flexible(child: subline()),
-                            const Spacer(),
-                            action,
-                          ],
-                        ),
+                        Row(spacing: DsSpace.s8, children: [badge, const Spacer(), action]),
                       ],
                     ),
                   );
@@ -1206,13 +1254,21 @@ final class _TaskCard extends ConsumerWidget {
                       coverTile,
                       identity(width),
                       if (showFigures)
-                        Row(
-                          spacing: DsSpace.s24,
-                          children: [
-                            _Figure(label: t.recorder.columnBitrate, value: figuresBitrate),
-                            _Figure(label: t.recorder.columnSize, value: figuresSize),
-                            _Figure(label: t.recorder.columnDuration, value: figuresDuration),
-                          ],
+                        Expanded(
+                          flex: 3,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _Figure(label: t.recorder.columnBitrate, value: figuresBitrate),
+                              ),
+                              Expanded(
+                                child: _Figure(label: t.recorder.columnSize, value: figuresSize),
+                              ),
+                              Expanded(
+                                child: _Figure(label: t.recorder.columnDuration, value: figuresDuration),
+                              ),
+                            ],
+                          ),
                         ),
                       SizedBox(
                         width: 132,
@@ -1220,7 +1276,7 @@ final class _TaskCard extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           spacing: DsSpace.s4,
-                          children: [badge, subline()],
+                          children: [badge],
                         ),
                       ),
                       Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s4, children: [action, menu()]),
@@ -1360,25 +1416,16 @@ final class _TaskMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     return DsMenuAnchor(
       semanticLabel: t.recorder.menuMore,
       align: DsAlign.end,
-      builder: (context, controller, child) => DsPressable(
+      builder: (context, controller, child) => DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
         semanticLabel: t.recorder.menuMore,
+        leading: const DsIcon(DsIcons.ellipsis, size: 14),
         onPressed: controller.toggle,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Padding(
-            padding: const EdgeInsets.all(DsSpace.s4),
-            child: DsIcon(
-              DsIcons.ellipsisVertical,
-              size: theme.sizes.iconSm,
-              color: hovered ? colors.text : colors.textSubtle,
-            ),
-          );
-        },
+        child: Text(t.common.more),
       ),
       items: [
         DsMenuItem(leading: const DsIcon(DsIcons.externalLink), label: Text(t.recorder.openRoom), onPressed: onOpen),
