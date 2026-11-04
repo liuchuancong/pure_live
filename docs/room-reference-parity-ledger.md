@@ -295,3 +295,25 @@ PLAN-CHECK huya     没有注册 resolver
 
 1. `test/live/recording_schedule_test.dart: only the live check moves a waiting or scheduled task` —— 已在「别人的门」一节定性：`recording_task.dart:331` 的 `needsLiveCheck => isArmed` 与它自己 `:325-330` 的注释互相矛盾，测试断言的是注释。改代码还是改注释+测试，归录像 lane。
 2. `test/music/music_pages_providers_test.dart: the providers the music pages watch all build` —— 新红，**与本车道无关**：`app/providers/boot/storage_providers.dart:10` 从 `4d8c21365`（"每个文件目录有默认值与选择"）起改成 `UnimplementedError: storagePathsProvider must be overridden at boot`，而音乐这个测试在 `:30` 用裸 `ProviderContainer()`，没有 boot 覆盖 ⇒ provider 处于 error 态。**全仓目前没有任何测试覆盖过 `storagePathsProvider`**（grep 为空），所以这不是"照抄某处现成写法"能解决的：要先定测试该注入临时目录还是让 provider 在非 boot 环境回落。归音乐/存储 lane 决定；本车道只把因果钉在这里。
+
+## mpv 开播属性对照（2026-11-05，第四部分：把"抄参考"限制在测过的数字上）
+
+两边都读源码，不看提交信息：
+
+| 属性 | 参考 `live_player/lib/src/mpv_options.dart:134-158` | 我们 `media_core_media_kit/.../media_kit_player_adapter_engine.dart:52-58` |
+| --- | --- | --- |
+| `demuxer-lavf-probesize` / `-analyzeduration` | 1048576 / 1（注明是 Bilibili 冷启动 A/B 实测：2MiB/2s 首帧 1802 ms → 1MiB/1s 708 ms） | **同值**（P1 已抄，注释里带着同一组数） |
+| `cache-on-disk` | no | no |
+| `network-timeout` | 15 | 15（媒体侧默认 5 s 会把"6 秒才应答"的活线读成"房间打不开"） |
+| `hwdec-software-fallback` | 1 | 1 |
+| `cache-secs` / `demuxer-max-bytes` / `demuxer-max-back-bytes` / `demuxer-donate-buffer` | 6 / 32 MiB / 4 MiB / no（注释自称 3.x 的 LiveBufferPolicy：内存缓存 + 小前后窗） | **不设** |
+| `demuxer-readahead-secs` | **2** | 不设 |
+| `force-seekable` | yes | 不设 |
+| `protocol_whitelist` | 一长串显式白名单 | 不设 |
+
+**为什么这轮不"对齐"**（关键判断，别再当免费午餐抄）：
+1. `demuxer-readahead-secs: 2` 是**先攒 2 秒再播**的意思，把它抄进来是拿首帧换平滑——正好与第 2 部分的诉求相反。我们保持不设（跟 mpv 自己的默认），这是**有意的差异**，不是遗漏。
+2. `cache-secs`/`demuxer-max-*`/`donate-buffer` 一族的注释只说"有界的直播缓冲（内存、小窗口）"，参考自己**没有**给出这些数对首帧的实测；能引用的实测只有探测那一对，而我们已经有了。
+3. `force-seekable: yes` 服务的是时移/回看_seek_；我们的直播线不做 forward seek（`selectLine`/`retry` 重开，不 seek）。
+4. `protocol_whitelist` 是**收紧**：抄一份显式白名单等于把"今天能播、名单里没有"的协议判死，而我们没有任何一站需要它。要加必须拿具体失败协议来证。
+5. **留给真数字的口子**：等 `room-open` 行给出 `request→firstFrame` 很大（比如 >1.5 s）时，唯一值得先试的是把 `demuxer-max-bytes`/`cache-secs` 调小（少攒就早播），并且要 A/B 出前后中位数——不是照抄 2 秒 readahead。
