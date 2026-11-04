@@ -214,7 +214,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final store = ref.watch(recordingTasksProvider);
-    final polling = ref.watch(recordingSettingsProvider).schedule.pollingEnabled;
     // The tasks store their room's identity only; the room itself (cover,
     // streamer, audience) is the snapshot the follows and history stores
     // keep under the same key (`platform:roomId`), so the card shows real
@@ -375,8 +374,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               attention: attention,
               total: listed.length,
               onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
-              polling: polling,
-              pollingBannerTasks: store.tasks.any((task) => task.needsLiveCheck),
               rooms: rooms,
             ),
           )
@@ -421,8 +418,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required int total,
     required VoidCallback? onStopAll,
 
-    required bool polling,
-    required bool pollingBannerTasks,
     required Map<String, LiveRoom> rooms,
   }) {
     final t = context.t;
@@ -449,33 +444,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 ],
               ),
             ),
-            // With the live check off nothing begins a take on its own, so the
-            // banner covers the scheduled rows too: a stopped task whose window
-            // is meant to re-arm it is just as stranded as a room waiting to go
-            // live.
-            if (!polling && pollingBannerTasks)
-              Padding(
-                padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-                child: DsAlert(
-                  title: Text(t.recorder.pollingOff),
-                  status: DsStatus.warning,
-                  action: DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: () {
-                      ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
-                      showDsToast(
-                        context: context,
-                        title: t.recorder.pollingEnabledToast(
-                          seconds: ref.read(recordingSettingsProvider).schedule.liveCheckSeconds,
-                        ),
-                        status: DsStatus.success,
-                      );
-                    },
-                    child: Text(t.recorder.pollingEnable),
-                  ),
-                ),
-              ),
             // The rows this page still owns, as the file manager's table on a
             // wide window and the cards on a narrow one. This is the whole
             // tasks page now — the library below became its own page.
@@ -801,9 +769,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
 
   /// Opens the take's schedule editor and saves the window it returns.
   Future<void> _editSchedule(RecordingTask task) async {
-    final draft = await showDsDialog<_ScheduleDraft>(
+    final draft = await showDsPanel<_ScheduleDraft>(
       context: context,
-      builder: (context) => _ScheduleDialog(task: task),
+      builder: (context) => _RoomSettingsPanel(task: task),
     );
     if (draft == null || !mounted) return;
     final days = draft.days.toList()..sort();
@@ -1256,7 +1224,21 @@ final class _TaskCard extends ConsumerWidget {
                       spacing: DsSpace.s8,
                       children: [
                         Row(spacing: DsSpace.s12, children: [coverTile, identity(width), menu()]),
-                        Row(spacing: DsSpace.s8, children: [badge, const Spacer(), action]),
+                        Row(
+                          spacing: DsSpace.s8,
+                          children: [
+                            badge,
+                            const Spacer(),
+                            DsButton.icon(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              semanticLabel: t.recorder.roomSettings,
+                              onPressed: onSchedule,
+                              icon: const DsIcon(DsIcons.settings, size: 14),
+                            ),
+                            action,
+                          ],
+                        ),
                       ],
                     ),
                   );
@@ -1296,23 +1278,27 @@ final class _TaskCard extends ConsumerWidget {
                           children: [badge],
                         ),
                       ),
-                      Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s4, children: [action, menu()]),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s4,
+                        children: [
+                          DsButton.icon(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            semanticLabel: t.recorder.roomSettings,
+                            onPressed: onSchedule,
+                            icon: const DsIcon(DsIcons.settings, size: 14),
+                          ),
+                          action,
+                          menu(),
+                        ],
+                      ),
                     ],
                   ),
                 );
               },
             ),
           ),
-          // The live take's own edge: a thin band that says "writing" before
-          // the badge is read.
-          if (recording)
-            PositionedDirectional(
-              start: 0,
-              top: 0,
-              bottom: 0,
-              width: 3,
-              child: IgnorePointer(child: ColoredBox(color: colors.danger.fill)),
-            ),
         ],
       ),
     );
@@ -1674,8 +1660,8 @@ final class _RecordSwitch extends StatelessWidget {
 }
 
 /// The recording settings' categories: where a file lands and how it names
-/// itself, how a capture is segmented and recovered, the background and
-/// capacity limits, and the live check that starts captures on its own.
+/// itself, how a capture is segmented and recovered, and the background and
+/// capacity limits. The live check belongs to each room now.
 enum RecordingTab {
   /// Where files land, what they are called and the file's own shape.
   files,
@@ -1685,9 +1671,6 @@ enum RecordingTab {
 
   /// Background behaviour, concurrency and the managed cache.
   runtime,
-
-  /// Watching followed rooms for a live start.
-  polling,
 }
 
 /// The recorder's settings pane: one page with its categories on a segmented
@@ -1777,7 +1760,6 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
               DsTab(value: RecordingTab.files, label: Text(t.recorder.settingsTabFiles)),
               DsTab(value: RecordingTab.capture, label: Text(t.recorder.settingsTabCapture)),
               DsTab(value: RecordingTab.runtime, label: Text(t.recorder.settingsTabRuntime)),
-              DsTab(value: RecordingTab.polling, label: Text(t.recorder.settingsTabPolling)),
             ],
           ),
         ),
@@ -1785,7 +1767,6 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           RecordingTab.files => _files(context),
           RecordingTab.capture => _capture(context),
           RecordingTab.runtime => _runtime(context),
-          RecordingTab.polling => _polling(context),
         },
       ],
     );
@@ -2163,33 +2144,6 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           ],
         ),
         const _RecordingCacheSection(),
-      ],
-    );
-  }
-
-  /// Watching followed rooms for a live start, and picking a capture back up
-  /// after a restart.
-  Widget _polling(BuildContext context) {
-    final t = context.t;
-    final settings = ref.watch(recordingSettingsProvider);
-    final controller = ref.read(recordingSettingsProvider.notifier);
-    return DsListSection(
-      header: Text(t.recorder.liveCheckGroup),
-      children: [
-        _RecordSwitch(
-          icon: DsIcons.clock,
-          title: t.recorder.enablePolling,
-          description: t.recorder.enablePollingDesc,
-          value: settings.schedule.pollingEnabled,
-          onChanged: (value) => controller.pollingEnabled = value,
-        ),
-        _RecordSwitch(
-          icon: DsIcons.power,
-          title: t.recorder.autoStartOnBoot,
-          description: t.recorder.autoStartOnBootDesc,
-          value: settings.schedule.autoStartOnBoot,
-          onChanged: (value) => controller.autoStartOnBoot = value,
-        ),
       ],
     );
   }
@@ -2661,16 +2615,16 @@ typedef _ScheduleDraft = ({
 
 /// The take's schedule editor: a switch, weekday chips, two time pickers and
 /// the window-end policy. A dialog because it is a short form, not a page.
-final class _ScheduleDialog extends StatefulWidget {
-  const _ScheduleDialog({required this.task});
+final class _RoomSettingsPanel extends StatefulWidget {
+  const _RoomSettingsPanel({required this.task});
 
   final RecordingTask task;
 
   @override
-  State<_ScheduleDialog> createState() => _ScheduleDialogState();
+  State<_RoomSettingsPanel> createState() => _RoomSettingsPanelState();
 }
 
-final class _ScheduleDialogState extends State<_ScheduleDialog> {
+final class _RoomSettingsPanelState extends State<_RoomSettingsPanel> {
   late bool _enabled = widget.task.scheduleEnabled;
   late Set<int> _days = widget.task.scheduleDays.toSet();
   late int _start = widget.task.scheduleStartMinutes;
@@ -2700,11 +2654,36 @@ final class _ScheduleDialogState extends State<_ScheduleDialog> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return DsPanel(
       title: Text(t.recorder.roomSettings),
-      icon: const DsIcon(DsIcons.calendarClock),
-      style: const DsDialogStyle(width: 460),
-      description: Column(
+      footer: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(t.common.cancel),
+            ),
+          ),
+          Expanded(
+            child: DsButton(
+              onPressed: () => Navigator.of(context).pop((
+                enabled: _enabled,
+                days: _days,
+                start: _start,
+                end: _end,
+                stopAtEnd: _stopAtEnd,
+                checkSeconds: _checkSeconds,
+                checkBackoff: _checkBackoff,
+                maxCheckSeconds: _maxCheckSeconds,
+              )),
+              child: Text(t.common.confirm),
+            ),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
         children: [
@@ -2858,26 +2837,6 @@ final class _ScheduleDialogState extends State<_ScheduleDialog> {
             ),
         ],
       ),
-      actions: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t.common.cancel),
-        ),
-        DsButton(
-          onPressed: () => Navigator.of(context).pop((
-            enabled: _enabled,
-            days: _days,
-            start: _start,
-            end: _end,
-            stopAtEnd: _stopAtEnd,
-            checkSeconds: _checkSeconds,
-            checkBackoff: _checkBackoff,
-            maxCheckSeconds: _maxCheckSeconds,
-          )),
-          child: Text(t.common.confirm),
-        ),
-      ],
     );
   }
 }

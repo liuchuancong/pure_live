@@ -382,11 +382,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.recording, t.recorder.queueTitle, 'queue 录制 队列'),
     _hit(SettingsSection.recording, t.recorder.maxTasksTitle, 'concurrent tasks 录制 并发 任务'),
     _hit(SettingsSection.recording, t.recorder.watermarkTitle, 'disk space 录制 磁盘 余量'),
-    _hit(
-      SettingsSection.recording,
-      t.recorder.enablePolling,
-      'live check polling offline waiting auto record 开播 检测 轮询 等待 自动 录制',
-    ),
     // Sites and accounts.
     _hit(
       SettingsSection.sitesDisplay,

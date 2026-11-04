@@ -32,11 +32,12 @@ enum RecordingFileContainer {
 final class RecordingScheduleSettings {
   /// Creates the schedule group.
   const RecordingScheduleSettings({
-    this.pollingEnabled = false,
+    // The check runs by design; each room owns its own cadence.
+    this.pollingEnabled = true,
     this.liveCheckSeconds = 30,
     this.checkBackoffEnabled = false,
     this.maxCheckSeconds = 300,
-    this.autoStartOnBoot = false,
+    this.autoStartOnBoot = true,
   });
 
   /// The designed defaults.
@@ -329,12 +330,13 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
         kRecordingCacheLimitMinMb,
         kRecordingCacheLimitMaxMb,
       ),
+      // The check and the launch pass are on by design (the constructor's
+      // defaults): each room owns its cadence, and the page no longer offers a
+      // switch that would strand every room.
       schedule: RecordingScheduleSettings(
-        pollingEnabled: _storedBool('recorder.pollingEnabled') ?? false,
         liveCheckSeconds: (_storedInt('recorder.liveCheckSeconds') ?? 30).clamp(10, 300),
         checkBackoffEnabled: _storedBool('recorder.checkBackoffEnabled') ?? false,
         maxCheckSeconds: (_storedInt('recorder.maxCheckSeconds') ?? 300).clamp(60, 3600),
-        autoStartOnBoot: _storedBool('recorder.autoStartOnBoot') ?? false,
       ),
       network: RecordingNetworkSettings(
         readTimeoutSeconds: (_storedInt('recorder.rwTimeout') ?? 15).clamp(5, 120),
