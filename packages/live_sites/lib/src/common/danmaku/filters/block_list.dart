@@ -35,7 +35,7 @@ final class DanmakuBlockList {
     return DanmakuBlockList._(
       {
         for (final user in users)
-          if (user.trim().toLowerCase() case final name when name.isNotEmpty && !_isMaskedName(name)) name,
+          if (user.trim().toLowerCase() case final name when name.isNotEmpty && !isMaskedName(name)) name,
       },
       List.unmodifiable(words),
       List.unmodifiable(patterns),
@@ -46,7 +46,11 @@ final class DanmakuBlockList {
 
   /// A platform-masked viewer name (`观***`): it stands for every viewer
   /// whose name starts the same way, so it blocks nobody.
-  static bool _isMaskedName(String name) => name.contains('*');
+  ///
+  /// Public because the surfaces that offer 「屏蔽此用户」 must ask the same question
+  /// the list answers: handing a viewer a block row that blocks nobody — of
+  /// several, by the prefix — is a door that opens onto a wall.
+  static bool isMaskedName(String name) => name.contains('*');
 
   final Set<String> _users;
   final List<String> _keywords;

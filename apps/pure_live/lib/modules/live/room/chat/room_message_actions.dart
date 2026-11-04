@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_sites/live_sites.dart' show DanmakuBlockList;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
 
@@ -20,6 +21,10 @@ Future<void> showRoomMessageActions(
   required bool isLocal,
 }) async {
   final name = userName.trim();
+  // A masked name (`观***`, what a guest sees of a Bilibili viewer) is not an
+  // identity: the shield's list reads it as every viewer whose name starts the
+  // same way, so the row would offer to hide a crowd.
+  final blockable = !isLocal && name.isNotEmpty && !DanmakuBlockList.isMaskedName(name);
   final action = await showDsPanel<RoomMessageAction>(
     context: context,
     builder: (panelContext) {
@@ -40,7 +45,7 @@ Future<void> showRoomMessageActions(
               title: Text(t.room.copy),
               onPressed: () => Navigator.of(panelContext).pop(RoomMessageAction.copy),
             ),
-            if (!isLocal && name.isNotEmpty)
+            if (blockable)
               DsListRow(
                 leading: const DsIcon(DsIcons.ban),
                 title: Text(t.room.blockUser),
@@ -60,7 +65,9 @@ Future<void> showRoomMessageActions(
   if (action == null || !context.mounted) return;
   switch (action) {
     case RoomMessageAction.copy:
-      await copyRoomMessageText(context, text);
+      // The sender's name comes along: a line copied out of a room is quoted
+      // somewhere else, where who said it is half of what it says.
+      await copyRoomMessageText(context, name.isEmpty ? text : '$name: $text');
     case RoomMessageAction.blockUser:
       await blockRoomMessageSender(context, ref, name);
     case RoomMessageAction.blockKeyword:

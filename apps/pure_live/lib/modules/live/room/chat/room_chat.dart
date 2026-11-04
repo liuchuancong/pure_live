@@ -768,14 +768,15 @@ final class _ChatLine extends ConsumerWidget {
         DsMenuItem(
           leading: const DsIcon(DsIcons.copy),
           label: Text(t.room.copy),
-          onPressed: () => unawaited(
-            copyRoomMessageText(
-              context,
-              gift == null ? message.text : (senderName.isEmpty ? words : '$senderName: $words'),
-            ),
-          ),
+          // Who said it is half of what a quoted line says, so the name rides
+          // along for every kind of line, and what is copied is what the column
+          // showed — not the platform's raw text with its emoticon codes in it.
+          onPressed: () => unawaited(copyRoomMessageText(context, senderName.isEmpty ? words : '$senderName: $words')),
         ),
-        if (!message.isLocal && senderName.isNotEmpty)
+        // A masked name (`观***`, what a guest sees of a Bilibili viewer) is not
+        // an identity: the shield's list reads it as every viewer whose name
+        // starts the same way, so this row would offer to hide a crowd.
+        if (!message.isLocal && senderName.isNotEmpty && !DanmakuBlockList.isMaskedName(senderName))
           DsMenuItem(
             leading: const DsIcon(DsIcons.ban),
             label: Text(t.room.blockUser),
