@@ -291,5 +291,6 @@
   "statePaused": "Paused",
   "pauseWatch": "Pause watching",
   "resumeWatch": "Resume watching",
-  "lastRecordingAt": "Last recorded {time}"
+  "lastRecordingAt": "Last recorded {time}",
+  "columnStatus": "State"
 }

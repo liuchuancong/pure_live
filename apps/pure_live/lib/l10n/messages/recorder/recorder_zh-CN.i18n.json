@@ -291,5 +291,6 @@
   "statePaused": "已暂停",
   "pauseWatch": "暂停监控",
   "resumeWatch": "恢复监控",
-  "lastRecordingAt": "上次录制于 {time}"
+  "lastRecordingAt": "上次录制于 {time}",
+  "columnStatus": "状态"
 }

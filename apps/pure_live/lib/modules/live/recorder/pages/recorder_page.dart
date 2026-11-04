@@ -504,7 +504,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                       child: wide
                           ? DsTable<RecordingTask>(
                               semanticLabel: t.recorder.runningTitle,
-                              style: const DsTableStyle(rowHeight: 56),
+                              style: const DsTableStyle(rowHeight: 68),
                               columns: _taskColumns(context, rooms),
                               rows: attention,
                               rowKey: (task) => task.id,
@@ -537,7 +537,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         label: t.recorder.columnTask,
         value: (task) => task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId,
         cell: (context, task) => _taskNameCell(context, task, rooms),
-        width: const DsTableColumnWidth.flex(3, 200),
+        width: const DsTableColumnWidth.flex(4, 240),
+      ),
+      DsTableColumn<RecordingTask>(
+        id: 'state',
+        label: t.recorder.columnStatus,
+        cell: _taskStateCell,
+        width: const DsTableColumnWidth.intrinsic(min: 116),
       ),
       DsTableColumn<RecordingTask>(
         id: 'size',
@@ -587,22 +593,24 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     ];
   }
 
-  /// The take's row head: its cover (the platform's letter when the room
-  /// snapshot has none), the streamer over the title, the facts line, and
-  /// the state's badge beside the name.
+  /// The row's identity, the way the reference's table draws it: the room's
+  /// cover, the streamer's avatar and name, and the platform with the room id
+  /// under them. The room's title rides the cover's label for screen readers
+  /// and the hover summary, so the two lines stay short.
   Widget _taskNameCell(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
-    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final room = rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'];
     final liveAnchor = (room?.anchor?.name ?? '').trim();
-    final streamer = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
+    final anchor = liveAnchor.isNotEmpty ? liveAnchor : task.anchorName.trim();
     final storedTitle = task.roomTitle.trim();
     final liveTitle = (room?.content.title ?? '').trim();
     final title = storedTitle.isNotEmpty ? storedTitle : (liveTitle.isNotEmpty ? liveTitle : task.roomId);
+    final nickname = anchor.isEmpty ? title : anchor;
+    final liveAvatar = (room?.anchor?.avatarUrl ?? '').trim();
+    final avatarUrl = liveAvatar.isNotEmpty ? liveAvatar : task.anchorAvatarUrl.trim();
     final liveCover = (room?.content.coverUrl ?? '').trim();
     final cover = liveCover.isNotEmpty ? liveCover : task.coverUrl.trim();
-    final fileDeleted = task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
     return Row(
       spacing: DsSpace.s8,
       children: [
@@ -610,55 +618,31 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           borderRadius: BorderRadius.circular(6),
           child: DsImage(
             image: cover.isEmpty ? null : cachedImage(cover),
-            width: 48,
-            height: 32,
+            width: 64,
+            height: 36,
+            semanticLabel: title,
             fallback: _CoverFallback(letter: _TaskCard.platformLetter(task.platform)),
           ),
+        ),
+        DsAvatar(
+          initials: avatarInitials(nickname),
+          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+          size: DsSize.sm,
+          semanticLabel: nickname,
         ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 2,
             children: [
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: Text(
-                      streamer.isEmpty ? title : streamer,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                    ),
-                  ),
-                  DsBadge(
-                    label: Text(
-                      task.postProcessing
-                          ? t.recorder.stateProcessing
-                          : fileDeleted
-                          ? t.recorder.stateFileDeleted
-                          : !task.enabled
-                          ? t.recorder.statePaused
-                          : task.state == RecordingTaskState.stopped
-                          ? t.recorder.stateWaiting
-                          : _TaskCard.stateLabel(t, task.state),
-                    ),
-                    status: task.postProcessing
-                        ? DsStatus.info
-                        : fileDeleted || !task.enabled
-                        ? DsStatus.neutral
-                        : task.state == RecordingTaskState.stopped
-                        ? DsStatus.warning
-                        : _TaskCard.stateStatus(task.state),
-                  ),
-                ],
+              Text(
+                nickname,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.bodyStrong.copyWith(color: colors.text),
               ),
               Text(
-                [
-                  _platformName(task.platform),
-                  if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
-                  if (task.scheduleEnabled) _scheduleSummary(t, task),
-                ].join(' · '),
+                '${_platformName(task.platform)} · ${task.roomId}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.caption.copyWith(color: colors.textMuted),
@@ -666,6 +650,51 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  /// The state's own column: the badge, with the take's length under it while
+  /// one is being written — the reference's "录制中 + 已录时长".
+  Widget _taskStateCell(BuildContext context, RecordingTask task) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final fileDeleted = task.state == RecordingTaskState.stopped && task.warning == 'file-deleted';
+    final elapsed = recordingElapsed(task);
+    final showsLength = !task.postProcessing && elapsed > Duration.zero;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      spacing: 2,
+      children: [
+        DsBadge(
+          label: Text(
+            task.postProcessing
+                ? t.recorder.stateProcessing
+                : fileDeleted
+                ? t.recorder.stateFileDeleted
+                : !task.enabled
+                ? t.recorder.statePaused
+                : task.state == RecordingTaskState.stopped
+                ? t.recorder.stateWaiting
+                : _TaskCard.stateLabel(t, task.state),
+          ),
+          status: task.postProcessing
+              ? DsStatus.info
+              : fileDeleted || !task.enabled
+              ? DsStatus.neutral
+              : task.state == RecordingTaskState.stopped
+              ? DsStatus.warning
+              : _TaskCard.stateStatus(task.state),
+        ),
+        if (showsLength)
+          Text(
+            formatRecordingDuration(elapsed),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+          ),
       ],
     );
   }
@@ -705,10 +734,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         child: Text(t.recorder.startNow),
       );
     }
+    // The watch switch is the row's everyday verb: a paused room resumes,
+    // a watched one pauses; the phase's own action follows it.
+    final watch = DsButton.icon(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      semanticLabel: task.enabled ? t.recorder.pauseWatch : t.recorder.resumeWatch,
+      onPressed: callbacks.onToggleWatch,
+      icon: DsIcon(task.enabled ? DsIcons.pause : DsIcons.play, size: 14),
+    );
     return Row(
       spacing: DsSpace.s4,
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        watch,
         ?primary,
         _TaskMenu(
           task: task,

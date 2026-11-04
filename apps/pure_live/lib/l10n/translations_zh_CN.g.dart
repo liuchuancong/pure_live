@@ -6201,6 +6201,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '上次录制于 {time}'
 	String lastRecordingAt({required Object time}) => '上次录制于 ${time}';
+
+	/// zh-CN: '状态'
+	String get columnStatus => '状态';
 }
 
 // Path: room
@@ -15327,6 +15330,7 @@ extension on Translations {
 			'recorder.pauseWatch' => '暂停监控',
 			'recorder.resumeWatch' => '恢复监控',
 			'recorder.lastRecordingAt' => ({required Object time}) => '上次录制于 ${time}',
+			'recorder.columnStatus' => '状态',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15747,9 +15751,9 @@ extension on Translations {
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
-			'settings.liveAlertDesc' => '关注的主播开播时发系统通知；运行时每 15 分钟检查。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.liveAlertDesc' => '关注的主播开播时发系统通知；运行时每 15 分钟检查。',
 			'settings.liveAlertTags' => '提醒标签',
 			'settings.liveAlertTagsDesc' => '只提醒带有所选标签的关注；不选则覆盖全部关注。',
 			'settings.liveAlertTagsAll' => '全部关注',
@@ -16261,9 +16265,9 @@ extension on Translations {
 			'settings.playerGuideIntro' => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。',
 			'settings.playerGuideManualTitle' => '播放手册：mpv 官方文档',
 			'settings.playerGuideManualHint' => '遇到问题先看「症状对照」；设置含义查「基础概念」。',
-			'settings.playerGuideChapterConcepts' => '基础概念',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideChapterConcepts' => '基础概念',
 			'settings.playerGuideChapterPresets' => '一键播放方案',
 			'settings.playerGuideChapterPictureSync' => '画面与同步',
 			'settings.playerGuideChapterQuality' => '画质增强',
@@ -16775,9 +16779,9 @@ extension on Translations {
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
-			'settings.twitchLanguage_es' => '西班牙语',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLanguage_es' => '西班牙语',
 			'settings.twitchLanguage_pt' => '葡萄牙语',
 			'settings.twitchLanguage_de' => '德语',
 			'settings.twitchLanguage_fr' => '法语',
@@ -17289,9 +17293,9 @@ extension on Translations {
 			'vod.cardElements' => '卡片显示项',
 			'vod.cardPlays' => '播放量',
 			'vod.cardDanmaku' => '弹幕数',
-			'vod.cardDuration' => '时长',
 			_ => null,
 		} ?? switch (path) {
+			'vod.cardDuration' => '时长',
 			'vod.cardUploader' => 'UP 主',
 			'vod.cardSeasonState' => '更新状态',
 			'vod.cardPreviewTitle' => '【4K 修复】完整版：这一首循环了整个夏天',
