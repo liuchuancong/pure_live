@@ -17,7 +17,7 @@
 > 来源：把参考 `features/live_play/player/*`、`danmaku/*`、`logic/room_menu_button.dart` 与我们 `room/page` + `room/chat` 逐控件再比一遍。已排除本表"已修/已持平"两节里的全部条目（含本轮 P23 的两处）。
 
 - [ ] **T13 关注动词进不去全屏**。参考把 `FollowButton` 画在横屏底条（`player/player_controls.dart:700-705`）与竖屏顶条（`:375-383`）。我们只有页头那条 `_FollowPill`（`room/page/room_page.dart:1405-1427`），`roomMenuItems` 与顶条都没有关注 → 全屏里想关注必须先退出。**做法**：底条右侧加一枚 PlayerBarButton（关注/已关注两态，复用 `_FollowPill` 的 provider 与文案），别再开第二个状态。
-- [ ] **T14 页签不报"别处积了多少"**。参考在 弹幕列表 页签上计未读、超级弹幕 页签上计条数（`danmaku/chat_panel.dart:97-117`）。我们五个页签标签是死的（`chat/room_chat.dart:88-96`）⇒ 停在屏蔽/录制页签时房间说了多少话完全看不出。**做法（设计已定，别再重新推导）**：计数要活在切页签不会销毁的地方——`_RoomChatPanelState` 里 `ref.listen(roomChatProvider)`，`tab != danmaku` 时按增量累加、选中 danmaku 页签时归零；超聊条数直接 `ref.watch(roomSuperChatsProvider).messages.length`。**用 `DsTab(count: …)`**（控件库自带计数与"99+/读屏"语义，别手搓 DsBadge Row）。在 danmaku 页签上当列表浮层已报过同一个数，那一档就别再显示（一行只说一次）。
+- [x] **T14 页签不报「别处积了多少」**（P24 做完）。参考在 弹幕列表 页签上计未读、超级弹幕 页签上计条数（`danmaku/chat_panel.dart:97-117`）。我们五个页签标签是死的（`chat/room_chat.dart:88-96`）⇒ 停在屏蔽/录制页签时房间说了多少话完全看不出。**做法（设计已定，别再重新推导）**：计数要活在切页签不会销毁的地方——`_RoomChatPanelState` 里 `ref.listen(roomChatProvider)`，`tab != danmaku` 时按增量累加、选中 danmaku 页签时归零；超聊条数直接 `ref.watch(roomSuperChatsProvider).messages.length`。**用 `DsTab(count: …)`**（控件库自带计数与"99+/读屏"语义，别手搓 DsBadge Row）。在 danmaku 页签上当列表浮层已报过同一个数，那一档就别再显示（一行只说一次）。
 - [ ] **T15 无锁定全屏**。参考 `bar_parts.dart:314-339` 的 LockButton 挂在右侧中（`player_view.dart:929-937`）：锁上后隐藏条、吞掉手势/滚轮（`:276`）。我们滚轮调音量与双击播放暂停在满屏时一直生效（`player_surface.dart:800-824`）⇒ 看电视时误触就改音量。
 - [ ] **T16 睡眠定时进不了全屏**。`_SleepChip` 只在页头（`room_page.dart:1896`），`roomMenuItems` 没有它（参考在房间菜单里带剩余分钟第二行：`room_menu_button.dart:152,254-259`）。做法：菜单里加一组时长项，复用 `kAsmrSleepMinuteChoices` 与 `asmrSleepDurationLabel`，别再开一套选择器。
 - [ ] **T17 桌面"在新窗口打开这间房"缺失**。参考 `room_menu_button.dart:166,357-359` 走 `DesktopWindow.openNewWindow`；我们有房间窗口（`room_opener.dart:46`）但房间菜单没有这一行。
@@ -51,6 +51,9 @@
 | P20 | `6f214f8ff` | 弹幕稳定 | 房间按新判据自己重连弹幕：blink 走 2 s/4 s/6 s 退避，限流按 `retryAfter`（没给就 15 s），不可重试的类不试；三次封顶后仍留给列上的"重试"按钮；`_installDanmaku` 成功归零、换房/`_teardown` 取消。被拒登录改用新串 `room.chatCookieExpired`，不再把平台英文诊断当 toast。 |
 | P22 | `fdd1491b4` | 竖屏形态 | 窄窗竖屏源改成参考那套：画面满幅 + 底部三停靠点面板（新 `room/page/room_bottom_panel.dart`：`AnimationController.unbounded` + `onVerticalDrag*`，`dart:ui clampDouble`，动效取 `DsMotion.moveSpringOrNull`，reduce-motion 直接跳）。停靠点用参考实值：地板 250 px（不是百分比）、44 %、68 % 且给画面留 120 px；手柄行 48、grip 38×4（桌面画 grip，手机在中间放「竖屏全屏」入口——条上那个入口在窄 bar 会被自己的宽度门藏掉）；右侧 pill＝条上同一个全屏动词（本 app 不强制转屏，所以不冒充「横屏全屏」）。拖动只动面板：`onCoverChanged` 把落定高度交给 `PlayerSurface.bottomInset`，控制条与唤醒条抬到面板之上，视频不重建。横屏源仍堆叠，但信箱加 `min(width/ratio, height*0.6)`。玻璃卡从 `_RoomChatGlass` 提成 `room/page/room_glass_card.dart`，剧场与面板共用一层玻璃。门：`dart analyze lib` 0 issues、`flutter test test/live` 42 绿（仍只录像 lane 一红）。运行期未验证：停靠手感、键盘顶起面板、旋转回宽窗都要真机。 |
 | P21 | `26bc82f77` | 录制显示 | 房间聊天列第 5 个页签「录制」＝参考右侧 RoomSidePanel 的只读状态卡：状态徽标、1 s 一跳的钟、`第 N 段 · 每 M 分钟一段`、chips 已录大小/平均码率/画质/弹幕条数，末了唯一动词＝打开录制中心（`RouteNames.recorder`，没有录制设置的深链就不挂第二个门）。为此引擎开一个公开读数 `RecorderEngine.chatEntries(taskId)`（写手本来就私有）；时钟复用 `RecordingIndicator.formatElapsed`（从 State 挪到 widget，一份两处用）；没开弹幕保存的 take 不出条数 chip（0 会被读成丢光了）。**不做**：页签里不放开始/停止/画质——条上和中心已有，重复就是两处会打架。
+
+| P23 | `6a765f802` | 弹幕行动作 | 掩码名（`观***`）不再给「屏蔽此用户」：屏蔽列表把它读成“所有同前缀的人”，所以我们自己就把它当不拦任何词（`block_list.dart` 的 `isMaskedName`，为此从私有提出来共用），但行菜单照旧提供这一项、点了还说“已屏蔽” ⇒ 一行会藏掉一群人的动作。复制改成参考的 `名字: 内容`，并且复制的是列上显示的那串字（带表情码的原文不再进剪贴板）。 |
+| P24 | `7412aeca7` | 页签计数 | T14 落地：聊天页签在**别的页签上**时按「最后看到的那条 id 之后有几条」计（不能按长度差——列表有 200 上限，满了以后长度不动），计数放在面板而不是列表（列表一切页签就被销毁）；用 `DsTab(count:)`让控件库自己画 99+ 与读屏；超聊页签是板上现存条数（付费卡按自己的时长挂着，那不是未读）。回到聊天页签即算读过；浮层那条计数继续管本页签。 |
 
 ## 已核对为持平或更强（别重做，附证据）
 
@@ -103,3 +106,5 @@
 - 2026-11-04 P22：竖屏三停靠点面板（T2 勾掉，队列已空）。方向没等到点名，按最贴参考的 D 当轮落实（样张在上一轮给过：B 纯参考 / C 只拖聊天 / D 参考+横屏信箱上限）。退回 B 只需去掉信箱上限，退回 C 只需把面板内容换成聊天列本身。
 - 本轮事故：用 python `s.index(锚点)` 删私有类 `_RoomChatGlass` 时，锚点文本在文件更早处也出现一次，`end < start` 于是把中间整段代码切掉并复制了一份，room_page.dart 直接语法崩。恢复办法是 `git checkout -- 单文件`（本轮该文件的改动全在我自己路径内、且已推送过基线），然后逐条用唯一全文的 Edit 重做。教训回到老规矩：**删整段用 Edit 带唯一 old_string，绝不用字符串索引做区间删除**。
 - 2026-11-04 P22 补：`test/live/room_bottom_panel_test.dart` 6 例（44 %→352、地板 250、顶档 544、300 px 矮窗地板压过两条比例规则且不抛、上抛落 544、小拖回 352）。门：`dart analyze test/live/room_bottom_panel_test.dart lib` 0 issues、`flutter test test/live/room_bottom_panel_test.dart` 6/6 绿。竖屏面板的几何与手势就此有门可把，只剩真机手感/键盘/旋转由用户自测。
+
+- 2026-11-04 P23+P24：参考第二次全量审计的前两项落地（掩码名不再提供屏蔽动作、复制带名字；T14 页签计数）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 48 例绿（仍只录像 lane 一红）；live_sites 463/463。运行期未验证：页签计数要真房间切来切去才看得见。新队列剩 T13（关注进不了全屏）、T15（锁定全屏）、T16（睡眠定时进菜单）、T17（新窗口）、T18（常驻登录提示条）、T19（钟与电量）。
