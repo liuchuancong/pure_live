@@ -261,3 +261,19 @@ headers=[origin, referer, user-agent, accept, accept-language, x-requested-with]
 | P39 | `bd54f39e4` | 进房诊断 | `room-open` 多了 `proxy=direct\|system\|manual`（`RoomOpenProxy` 自带 token，纯类可测），详情的「进房耗时」抬头跟着显示 `不使用代理/跟随系统代理/手动代理`（复用网络页现成三串，不再造第三套词）。**动机**：站点探针记录说 5 站（youtube/twitch/picarto/17live/steambroadcast）只有开 `127.0.0.1:7890` 才通，而 `app proxy.mode` 默认 `off`（`reference-pure-live-live-site-health`）——同一个 detail=10s 的数字，两种病因、两种修法，光看分段量不出来。新例 1 条：`flutter test test/live` 54 绿中 53（唯一红仍是录像 lane 那条）。|
 
 同时复核：**`displayLabel` 的四处仍然落不了地**——`player_surface.dart`、`room_page.dart`、`room_switcher.dart` 此刻都带着别人未入库的 hunk（`controller.open(known: room)` 一族），本轮新提交没有碰这三个文件；Bigo 中继的 1/2 选择继续等点名，我不擅自新增媒体子系统，也不擅自砍平台。
+
+## P37 的回溯验证（2026-11-05，临时探针跑真适配器，用完已删）
+
+P37 把房间取线路改成"能确认的站先要 plan"。这是改了**取流路径**的改动，不能只靠 analyze 过门，所以直接对在册的 resolver 站各开一间在播房，比 `getLines` 与 `resolvePlan` 两份答案：
+
+```
+PLAN-CHECK douyin   plain=2 plan=2 firstSame=true  applied=蓝光 served=蓝光 asked=蓝光
+PLAN-CHECK bilibili plain=6 plan=6 firstSame=false applied=超清 served=超清 asked=2K
+PLAN-CHECK huya     没有注册 resolver
+```
+
+- **bilibili 当场证实了这个改动的必要性**：无登录态要 2K，平台答 **超清**。改之前条上会一直写 2K（要来的名字），现在写超清（给的名字）。
+- douyin 两边一致（段数与首条 URL 同），说明"能确认的站"里没有确认时行为不变 —— 没有回归。
+- `firstSame=false` 是**正常的**：bilibili 每次问线路都重签 CDN 令牌，两次请求的 URL 天然不同；条数一致即可，播放器拿的是 plan 那份，不会再混用。
+- **纠正我自己写错的两处散文**（代码没问题，登记以防下轮照抄错事实）：注册 `LivePlaybackPlanResolver` 的是 **bilibili / cc / douyin / twitch / yy** 五站（`*_site.dart:573/416/513/650/678`），**huya 不在其中**；我在 `746fec7d7` 的提交正文里把 huya 也算进去了。
+- 探针侧的 cc/yy/twitch 超时是探针自己没包 try（推荐接口 20 s 未回），不是产品分支：房间那条路是 `resolvePlan` 失败就退回 `getLines`，正是今天的行为。
