@@ -156,3 +156,4 @@
 - **下一轮的两条候补（都要先有 `room-open` 数字才动）**：
   - T24 抢占的在途请求不取消：参考把 `CancelToken` 塞进发现过程（`live_core/live_site.dart:575` `LiveQualityDiscoveryScope`），我们靠 epoch 把迟到答案丢掉但请求仍在跑——快速连续换房时，上一间的详情/画质/线路还在占连接与 DNS。若数字显示 `qualities`/`lines` 段在大、且用户是连换几间房，再考虑把取消信号接进 `getRoom/getQualities/getLines`（那是 34 站的接口面，别无证据动）。
   - T25 三次串行请求：`getRoom → getQualities → getLines` 是三次网络往返才交源（参考同样两次 `getRoomDetail → discover → _openQuality`）。要合并必须先证明本站两个调用打的是同一端点且第二个不依赖第一个的字段（bilibili 的"双 playinfo 是 API 固有"已经判过一次，别再当成免费午餐）。
+- 2026-11-05 P35（`1ff3e9358`）：数字要有人能看见才算数。`RoomOpenTiming.stages`（`name`+`took` 的清单，chat 从 T0 起算）交给 `roomOpenRecordProvider`，**直播间详情**里多一段「进房耗时 · 共 N 毫秒」：房间信息/画质列表/线路地址/交给播放器/首帧/开始播放/弹幕握手，未到达的阶段**不列**（列 0 会被读成"这步很快"而不是"没走到"）。开新房间先 `clear()`，上一间的数字不能冒充这一间的。日志行仍写（`room-open …`），两处同源——`line()` 现在由 `stages` 生成，不会漂成两套数。门：`dart analyze lib` 0 issues、`flutter test test/live` 53 例中 52 绿（含 timing 5 例）、`dart format` 只点本轮三个文件。运行期未验证：这一段要在真开一次房之后才有内容（进房没走完就退出 ⇒ 没有记录，段落自己藏起来）。
