@@ -13,6 +13,7 @@ import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/shared.dart' show feedGutter;
 
 /// The bar's own width thresholds. The sidebar takes its share of the window
 /// first, so the window width says nothing about how much room the bar has.
@@ -94,7 +95,10 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
       icon: DsIcon(DsIcons.heart, color: favourites.contains(track) ? colors.accent : null),
     );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
+      // The gutter the page above it uses: the bar is the module's own bottom
+      // strip, laid under every page, and a flat s12 let its edges hang four
+      // to eight points outside the header and feed columns it overlays.
+      padding: feedGutter(context, top: 0, bottom: DsSpace.s8),
       child: DsSurface(
         decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
         padding: EdgeInsets.zero,
