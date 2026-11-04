@@ -1272,12 +1272,10 @@ final class _TaskCard extends ConsumerWidget {
             hasFile: saved.isNotEmpty,
             onOpen: onOpen,
             onStop: onStop,
-            onToggleWatch: onToggleWatch,
             onDelete: onDelete,
             onSchedule: onSchedule,
             onCancelProcessing: onCancelProcessing,
             onRetryJoin: onRetryJoin,
-            onPlayExternal: onPlayExternal,
           );
           final badge = DsBadge(label: Text(statusText), status: statusTone);
           final note = statusNote.isEmpty
@@ -1482,8 +1480,8 @@ final class _BatchMenu extends StatelessWidget {
 }
 
 /// The card's "⋮" menu: the room, the saved file's folder (when the task
-/// has one), taking a waiting task out of the live check, and the confirmed
-/// delete.
+/// has one), the room's settings and the confirmed delete, with the running
+/// session's own verbs in between.
 final class _TaskMenu extends StatelessWidget {
   const _TaskMenu({
     required this.task,
@@ -1491,11 +1489,9 @@ final class _TaskMenu extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     required this.onSchedule,
-    required this.onToggleWatch,
     this.onStop,
     this.onCancelProcessing,
     this.onRetryJoin,
-    this.onPlayExternal,
   });
 
   final RecordingTask task;
@@ -1510,18 +1506,12 @@ final class _TaskMenu extends StatelessWidget {
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
 
-  /// Pauses or resumes the room's watch switch.
-  final VoidCallback onToggleWatch;
-
   /// Cancels a running join/transcode, null when there is none.
   final VoidCallback? onCancelProcessing;
 
   /// Re-runs the post-recording steps on a take the app never finished, null
   /// while the task is being captured or finished.
   final VoidCallback? onRetryJoin;
-
-  /// Hands this take to the system's own player, null under the same rule.
-  final VoidCallback? onPlayExternal;
 
   @override
   Widget build(BuildContext context) {
@@ -1539,15 +1529,13 @@ final class _TaskMenu extends StatelessWidget {
       ),
       items: [
         DsMenuItem(leading: const DsIcon(DsIcons.externalLink), label: Text(t.recorder.openRoom), onPressed: onOpen),
-        DsMenuItem(leading: const DsIcon(DsIcons.settings), label: Text(t.navigation.settings), onPressed: onSchedule),
         if (hasFile)
           DsMenuItem(
             leading: const DsIcon(DsIcons.folderOpen),
             label: Text(t.recorder.openFolder),
             onPressed: () => unawaited(_openFolder(context)),
           ),
-        if (onPlayExternal case final play?)
-          DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.recorder.playRecording), onPressed: play),
+        DsMenuItem(leading: const DsIcon(DsIcons.settings), label: Text(t.navigation.settings), onPressed: onSchedule),
         if (onStop case final stop?)
           DsMenuItem(
             leading: const DsIcon(DsIcons.squareStop),
@@ -1559,11 +1547,6 @@ final class _TaskMenu extends StatelessWidget {
           DsMenuItem(leading: const DsIcon(DsIcons.x), label: Text(t.recorder.cancelProcessing), onPressed: cancel),
         if (onRetryJoin case final retry?)
           DsMenuItem(leading: const DsIcon(DsIcons.merge), label: Text(t.recorder.retryJoin), onPressed: retry),
-        DsMenuItem(
-          leading: DsIcon(task.enabled ? DsIcons.pause : DsIcons.play),
-          label: Text(task.enabled ? t.recorder.pauseWatch : t.recorder.resumeWatch),
-          onPressed: onToggleWatch,
-        ),
         const DsMenuDivider(),
         DsMenuItem(
           leading: const DsIcon(DsIcons.trash2),
