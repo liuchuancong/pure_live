@@ -530,7 +530,7 @@
   "navMusic": "音乐",
   "musicSettingsDescription": "播放、歌词、桌面歌词、下载、音源、快捷键与同步。",
   "navMusicPlay": "播放",
-  "musicPlaybackDescription": "音源、音质与播放、列表行为。",
+  "musicPlaybackDescription": "音源、音质与播放行为。",
   "navMusicSources": "自定义源",
   "musicSourcesDescription": "导入并管理 lx 风格的自定义音源脚本。",
   "navMusicDownload": "下载",
@@ -1451,5 +1451,9 @@
   "lanSyncKeepLocal": "保留本机",
   "lanSyncKeepRemote": "采用对方",
   "lanSyncConflictResolved": "冲突已处理",
-  "lanSyncConflictOutdated": "本机数据刚变过，请重新查看后再决定"
+  "lanSyncConflictOutdated": "本机数据刚变过，请重新查看后再决定",
+  "navMusicInterface": "界面与列表",
+  "musicInterfaceDescription": "列表行、来源与不喜欢的显示方式。",
+  "navMusicStorage": "存储与重置",
+  "musicStorageDescription": "缓存清理与恢复默认。"
 }

@@ -530,7 +530,7 @@
   "navMusic": "Music",
   "musicSettingsDescription": "Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.",
   "navMusicPlay": "Playback",
-  "musicPlaybackDescription": "Sources, quality and how playback and lists behave.",
+  "musicPlaybackDescription": "Sources, quality and how playback behaves.",
   "navMusicSources": "Custom sources",
   "musicSourcesDescription": "Import and manage lx-style custom music-source scripts.",
   "navMusicDownload": "Downloads",
@@ -1451,5 +1451,9 @@
   "lanSyncKeepLocal": "Keep mine",
   "lanSyncKeepRemote": "Take theirs",
   "lanSyncConflictResolved": "Conflict settled",
-  "lanSyncConflictOutdated": "This device's copy just changed; review it and decide again"
+  "lanSyncConflictOutdated": "This device's copy just changed; review it and decide again",
+  "navMusicInterface": "Interface & lists",
+  "musicInterfaceDescription": "How list rows, sources and dislikes read.",
+  "navMusicStorage": "Storage & reset",
+  "musicStorageDescription": "Cache cleanup and the defaults."
 }

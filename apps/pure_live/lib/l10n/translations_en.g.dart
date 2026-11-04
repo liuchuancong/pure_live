@@ -3020,7 +3020,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navMusic => 'Music';
 	@override String get musicSettingsDescription => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.';
 	@override String get navMusicPlay => 'Playback';
-	@override String get musicPlaybackDescription => 'Sources, quality and how playback and lists behave.';
+	@override String get musicPlaybackDescription => 'Sources, quality and how playback behaves.';
 	@override String get navMusicSources => 'Custom sources';
 	@override String get musicSourcesDescription => 'Import and manage lx-style custom music-source scripts.';
 	@override String get navMusicDownload => 'Downloads';
@@ -3942,6 +3942,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get lanSyncKeepRemote => 'Take theirs';
 	@override String get lanSyncConflictResolved => 'Conflict settled';
 	@override String get lanSyncConflictOutdated => 'This device\'s copy just changed; review it and decide again';
+	@override String get navMusicInterface => 'Interface & lists';
+	@override String get musicInterfaceDescription => 'How list rows, sources and dislikes read.';
+	@override String get navMusicStorage => 'Storage & reset';
+	@override String get musicStorageDescription => 'Cache cleanup and the defaults.';
 }
 
 // Path: shield
@@ -7589,7 +7593,7 @@ extension on TranslationsEn {
 			'settings.navMusic' => 'Music',
 			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
 			'settings.navMusicPlay' => 'Playback',
-			'settings.musicPlaybackDescription' => 'Sources, quality and how playback and lists behave.',
+			'settings.musicPlaybackDescription' => 'Sources, quality and how playback behaves.',
 			'settings.navMusicSources' => 'Custom sources',
 			'settings.musicSourcesDescription' => 'Import and manage lx-style custom music-source scripts.',
 			'settings.navMusicDownload' => 'Downloads',
@@ -8515,6 +8519,10 @@ extension on TranslationsEn {
 			'settings.lanSyncKeepRemote' => 'Take theirs',
 			'settings.lanSyncConflictResolved' => 'Conflict settled',
 			'settings.lanSyncConflictOutdated' => 'This device\'s copy just changed; review it and decide again',
+			'settings.navMusicInterface' => 'Interface & lists',
+			'settings.musicInterfaceDescription' => 'How list rows, sources and dislikes read.',
+			'settings.navMusicStorage' => 'Storage & reset',
+			'settings.musicStorageDescription' => 'Cache cleanup and the defaults.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -8745,12 +8753,12 @@ extension on TranslationsEn {
 			'vod.durationOver60' => 'Over 60 min',
 			'vod.related' => 'Related',
 			'vod.changeRelated' => 'Shuffle',
+			_ => null,
+		} ?? switch (path) {
 			'vod.expand' => 'More',
 			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
-			_ => null,
-		} ?? switch (path) {
 			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',

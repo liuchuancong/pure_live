@@ -182,13 +182,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // and the search beside them, then the lists the viewer works through —
     // 歌单 / 排行榜 / 我的列表. The module still lands on the search: the
     // rail's first entry is a page to open, not where the switcher drops you.
+    // Three blocks in a listener's own order: what the source suggests, the
+    // library the viewer works through, then the tools. The equaliser is not
+    // a menu row: its only door is the settings group's 音效 page.
     menu: [
       [NavigationItem.musicRecommend, NavigationItem.musicFeatured, NavigationItem.music],
-      [NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
+      [NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary, NavigationItem.musicLocal],
       [
-        NavigationItem.musicLocal,
         NavigationItem.musicDownloads,
-        NavigationItem.musicEffects,
         // The shared tree's console sits with the module's own tools. Settings
         // is not a menu row here — it is not one in any other module either, and
         // the shell's own settings entry already opens inside this module's
@@ -215,11 +216,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         labelKey: 'groupMusic',
         sections: [
           SettingsSection.music,
+          SettingsSection.musicInterface,
           SettingsSection.musicLyric,
           SettingsSection.musicSources,
           SettingsSection.musicDownload,
           SettingsSection.musicSync,
           SettingsSection.musicHotkeys,
+          SettingsSection.musicEq,
+          SettingsSection.musicStorage,
         ],
       ),
       _systemGroup,

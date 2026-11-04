@@ -8632,8 +8632,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放'
 	String get navMusicPlay => '播放';
 
-	/// zh-CN: '音源、音质与播放、列表行为。'
-	String get musicPlaybackDescription => '音源、音质与播放、列表行为。';
+	/// zh-CN: '音源、音质与播放行为。'
+	String get musicPlaybackDescription => '音源、音质与播放行为。';
 
 	/// zh-CN: '自定义源'
 	String get navMusicSources => '自定义源';
@@ -11397,6 +11397,18 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '本机数据刚变过，请重新查看后再决定'
 	String get lanSyncConflictOutdated => '本机数据刚变过，请重新查看后再决定';
+
+	/// zh-CN: '界面与列表'
+	String get navMusicInterface => '界面与列表';
+
+	/// zh-CN: '列表行、来源与不喜欢的显示方式。'
+	String get musicInterfaceDescription => '列表行、来源与不喜欢的显示方式。';
+
+	/// zh-CN: '存储与重置'
+	String get navMusicStorage => '存储与重置';
+
+	/// zh-CN: '缓存清理与恢复默认。'
+	String get musicStorageDescription => '缓存清理与恢复默认。';
 }
 
 // Path: shield
@@ -16292,7 +16304,7 @@ extension on Translations {
 			'settings.navMusic' => '音乐',
 			'settings.musicSettingsDescription' => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。',
 			'settings.navMusicPlay' => '播放',
-			'settings.musicPlaybackDescription' => '音源、音质与播放、列表行为。',
+			'settings.musicPlaybackDescription' => '音源、音质与播放行为。',
 			'settings.navMusicSources' => '自定义源',
 			'settings.musicSourcesDescription' => '导入并管理 lx 风格的自定义音源脚本。',
 			'settings.navMusicDownload' => '下载',
@@ -17218,6 +17230,10 @@ extension on Translations {
 			'settings.lanSyncKeepRemote' => '采用对方',
 			'settings.lanSyncConflictResolved' => '冲突已处理',
 			'settings.lanSyncConflictOutdated' => '本机数据刚变过，请重新查看后再决定',
+			'settings.navMusicInterface' => '界面与列表',
+			'settings.musicInterfaceDescription' => '列表行、来源与不喜欢的显示方式。',
+			'settings.navMusicStorage' => '存储与重置',
+			'settings.musicStorageDescription' => '缓存清理与恢复默认。',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -17448,12 +17464,12 @@ extension on Translations {
 			'vod.durationOver60' => '60 分钟以上',
 			'vod.related' => '相关推荐',
 			'vod.changeRelated' => '换一换',
+			_ => null,
+		} ?? switch (path) {
 			'vod.expand' => '展开',
 			'vod.collapse' => '收起',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
-			_ => null,
-		} ?? switch (path) {
 			'vod.score' => '评分',
 			'vod.danmakuOn' => '显示弹幕',
 			'vod.danmakuOff' => '隐藏弹幕',

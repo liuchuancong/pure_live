@@ -66,15 +66,13 @@ const List<double> _kPlaybackRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
 /// `1x` and 1.25 reads `1.25x`.
 String _playbackRateLabel(double rate) => '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 2)}x';
 
-/// The music module's own settings, the way lx-music lays its rail out:
-/// the source a song is asked from, the rendition asked of it, the list
-/// behaviours and the reset — with the equaliser behind a second segment
-/// rather than a row of its own, the way the live module's pages carry
-/// their sections. The other pages (sources, download, lyrics…) still sit
-/// beside it as their own rows.
+/// The music module's own settings, on the reference's rail: 播放 keeps the
+/// source, rendition and playback behaviours; 界面与列表 keeps the player and
+/// list looks; 存储与重置 keeps the caches and the reset. The equaliser is a
+/// page of its own beside them (the menu no longer carries a second door).
 final class MusicSettingsPane extends ConsumerStatefulWidget {
-  /// The pane shown under Settings → Music. [initialSection] is how a search
-  /// hit or a stored deep link opens the page on the equaliser half.
+  /// The pane shown under Settings → Music. [initialSection] names the group
+  /// the rail row opens (播放, 界面与列表, 存储与重置 or 音效).
   const MusicSettingsPane({this.initialSection = SettingsSection.music, super.key});
 
   /// The section the page opens on: this page's own body or one it carries.
@@ -85,35 +83,15 @@ final class MusicSettingsPane extends ConsumerStatefulWidget {
 }
 
 final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
-  late SettingsSection _section = widget.initialSection;
+  SettingsSection get _section => widget.initialSection;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    // The page's own half plus the sections it carries; their labels are the
-    // segment names, so a tab and the page it opens cannot drift apart.
-    final sections = [SettingsSection.music, ...settingsChildrenOf(SettingsSection.music)];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        // The two names are short, but a narrow sidebar still squeezes them:
-        // the control scrolls sideways instead of squeezing its own segments.
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DsSegmentedControl<SettingsSection>(
-              value: _section,
-              semanticLabel: t.settings.navMusic,
-              segments: [for (final section in sections) DsSegment(value: section, label: Text(section.label(t)))],
-              onChanged: (value) => setState(() => _section = value),
-            ),
-          ),
-        ),
-        if (_section == SettingsSection.musicEq) const MusicEqPane() else _playbackSection(context, ref),
-      ],
-    );
+    // 音效 keeps its own page; the other three open this pane on one of its
+    // groups (播放 / 界面与列表 / 存储与重置), the way the reference splits
+    // 基本设置 from the list and storage pages.
+    if (_section == SettingsSection.musicEq) return const MusicEqPane();
+    return _playbackSection(context, ref);
   }
 
   Widget _playbackSection(BuildContext context, WidgetRef ref) {
@@ -127,8 +105,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        DsListSection(
-          header: Text(t.music.settingsPlayback),
+        if (_section != SettingsSection.musicInterface && _section != SettingsSection.musicStorage)
+          DsListSection(
+            header: Text(t.music.settingsPlayback),
           children: [
             SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.disc3),
@@ -236,8 +215,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
             ),
           ],
         ),
-        DsListSection(
-          header: Text(t.music.settingsInterface),
+        if (_section == SettingsSection.musicInterface)
+          DsListSection(
+            header: Text(t.music.settingsInterface),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.sparkles),
@@ -301,8 +281,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
             ),
           ],
         ),
-        DsListSection(
-          header: Text(t.music.settingsList),
+        if (_section == SettingsSection.musicInterface)
+          DsListSection(
+            header: Text(t.music.settingsList),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.arrowUpToLine),
@@ -343,8 +324,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
             ),
           ],
         ),
-        DsListSection(
-          header: Text(t.music.dislikeSection),
+        if (_section == SettingsSection.musicInterface)
+          DsListSection(
+            header: Text(t.music.dislikeSection),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.ban),
@@ -359,8 +341,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
             ),
           ],
         ),
-        DsListSection(
-          header: Text(t.music.cacheClean),
+        if (_section == SettingsSection.musicStorage)
+          DsListSection(
+            header: Text(t.music.cacheClean),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.refreshCw),
@@ -405,8 +388,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
         ),
         // The reset verb closes the page: everything above it is tunable in
         // place, this one throws the tuning away.
-        DsListSection(
-          header: Text(t.music.settingsReset),
+        if (_section == SettingsSection.musicStorage)
+          DsListSection(
+            header: Text(t.music.settingsReset),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
