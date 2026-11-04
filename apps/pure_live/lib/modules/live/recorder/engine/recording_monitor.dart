@@ -1,4 +1,4 @@
-import 'dart:async' show TimeoutException, Timer, unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:io' show Directory;
 import 'dart:math' as math;
 
@@ -14,10 +14,21 @@ import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' sho
 import 'package:pure_live/modules/live/recorder/engine/recording_claim.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_finalize_lock.dart' show hasLiveFinalizeLock;
 import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
-    show NoRecordableStream, RecordableStream, resolveRecordableStream;
+    show RecordableStream, resolveRecordableStream;
 
 /// How long one room's live check may take before the next tick tries again.
 const Duration _kLiveCheckTimeout = Duration(seconds: 20);
+
+/// How many rooms' live checks are read at once. More than one, because a room
+/// is not owed another room's slow platform; no more than this, because a wall
+/// of simultaneous reads against one site is how it answers 412 (Bilibili) or
+/// throttles the device — and the tick comes round again in seconds anyway.
+const int _kLiveCheckConcurrency = 4;
+
+/// One room's live check: the row it was asked for, the stream its platform
+/// served (null: there is nothing to start), and whether that empty answer
+/// counts against the room's own interval.
+typedef _RoomCheck = ({RecordingTask task, RecordableStream? stream, bool countsAsFailure});
 
 /// The live check of waiting recording tasks: while the setting is on and a
 /// task waits for its room, the monitor asks the room for its current stream
@@ -249,6 +260,45 @@ final class RecordingLiveMonitor {
     }
   }
 
+  /// The platform reads of [tasks], a few at a time, answered in the order the
+  /// tasks came in.
+  Future<List<_RoomCheck>> _checkRooms(List<RecordingTask> tasks) async {
+    if (tasks.isEmpty) return const <_RoomCheck>[];
+    final answers = List<_RoomCheck?>.filled(tasks.length, null);
+    var next = 0;
+    Future<void> worker() async {
+      while (next < tasks.length) {
+        final index = next++;
+        answers[index] = await _checkRoom(tasks[index]);
+      }
+    }
+
+    await Future.wait([for (var slot = 0; slot < math.min(_kLiveCheckConcurrency, tasks.length); slot++) worker()]);
+
+    return [for (final answer in answers) ?answer];
+  }
+
+  /// One room's current stream. An offline room, a read that timed out and a
+  /// read that threw all answer with nothing and stretch the room's own
+  /// interval; a platform the registry no longer serves is not the room's
+  /// failure, so it keeps its normal cadence.
+  Future<_RoomCheck> _checkRoom(RecordingTask task) async {
+    final site = _ref.read(sitesProvider).getById(task.platform);
+    if (site == null) return (task: task, stream: null, countsAsFailure: false);
+    try {
+      final stream = await resolveRecordableStream(
+        site: site,
+        platform: task.platform,
+        roomId: task.roomId,
+        qualityLabel: task.quality,
+      ).timeout(_kLiveCheckTimeout);
+
+      return (task: task, stream: stream, countsAsFailure: false);
+    } on Object {
+      return (task: task, stream: null, countsAsFailure: true);
+    }
+  }
+
   /// Checks every startable task once. A task that is still offline, whose
   /// platform answers slowly or whose start fails stays as it is; the next
   /// tick tries again (the reference's failure backoff is REC-20).
@@ -296,33 +346,40 @@ final class RecordingLiveMonitor {
       final liveIds = {for (final task in startable) task.id};
       _lastChecked.removeWhere((id, _) => !liveIds.contains(id));
       _failures.removeWhere((id, _) => !liveIds.contains(id));
+      // The sweep owes each room its own cadence, so the rooms that are due are
+      // picked first and their platform reads run together: one room whose
+      // platform answers slowly — or not at all until the read times out — would
+      // otherwise push every other room's check past its own interval, because
+      // the guard at the top of the tick skips an overlapping sweep and the
+      // whole sweep costs the sum of its rooms.
+      final due = <RecordingTask>[];
       for (final task in startable) {
         if (!_ref.read(recordingSettingsProvider).schedule.pollingEnabled && !force) return;
         if (engine.isRecording(task.id)) continue;
         final last = _lastChecked[task.id];
         if (last != null && now.difference(last) < _delayFor(task)) continue;
         _lastChecked[task.id] = now;
-        final site = _ref.read(sitesProvider).getById(task.platform);
-        if (site == null) continue;
-        final RecordableStream stream;
-        try {
-          stream = await resolveRecordableStream(
-            site: site,
-            platform: task.platform,
-            roomId: task.roomId,
-            qualityLabel: task.quality,
-          ).timeout(_kLiveCheckTimeout);
-        } on NoRecordableStream {
-          if (settings.schedule.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
-          continue;
-        } on TimeoutException {
-          if (settings.schedule.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
-          continue;
-        } on Object {
-          if (settings.schedule.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
+        if (_ref.read(sitesProvider).getById(task.platform) == null) continue;
+        due.add(task);
+      }
+      // What the platforms answered, in task order: which room reaches the
+      // concurrency cap of the recording engine first stays the order the rows
+      // are listed in, not the order the networks happened to finish in.
+      final answers = await _checkRooms(due);
+      for (final check in answers) {
+        final task = check.task;
+        final stream = check.stream;
+        if (stream == null) {
+          // A room that is simply not live, a read that timed out and a read
+          // that failed all stretch that room's own interval when its backoff is
+          // on; a platform the registry no longer serves is not a failure of the
+          // room and stays on its normal cadence.
+          if (check.countsAsFailure && settings.schedule.checkBackoffEnabled) {
+            _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
+          }
           continue;
         }
-        // The task may have been removed or started while the platform
+        // The task may have been removed or started while the platforms
         // answered. A settled row is re-armed to waiting here, only once the
         // room has answered with a live stream, so a room that stays offline
         // writes nothing to the store on every tick.
@@ -334,6 +391,8 @@ final class RecordingLiveMonitor {
         }
         if (!_ref.read(recordingSettingsProvider).schedule.pollingEnabled) return;
         _failures.remove(task.id);
+        final site = _ref.read(sitesProvider).getById(task.platform);
+        if (site == null) continue;
         try {
           await engine.start(task, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());
         } on Object {
