@@ -229,51 +229,52 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     );
   }
 
-  /// The file list: one day after another, each day's header pinned while its
-  /// own takes scroll past — the way a drive client holds the date you are
-  /// reading, and the reason the grid it also offered never earned its keep.
+  /// The file list: one day after another, each day opening with its own
+  /// header and folding away under it.
+  ///
+  /// The days are ordinary slivers of one list rather than a
+  /// `SliverMainAxisGroup` around a pinned header: the group emits a geometry
+  /// whose layout extent exceeds its paint extent once a pinned child sits
+  /// inside it, which aborts the viewport's layout and leaves the next pointer
+  /// event hit-testing slivers that were never laid out.
   Widget _dayGroups(List<RecordingTake> filtered, List<String> days, double inset) {
     final t = context.t;
     return Padding(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s12),
       child: CustomScrollView(
         slivers: [
-          for (final day in days)
-            SliverMainAxisGroup(
-              slivers: [
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _DayHeaderDelegate(
-                    title: _dayTitle(day),
-                    summary: t.recorder.groupSummary(
-                      count: filtered.where((take) => take.day == day).length,
-                      size: formatRecordingBytes(
-                        filtered.where((take) => take.day == day).fold<int>(0, (total, take) => total + take.bytes),
-                      ),
-                    ),
-                    collapsed: _collapsed.contains(day),
-                    onToggle: () => setState(() {
-                      if (!_collapsed.remove(day)) _collapsed.add(day);
-                    }),
+          for (final day in days) ...[
+            SliverToBoxAdapter(
+              child: _DayHeader(
+                title: _dayTitle(day),
+                summary: t.recorder.groupSummary(
+                  count: filtered.where((take) => take.day == day).length,
+                  size: formatRecordingBytes(
+                    filtered.where((take) => take.day == day).fold<int>(0, (total, take) => total + take.bytes),
                   ),
                 ),
-                if (!_collapsed.contains(day))
-                  SliverList(
-                    delegate: SliverChildListDelegate([
-                      for (final take in filtered)
-                        if (take.day == day)
-                          _TakeRow(
-                            take: take,
-                            selected: _selected,
-                            onSelect: _toggle,
-                            onPlay: () => _play(take),
-                            menu: _takeMenu(take),
-                            platformName: widget.platformName,
-                          ),
-                    ]),
-                  ),
-              ],
+                collapsed: _collapsed.contains(day),
+                onToggle: () => setState(() {
+                  if (!_collapsed.remove(day)) _collapsed.add(day);
+                }),
+              ),
             ),
+            if (!_collapsed.contains(day))
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  for (final take in filtered)
+                    if (take.day == day)
+                      _TakeRow(
+                        take: take,
+                        selected: _selected,
+                        onSelect: _toggle,
+                        onPlay: () => _play(take),
+                        menu: _takeMenu(take),
+                        platformName: widget.platformName,
+                      ),
+                ]),
+              ),
+          ],
         ],
       ),
     );
@@ -643,19 +644,13 @@ String recorderLibrarySortLabel(Translations t, RecorderLibrarySort order) => sw
   RecorderLibrarySort.duration => t.recorder.sortDuration,
 };
 
-/// The day's pinned header: what it folds away, how many takes it holds and
-/// how big they are together.
+/// The day's header: what it folds away, how many takes it holds and how big
+/// they are together.
 ///
-/// It paints its own background because a pinned header floats over the rows
-/// sliding under it; a transparent one would print the date through the take
-/// it is passing.
-final class _DayHeaderDelegate extends SliverPersistentHeaderDelegate {
-  const _DayHeaderDelegate({
-    required this.title,
-    required this.summary,
-    required this.collapsed,
-    required this.onToggle,
-  });
+/// It paints its own background because the rows scroll under it; a
+/// transparent one would print the date through the take it is passing.
+final class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.title, required this.summary, required this.collapsed, required this.onToggle});
 
   final String title;
   final String summary;
@@ -666,44 +661,37 @@ final class _DayHeaderDelegate extends SliverPersistentHeaderDelegate {
   static const double _height = 36;
 
   @override
-  double get minExtent => _height;
-
-  @override
-  double get maxExtent => _height;
-
-  @override
-  bool shouldRebuild(covariant _DayHeaderDelegate oldDelegate) =>
-      oldDelegate.collapsed != collapsed || oldDelegate.title != title || oldDelegate.summary != summary;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    return ColoredBox(
-      color: colors.surface,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.border)),
-        ),
-        child: DsPressable(
-          onPressed: onToggle,
-          builder: (context, states, _) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s6),
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                DsIcon(collapsed ? DsIcons.chevronRight : DsIcons.chevronDown, size: 16, color: colors.textMuted),
-                Text(title, style: theme.typography.labelStrong.copyWith(color: colors.text)),
-                Expanded(
-                  child: Text(
-                    summary,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+    return SizedBox(
+      height: _height,
+      child: ColoredBox(
+        color: colors.surface,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colors.border)),
+          ),
+          child: DsPressable(
+            onPressed: onToggle,
+            builder: (context, states, _) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s6),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  DsIcon(collapsed ? DsIcons.chevronRight : DsIcons.chevronDown, size: 16, color: colors.textMuted),
+                  Text(title, style: theme.typography.labelStrong.copyWith(color: colors.text)),
+                  Expanded(
+                    child: Text(
+                      summary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
