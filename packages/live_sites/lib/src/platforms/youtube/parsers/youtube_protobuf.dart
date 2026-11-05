@@ -11,8 +11,9 @@
 ///
 /// - a singular field keeps its last value; a field sent with another wire
 ///   type than its declared one is ignored (an unknown field);
-/// - fixed64 and fixed32 are consumed and reported as varints of their
-///   little-endian value; groups (wire types 3 and 4) are skipped;
+/// - fixed64 and fixed32 are consumed and kept under their own wire type, so
+///   `integer` (a varint reader) never reports them; groups (wire types 3 and
+///   4) are skipped;
 /// - strings are UTF-8 with malformed bytes replaced;
 /// - a truncated field, a varint of more than ten bytes, field number 0, a
 ///   length above 2^31 − 1, an unmatched group end or wire type 6 or 7 is a
