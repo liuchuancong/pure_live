@@ -657,4 +657,90 @@ void main() {
       );
     });
   });
+
+  group('the line that says someone subscribed', () {
+    test("a subscription is the site's notice and its words as chat", () {
+      final frame = ChzzkDanmakuCodec.decode(
+        _cmd(
+          93101,
+          body: [
+            _pushed(type: 11, text: 'greetings', extras: {'tierName': '팬', 'month': 3}, profile: {'nickname': 'Ann'}),
+          ],
+        ),
+      );
+      expect(frame.messages.map((message) => message.type), [
+        LiveMessageType.notice,
+        LiveMessageType.chat,
+      ], reason: 'the line is both what the site announces and what the viewer typed');
+      final notice = frame.messages.first;
+      expect(notice.text, 'Ann 订阅了「팬」，已订阅 3 个月');
+      expect(notice.payload, LiveNoticeKind.subscription);
+      expect(notice.effectiveSender.userId, 'u1');
+      expect(notice.effectiveSender.userName, 'Ann');
+      expect(notice.messageId, 'subscription:u1:1790733600000', reason: 'never the id of its own chat twin');
+      expect(notice.sentAt, DateTime.fromMillisecondsSinceEpoch(1790733600000));
+      expect(frame.messages.last.text, 'greetings');
+      expect(frame.messages.last.messageId, 'u1:1790733600000');
+    });
+
+    test('the tier and the months say only what the line carries', () {
+      String textOf(Map<String, Object?> extras, {Map<String, Object?>? profile}) =>
+          ChzzkDanmakuCodec.subscription(_pushed(type: 11, extras: extras, profile: profile))!.text;
+
+      expect(textOf({'month': 2}, profile: {'nickname': 'Ann'}), 'Ann 订阅了频道，已订阅 2 个月');
+      expect(textOf({'tierName': '팬'}, profile: {'nickname': 'Ann'}), 'Ann 订阅了「팬」');
+      expect(textOf({'tierName': '팬', 'month': 0}, profile: {'nickname': 'Ann'}), 'Ann 订阅了「팬」');
+      expect(textOf({'month': 'two'}, profile: {'nickname': 'Ann'}), 'Ann 订阅了频道', reason: 'no readable count');
+      // The name is the profile's, else the extras' the site writes for a masked viewer.
+      expect(textOf({'tierName': '팬', 'nickname': 'Bea'}, profile: {'nickname': '  '}), 'Bea 订阅了「팬」');
+      expect(
+        ChzzkDanmakuCodec.subscription(_pushed(type: 11, extras: {'tierName': '팬'}))!.text,
+        '订阅了「팬」',
+        reason: 'nobody named: the notice says what happened, not who',
+      );
+    });
+
+    test('a subscription the site hides is neither notice nor chat', () {
+      for (final status in ['BLIND', 'CBOTBLIND', 'DELETED']) {
+        final frame = ChzzkDanmakuCodec.decode(
+          _cmd(
+            93101,
+            body: [
+              _pushed(type: 11, text: 'words', status: status, extras: {'tierName': '팬'}),
+            ],
+          ),
+        );
+        expect(frame.messages, isEmpty, reason: 'a $status line still carries its text and the site hides it');
+      }
+      expect(ChzzkDanmakuCodec.subscription(_pushed(type: 11, status: 'BLIND')), isNull);
+      expect(
+        ChzzkDanmakuCodec.subscription(_pushed(type: 12, extras: {'tierName': '팬'})),
+        isNull,
+        reason: 'a gift of passes is its own notice',
+      );
+    });
+
+    test('a subscription in the recent chat is the same line as a pushed one', () {
+      final recent = ChzzkDanmakuCodec.decode(
+        _cmd(
+          15101,
+          retCode: 0,
+          body: {
+            'messageList': [
+              _recent(type: 11, text: 'old words', extras: {'tierName': '팬', 'month': 2}, profile: {'nickname': 'Ann'}),
+            ],
+          },
+        ),
+      );
+      expect(recent.messages.map((message) => message.type), [LiveMessageType.notice, LiveMessageType.chat]);
+      expect(recent.messages.first.text, 'Ann 订阅了「팬」，已订阅 2 个月');
+      expect(
+        recent.messages.first.messageId,
+        'subscription:u1:1790733600000',
+        reason: 'the recent form names its account and time differently, and the notice must still have them',
+      );
+      expect(recent.messages.first.sentAt, DateTime.fromMillisecondsSinceEpoch(1790733600000));
+      expect(recent.messages.last.messageId, 'u1:1790733600000');
+    });
+  });
 }

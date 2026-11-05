@@ -316,20 +316,23 @@ abstract final class ChzzkDanmakuCodec {
 
   static List<LiveMessage> _lines(List<Object?> items, {required bool recent, required DateTime receivedAt}) => [
     for (final item in items)
-      if (item is Map) ...[?subscription(item), ?line(item, recent: recent, receivedAt: receivedAt)],
+      if (item is Map) ...[?subscription(item, recent: recent), ?line(item, recent: recent, receivedAt: receivedAt)],
   ];
 
   /// The notice of a subscription line: the subscriber's name, then 订阅了
   /// 「tier」 and 已订阅 N 个月 in Chinese around the platform's own names
   /// (`extras.tierName`, `extras.month`), the subscriber being
   /// `profile.nickname` else `extras.nickname`. Its id is `subscription:<user>:<time>` so it never
-  /// collides with the same line's chat message. Null for any other line, and
-  /// for one the site does not show.
-  static LiveMessage? subscription(Map<Object?, Object?> item) {
-    if (_int(item['messageTypeCode'] ?? item['msgTypeCode']) != subscriptionType) return null;
-    final status = item['messageStatusType'] ?? item['msgStatusType'];
+  /// collides with the same line's chat message. [recent] reads the line in the
+  /// recent chat's field names, as [line] does: without it the notice of a line
+  /// from the history would carry no account, no time and so no id at all. Null
+  /// for any other line, and for one the site does not show.
+  static LiveMessage? subscription(Map<Object?, Object?> item, {bool recent = false}) {
+    final names = recent ? _recentFields : _pushedFields;
+    if (_int(item[names['type']]) != subscriptionType) return null;
+    final status = item[names['status']];
     if (status != null && status != 'NORMAL') return null;
-    final row = _rowOf(item);
+    final row = _rowOf(item, names: names);
     final extras = row.extras;
     var name = _scalar(row.profile?['nickname']).trim();
     if (name.isEmpty) name = _scalar(extras['nickname']).trim();
