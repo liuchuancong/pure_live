@@ -10,7 +10,7 @@
 2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
 4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。
-5. **还欠的两笔小账**（都被别人的在途改动挡住，2026-11-05 复核仍挡）：`displayLabel` 的显示位只剩 `player_surface.dart:430,1246`（被别人 `:81` 的 `open(known: room)` hunk 挡住）与 `multiview_page.dart:1099,1104`（被别人 `:535` 的 `openRoom(room:)` hunk 挡住）；getter 早已在 HEAD（`34578f23c`），谁先落地都不影响编译。开工前 `git status` 复核，文件干净就把这两处补完再划掉。
+5. **欠账已清（2026-11-05 第十三轮）**：`displayLabel` 的显示位全部落地——房间的两处随别的 lane 的提交进了 HEAD（`player_surface.dart:430,1246`），多视图两处是 `2208ce785`（`:1099,:1105`）。别再当待办；新加画质显示位时直接用 `displayLabel`，身份仍用 `label`/`qualityId`。
 6. **决定只剩一个**：①**Bigo 已定案并落地**（用户拒绝回环中继 ⇒ `01075c532` 让 `getLines` 带可读原因失败，见「第十二轮」；不要再提做中继）。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
 
@@ -466,3 +466,14 @@ PLAN-CHECK huya     没有注册 resolver
 
 1. **`stripInvisiblePlaceholders`（参考 `live_core/json.dart:59`，宣称快手标题留 U+FFFC）——不搬。** 探针扫了 32 站里所有有匿名热门的站共 **526 间房**的 title / anchor.name / notice，按参考那张字符表（U+0000-08、0B、0C、0E-1F、7F-9F、FFF9-FFFC、FFFE、FFFF）逐 rune 检查：**命中 0**。⇒ 我们的解析层没把这批字符带进显示文本（各站 parser 自己已过滤或数据本就没有）。为没观察到的缺陷加一层全局清洗，等于给每条标题多一次扫描 + 一个新失败模式，**不做**。未覆盖面：聊天正文（要开 30+ 个 socket，本轮没测）；若真出现"弹幕里一个方块"，再按该站那条消息定位，别提前搬整张表。
 2. **参考的 21 条命名实体表（我们 `common/quality_label… 不，是 `common/normalization/html_entities.dart` 只有 14 条，缺 ensp/emsp/thinsp/ldquo/rdquo/lsquo/rsquo/yen/reg）——不补。** 同一批 526 间房里的这三类文本，用我们解码器自己的正则（`&([a-zA-Z][a-zA-Z0-9]{1,31});`）扫**残留引用**：**命中 0**。⇒ 要么平台不发，要么各站解码已过一遍；补那 8 条名字现在没有任何数据会走到，是"搬了没人读的表"（正是 P46/P50 那类债）。要补的时机是探针第一次真的扫到一个名字。
+
+## 第十四轮（2026-11-05）：付费卡到了列表里已经不是它自己 —— 我上两轮的接线因此是空的
+
+P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）都从 `LiveMessage` 的字段读数据。本轮顺着"谁把消息交给列表"查下去，发现**聊天列看到的付费行根本不是平台那条消息**：
+
+- `RoomDanmakuPipeline.accept()` 里只有礼物有专路，其他一律 `danmaku.acceptExternal(DanmakuMessage(type: chat, …))`；`_ChatMirrorSink.onDanmaku` 再把这条**重建**成 `LiveMessage.normalized(text/sender/color/messageId/sentAt/isLocal/replayed)`。⇒ `payload`（价格与配色）、`type == superChat`、`emotes` 三样都在这一来一回里没了。⇒ 房间侧那条"醒目留言 = 彩底横幅 + 价签"的分支（`room_chat.dart:838`）对管道来的消息**永远不成立**，平台配色（P49）和普通聊天的表情（P50）都是接了个拿不到数据的读者。
+- 参考怎么分派（`live_play/logic/room_controller.dart:1219-1236`）：`chat` 才 `_flying.add(message)`；`superChat` 只进板子 + `chat.add(ChatLine.superChat(superChat))`，**不飞**；`online` → `_applyAudience`（= P48 的同一条判据，第二次对上了）。
+
+| P53 | `239534233` | 付费卡与表情到底 | ①super chat 与礼物同路：在站侧分派处直接 `onChat(原消息)`（价格、配色、表情都在），屏蔽名单在这里也查一次（花钱不是回到观众清过的屏幕），并按 id 去重——平台在卡过期前每轮都会重发：有 id 就是**原地更新**（`replaceId`），没 id 就只画一次、重发丢掉。②普通聊天的表情不再指望重建：`accept()` 把 `emotes` 按 `messageId`（管道原样带过去的键）存住，镜像取用时**读一次即清**，映射有上限（400），不会因为房间跑几小时而涨。行为变化一处，和参考一致：**醒目留言不再飞过画面**（它以前以纯文本聊天飞）。门：app `dart analyze lib` 0 issues、`flutter test test/live` 77 例中 76 绿（唯一红仍是录像 lane）。无 harness 可测这段（全仓没有 `RoomController` 测试），**运行期请验**：bilibili/斗鱼/虎牙买一条 SC ⇒ 列表里应看到彩底 + 价签（若该平台给了配色，是它自己的颜色），且同一条购买不会越刷越多；bilibili 发一条带 `[dog]` 的普通聊天 ⇒ 列表里应是图。**注意 HEAD 里那 53 行是纯增量，验证是在"我的改动 + 别人在途改动"的工作副本上做的。** |
+
+- **共享工作树的一课（技术活）**：`room_controller.dart` 本轮同时被另一条 lane 改（`SchedulerBinding` → 事件队列、`roomChatNoticeProvider` 清理若干处）。`git commit -- <文件>` 会把他们的 hunk 一起卷进去（`746fec785` 事故），不带 pathspec 的 `git commit` 又只会提交索引里已有的东西。做法：把 `git diff` 按 hunk 切开（awk），逐块判断归属，只把我的 6 块 `git apply --cached`，**提交前用 `git diff --cached | grep` 证明里面没有别人的关键字**（本轮：`scheduler|roomChatNoticeProvider` 命中 0），提交后再 `git diff` 确认他们那 5 块仍在未暂存区。索引只用于"选择提交内容"，工作树完全不动。
