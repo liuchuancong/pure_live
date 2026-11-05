@@ -421,3 +421,18 @@ PLAN-CHECK huya     没有注册 resolver
 | P49 | `cf0b8d6c7` | 付费卡穿平台自己的颜色 | 新 `room/chat/paid_banner.dart`：`platformColor`（`#RRGGBB`/`#AARRGGBB`/裸 6 位；**名字、`rgb()`、截断串一律判否**，退回主题而不是涂成灰——这条比参考严，参考那把 `int.tryParse(hex...)` 会把 4 位串当数字吃进去）、`paidBanner`（行：填色取平台的色但向 surface 收到 22%、描边收 45%，所以色相在场、正文仍用主题墨色，浅/深主题都成立）、`paidBannerGradient`（超聊板：两色渐变，**权重仍由金额档位 0.05/0.10/0.16 决定**——参考的"按金额分级"和我们已有的"板子按价值读"两条规则都留住）。两处渲染面都接（行 + 板），不留半个读者。**故意不抄**参考的"满色 + 反推墨色"：我们的行里名字/徽章/时间戳各用自己的主题墨色，铺满饱和色会一处一处破；tint 路线让文字一条都不用改。新 `test/live/room_paid_banner_test.dart`（8 例：解析正反、tint 比原色淡但比 surface 深、描边比填色重、墨色在 fill 上仍 ≥4.5、权重随金额变、缺尾色=单色、缺顶色=交回调用方）。门：`dart analyze lib` 0 issues、`flutter test test/live/room_paid_banner_test.dart` **8 绿**、`flutter test test/live` 70 例中 69 绿（唯一红仍是录像 lane）。运行期未验：**要在一间有 B 站/斗鱼付费卡的房间看那条行与超聊页的卡片**（浅色与深色各一次）；若 tint 太淡看不出色相，把 `paidBanner` 的 0.78/0.55 调小即可，规则不用改。 |
 
 - 提交纪律：第一版提交正文把生产者写成"六站（含 Kick）"——Kick 只是早前那次 socket 普查里出现过，本站**不产** `SuperChatDisplay`。**未推送前**改正并折进同一条提交（`--amend -- <我的三个路径>`，别人没在里面），已推送历史不改写。
+
+## 探测预算实测（2026-11-05，第十次对照：P41 那张属性表到底还能不能再压）
+
+第 2 部分欠的那次 `room-open` 还没等到（盘上最新日志仍停在 11-03，且早于 P34）。这一轮换了一条**不用等用户重跑**的测法：临时 `dart test` 用真适配器签一条**活着的 douyu FLV**，紧接着把它交给本机 `D:\ffmpeg\bin\ffmpeg.exe`（mpv 的 `demuxer-lavf-probesize/analyzeduration` 就是转成 ffmpeg 的 `-probesize/-analyzeduration`，所以这一段是同一把尺子），每档**重新签一条新地址**（同一条问两次读的是 CDN 的热路，数字就不是探测的代价了），跑 `-map 0 -t 1 -f null -`：
+
+| 探测预算（probesize / analyzeduration） | 打开+取到第一秒画面 |
+| --- | --- |
+| ffmpeg 默认（5 MiB / 5 s） | **1202 ms** |
+| **1 MiB / 1 s（P1 现在用的）** | **809 ms** |
+| 128 KiB / 500 ms | 804 ms（并回 `Application provided invalid, non monotonically increasing dts`） |
+| 64 KiB / 0 s | 535 ms |
+
+- **结论：P1 的两个值停在曲线的拐点上，别再压。** 1202→809 的 393 ms 是**已经在场的收益**（早拿走了）；再往 128 KiB 只多 5 ms（噪声级），要再快只能 64 KiB/0，那 274 ms 拿的是**探测不足**的风险——FLV 里塞 HEVC/AV1、多节目、头部来得晚的流都会误判（绿屏、时长对分辨率不对、seek 坏），而这条判据不能靠 analyze 过门，得拿房间 `firstFrame` 做 A/B（P41 立的规矩）。⇒ **本轮不改引擎默认，零代码。**
+- 顺带纠一条我自己在同一轮里产生的假象：第一次跑（未控温）里 `DEFAULTS` 报了"45 s 无应答"，看着像"默认预算会把直播卡死"。**那条不可复现**，同一间房重测默认档是 1202 ms；第一次那两跑撞上的是**过期地址与 fake-ip DNS**（bilibili 那两条 `-138` 就是打到 `v.smtcdns.net` 这条假地址上，见 [[reference-local-proxy-fakeip-diagnosis]]），不是探测的代价。⇒ 记下教训：**代理侧测出来的"挂了"先当环境问题，别当引擎结论**；控制手段是"每档重签一条 + 同一间房 + 有界等待"。
+- 可复现的做法（下轮要测别的站直接照抄）：临时 `dart test` 里 `DioFactory(proxyPolicy: FixedProxyPolicy(global: HttpProxyRoute(host:'127.0.0.1', port:7890)))` → `createBuiltInLiveSites(http:)` → 取热门里 `broadcast.isLiveNow` 的第一间 → `getLines` → `Process.run('D:\ffmpeg\bin\ffmpeg.exe', [...预算, '-headers', 'k: v\r\n...', '-i', url, '-map','0','-t','1','-f','null','-'])`，`.timeout(45 s)` 包住；用完删文件（[[feedback-temp-tests-delete-after-verifying]]）。
