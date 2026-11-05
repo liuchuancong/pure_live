@@ -696,3 +696,13 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 | 计数 | 同上 | 765 绿 | `packages/live_sites` `dart test` **765 绿**（开工 680：+35 kugoulive、+27 kick），`dart analyze lib test` 0 issues；本轮 4 条提交全部推送成功。 |
 
 **留给下轮的**：薄度队列剩下 **pandalive → picarto → chzzk → kilakila → missevan → showroom**（bigo/sixroom 归录像/取流 lane 的读者管）；kugoulive 那三条"按现状钉住"的读法若遇到真帧反证要连证据一起改；session 循环那三维（假时钟、假 WebSocket）仍未动。
+
+## 第三十轮（2026-11-05）：薄度队列再吃两家（pandalive、picarto）
+
+**参考的拉取**：本轮开头 `Already up to date`（`f00bebd91`，源码仍 5.6.2）⇒ 第 5 部分本轮无新代码可抄；第 1/3 部分的四处 UI 缺口仍在别人的 5 个脏文件里（`room_page.dart`/`room_controller.dart`/`room_playlist.dart` + `lib/l10n`，本轮 `git status` 又核过一次）。⇒ 活继续从"薄度队列"取。
+
+| P78 | `e1bb05f85` | pandalive 钉深（15 条，原先只钉了하트） | 新增 `test/platforms/pandalive/pandalive_danmaku_test.dart`。钉住：connect/subscribe/ping 的**确切 JSON 与回显 id**（`id` 1/2，ping 从 2 往后数）；25 s 心跳、8 s 加入、90 s 静默、3 次拒绝、8 次重连，以及续期时刻（**提前一分钟；ttl 不超过两倍 lead 就取一半**）；`grant` 的接受态（channel **必须是文本**、trim 后才用）、`errorData.code` 的拒绝、`isLive` 三种"否"（false/'N'/0）算 `not live` 而**缺该字段不算**、六种不可用应答各自的 kind；JWT 从 payload 的 `exp` 读到期（**文本 exp/0/负数/超出钟面/两段/坏 base64 都算没说**）；`checked` 只留站方形状（id 可带 `@后缀`、**空格的 token 丢掉但参数留着**=重新去要一个）；**一帧可含多行**（换行分隔）：订阅应答才算加入、connect 应答只说 ttl（`expires` 不为真或 ttl≤0 都不说）、错误帧自报命令且**第一个赢**、ping 的错误不算加入失败、别的频道/带 `type` 的 join-leave push/没有 id 的应答都不读、坏行只丢它自己、字节与坏 UTF-8 不抛；聊天行：四种 `chatTypes`、**有字先于表情**、表情取第一个自报名的并加方括号、`<channel>:<offset>`（offset 非整数/负数/文本都没有 id）、时间只认正整数秒。 |
+| P79 | `71e72c0fb` | picarto 钉深（25 条，原先只钉了 tips 与订阅） | 新增 `test/platforms/picarto/picarto_danmaku_test.dart`。钉住：令牌问题体的形状与**只有三段 JWT 才进 socket 路径**（未知频道回 `key: null`）；帧分派——`JWT_TOKEN` 拒绝只报标志不报消息、`type`/`t` 与 `messages`/`m` 两种拼法（`messages` 优先）、**历史页 `paginated`/`p` 按 JS truthiness 跳过**、给管理员看的 `system`（`c: b`）不显示、`system` 帧里**没有类型的行不显示而 `c` 帧里的显示**、非 JSON/非对象/未知类型为空、**一个坏字段只坏它自己**（时间/颜色/id 各自回落，坏行只丢那一条）；聊天行的 `id ?? _id`、名字可为数字、时间**只按毫秒读且只查范围**（0 与负数照样是一个时刻——站点总发真毫秒）、名字颜色 3/6 位十六进制（可带 `#`，文本才算）；tip 的 `v` 标记或 `ct` 类型才算、`x` 必须是正整数、没时间就以帧到达为起点、多频道同播时 `rn` 不是本房间就写明"打赏给 X"；系统通知的 `{link}`/`{icon}` **照站方的取法**（第 k 个取 `l[2k+1]`，越界回退 `l[0]`，列表缺失则占位符原样留着，`\n` 拼接并去掉空段）；raid 的两种说法；六种订阅句子（`md` 缺省为 1）；`rm`/`cm` 撤回（**撤回自己认领 id**会与目标撞车，故不认领）；`stream` 帧的在线数（别的频道的状态不读、文本数字不读、0 是有效数字，且**状态在历史页规则之前读**）。 |
+| 计数 | 同上 | 805 绿 | `packages/live_sites` `dart test` **805 绿**（开工 765：+15 pandalive、+25 picarto），`dart analyze lib test` 0 issues；四条提交全部推送成功。 |
+
+**留给下轮的**：薄度队列剩 **chzzk(1018/80) → kilakila(872/93) → missevan(1053/102) → showroom(501/107)**；本轮**没找到新的解码器缺陷**（pandalive/picarto 的失败全部是我的 fixture 写错，改判据不改成站方代码），这条要说出来，免得下轮以为"钉得住就是有缺陷"。
