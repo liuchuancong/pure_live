@@ -196,7 +196,10 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
     final router = ref.read(appRouterProvider);
     Navigator.of(context).pop();
     unawaited(
-      router.pushReplacement(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+      router.pushReplacement(
+        RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location,
+        extra: room,
+      ),
     );
   }
 }

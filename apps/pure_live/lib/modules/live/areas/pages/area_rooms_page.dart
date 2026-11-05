@@ -111,7 +111,8 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
 
     Widget grid(AreaRoomsState open, List<LiveRoom> rooms, {required bool endless}) {
       Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
-        void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+        void open() =>
+            openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: rooms);
         return RoomCardMenu(
           room: room,
           onOpen: open,

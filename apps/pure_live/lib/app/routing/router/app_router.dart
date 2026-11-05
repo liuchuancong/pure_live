@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel;
-import 'package:live_sites/live_sites.dart' show LiveArea;
+import 'package:live_sites/live_sites.dart' show LiveArea, LiveRoom;
 import 'package:media_core/media_core.dart' show PresentationMode;
 import 'package:pure_live/app/navigation/navigation.dart' show navigationOf;
 import 'package:pure_live/app/providers/providers.dart';
@@ -419,7 +419,17 @@ final class RoomRoute extends GoRouteData with $RoomRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) => _PlayerWindowChrome(
     drawsOwnChrome: true,
-    child: RoomPage(platform: platform, roomId: roomId),
+    // The card the room was opened from rides as the route's extra; a room
+    // window (whose route is a string) leaves it null and the page takes
+    // its seed from the shared shelf instead.
+    child: RoomPage(
+      platform: platform,
+      roomId: roomId,
+      room: switch (state.extra) {
+        final LiveRoom room => room,
+        _ => null,
+      },
+    ),
   );
 }
 

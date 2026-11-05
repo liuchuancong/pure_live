@@ -79,7 +79,9 @@ final class PictureActionButton extends ConsumerWidget {
       ),
       RoomPictureAction.refresh => (
         t.common.retry,
-        room == null ? null : () => unawaited(controller.open(platform: room.ref.platform, roomId: room.ref.roomId)),
+        room == null
+            ? null
+            : () => unawaited(controller.open(platform: room.ref.platform, roomId: room.ref.roomId, known: room)),
       ),
       RoomPictureAction.retry => (t.common.retry, () => unawaited(controller.retry())),
       RoomPictureAction.switchLine => (
@@ -425,7 +427,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
           children: [
             for (final option in room.qualities)
               PlayerPanelOption(
-                label: option.label,
+                label: option.displayLabel,
                 selected: option == current,
                 onPressed: () {
                   _hidePicker();
@@ -1241,7 +1243,7 @@ final class _StreamPickerRow extends ConsumerWidget {
             context,
             picker: _Picker.quality,
             icon: DsIcons.gauge,
-            label: quality.label,
+            label: quality.displayLabel,
             semanticLabel: t.room.quality,
           ),
         if (line != null && lines.length > 1)

@@ -532,7 +532,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final platform = room?.ref.platform ?? key.substring(0, at);
     final roomId = room?.ref.roomId ?? key.substring(at + 1);
     final playback = ref.read(multiviewPlaybackProvider.notifier)..setActive(active: false);
-    await openRoom(context, platform: platform, roomId: roomId);
+    await openRoom(context, platform: platform, roomId: roomId, room: room);
     if (!mounted) return;
     playback.setActive(active: TickerMode.valuesOf(context).enabled);
   }

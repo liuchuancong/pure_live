@@ -324,7 +324,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
     Widget cardFor(LiveRoom room, {bool listRow = false}) {
       final names = [for (final id in room.local.tagIds) ?tagNames[id]];
-      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+      void open() =>
+          openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: rooms);
       // The card's own menu already carries open, share, links, unfollow
       // and the tags; the page adds nothing of its own.
       return RoomCardMenu(

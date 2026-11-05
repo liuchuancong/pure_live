@@ -336,7 +336,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   /// it — open, copy the link, then this page's own remove.
   Widget _historyCard(BuildContext context, LiveRoom room, {required DateTime watchedAt, bool listRow = false}) {
     final t = context.t;
-    void open() => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId));
+    void open() => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room));
     final remove = _busy ? null : () => unawaited(_remove(room));
     return RoomCardMenu(
       room: room,

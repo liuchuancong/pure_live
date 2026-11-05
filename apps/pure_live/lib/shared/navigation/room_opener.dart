@@ -10,6 +10,8 @@ import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/modules/live/room/room.dart';
 
+import 'package:pure_live/shared/navigation/room_seed.dart' show forgetRoomSeed, rememberRoomSeed;
+
 /// Opens a live room the host's way: in its own window on the desktop —
 /// the chat app's shape, one window per room the viewer is watching — or
 /// pushed onto the app's navigator everywhere else, and on the desktop too
@@ -21,6 +23,11 @@ import 'package:pure_live/modules/live/room/room.dart';
 /// same room's player and chat twice, so an already-open room is navigated
 /// and raised instead of opened again.
 ///
+/// [room] is the card the viewer picked: the room page draws its title and
+/// cover while the detail request runs, the way the reference opens with
+/// the list's room in hand. A room opened from a playlist takes the
+/// playlist's own entry when [room] is omitted.
+///
 /// [playlist] is the list the viewer picked the room from, in its order:
 /// the portrait full screen swipes through it. A room opened any other way
 /// leaves no list behind.
@@ -28,6 +35,7 @@ Future<void> openRoom(
   BuildContext context, {
   required String platform,
   required String roomId,
+  LiveRoom? room,
   List<LiveRoom>? playlist,
 }) async {
   final container = ProviderScope.containerOf(context, listen: false);
@@ -41,6 +49,7 @@ Future<void> openRoom(
   } else {
     container.read(roomPlaylistProvider.notifier).open(rooms: playlist, current: playlist[index]);
   }
+  final known = room ?? (index >= 0 ? playlist![index] : null);
   final desktop = container.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;
   final windows = container.read(secondaryWindowsProvider);
   if (desktop && container.read(roomWindowsProvider) && windows != null) {
@@ -58,14 +67,21 @@ Future<void> openRoom(
           ..focus();
         return;
       }
+      // The window route is a string, so the room rides beside it in this
+      // isolate's seed shelf; the page takes it on its first frame.
+      if (known != null) rememberRoomSeed(known);
       await windows.open(role: WindowRole.panel, route: route, businessKey: businessKey);
       return;
     } on Object {
+      if (known != null) forgetRoomSeed(platform, roomId);
       // The window did not come up; the in-app route still works.
     }
   }
   if (!context.mounted) {
     return;
   }
-  await context.push(RoomRoute(platform: platform, roomId: roomId).location);
+  await context.push(
+    RoomRoute(platform: platform, roomId: roomId).location,
+    extra: known,
+  );
 }

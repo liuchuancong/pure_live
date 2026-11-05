@@ -44,7 +44,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
   }
 
   void _openRoom(LiveRoom room, List<LiveRoom> playlist) {
-    unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: playlist));
+    unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: playlist));
   }
 
   @override

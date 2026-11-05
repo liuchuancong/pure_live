@@ -49,6 +49,7 @@ import 'package:pure_live/modules/live/room/player/room_playlist.dart'
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart';
 import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart' show showRoomDirectLinks;
+import 'package:pure_live/shared/navigation/room_seed.dart' show takeRoomSeed;
 import 'package:pure_live/shared/shared.dart';
 
 /// The live room: media_core's picture with the app's control layer over
@@ -63,13 +64,17 @@ import 'package:pure_live/shared/shared.dart';
 /// state they publish.
 final class RoomPage extends ConsumerStatefulWidget {
   /// The room to open, by platform and room id.
-  const RoomPage({required this.platform, required this.roomId, super.key});
+  const RoomPage({required this.platform, required this.roomId, this.room, super.key});
 
   /// The room's platform id.
   final String platform;
 
   /// The room's platform room id.
   final String roomId;
+
+  /// The card the room was opened from, when the opener had it in hand: the
+  /// page draws the title and cover from it while the detail request runs.
+  final LiveRoom? room;
 
   @override
   ConsumerState<RoomPage> createState() => _RoomPageState();
@@ -243,9 +248,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         await ref.read(roomProvider.notifier).togglePlayPause();
       },
     );
-    // The room never opens from inside its own build; the page asks.
+    // The room never opens from inside its own build; the page asks. The
+    // card the opener passed (or the seed a room window left on the shared
+    // shelf) is the page's first frame; the detail request replaces it.
+    final seed = widget.room ?? takeRoomSeed(widget.platform, widget.roomId);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(roomProvider.notifier).open(platform: widget.platform, roomId: widget.roomId));
+      unawaited(ref.read(roomProvider.notifier).open(platform: widget.platform, roomId: widget.roomId, known: seed));
     });
     // A PiP window closed while the app is away means "stop", when the
     // setting says so; the system ends the window without a lifecycle event.
@@ -685,9 +693,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _currentRoomKey = target.ref.identityKey;
     if (fromSource) ref.read(roomPlaylistProvider.notifier).move(step);
     unawaited(
-      ref.read(roomProvider.notifier).open(platform: target.ref.platform, roomId: target.ref.roomId).whenComplete(() {
-        if (mounted) _switchingPortraitRoom = false;
-      }),
+      ref
+          .read(roomProvider.notifier)
+          .open(platform: target.ref.platform, roomId: target.ref.roomId, known: target)
+          .whenComplete(() {
+            if (mounted) _switchingPortraitRoom = false;
+          }),
     );
   }
 
@@ -1588,6 +1599,7 @@ List<Widget> roomMenuItems(
               context,
               platform: detail.ref.platform,
               roomId: detail.ref.roomId,
+              room: detail,
               playlist: ref.read(roomPlaylistProvider)?.rooms,
             ),
           ),
