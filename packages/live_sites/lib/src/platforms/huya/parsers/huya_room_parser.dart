@@ -293,6 +293,7 @@ abstract final class HuyaRoomParser {
                 ? LiveStatus.live
                 : LiveStatus.offline,
           ),
+          roomId: id,
         ),
       );
     }

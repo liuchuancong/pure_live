@@ -46,7 +46,7 @@ final class AcfunSearchProvider implements LiveSearchProvider {
           items: [
             for (final room in rooms)
               if (anchors) ...[
-                if (room.anchor case final anchor?) LiveSearchResult.anchor(anchor),
+                if (room.anchor case final anchor?) LiveSearchResult.anchor(anchor, roomId: room.ref.roomId),
               ] else
                 LiveSearchResult.room(room),
           ],

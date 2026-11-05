@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_sites/live_sites.dart' show SiteFacts;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
@@ -11,11 +12,20 @@ import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 import 'package:webview_all/webview_all.dart';
 
+/// The search pages are the platforms' desktop sites: the reference opens
+/// every in-app web search with `desktopSite: true`, because the mobile
+/// pages hide most rooms behind an app hand-off. WebView2 on Windows already
+/// reports this, but Android and iOS need it spelled out.
+const String _desktopUserAgent =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/140.0.0.0 Safari/537.36';
+
 /// What to open in the in-app web view: the platform's search page, the
 /// platform id and the words searched.
 final class WebSearchRequest {
-  /// Describes [uri] on [platform], searching [keyword].
-  const WebSearchRequest({required this.uri, required this.platform, this.keyword = ''});
+  /// Describes [uri] on [platform], searching [keyword]; [title] replaces the
+  /// page's generic "web search" heading when it opens a live directory.
+  const WebSearchRequest({required this.uri, required this.platform, this.keyword = '', this.title});
 
   /// The search page to open.
   final Uri uri;
@@ -25,6 +35,9 @@ final class WebSearchRequest {
 
   /// The words searched (the page's subtitle); may be empty.
   final String keyword;
+
+  /// The heading this request shows, when it is not a search.
+  final String? title;
 }
 
 /// The platform's own search page inside the app, rendered by
@@ -51,10 +64,21 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   bool _loading = false;
   String? _error;
 
-  /// The page the WebView is on now, for the "open the room it shows" bar.
-  /// The initial search page is not a room, so only a later navigation
-  /// offers the bar.
+  /// The page the WebView is on now, for the "open the room it shows" bar
+  /// and the external-browser fallback.
   String? _currentUrl;
+
+  /// The room the current page names, resolved through the platform
+  /// resolvers once the page settles; null when the page is not a room.
+  ({String platform, String roomId, Uri url})? _found;
+
+  /// Rooms whose bar the viewer closed; the same room is not offered again,
+  /// as the reference's dismiss remembers.
+  final Set<String> _dismissedRooms = <String>{};
+
+  /// Rises with every page; a resolution that arrives after a newer page
+  /// must not put its room over that page.
+  int _detect = 0;
 
   bool get _supported => WebViewPlatform.instance != null;
 
@@ -62,8 +86,18 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   void initState() {
     super.initState();
     final request = widget.request;
-    if (request == null || !_supported) return;
+    if (request == null) return;
+    // No in-app WebView on this host (Linux, or a Windows without WebView2):
+    // the reference sends the search to the system browser at once instead
+    // of showing an empty frame.
+    if (!_supported) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_openExternal());
+      });
+      return;
+    }
     final controller = WebViewController();
+    unawaited(controller.setUserAgent(_desktopUserAgent));
     unawaited(controller.setJavaScriptMode(JavaScriptMode.unrestricted));
     unawaited(
       controller.setNavigationDelegate(
@@ -73,9 +107,11 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
           },
           onPageStarted: (_) {
             if (mounted) {
+              _detect++;
               setState(() {
                 _loading = true;
                 _error = null;
+                _found = null;
               });
             }
           },
@@ -86,6 +122,7 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
                 _progress = 100;
                 _currentUrl = url;
               });
+              unawaited(_detectRoom(url));
             }
           },
           onUrlChange: (change) {
@@ -115,8 +152,9 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     if (mounted) context.pop();
   }
 
-  Future<void> _openExternal() async {
-    final uri = widget.request?.uri;
+  Future<void> _openExternal([Uri? target]) async {
+    final current = _currentUrl;
+    final uri = target ?? (current == null ? null : Uri.tryParse(current)) ?? widget.request?.uri;
     if (uri == null) return;
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
@@ -142,6 +180,9 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     final request = widget.request;
     final site = request == null ? null : ref.read(sitesProvider).getById(request.platform);
     final platformName = site == null ? (request?.platform ?? '') : localizedSiteName(site);
+    final found = _found;
+    final foundSite = found == null ? null : ref.read(sitesProvider).getById(found.platform);
+    final foundName = foundSite == null ? (found?.platform ?? '') : localizedSiteName(foundSite);
     final subtitle = request == null
         ? ''
         : [if (platformName.isNotEmpty) platformName, if (request.keyword.isNotEmpty) request.keyword].join(' · ');
@@ -167,7 +208,7 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
                       spacing: 2,
                       children: [
                         Text(
-                          t.search.webSearchTitle,
+                          request?.title ?? t.search.webSearchTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.typography.title.copyWith(color: colors.text),
@@ -194,20 +235,30 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
                 ],
               ),
             ),
-            if (_roomLink != null)
+            if (found != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
                 child: DsAlert(
                   title: Text(t.search.linkDetected),
-                  description: Text(_roomLink!, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  action: DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    loading: ref.watch(linkToolProvider).resolving,
-                    onPressed: ref.watch(linkToolProvider).resolving
-                        ? null
-                        : () => unawaited(_openRecognizedRoom(_roomLink!)),
-                    child: Text(t.search.linkOpen),
+                  description: Text('$foundName · ${found.roomId}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  action: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: DsSpace.s4,
+                    children: [
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(_openRecognizedRoom(found)),
+                        child: Text(t.search.linkOpen),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        semanticLabel: t.common.close,
+                        onPressed: _dismissRoomLink,
+                        icon: const DsIcon(DsIcons.x, size: 16),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -233,33 +284,39 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     );
   }
 
-  /// A navigated page that is not the search page itself; the resolver
-  /// decides whether it really names a room before the page opens one.
-  String? get _roomLink {
-    final current = _currentUrl;
+  /// Resolves the settled page through the platform resolvers and offers its
+  /// room when one parses; a non-room page (a result list, an article) gets
+  /// no bar. The reference parses locally; our resolvers answer room URLs
+  /// without a request and only follow a short link when one is present.
+  Future<void> _detectRoom(String url) async {
     final initial = widget.request?.uri.toString();
-    if (current == null || current == initial) return null;
-    if (!current.startsWith('http://') && !current.startsWith('https://')) return null;
-    return current;
-  }
-
-  Future<void> _openRecognizedRoom(String url) async {
+    if (url == initial || !url.startsWith('http')) return;
+    final generation = ++_detect;
     await ref.read(linkToolProvider.notifier).resolve(url);
-    if (!mounted) return;
-    final link = ref.read(linkToolProvider);
-    if (link.resolved case final room?) {
-      await openRoom(context, platform: room.platform, roomId: room.roomId);
+    if (!mounted || generation != _detect || _currentUrl != url) return;
+    final room = ref.read(linkToolProvider).resolved;
+    if (room == null || _dismissedRooms.contains('${room.platform}/${room.roomId}')) return;
+    // A host with no native TLS channel cannot open this platform's room
+    // natively; the web page itself is where the viewer watches it.
+    if (SiteFacts.requiresNativeTls.contains(room.platform) &&
+        !ref.read(nativeTlsPlatformsProvider).contains(room.platform)) {
       return;
     }
-    final failure = link.failure;
-    final action = failure != null && failure.isTransient ? () => unawaited(_openRecognizedRoom(url)) : null;
-    showDsToast(
-      context: context,
-      title: context.t.search.linkFailed,
-      status: DsStatus.danger,
-      actionLabel: action != null ? context.t.common.retry : null,
-      onAction: action,
-    );
+    setState(() => _found = room);
+  }
+
+  void _dismissRoomLink() {
+    final room = _found;
+    if (room == null) return;
+    setState(() {
+      _dismissedRooms.add('${room.platform}/${room.roomId}');
+      _found = null;
+    });
+  }
+
+  Future<void> _openRecognizedRoom(({String platform, String roomId, Uri url}) room) async {
+    if (!mounted) return;
+    await openRoom(context, platform: room.platform, roomId: room.roomId);
   }
 
   Widget _unsupported(BuildContext context, Translations t) {
@@ -286,7 +343,19 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
         icon: const DsIcon(DsIcons.cloudOff),
         title: Text(t.search.webSearchFailed),
         description: error == null ? null : Text(error, textAlign: TextAlign.center),
-        actions: [DsButton(onPressed: () => unawaited(_reload()), child: Text(t.common.retry))],
+        actions: [
+          DsButton(
+            onPressed: () => unawaited(_reload()),
+            leading: const DsIcon(DsIcons.refreshCw),
+            child: Text(t.common.retry),
+          ),
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => unawaited(_openExternal()),
+            leading: const DsIcon(DsIcons.externalLink),
+            child: Text(t.search.webSearchOpenExternal),
+          ),
+        ],
       ),
     );
   }

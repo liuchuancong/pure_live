@@ -44,7 +44,7 @@ final class YySearchProvider implements LiveSearchProvider {
         case LiveSearchTarget.anchors:
           results = [
             for (final anchor in await site.searchAnchors(request.query, page: request.page))
-              LiveSearchResult.anchor(anchor),
+              LiveSearchResult.anchor(anchor, roomId: anchor.anchorId),
           ];
         case LiveSearchTarget.areas:
           results = const [];

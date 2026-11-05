@@ -1,4 +1,5 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:io' show Platform;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -11,12 +12,15 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
+import 'package:pure_live/modules/live/search/search_capability.dart';
 import 'package:pure_live/modules/live/search/search_controller.dart';
+import 'package:pure_live/modules/live/search/search_scope.dart';
 import 'package:pure_live/modules/live/search/web_search_page.dart' show WebSearchRequest;
 import 'package:pure_live/modules/live/search/web_search_urls.dart' show webSearchUrl;
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
+import 'package:webview_all/webview_all.dart' show WebViewPlatform;
 
 /// How many completions the panel shows at most: a handful keeps the field's
 /// reach honest while bounding the panel's height in a short window.
@@ -47,6 +51,10 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// The field's current text — the draft the completions follow, distinct
   /// from the committed query the results answer to.
   String _draft = '';
+
+  /// The link in the draft whose platforms have been asked; the banner waits
+  /// for an answer, so an ordinary address does not claim to be a room.
+  String? _checkedLink;
 
   /// The viewer's local filters over the received results.
   _SearchSort _sort = _SearchSort.smart;
@@ -81,21 +89,42 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   void _onDraftChanged(String draft) {
     final word = draft.trim();
     if (word == _draft) return;
+    if (_linkIn(word) == null) _checkedLink = null;
     setState(() => _draft = word);
     _suggestDebounce?.cancel();
     _suggestDebounce = Timer(const Duration(milliseconds: 300), () {
       unawaited(ref.read(searchProvider.notifier).suggest(draft));
+      final link = _linkIn(draft);
+      if (link != null && link != _checkedLink) {
+        _checkedLink = link;
+        // The previous room's answer must not stand in for this link while
+        // the platforms are still being asked.
+        ref.read(linkToolProvider.notifier).reset();
+        unawaited(ref.read(linkToolProvider.notifier).resolve(link));
+      }
     });
   }
 
-  /// Runs the draft as the search's query, records it in the history and
-  /// keeps the field's own text.
+  /// Runs the draft: a link the platforms recognise opens its room; a
+  /// keyword is recorded and searched. A link that resolves to nothing falls
+  /// through to the keyword search, as the reference does.
   void _onSubmitted(String draft) {
     _suggestDebounce?.cancel();
     setState(() => _draft = draft.trim());
+    unawaited(_submit(draft));
+  }
+
+  Future<void> _submit(String draft) async {
     final word = draft.trim();
-    if (word.isNotEmpty) unawaited(ref.read(searchHistoryProvider.notifier).commit(word));
-    unawaited(ref.read(searchProvider.notifier).search(draft));
+    if (word.isEmpty) {
+      showDsToast(context: context, title: context.t.search.inputRequired);
+      return;
+    }
+    final link = _linkIn(word);
+    if (link != null && await _openLink(link)) return;
+    if (!mounted) return;
+    unawaited(ref.read(searchHistoryProvider.notifier).commit(word));
+    unawaited(ref.read(searchProvider.notifier).search(word));
   }
 
   /// A phone asks for the result's conditions in a panel; a wider window
@@ -142,23 +171,41 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     // platform is not offered as a search scope either.
     ref.watch(sitesDisplayProvider);
     final visible = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final nativeTls = ref.watch(nativeTlsPlatformsProvider);
     final allPlatformIds = [
       for (final site in ref.watch(sitesProvider).all)
-        if (visible.contains(site.manifest.id)) site.manifest.id,
+        if (visible.contains(site.manifest.id) &&
+            !SiteFacts.isRetired(site.manifest.id) &&
+            (!SiteFacts.requiresNativeTls.contains(site.manifest.id) || nativeTls.contains(site.manifest.id)))
+          site.manifest.id,
     ];
     final word = _draft.trim().isEmpty ? search.query.trim() : _draft.trim();
-    final canWebSearch = scope != kSearchAllPlatforms && webSearchUrl(scope, word) != null;
+    final canWebSearch =
+        scope != kSearchAllPlatforms && SearchCapabilities.of(scope).webSearch && webSearchUrl(scope, word) != null;
     final link = _linkIn(word);
     final linkState = ref.watch(linkToolProvider);
+    // Only a link a platform actually resolved is offered; an ordinary URL
+    // in the field is just text until the search runs.
+    final showLink = link != null && link == _checkedLink && linkState.resolved != null;
+    final failed = ref.watch(searchFailuresProvider);
+    final failureNames = [for (final id in failed) _platformName(id)].join('、');
     final view = _viewOf(search);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final platforms = [kSearchAllPlatforms, ...allPlatformIds];
     void chooseScope(String id) {
       if (id == scope) return;
+      // The reference re-runs the field's text on the new scope instead of
+      // discarding what the viewer typed.
+      final word = _draft.trim().isEmpty ? search.query.trim() : _draft.trim();
       ref.read(searchSiteIdProvider.notifier).selected = id;
-      _field.clear();
-      setState(() => _draft = '');
-      unawaited(ref.read(searchProvider.notifier).search(''));
+      if (word.isEmpty) {
+        unawaited(ref.read(searchProvider.notifier).search(''));
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(ref.read(searchProvider.notifier).search(word));
+      });
     }
 
     void managePlatforms() =>
@@ -228,53 +275,61 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                   )
                 else
                   DsPopover(
-                  align: DsAlign.end,
-                  semanticLabel: context.t.search.filterTitle,
-                  style: const DsPopoverStyle(width: 264),
-                  contentBuilder: (context) => _SearchFilterPanel(
-                    sort: _sort,
-                    options: [
-                      for (final sort in _SearchSort.values)
-                        DsSelectOption(value: sort, label: _sortLabel(context, sort)),
-                    ],
-                    includeOffline: _includeOffline,
-                    onSortChanged: (sort) => setState(() => _sort = sort),
-                    onIncludeOfflineChanged: (value) => setState(() => _includeOffline = value),
-                    onReset: () => setState(() {
-                      _sort = _SearchSort.smart;
-                      _includeOffline = true;
-                    }),
-                  ),
-                  builder: (context, controller, _) {
-                    final active = (_sort == _SearchSort.smart ? 0 : 1) + (_includeOffline ? 0 : 1);
-                    // A compact window keeps the secondary action an icon;
-                    // the count rides the kit's anchored badge.
-                    if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) {
-                      return DsAnchoredBadge(
-                        badge: active == 0 ? const SizedBox.shrink() : DsCount(active, semanticLabel: '$active'),
-                        child: DsButton.icon(
-                          variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
-                          size: DsSize.sm,
-                          semanticLabel: active == 0
-                              ? context.t.search.filterTitle
-                              : '${context.t.search.filterTitle}, $active',
-                          onPressed: controller.toggle,
-                          icon: const DsIcon(DsIcons.slidersHorizontal, size: 16),
-                        ),
+                    align: DsAlign.end,
+                    semanticLabel: context.t.search.filterTitle,
+                    style: const DsPopoverStyle(width: 264),
+                    contentBuilder: (context) => _SearchFilterPanel(
+                      sort: _sort,
+                      options: [
+                        for (final sort in _SearchSort.values)
+                          DsSelectOption(value: sort, label: _sortLabel(context, sort)),
+                      ],
+                      includeOffline: _includeOffline,
+                      onSortChanged: (sort) => setState(() => _sort = sort),
+                      onIncludeOfflineChanged: (value) => setState(() => _includeOffline = value),
+                      onReset: () => setState(() {
+                        _sort = _SearchSort.smart;
+                        _includeOffline = true;
+                      }),
+                    ),
+                    builder: (context, controller, _) {
+                      final active = (_sort == _SearchSort.smart ? 0 : 1) + (_includeOffline ? 0 : 1);
+                      // A compact window keeps the secondary action an icon;
+                      // the count rides the kit's anchored badge.
+                      if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) {
+                        return DsAnchoredBadge(
+                          badge: active == 0 ? const SizedBox.shrink() : DsCount(active, semanticLabel: '$active'),
+                          child: DsButton.icon(
+                            variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
+                            size: DsSize.sm,
+                            semanticLabel: active == 0
+                                ? context.t.search.filterTitle
+                                : '${context.t.search.filterTitle}, $active',
+                            onPressed: controller.toggle,
+                            icon: const DsIcon(DsIcons.slidersHorizontal, size: 16),
+                          ),
+                        );
+                      }
+                      return DsButton(
+                        variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
+                        size: DsSize.sm,
+                        leading: const DsIcon(DsIcons.slidersHorizontal, size: 16),
+                        trailing: active == 0 ? null : DsCount(active),
+                        semanticLabel: active == 0
+                            ? context.t.search.filterTitle
+                            : '${context.t.search.filterTitle}, $active',
+                        onPressed: controller.toggle,
+                        child: Text(context.t.search.filterTitle),
                       );
-                    }
-                    return DsButton(
-                      variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.slidersHorizontal, size: 16),
-                      trailing: active == 0 ? null : DsCount(active),
-                      semanticLabel: active == 0
-                          ? context.t.search.filterTitle
-                          : '${context.t.search.filterTitle}, $active',
-                      onPressed: controller.toggle,
-                      child: Text(context.t.search.filterTitle),
-                    );
-                  },
+                    },
+                  ),
+              if (scope == kSearchAllPlatforms)
+                DsButton.icon(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  semanticLabel: context.t.search.scopeTitle,
+                  onPressed: () => unawaited(_openScope()),
+                  icon: const DsIcon(DsIcons.listChecks, size: 16),
                 ),
               DsButton.icon(
                 variant: DsButtonVariant.secondary,
@@ -306,7 +361,46 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               onChanged: (target) => unawaited(ref.read(searchProvider.notifier).switchTarget(target)),
             ),
           ),
-        if (link != null)
+        if (scope != kSearchAllPlatforms && targets.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: Text(
+              searchCoverageText(context.t, SearchCapabilities.of(scope)),
+              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
+            ),
+          ),
+        if (search.query.isNotEmpty && failed.isNotEmpty && (search.rooms.isNotEmpty || search.anchors.isNotEmpty))
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: DsAlert(
+              title: Text(context.t.search.partialFailureTitle),
+              description: Text(
+                context.t.search.partialFailureDescription(platforms: failureNames),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              action: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(ref.read(searchProvider.notifier).retry()),
+                    child: Text(context.t.search.partialFailureRetry),
+                  ),
+                  if (scope == kSearchAllPlatforms)
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      onPressed: () => unawaited(_openScope()),
+                      child: Text(context.t.search.partialFailureScope),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        if (showLink)
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsAlert(
@@ -337,7 +431,12 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
             ),
           ),
         Expanded(
-          child: _SearchResults(search: view, targets: targets),
+          child: _SearchResults(
+            search: view,
+            targets: targets,
+            hasHiddenOffline: !_includeOffline && view.target == LiveSearchTarget.rooms && search.rooms.isNotEmpty,
+            onShowOffline: () => setState(() => _includeOffline = true),
+          ),
         ),
       ],
     );
@@ -358,10 +457,53 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       return;
     }
     if (!mounted) return;
+    // A Windows without WebView2 asks before leaving the app: cancel, the
+    // runtime's download page, or the system browser (the reference's c15).
+    if (Platform.isWindows && WebViewPlatform.instance == null) {
+      final proceed = await _askWithoutWebView2();
+      if (!proceed || !mounted) return;
+    }
     await context.push(
       RouteNames.webSearch,
       extra: WebSearchRequest(uri: uri, platform: scope, keyword: word),
     );
+  }
+
+  /// Asks what to do without WebView2: the system browser continues the
+  /// search, the download action leaves for Microsoft's page, cancel stops.
+  Future<bool> _askWithoutWebView2() async {
+    final choice = await showDsDialog<String>(
+      context: context,
+      builder: (context) => DsDialog(
+        title: Text(context.t.search.webView2MissingTitle),
+        description: Text(context.t.search.webView2MissingBody),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.ghost,
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(context.t.common.cancel),
+          ),
+          DsButton(
+            variant: DsButtonVariant.ghost,
+            onPressed: () => Navigator.of(context).pop('download'),
+            child: Text(context.t.search.webView2Download),
+          ),
+          DsButton(
+            variant: DsButtonVariant.primary,
+            onPressed: () => Navigator.of(context).pop('browser'),
+            child: Text(context.t.search.webSearchOpenExternal),
+          ),
+        ],
+      ),
+    );
+    if (choice == 'download') {
+      await launchUrl(
+        Uri.parse('https://developer.microsoft.com/microsoft-edge/webview2/'),
+        mode: LaunchMode.externalApplication,
+      );
+      return false;
+    }
+    return choice == 'browser';
   }
 
   /// Whether the result's conditions are offered: a committed search whose
@@ -384,29 +526,25 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// The filtered/ordered copy of [search] the page draws: the controller
   /// keeps the raw platform pages, so a new sort or the offline toggle is
   /// instant and never re-asks the servers.
+  ///
+  /// "Offline" means not playable now, so hiding it keeps replays (the
+  /// reference's `isPlayableNow` rule); the order puts live first, then
+  /// replay, then the rest under every sort mode.
   SearchState _viewOf(SearchState search) {
     if (search.target == LiveSearchTarget.areas) return search;
-    var rooms = search.rooms;
-    var anchors = search.anchors;
-    if (!_includeOffline) {
-      rooms = [
-        for (final room in rooms)
-          if (room.broadcast.isLiveNow) room,
-      ];
-      anchors = [
-        for (final anchor in anchors)
-          if (anchor.liveStatus == LiveStatus.live) anchor,
-      ];
-    }
-    if (_sort != _SearchSort.smart) {
-      rooms = _sortRooms(rooms);
-      anchors = _sortAnchors(anchors);
-    }
+    final rooms = [
+      for (final room in search.rooms)
+        if (_includeOffline || room.broadcast.isPlayableNow) room,
+    ];
+    final anchors = [
+      for (final anchor in search.anchors)
+        if (_includeOffline || anchor.liveStatus == LiveStatus.live) anchor,
+    ];
     return (
       query: search.query,
       target: search.target,
-      rooms: rooms,
-      anchors: anchors,
+      rooms: _sortRooms(rooms),
+      anchors: _sortAnchors(anchors),
       areas: search.areas,
       nextPage: search.nextPage,
       hasMore: search.hasMore,
@@ -417,39 +555,93 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   List<LiveRoom> _sortRooms(List<LiveRoom> rooms) {
-    final indexed = rooms.indexed.toList()
+    final order = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final ranks = {for (var i = 0; i < order.length; i++) order[i].trim().toLowerCase(): i};
+    final metric = ref.read(audienceMetricProvider);
+    final policy = ref.read(audiencePolicyProvider);
+    int audience(LiveRoom room) => audienceFigureOf(room, metric, policy: policy) ?? -1;
+    int followers(LiveRoom room) {
+      final explicit = room.anchor?.followerCount ?? 0;
+      if (explicit > 0) return explicit;
+      // A platform whose audience number is followers publishes it there,
+      // not on the anchor (the reference's follower fallback).
+      if (room.audience.primaryMetric == LiveAudienceMetricType.followers) return audience(room);
+      return 0;
+    }
+
+    int platform(LiveRoom room) => ranks[room.ref.platform] ?? ranks.length;
+    int state(LiveRoom room) => room.broadcast.isLiveNow ? 2 : (room.broadcast.isPlayableNow ? 1 : 0);
+    final sorted = [...rooms]
       ..sort((a, b) {
-        final left = a.$2;
-        final right = b.$2;
-        final order = switch (_sort) {
-          _SearchSort.platform => left.ref.platform.compareTo(right.ref.platform),
-          _SearchSort.audience => _audienceOf(right).compareTo(_audienceOf(left)),
-          _SearchSort.followers => _followersOf(right).compareTo(_followersOf(left)),
-          _SearchSort.smart => 0,
+        final byState = state(b).compareTo(state(a));
+        if (byState != 0) return byState;
+        final comparisons = switch (_sort) {
+          _SearchSort.smart => <int Function()>[
+            () => audience(b).compareTo(audience(a)),
+            () => followers(b).compareTo(followers(a)),
+            () => platform(a).compareTo(platform(b)),
+          ],
+          _SearchSort.platform => <int Function()>[
+            () => platform(a).compareTo(platform(b)),
+            () => audience(b).compareTo(audience(a)),
+            () => followers(b).compareTo(followers(a)),
+          ],
+          _SearchSort.audience => <int Function()>[
+            () => audience(b).compareTo(audience(a)),
+            () => platform(a).compareTo(platform(b)),
+            () => followers(b).compareTo(followers(a)),
+          ],
+          _SearchSort.followers => <int Function()>[
+            () => followers(b).compareTo(followers(a)),
+            () => audience(b).compareTo(audience(a)),
+            () => platform(a).compareTo(platform(b)),
+          ],
         };
-        return order != 0 ? order : a.$1.compareTo(b.$1);
+        for (final compare in comparisons) {
+          final result = compare();
+          if (result != 0) return result;
+        }
+        final title = a.content.title.toLowerCase().compareTo(b.content.title.toLowerCase());
+        if (title != 0) return title;
+        return a.identityKey.compareTo(b.identityKey);
       });
-    return [for (final (_, room) in indexed) room];
+    return sorted;
   }
 
   List<LiveAnchor> _sortAnchors(List<LiveAnchor> anchors) {
-    final indexed = anchors.indexed.toList()
+    final order = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final ranks = {for (var i = 0; i < order.length; i++) order[i].trim().toLowerCase(): i};
+    int platform(LiveAnchor anchor) => ranks[anchor.platform] ?? ranks.length;
+    int followers(LiveAnchor anchor) => anchor.followerCount ?? 0;
+    int state(LiveAnchor anchor) => anchor.liveStatus == LiveStatus.live ? 1 : 0;
+    final sorted = [...anchors]
       ..sort((a, b) {
-        final order = switch (_sort) {
-          _SearchSort.platform => a.$2.platform.compareTo(b.$2.platform),
-          _SearchSort.audience ||
-          _SearchSort.followers => (b.$2.followerCount ?? -1).compareTo(a.$2.followerCount ?? -1),
-          _SearchSort.smart => 0,
+        final comparisons = switch (_sort) {
+          _SearchSort.smart => <int Function()>[
+            () => state(b).compareTo(state(a)),
+            () => followers(b).compareTo(followers(a)),
+            () => platform(a).compareTo(platform(b)),
+          ],
+          _SearchSort.platform => <int Function()>[
+            () => platform(a).compareTo(platform(b)),
+            () => state(b).compareTo(state(a)),
+            () => followers(b).compareTo(followers(a)),
+          ],
+          _SearchSort.audience || _SearchSort.followers => <int Function()>[
+            () => followers(b).compareTo(followers(a)),
+            () => state(b).compareTo(state(a)),
+            () => platform(a).compareTo(platform(b)),
+          ],
         };
-        return order != 0 ? order : a.$1.compareTo(b.$1);
+        for (final compare in comparisons) {
+          final result = compare();
+          if (result != 0) return result;
+        }
+        final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        return name != 0 ? name : a.anchorId.compareTo(b.anchorId);
       });
-    return [for (final (_, anchor) in indexed) anchor];
+    return sorted;
   }
-
-  static int _audienceOf(LiveRoom room) =>
-      room.audience.onlineViewers ?? room.audience.popularity ?? room.audience.totalViewers ?? -1;
-
-  static int _followersOf(LiveRoom room) => room.anchor?.followerCount ?? -1;
 
   static String? _linkIn(String text) => RegExp(r'https?://[^\s，。；;“”‘’<>]+').firstMatch(text)?.group(0);
 
@@ -460,13 +652,31 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     _SearchSort.followers => context.t.search.sortFollowers,
   };
 
-  Future<void> _openLink(String text) async {
-    await ref.read(linkToolProvider.notifier).resolve(text);
+  /// Opens the "all" scope panel: which platforms the combined search asks.
+  /// A saved choice re-runs the field's text, as the reference does.
+  Future<void> _openScope() async {
+    final visible = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final nativeTls = ref.read(nativeTlsPlatformsProvider);
+    final sites = [
+      for (final id in visible)
+        if (ref.read(sitesProvider).getById(id) case final site?
+            when !SiteFacts.isRetired(id) && (!SiteFacts.requiresNativeTls.contains(id) || nativeTls.contains(id)))
+          site,
+    ];
+    final next = await showSearchScopePanel(context, sites: sites, excluded: ref.read(searchExcludedProvider));
     if (!mounted) return;
+    await ref.read(searchExcludedProvider.notifier).save(next);
+    final word = _draft.trim().isEmpty ? ref.read(searchProvider).query.trim() : _draft.trim();
+    if (word.isNotEmpty) unawaited(ref.read(searchProvider.notifier).search(word));
+  }
+
+  Future<bool> _openLink(String text) async {
+    await ref.read(linkToolProvider.notifier).resolve(text);
+    if (!mounted) return false;
     final link = ref.read(linkToolProvider);
     if (link.resolved case final room?) {
       await openRoom(context, platform: room.platform, roomId: room.roomId);
-      return;
+      return true;
     }
     final failure = link.failure;
     final action = failure != null && failure.isTransient ? () => unawaited(_openLink(text)) : null;
@@ -477,6 +687,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       actionLabel: action != null ? context.t.common.retry : null,
       onAction: action,
     );
+    return false;
   }
 
   String _platformName(String id) {
@@ -674,7 +885,12 @@ final class _TargetSegments extends StatelessWidget {
 /// The results for the current search: the room grid, the streamer and area
 /// lists, or an honest skeleton, empty state or error in their place.
 final class _SearchResults extends ConsumerWidget {
-  const _SearchResults({required this.search, required this.targets});
+  const _SearchResults({
+    required this.search,
+    required this.targets,
+    required this.hasHiddenOffline,
+    required this.onShowOffline,
+  });
 
   /// The search being shown.
   final SearchState search;
@@ -682,9 +898,16 @@ final class _SearchResults extends ConsumerWidget {
   /// The targets the site searches; empty when it cannot search at all.
   final List<LiveSearchTarget> targets;
 
+  /// Whether the only hits were non-playable rooms the offline filter hid.
+  final bool hasHiddenOffline;
+
+  /// Shows the hidden offline rooms.
+  final VoidCallback onShowOffline;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final anchorRooms = ref.watch(anchorRoomsProvider);
     final empty = search.rooms.isEmpty && search.anchors.isEmpty && search.areas.isEmpty;
     if (search.query.isEmpty) {
       if (targets.isEmpty) {
@@ -720,6 +943,16 @@ final class _SearchResults extends ConsumerWidget {
         ),
       );
     }
+    if (empty && hasHiddenOffline) {
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.searchX),
+          title: Text(t.search.noLiveResultsTitle),
+          description: Text(t.search.noLiveResultsDescription),
+          actions: [DsButton(onPressed: onShowOffline, child: Text(t.search.includeOffline))],
+        ),
+      );
+    }
     if (empty) {
       return Center(
         child: DsEmptyState(
@@ -735,12 +968,19 @@ final class _SearchResults extends ConsumerWidget {
         items: search.anchors,
         itemBuilder: (context, item) {
           final anchor = item as LiveAnchor;
+          final roomId = (anchorRooms[searchAnchorKey(anchor)] ?? '').trim();
+          final platform = anchor.platform.trim();
           final profile = (anchor.profileUrl ?? '').trim();
+          final openRoomById = roomId.isEmpty || platform.isEmpty
+              ? null
+              : () => unawaited(openRoom(context, platform: platform, roomId: roomId));
           return _AnchorCard(
             anchor: anchor,
-            onOpen: profile.isEmpty
-                ? null
-                : () => unawaited(launchUrl(Uri.parse(profile), mode: LaunchMode.externalApplication)),
+            onOpen:
+                openRoomById ??
+                (profile.isEmpty
+                    ? null
+                    : () => unawaited(launchUrl(Uri.parse(profile), mode: LaunchMode.externalApplication))),
           );
         },
         hasMore: search.hasMore,
@@ -782,7 +1022,8 @@ final class _RoomResults extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
     Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
-      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms);
+      void open() =>
+          openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: search.rooms);
       return RoomCardMenu(
         room: room,
         onOpen: open,

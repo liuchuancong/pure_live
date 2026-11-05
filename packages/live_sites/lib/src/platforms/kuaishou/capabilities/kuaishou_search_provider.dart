@@ -56,6 +56,7 @@ final class KuaishouSearchProvider implements LiveSearchProvider {
                     avatarUrl: room.content.coverUrl.isEmpty ? null : room.content.coverUrl,
                     liveStatus: room.broadcast.liveStatus,
                   ),
+                  roomId: room.ref.roomId,
                 ),
             ]
           : [for (final room in rooms.take(size)) LiveSearchResult.room(room)];

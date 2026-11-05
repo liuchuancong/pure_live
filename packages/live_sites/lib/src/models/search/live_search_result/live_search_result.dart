@@ -20,7 +20,7 @@ sealed class LiveSearchResult {
   const factory LiveSearchResult.room(LiveRoom room) = RoomSearchResult;
 
   /// Creates a LiveSearchResult with already-normalized fields.
-  const factory LiveSearchResult.anchor(LiveAnchor anchor) = AnchorSearchResult;
+  const factory LiveSearchResult.anchor(LiveAnchor anchor, {String? roomId}) = AnchorSearchResult;
 
   /// Creates a LiveSearchResult with already-normalized fields.
   const factory LiveSearchResult.area(LiveArea area) = AreaSearchResult;
@@ -49,19 +49,23 @@ final class RoomSearchResult implements LiveSearchResult {
 @immutable
 final class AnchorSearchResult implements LiveSearchResult {
   /// The anchor that was found.
-  const AnchorSearchResult(this.anchor);
+  const AnchorSearchResult(this.anchor, {this.roomId});
 
   /// The anchor that was found.
   final LiveAnchor anchor;
 
-  @override
-  bool operator ==(Object other) => other is AnchorSearchResult && other.anchor == anchor;
+  /// The streamer's room, when the platform's answer names one; the anchor's
+  /// own id is not always the room id (Bilibili's is the user id).
+  final String? roomId;
 
   @override
-  int get hashCode => anchor.hashCode;
+  bool operator ==(Object other) => other is AnchorSearchResult && other.anchor == anchor && other.roomId == roomId;
 
   @override
-  String toString() => 'LiveSearchResult.anchor($anchor)';
+  int get hashCode => Object.hash(anchor, roomId);
+
+  @override
+  String toString() => 'LiveSearchResult.anchor($anchor, roomId: $roomId)';
 }
 
 /// An area hit.

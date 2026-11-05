@@ -242,21 +242,28 @@ abstract final class BilibiliRoomParser {
   }
 
   /// `search/type?search_type=live_user`: streamers whose name matched, live
-  /// or not (`is_live` says which).
-  static List<LiveAnchor> searchAnchors(String body, {int status = 200}) {
+  /// or not (`is_live` says which), with the room each one's page opens.
+  static List<({LiveAnchor anchor, String roomId})> searchAnchors(String body, {int status = 200}) {
     final root = checked(body, what: 'search live_user', status: status);
-    return [
-      for (final item in jsonList(jsonObject(root['data'])?['result']))
-        if (jsonObject(item) case final user? when _roomId(user['roomid']) != null)
-          LiveAnchor.normalized(
-            platform: bilibiliSiteId,
-            anchorId: jsonString(user['mid']) ?? _roomId(user['roomid'])!,
-            name: _highlighted(user['uname']),
-            avatarUrl: sizedImage(user['uface'], '@400w.jpg'),
-            followerCount: jsonCount(user['fans_num']) ?? jsonCount(user['attentions']),
-            liveStatus: user['is_live'] == true || jsonInt(user['is_live']) == 1 ? LiveStatus.live : LiveStatus.offline,
-          ),
-    ];
+    final results = <({LiveAnchor anchor, String roomId})>[];
+    for (final item in jsonList(jsonObject(root['data'])?['result'])) {
+      final user = jsonObject(item);
+      if (user == null) continue;
+      final roomId = _roomId(user['roomid']);
+      if (roomId == null) continue;
+      results.add((
+        anchor: LiveAnchor.normalized(
+          platform: bilibiliSiteId,
+          anchorId: jsonString(user['mid']) ?? roomId,
+          name: _highlighted(user['uname']),
+          avatarUrl: sizedImage(user['uface'], '@400w.jpg'),
+          followerCount: jsonCount(user['fans_num']) ?? jsonCount(user['attentions']),
+          liveStatus: user['is_live'] == true || jsonInt(user['is_live']) == 1 ? LiveStatus.live : LiveStatus.offline,
+        ),
+        roomId: roomId,
+      ));
+    }
+    return results;
   }
 
   // Rooms ---------------------------------------------------------------------

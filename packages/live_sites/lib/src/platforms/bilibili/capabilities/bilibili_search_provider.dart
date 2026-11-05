@@ -74,8 +74,8 @@ final class BilibiliSearchProvider implements LiveSearchProvider {
   Future<List<LiveSearchResult>> _anchors(String text, int page) async {
     final response = await site.unsignedGet(BilibiliEndpoints.search(type: 'live_user', keyword: text, page: page));
     return [
-      for (final anchor in BilibiliRoomParser.searchAnchors(response.text, status: response.status))
-        LiveSearchResult.anchor(anchor),
+      for (final entry in BilibiliRoomParser.searchAnchors(response.text, status: response.status))
+        LiveSearchResult.anchor(entry.anchor, roomId: entry.roomId),
     ];
   }
 }

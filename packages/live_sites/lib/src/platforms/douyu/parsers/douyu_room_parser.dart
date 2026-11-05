@@ -219,6 +219,7 @@ abstract final class DouyuRoomParser {
                   ? LiveStatus.live
                   : LiveStatus.offline,
             ),
+            roomId: roomId(anchor['rid']),
           ),
     ];
   }

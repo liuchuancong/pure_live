@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show TimeoutException, unawaited;
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +7,8 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/live/search/search_capability.dart' show SearchCapabilities;
+import 'package:pure_live/modules/live/search/search_scope.dart' show searchExcludedProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// What the search page holds: the committed query, the target it runs on,
@@ -38,13 +40,27 @@ SearchState _initial(LiveSearchTarget target) => (
   suggestions: const [],
 );
 
+/// How long one platform may take for one search page (the reference's
+/// `liveSearchRequestTimeout`); a platform that misses it is skipped instead
+/// of holding the whole search open.
+const Duration _searchRequestTimeout = Duration(seconds: 12);
+
+/// TwitCasting refuses a keyword past its own limit; the reference cuts it
+/// before asking, so a long share text still searches instead of failing.
+const int _twitcastingKeywordLimit = 100;
+
+String _queryFor(String siteId, String query) => siteId == 'twitcasting' && query.length > _twitcastingKeywordLimit
+    ? query.substring(0, _twitcastingKeywordLimit)
+    : query;
+
 /// The search page's state and requests, paged by scroll like the home feed.
 ///
 /// [build] watches the search scope (the page's own platform tabs, not the
 /// shell's site), so switching scopes restarts the search surface: the
 /// query, its results and even its target reset, and the scope's own
 /// `supportedTargets` decide what can be searched at all — every platform
-/// at once ("all") searches rooms only, like the reference. The page asks
+/// at once ("all") searches rooms and, where a platform can answer them,
+/// streamers; one platform offers the targets it declares. The page asks
 /// for every search (a submit, a suggestion tap, a target switch) — a
 /// notifier never loads from inside its own build. A newer request always
 /// wins: answers from a search that was replaced are dropped, not written
@@ -70,6 +86,14 @@ final class SearchController extends Notifier<SearchState> {
   final Map<String, bool> _everywhereMore = {};
   final Map<String, int> _everywhereStagnant = {};
 
+  /// The platforms that failed while this "all" search ran; the page's
+  /// banner names them until a later page or retry answers.
+  final Set<String> _everywhereFailed = <String>{};
+
+  /// The room each anchor hit names, when its platform's answer carried one;
+  /// the anchor card opens that room instead of the profile page.
+  final Map<String, String> _anchorRooms = <String, String>{};
+
   @override
   SearchState build() {
     final scope = ref.watch(searchSiteIdProvider);
@@ -85,10 +109,29 @@ final class SearchController extends Notifier<SearchState> {
   }
 
   /// The targets [scope] actually searches, in the canonical rooms,
-  /// anchors, areas order; "all" searches rooms only (the reference's
-  /// all-platforms scope), one platform the targets it offers.
+  /// anchors, areas order; "all" searches rooms everywhere and streamers
+  /// where a platform can answer them, one platform the targets it offers.
   List<LiveSearchTarget> supportedTargetsOf(String scope) {
-    if (scope == kSearchAllPlatforms) return const [LiveSearchTarget.rooms];
+    if (scope == kSearchAllPlatforms) {
+      final excluded = ref.read(searchExcludedProvider);
+      final nativeTls = ref.read(nativeTlsPlatformsProvider);
+      final anchors = ref
+          .read(sitesProvider)
+          .all
+          .where(
+            (site) =>
+                !excluded.contains(site.manifest.id) &&
+                !SiteFacts.isRetired(site.manifest.id) &&
+                (!SiteFacts.requiresNativeTls.contains(site.manifest.id) || nativeTls.contains(site.manifest.id)),
+          )
+          .any(
+            (site) =>
+                site.capability<LiveSearchProvider>()?.supportedTargets.contains(LiveSearchTarget.anchors) ?? false,
+          );
+      // "All" searches rooms everywhere and streamers where a platform can
+      // answer them, as the reference's all-platforms scope does.
+      return [LiveSearchTarget.rooms, if (anchors) LiveSearchTarget.anchors];
+    }
     final offered =
         ref.read(sitesProvider).getById(scope)?.capability<LiveSearchProvider>()?.supportedTargets ??
         const <LiveSearchTarget>{};
@@ -232,6 +275,10 @@ final class SearchController extends Notifier<SearchState> {
     final site = scope == kSearchAllPlatforms ? null : ref.read(sitesProvider).getById(scope);
     if (replace) {
       _stagnant = 0;
+      ref.read(searchFailuresProvider.notifier).clear();
+      _everywhereFailed.clear();
+      _anchorRooms.clear();
+      ref.read(anchorRoomsProvider.notifier).set(const <String, String>{});
       if (site == null) {
         _everywhereMore.clear();
         _everywhereStagnant.clear();
@@ -280,9 +327,18 @@ final class SearchController extends Notifier<SearchState> {
     // server page boundary mid-search (the reference's search page size).
     Either<LiveSiteError, LivePage<LiveSearchResult>> answer;
     try {
-      answer = await capability.search(
-        LiveSearchRequest.of(query: query, target: target, page: page, pageSize: searchRequestSize),
-      );
+      answer = await capability
+          .search(
+            LiveSearchRequest.of(
+              query: _queryFor(site.manifest.id, query),
+              target: target,
+              page: page,
+              pageSize: searchRequestSize,
+            ),
+          )
+          .timeout(_searchRequestTimeout);
+    } on TimeoutException catch (error) {
+      answer = left(LiveSiteError.network(siteId: site.manifest.id, message: 'search timed out', cause: error));
     } on Object catch (error) {
       answer = left(LiveSiteError.network(siteId: site.manifest.id, message: '$error', cause: error));
     }
@@ -290,19 +346,23 @@ final class SearchController extends Notifier<SearchState> {
     // answer without writing it.
     if (!ref.mounted || generation != _searchGeneration) return;
     answer.match(
-      (error) => state = (
-        query: query,
-        target: target,
-        rooms: state.rooms,
-        anchors: state.anchors,
-        areas: state.areas,
-        nextPage: state.nextPage,
-        hasMore: false,
-        loading: false,
-        error: error,
-        suggestions: state.suggestions,
-      ),
+      (error) {
+        ref.read(searchFailuresProvider.notifier).set({site.manifest.id});
+        state = (
+          query: query,
+          target: target,
+          rooms: state.rooms,
+          anchors: state.anchors,
+          areas: state.areas,
+          nextPage: state.nextPage,
+          hasMore: false,
+          loading: false,
+          error: error,
+          suggestions: state.suggestions,
+        );
+      },
       (pageAnswer) {
+        ref.read(searchFailuresProvider.notifier).clear();
         final before = state.rooms.length + state.anchors.length + state.areas.length;
         final rooms = replace
             ? _mergeRooms(const [], _roomsOf(pageAnswer))
@@ -324,8 +384,11 @@ final class SearchController extends Notifier<SearchState> {
           areas: areas,
           nextPage: page + 1,
           // A page that repeated itself is given one more chance, then the
-          // walk ends even if the endpoint keeps claiming more.
-          hasMore: (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) && stagnant < 2,
+          // walk ends; a platform whose adapter has one page ends at once.
+          hasMore:
+              SearchCapabilities.of(site.manifest.id).paged &&
+              (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) &&
+              stagnant < 2,
           loading: false,
           error: null,
           suggestions: state.suggestions,
@@ -347,9 +410,10 @@ final class SearchController extends Notifier<SearchState> {
     required bool replace,
   }) async {
     final visible = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final excluded = ref.read(searchExcludedProvider);
     final all = <({LiveSite site, LiveSearchProvider capability})>[
       for (final site in ref.read(sitesProvider).all)
-        if (visible.contains(site.manifest.id))
+        if (visible.contains(site.manifest.id) && !excluded.contains(site.manifest.id))
           if (site.capability<LiveSearchProvider>() case final capability?)
             if (capability.supportedTargets.contains(target)) (site: site, capability: capability),
     ];
@@ -381,57 +445,78 @@ final class SearchController extends Notifier<SearchState> {
       return;
     }
     // Bounded fan-out: a few platforms in flight at a time, each worker
-    // taking the next platform as it finishes instead of every batch
-    // waiting for its slowest member (the reference's
-    // maxConcurrentSearchSites).
+    // taking the next platform as it finishes. Every answer is merged the
+    // moment it arrives, so a slow platform no longer holds the whole page.
     const maxConcurrent = 8;
-    final answers = List<Either<LiveSiteError, LivePage<LiveSearchResult>>?>.filled(candidates.length, null);
+    var succeeded = false;
     var next = 0;
+
+    void apply(String id, Either<LiveSiteError, LivePage<LiveSearchResult>> answer) {
+      if (!ref.mounted || generation != _searchGeneration) return;
+      answer.match(
+        (_) {
+          _everywhereMore[id] = false;
+          _everywhereFailed.add(id);
+          ref.read(searchFailuresProvider.notifier).set(_everywhereFailed);
+        },
+        (pageAnswer) {
+          succeeded = true;
+          _everywhereFailed.remove(id);
+          final before = state.rooms.length + state.anchors.length + state.areas.length;
+          final rooms = _mergeRooms(state.rooms, _roomsOf(pageAnswer));
+          final anchors = _mergeAnchors(state.anchors, _anchorsOf(pageAnswer));
+          final areas = _mergeAreas(state.areas, _areasOf(pageAnswer));
+          final added = rooms.length + anchors.length + areas.length - before;
+          final stagnant = added == 0 ? (_everywhereStagnant[id] ?? 0) + 1 : 0;
+          _everywhereStagnant[id] = stagnant;
+          _everywhereMore[id] =
+              SearchCapabilities.of(id).paged && (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) && stagnant < 2;
+          state = (
+            query: query,
+            target: target,
+            rooms: rooms,
+            anchors: anchors,
+            areas: areas,
+            nextPage: state.nextPage,
+            hasMore: state.hasMore,
+            loading: true,
+            error: null,
+            suggestions: state.suggestions,
+          );
+          ref.read(searchFailuresProvider.notifier).set(_everywhereFailed);
+        },
+      );
+    }
+
     Future<void> ask() async {
       while (true) {
         final index = next++;
         if (index >= candidates.length) return;
         final candidate = candidates[index];
+        final id = candidate.site.manifest.id;
         Either<LiveSiteError, LivePage<LiveSearchResult>> answer;
         try {
-          answer = await candidate.capability.search(
-            LiveSearchRequest.of(query: query, target: target, page: page, pageSize: searchRequestSize),
-          );
+          answer = await candidate.capability
+              .search(
+                LiveSearchRequest.of(
+                  query: _queryFor(id, query),
+                  target: target,
+                  page: page,
+                  pageSize: searchRequestSize,
+                ),
+              )
+              .timeout(_searchRequestTimeout);
+        } on TimeoutException catch (error) {
+          answer = left(LiveSiteError.network(siteId: id, message: 'search timed out', cause: error));
         } on Object catch (error) {
-          answer = left(LiveSiteError.network(siteId: candidate.site.manifest.id, message: '$error', cause: error));
+          answer = left(LiveSiteError.network(siteId: id, message: '$error', cause: error));
         }
-        if (!ref.mounted || generation != _searchGeneration) return;
-        answers[index] = answer;
+        apply(id, answer);
       }
     }
 
     await Future.wait([for (var worker = 0; worker < math.min(maxConcurrent, candidates.length); worker++) ask()]);
     if (!ref.mounted || generation != _searchGeneration) return;
-    var rooms = replace ? <LiveRoom>[] : [...state.rooms];
-    var anchors = replace ? <LiveAnchor>[] : [...state.anchors];
-    var areas = replace ? <LiveArea>[] : [...state.areas];
-    var succeeded = false;
-    for (var index = 0; index < candidates.length; index++) {
-      final answer = answers[index];
-      if (answer == null) continue;
-      final id = candidates[index].site.manifest.id;
-      answer.match(
-        (_) {
-          _everywhereMore[id] = false;
-        },
-        (pageAnswer) {
-          succeeded = true;
-          final before = rooms.length + anchors.length + areas.length;
-          rooms = _mergeRooms(rooms, _roomsOf(pageAnswer));
-          anchors = _mergeAnchors(anchors, _anchorsOf(pageAnswer));
-          areas = _mergeAreas(areas, _areasOf(pageAnswer));
-          final added = rooms.length + anchors.length + areas.length - before;
-          final stagnant = added == 0 ? (_everywhereStagnant[id] ?? 0) + 1 : 0;
-          _everywhereStagnant[id] = stagnant;
-          _everywhereMore[id] = (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) && stagnant < 2;
-        },
-      );
-    }
     // Nothing at all answered (every platform failed): the error state says
     // so instead of an empty page.
     if (!succeeded) {
@@ -452,9 +537,9 @@ final class SearchController extends Notifier<SearchState> {
     state = (
       query: query,
       target: target,
-      rooms: rooms,
-      anchors: anchors,
-      areas: areas,
+      rooms: state.rooms,
+      anchors: state.anchors,
+      areas: state.areas,
       nextPage: page + 1,
       hasMore: _everywhereMore.values.any((more) => more),
       loading: false,
@@ -476,8 +561,7 @@ final class SearchController extends Notifier<SearchState> {
   }
 
   /// Anchor identity: the platform's uid, e.g. `bilibili:123`.
-  static String _anchorKey(LiveAnchor anchor) =>
-      '${anchor.platform}:${anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId}';
+  static String _anchorKey(LiveAnchor anchor) => searchAnchorKey(anchor);
 
   /// Merges [incoming] anchors into [current] by identity.
   static List<LiveAnchor> _mergeAnchors(List<LiveAnchor> current, Iterable<LiveAnchor> incoming) {
@@ -506,10 +590,21 @@ final class SearchController extends Notifier<SearchState> {
   ];
 
   /// The anchor hits of [page] — the ones an anchors search answered.
-  static List<LiveAnchor> _anchorsOf(LivePage<LiveSearchResult> page) => [
-    for (final hit in page.items)
-      if (hit case AnchorSearchResult(:final anchor)) anchor,
-  ];
+  List<LiveAnchor> _anchorsOf(LivePage<LiveSearchResult> page) {
+    final anchors = <LiveAnchor>[];
+    var learned = false;
+    for (final hit in page.items) {
+      if (hit case AnchorSearchResult(:final anchor, :final roomId)) {
+        anchors.add(anchor);
+        if (roomId != null && roomId.trim().isNotEmpty) {
+          _anchorRooms[searchAnchorKey(anchor)] = roomId.trim();
+          learned = true;
+        }
+      }
+    }
+    if (learned) ref.read(anchorRoomsProvider.notifier).set(Map.of(_anchorRooms));
+    return anchors;
+  }
 
   /// The area hits of [page] — the ones an areas search answered.
   static List<LiveArea> _areasOf(LivePage<LiveSearchResult> page) => [
@@ -517,6 +612,40 @@ final class SearchController extends Notifier<SearchState> {
       if (hit case AreaSearchResult(:final area)) area,
   ];
 }
+
+/// The identity an anchor's search hit is keyed by; the room map and the
+/// merge both use it.
+String searchAnchorKey(LiveAnchor anchor) =>
+    '${anchor.platform}:${anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId}';
+
+/// The platforms a search asked that answered with a failure; the page
+/// names them and offers a retry instead of hiding the partial result.
+final class SearchFailuresController extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const <String>{};
+
+  /// Replaces the failed set.
+  void set(Set<String> ids) => state = Set.unmodifiable(ids);
+
+  /// Forgets the last search's failures.
+  void clear() => state = const <String>{};
+}
+
+/// The platforms that failed in the current search.
+final searchFailuresProvider = NotifierProvider<SearchFailuresController, Set<String>>(SearchFailuresController.new);
+
+/// The room id behind each anchor hit, keyed by [searchAnchorKey]; the card
+/// opens it when present, the profile page otherwise.
+final class AnchorRoomsController extends Notifier<Map<String, String>> {
+  @override
+  Map<String, String> build() => const <String, String>{};
+
+  /// Replaces the learned rooms.
+  void set(Map<String, String> rooms) => state = Map.unmodifiable(rooms);
+}
+
+/// The rooms the anchor hits name.
+final anchorRoomsProvider = NotifierProvider<AnchorRoomsController, Map<String, String>>(AnchorRoomsController.new);
 
 /// The search page's state.
 final searchProvider = NotifierProvider<SearchController, SearchState>(SearchController.new);
@@ -556,24 +685,30 @@ final class SearchSiteController extends Notifier<String> {
 final searchSiteIdProvider = NotifierProvider<SearchSiteController, String>(SearchSiteController.new);
 
 /// The search history: the last queries the viewer committed, newest
-/// first, kept under `search.history` (the reference stores its history in
-/// the same shape), at most ten.
+/// first, kept under `search.history`, at most twenty (the reference's
+/// limit), each cut to the same length its share texts are.
 final class SearchHistoryController extends Notifier<List<String>> {
+  /// How many words are kept.
+  static const int limit = 20;
+
+  /// The longest word kept; longer share texts are cut, not refused.
+  static const int maxLength = 200;
+
   @override
   List<String> build() {
     try {
-      return StoragePrefs.getStringList('search.history') ?? const <String>[];
+      return _clean(StoragePrefs.getStringList('search.history') ?? const <String>[]);
     } on Object {
       return const [];
     }
   }
 
-  /// Puts [query] at the history's head, dropping its older self and every
-  /// entry past the tenth.
+  /// Puts [query] at the history's head, moving an equal word (case
+  /// ignored) up rather than duplicating it.
   Future<void> commit(String query) async {
     final word = query.trim();
     if (word.isEmpty) return;
-    final next = [word, ...state.where((entry) => entry != word)].take(10).toList();
+    final next = _clean([word, ...state]);
     state = next;
     try {
       await StoragePrefs.setStringList('search.history', next);
@@ -602,6 +737,20 @@ final class SearchHistoryController extends Notifier<List<String>> {
       // Same nicety as commit.
     }
   }
+
+  static List<String> _clean(Iterable<String> words) {
+    final seen = <String>{};
+    final cleaned = <String>[];
+    for (final raw in words) {
+      final word = _cut(raw.trim());
+      if (word.isEmpty || !seen.add(word.toLowerCase())) continue;
+      cleaned.add(word);
+      if (cleaned.length == limit) break;
+    }
+    return cleaned;
+  }
+
+  static String _cut(String word) => word.length <= maxLength ? word : word.substring(0, maxLength);
 }
 
 /// The search history.
