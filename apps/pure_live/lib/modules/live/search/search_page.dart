@@ -16,7 +16,7 @@ import 'package:pure_live/modules/live/search/search_capability.dart';
 import 'package:pure_live/modules/live/search/search_controller.dart';
 import 'package:pure_live/modules/live/search/search_scope.dart';
 import 'package:pure_live/modules/live/search/web_search_page.dart' show WebSearchRequest;
-import 'package:pure_live/modules/live/search/web_search_urls.dart' show webSearchUrl;
+import 'package:pure_live/modules/live/search/web_search_urls.dart' show hasWebSearch, webSearchUrl;
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
@@ -180,8 +180,10 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           site.manifest.id,
     ];
     final word = _draft.trim().isEmpty ? search.query.trim() : _draft.trim();
-    final canWebSearch =
-        scope != kSearchAllPlatforms && SearchCapabilities.of(scope).webSearch && webSearchUrl(scope, word) != null;
+    // A platform with a web-search page keeps the button usable even before
+    // the field has a word; pressing it says what is missing instead of
+    // offering a dead control. "All" offers the platform picker.
+    final canWebSearch = scope == kSearchAllPlatforms ? allPlatformIds.any(hasWebSearch) : hasWebSearch(scope);
     final link = _linkIn(word);
     final linkState = ref.watch(linkToolProvider);
     // Only a link a platform actually resolved is offered; an ordinary URL
@@ -445,12 +447,17 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// Opens the chosen platform's own search page in the app's web view.
   Future<void> _openWebSearch() async {
     final t = context.t;
-    final scope = ref.read(searchSiteIdProvider);
-    if (scope == kSearchAllPlatforms) {
-      showDsToast(context: context, title: t.search.webSearchSelectPlatform);
+    final word = (_draft.trim().isEmpty ? ref.read(searchProvider).query : _draft).trim();
+    if (word.isEmpty) {
+      showDsToast(context: context, title: t.search.inputRequired);
       return;
     }
-    final word = (_draft.trim().isEmpty ? ref.read(searchProvider).query : _draft).trim();
+    var scope = ref.read(searchSiteIdProvider);
+    if (scope == kSearchAllPlatforms) {
+      final picked = await _pickWebSearchPlatform();
+      if (picked == null || !mounted) return;
+      scope = picked;
+    }
     final uri = webSearchUrl(scope, word);
     if (uri == null) {
       showDsToast(context: context, title: t.search.webSearchUnavailable);
@@ -466,6 +473,50 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     await context.push(
       RouteNames.webSearch,
       extra: WebSearchRequest(uri: uri, platform: scope, keyword: word),
+    );
+  }
+
+  /// The platforms "all" may open a web search for: visible, not retired,
+  /// reachable by this host and carrying a search page.
+  List<LiveSite> _webSearchSites() {
+    final visible = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final nativeTls = ref.read(nativeTlsPlatformsProvider);
+    return [
+      for (final site in ref.read(sitesProvider).all)
+        if (visible.contains(site.manifest.id) &&
+            !SiteFacts.isRetired(site.manifest.id) &&
+            (!SiteFacts.requiresNativeTls.contains(site.manifest.id) || nativeTls.contains(site.manifest.id)) &&
+            hasWebSearch(site.manifest.id))
+          site,
+    ];
+  }
+
+  /// Asks which platform's web search "all" should open.
+  Future<String?> _pickWebSearchPlatform() {
+    final sites = _webSearchSites();
+    if (sites.isEmpty) {
+      showDsToast(context: context, title: context.t.search.webSearchUnavailable);
+      return Future<String?>.value();
+    }
+    return showDsPanel<String>(
+      context: context,
+      builder: (context) => DsPanel(
+        title: Text(context.t.search.webSearchTitle),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s4,
+            children: [
+              for (final site in sites)
+                DsListRow(
+                  leading: localizedSiteIcon(site, size: 24),
+                  title: Text(localizedSiteName(site)),
+                  onPressed: () => Navigator.of(context).pop(site.manifest.id),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

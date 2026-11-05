@@ -1,3 +1,8 @@
+/// Whether [platform] has a web search page at all. The header's web-search
+/// button uses this instead of the keyword-bound [webSearchUrl], so an empty
+/// field says "type something" rather than leaving the button greyed out.
+bool hasWebSearch(String platform) => webSearchUrl(platform, 'x') != null;
+
 /// The platform's own web-search page for [keyword], or null when the
 /// platform has none (or the keyword is blank).
 ///
