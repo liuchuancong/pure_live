@@ -363,52 +363,10 @@ void main() {
     });
   });
 
-  group('the protobuf reader underneath it', () {
-    test('a singular field keeps its last value and a repeated one keeps its entries', () {
-      final message = DouyinProtoMessage.decode(
-        (DouyinProtoWriter()
-              ..integer(1, 1)
-              ..integer(1, 2)
-              ..bytes(3, (DouyinProtoWriter()..integer(1, 7)).toBytes())
-              ..bytes(3, (DouyinProtoWriter()..integer(5, 9)).toBytes()))
-            .toBytes(),
-      );
-      expect(message.integer(1), 2);
-      expect(message.message(3)!.integer(1), 7, reason: 'a singular message is merged on its bytes');
-      expect(message.message(3)!.integer(5), 9);
-      expect(message.messages(3), hasLength(2), reason: 'a repeated message never merges, or two gifts become one');
-      expect(DouyinProtoMessage.decode(const <int>[]).string(1), isNull);
-      expect(DouyinProtoMessage.unsigned(-5), '18446744073709551611');
-    });
-
-    test('a fixed width is kept under its own wire type, so the varint reader never sees it', () {
-      final data = Uint8List.fromList([
-        0x09, // field 1, fixed64
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0x08,
-        0x02, // field 1, varint
-      ]);
-      final message = DouyinProtoMessage.decode(data);
-      expect(message.fields.map((field) => (field.number, field.wireType)), [(1, 1), (1, 0)]);
-      expect(message.integer(1), 2, reason: 'the varint of the same number is the one that reads');
-      for (final bytes in <List<int>>[
-        [0x0E, 0x05], // wire type 6
-        [0x00], // field number 0
-        [0x0A, 0x04, 0x01], // a field shorter than it says
-        [0x08, 0x80], // a value cut off
-        [for (var i = 0; i < 11; i++) 0x80], // a varint of more than ten bytes
-      ]) {
-        expect(() => DouyinProtoMessage.decode(bytes), throwsFormatException, reason: '$bytes stops adding up');
-      }
-    });
-
+  // What this reader does with varints, wire types, merged and repeated
+  // messages, fixed widths and truncated bytes is proved for all five
+  // hand-written platform readers in `test/platforms/protobuf_readers_test.dart`.
+  group('the text under the protobuf', () {
     test('a chat text with a broken byte still reads', () {
       expect(DouyinDanmakuProtocol.decodeText([0xFF, ...utf8.encode('ok')]), '\uFFFDok');
     });
