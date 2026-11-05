@@ -460,9 +460,14 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       t.backup.webdavHelp.paramsSection,
       'webdav server address username password 服务器地址 用户名 密码 参数',
     ),
-    _hit(SettingsSection.lanSync, s.lanSync, 'lan sync local network devices pair 局域网 同步 设备 配对 发现'),
-    _hit(SettingsSection.lanSync, s.lanSyncPaired, 'lan sync paired devices trust grants 已配对 设备 授权 信任'),
-    _hit(SettingsSection.lanSync, s.lanSyncNearby, 'lan sync nearby discover devices 附近 设备 发现'),
+    // One row, because the pane draws one list: paired trusts and unpaired
+    // nearby devices share the `lanSyncDevices` header, so the words that named
+    // the old split sections travel as keywords of the row that opens it.
+    _hit(
+      SettingsSection.lanSync,
+      s.lanSync,
+      'lan sync local network devices pair paired nearby trust grants 局域网 同步 设备 配对 发现 已配对 附近的 授权 信任',
+    ),
     _hit(
       SettingsSection.backup,
       t.backup.secretsSwitchTitle,
