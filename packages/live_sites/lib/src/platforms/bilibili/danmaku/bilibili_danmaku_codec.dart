@@ -567,7 +567,7 @@ abstract final class BilibiliDanmakuProtocol {
       userName: (root.string(2)?.trim() ?? '').isNotEmpty
           ? root.string(2)!.trim()
           : sender?.message(2)?.string(1)?.trim() ?? '',
-      userId: BilibiliProtoMessage.unsigned(uid),
+      userId: uid == 0 ? '' : BilibiliProtoMessage.unsigned(uid),
       medal: medalName.isNotEmpty
           ? (name: medalName, level: level(medal?.integer(5)))
           : richName.isNotEmpty

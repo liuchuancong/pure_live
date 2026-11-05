@@ -149,7 +149,9 @@ abstract final class DouyinDanmakuProtocol {
   /// broadcast's chat is dropped (a room id of 0 or none is kept); the id is
   /// `common.msgId`, else the envelope's. The time is `createTime`, else
   /// `eventTime`; above 10^11 is milliseconds, otherwise seconds, and 0 means
-  /// none. Ids are unsigned (a uint64 read into a signed `int`).
+  /// none — as it does for the sender's account, which reads as nobody rather
+  /// than as one account every anonymous chat shares. Ids are unsigned (a uint64
+  /// read into a signed `int`).
   static LiveMessage? chat(Uint8List payload, int envelopeId, String roomId) {
     final message = DouyinProtoMessage.decode(payload);
     final common = message.message(1);
@@ -174,7 +176,12 @@ abstract final class DouyinDanmakuProtocol {
     return LiveMessage.normalized(
       text: message.string(3) ?? '',
       sender: MessageSender.normalized(
-        userId: DouyinProtoMessage.unsigned(user?.integer(1) ?? 0),
+        // An account the platform did not name reads as none: a `userId` of `0`
+        // would be one account every anonymous chat shares.
+        userId: switch (user?.integer(1)) {
+          final int id when id != 0 => DouyinProtoMessage.unsigned(id),
+          _ => '',
+        },
         userName: user?.string(3) ?? '',
       ),
       color: LiveMessageColor.white,

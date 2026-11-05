@@ -706,6 +706,7 @@ void main() {
         ),
       ).messages.single;
       expect(withRich.effectiveSender.fanBadgeName, 'fan');
+      expect(withRich.effectiveSender.userId, isEmpty, reason: 'a gift that names no account says nobody, not 0');
       expect(withRich.effectiveSender.fanBadgeLevel, '4');
       expect((withRich.payload! as LiveGift).name, '小花花');
     });
