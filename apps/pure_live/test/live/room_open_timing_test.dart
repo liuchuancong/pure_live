@@ -62,6 +62,21 @@ void main() {
     expect(timing.line(failed: true), isNot(contains('http')));
   });
 
+  test('a walk-away names itself, and a fast one is not one', () {
+    final timing = _timing(site: 'douyu', roomId: '9')..markDetail();
+
+    // The room never failed and never showed a picture: whoever left it did so
+    // because of how long it took, and that has to be readable in the line.
+    expect(timing.line(abandoned: true), contains('result=abandoned'));
+    expect(timing.line(abandoned: true), isNot(contains('result=incomplete')));
+
+    // The other half of the rule: a tap through a list is browsing, not a slow
+    // room, and the budget is what keeps it out of the log. The clock here
+    // moves 100 ms a reading, so no stage sequence reaches the budget.
+    expect(kSlowEntryBudget, const Duration(seconds: 3));
+    expect(timing.total < kSlowEntryBudget, isTrue);
+  });
+
   test('the line names which way the requests left the machine', () {
     expect(_timing(site: 'youtube', roomId: '3').line(), contains('proxy=direct'));
 

@@ -24,6 +24,17 @@ enum RoomOpenProxy {
 /// and how long it took, null when the entry never reached it.
 typedef RoomOpenStage = ({String name, Duration? took});
 
+/// The wait after which walking away from a room is itself the measurement.
+///
+/// An entry the viewer left before its picture arrived used to report nothing,
+/// on the reasoning that its numbers describe a wait nobody sat through. Under
+/// that budget the reasoning holds: a tap that moves on in half a second is
+/// browsing, not a slow room, and logging it would turn every list into noise.
+/// Past it, the walk-away is the only witness there is that the room was too
+/// slow to wait for - and it is the number the reference's own two-to-three
+/// second entry is measured against.
+const Duration kSlowEntryBudget = Duration(seconds: 3);
+
 /// How long one entry into a room took, stage by stage.
 ///
 /// "The room opens slowly" is four different faults wearing one coat: the
@@ -126,15 +137,18 @@ final class RoomOpenTiming {
   Duration get total =>
       (_playing ?? _firstFrame ?? _requested ?? _lines ?? _qualities ?? _detail ?? started).difference(started);
 
-  /// The fixed-field log line, [failed] when the entry ended in an error
-  /// rather than a picture.
-  String line({bool failed = false}) => [
+  /// The fixed-field log line: [failed] when the entry ended in an error
+  /// rather than a picture, [abandoned] when the viewer walked away from it
+  /// before either (see [kSlowEntryBudget]).
+  String line({bool failed = false, bool abandoned = false}) => [
     'room-open',
     'site=$site',
     'room=$roomId',
     'proxy=${proxy.token}',
     'result=${failed
         ? 'error'
+        : abandoned
+        ? 'abandoned'
         : _playing != null
         ? 'playing'
         : 'incomplete'}',

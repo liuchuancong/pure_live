@@ -23,7 +23,7 @@ import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTi
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/modules/live/room/controller/room_open_timing.dart'
-    show RoomOpenProxy, RoomOpenStage, RoomOpenTiming;
+    show RoomOpenProxy, RoomOpenStage, RoomOpenTiming, kSlowEntryBudget;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
 
@@ -657,8 +657,9 @@ final class RoomController extends Notifier<RoomState> {
   int _openEpoch = 0;
 
   /// The stopwatch of the entry now in flight, reported once when its picture
-  /// arrives or fails and dropped when the viewer leaves before then: "the
-  /// room is slow" is four different faults, and only the numbers say which.
+  /// arrives or fails, and once more if the viewer walks away from a room that
+  /// has been asking longer than [kSlowEntryBudget]: "the room is slow" is
+  /// four different faults, and only the numbers say which.
   RoomOpenTiming? _openTiming;
 
   /// Which way this entry's requests are leaving the machine.
@@ -675,12 +676,16 @@ final class RoomController extends Notifier<RoomState> {
 
   /// Writes the entry's line to the log, hands its numbers to the details
   /// panel, and stops measuring.
-  void _reportOpenTiming({bool failed = false}) {
+  ///
+  /// An [abandoned] entry reaches the log only: the panel belongs to the room
+  /// the viewer stayed in, and the entry they walked away from has no panel
+  /// left to show it on.
+  void _reportOpenTiming({bool failed = false, bool abandoned = false}) {
     final timing = _openTiming;
     if (timing == null) return;
     _openTiming = null;
-    appLog.forCategory('room').info(timing.line(failed: failed));
-    if (!ref.mounted) return;
+    appLog.forCategory('room').info(timing.line(failed: failed, abandoned: abandoned));
+    if (abandoned || !ref.mounted) return;
     ref.read(roomOpenRecordProvider.notifier).report(timing, failed: failed);
   }
 
@@ -1971,8 +1976,14 @@ final class RoomController extends Notifier<RoomState> {
     _openEpoch++;
     _danmakuEpoch++;
     _danmakuOpeningEpoch = null;
-    // An entry the viewer left before its picture arrived reports nothing:
-    // its numbers describe a wait nobody sat through.
+    // An entry the viewer left before its picture arrived used to report
+    // nothing, on the reasoning that its numbers describe a wait nobody sat
+    // through. Past [kSlowEntryBudget] that reasoning hides exactly the case
+    // the task is about: a room so slow the viewer gave up, with nothing
+    // failed and no first frame to blame. Below it, a tap through a list is
+    // browsing, and it stays out of the log.
+    final timing = _openTiming;
+    if (timing != null && timing.total >= kSlowEntryBudget) _reportOpenTiming(abandoned: true);
     _openTiming = null;
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_handles?.cancel() ?? Future<void>.value());
