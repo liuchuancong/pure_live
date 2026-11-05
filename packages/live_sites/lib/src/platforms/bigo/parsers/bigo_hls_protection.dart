@@ -6,9 +6,12 @@ import 'dart:typed_data';
 /// unreadable). Applying [transform] twice with one seed restores the input, so
 /// the same call that scrambles a segment unscrambles it.
 ///
-/// The adapter hands out the playlist as the site writes it; whoever plays it
-/// relays every segment through [transform] with [seed] (see the ledger's
-/// deferred note for bigo playback).
+/// This app runs nothing between the CDN and the player that could apply it to
+/// every segment, so the playback capability refuses bigo's stream with the
+/// reason instead of handing out a playlist whose picture would stay black
+/// (`BigoPlaybackProvider.getLines`). The arithmetic stays here because it is
+/// what any descrambler would need - and because the tag is how the room is
+/// recognised at all.
 abstract final class BigoHlsProtection {
   /// The bytes a segment's transform touches (two TS packets).
   static const int prefixBytes = 376;

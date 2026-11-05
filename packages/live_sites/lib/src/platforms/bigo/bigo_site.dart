@@ -43,8 +43,8 @@ import 'package:live_sites/src/platforms/bigo/parsers/bigo_studio.dart';
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// How a studio answer is asked for, which decides whether the answer can be
-/// the one that carries the playlist.
+/// How a studio answer is asked for, which decides what the answer may be used
+/// for.
 enum BigoStudioUse {
   /// A room read: a fresh token, whose first use says whether the room has a
   /// password and hands out the playlist; a login gate is asked again with the
@@ -54,9 +54,6 @@ enum BigoStudioUse {
   /// A quality list or a state check: the reusable token; a login gate is asked
   /// again with the same token and that answer is used.
   refresh,
-
-  /// A play resolve: a fresh token for the playlist, nothing asked again.
-  input,
 }
 
 /// The Bigo Live adapter (parsing in `parsers/`): manifest + capability
@@ -72,13 +69,14 @@ enum BigoStudioUse {
 ///   filters it never work on two different lists;
 /// - a room is the anonymous web token (`webjs/t`, then `webjs/status` with the
 ///   encrypted request) and `getInternalStudioInfo` with it, within one
-///   [deadline]. Only a token's first use gives the playlist and says whether
-///   the room has a password, so a room read and a play resolve take a fresh
-///   token (three requests), while a quality list or a state check reuses the
-///   last token for [tokenReuse] (one request);
-/// - the streams have no URL to keep: the one quality resolves through the
-///   studio again on every play, and the playlist's segments are scrambled on
-///   their way through a relay (see `BigoHlsProtection`).
+///   [deadline]. Only a token's first use says whether the room has a password
+///   and names the playlist, so a room read takes a fresh token (three
+///   requests) while a quality list or a state check reuses the last token for
+///   [tokenReuse] (one request);
+/// - the streams cannot be watched: the one quality is a web HLS whose segments
+///   the site scrambles, and the app runs no descrambling relay, so the playback
+///   capability answers the reason (see `BigoHlsProtection` for the arithmetic
+///   and `BigoPlaybackProvider.getLines` for the answer).
 ///
 /// Rooms are identified by the Bigo id the site writes (`clientBigoId`), which
 /// is what a detail returns whatever the room was asked for by; list cards keep
@@ -278,27 +276,26 @@ final class BigoSite implements LiveSite {
 
   /// The studio of [siteId] for [use], within one [deadline].
   ///
-  /// A room read and a play resolve take a fresh token (three requests): only a
-  /// token's first use gives the playlist and says whether the room has a
-  /// password. A refresh takes the reusable token (one request when one is
-  /// kept). Every token, once used, is kept for refreshes.
+  /// A room read takes a fresh token (three requests): only a token's first use
+  /// says whether the room has a password and names the playlist. A refresh
+  /// takes the reusable token (one request when one is kept). Every token, once
+  /// used, is kept for refreshes.
   ///
   /// The site sometimes answers a token's first use with `needLogin`, all
   /// fields zeroed, and turns out to accept the same token a moment later (seen
   /// in bursts of new tokens). The same token asked again (one more request, only
   /// then) gives the room's state: a room read keeps the login gate with that
   /// state (a gated live room is live and marked), a refresh uses that answer as
-  /// it is. A play resolve asks nothing again: a gated input has no playlist
-  /// either way.
+  /// it is.
   Future<BigoStudio> studio(String siteId, BigoStudioUse use) => _scoped((token) async {
     final checked = BigoRoomParser.checkedSiteId(siteId);
     final webToken = switch (use) {
       BigoStudioUse.refresh => await _reusableToken(),
-      BigoStudioUse.entry || BigoStudioUse.input => await _fetchToken(token),
+      BigoStudioUse.entry => await _fetchToken(token),
     };
     final first = await _ask(checked, webToken, token);
     if (use != BigoStudioUse.refresh) _keepToken(webToken);
-    if (first.access != BigoAccess.loginRequired || use == BigoStudioUse.input) return first;
+    if (first.access != BigoAccess.loginRequired) return first;
     final again = await _ask(checked, webToken, token);
     if (again.access == BigoAccess.loginRequired) {
       if (_token == webToken) _tokenAt = null;
@@ -327,19 +324,6 @@ final class BigoSite implements LiveSite {
   /// the state, names and pictures but neither the playlist nor the password
   /// flag, so it answers a quality list, not a playlist.
   Future<BigoStudio> refresh(String roomId) => studio(roomId, BigoStudioUse.refresh);
-
-  /// The media of a play resolve: a fresh web token and studio answer, never
-  /// shared between consumers or reused after a failure, and the playlist as a
-  /// line with the platform's headers. A studio that cannot be watched says why;
-  /// an answer without the playlist is stream-unavailable.
-  Future<Uri> playPlaylist(String roomId) async {
-    final answer = await studio(roomId, BigoStudioUse.input);
-    final error = answer.streamError;
-    if (error != null) throw error;
-    final hls = answer.hls;
-    if (hls == null) throw BigoFailure(BigoFailureKind.streamUnavailable, '${answer.siteId}: no hls_src');
-    return hls;
-  }
 
   // Catalog and search --------------------------------------------------------
 
