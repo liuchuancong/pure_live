@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/tiktok/api/tiktok_endpoints.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_failure.dart';
 import 'package:live_sites/src/platforms/tiktok/tiktok_manifest.dart';
 
@@ -28,7 +29,15 @@ final class TiktokHttp {
   Future<TiktokResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     final LiveResponse response;
     try {
-      response = await http.send(LiveRequest.custom(method: 'GET', site: tiktokSiteId, url: url, headers: headers));
+      response = await http.send(
+        LiveRequest.custom(
+          method: 'GET',
+          site: tiktokSiteId,
+          url: url,
+          headers: headers,
+          timeout: TiktokEndpoints.requestTimeout,
+        ),
+      );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
       throw TiktokFailure(TiktokFailureKind.network, 'GET $url: $failure', cause: failure);

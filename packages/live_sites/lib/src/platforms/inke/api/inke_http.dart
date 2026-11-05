@@ -35,6 +35,7 @@ final class InkeHttp {
           url: url,
           headers: InkeEndpoints.headers,
           cancelToken: cancel,
+          timeout: InkeEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {

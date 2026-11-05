@@ -37,6 +37,7 @@ final class LivemeHttp {
       url: url,
       headers: LivemeEndpoints.headers(shortId: shortId),
       cancelToken: cancel,
+      timeout: LivemeEndpoints.requestTimeout,
     ),
   );
 

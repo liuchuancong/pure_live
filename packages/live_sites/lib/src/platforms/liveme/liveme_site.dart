@@ -146,6 +146,7 @@ final class LivemeSite implements LiveSite {
         'content-type': 'application/x-www-form-urlencoded',
       },
       body: LiveRequest.form(url, fields: signed.fields, site: livemeSiteId).body,
+      timeout: LivemeEndpoints.requestTimeout,
     );
   }
 

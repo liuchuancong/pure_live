@@ -1,6 +1,14 @@
 /// Kick endpoints, user agents and protocol constants (ARCHITECTURE.md §7.2:
 /// endpoint shapes live here; the parsers read the answers).
 abstract final class KickEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; streaming is untouched, since these fields cover
+  /// the request/response path and not `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Desktop Chrome 140, the UA the web client sends.
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '

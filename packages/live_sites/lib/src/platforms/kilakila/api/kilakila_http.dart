@@ -36,6 +36,7 @@ final class KilakilaHttp {
           url: url,
           headers: KilakilaEndpoints.headers,
           cancelToken: cancel,
+          timeout: KilakilaEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {

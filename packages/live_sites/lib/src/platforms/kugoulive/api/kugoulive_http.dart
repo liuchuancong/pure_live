@@ -37,6 +37,7 @@ final class KugouliveHttp {
           url: url,
           headers: headers ?? KugouliveEndpoints.apiHeaders,
           cancelToken: cancel,
+          timeout: KugouliveEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {

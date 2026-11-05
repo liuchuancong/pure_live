@@ -8,12 +8,28 @@ import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
+import 'package:live_sites/src/platforms/inke/api/inke_endpoints.dart';
+import 'package:live_sites/src/platforms/inke/api/inke_http.dart';
+import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
+import 'package:live_sites/src/platforms/kick/api/kick_http.dart';
+import 'package:live_sites/src/platforms/kilakila/api/kilakila_endpoints.dart';
+import 'package:live_sites/src/platforms/kilakila/api/kilakila_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_endpoints.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
+import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_endpoints.dart';
+import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
+import 'package:live_sites/src/platforms/liveme/api/liveme_endpoints.dart';
+import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
+import 'package:live_sites/src/platforms/showroom/api/showroom_endpoints.dart';
+import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
+import 'package:live_sites/src/platforms/tiktok/api/tiktok_endpoints.dart';
+import 'package:live_sites/src/platforms/tiktok/api/tiktok_http.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
+import 'package:live_sites/src/platforms/weibo/api/weibo_endpoints.dart';
+import 'package:live_sites/src/platforms/weibo/api/weibo_http.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_endpoints.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_http.dart';
 import 'package:test/test.dart';
@@ -56,10 +72,11 @@ Future<List<LiveRequest>> _capture(Future<void> Function(_RecordingHttp http) as
   return http.sent;
 }
 
-void _expectCapped(List<LiveRequest> requests, Duration cap, {int? atLeast}) {
-  expect(requests, hasLength(greaterThanOrEqualTo(atLeast ?? 1)));
+void _expectCapped(List<LiveRequest> requests, Duration cap, {int? atLeast, String? site}) {
+  final from = site == null ? '' : '$site: ';
+  expect(requests, hasLength(greaterThanOrEqualTo(atLeast ?? 1)), reason: '$from built no request');
   for (final request in requests) {
-    expect(request.timeout, cap, reason: '${request.method} ${request.url} must not wait forever');
+    expect(request.timeout, cap, reason: '$from${request.method} ${request.url} must not wait forever');
   }
 }
 
@@ -137,14 +154,70 @@ void main() {
       _expectCapped(requests, YyEndpoints.requestTimeout, atLeast: 2);
     });
 
+    test('the eight single-read transports cap their one request shape', () async {
+      final oneShots = <(String, Duration, Future<void> Function(LiveHttp))>[
+        (
+          'inke',
+          InkeEndpoints.requestTimeout,
+          (http) => InkeHttp(http).get(Uri.parse('https://api.inke.cn/web/liveDetail.json?live_id=1')),
+        ),
+        (
+          'kick',
+          KickEndpoints.requestTimeout,
+          (http) => KickHttp(http).get(Uri.parse('https://kick.com/api/v1/channels/x')),
+        ),
+        (
+          'kilakila',
+          KilakilaEndpoints.requestTimeout,
+          (http) => KilakilaHttp(http).get(Uri.parse('https://www.kilakila.net/api/room/1')),
+        ),
+        (
+          'kugoulive',
+          KugouliveEndpoints.requestTimeout,
+          (http) => KugouliveHttp(http).get(Uri.parse('https://app.kugou.com/livesdk/x?authorId=1')),
+        ),
+        (
+          'liveme',
+          LivemeEndpoints.requestTimeout,
+          (http) => LivemeHttp(http).get(Uri.parse('https://m-app.liveme.com/api/room/x')),
+        ),
+        (
+          'showroom',
+          ShowroomEndpoints.requestTimeout,
+          (http) => ShowroomHttp(http).get(Uri.parse('https://www.showroom-live.com/api/room/1')),
+        ),
+        (
+          'tiktok',
+          TiktokEndpoints.requestTimeout,
+          (http) => TiktokHttp(http).get(Uri.parse('https://www.tiktok.com/api/live/detail/?roomId=1')),
+        ),
+        (
+          'weibo',
+          WeiboEndpoints.requestTimeout,
+          (http) => WeiboHttp(http).get(Uri.parse('https://weblive.weibo.com/x?room_id=1')),
+        ),
+      ];
+      for (final (site, cap, ask) in oneShots) {
+        _expectCapped(await _capture(ask), cap, atLeast: 1, site: site);
+      }
+    });
+
     test('every cap in the table is the same documented wait', () {
       for (final cap in [
         BilibiliEndpoints.requestTimeout,
         DouyinEndpoints.requestTimeout,
         DouyuEndpoints.requestTimeout,
+        InkeEndpoints.requestTimeout,
+        KickEndpoints.requestTimeout,
+        KilakilaEndpoints.requestTimeout,
         KuaishouEndpoints.requestTimeout,
+        KugouliveEndpoints.requestTimeout,
+        LivemeEndpoints.requestTimeout,
+        ShowroomEndpoints.requestTimeout,
         SoopEndpoints.requestTimeout,
+        TiktokEndpoints.requestTimeout,
         TwitchEndpoints.requestTimeout,
+        WeiboEndpoints.requestTimeout,
         YyEndpoints.requestTimeout,
       ]) {
         expect(cap, const Duration(seconds: 20), reason: 'one number, so a stall reads the same everywhere');

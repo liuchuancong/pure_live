@@ -10,6 +10,14 @@ import 'package:live_sites/src/platforms/weibo/weibo_manifest.dart';
 /// A room is one broadcast (`1022:2321325347923495092258`), not an anchor: the
 /// next broadcast of the same anchor is another room.
 abstract final class WeiboEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; streaming is untouched, since these fields cover
+  /// the request/response path and not `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Website origin.
   static const String origin = 'https://weibo.com';
 

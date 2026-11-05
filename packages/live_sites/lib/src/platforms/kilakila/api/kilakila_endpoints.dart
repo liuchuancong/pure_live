@@ -2,6 +2,14 @@
 /// statics): the two hosts of the API, the media CDN, the two timelines, the
 /// platform's limits and the one quality.
 abstract final class KilakilaEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; streaming is untouched, since these fields cover
+  /// the request/response path and not `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// The website: the API host of the timeline, `getRoomInfo` and search.
   static const String origin = 'https://live.kilakila.cn';
 

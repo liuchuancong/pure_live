@@ -30,7 +30,13 @@ final class ShowroomHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.custom(method: 'GET', site: showroomSiteId, url: url, headers: ShowroomEndpoints.headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: showroomSiteId,
+          url: url,
+          headers: ShowroomEndpoints.headers,
+          timeout: ShowroomEndpoints.requestTimeout,
+        ),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

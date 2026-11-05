@@ -39,6 +39,7 @@ final class WeiboHttp {
           url: url,
           headers: WeiboEndpoints.headers,
           cancelToken: cancel,
+          timeout: WeiboEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {

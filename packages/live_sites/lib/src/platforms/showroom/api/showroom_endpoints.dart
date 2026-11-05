@@ -2,6 +2,14 @@
 /// and API origin, the request and media headers, the room key grammar, the
 /// reserved first path segments, and the local page sizes.
 abstract final class ShowroomEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; streaming is untouched, since these fields cover
+  /// the request/response path and not `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Web and API origin.
   static const String origin = 'https://www.showroom-live.com';
 
