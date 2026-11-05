@@ -444,3 +444,14 @@ PLAN-CHECK huya     没有注册 resolver
 | P50 | `3d6a2029e` | 表情画出来 | 新 `room/chat/room_emotes.dart` 的纯函数 `splitPlatformEmotes(words, emotes)`（**只切正文里真出现的码**、去重取第一个可用 url、同处以长码优先、空 url/空码跳过），`_wordSpans` 把"图集没画到的那些段"交给它；平台表情用 `cachedImage(url, height:)` 在**该行自己的字号**上画（`_PlatformEmote`），**取不到图就退回文字原样**（`errorBuilder`），所以一条 CDN 挂掉的表情只损失那张贴纸、不损失那句话。**图集仍排在前面**：飞行层用的是同一张已解码的图，列表先吃它才不会为每个字发一次网络。两处**故意的边界**（不是遗漏）：①**飞行层不动**——`barrage_item_mapper` 在引擎侧，把平台 URL 塞进飞层要跨包加一条图片装载路，本轮不值；②`LiveMessageStyle`/`LiveMessagePlacement` 仍无人读：它们只服务**本地自绘弹幕**（用户自己发的那条），而全仓 `LiveDanmakuSending` 零实现者（见「发弹幕能力普查」）——**等第一个发送实现者出现再读**，别为没读者的字段做 UI。新 `test/live/room_emote_split_test.dart`（7 例）。门：app `dart analyze lib test/live` 0 issues、`flutter test test/live` **77 绿 + 1 红**（唯一红仍是录像 lane 的 `recording_schedule_test.dart`）。运行期未验：**要在 bilibili/chzzk/kuaishou/youtube 各看一条带平台表情的消息**——参考的判据是"看得到图，图挂了看得到原码"。 |
 
 - 本轮也纠了自己两处口径：先写文档时说 chzzk 的码是 `/{name}`，读源码是 `{:…:}`（`chzzk_danmaku_codec.dart:166 _emojiCode`）；先写的测试用 `[哭笑]`/`[笑]` 举例"长码优先"，但那对码在文本里其实不会同时命中，改成真能重叠的 `[a]`/`[a]b`。**教训：写在注释里的"某站长这样"必须回源码取形状**，别按记忆里的平台习惯猜（同 [[feedback-settings-mirror-capability]] 的"字段名必须从源码取"）。
+
+## 第十二轮（2026-11-05）：Bigo 点名了——不建中继，那就带原因失败
+
+用户在别处已明确**拒绝回环中继**（[[project-pure-live-bigo-hls-relay]]："只能带原因失败"），本轮把那条决定落成代码，不再等点名。
+
+- **此前的事实**：`BigoHlsProtection`（seed 读取 + 两段 TS 包头 XOR）**全包零调用者、零测试**——第七例"有写没读"。bigo 房的线路照旧交给 mpv，mpv 拿到的是加扰段 ⇒ 黑屏 + 转圈；录像订阅要是接上，写进盘的也是加扰包。
+- **为什么不"先看一眼播放列表再决定"**：bigo 的播放地址**一次性**（`singleUse`，站方只发一次用的 URL）。为了判断加扰而去 GET 它，就是把那次机会花在判断上；不加扰的房间本来能播，也会被我们烧掉地址。⇒ 用一次多余请求换"可能有一间房不需要拒绝"，代价落在真能播的那批上，不划算。
+- **改法（`010755321`）**：`BigoPlaybackProvider.getLines` 直接 `left(LiveSiteError.unsupported(...))`，message 是一句中文原因（"Bigo 的网页直播流是逐段加密的（播放列表带 #EXT-X-BIGO-WEB-PROTECTION），本版不转码这段流，无法播放"）。**不动 getQualities**：直播中/有密码/付费/下线这些房间事实照旧报（下线仍是 content-unavailable），只是播不了。房间侧不用改：`pictureStateOf` 已把 `state.error` 当原因行显示（`room_status.dart:137`）。`LiveSiteError.unsupported.isTransient=false` ⇒ 上层不会自动重试。
+- **删掉的死路**：`BigoSite.playPlaylist`（唯一调用者没了）与 `BigoStudioUse.input`（随之不可达）以及那句"play resolve 不再追问"的分支。**没删** `BigoHlsProtection`：它是"这房间为什么不能播"的根据，也是将来真要做还原时唯一已有的算法——本轮给它补了测试（seed 从 `VERSION=1,SEED=…` 的属性表里读、普通播放列表返回 null、transform 自反）。
+- 门：live_sites `dart analyze lib test` 0 issues、`dart test` **475 全绿**（上一轮那条搜索 lane 的 `site_facts_test` 红已自消）；app `dart analyze lib` 0 issues。**运行期待验**：进一间 bigo 房，画面位应该直接说原因而不是黑屏转圈；录像订阅同样应带这个原因失败。
+- **已知过窄之处**（写在这里，别当隐藏假设）：若哪天出现**不加扰**的 bigo 网页流，这条一律拒绝会把它一起拒了。到时候选的更细做法是：`getLines` 交回地址并在 `LivePlayLine` 上带一个"需要还原"的表达（P44 那节写过），由能转码的一方决定播或不播；**没有中继之前，这条拒绝仍是正确答案**。
