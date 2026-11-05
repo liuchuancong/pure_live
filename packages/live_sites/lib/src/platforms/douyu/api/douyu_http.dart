@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 
@@ -21,7 +22,13 @@ final class DouyuHttp {
   Future<({String text, int status})> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url, headers: headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: douyuSiteId,
+          url: url,
+          headers: headers,
+          timeout: DouyuEndpoints.requestTimeout,
+        ),
       );
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
@@ -46,6 +53,7 @@ final class DouyuHttp {
           body: body,
           contentType: 'application/x-www-form-urlencoded',
           headers: headers,
+          timeout: DouyuEndpoints.requestTimeout,
         ),
       );
       return (text: response.text, status: response.statusCode);
@@ -59,7 +67,9 @@ final class DouyuHttp {
   /// 3xx answer (an alias page to its rid page).
   Future<({String? location, String text, int status})> getRedirect(Uri url) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url));
+      final response = await http.send(
+        LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url, timeout: DouyuEndpoints.requestTimeout),
+      );
       return (location: response.headers['location'], text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -74,7 +84,13 @@ final class DouyuHttp {
   Future<List<String>> passportSetCookies(Uri url, Map<String, String> headers) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url, headers: headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: douyuSiteId,
+          url: url,
+          headers: headers,
+          timeout: DouyuEndpoints.requestTimeout,
+        ),
       );
       return response.setCookies;
     } on TransportFailure catch (failure) {

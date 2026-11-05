@@ -1,6 +1,14 @@
 /// Douyu endpoints, user agents and protocol constants (ARCHITECTURE.md §7.2:
 /// endpoint shapes live here; signing lives in the signer).
 abstract final class DouyuEndpoints {
+  /// How long one douyu request may take. The room's open awaits the room
+  /// detail, the play data and the stream key, and the transport has no wait
+  /// of its own — so an edge that answers late, or never, holds the room's
+  /// spinner with no message. 20 s, the cap this repo's platforms that set
+  /// one already use; the measured answer for a room is hundreds of
+  /// milliseconds, so this only cuts off a stall.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Desktop Chrome 128, the UA the web player sends with API and media
   /// requests.
   static const String userAgent =

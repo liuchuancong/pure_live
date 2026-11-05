@@ -4,6 +4,14 @@ import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_json.dart';
 /// §7.2: endpoint shapes live here; the WBI signature lives in
 /// `bilibili_wbi.dart`, request assembly in `bilibili_http.dart`).
 abstract final class BilibiliEndpoints {
+  /// How long one web-API request may take. The room's open awaits the room
+  /// detail, the qualities and the stream assignment, and the transport has
+  /// no wait of its own — so an edge that answers late, or never, holds the
+  /// room's spinner with no message. 20 s, the cap this repo's platforms
+  /// that set one already use; the observed answers are hundreds of
+  /// milliseconds, so this only cuts off a stall.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Desktop Chrome 138, the UA the web client sends with every request.
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '

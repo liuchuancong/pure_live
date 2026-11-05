@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 
@@ -25,7 +26,13 @@ final class BilibiliHttp {
   Future<BilibiliResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: bilibiliSiteId, url: url, headers: headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: bilibiliSiteId,
+          url: url,
+          headers: headers,
+          timeout: BilibiliEndpoints.requestTimeout,
+        ),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {
@@ -39,7 +46,15 @@ final class BilibiliHttp {
   /// as ([headers] joins repeated values, which cannot be split back apart).
   Future<LiveResponse> getRaw(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      return await http.send(LiveRequest.custom(method: 'GET', site: bilibiliSiteId, url: url, headers: headers));
+      return await http.send(
+        LiveRequest.custom(
+          method: 'GET',
+          site: bilibiliSiteId,
+          url: url,
+          headers: headers,
+          timeout: BilibiliEndpoints.requestTimeout,
+        ),
+      );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
       throw BilibiliFailure(BilibiliFailureKind.network, 'GET $url: $failure', cause: failure);
