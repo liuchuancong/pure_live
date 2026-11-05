@@ -5,5 +5,6 @@ library;
 export 'room_search_picker.dart';
 export 'search_controller.dart';
 export 'search_page.dart';
+export 'web_live_urls.dart';
 export 'web_search_page.dart';
 export 'web_search_urls.dart';
