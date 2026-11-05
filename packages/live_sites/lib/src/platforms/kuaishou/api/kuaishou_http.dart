@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_endpoints.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_failure.dart';
 
@@ -28,7 +29,13 @@ final class KuaishouHttp {
   Future<KuaishouResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: kuaishouSiteId, url: url, headers: headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: kuaishouSiteId,
+          url: url,
+          headers: headers,
+          timeout: KuaishouEndpoints.requestTimeout,
+        ),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {
@@ -50,6 +57,7 @@ final class KuaishouHttp {
           body: jsonEncode(json),
           contentType: 'application/json',
           headers: headers,
+          timeout: KuaishouEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {
@@ -66,7 +74,14 @@ final class KuaishouHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.custom(method: 'GET', site: kuaishouSiteId, url: url, headers: headers, cancelToken: cancel),
+        LiveRequest.custom(
+          method: 'GET',
+          site: kuaishouSiteId,
+          url: url,
+          headers: headers,
+          cancelToken: cancel,
+          timeout: KuaishouEndpoints.requestTimeout,
+        ),
       );
     } on TransportFailure {
       // A transport breakdown (and a cancellation) is the session's to fold

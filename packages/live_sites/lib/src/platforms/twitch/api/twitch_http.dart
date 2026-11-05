@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 
@@ -27,7 +28,13 @@ final class TwitchHttp {
   Future<TwitchResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: twitchSiteId, url: url, headers: headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: twitchSiteId,
+          url: url,
+          headers: headers,
+          timeout: TwitchEndpoints.requestTimeout,
+        ),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {
@@ -49,6 +56,7 @@ final class TwitchHttp {
           body: jsonEncode(operation),
           contentType: 'text/plain;charset=UTF-8',
           headers: headers,
+          timeout: TwitchEndpoints.requestTimeout,
         ),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);

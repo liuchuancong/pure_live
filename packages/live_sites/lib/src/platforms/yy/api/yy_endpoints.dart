@@ -6,6 +6,17 @@ import 'package:live_sites/src/platforms/yy/parsers/yy_json.dart';
 /// origin, the user agents of the three request families, the stream SDK
 /// version, the mobile HLS route, the FLV lease and the preset area names.
 abstract final class YyEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; the measured room answers are hundreds of
+  /// milliseconds, so this only cuts off a stall.
+  ///
+  /// Streaming is not affected: this is the request/response path, not
+  /// `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Web origin; also the `Origin` of API and media requests.
   static const String origin = 'https://www.yy.com';
 

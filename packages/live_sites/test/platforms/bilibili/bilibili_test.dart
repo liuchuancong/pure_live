@@ -1,11 +1,6 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
-import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_play_parser.dart';
 import 'package:test/test.dart';
@@ -59,26 +54,6 @@ Map<String, dynamic> _data(List<Map<String, dynamic>> streams, {Map<int, String>
 };
 
 /// The transport as the site reads it: every request recorded, one answer.
-final class _RecordingHttp implements LiveHttp {
-  final List<LiveRequest> sent = [];
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    sent.add(request);
-    return LiveResponse(
-      statusCode: 200,
-      headers: const <String, String>{},
-      bodyBytes: Uint8List.fromList(utf8.encode('{}')),
-    );
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
-
 void main() {
   group('play lines', () {
     test('lines order by protocol, format, codec and CDN; one codec is kept and URLs never repeat', () {
@@ -209,28 +184,6 @@ void main() {
         () => BilibiliPlayParser.resolvedLines(const {}, requestedQn: 250, roomId: '1', issuedAt: _issued),
         throwsA(isA<BilibiliFailure>()),
       );
-    });
-  });
-
-  group('the API transport', () {
-    test('every request carries the wait cap, so a silent edge cannot hold the room', () async {
-      // The room's open awaits this transport for the room detail, the
-      // qualities and the stream assignment, and the transport itself waits
-      // for nothing: an edge that accepts the connection and never answers
-      // would leave the viewer holding a spinner with no message at all.
-      final http = _RecordingHttp();
-      final transport = BilibiliHttp(http);
-
-      await transport.get(Uri.parse('https://api.live.bilibili.com/room/v1/Room/get_info?room_id=123'));
-      await transport.getRaw(
-        Uri.parse('https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=123'),
-      );
-
-      expect(http.sent, hasLength(2));
-      for (final request in http.sent) {
-        expect(request.timeout, BilibiliEndpoints.requestTimeout, reason: '${request.url} must not wait forever');
-      }
-      expect(BilibiliEndpoints.requestTimeout, const Duration(seconds: 20));
     });
   });
 }

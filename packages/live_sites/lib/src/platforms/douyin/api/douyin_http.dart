@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 
@@ -26,7 +27,13 @@ final class DouyinHttp {
   Future<DouyinResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: douyinSiteId, url: url, headers: headers),
+        LiveRequest.custom(
+          method: 'GET',
+          site: douyinSiteId,
+          url: url,
+          headers: headers,
+          timeout: DouyinEndpoints.requestTimeout,
+        ),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {

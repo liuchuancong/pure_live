@@ -8,6 +8,17 @@ import 'dart:math';
 /// (the parsers read that as api-changed), so the hashes are named constants
 /// rather than inlined at each call.
 abstract final class TwitchEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; the measured room answers are hundreds of
+  /// milliseconds, so this only cuts off a stall.
+  ///
+  /// Streaming is not affected: this is the request/response path, not
+  /// `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Desktop Chrome 137 — the UA sent to GraphQL, usher and the CDN.
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '

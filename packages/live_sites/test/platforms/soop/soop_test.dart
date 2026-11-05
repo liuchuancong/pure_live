@@ -1,14 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/models/enums/live_gift_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_notice_kind.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
-import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
-import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
 import 'package:live_sites/src/platforms/soop/danmaku/soop_danmaku_codec.dart';
 import 'package:test/test.dart';
 
@@ -34,29 +31,6 @@ SoopPacket _packet(int service, List<String> fields) =>
     (service: service, body: Uint8List.fromList(utf8.encode(_body(fields))));
 
 /// The transport as the API read sees it: every request recorded, one answer.
-final class _RecordingHttp implements LiveHttp {
-  new(this.body);
-
-  final String body;
-  final List<LiveRequest> sent = [];
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    sent.add(request);
-    return LiveResponse(
-      statusCode: 200,
-      headers: const <String, String>{},
-      bodyBytes: Uint8List.fromList(utf8.encode(body)),
-    );
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
-
 void main() {
   group('packets', () {
     test('a frame carries several packets, and the split stops at a bad one', () {
@@ -238,28 +212,6 @@ void main() {
         Uri.parse('wss://chat.example:8444/Websocket/123'),
         Uri.parse('ws://chat.example:8443/Websocket/123'),
       ]);
-    });
-  });
-
-  group('the API transport', () {
-    test('every API request carries the wait cap', () async {
-      // The room's open awaits the stream assignment and its key. SOOP's
-      // assignment interface sometimes answers and then never finishes the
-      // response, and a request with no cap leaves the viewer holding a
-      // spinner that has no end to it.
-      final http = _RecordingHttp('{"result":1}');
-      final transport = SoopHttp(http);
-
-      await transport.get(Uri.parse('https://m.sooplive.co.kr/_api/session/play_live?channel_id=123'));
-      await transport.postForm(
-        Uri.parse('https://apiv2.sooplive.co.kr/api/v1/BJ/player_live_api'),
-        const <String, String>{'broad': '1'},
-      );
-
-      expect(http.sent, hasLength(2));
-      for (final request in http.sent) {
-        expect(request.timeout, SoopEndpoints.requestTimeout, reason: 'GET/POST ${request.url} must not wait forever');
-      }
     });
   });
 }

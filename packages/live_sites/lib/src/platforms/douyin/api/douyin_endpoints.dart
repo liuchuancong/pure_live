@@ -1,6 +1,17 @@
 /// Douyin endpoints, user agents and protocol constants (ARCHITECTURE.md
 /// §7.2: endpoint shapes live here; signing lives in `douyin_sign.dart`).
 abstract final class DouyinEndpoints {
+  /// How long one request may take. The room's open awaits this platform's
+  /// detail and stream answer, and the transport waits for nothing on its
+  /// own: an edge that accepts the connection and never answers would hold
+  /// the room's spinner forever. 20 s, the cap this repo's platforms that
+  /// set one already use; the measured room answers are hundreds of
+  /// milliseconds, so this only cuts off a stall.
+  ///
+  /// Streaming is not affected: this is the request/response path, not
+  /// `LiveHttp.open`.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Desktop Chrome 134, the UA of the API requests, the one `a_bogus`
   /// encodes and the danmaku handshake's.
   static const String userAgent =

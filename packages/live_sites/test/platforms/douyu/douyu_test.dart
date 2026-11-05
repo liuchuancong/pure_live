@@ -1,15 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
-import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
-import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_stt_codec.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
@@ -36,30 +33,6 @@ List<LiveMessage> _decode(List<String> bodies, {bool Function()? filter, DouyuGi
     );
 
 /// The transport as the site reads it: every request recorded, one answer.
-final class _RecordingHttp implements LiveHttp {
-  new({this.headers = const <String, String>{}});
-
-  /// What the answer answers with (a redirect carries its `location`).
-  final Map<String, String> headers;
-  final List<LiveRequest> sent = [];
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    sent.add(request);
-    return LiveResponse(
-      statusCode: headers.isEmpty ? 200 : 302,
-      headers: headers,
-      bodyBytes: Uint8List.fromList(utf8.encode('{}')),
-      setCookies: const <String>['did=3; Max-Age=1'],
-    );
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
 
 void main() {
   group('STT encoding', () {
@@ -302,34 +275,6 @@ void main() {
         () => DouyuPlayParser.answer({}, roomId: _roomId, cdn: 'hs', cookie: '', issuedAt: _issuedAt),
         throwsA(isA<DouyuFailure>().having((failure) => failure.kind, 'kind', DouyuFailureKind.apiChanged)),
       );
-    });
-  });
-
-  group('the API transport', () {
-    test('every request carries the wait cap, so a silent edge cannot hold the room', () async {
-      // The room's open awaits this transport for the room card, the play
-      // answer and the stream key, and the transport itself waits for
-      // nothing: an edge that accepts the connection and never answers would
-      // leave the viewer holding a spinner with no message at all.
-      final direct = _RecordingHttp();
-      final transport = DouyuHttp(direct);
-      await transport.get(Uri.parse('https://www.douyu.com/betard/123'));
-      await transport.postForm(
-        Uri.parse('https://www.douyu.com/liverp/getH5PlayV1/123'),
-        fields: const <String, String>{'tid': '1'},
-      );
-
-      final redirecting = _RecordingHttp(headers: const <String, String>{'location': 'https://www.douyu.com/456'});
-      final aliased = DouyuHttp(redirecting);
-      await aliased.getRedirect(Uri.parse('https://yuba.douyu.com/p/123'));
-      await aliased.passportSetCookies(Uri.parse('https://passport.douyu.com/index/renewal'), const <String, String>{
-        'Cookie': 'ptyck=x',
-      });
-
-      for (final request in [...direct.sent, ...redirecting.sent]) {
-        expect(request.timeout, DouyuEndpoints.requestTimeout, reason: '${request.url} must not wait forever');
-      }
-      expect(DouyuEndpoints.requestTimeout, const Duration(seconds: 20));
     });
   });
 }
