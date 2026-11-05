@@ -810,3 +810,11 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 | 队列状态 | 同上 | 缝队列：**16/28 被驱动**，可自动排队的活真的见底了 | 已钉 session：showroom、pandalive、missevan、kilakila、soop、twitcasting、jdlive、picarto、sixroom、steambroadcast、fc2live、yy、kugoulive、baidulive（14 家有缝的全部）+ kuaishou、youtube（快路径）。**没有任何一个未钉站点能在不改代码的情况下证其退避**；douyu/kick/acfun/bigo/chzzk/douyin/huya/niconico/seventeenlive/twitch/bilibili 的**开线即发/帧→上报/错误→重连**这三条仍可只用假 socket 钉（像 P74/P75），但心跳与退避要真计时器（Douyu 的 2 s 重连、Twitch 的 40 s PING 之类都不适合塞进测试）。 |
 | 计数 | 同上 | **1085 绿** | `packages/live_sites` `dart test` 1085（开工 1070：+15 baidulive），`dart analyze lib test` 0 issues；提交在本地（**ahead 6，含本表**）。首跑红 3 处仍全是我自己：把 `_ok` 只当文本答案器（分段要发原始字节）、把"入会那次就看到的分段"当成新分段（于是永远不取）、以及给一个**固定钟**测"签名中途过期"（必须换成可推进的钟）。 |
 
+## 第四十一轮（2026-11-05）：先改口——"13 家还能证三条"也只有 3 家成立
+
+**网络**：本轮开头直连 push/pull 仍 reset；`curl --noproxy https://github.com/` 回到 200（`raw.githubusercontent.com` 反而超时），于是 **`git -c http.proxy= -c https.proxy= push origin v2` 一次推上 8 个提交**（`d3068ced4..83d3a605d`），参考仓同一条旁路 `Already up to date`（`f00bebd91`）⇒ 第 5 部分无新条目。**上一轮我写的"GitHub 出口故障"只说对了一半**：坏的是**仓库配置里那个 7890 代理**，直连后来是通的；⇒ 顺序要包含"直连也再试一次（`-c http.proxy=`）"，别只盯着 curl 的 000。
+**第 1/3 部分**仍被那四个脏文件挡着；**第 2 部分**日志仍是 `2026-11-03/PureLive.log`。
+
+| 纠正 | 同上 | 缝队列之外**真正还能测的只剩 niconico**（不是 13 家） | 上一轮我在 P98 与任务里写"其余 13 家至少能用假 socket 证三条（开线即发 / 帧→上报 / 错误→重连）"。**这条按名字数了一遍就不成立了**：acfun、bigo、bilibili、chzzk、douyin、douyu、huya、kick、seventeenlive、twitch 这 **10 家的 session 直接 `DanmakuSocket(...)` 内联构造**（`src/common/websocket/danmaku_socket.dart`），既不注入 connector 也不注入计时器 ⇒ **连开线即发什么都证不了**，除非改代码。真正还 drivable 的只有 **niconico**：`NiconicoDanmakuSession` 收 `openSeat` 工厂与 `now`，`NiconicoSeat` 收 `SocketConnector`（启动 20 s / 静默 90 s 仍是真计时器，那两条不证）。⇒ 这条也解释了一个旧观察：为什么 kuaishou/youtube 的 session 测试（P74/P75）长那样——它们是 HTTP 轮询、天然可注入。**下一步不是"排队做 13 家"，而是要么点名给这 10 家加缝，要么转去做别的**（第 1/2/3 部分都在等人）。 |
+| 计数 | 同上 | **1085 绿**（无新增测试） | 本轮只改台账与事实；`dart analyze lib test` 0 issues、`packages/live_sites dart test` 1085 不变，站点代码零改动。**这是我连续第二轮把"能不能测"数错**（第三十三轮按类型名漏了 baidulive，第四十轮按"有没有 wrapper"多算了 10 家）：**判据必须是"构造函数里有没有可注入的接缝"，逐家看 ctor，不要 grep 关键字。** |
+
