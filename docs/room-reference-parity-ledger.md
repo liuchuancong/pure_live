@@ -485,3 +485,19 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 | P54 | `34e527833` | 行认得出是谁 | 把 P53 的"只带表情"换成**带整条原始消息**：`_originals: Map<String, LiveMessage>`，键是管道原样带过去的 `_lineKey`（有平台 id 用 id，没有就用 `发送者\u0000文本`——正是 gate 自己判定同一条的那对）；镜像 `originalOf(key)` **读一次即删**（`Map.remove` 直接 tear-off），上限 400。房间自己合成的行（连接通知/过滤反馈）没有原件，仍走重建。礼物/付费卡不受影响（P53 起就在站侧分派处进列表）。门：app `dart analyze lib` 0 issues；`flutter test test/live` **77 绿**（唯一红仍是录像 lane；中途 `recorder_page_providers_test`/`room_bottom_panel_test` 报过"加载失败"，单跑各自全绿——是别的 lane 正在写文件的瞬时态，别当真红）。运行期请验：任一 bilibili/斗鱼房，普通观众行应有头像与平台徽章、房管/主播行有角色色，名字色与平台给的一致。 |
 
 - **与另一条 lane 的冲突，本轮只报告不动手**：`room_controller.dart` 现在带着别人的在途改动——`live_site_ingest.dart`（未跟踪）、`_ingest` 启停、`LiveSiteRuntimeInfo` 上"这站要 ingest"的标志、以及 `resolved.lines` 那段取线重写的 hunk。**他们做的正是 Bigo 的逐段 XOR 还原通道**，而 P51（`01075c532`）把 `BigoPlaybackProvider.getLines` 直接判成 `unsupported` ⇒ 中继拿不到地址。用户当时的原话是"我要的是播放器能正常识别的地址，别瞎改"、并拒绝回环中继（[[project-pure-live-bigo-hls-relay]]）；如果那条 lane 的 ingest 就是"修出播放器能认的地址"的那一步，**P51 的无条件拒绝要改成"没有还原通道时才拒绝"**——但那是 bigo/ingest 那条线的决定，本轮不抢改，等它落地或由用户点名。
+
+## 第十六轮（2026-11-05）：底条的"宽档才有"动词，逐个找第二个入口
+
+第 1/3 部分的控件普查上次做在顶部条（T21 就是这么抓出来的），这次做底条。判据：**`_ControlBar` 里每个 `if (wide)`（≥720 px）的动词，在窄窗/手机上必须有第二个入口**，否则那台设备根本没有这个能力。
+
+| 底条 wide-only 动词 | 第二个入口 | 结论 |
+| --- | --- | --- |
+| 截图 `DsIcons.camera` | 房间菜单 `t.room.screenshot`（按 `canCaptureScreenshot` 门控） | 齐 |
+| 音量滑杆 | **静音按钮在所有宽度都在**，滚动/手势调音量在桌面上另有路 | 齐（滑杆本身不是唯一入口） |
+| 录制指示（RecordingIndicator） | 顶部条的 `_PresentationCluster` 两臂都画（P28/P31） | 齐 |
+| 小窗 / 投屏 | 同上，strip 的 cluster + 菜单 `pipOn/Off`、`cast` | 齐 |
+| 窗口全屏 `rectangleHorizontal` | 无（仅桌面且 wide）——但窗口可拉宽，且 `fullscreen`（沉浸）在任何宽度都有 | **不动**，理由记这条 |
+| 竖屏全屏 `rectangleVertical` | 移动端在竖屏布局里有拇指按钮（`room_page.dart:966-971`）；桌面窄窗没有 | **不动**：桌面窄窗=可拉宽，代价低于给一个能拉宽的窗口再加一行 |
+| **音频模式 `headphones`** | **没有**。`setAudioOnly` 只有底条 wide 档一个入口，菜单 24 行里也没有 | ⇒ **P55** |
+
+| P55 | `9e1a470d6` | 手机能切音频模式 | 房间菜单在"画面能做的事"那一组里加一行（截图行之后）：`t.room.audioOnlyMode` / `t.room.restoreVideo` 现成两串（底条在用），`checked: room.audioOnly`，动词 `ref.read(roomProvider.notifier).setAudioOnly`。**不需要门控**：`setAudioOnly` 在没有 handle 时只记状态（`room_controller.dart:1119-1130`），不会挂一个打不开的门。为什么值得做：应用自己在房间进后台时会自动切到这个模式（`room_page.dart:523-532`），却给用手机看直播的人留了唯一一条不能主动选它的路——而省流量/省电恰恰是手机上最需要的。**零新串**（l10n 仍属别的 lane 在飞的树，没跑 slang）。门：`dart analyze lib/modules/live/room` 0 issues；**提交用的是"hunk 切分 + `git apply --cached`"**（`room_page.dart` 当时带着另一条 lane 的 SchedulerBinding→`_writeAfterFrame` 重构 4 个 hunk，他们的改动原样留在工作树）。运行期未验：手机上开房间 → ⋮ 里应有"音频模式"，点了画面停、声音继续；桌面宽窗仍然只有底条那一枚（一行一个入口）。 |
