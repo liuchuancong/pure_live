@@ -1,4 +1,5 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:io' show Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart' show SystemProxyEndpoint;
@@ -286,6 +287,13 @@ final class _SettingsProxyPolicy implements ProxyPolicy {
   @override
   ProxyRoute? routeFor(Uri url, {String? site}) => _route();
 }
+
+/// The platforms whose Cloudflare-blocked API this host can reach through a
+/// native TLS channel: Windows now has one (WinHTTP/Schannel), the other
+/// hosts have none yet, so their lists leave Kick out.
+final nativeTlsPlatformsProvider = Provider<Set<String>>((ref) {
+  return Platform.isWindows ? const {'kick'} : const <String>{};
+});
 
 /// The app's shared transport factory: one place wires the proxy policy,
 /// so the player-adjacent modules (vod, iptv, backups) all honour the

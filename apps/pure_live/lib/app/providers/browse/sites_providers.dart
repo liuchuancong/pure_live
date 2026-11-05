@@ -1,7 +1,11 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 
-import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/app/providers/network/network_providers.dart'
+    show networkFactoryProvider, proxySettingsProvider;
+import 'package:pure_live/app/providers/network/winhttp_live_http.dart' show WinHttpLiveHttp;
 import 'package:pure_live/features/account/account.dart' show douyuLoginStoreProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
@@ -17,9 +21,16 @@ final sitesProvider = Provider<LiveSiteRegistry>((ref) {
   // One transport for every site: the proxy and the network log configured
   // once, rather than each adapter opening its own silent client.
   final http = ref.watch(networkFactoryProvider).create();
+  // Kick's host refuses Flutter's TLS handshake; Windows' WinHTTP answers.
+  // The transport is only handed to Kick, and only where it exists.
+  final kickHttp = Platform.isWindows
+      ? WinHttpLiveHttp(route: () => ref.read(proxySettingsProvider.notifier).route)
+      : null;
+  ref.onDispose(() => kickHttp?.close());
   return LiveSiteRegistry(
     createBuiltInLiveSites(
       http: http,
+      kickHttp: kickHttp,
       // The douyu protocol reads this for every suspected chat, so the
       // shield page's switch bites the next line without a re-open.
       douyuFilterSuspectedAutomated: () => ref.read(danmakuFilterProvider).douyuSuspectedAutomated,
