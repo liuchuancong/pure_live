@@ -8,6 +8,8 @@ import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
+import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
+import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/inke/api/inke_endpoints.dart';
 import 'package:live_sites/src/platforms/inke/api/inke_http.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
@@ -20,6 +22,8 @@ import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_endpoints.dart'
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_endpoints.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
+import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
+import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_endpoints.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
@@ -154,6 +158,40 @@ void main() {
       _expectCapped(requests, YyEndpoints.requestTimeout, atLeast: 2);
     });
 
+    test('huya caps its three request shapes and keeps a wait the caller names', () async {
+      final requests = await _capture((http) async {
+        final transport = HuyaHttp(http);
+        await transport.get(Uri.parse('https://m.huya.com/x'));
+        await transport.postJson(Uri.parse('https://accounts.huya.com/passport/login'), json: const <String, Object>{});
+        await transport.postBytes(Uri.parse('https://wup.huya.com/x'), body: const <int>[1, 2, 3]);
+      });
+      _expectCapped(requests, HuyaEndpoints.requestTimeout, atLeast: 3);
+
+      final token = await _capture(
+        (http) => HuyaHttp(http).postBytes(
+          Uri.parse('https://wup.huya.com/x'),
+          body: const <int>[1, 2, 3],
+          timeout: HuyaEndpoints.tokenTimeout,
+        ),
+      );
+      expect(token.single.timeout, HuyaEndpoints.tokenTimeout, reason: 'the 5 s the cdn-token ask declares');
+    });
+
+    test('niconico caps the page read and the comment poll, not the stream', () async {
+      final requests = await _capture((http) async {
+        final transport = NiconicoHttp(http);
+        await transport.get(Uri.parse('https://live.nicovideo.jp/watch/lv1'));
+        await transport.feed(Uri.parse('https://ccolvideolivedl.live.nicovideo.jp/messages/1'));
+      });
+      _expectCapped(requests, NiconicoEndpoints.requestTimeout, atLeast: 2);
+      final caller = await _capture(
+        (http) =>
+            NiconicoHttp(http)
+                .get(Uri.parse('https://api.live2.nicovideo.jp/api/heartbeat'), timeout: const Duration(seconds: 3)),
+      );
+      expect(caller.single.timeout, const Duration(seconds: 3), reason: 'a caller that names its own wait keeps it');
+    });
+
     test('the eight single-read transports cap their one request shape', () async {
       final oneShots = <(String, Duration, Future<void> Function(LiveHttp))>[
         (
@@ -207,12 +245,14 @@ void main() {
         BilibiliEndpoints.requestTimeout,
         DouyinEndpoints.requestTimeout,
         DouyuEndpoints.requestTimeout,
+        HuyaEndpoints.requestTimeout,
         InkeEndpoints.requestTimeout,
         KickEndpoints.requestTimeout,
         KilakilaEndpoints.requestTimeout,
         KuaishouEndpoints.requestTimeout,
         KugouliveEndpoints.requestTimeout,
         LivemeEndpoints.requestTimeout,
+        NiconicoEndpoints.requestTimeout,
         ShowroomEndpoints.requestTimeout,
         SoopEndpoints.requestTimeout,
         TiktokEndpoints.requestTimeout,

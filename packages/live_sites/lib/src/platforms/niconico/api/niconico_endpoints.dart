@@ -2,6 +2,16 @@
 /// §7.2: endpoint shapes and the room-id grammar live here; parsing lives in
 /// `parsers/`).
 abstract final class NiconicoEndpoints {
+  /// How long one request may take when the caller names no wait of its
+  /// own. The room's open awaits these answers, and the transport waits for
+  /// nothing by itself: an edge that accepts the connection and never
+  /// answers would hold the room's spinner forever. 20 s, the cap this
+  /// repo's platforms that set one already use.
+  ///
+  /// Streaming is not covered here: niconico's comment-server answer runs
+  /// for tens of seconds by design and keeps its caller's own value.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// The desktop user agent every page, list and media request is sent with.
   static const String userAgent = 'Mozilla/5.0';
 

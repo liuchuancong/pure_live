@@ -23,6 +23,16 @@ abstract final class HuyaEndpoints {
   /// Longest wait for a WUP play-token answer.
   static const Duration tokenTimeout = Duration(seconds: 5);
 
+  /// How long one request may take when the caller names no wait of its
+  /// own. The room's open awaits these answers, and the transport waits for
+  /// nothing by itself: an edge that accepts the connection and never
+  /// answers would hold the room's spinner forever. 20 s, the cap this
+  /// repo's platforms that set one already use.
+  ///
+  /// Streaming is not covered here: niconico's comment-server answer runs
+  /// for tens of seconds by design and keeps its caller's own value.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// A desktop Chrome UA for room pages (the alias lookup).
   static const String desktopUserAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '

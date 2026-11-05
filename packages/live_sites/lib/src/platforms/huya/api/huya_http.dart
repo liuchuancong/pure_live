@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 
@@ -23,7 +24,15 @@ final class HuyaHttp {
   /// parsers decide what 403/422/429/5xx mean for their endpoint.
   Future<({String text, int status})> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: huyaSiteId, url: url, headers: headers));
+      final response = await http.send(
+        LiveRequest.custom(
+          method: 'GET',
+          site: huyaSiteId,
+          url: url,
+          headers: headers,
+          timeout: HuyaEndpoints.requestTimeout,
+        ),
+      );
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -46,6 +55,7 @@ final class HuyaHttp {
           body: jsonEncode(json),
           contentType: 'application/json',
           headers: headers,
+          timeout: HuyaEndpoints.requestTimeout,
         ),
       );
       return (text: response.text, status: response.statusCode);
@@ -56,7 +66,8 @@ final class HuyaHttp {
   }
 
   /// POSTs [body] as raw bytes (a WUP RPC packet, whose body the caller already
-  /// encoded); bad statuses are ordinary answers.
+  /// encoded); bad statuses are ordinary answers. [timeout] names the caller's own
+  /// wait, which is what every call site does.
   Future<({Uint8List bytes, int status})> postBytes(
     Uri url, {
     required List<int> body,
@@ -71,7 +82,7 @@ final class HuyaHttp {
           url: url,
           bodyBytes: Uint8List.fromList(body),
           headers: headers,
-          timeout: timeout,
+          timeout: timeout ?? HuyaEndpoints.requestTimeout,
         ),
       );
       return (bytes: response.bodyBytes, status: response.statusCode);
