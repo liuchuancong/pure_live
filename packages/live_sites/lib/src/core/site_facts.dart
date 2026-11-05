@@ -16,9 +16,6 @@ abstract final class SiteIds {
   /// The bilibili platform id.
   static const String bilibili = 'bilibili';
 
-  /// The cc platform id.
-  static const String cc = 'cc';
-
   /// The chzzk platform id.
   static const String chzzk = 'chzzk';
 
@@ -54,9 +51,6 @@ abstract final class SiteIds {
 
   /// The liveme platform id.
   static const String liveMe = 'liveme';
-
-  /// The looklive platform id.
-  static const String lookLive = 'looklive';
 
   /// The missevan platform id.
   static const String missevan = 'missevan';
@@ -182,6 +176,17 @@ abstract final class SiteFacts {
     'taobao.com',
     'm.tb.cn',
   };
+
+  /// Platforms whose recommendation feed only answers a signed-in request;
+  /// no anonymous room list exists. The popular page still offers their web
+  /// directory as the fallback; search keeps them for room-id/link lookup.
+  static const Set<String> noAnonymousDiscovery = {'tiktok', 'xiaohongshu'};
+
+  /// Platforms whose API host refuses Flutter's dart:io TLS fingerprint
+  /// (Cloudflare). Windows now has a native WinHTTP channel; other hosts
+  /// fall back to the platform's web directory, and the search lists leave
+  /// the platform out until such a channel exists.
+  static const Set<String> requiresNativeTls = {'kick'};
 
   /// The platforms whose danmaku reports super chats or paid messages like
   /// them, and the unit of their `LiveSuperChatMessage.price`:

@@ -113,7 +113,6 @@ const List<String> _audiencePlatformOrder = [
   'huya',
   'douyin',
   'kuaishou',
-  'cc',
   'twitch',
   'soop',
   'yy',
@@ -126,7 +125,6 @@ const List<String> _audiencePlatformOrder = [
   'xiaohongshu',
   'niconico',
   'weibo',
-  'looklive',
 ];
 
 List<LiveSite> _orderedSites(Iterable<LiveSite> sites) {

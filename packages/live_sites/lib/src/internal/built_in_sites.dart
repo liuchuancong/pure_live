@@ -8,8 +8,6 @@ import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
-import 'package:live_sites/src/platforms/cc/api/cc_http.dart';
-import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
@@ -35,8 +33,6 @@ import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
 import 'package:live_sites/src/platforms/liveme/liveme_site.dart';
-import 'package:live_sites/src/platforms/looklive/api/looklive_http.dart';
-import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
@@ -86,6 +82,10 @@ import 'package:live_websocket/live_websocket.dart' show exactWebSocketConnect;
 /// "过滤疑似机器人弹幕" for every suspected chat; null keeps them.
 List<LiveSite> createBuiltInLiveSites({
   LiveHttp? http,
+  // Kick's API host refuses Flutter's TLS fingerprint; the app hands a
+  // native Windows channel here (null elsewhere, which leaves Kick on the
+  // shared transport and off the host's platform lists).
+  LiveHttp? kickHttp,
   DouyuLoginStore? douyuLogin,
   List<String> Function()? twitchLanguages,
   bool Function()? youtubeAllChat,
@@ -114,13 +114,11 @@ List<LiveSite> createBuiltInLiveSites({
     ),
     AcfunSite(http: AcfunHttp(transport)),
     BigoSite(http: BigoHttp(transport)),
-    CcSite(http: CcHttp(transport)),
     ChzzkSite(http: ChzzkHttp(transport)),
     Fc2LiveSite(http: Fc2LiveHttp(transport)),
-    KickSite(http: KickHttp(transport)),
+    KickSite(http: KickHttp(kickHttp ?? transport)),
     NiconicoSite(http: NiconicoHttp(transport)),
     PicartoSite(http: PicartoHttp(transport)),
-    LookliveSite(http: LookliveHttp(transport)),
     InkeSite(http: InkeHttp(transport)),
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),

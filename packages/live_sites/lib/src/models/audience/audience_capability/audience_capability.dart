@@ -67,11 +67,6 @@ const Map<String, LiveAudienceCapability> kAudienceCapabilities = {
     hasTotalViewers: false,
     onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'cc': LiveAudienceCapability(
-    hasPopularity: true,
-    hasTotalViewers: false,
-    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
-  ),
   'twitch': LiveAudienceCapability(
     hasPopularity: false,
     hasTotalViewers: false,
@@ -177,11 +172,6 @@ const Map<String, LiveAudienceCapability> kAudienceCapabilities = {
     hasPopularity: true,
     hasTotalViewers: false,
     onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
-  ),
-  'looklive': LiveAudienceCapability(
-    hasPopularity: true,
-    hasTotalViewers: false,
-    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
   // Missevan's public heat is `score`; listeners arrive through chat only.
   'missevan': LiveAudienceCapability(

@@ -107,17 +107,41 @@ List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines, {String? title, Strin
   };
   return [
     for (final line in lines)
-      PlayerSource.of(
-        id: SourceId('live:${line.lineLabel ?? ''}:${line.url.hashCode}'),
-        uri: Uri.parse(line.url),
-        type: SourceType.live,
-        protocol: SourceProtocol.fromScheme(Uri.parse(line.url).scheme),
-        format: SourceFormat.fromUri(Uri.parse(line.url)),
-        headers: line.headers.isEmpty ? null : SourceHeaders(line.headers.toMap()),
-        title: title == null || title.isEmpty ? null : title,
-        metadata: metadata.isEmpty ? null : metadata,
-      ),
+      if (Uri.tryParse(line.url) case final uri? when uri.host.isNotEmpty)
+        PlayerSource.of(
+          id: SourceId('live:${line.lineLabel ?? ''}:${line.url.hashCode}'),
+          uri: uri,
+          type: SourceType.live,
+          protocol: SourceProtocol.fromScheme(uri.scheme),
+          format: _sourceFormatOf(line, uri),
+          headers: line.headers.isEmpty ? null : SourceHeaders(line.headers.toMap()),
+          title: title == null || title.isEmpty ? null : title,
+          metadata: metadata.isEmpty ? null : metadata,
+        ),
   ];
+}
+
+/// The line's container for the engine. The URL's extension is the first
+/// answer; a platform whose CDN address has none (FC2's playlist, YouTube's
+/// `videoplayback`) still declared its format on the line, and that
+/// declaration is what lets the selector and the engine treat it as HLS/FLV
+/// rather than as an unknown blob.
+SourceFormat _sourceFormatOf(LivePlayLine line, Uri uri) {
+  final byUri = SourceFormat.fromUri(uri);
+  if (byUri.isKnown) return byUri;
+  return switch (line.format) {
+    LiveStreamFormat.hls => SourceFormat.m3u8,
+    LiveStreamFormat.dash => SourceFormat.mpd,
+    LiveStreamFormat.flv => SourceFormat.flv,
+    LiveStreamFormat.mpegts => SourceFormat.mpegTs,
+    LiveStreamFormat.mp4 => SourceFormat.mp4,
+    LiveStreamFormat.rtmp ||
+    LiveStreamFormat.rtsp ||
+    LiveStreamFormat.udp ||
+    LiveStreamFormat.rtp ||
+    LiveStreamFormat.webrtc ||
+    LiveStreamFormat.other => SourceFormat.unknown,
+  };
 }
 
 /// The sources for a line switch: fresh lines, the room's surface identity

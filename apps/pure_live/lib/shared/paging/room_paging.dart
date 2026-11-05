@@ -7,18 +7,17 @@ import 'package:live_sites/live_sites.dart';
 ///
 /// The reference tuned these to the platforms' own windows (3.x's
 /// `popularWindowSizes`): Douyu's `allpage` answers 40 whatever is asked,
-/// Huya's list ~120, SOOP 60, TwitCasting a 60-room window, Twitch and CC
-/// 100, Douyin 20. The rest are asked the adapters' default 30. The request
-/// size stays constant for a whole walk — it is never the viewer's display
-/// page size, so changing that size cannot slide the server's page
-/// boundaries under an open feed.
+/// Huya's list ~120, SOOP 60, TwitCasting a 60-room window, Twitch 100,
+/// Douyin 20. The rest are asked the adapters' default 30. The request size
+/// stays constant for a whole walk — it is never the viewer's display page
+/// size, so changing that size cannot slide the server's page boundaries under
+/// an open feed.
 int roomFeedRequestSize(String platform) => switch (platform) {
   SiteIds.douyu => 40,
   SiteIds.huya => 120,
   SiteIds.soop => 60,
   SiteIds.twitcasting => 60,
   SiteIds.twitch => 100,
-  SiteIds.cc => 100,
   SiteIds.douyin => 20,
   _ => 30,
 };

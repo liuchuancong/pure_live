@@ -4,10 +4,10 @@ import 'package:live_sites/live_sites.dart' show SiteIds;
 ///
 /// Only the platforms whose adapters actually consume a login cookie have an
 /// entry: bilibili, douyin, douyu, huya, kuaishou, twitch and yy are built
-/// into the registry today, and cc and soop are listed for the capability a
-/// sibling workstream adds. A platform left out (chzzk, acfun, youtube, …)
-/// takes no cookie at all, so a stored login would tell the viewer nothing
-/// about it and it has no business being on the page.
+/// into the registry today, and soop is listed for the capability a sibling
+/// workstream adds. A platform left out (chzzk, acfun, youtube, …) takes no
+/// cookie at all, so a stored login would tell the viewer nothing about it and
+/// it has no business being on the page.
 enum AccountCheckKind {
   /// Asks the platform who its stored cookie signs in (bilibili, douyin).
   online,
@@ -75,7 +75,6 @@ final List<AccountPlatform> accountPlatforms = [
   AccountPlatform(id: SiteIds.douyin, check: AccountCheckKind.online, website: Uri.https('live.douyin.com', '/')),
   AccountPlatform(id: SiteIds.kuaishou, website: Uri.https('live.kuaishou.com', '/')),
   AccountPlatform(id: SiteIds.yy, website: Uri.https('www.yy.com', '/')),
-  AccountPlatform(id: SiteIds.cc, website: Uri.https('cc.163.com', '/'), usedByRequests: false),
   AccountPlatform(
     id: SiteIds.twitch,
     check: AccountCheckKind.twitch,

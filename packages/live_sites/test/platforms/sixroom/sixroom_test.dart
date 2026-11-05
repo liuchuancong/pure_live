@@ -3,6 +3,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
+import 'package:live_sites/src/platforms/sixroom/api/sixroom_endpoints.dart';
 import 'package:live_sites/src/platforms/sixroom/danmaku/sixroom_danmaku_codec.dart';
 import 'package:test/test.dart';
 
@@ -118,6 +119,31 @@ void main() {
           'fid': '0',
           'content': {'item': '5', 'itemName': '花', 'num': 1},
         }),
+        isNull,
+      );
+    });
+  });
+
+  group('stream address', () {
+    test('both the v and s stream-name prefixes name the room', () {
+      expect(
+        SixroomEndpoints.mediaUri(userId: '69716930', liveId: '222505605', flvTitle: 'v69716930-222505605'),
+        Uri.parse('https://wlive.6rooms.com/httpflv/v69716930-222505605.flv'),
+      );
+      expect(
+        SixroomEndpoints.mediaUri(userId: '69716930', liveId: '222505605', flvTitle: 's69716930-222505605'),
+        Uri.parse('https://wlive.6rooms.com/httpflv/s69716930-222505605.flv'),
+      );
+      expect(
+        SixroomEndpoints.mediaUri(userId: '69716930', liveId: '222505605', flvTitle: 's69716930-222505605-many'),
+        Uri.parse('https://wlive.6rooms.com/httpflv/s69716930-222505605-many.flv'),
+      );
+    });
+
+    test('another room’s name and another prefix stay out', () {
+      expect(SixroomEndpoints.mediaUri(userId: '69716930', liveId: '222505605', flvTitle: 's69716930-1'), isNull);
+      expect(
+        SixroomEndpoints.mediaUri(userId: '69716930', liveId: '222505605', flvTitle: 'x69716930-222505605'),
         isNull,
       );
     });

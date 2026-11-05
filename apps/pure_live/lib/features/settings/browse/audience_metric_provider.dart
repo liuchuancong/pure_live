@@ -33,7 +33,6 @@ const String kRealOnlinePlatformsPref = 'browse.realOnlinePlatforms';
 const List<String> kDefaultRealOnlinePlatforms = [
   SiteIds.douyin,
   SiteIds.kuaishou,
-  SiteIds.cc,
   SiteIds.twitch,
   SiteIds.soop,
   SiteIds.acfun,

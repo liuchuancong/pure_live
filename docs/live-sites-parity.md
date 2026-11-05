@@ -5,6 +5,8 @@
 > 规则：参考仓库只读，不照搬其架构（参考是 `LiveSite` + 可选接口，目标是 `capability<T>()`）；目标源码注释用英文，本文用中文；平台特例只留在 `platforms/<id>/`；不伪造能力（`capability<T>()` 返回 null 即不支持）。每次改动后 `dart analyze packages/live_sites` 必须 0 issues。
 >
 > 盘点日期：2026-10-27。基线：`dart analyze packages/live_sites` 通过。
+>
+> 2026-11-05：**CC 与 LOOK 已从 `live_sites` 删除**，当前 32 站；下文所有 34 站的对照与探针是删除前的历史记录。
 
 ---
 
@@ -404,3 +406,56 @@
 - `LiveSiteDirectoryPager` / `LiveSiteCategoryDirectoryProvider`（仅 cc）：目标 App 用 `areaRequestSize` + `RoomWalk` 本地分页，offset 由站点请求窗口决定，与参考固定 30 的效果一致。
 - `CatchUp`（IPTV 追时移）与 `epgId/currentProgramme*`：参考只有 IPTV 路径构造 `CatchUp`，34 个直播站点没有一个写入 epg 字段 → `live_sites` 无需建模。
 - `LiveDirectoryNotice`：展示层常驻文案，目标未消费 → 不加。
+
+## 8. 热门进房探针（2026-11-05）
+
+用 `createBuiltInLiveSites()` 直接跑 34 站：每站取发现/热门第一页的第一间直播房，走 `getRoom → getQualities → getLines`，每段 20 秒预算。直连与本机代理 `127.0.0.1:7890` 各跑一遍。
+
+- **直连正常（25 站）**：斗鱼、虎牙、抖音、B站、快手、AcFun、BIGO、CC、CHZZK、Inke、京东直播、KiLaKiLa、酷狗、猫耳、PandaLive、Showroom、Sixroom、Liveme、YY、SOOP、百度直播、微博等。
+- **直连失败、开代理恢复**：YouTube、Twitch、Picarto（直连 403）、17LIVE（直连 502）、Steam Broadcast。⇒ 这些不是适配器坏了，是本机网络不可达；App 里 `proxy.mode` 当前是 `off`，打开 `127.0.0.1:7890` 即可。
+- **两种路由都失败**：
+  - Kick：Cloudflare 拒绝 dart:io 的 TLS 指纹；参考同样注明需要系统/浏览器 TLS。
+- **2026-11-05 全站兜底**：热门页恢复显示每个未退役平台；原生列表为空或失败时，页内给出“打开网页版”，由 `WebSearchPage`（`webview_all`、桌面 UA）加载 `webLiveUrl` 的站点目录。Windows 上 Kick 走原生 WinHTTP；其他系统 Kick/无匿名列表的平台走网页版。LOOK 因停运仍不出现；Kick 以外的网页在 WebView 内可看，房间条只为有原生传输的平台提供。
+  - FC2：代理下播放控制握手仍超时（探针用 Dio 代理，不走 App 的全局 `HttpOverrides`，App 开代理后需复验）。
+  - Niconico：代理下仍超时，疑似线路/区域。
+  - Twitcasting：代理下 `top/category` 返回空窗，不是报错，是当前地区没有可推荐直播。
+- **实现上已知为空**：TikTok、小红书没有匿名可达的热门列表；LOOK Live 推荐当前返回空页。
+- **2026-11-05 收口**：LOOK 直播官网公告 2026-10-12 起业务调整、11-01 关闭开播，目录持续空 ⇒ `SiteFacts.retired` 加 `looklive` 与 `look.163.com`/`api.look.163.com`，热门与搜索平台列表不再列它；TikTok、小红书进 `SiteFacts.noAnonymousDiscovery`（搜索仍保留，按房间号/链接查找可用）；Twitcasting 官网首页当前明示“没有直播中的视频”，不是适配器问题；Kick 在 Windows 走 `WinHttpLiveHttp`（WinHTTP/Schannel，ffi，isolate，按应用代理路由），其他系统回退网页版。
+- **注意**：探针不经过 App 的 `AppProxyHttpOverrides`、Cookie 和登录态，结论只用于区分“接口/解析坏了”还是“网络/平台拒绝”。站点端点与参考同名实现逐字一致（Kick/Picarto/TwitCasting/17LIVE），没有发现移植漂移。
+
+## 9. 搜索逻辑对照（2026-11-05）
+
+参考 `E:\study\Pure_live\apps\pure_live\lib\features\search`，目标 `apps/pure_live/lib/modules/live/search`；插件按目标要求保留 `webview_all`。
+
+- 已对齐：链接/分享文本回车先解析进房、失败再回落关键词搜索；输入框链接条只在平台真解析出房间后出现；历史 20 条/200 字/忽略大小写去重；隐藏离线保留回放（`isPlayableNow`），并提供“只藏了离线”的空态一键显示；排序按 直播>回放>离线 → 观众/关注 → 用户平台顺序，四种模式逐级比较；全部范围也搜主播；每站 12 秒超时；TwitCasting 关键词截 100 字；空提交提示不丢结果；切平台保留输入并重搜；浏览器搜索桌面 UA、无 WebView 自动转系统浏览器、失败可转、房间条解析成功才出现且可关；`SearchCapability` 覆盖说明与平台范围面板（国内/海外分组、仅国内、全选、最后一项锁定、`search.allExcluded` 持久化、至少保留一站）；逐站流式合并结果 + 失败平台横幅（重试/调整范围）；不分页平台到第一页即止；主播结果带 `roomId` 时直接进房（B站/斗鱼/虎牙/快手/CC/AcFun/YY 已补），没有房间号时回退到主页；Windows 无 WebView2 的预询问弹窗（取消/下载/系统浏览器）。
+- 未对齐：本地 LinkParser（目标目前用平台 resolver 替代；直链解析本地完成，短链才会走一次请求，行为等价但不是纯本地）。
+
+## 10. 播放地址形态审计（2026-11-05）
+
+口径：**32 个平台站**（CC、LOOK 于同轮删除；39 是删除前 `LivePlayLine.of` 的构造点数量——B 站、CC、Inke、YY、虎牙各有直播/回放两处，34 + 5 = 39）。
+
+| 站点 | 不规则形态 | 处理位置 | 现状 |
+| --- | --- | --- | --- |
+| YY | `cdn_info.url` 可能是协议相对 `//host/…` | `yy_play_parser.dart:92` | 先补 `https:` 再校验/建线路 |
+| 斗鱼 | `rtmp_live` 可为绝对 `rtmp://`；`rtmp_url`/`flv_url` 是基址，需与 `rtmp_live` 拼接；字段带 HTML 实体 | `douyu_play_parser.dart:247` | 解实体 + 拼接；rtmp 原样交给播放器 |
+| 虎牙 | `sFlvUrl`/`sHlsUrl` 基址 + 流名 + 签名 query；`http://*.huya.com` 要升 https | `huya_play_parser.dart:208`/`369` | `secureBase` + 拼接 |
+| SOOP | `view_url` 基址后追加 `?aid=` | `soop_room_parser.dart:790` | 拼接 |
+| B 站直播 | 播放地址由 `host + base_url + extra` 三段拼成 | `bilibili_play_parser.dart:196` | 拼接后校验 http(s) |
+| 百度直播 | 主 CDN http→https；`flv-live` 的 https→http（证书与主机不匹配） | `baidulive_play_parser.dart:112` | `mediaUrl` 改写 scheme |
+| 微博回放 | 回放地址 http→https | `weibo_json.dart:120` | `replayUrl` 改写 |
+| Inke | Zego/Wangsu 地址 App 给 http，按固定 host + path 校验 | `inke_room_parser.dart:546` | 保留 http |
+| FC2 | playlist 地址没有 `.m3u8` 后缀，按控制消息声明格式 | `fc2live_play_parser.dart:276` | 不靠后缀推断 |
+
+- HLS 主播放列表里的相对变体地址（Chzzk/Kick/Niconico/PandaLive/Picarto/Twitch/YouTube/JD）都由 `resolveHlsVariantUri`/`master.resolve` 解析，不进入线路地址。
+- 通用兜底：`normalizePlayUrl`（`common/normalization/site_urls.dart`）装在所有线路的唯一入口 `LivePlayLine.of` 上：去引号与空白、`\/`→`/`、`&amp;`→`&`、`//`→https、`http:/`→`http://`、裸域名补 https、`/path` 有 base 时解析；rtmp/rtsp 与其他未知形态原样保留。
+- CC 的 `videourl`/`bakvideourl` 与参考的 `jsonUrl` 一样要求绝对 http(s)，不是缺口（已核对参考 `cc_api.dart` 的 `_answerLines`；CC 已于 2026-11-05 删除）。
+- 结论：没有站点因地址形态被丢线；上表形态与参考逐站一致，参考没有额外归一化的站，目标也没有多出行为。
+
+### 10.1 播放器可识别性检测（2026-11-05）
+
+- 探测：`cd packages/live_sites && dart run tool/capability_probe.dart --only=hot,room,qualities,lines,plan --deep --workers=3 --timeout=20`，另用临时用例打印每条线路的 scheme/扩展名（跑完即删）。这一轮在删除 CC/LOOK 之前，覆盖 34 站。
+- 18 个能取到线路的站全部产出**绝对 http(s) URL**，扩展名只有 `.flv` / `.m3u8`；没有 `//`、缺 scheme、带引号或 HTML 实体残留。
+- **唯一的地址级真 bug**：六间房 inroom 的流名从 `v<uid>-<liveId>` 变成 `s<uid>-<liveId>`，`SixroomEndpoints.mediaUri` 只认 `v` ⇒ 解析层直接判为不可播。已改为接受 `[vs]` 前缀并补测试（`sixroom_test.dart` 新增 2 条）。
+- **播放器侧识别**：`roomSourcesOf` 原来只按 URL 扩展名推断 `SourceFormat`；FC2 这类无扩展名的 HLS 线路会得到 `unknown`。现在扩展名没说时回退到 `LivePlayLine.format`（HLS→`m3u8`、FLV→`flv`、MPEG-TS→`mpegTs`、DASH→`mpd`、MP4→`mp4`）；连 host 都解析不出的线路不再交给播放器。
+- **不是地址问题、未在解析层改**：Bigo 分片加扰（地址正常，播放器读到的是被 XOR 的 TS）；Showroom CDN 403（同一 `.m3u8` 带 UA/Referer/Origin 均 403）；YouTube/Twitch/CC/FC2/Niconico/KiLaKiLa/YY/Inke/Steam/TwitCasting 直连超时；Picarto 403；17LIVE 502；TikTok/小红书/TwitCasting 无匿名直播房；LOOK 退役。
+- 结论：删除前 34 站的播放地址形态本身已全部是播放器可解析的绝对 http(s) URL；地址层只剩六间房 `s` 前缀这一个真 bug，已修。其余无法播放的原因分别是网络不可达、CDN 拒绝或内容保护，不是地址形态。

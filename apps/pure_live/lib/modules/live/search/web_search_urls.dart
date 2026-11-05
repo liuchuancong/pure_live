@@ -12,7 +12,6 @@ Uri? webSearchUrl(String platform, String keyword) {
     'huya' => 'https://www.huya.com/search?hsk=$query',
     'douyin' => 'https://www.douyin.com/search/$query?type=live',
     'kuaishou' => 'https://live.kuaishou.com/search?keyword=$query',
-    'cc' => 'https://cc.163.com/search/all/?query=$query&only=all',
     'twitch' => 'https://www.twitch.tv/search?term=$query',
     'soop' => 'https://www.sooplive.co.kr/?szKeyword=$query',
     'yy' => 'https://www.yy.com/search-$query',

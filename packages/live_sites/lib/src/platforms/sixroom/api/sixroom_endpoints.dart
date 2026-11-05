@@ -204,11 +204,12 @@ abstract final class SixroomEndpoints {
 
   /// The FLV stream of a room: `https://wlive.6rooms.com/httpflv/<name>.flv`
   /// when [userId] and [liveId] are ids and [flvTitle] is
-  /// `v<userId>-<liveId>`, optionally with `-many`; null otherwise. The URL
+  /// `v<userId>-<liveId>` (the older spelling) or `s<userId>-<liveId>` (the
+  /// encoder's current one), optionally with `-many`; null otherwise. The URL
   /// is not signed and has no expiry.
   static Uri? mediaUri({required String userId, required String liveId, required String flvTitle}) {
     if (!isUserId(userId) || !isUserId(liveId)) return null;
-    if (!RegExp('^v${RegExp.escape(userId)}-${RegExp.escape(liveId)}(?:-many)?\$').hasMatch(flvTitle)) {
+    if (!RegExp('^[vs]${RegExp.escape(userId)}-${RegExp.escape(liveId)}(?:-many)?\$').hasMatch(flvTitle)) {
       return null;
     }
     return Uri.parse('https://$mediaHost/httpflv/$flvTitle.flv');

@@ -23,7 +23,7 @@ abstract final class LiveQualityLabel {
     final mapped = switch (platformToken) {
       'bilibili' => _bilibili(token, id),
       'douyin' => _douyin(token),
-      'douyu' || 'huya' || 'kuaishou' || 'cc' || 'yy' => _generic(token),
+      'douyu' || 'huya' || 'kuaishou' || 'yy' => _generic(token),
       'soop' => _soop(token),
       'twitch' => _twitch(raw, token),
       'iptv' => token == 'default' ? '默认' : null,
