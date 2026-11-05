@@ -11,7 +11,7 @@
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
 4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。
 5. **还欠的两笔小账**（都被别人的在途改动挡住，2026-11-05 复核仍挡）：`displayLabel` 的显示位只剩 `player_surface.dart:430,1246`（被别人 `:81` 的 `open(known: room)` hunk 挡住）与 `multiview_page.dart:1099,1104`（被别人 `:535` 的 `openRoom(room:)` hunk 挡住）；getter 早已在 HEAD（`34578f23c`），谁先落地都不影响编译。开工前 `git status` 复核，文件干净就把这两处补完再划掉。
-6. **两个等点名的决定**：①Bigo 的 HLS 已实测是逐段加扰（`#EXT-X-BIGO-WEB-PROTECTION:SEED=…`），我们包里有还原算法但没有中继 ⇒ 现在进 bigo 房基本黑屏（参考实测直连 11 次成 1 次）。选 **1** 我做环回中继（并给 `LivePlayLine` 一个"要先还原"的表达），选 **2** 我让它带可读原因失败。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前两样都不做**。
+6. **决定只剩一个**：①**Bigo 已定案并落地**（用户拒绝回环中继 ⇒ `01075c532` 让 `getLines` 带可读原因失败，见「第十二轮」；不要再提做中继）。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
 
 ## 车道规格
@@ -451,7 +451,7 @@ PLAN-CHECK huya     没有注册 resolver
 
 - **此前的事实**：`BigoHlsProtection`（seed 读取 + 两段 TS 包头 XOR）**全包零调用者、零测试**——第七例"有写没读"。bigo 房的线路照旧交给 mpv，mpv 拿到的是加扰段 ⇒ 黑屏 + 转圈；录像订阅要是接上，写进盘的也是加扰包。
 - **为什么不"先看一眼播放列表再决定"**：bigo 的播放地址**一次性**（`singleUse`，站方只发一次用的 URL）。为了判断加扰而去 GET 它，就是把那次机会花在判断上；不加扰的房间本来能播，也会被我们烧掉地址。⇒ 用一次多余请求换"可能有一间房不需要拒绝"，代价落在真能播的那批上，不划算。
-- **改法（`010755321`）**：`BigoPlaybackProvider.getLines` 直接 `left(LiveSiteError.unsupported(...))`，message 是一句中文原因（"Bigo 的网页直播流是逐段加密的（播放列表带 #EXT-X-BIGO-WEB-PROTECTION），本版不转码这段流，无法播放"）。**不动 getQualities**：直播中/有密码/付费/下线这些房间事实照旧报（下线仍是 content-unavailable），只是播不了。房间侧不用改：`pictureStateOf` 已把 `state.error` 当原因行显示（`room_status.dart:137`）。`LiveSiteError.unsupported.isTransient=false` ⇒ 上层不会自动重试。
+- **改法（`01075c532`）**：`BigoPlaybackProvider.getLines` 直接 `left(LiveSiteError.unsupported(...))`，message 是一句中文原因（"Bigo 的网页直播流是逐段加密的（播放列表带 #EXT-X-BIGO-WEB-PROTECTION），本版不转码这段流，无法播放"）。**不动 getQualities**：直播中/有密码/付费/下线这些房间事实照旧报（下线仍是 content-unavailable），只是播不了。房间侧不用改：`pictureStateOf` 已把 `state.error` 当原因行显示（`room_status.dart:137`）。`LiveSiteError.unsupported.isTransient=false` ⇒ 上层不会自动重试。
 - **删掉的死路**：`BigoSite.playPlaylist`（唯一调用者没了）与 `BigoStudioUse.input`（随之不可达）以及那句"play resolve 不再追问"的分支。**没删** `BigoHlsProtection`：它是"这房间为什么不能播"的根据，也是将来真要做还原时唯一已有的算法——本轮给它补了测试（seed 从 `VERSION=1,SEED=…` 的属性表里读、普通播放列表返回 null、transform 自反）。
 - 门：live_sites `dart analyze lib test` 0 issues、`dart test` **475 全绿**（上一轮那条搜索 lane 的 `site_facts_test` 红已自消）；app `dart analyze lib` 0 issues。**运行期待验**：进一间 bigo 房，画面位应该直接说原因而不是黑屏转圈；录像订阅同样应带这个原因失败。
 - **已知过窄之处**（写在这里，别当隐藏假设）：若哪天出现**不加扰**的 bigo 网页流，这条一律拒绝会把它一起拒了。到时候选的更细做法是：`getLines` 交回地址并在 `LivePlayLine` 上带一个"需要还原"的表达（P44 那节写过），由能转码的一方决定播或不播；**没有中继之前，这条拒绝仍是正确答案**。
