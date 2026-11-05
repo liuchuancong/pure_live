@@ -115,7 +115,9 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     final sites = {for (final site in ref.read(sitesProvider).all) site.manifest.id: site};
     return [
       for (final id in order)
-        if (sites[id] case final site? when site.capability<LiveDiscoveryProvider>() != null && display.shown(id)) id,
+        if (sites[id] case final site?
+            when site.capability<LiveDiscoveryProvider>() != null && display.shown(id) && !SiteFacts.isRetired(id))
+          id,
     ];
   }
 

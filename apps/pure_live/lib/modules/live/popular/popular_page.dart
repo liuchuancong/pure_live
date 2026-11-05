@@ -252,6 +252,39 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
         );
     final wide = MediaQuery.sizeOf(context).width >= 768;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    // A platform whose native feed ended empty or failed still has its own
+    // web directory: the native channel is not the only way in.
+    final webUrl = webLiveUrl(platform);
+    if (webUrl != null && state.rooms.isEmpty && !state.loading && (state.error != null || !state.hasMore)) {
+      final site = ref.read(sitesProvider).getById(platform);
+      final title = site == null ? platform : localizedSiteName(site);
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.globe),
+          title: Text(t.search.webVersionTitle),
+          description: Text(state.error?.message ?? t.search.webVersionDescription),
+          actions: [
+            if (state.error != null)
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                onPressed: () => unawaited(controller.refresh(platform)),
+                leading: const DsIcon(DsIcons.refreshCw, size: 16),
+                child: Text(t.common.retry),
+              ),
+            DsButton(
+              onPressed: () => unawaited(
+                context.push(
+                  RouteNames.webSearch,
+                  extra: WebSearchRequest(uri: webUrl, platform: platform, title: title),
+                ),
+              ),
+              leading: const DsIcon(DsIcons.globe, size: 16),
+              child: Text(t.search.webVersion),
+            ),
+          ],
+        ),
+      );
+    }
     // The platform's own recommendation order, shown as-is.
     final ordered = state.rooms;
     // Desktop pages slice the platform catalogue locally, so fixed-window
@@ -259,7 +292,8 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
     // way, and the viewer's page size never moves a server boundary.
     final rooms = wide ? roomPageOf(ordered, state.page, state.pageSize) : ordered;
     Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
-      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+      void open() =>
+          openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: rooms);
       return RoomCardMenu(
         room: room,
         onOpen: open,
@@ -500,7 +534,8 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
     final pageSize = _pageSize;
     final rooms = wide ? roomPageOf(search.rooms, page, pageSize) : search.rooms;
     Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
-      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+      void open() =>
+          openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: rooms);
       return RoomCardMenu(
         room: room,
         onOpen: open,
