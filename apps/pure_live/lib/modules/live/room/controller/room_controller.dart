@@ -155,8 +155,9 @@ final class RoomDanmakuPipeline {
         inner: FlameBarrageSink(barrage),
         showFixedTop: showFixedTop,
         showFixedBottom: showFixedBottom,
-        // Drained on read: a line is drawn once, and the room runs for hours.
-        emotesOf: (id) => _emotesById.remove(id) ?? const [],
+        // Read once: the row is drawn from what the site sent, then the copy
+        // goes, so the map cannot grow with the room.
+        originalOf: _originals.remove,
       ),
       config: _danmakuConfigFor(filter, repeat),
       policy: _shieldPolicyFor(shield),
@@ -214,12 +215,13 @@ final class RoomDanmakuPipeline {
   /// a platform's re-poll of one purchase does not stack up (see [accept]).
   final Set<String> _paidShown = <String>{};
 
-  /// The emoticons of a chat line, under the platform's id for that line,
-  /// between the site's message and the mirror's: the filters judge the text
-  /// and rebuild the line they accept, and the pictures a platform names
-  /// inside that text are not something it can rebuild. Bounded and drained on
-  /// read, because a room runs for hours and a line is drawn once.
-  final Map<String, List<LiveEmote>> _emotesById = <String, List<LiveEmote>>{};
+  /// The site's own message behind a line the pipeline is about to accept,
+  /// under the key [_lineKey] the mirror asks with. The filters judge a line and
+  /// then rebuild it, and a rebuild cannot invent what the platform said about
+  /// who spoke: the avatar, its badges and role, the name colour it chose, the
+  /// emoticons inside the text. Bounded and drained on read, because a room runs
+  /// for hours and a line is drawn once.
+  final Map<String, LiveMessage> _originals = <String, LiveMessage>{};
 
   /// The player binding carrying pause and seek into the barrage.
   DanmakuPlayerBinding? binding;
@@ -316,15 +318,11 @@ final class RoomDanmakuPipeline {
       onChat(message, replaceId: seen ? id : null);
       return;
     }
-    // The filters rebuild the line they accept, and what a platform names
-    // inside the text is not something a rebuild can restore: the pictures
-    // stay here, under the id the rebuild carries unchanged, until the mirror
-    // asks for them.
-    final emoteKey = message.messageId.trim();
-    if (emoteKey.isNotEmpty && message.emotes.isNotEmpty) {
-      if (_emotesById.length > 400) _emotesById.remove(_emotesById.keys.first);
-      _emotesById[emoteKey] = message.emotes.toList(growable: false);
-    }
+    // What the platform said about who spoke rides along here, because the
+    // filters hand the mirror a rebuilt line and a rebuild cannot invent it.
+    final key = _lineKey(message.messageId, userName: message.sender?.userName ?? '', text: message.text);
+    if (_originals.length > 400) _originals.remove(_originals.keys.first);
+    _originals[key] = message;
     danmaku.acceptExternal(
       DanmakuMessage(
         type: DanmakuMessageType.chat,
@@ -376,6 +374,14 @@ final class RoomDanmakuPipeline {
   }
 }
 
+/// Where a chat line's own message is kept between the site's socket and the
+/// mirror's row: the platform's id when it gives one, else the sender and the
+/// text — the pair the gate itself already treats as one message.
+String _lineKey(String messageId, {required String userName, required String text}) {
+  final id = messageId.trim();
+  return id.isNotEmpty ? id : '${userName.trim()}\u0000$text';
+}
+
 /// Mirrors the messages the pipeline accepted onto the chat list, then hands
 /// them to the flying layer. The list must see exactly what the filters let
 /// through, so the mirror sits after them rather than at the site seam; the
@@ -387,7 +393,7 @@ final class _ChatMirrorSink implements DanmakuSink {
     required this.inner,
     required this.showFixedTop,
     required this.showFixedBottom,
-    required this.emotesOf,
+    required this.originalOf,
   });
 
   final void Function(LiveMessage message, {String? replaceId}) onChat;
@@ -395,36 +401,35 @@ final class _ChatMirrorSink implements DanmakuSink {
   final bool Function() showFixedTop;
   final bool Function() showFixedBottom;
 
-  /// The platform's pictures for a line the filters just accepted, taken from
-  /// what the site sent under the id the pipeline carried unchanged: a paid
-  /// line and a gift arrive as themselves (see [RoomDanmakuPipeline.accept]),
-  /// an ordinary one arrives rebuilt.
-  final List<LiveEmote> Function(String messageId) emotesOf;
+  /// The site's own message for a line the filters just accepted, or null when
+  /// the line was composed here (a connection notice). What a platform says
+  /// about who spoke - avatar, badges, role, name colour, its emoticons - lives
+  /// only on that message: the pipeline hands back a rebuilt line of text.
+  final LiveMessage? Function(String key) originalOf;
 
   @override
   void onDanmaku(DanmakuMessage message, {bool immediate = false}) {
     if (message.text.trim().isNotEmpty) {
       onChat(
-        LiveMessage.normalized(
-          text: message.text,
-          sender: MessageSender.of(
-            userId: message.userId,
-            userName: message.userName,
-            userLevel: message.userLevel.isEmpty ? null : message.userLevel,
-            fanBadgeLevel: message.fansLevel,
-            fanBadgeName: message.fansName,
-          ),
-          color: LiveMessageColor(message.color.r, message.color.g, message.color.b),
-          messageId: message.messageId,
-          sentAt: message.sentAt,
-          isLocal: message.isLocal,
-          // The site's own pictures, which the rebuild cannot invent.
-          emotes: emotesOf(message.messageId),
-          // The list marks a re-shown line as 「之前发的」; the flag has to
-          // survive the round trip through the pipeline or the gate's replay
-          // window lets a backlog in that then claims to be live.
-          replayed: message.replayed,
-        ),
+        originalOf(_lineKey(message.messageId, userName: message.userName, text: message.text)) ??
+            LiveMessage.normalized(
+              text: message.text,
+              sender: MessageSender.of(
+                userId: message.userId,
+                userName: message.userName,
+                userLevel: message.userLevel.isEmpty ? null : message.userLevel,
+                fanBadgeLevel: message.fansLevel,
+                fanBadgeName: message.fansName,
+              ),
+              color: LiveMessageColor(message.color.r, message.color.g, message.color.b),
+              messageId: message.messageId,
+              sentAt: message.sentAt,
+              isLocal: message.isLocal,
+              // The list marks a re-shown line as 「之前发的」; the flag has to
+              // survive the round trip through the pipeline or the gate's replay
+              // window lets a backlog in that then claims to be live.
+              replayed: message.replayed,
+            ),
       );
     }
     final draws = switch (message.style?.placement) {
