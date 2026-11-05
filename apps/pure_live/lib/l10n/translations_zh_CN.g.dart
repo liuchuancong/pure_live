@@ -6994,6 +6994,15 @@ class Translations$search$zh_CN {
 	/// zh-CN: '换个关键词，或切换到其他搜索目标。'
 	String get noResultsDescription => '换个关键词，或切换到其他搜索目标。';
 
+	/// zh-CN: '没有正在直播的结果'
+	String get noLiveResultsTitle => '没有正在直播的结果';
+
+	/// zh-CN: '离线结果已隐藏；可以显示离线直播间。'
+	String get noLiveResultsDescription => '离线结果已隐藏；可以显示离线直播间。';
+
+	/// zh-CN: '请输入搜索关键词'
+	String get inputRequired => '请输入搜索关键词';
+
 	/// zh-CN: '该平台不支持搜索'
 	String get unsupportedTitle => '该平台不支持搜索';
 
@@ -7074,6 +7083,81 @@ class Translations$search$zh_CN {
 
 	/// zh-CN: '没有解析到直播间'
 	String get linkFailed => '没有解析到直播间';
+
+	/// zh-CN: '搜索范围'
+	String get scopeTitle => '搜索范围';
+
+	/// zh-CN: '“全部”会同时搜索勾选的平台；至少保留一个。'
+	String get scopeHint => '“全部”会同时搜索勾选的平台；至少保留一个。';
+
+	/// zh-CN: '国内平台'
+	String get scopeDomestic => '国内平台';
+
+	/// zh-CN: '海外平台'
+	String get scopeOverseas => '海外平台';
+
+	/// zh-CN: '仅国内'
+	String get scopeDomesticOnly => '仅国内';
+
+	/// zh-CN: '全选'
+	String get scopeSelectAll => '全选';
+
+	/// zh-CN: '完成'
+	String get scopeApply => '完成';
+
+	/// zh-CN: '只搜正在直播的房间'
+	String get coverageLiveOnly => '只搜正在直播的房间';
+
+	/// zh-CN: '搜索正在直播和部分离线房间'
+	String get coverageLiveAndOffline => '搜索正在直播和部分离线房间';
+
+	/// zh-CN: '只按频道 ID 或链接查找'
+	String get coverageChannelLookup => '只按频道 ID 或链接查找';
+
+	/// zh-CN: '只按房间号或链接查找'
+	String get coverageRoomLookup => '只按房间号或链接查找';
+
+	/// zh-CN: '只筛当前推荐列表'
+	String get coverageShowcaseSnapshot => '只筛当前推荐列表';
+
+	/// zh-CN: '只搜本机导入的频道'
+	String get coverageLocalChannels => '只搜本机导入的频道';
+
+	/// zh-CN: '仅支持网页搜索'
+	String get coverageWebOnly => '仅支持网页搜索';
+
+	/// zh-CN: '不支持搜索'
+	String get coverageUnavailable => '不支持搜索';
+
+	/// zh-CN: '部分平台没有返回结果'
+	String get partialFailureTitle => '部分平台没有返回结果';
+
+	/// zh-CN: '这些平台可能被网络或代理拦住了：{platforms: String}'
+	String partialFailureDescription({required String platforms}) => '这些平台可能被网络或代理拦住了：${platforms}';
+
+	/// zh-CN: '重试'
+	String get partialFailureRetry => '重试';
+
+	/// zh-CN: '调整范围'
+	String get partialFailureScope => '调整范围';
+
+	/// zh-CN: '缺少内嵌网页组件'
+	String get webView2MissingTitle => '缺少内嵌网页组件';
+
+	/// zh-CN: '当前 Windows 没有 WebView2，网页搜索可以改用系统浏览器，或先安装 WebView2。'
+	String get webView2MissingBody => '当前 Windows 没有 WebView2，网页搜索可以改用系统浏览器，或先安装 WebView2。';
+
+	/// zh-CN: '下载 WebView2'
+	String get webView2Download => '下载 WebView2';
+
+	/// zh-CN: '打开网页版'
+	String get webVersion => '打开网页版';
+
+	/// zh-CN: '这里没有内置列表'
+	String get webVersionTitle => '这里没有内置列表';
+
+	/// zh-CN: '可以在应用内打开该平台的网页版查看直播间。'
+	String get webVersionDescription => '可以在应用内打开该平台的网页版查看直播间。';
 }
 
 // Path: settings
@@ -11214,6 +11298,33 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '打开后本机可被发现并接受配对；设备名与授权保持不变。'
 	String get lanSyncEnableDesc => '打开后本机可被发现并接受配对；设备名与授权保持不变。';
+
+	/// zh-CN: '本机'
+	String get lanSyncThisDevice => '本机';
+
+	/// zh-CN: '设备'
+	String get lanSyncDevices => '设备';
+
+	/// zh-CN: '{count: int} 台已配对'
+	String lanSyncPairedCount({required int count}) => '${count} 台已配对';
+
+	/// zh-CN: '已共享 {selected: int}/{total: int} 项'
+	String lanSyncSharedCount({required int selected, required int total}) => '已共享 ${selected}/${total} 项';
+
+	/// zh-CN: '冲突处理'
+	String get lanSyncConflictSection => '冲突处理';
+
+	/// zh-CN: '同步记录'
+	String get lanSyncHistory => '同步记录';
+
+	/// zh-CN: '同步中'
+	String get lanSyncSyncing => '同步中';
+
+	/// zh-CN: '已取消'
+	String get lanSyncTaskCancelled => '已取消';
+
+	/// zh-CN: '已暂停'
+	String get lanSyncTaskPaused => '已暂停';
 
 	/// zh-CN: '本机名称'
 	String get lanSyncDeviceName => '本机名称';
@@ -15816,6 +15927,9 @@ extension on Translations {
 			'search.tabAreas' => '分区',
 			'search.noResultsTitle' => '没有找到相关结果',
 			'search.noResultsDescription' => '换个关键词，或切换到其他搜索目标。',
+			'search.noLiveResultsTitle' => '没有正在直播的结果',
+			'search.noLiveResultsDescription' => '离线结果已隐藏；可以显示离线直播间。',
+			'search.inputRequired' => '请输入搜索关键词',
 			'search.unsupportedTitle' => '该平台不支持搜索',
 			'search.unsupportedDescription' => '请切换到其他平台再试。',
 			'search.liveBadge' => '直播中',
@@ -15843,6 +15957,31 @@ extension on Translations {
 			'search.linkOpen' => '打开直播间',
 			'search.linkResolving' => '正在解析链接…',
 			'search.linkFailed' => '没有解析到直播间',
+			'search.scopeTitle' => '搜索范围',
+			'search.scopeHint' => '“全部”会同时搜索勾选的平台；至少保留一个。',
+			'search.scopeDomestic' => '国内平台',
+			'search.scopeOverseas' => '海外平台',
+			'search.scopeDomesticOnly' => '仅国内',
+			'search.scopeSelectAll' => '全选',
+			'search.scopeApply' => '完成',
+			'search.coverageLiveOnly' => '只搜正在直播的房间',
+			'search.coverageLiveAndOffline' => '搜索正在直播和部分离线房间',
+			'search.coverageChannelLookup' => '只按频道 ID 或链接查找',
+			'search.coverageRoomLookup' => '只按房间号或链接查找',
+			'search.coverageShowcaseSnapshot' => '只筛当前推荐列表',
+			'search.coverageLocalChannels' => '只搜本机导入的频道',
+			'search.coverageWebOnly' => '仅支持网页搜索',
+			'search.coverageUnavailable' => '不支持搜索',
+			'search.partialFailureTitle' => '部分平台没有返回结果',
+			'search.partialFailureDescription' => ({required String platforms}) => '这些平台可能被网络或代理拦住了：${platforms}',
+			'search.partialFailureRetry' => '重试',
+			'search.partialFailureScope' => '调整范围',
+			'search.webView2MissingTitle' => '缺少内嵌网页组件',
+			'search.webView2MissingBody' => '当前 Windows 没有 WebView2，网页搜索可以改用系统浏览器，或先安装 WebView2。',
+			'search.webView2Download' => '下载 WebView2',
+			'search.webVersion' => '打开网页版',
+			'search.webVersionTitle' => '这里没有内置列表',
+			'search.webVersionDescription' => '可以在应用内打开该平台的网页版查看直播间。',
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
 			'settings.navPersonalization' => '个性化',
@@ -15951,6 +16090,8 @@ extension on Translations {
 			'settings.windowSize' => '窗口尺寸',
 			'settings.windowSizeDesc' => '启动时的窗口大小。',
 			'settings.windowWidth' => '宽度',
+			_ => null,
+		} ?? switch (path) {
 			'settings.windowHeight' => '高度',
 			'settings.windowSizeRangeHint' => '宽度 400–16384，高度 300–16384（逻辑像素）。',
 			'settings.windowSizeOutOfRange' => '尺寸超出范围：宽 400–16384，高 300–16384。',
@@ -15979,8 +16120,6 @@ extension on Translations {
 			'settings.refreshRateFailed' => '刷新率读取失败',
 			'settings.refreshRateApplyFailed' => '刷新率请求未生效',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
@@ -16465,6 +16604,8 @@ extension on Translations {
 			'settings.hardwareDecoderVdpau' => 'vdpau（NVIDIA Linux 旧接口）',
 			'settings.hardwareDecoderVdpauCopy' => 'vdpau-copy（VDPAU + 拷回内存）',
 			'settings.hardwareDecoderMediacodec' => 'mediacodec（Android 直通，推荐）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hardwareDecoderMediacodecCopy' => 'mediacodec-copy（Android + 拷回内存）',
 			'settings.customOutput' => '自定义驱动与硬件加速',
 			'settings.customOutputDesc' => '用所选输出与解码器替代「硬件解码」。',
@@ -16493,8 +16634,6 @@ extension on Translations {
 			'settings.audioOutputNull' => 'null（不输出声音，静音调试）',
 			'settings.videoSync' => '视频同步模式 (--video-sync)',
 			'settings.videoSyncDesc' => '跟随音频时钟或显示刷新；显示重采样最平滑但更吃 GPU。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.videoSyncAudio' => '音频时钟（mpv 默认）',
 			'settings.videoSyncDisplayResample' => '显示重采样（最平滑，吃 GPU）',
 			'settings.videoSyncDisplayResampleVdrop' => '显示重采样 + 视频丢帧',
@@ -16979,6 +17118,8 @@ extension on Translations {
 			'settings.tagSavedToast' => ({required String name}) => '已保存标签“${name}”',
 			'settings.tagDeletedToast' => ({required String name}) => '已删除标签“${name}”',
 			'settings.tagDeleteTitle' => ({required String name}) => '确定要永久删除标签“${name}”吗？',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} 个直播间会移出该标签，不会被取消关注。',
 			'settings.tagDeleteBody' => '该标签还没有直播间在使用。',
 			'settings.tagEmptyTitle' => '暂无自定义标签',
@@ -17007,8 +17148,6 @@ extension on Translations {
 			'settings.roomCardSettingsDescription' => '版式固定，这里只选显示哪些信息；所有设备共用这一套。',
 			'settings.roomCardPreview' => '卡片预览',
 			'settings.roomCardPreviewTitle' => '今晚八点，一起聊聊新番和游戏',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardPreviewAnchor' => '夜色电台',
 			'settings.roomCardPreviewArea' => '游戏分区',
 			'settings.roomCardPreviewHint' => '改动会立即反映在这张卡片上。',
@@ -17226,6 +17365,15 @@ extension on Translations {
 			'settings.lanSyncDescription' => '与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。',
 			'settings.lanSyncEnable' => '启用局域网同步',
 			'settings.lanSyncEnableDesc' => '打开后本机可被发现并接受配对；设备名与授权保持不变。',
+			'settings.lanSyncThisDevice' => '本机',
+			'settings.lanSyncDevices' => '设备',
+			'settings.lanSyncPairedCount' => ({required int count}) => '${count} 台已配对',
+			'settings.lanSyncSharedCount' => ({required int selected, required int total}) => '已共享 ${selected}/${total} 项',
+			'settings.lanSyncConflictSection' => '冲突处理',
+			'settings.lanSyncHistory' => '同步记录',
+			'settings.lanSyncSyncing' => '同步中',
+			'settings.lanSyncTaskCancelled' => '已取消',
+			'settings.lanSyncTaskPaused' => '已暂停',
 			'settings.lanSyncDeviceName' => '本机名称',
 			'settings.lanSyncDeviceNameDesc' => '展示给其他设备的名字。',
 			'settings.lanSyncDeviceNameSaved' => '设备名已更新',
@@ -17484,6 +17632,8 @@ extension on Translations {
 			'vod.regionGames' => '游戏',
 			'vod.regionGuichu' => '鬼畜',
 			'vod.regionMusic' => '音乐',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regionDance' => '舞蹈',
 			'vod.regionFilm' => '影视',
 			'vod.regionEntertainment' => '娱乐',
@@ -17521,8 +17671,6 @@ extension on Translations {
 			'vod.pgcDocumentary' => '纪录片',
 			'vod.pgcGuochuang' => '国创',
 			'vod.pgcTv' => '电视剧',
-			_ => null,
-		} ?? switch (path) {
 			'vod.pgcVariety' => '综艺',
 			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',
 			'vod.episodes' => '选集',

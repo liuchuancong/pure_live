@@ -2468,6 +2468,9 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get tabAreas => 'Areas';
 	@override String get noResultsTitle => 'No results';
 	@override String get noResultsDescription => 'Try other words, or another target.';
+	@override String get noLiveResultsTitle => 'No live results';
+	@override String get noLiveResultsDescription => 'Offline rooms are hidden; you can show them.';
+	@override String get inputRequired => 'Enter a search term';
 	@override String get unsupportedTitle => 'This platform cannot search';
 	@override String get unsupportedDescription => 'Switch to another platform and try again.';
 	@override String get liveBadge => 'Live';
@@ -2495,6 +2498,31 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get linkOpen => 'Open room';
 	@override String get linkResolving => 'Resolving the link…';
 	@override String get linkFailed => 'The link did not resolve to a room';
+	@override String get scopeTitle => 'Search scope';
+	@override String get scopeHint => '“All” searches every ticked platform; keep at least one.';
+	@override String get scopeDomestic => 'Domestic';
+	@override String get scopeOverseas => 'Overseas';
+	@override String get scopeDomesticOnly => 'Domestic only';
+	@override String get scopeSelectAll => 'Select all';
+	@override String get scopeApply => 'Done';
+	@override String get coverageLiveOnly => 'Finds rooms that are live now';
+	@override String get coverageLiveAndOffline => 'Finds live and some offline rooms';
+	@override String get coverageChannelLookup => 'Looks up a channel id or link';
+	@override String get coverageRoomLookup => 'Looks up a room id or link';
+	@override String get coverageShowcaseSnapshot => 'Filters the current showcase';
+	@override String get coverageLocalChannels => 'Searches channels imported here';
+	@override String get coverageWebOnly => 'Web search only';
+	@override String get coverageUnavailable => 'No search';
+	@override String get partialFailureTitle => 'Some platforms returned nothing';
+	@override String partialFailureDescription({required String platforms}) => 'The network or a proxy may have blocked these: ${platforms}';
+	@override String get partialFailureRetry => 'Retry';
+	@override String get partialFailureScope => 'Adjust scope';
+	@override String get webView2MissingTitle => 'WebView2 is missing';
+	@override String get webView2MissingBody => 'This Windows has no WebView2; open the web search in the system browser, or install WebView2 first.';
+	@override String get webView2Download => 'Download WebView2';
+	@override String get webVersion => 'Open web version';
+	@override String get webVersionTitle => 'No in-app list here';
+	@override String get webVersionDescription => 'Open the platform\'s web version in the app to see its rooms.';
 }
 
 // Path: settings
@@ -3881,6 +3909,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get lanSyncDescription => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.';
 	@override String get lanSyncEnable => 'Enable LAN sync';
 	@override String get lanSyncEnableDesc => 'While on, this device is discoverable and accepts pairing; names and grants stay.';
+	@override String get lanSyncThisDevice => 'This device';
+	@override String get lanSyncDevices => 'Devices';
+	@override String lanSyncPairedCount({required int count}) => '${count} paired';
+	@override String lanSyncSharedCount({required int selected, required int total}) => '${selected} of ${total} shared';
+	@override String get lanSyncConflictSection => 'Conflicts';
+	@override String get lanSyncHistory => 'Sync history';
+	@override String get lanSyncSyncing => 'Syncing';
+	@override String get lanSyncTaskCancelled => 'Cancelled';
+	@override String get lanSyncTaskPaused => 'Paused';
 	@override String get lanSyncDeviceName => 'Device name';
 	@override String get lanSyncDeviceNameDesc => 'Shown to other devices.';
 	@override String get lanSyncDeviceNameSaved => 'Device name updated';
@@ -7067,6 +7104,9 @@ extension on TranslationsEn {
 			'search.tabAreas' => 'Areas',
 			'search.noResultsTitle' => 'No results',
 			'search.noResultsDescription' => 'Try other words, or another target.',
+			'search.noLiveResultsTitle' => 'No live results',
+			'search.noLiveResultsDescription' => 'Offline rooms are hidden; you can show them.',
+			'search.inputRequired' => 'Enter a search term',
 			'search.unsupportedTitle' => 'This platform cannot search',
 			'search.unsupportedDescription' => 'Switch to another platform and try again.',
 			'search.liveBadge' => 'Live',
@@ -7094,6 +7134,31 @@ extension on TranslationsEn {
 			'search.linkOpen' => 'Open room',
 			'search.linkResolving' => 'Resolving the link…',
 			'search.linkFailed' => 'The link did not resolve to a room',
+			'search.scopeTitle' => 'Search scope',
+			'search.scopeHint' => '“All” searches every ticked platform; keep at least one.',
+			'search.scopeDomestic' => 'Domestic',
+			'search.scopeOverseas' => 'Overseas',
+			'search.scopeDomesticOnly' => 'Domestic only',
+			'search.scopeSelectAll' => 'Select all',
+			'search.scopeApply' => 'Done',
+			'search.coverageLiveOnly' => 'Finds rooms that are live now',
+			'search.coverageLiveAndOffline' => 'Finds live and some offline rooms',
+			'search.coverageChannelLookup' => 'Looks up a channel id or link',
+			'search.coverageRoomLookup' => 'Looks up a room id or link',
+			'search.coverageShowcaseSnapshot' => 'Filters the current showcase',
+			'search.coverageLocalChannels' => 'Searches channels imported here',
+			'search.coverageWebOnly' => 'Web search only',
+			'search.coverageUnavailable' => 'No search',
+			'search.partialFailureTitle' => 'Some platforms returned nothing',
+			'search.partialFailureDescription' => ({required String platforms}) => 'The network or a proxy may have blocked these: ${platforms}',
+			'search.partialFailureRetry' => 'Retry',
+			'search.partialFailureScope' => 'Adjust scope',
+			'search.webView2MissingTitle' => 'WebView2 is missing',
+			'search.webView2MissingBody' => 'This Windows has no WebView2; open the web search in the system browser, or install WebView2 first.',
+			'search.webView2Download' => 'Download WebView2',
+			'search.webVersion' => 'Open web version',
+			'search.webVersionTitle' => 'No in-app list here',
+			'search.webVersionDescription' => 'Open the platform\'s web version in the app to see its rooms.',
 			'settings.title' => 'Settings',
 			'settings.navGeneral' => 'Browsing & window',
 			'settings.navPersonalization' => 'Personalization',
@@ -7202,6 +7267,8 @@ extension on TranslationsEn {
 			'settings.windowSize' => 'Window size',
 			'settings.windowSizeDesc' => 'Window size at launch.',
 			'settings.windowWidth' => 'Width',
+			_ => null,
+		} ?? switch (path) {
 			'settings.windowHeight' => 'Height',
 			'settings.windowSizeRangeHint' => 'Width 400–16384, height 300–16384 (logical pixels).',
 			'settings.windowSizeOutOfRange' => 'Out of range: width 400–16384, height 300–16384.',
@@ -7230,8 +7297,6 @@ extension on TranslationsEn {
 			'settings.refreshRateFailed' => 'The refresh rate could not be read',
 			'settings.refreshRateApplyFailed' => 'The refresh-rate request did not take effect',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '${count} displays detected',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
@@ -7716,6 +7781,8 @@ extension on TranslationsEn {
 			'settings.hardwareDecoderVdpau' => 'vdpau (NVIDIA Linux legacy)',
 			'settings.hardwareDecoderVdpauCopy' => 'vdpau-copy (VDPAU + copy-back)',
 			'settings.hardwareDecoderMediacodec' => 'mediacodec (Android, recommended)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hardwareDecoderMediacodecCopy' => 'mediacodec-copy (Android + copy-back)',
 			'settings.customOutput' => 'Custom driver & hardware acceleration',
 			'settings.customOutputDesc' => 'Uses the chosen output and decoder instead of the hardware switch.',
@@ -7744,8 +7811,6 @@ extension on TranslationsEn {
 			'settings.audioOutputNull' => 'null (no audio, silent debugging)',
 			'settings.videoSync' => 'Video sync mode (--video-sync)',
 			'settings.videoSyncDesc' => 'Sync to the audio clock or the display; resampling is smoothest but costs GPU.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.videoSyncAudio' => 'Audio clock (mpv default)',
 			'settings.videoSyncDisplayResample' => 'Display resample (smoothest, GPU heavy)',
 			'settings.videoSyncDisplayResampleVdrop' => 'Display resample + vdrop',
@@ -8230,6 +8295,8 @@ extension on TranslationsEn {
 			'settings.tagSavedToast' => ({required String name}) => 'Saved the tag “${name}”',
 			'settings.tagDeletedToast' => ({required String name}) => 'Deleted the tag “${name}”',
 			'settings.tagDeleteTitle' => ({required String name}) => 'Permanently delete the tag “${name}”?',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} followed rooms will leave this tag; the rooms stay followed.',
 			'settings.tagDeleteBody' => 'No room is using this tag yet.',
 			'settings.tagEmptyTitle' => 'No custom tags yet',
@@ -8258,8 +8325,6 @@ extension on TranslationsEn {
 			'settings.roomCardSettingsDescription' => 'The card and list row have fixed designs; choose which details they show. Every device shares this one set.',
 			'settings.roomCardPreview' => 'Card preview',
 			'settings.roomCardPreviewTitle' => 'Late-night anime and games',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardPreviewAnchor' => 'Night Radio',
 			'settings.roomCardPreviewArea' => 'Gaming',
 			'settings.roomCardPreviewHint' => 'Changes show up in this card at once.',
@@ -8477,6 +8542,15 @@ extension on TranslationsEn {
 			'settings.lanSyncDescription' => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.',
 			'settings.lanSyncEnable' => 'Enable LAN sync',
 			'settings.lanSyncEnableDesc' => 'While on, this device is discoverable and accepts pairing; names and grants stay.',
+			'settings.lanSyncThisDevice' => 'This device',
+			'settings.lanSyncDevices' => 'Devices',
+			'settings.lanSyncPairedCount' => ({required int count}) => '${count} paired',
+			'settings.lanSyncSharedCount' => ({required int selected, required int total}) => '${selected} of ${total} shared',
+			'settings.lanSyncConflictSection' => 'Conflicts',
+			'settings.lanSyncHistory' => 'Sync history',
+			'settings.lanSyncSyncing' => 'Syncing',
+			'settings.lanSyncTaskCancelled' => 'Cancelled',
+			'settings.lanSyncTaskPaused' => 'Paused',
 			'settings.lanSyncDeviceName' => 'Device name',
 			'settings.lanSyncDeviceNameDesc' => 'Shown to other devices.',
 			'settings.lanSyncDeviceNameSaved' => 'Device name updated',
@@ -8735,6 +8809,8 @@ extension on TranslationsEn {
 			'vod.regionGames' => 'Gaming',
 			'vod.regionGuichu' => 'Guichu',
 			'vod.regionMusic' => 'Music',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regionDance' => 'Dance',
 			'vod.regionFilm' => 'Film & TV',
 			'vod.regionEntertainment' => 'Entertainment',
@@ -8772,8 +8848,6 @@ extension on TranslationsEn {
 			'vod.pgcDocumentary' => 'Documentaries',
 			'vod.pgcGuochuang' => 'Guochuang',
 			'vod.pgcTv' => 'TV series',
-			_ => null,
-		} ?? switch (path) {
 			'vod.pgcVariety' => 'Variety',
 			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
 			'vod.episodes' => 'Episodes',
