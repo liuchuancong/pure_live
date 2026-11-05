@@ -9,7 +9,7 @@
 1. **第 1 部分（桌面控件/弹幕列表/录制显示）**：与参考逐控件比过三轮并已持平或更强；`T13–T23`、`P27–P39` 是成果清单。**再动就是凭喜好重排**——参考底条动词与我们的"条 + ⋮ 菜单"分工按参考自己的 `menuEntriesOnBars` 规则等价（它把条上有的从菜单里删掉，我们把同类动词收进菜单，都是一个入口）。
 2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。**例外：第十八轮的 P58 不是靠猜的**——它量的是盘上已有的 `attaching engine … {line: N}` 行（恢复每次从 line 0 开始，观众选的线路被丢掉），修的是恢复路径的线路身份，与首帧耗时无关，见「第十八轮」。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
-4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。**测试这一维是第十九轮才补上的**：我们 `live_sites` 的 22 个弹幕解码器**此前零直接测试**（`danmaku/*.dart` 里有 `static …decode(` 的文件共 20 个；参考侧有 20 个站点测试文件），bilibili 已钉住（P59，25 条），其余站点按「第十九轮」给的顺序欠着——那不是"持平"，是"没人验过"。
+4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。**测试这一维是第十九轮才补上的**：我们 `live_sites` 的弹幕解码器**此前零直接测试**（`danmaku/*.dart` 里有 `static …decode(` 的文件共 20 个；参考侧有 20 个站点测试文件），bilibili（P59，25 条）与 douyu（P60，20 条）已钉住，其余站点按「第十九轮/第二十轮」给的顺序欠着——那不是"持平"，是"没人验过"。
 5. **欠账已清（2026-11-05 第十三轮）**：`displayLabel` 的显示位全部落地——房间的两处随别的 lane 的提交进了 HEAD（`player_surface.dart:430,1246`），多视图两处是 `2208ce785`（`:1099,:1105`）。别再当待办；新加画质显示位时直接用 `displayLabel`，身份仍用 `label`/`qualityId`。
 6. **决定只剩一个**：①**Bigo 已定案并落地**（用户拒绝回环中继 ⇒ `01075c532` 让 `getLines` 带可读原因失败，见「第十二轮」；不要再提做中继）。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
@@ -527,9 +527,20 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 
 **结果要说实话**：这 25 条**没有测出解码器的错**（全绿）——它的价值是线格式从此有钉，改协议常量（比如 `protocolVersion`、`maxNesting`）会当场红，而参考能逐个站点做对照的只剩测试这一维。`dart test`（纯 Dart 包，不是 flutter test）整包 **500 绿**（原 475）。
 
-**下一轮接着钉的顺序**（按弹幕量，别一次开 20 个）：douyu（`douyu_stt_codec.dart`，注意它只有 session + stt，没有独立 codec）、huya（`huya_danmaku_codec.dart` + `huya_tars.dart`，fixture 要自己用 TARS 写）、kuaishou、douyin、yy（`yy_packet.dart`）、twitch。判据同本轮：`dart analyze test/platforms/<site>` 0 issues + `dart test test/platforms/<site>`。
+**下一轮接着钉的顺序**（按弹幕量，别一次开 20 个）：huya（`huya_danmaku_codec.dart` + `huya_tars.dart`，fixture 要自己用 TARS 写）、kuaishou、douyin、yy（`yy_packet.dart`）、twitch——douyu 已在第二十轮钉住（P60）。判据同本轮：`dart analyze test/platforms/<site>` 0 issues + `dart test test/platforms/<site>`。
 
 **写站点测试的一个坑（本轮踩了一次）**：只 import 平台 codec 文件不会把 `LiveMessage` 的成员名带进来——`effectiveSender`/`effectiveColor` 这类模型 getter 必须**直接 import 模型文件**（`src/models/message/live_message/live_message.dart`），否则 analyzer 报 "getter isn't defined for the type LiveMessage"，看着像模型坏了。另外 `LiveMessageType` 里那一档叫 **`audienceUpdate`**，不是 `audience`。
+
+## 第二十轮（2026-11-05）：斗鱼的 STT 线格式钉住，顺手掉一个空转三元
+
+按上一轮给的顺序做第二个站点。`packages/live_sites/test/platforms/douyu/douyu_danmaku_test.dart` 新增 **20 条**，`dart test test/platforms/douyu` **38 绿**（原 18），整包 `dart test` **520 绿**（原 500）。钉住：转义一层一个 `@A`/`@S`、浅读只解一层（**内层留成文本**）、map 的"无键段跳过/后到的重复键赢"、list 丢空段、包体是**小端双长度**+ type 689 + 两个标志位 + 结尾 `\0`（长度不含自己那 4 字节）、进房两包（loginreq → joingroup gid −9999）、心跳 `mrkl/`、尾巴坏掉是**丢弃而不是硬解**；显示侧钉：聊天的等级/粉丝牌（`bnn` 为空时 `bl` 不算牌）/六种官方色表/秒与毫秒两种时间戳/别的房间与空文本不落列表、**疑似机器人规则逐条重读**（中途改设置立刻生效）、一条抛异常的包**不吞掉同帧后面的包**、`rss` 停帧且只对**这间房**停、付费消息的 `cprice` 是分（`￥20`、时长 60 s、官方两色）、礼物（目录价与图、不认识的礼物只留名字、`gfcnt` 0 也算 1 个、`hits` 进 combo 且 comboKey 是 `uid:gfid`、`gpf=1` 或 `gfid=0+pid` 是背包免费、别的房间与无名字不给）。提交 `594ccb64b`。
+
+| P60 | `594ccb64b` | 斗鱼的 STT 线格式被钉住（20 条），并去掉一处空转三元 | 见本节四条：fixture 的四个初判失败全是我的写法错（小端双长度、转义结果少算、超 int64 的 `cst` 是 null 不是抛、语音包嵌套层数）；真收获是 `toLiveGift` 的 `kind: free ? normal : normal`（免费与付费本来就由 `value.unit` 带，分层规则读的就是它）；`voice_trlt` 有意不钉，等真帧。 |
+
+- **本轮 4 条初判失败全是我 fixture 自己错，不是解码器的错**（如实记，免得下轮误以为挖到 bug）：① 长度字段是小端，我按大端写了 `[0,0,0,19]`；② `escape('a@b/c')` 的结果我少算了结尾字符；③ `cst@=999999999999999999999` 超 int64，`int.tryParse` 给 **null 而不是抛**，要拿"能解析但超 `DateTime` 范围"的值（`9007199254740992`）才测得到那条 catch；④ `voice_trlt` 的嵌套转义我猜错层数。
+- **真收获是一处空转代码**：`toLiveGift` 里 `kind: free ? LiveGiftKind.normal : LiveGiftKind.normal`（`douyu_gift_parser.dart:213`）。`LiveGiftKind` 只有 `normal/subscription/tip`，免费与付费的差别本来就由 `value.unit`（`free`/`other`/`fen`）带着，而那正是分层规则读的东西（`gift_chat_filter.dart:67`、`gift_flights.dart:137`）；参考侧的斗鱼根本不带 `kind`（走模型默认）。⇒ 删掉那行与它的 import，行为不变（本轮的礼物测试钉着 `value.unit`）。
+- **有意没钉的**：`voice_trlt`（语音付费消息）。它的 `list` 与 `uat` 是**三层转义**，而本仓与参考**都没有一条真包样本** ⇒ 写出来只会把测试钉在我的猜测上。要在钉它，先抓一条真帧（进语音付费房抓 socket 或加临时日志），别先写。
+- **队列更新**：还剩 **huya**（要先用 `huya_tars.dart` 造 TARS fixture，最贵的一条）、kuaishou、douyin、yy（`yy_packet.dart`）、twitch。bilibili 与 douyu 已钉。
 
 ## 第十七轮（2026-11-05）：四道护栏跑在 HEAD 上，清掉我那批积压提交欠下的两条
 
