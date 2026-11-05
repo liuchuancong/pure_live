@@ -7,7 +7,7 @@
 ## 当前状态（2026-11-05 收尾，先读这八行再挑活）
 
 1. **第 1 部分（桌面控件/弹幕列表/录制显示）**：与参考逐控件比过三轮并已持平或更强；`T13–T23`、`P27–P39` 是成果清单。**再动就是凭喜好重排**——参考底条动词与我们的"条 + ⋮ 菜单"分工按参考自己的 `menuEntriesOnBars` 规则等价（它把条上有的从菜单里删掉，我们把同类动词收进菜单，都是一个入口）。
-2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。
+2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。**例外：第十八轮的 P58 不是靠猜的**——它量的是盘上已有的 `attaching engine … {line: N}` 行（恢复每次从 line 0 开始，观众选的线路被丢掉），修的是恢复路径的线路身份，与首帧耗时无关，见「第十八轮」。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
 4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。
 5. **欠账已清（2026-11-05 第十三轮）**：`displayLabel` 的显示位全部落地——房间的两处随别的 lane 的提交进了 HEAD（`player_surface.dart:430,1246`），多视图两处是 `2208ce785`（`:1099,:1105`）。别再当待办；新加画质显示位时直接用 `displayLabel`，身份仍用 `label`/`qualityId`。
@@ -503,6 +503,22 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 
 | P55 | `9e1a470d6` | 手机能切音频模式 | 房间菜单在"画面能做的事"那一组里加一行（截图行之后）：`t.room.audioOnlyMode` / `t.room.restoreVideo` 现成两串（底条在用），`checked: room.audioOnly`，动词 `ref.read(roomProvider.notifier).setAudioOnly`。**不需要门控**：`setAudioOnly` 在没有 handle 时只记状态（`room_controller.dart:1119-1130`），不会挂一个打不开的门。为什么值得做：应用自己在房间进后台时会自动切到这个模式（`room_page.dart:523-532`），却给用手机看直播的人留了唯一一条不能主动选它的路——而省流量/省电恰恰是手机上最需要的。**零新串**（l10n 仍属别的 lane 在飞的树，没跑 slang）。门：`dart analyze lib/modules/live/room` 0 issues；**提交用的是"hunk 切分 + `git apply --cached`"**（`room_page.dart` 当时带着另一条 lane 的 SchedulerBinding→`_writeAfterFrame` 重构 4 个 hunk，他们的改动原样留在工作树）。运行期未验：手机上开房间 → ⋮ 里应有"音频模式"，点了画面停、声音继续；桌面宽窗仍然只有底条那一枚（一行一个入口）。 |
 
+## 第十八轮（2026-11-05）：恢复重取地址时，观众选的那条线路被丢掉了（第 2 部分）
+
+盘上的运行证据（`%APPDATA%\com.purelive\pure_live\debug\data\logs\2026-11-03\PureLive.log`，`attaching engine mpv for …` 带 `{line: N}`）：同一条 douyu 地址在 09:11:44.633 与 09:11:53.042 各 attach 一次都是 `line: 0`；YY 房间 10:26:21→10:32:20 七次 attach 全部 `line: 0`（地址的 serial 每次重取都在换），最后一次 `live sweep exhausted {sources: 1, enginesTried: 1}`。⇒ 恢复路径每次从头一条开始，这与"进房慢"不同，是**卡一下之后回不到我选的那条**。
+
+参考的做法（`live_player/lib/src/session.dart`）：`_matching()`（`:1237`）用 `lineKey = line.lineId ?? line.url`（CDN 码，重签名不变）把"正在放的这条"映射进新 plan，attempt 0 就重开它；只有再失败一次才 `markFailed` + `next()` 换下一条（`:1298`、`:1370`），并且每个 retry round `_lines.reset()`。我们的 `_refreshSourcesForRecovery` 把刷新后的列表**写死从 index 0 开始**（原注释自己就矛盾："the engine-switch resume point follows it, having been the line the user was watching"——`_sweepStart` 被同一行归零了）。
+
+| P58 | `media_core a85c0b6` | 恢复不换线路 | **线路身份用 host+path**：签名单次有效、每次重取都变，而 host+path 正是"哪条 CDN"这件事本身（`_lineAddress()` 已经是这个形状，日志也用它）。刷新回来后按它找那条线路，找到就从它继续（`_sourceIndex`/`_sweepStart` 一起跟上），找不到才回 0——**只改顺序、从不拒绝播放**，所以不会新挂一扇打不开的门。app 侧不用改：`room_controller.dart:1579` 本来就把 `_playback.sourceIndex` 镜像进 `state.lineIndex`，修完之后那条镜像不再骗人。**外部仓，按规矩只本地提交、不推送。** |
+| 测试 | 同上 | 新增一条会咬人的用例 | `live_playback_controller_test.dart` 的 `recovery source refresh` 组里加"观众选的线路活过一次重排计划的刷新"：两条线路、`switchLine(1)`、恢复解析回 `{primary, backup}`（backup 在 index 1），断言 `sourceIndex == 1` 且引擎最后开的是 `cdn-backup.example`。**自证**：把 lib 改动还原后同一条测试 = `Expected: <1> Actual: <0>`；改回来后 `flutter test` 整包 **57 绿**。判据本身：`dart analyze lib test` 0 issues。 |
+
+**这轮的提交坑（同文件混着别人的 hunk，第三次遇到）**：`live_playback_sweep.dart` 里躺着另一条 lane 未提交的 22/7 行日志改动，media_core 整仓 **91 个文件在飞**（`packages/media_core/lib/**` 大范围重构、`live_playback_pipeline.dart`、`live_watchdog_arms.dart`）。做法仍是 hunk 切分：`git show HEAD:<path>` 起底 → 只把我的那段替换进去 → `git apply --cached` → 索引里确认只有我的两个路径 → `git commit`（不带 pathspec）。提交后他们的 hunk 原样在工作树（`git diff --stat` 从 41/13 变 22/7）。还原/复原全程用仓外副本 `/d/flutter/_sweep.keep` 的 md5（`0612869b0a989b0f8cdec7d88b03998e`）核对，逐字节一致。
+
+**查过但判定不搬的两条（别再当缺口重开）**
+- `live_core/lib/src/hls_source_query_policy.dart`（87 行）：参考**自己的站点零调用**（全仓只有 live_media 的管道参数和它自己的测试在传）。它描述的是"某个 provider 会把 master 的 `token` 手动加到子请求"这件事，不是通用 HLS 规则——没有观测到的站点，就没有要接的东西。
+- `live_media/lib/src/fallback.dart` 的 `DecoderFallback`（硬件解码失败后换 `hwdec=no`，参考确有消费者 `session.dart:183`）：我们把解码档做成了**观众的设置**（`playback.hwdec`、`effectivePlayerHardwareDecoder()`、preset 的 `lockedOutputKeys`）再加引擎间兜底；自动换档会覆盖一个人明确选过的解码方式，还会让"为什么这次是软解"变成设置里读不出来的事 ⇒ 记为有意差异，不改。
+- `LineFallback` 的失败线路记忆（markFailed 只在 attempt>0 生效）：我们一次 `_sweep` 本来就把每条线路走完，记忆只影响"跨恢复任务的第一条试谁"，代价是一条候选的验证预算 ⇒ 等下一次有 `room-open`/`recovery` 的重建运行数据再判，别先写。
+
 ## 第十七轮（2026-11-05）：四道护栏跑在 HEAD 上，清掉我那批积压提交欠下的两条
 
 第 1/3/4 部分的普查方向本轮没有新洞（见下面"模型字段普查见底"），于是把这轮花在**验证门本身**：今早 09:41–09:46 那批"按主题拆分"的积压提交把两道护栏弄红过，我在 HEAD 上重跑并归属。判据是同一命令在两个提交上的差：`2bec9260a`（09:35，批次之前）= IA 绿 / manifest 7 条，`16bed7c8c`（批次之后）= IA 2 条 / manifest 8 条 ⇒ 批次净增 3 条，其中 2 条属我。
@@ -526,4 +542,4 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 
 **更正第十五轮的一处措辞**：那一轮写"重建丢了头像、平台徽章、角色、名字色、**会员档（`membershipTier`）**"。前四项成立，`membershipTier` **不成立**：本轮普查 `packages/live_sites/lib/src/platforms/**` 里没有任何站点传过它（`MessageSender.normalized/of` 的这枚参数零调用），应用侧也零读者，只有 `message_sender.dart:17,36,48,68,79,121` 的声明与文档。所以那条字段从来没被丢掉过，谈不上"喂不进去"；参考侧同样只在 `GUARD_BUY` 礼物上带 `guardLevel`，发送者身上没有档。P54 的修复本身不受影响。
 
-**Bigo 那条冲突本轮复核过，仍未变**：`packages/live_sites/lib/src/core/live_site_ingest.dart` 与 `live_site_runtime_info.dart` 还是未跟踪/在飞（连同 `room_controller.dart`、`room_page.dart`、`stream_resolver.dart`、`player.dart`、`pubspec.yaml`、各端 plugin registrant），所以 P51（`01075c532`）那一刀切的 `unsupported` 继续成立，本轮**没有**碰 bigo 的任何文件，也没跑 `slang`/`build_runner`。
+**Bigo 那条冲突本轮复核过，仍未变**：`packages/live_sites/lib/src/core/live_site_ingest.dart` 与 `live_site_runtime_info.dart` 还是未跟踪/在飞（连同 `bigo_site.dart`、`bigo_playback_provider.dart`、`core.dart`、`site_facts.dart`、`test/platforms/bigo/bigo_test.dart`、`docs/live-sites-parity.md`、app 的 `room_controller.dart`、`room_page.dart`、`stream_resolver.dart`、`player.dart`、`player/live_ingest.dart`、`pubspec.yaml`、各端 plugin registrant 与 `pubspec.lock`），所以 P51（`01075c532`）那一刀切的 `unsupported` 在 **HEAD 上仍然成立**（第十八轮复核：`git show HEAD:` 那行还在），而**工作树里他们已把它换成 recipe 通道**（`runtimeInfo.ingest` + `media_core_ingest` 的环回还原，与用户 11-05"要播放器能正常识别的地址、别自己瞎改"的决定并不冲突——那是站点声明需求、通用执行层做钩子）。⇒ 本轮**没有**碰 bigo 的任何文件，也没跑 `slang`/`build_runner`；等他们入库后由他们决定 P51 的收法。
