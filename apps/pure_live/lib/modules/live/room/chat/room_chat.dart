@@ -15,6 +15,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/modules/live/room/chat/paid_banner.dart';
+import 'package:pure_live/modules/live/room/chat/room_emotes.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
 import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
@@ -826,8 +827,10 @@ final class _ChatLine extends ConsumerWidget {
                   ],
                   if (showNames && senderName.isNotEmpty && !repeats) TextSpan(text: '$senderName: ', style: nameStyle),
                   // The words with the platform's own emoticons in them, cut
-                  // out of the flying layer's catalogue and drawn as itself.
-                  ..._wordSpans(words, lineStyle, fontPx * 1.2),
+                  // out of the flying layer's catalogue and drawn as itself -
+                  // and, for what the catalogue does not carry, the pictures
+                  // this message names.
+                  ..._wordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
                 ],
               ),
             ),
@@ -1168,10 +1171,10 @@ final class _BadgeImage extends StatelessWidget {
 /// "[抠鼻]") regex-cut out of the words and painted from the bundled atlas.
 /// A catalogue that hasn't loaded — or a word it doesn't know — stays text,
 /// exactly as written.
-List<InlineSpan> _wordSpans(String words, TextStyle style, double emojiSize) {
+List<InlineSpan> _wordSpans(String words, TextStyle style, double emojiSize, {Iterable<LiveEmote> emotes = const []}) {
   final atlas = EmojiAtlas.instance;
   final regex = atlas.regex;
-  if (regex == null || !regex.hasMatch(words)) return [TextSpan(text: words, style: style)];
+  if (regex == null || !regex.hasMatch(words)) return _plainSpans(words, style, emojiSize, emotes);
   final spans = <InlineSpan>[];
   var last = 0;
   for (final match in regex.allMatches(words)) {
@@ -1180,9 +1183,10 @@ List<InlineSpan> _wordSpans(String words, TextStyle style, double emojiSize) {
     final image = info == null ? null : atlas.image(info.id);
     final src = image == null ? null : atlas.getSrcRect(key);
     // A match without a picture is left in the running text: the next
-    // flush writes it out as written.
+    // flush writes it out as written - and the platform's own emoticon table
+    // gets its chance on it there.
     if (image == null || src == null) continue;
-    if (match.start > last) spans.add(TextSpan(text: words.substring(last, match.start), style: style));
+    if (match.start > last) spans.addAll(_plainSpans(words.substring(last, match.start), style, emojiSize, emotes));
     spans.add(
       WidgetSpan(
         alignment: PlaceholderAlignment.middle,
@@ -1191,8 +1195,53 @@ List<InlineSpan> _wordSpans(String words, TextStyle style, double emojiSize) {
     );
     last = match.end;
   }
-  if (last < words.length) spans.add(TextSpan(text: words.substring(last), style: style));
+  if (last < words.length) spans.addAll(_plainSpans(words.substring(last), style, emojiSize, emotes));
   return spans;
+}
+
+/// The words the atlas did not draw, with the platform's own emoticons in
+/// place: four platforms hand their pictures over inside the message (Bilibili
+/// a whole-line sticker or an inline `[dog]`, ChZZK a `{:이모티콘:}`, Kuaishou a
+/// `[…]`, YouTube a custom-emoji shortcut), and the bundled sheet cannot cover
+/// what a site adds on its own. Without a picture for the code the words stay
+/// exactly as written.
+List<InlineSpan> _plainSpans(String run, TextStyle style, double emojiSize, Iterable<LiveEmote> emotes) {
+  if (run.isEmpty) return const [];
+  if (emotes.isEmpty) return [TextSpan(text: run, style: style)];
+  final pieces = splitPlatformEmotes(run, emotes);
+  if (pieces.length == 1 && pieces.single.emoteUrl == null) return [TextSpan(text: run, style: style)];
+  return [
+    for (final piece in pieces)
+      if (piece.emoteUrl case final String url)
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: _PlatformEmote(code: piece.text, url: url, size: emojiSize, style: style),
+        )
+      else
+        TextSpan(text: piece.text, style: style),
+  ];
+}
+
+/// One emoticon the platform supplied: its own picture at the chat line's
+/// size, and its code as written when the picture cannot be had - the line
+/// then reads exactly as it did before the platform's table was ever read.
+final class _PlatformEmote extends StatelessWidget {
+  const _PlatformEmote({required this.code, required this.url, required this.size, required this.style});
+
+  final String code;
+  final String url;
+  final double size;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 1),
+    child: Image(
+      image: cachedImage(url, height: size.round()),
+      height: size,
+      errorBuilder: (context, error, stackTrace) => Text(code, style: style),
+    ),
+  );
 }
 
 /// One emoticon of the bundled atlas: a rect of the sheet the flying layer
