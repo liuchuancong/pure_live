@@ -3,6 +3,7 @@
 // ignore_for_file: unnecessary_type_name_in_constructor
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
+import 'package:live_sites/src/common/normalization/normalization.dart' show normalizePlayUrl;
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -22,7 +23,8 @@ abstract class LivePlayLine implements Built<LivePlayLine, LivePlayLineBuilder> 
   /// Builds from a builder [updates] callback — the codegen entry.
   factory LivePlayLine([void Function(LivePlayLineBuilder)? updates]) = _$LivePlayLine;
 
-  /// Creates a LivePlayLine with already-normalized fields.
+  /// Creates a LivePlayLine; the URL is normalized
+  /// ([normalizePlayUrl]) on the way in.
   factory LivePlayLine.of({
     required String url,
     required LiveStreamFormat format,
@@ -35,7 +37,9 @@ abstract class LivePlayLine implements Built<LivePlayLine, LivePlayLineBuilder> 
     bool singleUse = false,
   }) => LivePlayLine(
     (b) => b
-      ..url = url
+      // Platforms answer in several shapes (`//host`, `http:/host`, quoted
+      // JSON, escaped slashes); every line crosses this one gate.
+      ..url = normalizePlayUrl(url)
       ..format = format
       ..formatSource = formatSource
       ..headers.replace(headers)
