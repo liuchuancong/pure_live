@@ -6,12 +6,16 @@ import 'dart:typed_data';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_kind.dart';
+import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
+import 'package:live_sites/src/models/enums/live_notice_kind.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
+import 'package:live_sites/src/models/message/live_emote/live_emote.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_retraction/live_retraction.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/bilibili/danmaku/bilibili_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_room_parser.dart';
 import 'package:test/test.dart';
 
 final ZLibCodec _zlib = ZLibCodec();
@@ -76,6 +80,37 @@ Map<String, Object?> _danmu(String text, {int color = 0xE33FFF, int dmid = 12345
   'cmd': 'DANMU_MSG',
   'info': [
     [0, 1, 25, color, 1790519893202, dmid, 0, '8z3o13gj', 0, 0, 0, '', 0, '{}', '{}'],
+    text,
+    [1000, 'viewer'],
+  ],
+};
+
+/// `info[0]` as a chat's own metadata, with the picture fields the room may
+/// send: a sticker at 12/13 and the rich user at 15.
+List<Object?> _chatMeta({Object? sticker, Object? rich}) => <Object?>[
+  0,
+  1,
+  25,
+  0xE33FFF,
+  1790519893202,
+  1234567890,
+  0,
+  '8z3o13gj',
+  0,
+  0,
+  0,
+  '',
+  if (sticker == null) 0 else 1,
+  sticker ?? '{}',
+  '{}',
+  rich,
+];
+
+/// A `DANMU_MSG` notice whose `info[0]` is [meta] and whose text is [text].
+Map<String, Object?> _chatWith(List<Object?> meta, String text) => {
+  'cmd': 'DANMU_MSG',
+  'info': [
+    meta,
     text,
     [1000, 'viewer'],
   ],
@@ -347,6 +382,31 @@ void main() {
       expect(_chats(watched), isEmpty);
     });
 
+    test('the online figure prefers `online_count`, and an unreadable one says nothing', () {
+      int? onlineOf(Map<String, Object?> data) {
+        final messages = BilibiliDanmakuProtocol.decode(_notice({'cmd': 'ONLINE_RANK_COUNT', 'data': data})).messages;
+        if (messages.isEmpty) return null;
+        final update = messages.single.payload! as LiveAudienceUpdate;
+        expect(update.kind, LiveAudienceSignalKind.onlineViewers);
+        return update.value;
+      }
+
+      expect(onlineOf({'online_count': 56, 'count': 99}), 56, reason: 'the older key is only a fallback');
+      expect(onlineOf({'count': 7}), 7);
+      expect(onlineOf({'online_count': '8'}), 8, reason: 'bilibili sends counts as strings');
+      expect(onlineOf({'online_count': 0}), 0);
+      for (final data in [
+        <String, Object?>{},
+        {'online_count': -1},
+        {'count': -1},
+        {'online_count': 'seven'},
+        {'online_count': 1.5},
+        {'other': 3},
+      ]) {
+        expect(onlineOf(data), isNull, reason: '$data carries no figure a room can show');
+      }
+    });
+
     test('a bought guard is a subscription gift named by its level', () {
       final frame = BilibiliDanmakuProtocol.decode(
         _notice({
@@ -423,14 +483,27 @@ void main() {
       expect(frame.messages.map((line) => (line.payload! as LiveRetraction).messageId), ['sc-1', 'sc-2']);
     });
 
-    test('a moderator warning and a cut-off say what the room did', () {
-      for (final notice in [
-        {'cmd': 'WARNING', 'msg': 'talk about this'},
-        {'cmd': 'CUT_OFF', 'msg': 'cut for that'},
+    test("a moderator warning and a cut-off lead with the room's own words", () {
+      for (final (cmd, lead) in [
+        ('WARNING', BilibiliDanmakuProtocol.warningNotice),
+        ('CUT_OFF', BilibiliDanmakuProtocol.cutOffNotice),
       ]) {
-        final line = BilibiliDanmakuProtocol.decode(_notice(notice)).messages.single;
-        expect(line.type, LiveMessageType.notice);
-        expect(line.text, contains(notice['msg']));
+        final withReason = BilibiliDanmakuProtocol.decode(_notice({'cmd': cmd, 'msg': 'talk about this'}))
+            .messages
+            .single;
+        expect(withReason.type, LiveMessageType.notice);
+        expect(withReason.text, '$lead：talk about this');
+        expect(withReason.payload, LiveNoticeKind.system, reason: 'a notice row is not a chat line');
+        // `msg` missing, empty or blank leaves the lead standing alone.
+        for (final notice in [
+          {'cmd': cmd},
+          {'cmd': cmd, 'msg': ''},
+          {'cmd': cmd, 'msg': '   '},
+        ]) {
+          final alone = BilibiliDanmakuProtocol.decode(_notice(notice)).messages.single;
+          expect(alone.text, lead, reason: '$notice has no reason to say');
+          expect(alone.payload, LiveNoticeKind.system);
+        }
       }
     });
 
@@ -462,7 +535,269 @@ void main() {
       expect(_operation(frame.sends.single), BilibiliDanmakuProtocol.opAck);
     });
   });
+
+  group('the pictures a chat carries', () {
+    test('a chat the platform sent no picture with carries none', () {
+      expect(BilibiliDanmakuProtocol.decode(_notice(_danmu('hello'))).messages.single.emotes, isEmpty);
+      final table = {
+        '[dog]': {'url': 'https://p.hdslb.com/dog.png'},
+      };
+      expect(
+        BilibiliDanmakuProtocol.emotes(
+          '',
+          _chatMeta(
+            rich: {
+              'extra': {'emots': table},
+            },
+          ),
+        ),
+        isEmpty,
+      );
+      expect(BilibiliDanmakuProtocol.emotes('[dog]', _chatMeta()), isEmpty);
+      expect(BilibiliDanmakuProtocol.emotes('[dog]', _chatMeta(rich: {'extra': <String, Object?>{}})), isEmpty);
+    });
+
+    test('a sticker is the whole text, and its picture is made https', () {
+      expect(
+        BilibiliDanmakuProtocol.emotes('[打call]', _chatMeta(sticker: {'url': 'http://i0.hdslb.com/base/gif/s.png'})),
+        [LiveEmote.of(code: '[打call]', url: 'https://i0.hdslb.com/base/gif/s.png')],
+      );
+      // Without a picture the sticker code stays plain text.
+      for (final sticker in [
+        {'url': ''},
+        {'url': 'gifs/s.png'},
+        <String, Object?>{},
+      ]) {
+        expect(BilibiliDanmakuProtocol.emotes('[打call]', _chatMeta(sticker: sticker)), isEmpty);
+      }
+      // The flag says sticker, but the field is not a picture record.
+      expect(BilibiliDanmakuProtocol.emotes('[打call]', _chatMeta(sticker: 'https://p.hdslb.com/x.png')), isEmpty);
+    });
+
+    test("the inline codes of the text come from the rich user's table", () {
+      final meta = _chatMeta(
+        rich: {
+          'extra': {
+            'emots': {
+              '[dog]': {'url': 'https://p.hdslb.com/dog.png'},
+              '[absent]': {'url': 'https://p.hdslb.com/absent.png'},
+              '[blank]': {'url': ''},
+              '[plain]': {'url': 'plain'},
+              '[cat]': {'url': 'http://p0.hdslb.com/cat.png'},
+            },
+          },
+        },
+      );
+      final found = BilibiliDanmakuProtocol.emotes('[dog] [cat] [blank] [plain]', meta);
+      expect(found.map((emote) => emote.code), ['[dog]', '[cat]']);
+      expect(found.map((emote) => emote.url), ['https://p.hdslb.com/dog.png', 'https://p0.hdslb.com/cat.png']);
+    });
+
+    test('the rich user arrives as JSON text just as well as as an object', () {
+      final table = {
+        '[dog]': {'url': 'https://p.hdslb.com/dog.png'},
+      };
+      expect(
+        BilibiliDanmakuProtocol.emotes(
+          '[dog] hi',
+          _chatMeta(
+            rich: jsonEncode({
+              'extra': {'emots': table},
+            }),
+          ),
+        ),
+        BilibiliDanmakuProtocol.emotes(
+          '[dog] hi',
+          _chatMeta(
+            rich: {
+              'extra': {'emots': table},
+            },
+          ),
+        ),
+      );
+
+      final line = BilibiliDanmakuProtocol.decode(
+        _notice(
+          _chatWith(
+            _chatMeta(
+              rich: {
+                'extra': {'emots': table},
+              },
+            ),
+            '[dog] hi',
+          ),
+        ),
+      ).messages.single;
+      expect(line.text, '[dog] hi');
+      expect(line.effectiveSender.userName, 'viewer');
+      expect(line.emotes.single.url, 'https://p.hdslb.com/dog.png');
+    });
+  });
+
+  group('a gift the room sends as protobuf', () {
+    test('SEND_GIFT_V2 is the gift line the JSON packet would be', () {
+      final pb = [
+        ..._pv(1, 1000),
+        ..._ps(2, 'payer'),
+        ..._pm(8, [..._pv(5, 7), ..._ps(6, '小可爱')]),
+        ..._pm(10, [
+          ..._pv(1, 24),
+          ..._ps(2, '小花花'),
+          ..._pv(3, 3),
+          ..._pv(5, 100),
+          ..._pv(7, 300),
+          ..._ps(8, 'gold'),
+          ..._ps(9, 'tid-1'),
+          ..._pv(10, 1790519893),
+          ..._ps(12, 'combo-1'),
+          ..._pm(29, [..._ps(1, 'anchor')]),
+          ..._pm(35, [..._ps(1, 'https://p2.hdslb.com/gift.png')]),
+        ]),
+        ..._pm(15, [
+          ..._pm(2, [..._ps(1, 'ignored')]),
+        ]),
+      ];
+      final line = BilibiliDanmakuProtocol.decode(_notice(_giftV2(pb))).messages.single;
+      final gift = line.payload! as LiveGift;
+      expect(line.type, LiveMessageType.gift);
+      expect(line.text, '小花花 ×3');
+      expect(line.effectiveSender.userId, '1000');
+      expect(line.effectiveSender.userName, 'payer', reason: 'the root name wins over the sender record');
+      expect(line.effectiveSender.fanBadgeName, '小可爱');
+      expect(line.effectiveSender.fanBadgeLevel, '7');
+      expect(line.messageId, 'bilibili:gift:tid-1');
+      expect(line.sentAt, DateTime.fromMillisecondsSinceEpoch(1790519893000, isUtc: true));
+      expect(gift.giftId, '24');
+      expect(gift.count, 3);
+      expect(gift.recipientName, 'anchor');
+      expect(gift.iconUrl, 'https://p2.hdslb.com/gift.png');
+      expect(gift.combo.comboKey, 'combo-1');
+      expect(gift.value.unit, LiveGiftUnit.goldSeed);
+      expect(gift.value.unitPrice, 100.0);
+      expect(gift.value.totalValue, 300.0);
+    });
+
+    test('the price of one is what the total says, and a silver gift is free', () {
+      LiveGift giftOf(List<int> giftFields) =>
+          BilibiliDanmakuProtocol.decode(_notice(_giftV2([..._pm(10, giftFields)]))).messages.single.payload!
+              as LiveGift;
+
+      final silver = giftOf([..._pv(1, 24), ..._ps(2, '小花花'), ..._pv(3, 3), ..._pv(7, 600), ..._ps(8, 'silver')]);
+      expect(silver.value.unit, LiveGiftUnit.silver);
+      expect(silver.value.unitPrice, 200.0);
+      expect(silver.value.totalValue, 600.0);
+      // A total the count does not divide leaves the unit price unnamed.
+      final odd = giftOf([..._pv(1, 24), ..._ps(2, '小花花'), ..._pv(3, 7), ..._pv(7, 600)]);
+      expect(odd.value.unitPrice, isNull);
+      expect(odd.value.totalValue, 600.0);
+      // Neither price nor total claims anything about money.
+      final free = giftOf([..._pv(1, 24), ..._ps(2, '小花花'), ..._pv(3, 1)]);
+      expect(<double?>[free.value.unitPrice, free.value.totalValue], [null, null]);
+      expect(free.count, 1, reason: 'a gift that names no count was still given once');
+      // The medal falls back to the rich user the sender record carries.
+      final withRich = BilibiliDanmakuProtocol.decode(
+        _notice(
+          _giftV2([
+            ..._pm(10, [..._ps(2, '小花花')]),
+            ..._pm(15, [
+              ..._pm(3, [..._ps(1, 'fan'), ..._pv(2, 4)]),
+            ]),
+          ]),
+        ),
+      ).messages.single;
+      expect(withRich.effectiveSender.fanBadgeName, 'fan');
+      expect(withRich.effectiveSender.fanBadgeLevel, '4');
+      expect((withRich.payload! as LiveGift).name, '小花花');
+    });
+
+    test('what the packet leaves out comes from the gift table', () {
+      const catalog = BilibiliGiftCatalog(
+        gifts: {'24': BilibiliGiftInfo(id: '24', name: '小花花', price: 990)},
+      );
+      final frame = BilibiliDanmakuProtocol.decode(
+        _notice(
+          _giftV2([
+            ..._pv(1, 24),
+            ..._pm(10, [..._pv(1, 24), ..._ps(2, '  '), ..._pv(3, 2)]),
+          ]),
+        ),
+        gifts: catalog,
+      );
+      final gift = frame.messages.single.payload! as LiveGift;
+      expect(gift.name, '小花花');
+      expect(gift.value.unit, LiveGiftUnit.goldSeed);
+      expect(gift.value.unitPrice, 990.0);
+      expect(gift.value.totalValue, 1980.0);
+      // An id of 0 names no gift, so the table is not asked.
+      final unknown =
+          BilibiliDanmakuProtocol.decode(
+                _notice(
+                  _giftV2([
+                    ..._pm(10, [..._pv(1, 0), ..._ps(2, '无名'), ..._pv(3, 1)]),
+                  ]),
+                ),
+                gifts: catalog,
+              ).messages.single.payload!
+              as LiveGift;
+      expect(unknown.giftId, isEmpty);
+      expect(unknown.value.unitPrice, isNull);
+    });
+
+    test('a packet that is not a gift gives nothing', () {
+      for (final data in <Object?>[
+        null,
+        <String, Object?>{},
+        {'pb': ''},
+        {'pb': '@@@@'},
+        {
+          'pb': base64.encode([0x0A]),
+        },
+        {'pb': base64.encode(_pv(1, 1000))},
+        {
+          'pb': base64.encode([
+            ..._pv(1, 1000),
+            ..._pm(10, [..._pv(3, 2)]),
+          ]),
+        },
+      ]) {
+        final frame = BilibiliDanmakuProtocol.decode(_notice({'cmd': 'SEND_GIFT_V2', 'data': ?data}));
+        expect(frame.error, isNull, reason: '$data is a gift this room was not told about, not a broken socket');
+        expect(frame.messages, isEmpty);
+      }
+    });
+  });
 }
+
+/// A protobuf varint field, as `SEND_GIFT_V2`'s `data.pb` carries it.
+List<int> _pv(int field, int value) => [..._ptag(field, 0), ..._pvarint(value)];
+
+/// A protobuf UTF-8 text field.
+List<int> _ps(int field, String text) {
+  final data = utf8.encode(text);
+  return [..._ptag(field, 2), ..._pvarint(data.length), ...data];
+}
+
+/// A nested protobuf message field.
+List<int> _pm(int field, List<int> inner) => [..._ptag(field, 2), ..._pvarint(inner.length), ...inner];
+
+List<int> _ptag(int field, int wireType) => _pvarint((field << 3) | wireType);
+
+List<int> _pvarint(int value) {
+  var rest = value;
+  final out = <int>[];
+  while (true) {
+    final byte = rest & 0x7F;
+    rest >>>= 7;
+    if (rest == 0) return [...out, byte];
+    out.add(byte | 0x80);
+  }
+}
+
+/// A `SEND_GIFT_V2` notice holding [pb] as its `data.pb`.
+Map<String, Object?> _giftV2(List<int> pb) => {
+  'cmd': 'SEND_GIFT_V2',
+  'data': {'pb': base64.encode(pb)},
+};
 
 extension on Object? {
   /// Wraps a notice the decoder reads, so a case can be written as its JSON.
