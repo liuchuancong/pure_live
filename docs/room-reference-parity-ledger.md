@@ -625,3 +625,13 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 **剩下的 12 家（下轮按流量排,别一次全改）**：douyin、kuaishou、twitch、yy（这四家房间量大）→ kick、tiktok、showroom、niconico 类海外站 → inke、kilakila、kugoulive、liveme、weibo。每家的动作与本轮一样：`<site>_endpoints.dart` 加一个带理由的 `requestTimeout`，transport 里每个 `LiveRequest` 传上，一条测试断言"每个请求都带"。**注意别把上限设到真会等的地方**：本轮确认过 `open()` 不受这三个值影响，所以拉流/下载不在射程里；但哪一家如果有**服务端长轮询**（登录态检查那类），要在它自己的调用点显式传更大的值而不是放开默认。
 
 **为什么没顺手改 live_net 的默认**：把默认放在 transport 里一处就能覆盖全部 31 家，但 `live_net` 是音乐/点播/下载/录像共用的包，本轮我没有那些车道在真慢响应下的证据（录像的分片拉取、下载的首字节等待都可能被一个全局 `receiveTimeout` 误伤）。⇒ 记这里，别下轮直接"顺手统一到包里"，那是需要一次跨车道验证的改动。
+
+## 第二十四轮（2026-11-05）：再关四家的无限等待，并把三条重复的测试并成一条守卫
+
+**参考的拉取**：本轮 `git -c http.version=HTTP/1.1 pull --ff-only` 一次就成，`Already up to date`，仍在 `f00bebd91` ⇒ 443 是间歇故障，上一轮的"重试到收尾"判据有效。
+
+| P65 | `9f87fc17a` | douyin / kuaishou / twitch / yy 的请求也不再无限等 | 按"进房流量"从第二十三轮那份 12 家名单里取前四家，共 **8 个 `LiveRequest.custom`** 加上各自 `requestTimeout = 20 s`：douyin 的页面读；kuaishou 的 api 读、feed POST、评论轮询；twitch 的页面读与 GraphQL POST；yy 的 api 读与表单 POST。**动手前先核两件事**（这是上一轮自己写的护栏）：① kuaishou 的评论是**客户端自己按计时器轮询**（`kuaishou_danmaku_session.dart:62` "serial polling of the comment feed"、`_schedule(wait)`），所以每请求上限不等于轮询间隔，不会把聊天掐短；② `LiveHttp.open()` 不走 `connect/send/receiveTimeout` 那三个字段，流式与分片拉取不在射程里。失败形态沿用各家原本的 `*Failure(network)`，房间念得出来。 |
+| P66 | 同上 | 三条重复测试并成一条守卫 | 上一轮给 soop、再上一轮给 bilibili/douyu 各写了一个"transport 带上限"的组，说的是同一件事（[[feedback-one-thing-said-once-per-row]]）。本轮改成 **`test/platforms/request_timeouts_test.dart`**：一个假 `LiveHttp` 记下全部请求，七家已封顶的 transport 每个方法走一遍，断言 ①每个请求都带着自己那家的上限 ②这些上限**是同一个数**（20 s）——以后新增一个不带上限的请求就会在这里红，而不是在某个房间里。三条旧组与它们的假件、多余 import 一起删掉（净 +5 条：删 3 加 8）。**守卫自己咬得住**：临时删掉 yy 的一个 `timeout:` ⇒ 只有 yy 那一条红（`Failing tests: … yy caps the api read and its form post`），改回来后 `dart test` 整包 **553 绿**；还原用仓外副本 md5 对过（`231557e3…`）。 |
+| 门禁 | 同上 | | `dart analyze test lib`（`packages/live_sites`）**0 issues**；整包 **553 绿**（上轮 548）。提交只含我列的 12 个路径；`platforms/bigo/**`、`core/**` 仍在 ingest lane 手里，本轮没碰。 |
+
+**还剩 8 家没有上限**：inke、kick、kilakila、kugoulive、liveme、showroom、tiktok、weibo。做法与本轮相同（`<site>_endpoints.dart` 加带理由的 `requestTimeout`，transport 每个请求传上，再往那份共享守卫里加一行）。**两家要先看一眼再动**：kick 的 Windows 通道是自己写的 `WinHttpLiveHttp`（ffi，不是 `LiveRequest` 那条路，见 [[reference-pure-live-live-site-health]]），上限要加在它自己的等待上；weibo/inke 如果有服务端长轮询（登录态那类），要在调用点显式给更大的值而不是放宽默认。
