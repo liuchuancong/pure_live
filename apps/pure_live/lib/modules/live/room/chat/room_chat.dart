@@ -14,6 +14,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
+import 'package:pure_live/modules/live/room/chat/paid_banner.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
 import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
@@ -836,15 +837,20 @@ final class _ChatLine extends ConsumerWidget {
     );
     if (superChat != null) {
       // A super chat is the loudest money in the room: the warm banner and
-      // the price chip up front, the words beside them.
+      // the price chip up front, the words beside them. The platform's own
+      // colours lead when it sends them (five platforms do, for the card the
+      // viewer paid for); the theme's warm tint is the fallback, not the rule.
+      final banner = paidBanner(superChat.display.backgroundColor, colors.surface);
       content = Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
           decoration: BoxDecoration(
-            color: colors.warning.tint,
+            color: banner?.fill ?? colors.warning.tint,
             borderRadius: BorderRadius.circular(theme.radii.card),
-            border: Border.fromBorderSide(BorderSide(color: colors.warning.fill.withValues(alpha: 0.35))),
+            border: Border.fromBorderSide(
+              BorderSide(color: banner?.edge ?? colors.warning.fill.withValues(alpha: 0.35)),
+            ),
           ),
           child: content,
         ),
@@ -1346,12 +1352,24 @@ final class _SuperChatCard extends StatelessWidget {
         : amount >= 10
         ? 0.10
         : 0.05;
+    // The same warmth, in the platform's own two colours when it sends them
+    // (the reference paints its super-chat card with exactly these): the money
+    // still decides the weight, so the board keeps reading by value, and the
+    // row's text keeps the theme's contrast.
+    final banner = paidBannerGradient(
+      top: message.display.backgroundColor,
+      bottom: message.display.backgroundBottomColor,
+      surface: colors.surface,
+      weight: tint,
+    );
     return Container(
       padding: const EdgeInsets.all(DsSpace.s12),
-      decoration: DsBoxDecoration(
-        color: colors.accent.withValues(alpha: tint),
-        borderRadius: BorderRadius.circular(theme.radii.card),
-      ),
+      decoration: banner == null
+          ? DsBoxDecoration(
+              color: colors.accent.withValues(alpha: tint),
+              borderRadius: BorderRadius.circular(theme.radii.card),
+            )
+          : BoxDecoration(gradient: banner, borderRadius: BorderRadius.circular(theme.radii.card)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s8,
