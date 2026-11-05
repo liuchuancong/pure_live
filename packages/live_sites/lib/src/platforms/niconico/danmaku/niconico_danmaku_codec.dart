@@ -307,7 +307,9 @@ abstract final class NiconicoDanmakuCodec {
   /// Who may comment by a `CommentLock` (1 status: 0 Unrestricted, 1 Locked,
   /// 2 Restricted; 2 follow_restriction {1 minimum_follow_duration {1
   /// seconds}}); null for a status this does not know (changes nothing). A
-  /// follow duration below zero is zero; over [maxFollowSeconds], that.
+  /// missing restriction is protobuf's default instance, so a restriction with
+  /// no duration is followers-only at once; a follow duration below zero is
+  /// zero; over [maxFollowSeconds], that.
   static NiconicoCommentLock? commentLockOf(NiconicoProtoMessage lock) {
     switch (lock.integer(1) ?? 0) {
       case 0:
@@ -315,9 +317,7 @@ abstract final class NiconicoDanmakuCodec {
       case 1:
         return NiconicoCommentLock.locked;
       case 2:
-        final restriction = lock.message(2);
-        if (restriction == null) return NiconicoCommentLock.none;
-        final seconds = restriction.message(1)?.integer(1) ?? 0;
+        final seconds = lock.message(2)?.message(1)?.integer(1) ?? 0;
         return NiconicoCommentLock.followers(Duration(seconds: seconds.clamp(0, maxFollowSeconds)));
       default:
         return null;
