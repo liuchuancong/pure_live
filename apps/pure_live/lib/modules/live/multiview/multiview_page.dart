@@ -1096,12 +1096,16 @@ final class _PaneControls extends StatelessWidget {
     );
     final quality = _StreamChip(
       icon: DsIcons.gauge,
-      label: pane.quality?.label ?? t.multiview.paneQuality,
+      label: pane.quality?.displayLabel ?? t.multiview.paneQuality,
       semanticLabel: t.multiview.paneQuality,
       enabled: !pane.switching && pane.qualities.isNotEmpty,
       items: [
         for (final quality in pane.qualities)
-          DsMenuItem(label: Text(quality.label), checked: quality == pane.quality, onPressed: () => onQuality(quality)),
+          DsMenuItem(
+            label: Text(quality.displayLabel),
+            checked: quality == pane.quality,
+            onPressed: () => onQuality(quality),
+          ),
       ],
     );
     final lineChip = pane.lines.length > 1
