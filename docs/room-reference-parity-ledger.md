@@ -9,7 +9,7 @@
 1. **第 1 部分（桌面控件/弹幕列表/录制显示）**：与参考逐控件比过三轮并已持平或更强；`T13–T23`、`P27–P39` 是成果清单。**再动就是凭喜好重排**——参考底条动词与我们的"条 + ⋮ 菜单"分工按参考自己的 `menuEntriesOnBars` 规则等价（它把条上有的从菜单里删掉，我们把同类动词收进菜单，都是一个入口）。
 2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。**例外：第十八轮的 P58 不是靠猜的**——它量的是盘上已有的 `attaching engine … {line: N}` 行（恢复每次从 line 0 开始，观众选的线路被丢掉），修的是恢复路径的线路身份，与首帧耗时无关，见「第十八轮」。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
-4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。
+4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。**测试这一维是第十九轮才补上的**：我们 `live_sites` 的 22 个弹幕解码器**此前零直接测试**（`danmaku/*.dart` 里有 `static …decode(` 的文件共 20 个；参考侧有 20 个站点测试文件），bilibili 已钉住（P59，25 条），其余站点按「第十九轮」给的顺序欠着——那不是"持平"，是"没人验过"。
 5. **欠账已清（2026-11-05 第十三轮）**：`displayLabel` 的显示位全部落地——房间的两处随别的 lane 的提交进了 HEAD（`player_surface.dart:430,1246`），多视图两处是 `2208ce785`（`:1099,:1105`）。别再当待办；新加画质显示位时直接用 `displayLabel`，身份仍用 `label`/`qualityId`。
 6. **决定只剩一个**：①**Bigo 已定案并落地**（用户拒绝回环中继 ⇒ `01075c532` 让 `getLines` 带可读原因失败，见「第十二轮」；不要再提做中继）。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
@@ -518,6 +518,18 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 - `live_core/lib/src/hls_source_query_policy.dart`（87 行）：参考**自己的站点零调用**（全仓只有 live_media 的管道参数和它自己的测试在传）。它描述的是"某个 provider 会把 master 的 `token` 手动加到子请求"这件事，不是通用 HLS 规则——没有观测到的站点，就没有要接的东西。
 - `live_media/lib/src/fallback.dart` 的 `DecoderFallback`（硬件解码失败后换 `hwdec=no`，参考确有消费者 `session.dart:183`）：我们把解码档做成了**观众的设置**（`playback.hwdec`、`effectivePlayerHardwareDecoder()`、preset 的 `lockedOutputKeys`）再加引擎间兜底；自动换档会覆盖一个人明确选过的解码方式，还会让"为什么这次是软解"变成设置里读不出来的事 ⇒ 记为有意差异，不改。
 - `LineFallback` 的失败线路记忆（markFailed 只在 attempt>0 生效）：我们一次 `_sweep` 本来就把每条线路走完，记忆只影响"跨恢复任务的第一条试谁"，代价是一条候选的验证预算 ⇒ 等下一次有 `room-open`/`recovery` 的重建运行数据再判，别先写。
+
+## 第十九轮（2026-11-05）：弹幕解码器一个测试都没有（第 4 部分，先给最忙的那条线钉住）
+
+普查 `packages/live_sites/test/**`：**站点测试全部只覆盖播放地址/画质/目录，弹幕解码器零直接测试**（有 `decode(` 的 `danmaku/*.dart` 共 20 个文件，测试数 0）（唯一沾弹幕的测试是 `danmaku_text_shape_test.dart`，那是过滤器的字形归一）。参考侧 `live_danmaku/test/sites/` 有 **20 个站点测试文件**。⇒ "逐文件 diff 过 9 个过滤器族"从来不含**线格式**：包帧、认证体、压缩层、cmd 分派，这些正是"进房后弹幕一条都不出"会藏的地方。
+
+| P59 | `443003128` | bilibili 的弹幕线格式被测试钉住 | 新增 `packages/live_sites/test/platforms/bilibili/bilibili_danmaku_test.dart`，**25 条**，从"我们往socket写什么"与"我们读出什么"两侧钉：头 16 字节（大端、version 0、sequence 1、心跳的 base64 逐字节）、auth 体的**键序**与 `protover 3`、`queue_uuid` 八位小写十六进制且 20 个种子互不重复、只有 `p_is_ack` 为真且 `msg_id`/`cmd`/整型 `p_msg_type` 齐了才回执（六种缺法都不回）、`**`/`＊＊` 才算打码名；解侧钉：包序、**故障前已到的条目要留下**（零长包与尾随字节两种）、超 `maxMessageBytes`/超 `maxPackets`/超 `maxInflatedBytes`/超过两层嵌套四种都有 `FormatException` 而不是崩溃、zlib 与 brotli（protover 3，含 brotli 套 zlib）都能解、op 3 人气与 op 8 认证码、`DANMU_MSG` 的 who/colour/时间戳（毫秒与秒两种）/dmid、`RECALL_DANMU_MSG` **不是聊天行**（它的 cmd 里就含 `DANMU_MSG`，且 uid 0 的撤回必须整条丢掉）、`WATCHED_CHANGE`/`ONLINE_RANK_COUNT` 走 audience、`GUARD_BUY` 是 subscription 礼物且档位名缺了也有名字、`SUPER_CHAT_MESSAGE` 带价与两条官方色、`SUPER_CHAT_MESSAGE_DELETE` 逐条撤回、`WARNING`/`CUT_OFF` 成系统条、未知 cmd 与非 JSON 只跳过不算错。 |
+
+**结果要说实话**：这 25 条**没有测出解码器的错**（全绿）——它的价值是线格式从此有钉，改协议常量（比如 `protocolVersion`、`maxNesting`）会当场红，而参考能逐个站点做对照的只剩测试这一维。`dart test`（纯 Dart 包，不是 flutter test）整包 **500 绿**（原 475）。
+
+**下一轮接着钉的顺序**（按弹幕量，别一次开 20 个）：douyu（`douyu_stt_codec.dart`，注意它只有 session + stt，没有独立 codec）、huya（`huya_danmaku_codec.dart` + `huya_tars.dart`，fixture 要自己用 TARS 写）、kuaishou、douyin、yy（`yy_packet.dart`）、twitch。判据同本轮：`dart analyze test/platforms/<site>` 0 issues + `dart test test/platforms/<site>`。
+
+**写站点测试的一个坑（本轮踩了一次）**：只 import 平台 codec 文件不会把 `LiveMessage` 的成员名带进来——`effectiveSender`/`effectiveColor` 这类模型 getter 必须**直接 import 模型文件**（`src/models/message/live_message/live_message.dart`），否则 analyzer 报 "getter isn't defined for the type LiveMessage"，看着像模型坏了。另外 `LiveMessageType` 里那一档叫 **`audienceUpdate`**，不是 `audience`。
 
 ## 第十七轮（2026-11-05）：四道护栏跑在 HEAD 上，清掉我那批积压提交欠下的两条
 
