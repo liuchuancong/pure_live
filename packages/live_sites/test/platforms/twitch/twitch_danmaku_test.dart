@@ -322,4 +322,135 @@ void main() {
       expect(notice.text, contains('Twitch'));
     });
   });
+
+  group('the chat reader of the 3.x client', () {
+    test('a line has to reach a trailing part to be chat', () {
+      expect(TwitchDanmakuCodec.chat(':tester!tester@t.tmi.twitch.tv PRIVMSG #tester'), isNull);
+      expect(TwitchDanmakuCodec.chat('@id=c-1 :t!u@h NOTICE #tester :look, a PRIVMSG here'), isNull);
+      expect(TwitchDanmakuCodec.chat('hello'), isNull);
+      // Any line that holds ` PRIVMSG ` counts, prefix or no prefix, command or
+      // no command: what follows the first ` :` after it is the text.
+      final bare = TwitchDanmakuCodec.chat('@id=c-1;user-id=9 PRIVMSG #tester :hi')!;
+      expect(bare.text, 'hi');
+      expect(bare.messageId, 'c-1');
+      expect(bare.effectiveSender.userName, 'Twitch', reason: 'no display-name and no nick! to read');
+    });
+
+    test('a tag without = is kept by the line parser and dropped by the chat reader', () {
+      const line = '@emotes;id=c-2 :t!u@t.tmi.twitch.tv PRIVMSG #tester :x';
+      expect(TwitchIrcLine.parse(line)!.tags['emotes'], isEmpty);
+      final spoken = TwitchDanmakuCodec.chat(line)!;
+      expect(spoken.messageId, 'c-2');
+      // A tag block that holds nothing leaves the chat without its tags.
+      expect(TwitchDanmakuCodec.chat('@ PRIVMSG #tester :x')!.messageId, isEmpty);
+    });
+
+    test('no time tag, or one that is no number, leaves the line without a time', () {
+      for (final timestamp in ['', 'many', '-']) {
+        expect(
+          TwitchDanmakuCodec.decode(_privmsg(extra: <String, String>{'tmi-sent-ts': timestamp})).messages.single.sentAt,
+          isNull,
+          reason: 'tmi-sent-ts="$timestamp" is no time',
+        );
+      }
+    });
+  });
+
+  group('a cheer that has nothing to key on', () {
+    test('without a message id the cheer is keyed by the speaker and the moment', () {
+      final cheer = TwitchDanmakuCodec.decode(_privmsg(extra: const <String, String>{'bits': '50', 'id': ''}))
+          .messages
+          .first;
+      final gift = cheer.payload! as LiveGift;
+      expect(cheer.messageId, isEmpty, reason: 'there is no chat id to hang ":bits" on');
+      expect(gift.combo.comboKey, 'bits:123:1790519893202');
+      expect(gift.count, 50);
+      expect(gift.value.totalValue, 50);
+
+      final anonymous = TwitchDanmakuCodec.decode('@bits=7 PRIVMSG #tester :hi').messages.first;
+      expect((anonymous.payload! as LiveGift).combo.comboKey, 'bits::', reason: 'no account, no time');
+      expect(anonymous.effectiveSender.userId, isEmpty);
+    });
+  });
+
+  group('what the announcements say about their viewer', () {
+    test('a USERNOTICE with nothing to say gives no line', () {
+      expect(TwitchDanmakuCodec.decode(_notice('@msg-id=raid;system-msg=')).messages, isEmpty);
+      expect(TwitchDanmakuCodec.decode('${_notice('@msg-id=sub;system-msg=')} :   ').messages, isEmpty);
+    });
+
+    test('the notice names the viewer by display-name, else login, else the site', () {
+      String? speaker(String tags) {
+        final messages = TwitchDanmakuCodec.decode(_notice(tags)).messages;
+        return messages.isEmpty ? null : messages.first.effectiveSender.userName;
+      }
+
+      expect(speaker(r'@display-name=Rich;login=rich;msg-id=sub;system-msg=New\ssub'), 'Rich');
+      expect(speaker(r'@display-name=;login=rich;msg-id=sub;system-msg=New\ssub'), 'rich');
+      expect(speaker(r'@msg-id=sub;system-msg=New\ssub'), isEmpty, reason: 'a notice with nobody behind it');
+
+      final frame = TwitchDanmakuCodec.decode(
+        '${_notice(r'@display-name=Rich;user-id=42;color=#177DE3;id=n-1;msg-id=sub;system-msg=New\ssub')} :hi',
+      );
+      final notice = frame.messages.first;
+      final spoken = frame.messages.last;
+      expect(notice.effectiveSender.nameColor, isNotNull);
+      expect(
+        <int>[
+          notice.effectiveSender.nameColor!.r,
+          notice.effectiveSender.nameColor!.g,
+          notice.effectiveSender.nameColor!.b,
+        ],
+        [0x17, 0x7D, 0xE3],
+      );
+      expect(spoken.messageId, 'n-1', reason: "the viewer's words keep the notice's own id");
+      expect(spoken.color, notice.effectiveSender.nameColor);
+      expect(notice.text, 'New sub');
+    });
+
+    test('a community gift marks its member notices too, and alike notices are two keys', () {
+      final member = TwitchDanmakuCodec.decode(
+        _notice(r'@msg-id=subgift;msg-param-community-gift-id=77;display-name=Rich;system-msg=Gifted\sto\ssomeone'),
+      );
+      expect(member.messages.single.payload, LiveNoticeKind.subscription);
+      final paired = member.communityGifts.entries.single;
+      expect(paired.value, (id: '77', announcement: false, count: 1));
+
+      final twice = TwitchDanmakuCodec.decode(
+        '${_notice('@msg-id=submysterygift;msg-param-community-gift-id=77;system-msg=gifted')}\r\n'
+        '${_notice('@msg-id=submysterygift;msg-param-community-gift-id=77;system-msg=gifted')}',
+      );
+      expect(twice.messages, hasLength(2));
+      expect(twice.communityGifts, hasLength(2), reason: 'the map is keyed by identity, so the room can pair each one');
+    });
+  });
+
+  group('frames the server sends in other shapes', () {
+    test('a frame split by bare line feeds still answers every PING', () {
+      final frame = TwitchDanmakuCodec.decode('PING :tmi.twitch.tv\n${_privmsg(text: 'one')}\nPING :tmi.twitch.tv');
+      expect(frame.replies, ['PONG :tmi.twitch.tv', 'PONG :tmi.twitch.tv']);
+      expect(frame.messages.map((line) => line.text), ['one']);
+      // Only a server PING is answered; a line that merely mentions one is not.
+      expect(TwitchDanmakuCodec.decode(':tmi.twitch.tv PRIVMSG #tester :PING :tmi').replies, isEmpty);
+    });
+
+    test('the refused login is found with tags before the prefix, and a channel NOTICE is not it', () {
+      expect(
+        TwitchDanmakuCodec.isLoginRejection(
+          '@msg-id=login_failed :tmi.twitch.tv NOTICE * :Login authentication failed',
+        ),
+        isTrue,
+      );
+      expect(TwitchDanmakuCodec.isLoginRejection('NOTICE * :Improperly formatted auth'), isTrue);
+      expect(TwitchDanmakuCodec.isLoginRejection(':tmi.twitch.tv NOTICE #tester :slow_mode'), isFalse);
+      for (final line in [':tmi.twitch.tv', '@x', '', ' :tmi.twitch.tv NOTICE * :x']) {
+        expect(TwitchDanmakuCodec.isLoginRejection(line), isFalse, reason: '"$line" is no refusal');
+      }
+      final frame = TwitchDanmakuCodec.decode(
+        '@msg-id=login_failed :tmi.twitch.tv NOTICE * :Login authentication failed',
+      );
+      expect(frame.loginRejected, isTrue);
+      expect(frame.messages, isEmpty);
+    });
+  });
 }
