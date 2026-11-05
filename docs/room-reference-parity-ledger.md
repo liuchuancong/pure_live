@@ -409,3 +409,15 @@ PLAN-CHECK huya     没有注册 resolver
 | **`AudienceRankKey`（参考 `audience.dart:310`）我们确实没有** | 参考排序分档：明确并发数 > 待取的并发数 > 热度/累计兜底，理由是"**几百万热度不该压过几千真人**"。我们的排序读的是**卡片那个数**（`search_page.dart:565` `audienceFigureOf(...) ?? -1`），而且设置页那条 `audienceRankingNote` 明说了这个规则（"排序用卡片显示的数值"）⇒ **不是漏，是另一条已登记的取舍**：在 `metric=automatic` + `preferRealOnline` 开着时卡片数就是真实在线数，两条规则在那个档位会同意；不同意的只有"跟随平台 + 关了偏好"或手选热度那几档。要改成参考的分档，得同时改 `search_page.dart`（**搜索 lane 正在改这个文件**，本轮不动它）。⇒ 队列项，等那文件干净或由搜索 lane 一起收。 |
 
 | P48 | `3243455ec` | 房间数字跟着直播走 | **第四例"有写没读"**（前三例：T20 只有读者没写者、P36 只有写者没读者、P46 搬了个 helper 没人调用）：`LiveAudienceUpdate` 有 **12+ 个生产者**（bilibili 心跳/`WATCHED_CHANGE`/operation_3、douyin、acfun、bigo、fc2live、baidulive、kuaishou、seventeenlive、steambroadcast 的编解码器都发 `LiveMessageType.audienceUpdate`，包侧 7 个平台的测试在钉它），app 侧**一个读者都没有** ⇒ 条上的在线数与详情页的三个数只在"页面重读 detail"时动；一间房开播期间涨了万人，屏幕上还是进房那一刻的数。现在 `audienceUpdate` 落到正在播的房间上（三种 kind 一对一写 `RoomAudience` 的三个字段），**与屏幕上已显示的数相同就不换 state**（这些几秒一条，每来一条就重建房间等于为没动的数字重画整页）；并且它不再进弹幕管线——管线本来就把空文本丢掉，同 retraction 的规矩。门：app `dart analyze lib` 0 issues、`flutter test test/live` 62 例中 61 绿（唯一红仍是录像 lane）、`dart format` 零重排、diff 只有我这 29 行。**未加测试**：全仓 app 测试树里没有任何 `RoomController` 的 harness（`grep -l roomControllerProvider apps/pure_live/test` 为空），为这 6 行现造一套是为本测试塑形；运行期请验：**开一间人气跳动的 bilibili 房，条上的数字与详情页的"人气/在线/累计"应在几秒内变，而不用等页面重读**。 |
+
+## 第九次对照（2026-11-05）：第五例"有写没读"——超级弹幕的官方配色
+
+普查方法照 P46（"谁生产、谁消费"两头数），这次数的是 `SuperChatDisplay`：
+
+- **生产者 5 站 6 处**：`bilibili_danmaku_codec.dart:722`、`bilibili_room_parser.dart:359`（房间页那张 SC 板也带配色）、`douyu_stt_codec.dart:236,262`、`huya_danmaku_codec.dart:330`、`seventeenlive_danmaku_codec.dart`、`youtube_danmaku_codec.dart`。
+- **消费者：0**。app 里 `display` 一个读者都没有 ⇒ 付费卡上那一条与超聊板用的是主题的 `colors.warning.tint` / `colors.accent` 梯度，**五站的红金配色全被丢掉**，B 站与斗鱼的 SC 看起来一模一样。
+- 参考怎么画：它的**行**（`chat_list.dart:777`）用 `parsePlatformColor(backgroundColor) ?? tertiaryContainer` + `InkOnColor.on(...)`；它的**卡片**（`super_chats.dart:171-172`）用两个色做渐变，墨色按对比反推。它的解析器 `parsePlatformColor`（`chat_list.dart:1008`）只剥 `#` 再 `tryParse`，**别的什么都不校验**。
+
+| P49 | `cf0b8d6c7` | 付费卡穿平台自己的颜色 | 新 `room/chat/paid_banner.dart`：`platformColor`（`#RRGGBB`/`#AARRGGBB`/裸 6 位；**名字、`rgb()`、截断串一律判否**，退回主题而不是涂成灰——这条比参考严，参考那把 `int.tryParse(hex...)` 会把 4 位串当数字吃进去）、`paidBanner`（行：填色取平台的色但向 surface 收到 22%、描边收 45%，所以色相在场、正文仍用主题墨色，浅/深主题都成立）、`paidBannerGradient`（超聊板：两色渐变，**权重仍由金额档位 0.05/0.10/0.16 决定**——参考的"按金额分级"和我们已有的"板子按价值读"两条规则都留住）。两处渲染面都接（行 + 板），不留半个读者。**故意不抄**参考的"满色 + 反推墨色"：我们的行里名字/徽章/时间戳各用自己的主题墨色，铺满饱和色会一处一处破；tint 路线让文字一条都不用改。新 `test/live/room_paid_banner_test.dart`（8 例：解析正反、tint 比原色淡但比 surface 深、描边比填色重、墨色在 fill 上仍 ≥4.5、权重随金额变、缺尾色=单色、缺顶色=交回调用方）。门：`dart analyze lib` 0 issues、`flutter test test/live/room_paid_banner_test.dart` **8 绿**、`flutter test test/live` 70 例中 69 绿（唯一红仍是录像 lane）。运行期未验：**要在一间有 B 站/斗鱼付费卡的房间看那条行与超聊页的卡片**（浅色与深色各一次）；若 tint 太淡看不出色相，把 `paidBanner` 的 0.78/0.55 调小即可，规则不用改。 |
+
+- 提交纪律：第一版提交正文把生产者写成"六站（含 Kick）"——Kick 只是早前那次 socket 普查里出现过，本站**不产** `SuperChatDisplay`。**未推送前**改正并折进同一条提交（`--amend -- <我的三个路径>`，别人没在里面），已推送历史不改写。
