@@ -1,4 +1,3 @@
-import 'package:live_sites/src/models/enums/live_gift_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/gift/live_gift_combo/live_gift_combo.dart';
@@ -210,7 +209,8 @@ abstract final class DouyuGiftParser {
       giftId: id,
       name: name,
       iconUrl: iconUrl,
-      kind: free ? LiveGiftKind.normal : LiveGiftKind.normal,
+      // Every douyu gift is an ordinary one: whether it cost anything rides
+      // on `value.unit` below, which is what the tier rules read.
       count: count,
       value: LiveGiftValue.of(
         unit: free ? LiveGiftUnit.free : (priceFen == null ? LiveGiftUnit.other : LiveGiftUnit.fen),
