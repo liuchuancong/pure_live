@@ -1630,6 +1630,16 @@ List<Widget> roomMenuItems(
           label: Text(t.room.screenshot),
           onPressed: () => unawaited(takeRoomScreenshot(context, ref, room.handle!)),
         ),
+      // The bar below carries this verb only where it has room for a text
+      // button beside the transport, so on a phone and in a narrow window the
+      // mode a viewer reaches for on a metered connection had no way in at all.
+      // Switching it is safe with nothing loaded, so the row needs no gate.
+      DsMenuItem(
+        leading: DsIcon(room.audioOnly ? DsIcons.video : DsIcons.headphones),
+        label: Text(room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode),
+        checked: room.audioOnly,
+        onPressed: () => unawaited(ref.read(roomProvider.notifier).setAudioOnly(value: !room.audioOnly)),
+      ),
       if (detail != null && waiting)
         DsMenuItem(
           leading: const DsIcon(DsIcons.clock),
