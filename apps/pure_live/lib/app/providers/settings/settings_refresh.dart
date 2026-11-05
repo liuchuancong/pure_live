@@ -36,6 +36,7 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/modules/live/search/search.dart';
+import 'package:pure_live/modules/live/search/search_scope.dart' show searchExcludedProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart' show musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart' show musicCustomPresetsProvider;
@@ -145,6 +146,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   musicSearchHistoryProvider,
   musicLocalProvider,
   searchHistoryProvider,
+  searchExcludedProvider,
   webdavAccountsProvider,
   autoShutdownProvider,
   navMenuProvider,

@@ -92,6 +92,9 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('shell.roomWindows', BackupPrefKind.boolean),
   ('ui.splash', BackupPrefKind.boolean),
   ('search.history', BackupPrefKind.stringList),
+  // The search's excluded platforms are one JSON string, not a string list:
+  // `SearchExcludedController` encodes the set itself.
+  ('search.allExcluded', BackupPrefKind.string),
   // The platform display and its order/preference.
   ('sites.display', BackupPrefKind.stringList),
   ('sites.display.hidden', BackupPrefKind.stringList),
