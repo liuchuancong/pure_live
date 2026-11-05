@@ -158,7 +158,10 @@ abstract final class YoutubeDanmakuCodec {
     final deleted = jsonObject(action['markChatItemAsDeletedAction']) ?? jsonObject(action['removeChatItemAction']);
     if (deleted != null) {
       final target = jsonString(deleted['targetId']) ?? jsonString(deleted['targetItemId']);
-      if (target != null) return _retraction(LiveRetraction.of(messageId: target));
+      // The feed names a line by its bare InnerTube id, while every line of
+      // this codec carries the `youtube:` prefix `_id` gives it: without the
+      // same prefix here the deletion names a line the list cannot find.
+      if (target != null && target.isNotEmpty) return _retraction(LiveRetraction.of(messageId: _prefixed(target)));
     }
     final byAuthor =
         jsonObject(action['markChatItemsByAuthorAsDeletedAction']) ??
@@ -308,7 +311,7 @@ abstract final class YoutubeDanmakuCodec {
         userName: author.isEmpty ? anonymousUserName : author,
       ),
       color: LiveMessageColor.white,
-      messageId: jsonString(renderer['id']) ?? '',
+      messageId: _id(renderer),
       sentAt: _time(renderer['timestampUsec']),
       payload: received ? LiveNoticeKind.giftedSubscription : LiveNoticeKind.subscription,
     );
@@ -362,10 +365,11 @@ abstract final class YoutubeDanmakuCodec {
     return emotes;
   }
 
-  static String _id(Map<String, dynamic> renderer) {
-    final id = jsonString(renderer['id']);
-    return id == null ? '' : 'youtube:$id';
-  }
+  static String _id(Map<String, dynamic> renderer) => _prefixed(jsonString(renderer['id']));
+
+  /// An InnerTube id as this codec writes it: prefixed, so a line and the
+  /// deletion that names it agree.
+  static String _prefixed(String? id) => id == null ? '' : 'youtube:$id';
 
   static DateTime? _time(Object? usec) {
     final micros = jsonInt(usec);
