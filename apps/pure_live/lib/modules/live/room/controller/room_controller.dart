@@ -155,6 +155,8 @@ final class RoomDanmakuPipeline {
         inner: FlameBarrageSink(barrage),
         showFixedTop: showFixedTop,
         showFixedBottom: showFixedBottom,
+        // Drained on read: a line is drawn once, and the room runs for hours.
+        emotesOf: (id) => _emotesById.remove(id) ?? const [],
       ),
       config: _danmakuConfigFor(filter, repeat),
       policy: _shieldPolicyFor(shield),
@@ -207,6 +209,17 @@ final class RoomDanmakuPipeline {
 
   /// The chat list's gift lines under "只显示值钱的礼物".
   late final GiftChatFilter chatGifts;
+
+  /// The paid cards this session has already given a line to, oldest first, so
+  /// a platform's re-poll of one purchase does not stack up (see [accept]).
+  final Set<String> _paidShown = <String>{};
+
+  /// The emoticons of a chat line, under the platform's id for that line,
+  /// between the site's message and the mirror's: the filters judge the text
+  /// and rebuild the line they accept, and the pictures a platform names
+  /// inside that text are not something it can rebuild. Bounded and drained on
+  /// read, because a room runs for hours and a line is drawn once.
+  final Map<String, List<LiveEmote>> _emotesById = <String, List<LiveEmote>>{};
 
   /// The player binding carrying pause and seek into the barrage.
   DanmakuPlayerBinding? binding;
@@ -281,6 +294,37 @@ final class RoomDanmakuPipeline {
       return;
     }
     final sender = message.sender;
+    if (message.type == LiveMessageType.superChat) {
+      // A paid message is a card, not a line of flying chat - the reference's
+      // own dispatch does it at this same seam. It has to arrive as what the
+      // platform sold, too: the price, the banner colours the site prescribed
+      // and the emoticons inside its text all live on this message, and the
+      // line the pipeline would rebuild from the filters' output carries none
+      // of them. The shields are consulted here for the same reason gifts are:
+      // paying for a message is no way back onto a screen the viewer cleared.
+      if ((_shieldRules?.enabled ?? false) && (_shieldBlockList?.blocks(message) ?? false)) return;
+      final card = message.payload is LiveSuperChatMessage ? message.payload! as LiveSuperChatMessage : null;
+      // Platforms re-send a paid card on every poll until it expires. With an
+      // id that arrives as an update to the line already on screen; without
+      // one, the same purchase is drawn once and the re-poll is dropped.
+      final id = message.messageId.trim();
+      final key = id.isNotEmpty ? id : 'card:${card?.userName ?? ''}|${message.text}|${card?.price.amount ?? 0}';
+      final seen = _paidShown.contains(key);
+      if (seen && id.isEmpty) return;
+      if (_paidShown.length > 500) _paidShown.remove(_paidShown.first);
+      _paidShown.add(key);
+      onChat(message, replaceId: seen ? id : null);
+      return;
+    }
+    // The filters rebuild the line they accept, and what a platform names
+    // inside the text is not something a rebuild can restore: the pictures
+    // stay here, under the id the rebuild carries unchanged, until the mirror
+    // asks for them.
+    final emoteKey = message.messageId.trim();
+    if (emoteKey.isNotEmpty && message.emotes.isNotEmpty) {
+      if (_emotesById.length > 400) _emotesById.remove(_emotesById.keys.first);
+      _emotesById[emoteKey] = message.emotes.toList(growable: false);
+    }
     danmaku.acceptExternal(
       DanmakuMessage(
         type: DanmakuMessageType.chat,
@@ -343,12 +387,19 @@ final class _ChatMirrorSink implements DanmakuSink {
     required this.inner,
     required this.showFixedTop,
     required this.showFixedBottom,
+    required this.emotesOf,
   });
 
   final void Function(LiveMessage message, {String? replaceId}) onChat;
   final DanmakuSink inner;
   final bool Function() showFixedTop;
   final bool Function() showFixedBottom;
+
+  /// The platform's pictures for a line the filters just accepted, taken from
+  /// what the site sent under the id the pipeline carried unchanged: a paid
+  /// line and a gift arrive as themselves (see [RoomDanmakuPipeline.accept]),
+  /// an ordinary one arrives rebuilt.
+  final List<LiveEmote> Function(String messageId) emotesOf;
 
   @override
   void onDanmaku(DanmakuMessage message, {bool immediate = false}) {
@@ -367,6 +418,8 @@ final class _ChatMirrorSink implements DanmakuSink {
           messageId: message.messageId,
           sentAt: message.sentAt,
           isLocal: message.isLocal,
+          // The site's own pictures, which the rebuild cannot invent.
+          emotes: emotesOf(message.messageId),
           // The list marks a re-shown line as 「之前发的」; the flag has to
           // survive the round trip through the pipeline or the gate's replay
           // window lets a backlog in that then claims to be live.
