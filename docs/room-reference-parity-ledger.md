@@ -387,3 +387,15 @@ PLAN-CHECK huya     没有注册 resolver
 | P46 | `b7c832668` | 档位名 | `LiveQualityLabel`（`common/quality_label.dart`）**是从参考逐字搬来的，但全仓零读者、零测试**——所以条上/面板上一直在漏平台的原始词：斗鱼无 `multirates` 时写 **`default`**、有名单但某行缺 `name` 时写 **空字符串**（一档空白）、TwitCasting 写 **`HLS high/medium/low`**（别的站都写 超清/蓝光）、niconico 写 **`1280x720`**、bilibili 遇到 `g_qn_desc` 没描述的 qn 就写**光秃秃的数字**（`20000`）。四处接回共享回落（平台自己的词 → 该码的房名 → 分辨率 → 码率 → `清晰度 <id>` → 默认），douyu 的兜底是 `'default'` 这个 token 而不是硬写中文；**身份不动**：`qualityId` 一律保持原值（`'$rate'` / `high` / `WxH@bandwidth` / `'$qn'`），`isSamePlayTier` 优先按 id 比，录像订阅用的是自己的 `kPreferredResolutionChoices`，所以改名字不影响任何已存的档位选择。新 `test/common/quality_label_test.dart`（7 例，这个文件此前**一个测试都没有**）。门：live_sites `dart analyze lib test` 0 issues、`dart test` **482 绿 + 1 红**（仍是搜索 lane 在途的 `site_facts_test`）、douyu/twitcasting/niconico/bilibili 四个平台族 47 例全绿（没有一站的测试在断言旧的英文标签）；app `dart analyze lib` 0 issues、`flutter test test/live` 61 例中 60 绿（唯一红仍是录像 lane）。运行期未验：要在斗鱼 H5（无 multirates）、twitcasting、niconico 各开一次房看档位名。 |
 
 - **本车道的方法再记一条**：搬到一半的共享件比没搬更危险——它看起来已经解决了。P46 就是"参考有、我们也有文件、但没人调用"的第三例（前两例：`portraitSwipeSwitchProvider` 只有读者没有写者 T20、`LiveCookieRefusalFeed` 只有写者没有读者 P36）。普查的问法必须是**两头都数**：谁写、谁读。
+
+## 第七次对照（2026-11-05）：零读者普查、条上控件的形态普查，和"走掉的那次进房"
+
+| 查的东西 | 结果 |
+| --- | --- |
+| `common/**` 的共享件谁在读（P46 方法的推广） | 两处**零读者**：`common/danmaku/emotes.dart`（`DanmakuEmoji`/`DanmakuEmojiAsset`/`parseList`，参考 `EmoteLibrary` 的逐平台 JSON 形态——我们早已换成 `EmojiAtlas` 一张图集+manifest，P16 用的就是它）与 `normalization/site_counts.dart` 的 `hasAudienceValue`。**都不删**（删除要点名，见 [[feedback-stay-on-requested-scope]]），登记为死端：`emotes.dart` 被 `danmaku.dart` barrel 导出但无人调用，以后真要做"逐平台表情 JSON"再启用它，别新写第三份。 |
+| `LiveAudienceCapability.onlineAvailableInRoomLists` 零读者，是不是缺口？ | **不是**：参考那边同样只有测试读它（`live_core/test/sites/pandalive_api_test.dart:659`、`twitcasting_site_test.dart:129`、`live_danmaku/test/missevan_test.dart:716`），它是**给能力表自证用的读法**，不是生产分支。⇒ 我们缺的是那几条断言，不是这个 getter。 |
+| 顶部条的控件在两臂里画齐没有（T21 的方法再走一遍） | 齐：`player_surface.dart:1456` 的非 identity 臂画 弹幕开关 + 集群(拆分档) + ⋮；`:1474` 的 identity 臂多画 返回/钟+电量(仅全屏)/房间名/直播或回放徽标/在线数（`:1519` 窄于 480 px 不收在线数）。in-page 不重复房间名与人数是**设计**（页头已有），不是漏。 |
+
+| P47 | `a0b141e8f` | 进房测量补最疼的一档 | **走掉的那次进房以前一个字都不写**：`_teardown` 里 `_openTiming = null`，注释的理由是"观众没坐完的那段等待不该报"。但这条恰好把第 2 部分最想要的那档藏了：**什么也没失败、首帧也没来、只有观众放弃**——今天这种房间在日志里等于没发生过。现在离开时如果这条请求已经跑了 **≥3 s**（`kSlowEntryBudget`，就是"参考两三秒能开"这把尺子），照样写一行 `result=abandoned`；**低于 3 s 不写**，因为在列表里连点两下是浏览不是证据（这条判据同时挡住日志被刷）。abandoned 只进日志、不进详情面板（面板属于观众留下的那间房）。`RoomOpenTiming.line()` 的 result 从三档变四档（`error/playing/incomplete/abandoned`），新测试 1 例把它和"快点击不该被算成慢房间"钉在一起（`flutter test test/live/room_open_timing_test.dart` **8 绿**）。门：app `dart analyze lib test/live/room_open_timing_test.dart` 0 issues、`flutter test test/live` 62 例中 61 绿（唯一红仍是录像 lane）、`dart format` 只点三个文件且零重排。**这一条不解决慢，它解决"看不见"**：下次用户在慢房间点返回，就会留下 `detail/qualities/lines/request` 到第几段与 `total=` 的数字。 |
+
+- **P44/P47 之后，第 2 部分仍然欠同一件事**：一次重建后的 `room-open` 行（现在连"观众中途走了"也会留下行）。没有 `request→opened` 与 `opened→firstFrame` 的实测数字，任何"再快一点"都还是猜。
