@@ -399,3 +399,13 @@ PLAN-CHECK huya     没有注册 resolver
 | P47 | `a0b141e8f` | 进房测量补最疼的一档 | **走掉的那次进房以前一个字都不写**：`_teardown` 里 `_openTiming = null`，注释的理由是"观众没坐完的那段等待不该报"。但这条恰好把第 2 部分最想要的那档藏了：**什么也没失败、首帧也没来、只有观众放弃**——今天这种房间在日志里等于没发生过。现在离开时如果这条请求已经跑了 **≥3 s**（`kSlowEntryBudget`，就是"参考两三秒能开"这把尺子），照样写一行 `result=abandoned`；**低于 3 s 不写**，因为在列表里连点两下是浏览不是证据（这条判据同时挡住日志被刷）。abandoned 只进日志、不进详情面板（面板属于观众留下的那间房）。`RoomOpenTiming.line()` 的 result 从三档变四档（`error/playing/incomplete/abandoned`），新测试 1 例把它和"快点击不该被算成慢房间"钉在一起（`flutter test test/live/room_open_timing_test.dart` **8 绿**）。门：app `dart analyze lib test/live/room_open_timing_test.dart` 0 issues、`flutter test test/live` 62 例中 61 绿（唯一红仍是录像 lane）、`dart format` 只点三个文件且零重排。**这一条不解决慢，它解决"看不见"**：下次用户在慢房间点返回，就会留下 `detail/qualities/lines/request` 到第几段与 `total=` 的数字。 |
 
 - **P44/P47 之后，第 2 部分仍然欠同一件事**：一次重建后的 `room-open` 行（现在连"观众中途走了"也会留下行）。没有 `request→opened` 与 `opened→firstFrame` 的实测数字，任何"再快一点"都还是猜。
+
+## 第八次对照（2026-11-05）：弹幕行的手势、参考的排序尺子，和一条"有写没读"的第四例
+
+| 查的东西 | 结果 |
+| --- | --- |
+| 参考 `ChatLineView` 的逐行手势（长按/右键 → 复制与屏蔽，**双击 = 复制**，`chat_list.dart:661-712`） | 前两样**我们有且更强**：每行包在 `DsContextMenuRegion` 里（`room_chat.dart:688/867`），按 desen_ui 的文档它吃 **右键 + 长按 + Shift+F10/上下文键 + 读屏"Show menu"**，条目是复制（带说话人名字）与屏蔽（掩码名不给屏蔽项）。**双击复制我们没有**——它只是省一步的便利，且会占掉竖屏"点一下叫回控制条"那一路的判读（T22/D-038 刚立过规矩），不擅自加。 |
+| 参考 `ChatListStyle.compact/card`（同一行两种画法）与 `ChatSizing` | 我们有 `fontSize`/行距读设置、礼物/超聊走彩底横幅、普通消息是裸行（`room_chat.dart` 的注释就写着"保持直播聊天的密度"）⇒ **形态等价**，不搬它的 style 枚举。 |
+| **`AudienceRankKey`（参考 `audience.dart:310`）我们确实没有** | 参考排序分档：明确并发数 > 待取的并发数 > 热度/累计兜底，理由是"**几百万热度不该压过几千真人**"。我们的排序读的是**卡片那个数**（`search_page.dart:565` `audienceFigureOf(...) ?? -1`），而且设置页那条 `audienceRankingNote` 明说了这个规则（"排序用卡片显示的数值"）⇒ **不是漏，是另一条已登记的取舍**：在 `metric=automatic` + `preferRealOnline` 开着时卡片数就是真实在线数，两条规则在那个档位会同意；不同意的只有"跟随平台 + 关了偏好"或手选热度那几档。要改成参考的分档，得同时改 `search_page.dart`（**搜索 lane 正在改这个文件**，本轮不动它）。⇒ 队列项，等那文件干净或由搜索 lane 一起收。 |
+
+| P48 | `3243455ec` | 房间数字跟着直播走 | **第四例"有写没读"**（前三例：T20 只有读者没写者、P36 只有写者没读者、P46 搬了个 helper 没人调用）：`LiveAudienceUpdate` 有 **12+ 个生产者**（bilibili 心跳/`WATCHED_CHANGE`/operation_3、douyin、acfun、bigo、fc2live、baidulive、kuaishou、seventeenlive、steambroadcast 的编解码器都发 `LiveMessageType.audienceUpdate`，包侧 7 个平台的测试在钉它），app 侧**一个读者都没有** ⇒ 条上的在线数与详情页的三个数只在"页面重读 detail"时动；一间房开播期间涨了万人，屏幕上还是进房那一刻的数。现在 `audienceUpdate` 落到正在播的房间上（三种 kind 一对一写 `RoomAudience` 的三个字段），**与屏幕上已显示的数相同就不换 state**（这些几秒一条，每来一条就重建房间等于为没动的数字重画整页）；并且它不再进弹幕管线——管线本来就把空文本丢掉，同 retraction 的规矩。门：app `dart analyze lib` 0 issues、`flutter test test/live` 62 例中 61 绿（唯一红仍是录像 lane）、`dart format` 零重排、diff 只有我这 29 行。**未加测试**：全仓 app 测试树里没有任何 `RoomController` 的 harness（`grep -l roomControllerProvider apps/pure_live/test` 为空），为这 6 行现造一套是为本测试塑形；运行期请验：**开一间人气跳动的 bilibili 房，条上的数字与详情页的"人气/在线/累计"应在几秒内变，而不用等页面重读**。 |
