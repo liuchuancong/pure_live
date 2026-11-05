@@ -615,7 +615,7 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 
 ## 第二十三轮（2026-11-05）：站点取流前的请求有 12 家**根本不等时间**（第 2 部分，普查出来的真慢因）
 
-**参考的拉取**：`git pull --ff-only` 与 `-c http.version=HTTP/1.1` 各试过两次（本轮开头一次、中间一次、收尾一次），全是 `SSL_ERROR_SYSCALL (github.com:443)`；`raw.githubusercontent.com` 通、github 主页 `curl` 回 000 ⇒ 就是 443 这一跳。**仓仍在 `f00bebd91`（上轮已到的顶点），所以没有少拿内容**，但这条要如实记：**本轮没拉到**。
+**参考的拉取**：本轮开头、中间共三次 `git pull --ff-only` / `-c http.version=HTTP/1.1` 都是 `SSL_ERROR_SYSCALL (github.com:443)`（`raw.githubusercontent.com` 通、github 主页 `curl` 回 000）；**收尾再试一次成了：`Already up to date`，仓在 `f00bebd91`**（上轮到的顶点）⇒ 没有少拿内容。443 是间歇不通，不是配置问题；照旧"每轮先 pull、失败就重试到收尾"。
 
 普查口径：`lib/src/platforms/<site>/api/<site>_http.dart` 里有没有把 `timeout:` 传进 `LiveRequest`。结果 **31 家里有 19 家传、12 家完全不传**：douyin、inke、kick、kilakila、kuaishou、kugoulive、liveme、showroom、tiktok、twitch、weibo、**bilibili、douyu**（后两家本轮补上，所以普查脚本数到 12 家不含它们——它们当时也在名单里）。判据链是硬的：`LiveRequest.timeout` 默认 null（`request.dart:54`）→ `dio_http.dart:164-166` 把 null 原样给 `connectTimeout/sendTimeout/receiveTimeout` → 我们自己的 `BaseOptions`（`dio_http.dart:191-198`）**没有设任何超时**，Dio 5.11 的默认也是 null ⇒ 一个"接了 TCP 但不回"的线路就是**永远等**。而房间的进房链路 `await playbackProvider.getQualities(...)`/`getLines(...)` 就在这条线上，app 侧也**没有任何** `.timeout(` 包着它（grep 整条进房路径为 0）。用户抱怨的"两三秒 vs 我的很慢"里，这种等待不是慢、是**没有尽头**。
 
