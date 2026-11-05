@@ -6,9 +6,11 @@ import 'package:live_lan_sync/live_lan_sync.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:live_storage/live_storage.dart' show StoragePrefs, StorageStores;
 import 'package:pure_live/app/logging/app_log.dart';
+import 'package:pure_live/app/providers/settings/settings_refresh.dart' show refreshSettings;
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show includeSecretsAllowed;
 import 'package:pure_live/features/lan_sync/data/drift_lan_sync_store.dart';
 import 'package:pure_live/features/lan_sync/data/favorites_sync_adapter.dart';
+import 'package:pure_live/features/lan_sync/data/music_library_sync.dart' show MusicLibrarySyncAdapter;
 import 'package:pure_live/features/lan_sync/data/scope_sources.dart';
 import 'package:pure_live/features/lan_sync/data/scoped_sync.dart';
 import 'package:pure_live/features/lan_sync/data/secure_credential_store.dart';
@@ -401,10 +403,19 @@ final lanSyncRuntimeProvider = FutureProvider<LanSyncRuntime?>((ref) async {
           },
         ),
       for (final scope in scopes)
-        if (scope != LanSyncScope.favorites)
+        if (scope == LanSyncScope.musicLibrary)
+          // The library merges per playlist and per song; the LX endpoint
+          // reads the same providers, so lx-music-desktop sees what lands.
+          MusicLibrarySyncAdapter(ledger: ledger, onApplied: () => refreshSettings(ref))
+        else if (scope != LanSyncScope.favorites)
           ScopedSyncAdapter(syncScope: scope, ledger: ledger, open: () => openScopeSource(ref, scope)),
     ],
-    options: LanSyncOptions(scopeConflictPolicies: {for (final scope in scopes) scope.id: settings.conflictPolicy}),
+    options: LanSyncOptions(
+      scopeConflictPolicies: {
+        for (final scope in scopes)
+          scope.id: scope == LanSyncScope.musicLibrary ? ConflictPolicy.merge : settings.conflictPolicy,
+      },
+    ),
     logger: lanSyncLogger,
   );
   final server = LanSyncHttpServer(

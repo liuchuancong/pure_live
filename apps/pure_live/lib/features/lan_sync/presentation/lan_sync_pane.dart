@@ -37,7 +37,7 @@ final class LanSyncPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
-          header: Text(t.settings.lanSync),
+          header: Text(t.settings.lanSyncThisDevice),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.refreshCw),
@@ -78,13 +78,9 @@ final class LanSyncPane extends ConsumerWidget {
               ),
           ],
         ),
+        if (settings.enabled) _DevicesSection(runtime: runtime),
         _ScopesSection(settings: settings),
-        if (settings.enabled) ...[
-          _PairedSection(runtime: runtime),
-          _NearbySection(runtime: runtime),
-          _ConflictsSection(runtime: runtime),
-          _TasksSection(runtime: runtime),
-        ],
+        if (settings.enabled) ...[_ConflictsSection(runtime: runtime), _TasksSection(runtime: runtime)],
       ],
     );
   }
@@ -110,7 +106,7 @@ final class LanSyncPane extends ConsumerWidget {
         ],
       ),
     );
-    if (saved == null || context.mounted) return;
+    if (saved == null || !context.mounted) return;
     await ref.read(lanSyncSettingsProvider.notifier).setDeviceName(saved);
     if (context.mounted) {
       showDsToast(context: context, title: context.t.settings.lanSyncDeviceNameSaved);
@@ -118,19 +114,21 @@ final class LanSyncPane extends ConsumerWidget {
   }
 }
 
-/// The paired devices: read once per runtime and re-read after a grant
-/// or a revoke — never by restarting the runtime, which would drop the
-/// server and the discovery just to refresh a list.
-final class _PairedSection extends ConsumerStatefulWidget {
-  const _PairedSection({required this.runtime});
+/// The paired and nearby devices in one list: the paired first, with the
+/// grants summary and a sync action, the rest offering pairing. Trusts are
+/// read once per runtime and re-read after a grant, a revoke or a pairing —
+/// never by restarting the runtime, which would drop the server and the
+/// discovery just to refresh a list.
+final class _DevicesSection extends ConsumerStatefulWidget {
+  const _DevicesSection({required this.runtime});
 
   final LanSyncRuntime? runtime;
 
   @override
-  ConsumerState<_PairedSection> createState() => _PairedSectionState();
+  ConsumerState<_DevicesSection> createState() => _DevicesSectionState();
 }
 
-final class _PairedSectionState extends ConsumerState<_PairedSection> {
+final class _DevicesSectionState extends ConsumerState<_DevicesSection> {
   Future<List<DeviceTrust>>? _trusts;
 
   @override
@@ -140,7 +138,7 @@ final class _PairedSectionState extends ConsumerState<_PairedSection> {
   }
 
   @override
-  void didUpdateWidget(_PairedSection oldWidget) {
+  void didUpdateWidget(_DevicesSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.runtime != widget.runtime) _reload();
   }
@@ -162,142 +160,154 @@ final class _PairedSectionState extends ConsumerState<_PairedSection> {
   int? _lastPortOf(LanSyncRuntime runtime, String deviceId) =>
       runtime.directory.devices.where((device) => device.deviceId == deviceId).map((device) => device.port).firstOrNull;
 
+  Future<void> _grant(LanSyncRuntime runtime, DeviceTrust trust) async {
+    final saved = await showLanSyncGrantsPanel(context, runtime: runtime, trust: trust);
+    if (!saved || !mounted) return;
+    _reload();
+    showDsToast(context: context, title: context.t.settings.lanSyncGrantsSaved);
+  }
+
+  Future<void> _sync(LanSyncRuntime runtime, DeviceTrust trust) async {
+    final address = _lastAddressOf(runtime, trust.deviceId);
+    final port = _lastPortOf(runtime, trust.deviceId);
+    if (address == null || port == null) {
+      if (mounted) {
+        showDsToast(context: context, title: context.t.settings.lanSyncSyncFailed, status: DsStatus.danger);
+      }
+      return;
+    }
+    runtime.rememberAddress(trust.deviceId, host: address, port: port);
+    final task = await runtime.synchronizeWith(trust.deviceId);
+    if (!mounted || task == null) return;
+    final t = context.t;
+    showDsToast(
+      context: context,
+      title: switch (task.status) {
+        SyncTaskStatus.completed => t.settings.lanSyncSyncDone,
+        SyncTaskStatus.partiallyCompleted => t.settings.lanSyncSyncPartial,
+        _ => t.settings.lanSyncSyncFailed,
+      },
+      status: task.status == SyncTaskStatus.completed ? DsStatus.success : DsStatus.danger,
+    );
+  }
+
+  Future<void> _forget(LanSyncRuntime runtime, DeviceTrust trust) async {
+    await runtime.trustService.revokeDevice(trust.deviceId);
+    if (!mounted) return;
+    _reload();
+    showDsToast(context: context, title: context.t.settings.lanSyncRevoked);
+  }
+
+  Future<void> _pair(LanSyncRuntime runtime, SyncDevice device) async {
+    await showPairingDialog(
+      context,
+      runtime: runtime,
+      peer: device,
+      address: device.addresses.first,
+      port: device.port!,
+    );
+    if (mounted) _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final current = widget.runtime;
     if (current == null) return const SizedBox.shrink();
     return FutureBuilder<List<DeviceTrust>>(
       future: _trusts,
       builder: (context, snapshot) {
-        final active = current;
         final trusts = (snapshot.data ?? const <DeviceTrust>[]).where((trust) => !trust.revoked).toList();
-        return DsListSection(
-          header: Text(t.settings.lanSyncPaired),
-          children: [
-            if (trusts.isEmpty)
-              DsListRow(title: Text(t.settings.lanSyncPairedEmpty))
-            else
-              for (final trust in trusts)
-                DsListRow(
-                  leading: const DsIcon(DsIcons.monitorSmartphone),
-                  title: Text(trust.displayName),
-                  description: Text(LanSyncLog.shortFingerprint(trust.keyFingerprint)),
-                  detail: Text(
-                    t.settings.lanSyncGrantsSummary(
-                      read: trust.readScopes.where((id) => active.scopeIds.contains(id)).length,
-                      write: trust.writeScopes.where((id) => active.scopeIds.contains(id)).length,
-                      total: active.scopes.length,
+        return StreamBuilder<SyncDevice>(
+          stream: current.directory.changes,
+          builder: (context, _) {
+            final pairedIds = {for (final trust in trusts) trust.deviceId};
+            final nearby = current.directory.devices
+                .where((device) => device.deviceId != current.deviceId && !pairedIds.contains(device.deviceId))
+                .toList(growable: false);
+            return DsListSection(
+              header: Row(
+                children: [
+                  Text(t.settings.lanSyncDevices),
+                  const Spacer(),
+                  if (trusts.isNotEmpty)
+                    Text(
+                      t.settings.lanSyncPairedCount(count: trusts.length),
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                ],
+              ),
+              children: [
+                if (trusts.isEmpty && nearby.isEmpty) DsListRow(title: Text(t.settings.lanSyncNearbyEmpty)),
+                for (final trust in trusts)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.monitorSmartphone),
+                    title: Text(trust.displayName),
+                    description: Text(LanSyncLog.shortFingerprint(trust.keyFingerprint)),
+                    detail: Text(
+                      t.settings.lanSyncGrantsSummary(
+                        read: trust.readScopes.where((id) => current.scopeIds.contains(id)).length,
+                        write: trust.writeScopes.where((id) => current.scopeIds.contains(id)).length,
+                        total: current.scopes.length,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: DsSpace.s8,
+                      children: [
+                        DsButton(
+                          variant: DsButtonVariant.primary,
+                          size: DsSize.sm,
+                          onPressed: () => unawaited(_sync(current, trust)),
+                          child: Text(t.settings.lanSyncSyncNow),
+                        ),
+                        DsMenuAnchor(
+                          semanticLabel: t.common.more,
+                          align: DsAlign.end,
+                          items: [
+                            DsMenuItem(
+                              label: Text(t.settings.lanSyncGrants),
+                              leading: const DsIcon(DsIcons.shield),
+                              onPressed: () => unawaited(_grant(current, trust)),
+                            ),
+                            DsMenuItem(
+                              label: Text(t.settings.lanSyncForget),
+                              leading: DsIcon(DsIcons.trash2, color: colors.danger.text),
+                              destructive: true,
+                              onPressed: () => unawaited(_forget(current, trust)),
+                            ),
+                          ],
+                          builder: (context, controller, _) => DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.common.more,
+                            onPressed: controller.toggle,
+                            icon: const DsIcon(DsIcons.ellipsisVertical, size: 18),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s8,
-                    children: [
-                      DsButton(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        onPressed: () => unawaited(
-                          showLanSyncGrantsPanel(context, runtime: active, trust: trust).then((saved) {
-                            if (saved && context.mounted) {
-                              showDsToast(context: context, title: t.settings.lanSyncGrantsSaved);
-                              _reload();
-                            }
-                          }),
-                        ),
-                        child: Text(t.settings.lanSyncGrants),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.secondary,
-                        size: DsSize.sm,
-                        onPressed: () {
-                          final address = _lastAddressOf(active, trust.deviceId);
-                          final port = _lastPortOf(active, trust.deviceId);
-                          if (address == null || port == null) return;
-                          active.rememberAddress(trust.deviceId, host: address, port: port);
-                          unawaited(
-                            active.synchronizeWith(trust.deviceId).then((task) {
-                              if (task == null || !context.mounted) return;
-                              showDsToast(
-                                context: context,
-                                title: switch (task.status) {
-                                  SyncTaskStatus.completed => t.settings.lanSyncSyncDone,
-                                  SyncTaskStatus.partiallyCompleted => t.settings.lanSyncSyncPartial,
-                                  _ => t.settings.lanSyncSyncFailed,
-                                },
-                                status: task.status == SyncTaskStatus.completed ? DsStatus.success : DsStatus.danger,
-                              );
-                            }),
-                          );
-                        },
-                        child: Text(t.settings.lanSyncSyncNow),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.dangerSoft,
-                        size: DsSize.sm,
-                        onPressed: () => unawaited(
-                          active.trustService.revokeDevice(trust.deviceId).then((_) {
-                            if (context.mounted) _reload();
-                          }),
-                        ),
-                        child: Text(t.settings.lanSyncForget),
-                      ),
-                    ],
+                for (final device in nearby)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.wifi),
+                    title: Text(device.deviceName),
+                    description: Text(device.addresses.firstOrNull ?? ''),
+                    detail: Text(device.platform),
+                    trailing: DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: device.addresses.isEmpty || device.port == null
+                          ? null
+                          : () => unawaited(_pair(current, device)),
+                      child: Text(t.settings.lanSyncPair),
+                    ),
                   ),
-                ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-final class _NearbySection extends ConsumerWidget {
-  const _NearbySection({required this.runtime});
-
-  final LanSyncRuntime? runtime;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final current = runtime;
-    if (current == null) return const SizedBox.shrink();
-    final directory = current.directory;
-    final localId = current.deviceId;
-    return StreamBuilder<SyncDevice>(
-      stream: directory.changes,
-      builder: (context, snapshot) {
-        final devices = directory.devices.where((device) => device.deviceId != localId).toList(growable: false);
-        return DsListSection(
-          header: Text(t.settings.lanSyncNearby),
-          children: [
-            if (devices.isEmpty)
-              DsListRow(title: Text(t.settings.lanSyncNearbyEmpty))
-            else
-              for (final device in devices)
-                DsListRow(
-                  leading: const DsIcon(DsIcons.monitorSmartphone),
-                  title: Text(device.deviceName),
-                  description: Text(device.addresses.firstOrNull ?? ''),
-                  detail: Text(device.platform),
-                  trailing: DsButton(
-                    variant: DsButtonVariant.primary,
-                    size: DsSize.sm,
-                    onPressed: device.addresses.isEmpty || device.port == null
-                        ? null
-                        : () => unawaited(
-                            showPairingDialog(
-                              context,
-                              runtime: current,
-                              peer: device,
-                              address: device.addresses.first,
-                              port: device.port!,
-                            ),
-                          ),
-                    child: Text(t.settings.lanSyncPair),
-                  ),
-                ),
-          ],
+              ],
+            );
+          },
         );
       },
     );
@@ -308,9 +318,9 @@ final class _NearbySection extends ConsumerWidget {
 /// they happened.
 void unawaited(Future<void> future) {}
 
-/// What this device shares, one check per scope, and the conflict policy.
-/// The vault's row appears only while the backup page's secrets switch is
-/// on; otherwise a hint says where the switch is.
+/// What this device shares, one check per scope. The vault's row appears
+/// only while the backup page's secrets switch is on; otherwise a hint says
+/// where the switch is.
 final class _ScopesSection extends ConsumerWidget {
   const _ScopesSection({required this.settings});
 
@@ -323,8 +333,22 @@ final class _ScopesSection extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final secretsAllowed = includeSecretsAllowed();
     final controller = ref.read(lanSyncSettingsProvider.notifier);
+    final offered = [
+      for (final scope in LanSyncScope.values)
+        if (scope != LanSyncScope.secrets || secretsAllowed) scope,
+    ];
+    final shared = offered.where(settings.scopes.contains).length;
     return DsListSection(
-      header: Text(t.settings.lanSyncScopes),
+      header: Row(
+        children: [
+          Text(t.settings.lanSyncScopes),
+          const Spacer(),
+          Text(
+            t.settings.lanSyncSharedCount(selected: shared, total: offered.length),
+            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+          ),
+        ],
+      ),
       children: [
         DsListRow(
           leading: const DsIcon(DsIcons.listChecks),
@@ -348,17 +372,6 @@ final class _ScopesSection extends ConsumerWidget {
               title: Text(lanSyncScopeLabel(t, scope), style: theme.typography.body.copyWith(color: colors.textMuted)),
               description: Text(t.settings.lanSyncScopeSecretsOff),
             ),
-        SettingsSegmentedRow<ConflictPolicy>(
-          leading: const DsIcon(DsIcons.gitMerge),
-          title: t.settings.lanSyncConflictPolicy,
-          description: t.settings.lanSyncConflictPolicyDesc,
-          value: settings.conflictPolicy,
-          options: [
-            (value: ConflictPolicy.preferRemote, label: t.settings.lanSyncPolicyRemote),
-            (value: ConflictPolicy.preferLocal, label: t.settings.lanSyncPolicyLocal),
-          ],
-          onChanged: (policy) => unawaited(controller.setConflictPolicy(policy)),
-        ),
       ],
     );
   }
@@ -376,8 +389,8 @@ final class _ConflictsSection extends ConsumerWidget {
     final current = runtime;
     if (current == null) return const SizedBox.shrink();
     final t = context.t;
+    final settings = ref.watch(lanSyncSettingsProvider);
     final conflicts = ref.watch(lanSyncConflictsProvider).value ?? const <SyncConflict>[];
-    if (conflicts.isEmpty) return const SizedBox.shrink();
     Future<void> settle(SyncConflict conflict, {required bool keepLocal}) async {
       try {
         await current.resolveConflict(conflict.key, keepLocal: keepLocal);
@@ -394,8 +407,21 @@ final class _ConflictsSection extends ConsumerWidget {
     }
 
     return DsListSection(
-      header: Text(t.settings.lanSyncConflicts(count: conflicts.length)),
+      header: Text(
+        conflicts.isEmpty ? t.settings.lanSyncConflictSection : t.settings.lanSyncConflicts(count: conflicts.length),
+      ),
       children: [
+        SettingsSegmentedRow<ConflictPolicy>(
+          leading: const DsIcon(DsIcons.gitMerge),
+          title: t.settings.lanSyncConflictPolicy,
+          description: t.settings.lanSyncConflictPolicyDesc,
+          value: settings.conflictPolicy,
+          options: [
+            (value: ConflictPolicy.preferRemote, label: t.settings.lanSyncPolicyRemote),
+            (value: ConflictPolicy.preferLocal, label: t.settings.lanSyncPolicyLocal),
+          ],
+          onChanged: (policy) => unawaited(ref.read(lanSyncSettingsProvider.notifier).setConflictPolicy(policy)),
+        ),
         for (final conflict in conflicts)
           DsListRow(
             leading: const DsIcon(DsIcons.triangleAlert),
@@ -444,7 +470,7 @@ final class _TasksSection extends StatelessWidget {
         if (tasks.isEmpty) return const SizedBox.shrink();
         final t = context.t;
         return DsListSection(
-          header: Text(t.settings.lanSyncSyncNow),
+          header: Text(t.settings.lanSyncHistory),
           children: [
             for (final task in tasks)
               DsListRow(
@@ -453,10 +479,28 @@ final class _TasksSection extends StatelessWidget {
                   SyncTaskStatus.failed || SyncTaskStatus.partiallyCompleted => DsIcons.triangleAlert,
                   _ => DsIcons.refreshCw,
                 }),
-                title: Text(task.peerDeviceId),
+                title: FutureBuilder<DeviceTrust?>(
+                  future: current.store.deviceTrust(task.peerDeviceId),
+                  builder: (context, peer) => Text(peer.data?.displayName ?? task.peerDeviceId),
+                ),
                 description: Text(
                   '${task.completedChanges}/${task.totalChanges}'
                   '${task.error == null ? '' : ' — ${task.error}'}',
+                ),
+                trailing: DsBadge(
+                  status: switch (task.status) {
+                    SyncTaskStatus.completed => DsStatus.success,
+                    SyncTaskStatus.failed => DsStatus.danger,
+                    _ => DsStatus.neutral,
+                  },
+                  label: Text(switch (task.status) {
+                    SyncTaskStatus.completed => t.settings.lanSyncSyncDone,
+                    SyncTaskStatus.partiallyCompleted => t.settings.lanSyncSyncPartial,
+                    SyncTaskStatus.failed => t.settings.lanSyncSyncFailed,
+                    SyncTaskStatus.cancelled => t.settings.lanSyncTaskCancelled,
+                    SyncTaskStatus.paused => t.settings.lanSyncTaskPaused,
+                    _ => t.settings.lanSyncSyncing,
+                  }),
                 ),
               ),
           ],

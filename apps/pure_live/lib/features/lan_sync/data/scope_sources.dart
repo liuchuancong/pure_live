@@ -6,6 +6,7 @@ import 'package:pure_live/features/backup/document/backup_repository.dart' show 
 import 'package:pure_live/features/backup/document/backup_settings.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show includeSecretsAllowed;
 import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show appSecretStoreProvider;
+import 'package:pure_live/features/lan_sync/data/music_library_sync.dart' show musicLibraryScopeSource;
 import 'package:pure_live/features/lan_sync/data/scoped_sync.dart' show ScopeSource;
 import 'package:pure_live/features/lan_sync/data/sync_scopes.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
@@ -31,6 +32,7 @@ Future<ScopeSource?> openScopeSource(Ref ref, LanSyncScope scope) async {
       LanSyncScope.recordings => _recordingsSource((await ref.read(recordingRepositoryProvider.future)).store),
       LanSyncScope.iptv => _iptvSource(ref, await StorageStores.instance.openStore(IptvKeys.table)),
       LanSyncScope.multiview => _multiviewSource(ref, (await ref.read(multiviewRepositoryProvider.future)).store),
+      LanSyncScope.musicLibrary => musicLibraryScopeSource(ref),
       LanSyncScope.secrets =>
         includeSecretsAllowed() ? _secretsSource(await ref.read(appSecretStoreProvider.future)) : null,
       _ => _settingsSource(ref, scope),
@@ -157,6 +159,9 @@ ScopeSource _settingsSource(Ref ref, LanSyncScope scope) => (
   },
   upsert: (key, payload) async {
     if (LanSyncScope.ofPrefKey(key) != scope) return;
+    // The music library's keys moved to their own entity scope; an older
+    // peer's whole-string write must not clobber what that scope merged.
+    if (scope == LanSyncScope.settingsMusic && kMusicLibraryPrefKeys.contains(key)) return;
     await _writePref(key, payload['value']);
   },
   delete: (_) async {},

@@ -1,5 +1,16 @@
 import 'package:pure_live/features/backup/document/backup_settings.dart' show kBackedUpPrefs;
 
+/// The preference keys the music library scope carries; they hold the
+/// lists the module's own LX sync exchanges, so they travel as entities
+/// instead of whole pref strings.
+const Set<String> kMusicLibraryPrefKeys = {
+  'music.playlists',
+  'music.favourites',
+  'music.recent',
+  'music.dislikes',
+  'music.lyric.overrides',
+};
+
 /// One thing the LAN sync can carry: a box of user data, one group of the
 /// settings, or the vault. The user picks which of these this device
 /// shares, and grants each paired device read and write per scope.
@@ -37,6 +48,10 @@ enum LanSyncScope {
   /// Music player prefs.
   settingsMusic('settings.music'),
 
+  /// The music library: playlists, favourites, recent plays, dislike rules
+  /// and linked lyrics, one entity each.
+  musicLibrary('music.library'),
+
   /// Recorder prefs.
   settingsRecorder('settings.recorder'),
 
@@ -57,7 +72,7 @@ enum LanSyncScope {
 
   /// Whether this scope is a box of keyed user data.
   bool get isStore => switch (this) {
-    favorites || areaFollows || history || recordings || iptv || multiview => true,
+    favorites || areaFollows || history || recordings || iptv || multiview || musicLibrary => true,
     _ => false,
   };
 
@@ -74,6 +89,7 @@ enum LanSyncScope {
     settingsPlayback,
     settingsDanmaku,
     settingsMusic,
+    musicLibrary,
     settingsRecorder,
     settingsModules,
   };
@@ -124,10 +140,11 @@ enum LanSyncScope {
   }
 
   /// The backed-up pref keys this settings scope carries, in manifest
-  /// order; empty for a non-settings scope.
+  /// order; empty for a non-settings scope. The music library's keys are
+  /// carried by [musicLibrary] instead.
   List<String> get prefKeys => [
     for (final (key, _) in kBackedUpPrefs)
-      if (ofPrefKey(key) == this) key,
+      if (ofPrefKey(key) == this && !(this == settingsMusic && kMusicLibraryPrefKeys.contains(key))) key,
   ];
 }
 
