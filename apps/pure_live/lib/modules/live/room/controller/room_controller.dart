@@ -1838,6 +1838,12 @@ final class RoomController extends Notifier<RoomState> {
       if (message.payload case final LiveRetraction target) _retract(target);
       return;
     }
+    // A figure is nobody's sentence: it describes the room, and it arrives
+    // through the chat because that is where the platform sends it.
+    if (message.type == LiveMessageType.audienceUpdate) {
+      if (message.payload case final LiveAudienceUpdate update) _applyAudience(update);
+      return;
+    }
     if (_shapeBlocked(message)) {
       _countShielded();
       return;
@@ -1852,6 +1858,29 @@ final class RoomController extends Notifier<RoomState> {
     if (!ref.mounted) return;
     ref.read(roomChatProvider.notifier).retract(target);
     _pipeline?.retract(target);
+  }
+
+  /// Puts one realtime figure onto the room, so the bar's count and the
+  /// details page follow the stream instead of waiting for the page's own
+  /// re-read: a dozen platforms carry the number inside the chat (Bilibili's
+  /// heartbeat and `WATCHED_CHANGE`, Douyin's, AcFun's, Bigo's, FC2's, Baidu's
+  /// viewer frames), and nothing here read them - a room that gained ten
+  /// thousand viewers while it was open still said what it said on entry.
+  ///
+  /// A figure equal to the one on screen changes nothing: these arrive every
+  /// few seconds, and replacing the room each time would redraw the page for a
+  /// number that did not move.
+  void _applyAudience(LiveAudienceUpdate update) {
+    final room = state.room;
+    if (room == null) return;
+    final before = room.audience;
+    final after = switch (update.kind) {
+      LiveAudienceSignalKind.onlineViewers => before.rebuild((b) => b.onlineViewers = update.value),
+      LiveAudienceSignalKind.popularity => before.rebuild((b) => b.popularity = update.value),
+      LiveAudienceSignalKind.totalViewers => before.rebuild((b) => b.totalViewers = update.value),
+    };
+    if (after == before) return;
+    state = _with(room: room.rebuild((b) => b.audience = after.toBuilder()));
   }
 
   /// The notice a refused cookie earns: the standing bar over the column it
