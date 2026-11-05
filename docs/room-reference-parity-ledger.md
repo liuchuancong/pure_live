@@ -7,7 +7,7 @@
 ## 当前状态（2026-11-05 收尾，先读这九行再挑活）
 
 1. **第 1 部分（桌面控件/弹幕列表/录制显示）**：与参考逐控件比过三轮并已持平或更强；`T13–T23`、`P27–P39` 是成果清单。**再动就是凭喜好重排**——参考底条动词与我们的"条 + ⋮ 菜单"分工按参考自己的 `menuEntriesOnBars` 规则等价（它把条上有的从菜单里删掉，我们把同类动词收进菜单，都是一个入口）。
-2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。**例外：第十八轮的 P58 不是靠猜的**——它量的是盘上已有的 `attaching engine … {line: N}` 行（恢复每次从 line 0 开始，观众选的线路被丢掉），修的是恢复路径的线路身份，与首帧耗时无关，见「第十八轮」。
+2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。**例外：第十八轮的 P58 不是靠猜的**——它量的是盘上已有的 `attaching engine … {line: N}` 行（恢复每次从 line 0 开始，观众选的线路被丢掉），修的是恢复路径的线路身份，与首帧耗时无关，见「第十八轮」。**同一部分还量出一个更硬的东西（第二十三轮）**：31 家站点的 API transport 里 **12 家完全不设 `timeout`**，而我们 `live_net` 的 Dio `BaseOptions` 也没有任何默认超时 ⇒ 一条"接了 TCP 不回话"的线路就是**永远转圈**，进房链路又正是 `await getQualities/getLines` 挂在它上面（app 侧无任何 `.timeout(`）。已给流量最大的 bilibili 与 douyu 补上 20 s（同仓 fc2live/soop 的先例值，实测 351/471 ms 有 40～60 倍余量，`open()` 流式不受影响）＝**P63**；剩下 12 家的顺序与判据在「第二十三轮」。
 3. **第 3 部分（竖屏/16:9/沉浸）**：窄窗三停靠点面板（P22）、竖屏进入提示（P30）、顶部两条控制行不再叠（P31）、锁定全屏（P28）都落了；**剧场模式参考没有**，不许照抄删。
 4. **第 4 部分（live_core / live_danmaku）**：22 个能力接口逐个查过读者；9 个过滤器族做过**逐文件 diff**；撤回/回放/正则/表情/错误分类/lease 全部对齐或以更强形态存在（`project` 侧 `LiveHotProvider` 是零实现冗余接口，删除是包侧决定）。**弹幕 socket 运行时（心跳/静默看门狗/握手超时/有界重连与计数复位）已按 22 站逐条普查为持平**，唯一缺口 `shutdownTimeout` 已补（P45）——别再拿 `HeartbeatConfig(` 的计数当结论，见「弹幕 socket 运行时普查」。参考 `hls_master.dart` 的选档对 Steam 是真洞，见「第六次对照」。**测试这一维是第十九轮才补上的**：我们 `live_sites` 的弹幕解码器**此前零直接测试**（`danmaku/*.dart` 里有 `static …decode(` 的文件共 20 个；参考侧有 20 个站点测试文件），bilibili（P59，25 条）、douyu（P60，20 条）与 yy（P62，25 条）已钉住，其余站点按「第十九轮/第二十轮」给的顺序欠着——那不是"持平"，是"没人验过"。
 5. **欠账已清（2026-11-05 第十三轮）**：`displayLabel` 的显示位全部落地——房间的两处随别的 lane 的提交进了 HEAD（`player_surface.dart:430,1246`），多视图两处是 `2208ce785`（`:1099,:1105`）。别再当待办；新加画质显示位时直接用 `displayLabel`，身份仍用 `label`/`qualityId`。
@@ -612,3 +612,16 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 **首轮 4 红仍然全是我的 fixture 错，解码器没有错**（连着第三轮这样，写下来当我自己的判据）：① uri 4321 的字节我写成 `0x11 0x11`，小端应是 `E1 10 00 00`；② XML 实体我按"先解 `&amp;` 再解 `&lt;`"推成 `a<b c A B`，真答案是 `a&b <c A B`（每个引用各自替换一次，不叠加）；③ 我拿裸 `<txt …>` 当会被解包，而 `chatText` 只认 `<?xml`/`<msg` 前缀；④ router 信封里的 `533080` 载荷是**裸字段**（`_readUserGroup(YyPacketReader(payload))` 不带包重读），我又套了一层包头，那条聊天就没被认出来。⇒ **钉协议前先把被测函数"按什么顺序读几个字段"抄成注释再写 fixture**，别凭平台印象；本轮另有两条 lint 也是同因（`writeByteArray('x')` 直接给了 String、单表达式里写级联返回 void）。
 
 **没做**：只加测试，`platforms/yy/**` 的 lib 未动；`room_page.dart`/`room_controller.dart` 本轮复核仍被 ingest lane 占着 ⇒ 第二十一轮表里那四条 UI 缺口继续挂。站点测试队列剩 **huya（要自己写 TARS fixture，最贵）→ kuaishou → douyin → twitch**。
+
+## 第二十三轮（2026-11-05）：站点取流前的请求有 12 家**根本不等时间**（第 2 部分，普查出来的真慢因）
+
+**参考的拉取**：`git pull --ff-only` 与 `-c http.version=HTTP/1.1` 各试过两次（本轮开头一次、中间一次、收尾一次），全是 `SSL_ERROR_SYSCALL (github.com:443)`；`raw.githubusercontent.com` 通、github 主页 `curl` 回 000 ⇒ 就是 443 这一跳。**仓仍在 `f00bebd91`（上轮已到的顶点），所以没有少拿内容**，但这条要如实记：**本轮没拉到**。
+
+普查口径：`lib/src/platforms/<site>/api/<site>_http.dart` 里有没有把 `timeout:` 传进 `LiveRequest`。结果 **31 家里有 19 家传、12 家完全不传**：douyin、inke、kick、kilakila、kuaishou、kugoulive、liveme、showroom、tiktok、twitch、weibo、**bilibili、douyu**（后两家本轮补上，所以普查脚本数到 12 家不含它们——它们当时也在名单里）。判据链是硬的：`LiveRequest.timeout` 默认 null（`request.dart:54`）→ `dio_http.dart:164-166` 把 null 原样给 `connectTimeout/sendTimeout/receiveTimeout` → 我们自己的 `BaseOptions`（`dio_http.dart:191-198`）**没有设任何超时**，Dio 5.11 的默认也是 null ⇒ 一个"接了 TCP 但不回"的线路就是**永远等**。而房间的进房链路 `await playbackProvider.getQualities(...)`/`getLines(...)` 就在这条线上，app 侧也**没有任何** `.timeout(` 包着它（grep 整条进房路径为 0）。用户抱怨的"两三秒 vs 我的很慢"里，这种等待不是慢、是**没有尽头**。
+
+| P63 | `b4b214d6c` | 打开量最大的两家的 API 请求不再无限等 | bilibili（2 处 `LiveRequest.custom`）与 douyu（4 处：`get`/`postForm`/`getRedirect`/`passportSetCookies`）各加 `requestTimeout = 20 s`，值不是我另起的：同仓 fc2live 与上轮 soop 都是 20 s，而实测 bilibili 351 ms / douyu 471 ms（「进房分段实测」）⇒ 40～60 倍余量，只会切掉停滞。**流式与下载不受影响**：`LiveHttp.open()`（`dio_http.dart:126` 一带）不走这三个 timeout，超时只在 `send()` 的 `RequestOptions` 上；失败仍是各站点原本就有的 network 失败（`BilibiliFailure(network)`/`DouyuFailure(network)`），房间念得出来。测试 +2：假 `LiveHttp` 记下每个请求，断言 `request.timeout` 带着那 20 s（不传就是 null，这条会红）。 |
+| 门禁 | 同上 | | `dart analyze lib test`（两站点目录）**0 issues**；`dart test test/platforms/{douyu,bilibili}` 69 绿；`packages/live_sites` 整包 **548 绿**（上轮 546）。提交只含我这 6 个路径（`git diff` 逐 hunk 看过，两站目录本轮开工时都是干净的）。 |
+
+**剩下的 12 家（下轮按流量排,别一次全改）**：douyin、kuaishou、twitch、yy（这四家房间量大）→ kick、tiktok、showroom、niconico 类海外站 → inke、kilakila、kugoulive、liveme、weibo。每家的动作与本轮一样：`<site>_endpoints.dart` 加一个带理由的 `requestTimeout`，transport 里每个 `LiveRequest` 传上，一条测试断言"每个请求都带"。**注意别把上限设到真会等的地方**：本轮确认过 `open()` 不受这三个值影响，所以拉流/下载不在射程里；但哪一家如果有**服务端长轮询**（登录态检查那类），要在它自己的调用点显式传更大的值而不是放开默认。
+
+**为什么没顺手改 live_net 的默认**：把默认放在 transport 里一处就能覆盖全部 31 家，但 `live_net` 是音乐/点播/下载/录像共用的包，本轮我没有那些车道在真慢响应下的证据（录像的分片拉取、下载的首字节等待都可能被一个全局 `receiveTimeout` 误伤）。⇒ 记这里，别下轮直接"顺手统一到包里"，那是需要一次跨车道验证的改动。
