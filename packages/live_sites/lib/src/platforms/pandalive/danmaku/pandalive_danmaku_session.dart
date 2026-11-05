@@ -171,7 +171,9 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
         _token = grant.token;
         _fresh = true;
       } on PandaliveChatRefusal catch (refusal) {
-        _terminate('live/play refused the chat: $refusal');
+        // The refusal's own text repeats `live/play:`, which this line already
+        // says: the code alone is what the room should read.
+        _terminate('live/play refused the chat: ${refusal.code.isEmpty ? 'no reason' : refusal.code}');
         return;
       } on PandaliveFailure catch (failure) {
         _failed('$failure', generation);
