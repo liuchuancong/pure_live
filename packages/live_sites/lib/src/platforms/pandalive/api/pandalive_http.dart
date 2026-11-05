@@ -43,7 +43,7 @@ final class PandaliveHttp {
           fields: fields,
           headers: {...PandaliveEndpoints.headers(referer), 'content-type': 'application/x-www-form-urlencoded'},
           site: PandaliveEndpoints.siteId,
-          timeout: timeout,
+          timeout: timeout ?? PandaliveEndpoints.requestTimeout,
           cancelToken: cancel,
         ),
       );
@@ -66,6 +66,7 @@ final class PandaliveHttp {
           url: url,
           headers: headers,
           cancelToken: cancel,
+          timeout: PandaliveEndpoints.requestTimeout,
         ),
       );
     } on CancelledFailure {

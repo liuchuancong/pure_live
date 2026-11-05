@@ -3,6 +3,12 @@
 /// socket, the platform's limits, the two directory areas, the category
 /// names and the room notices.
 abstract final class PandaliveEndpoints {
+  /// How long one request may take when the caller names no wait of its own.
+  /// The room's open awaits the API post and the IVS playlist behind it, and
+  /// the transport waits for nothing by itself; 20 s, the cap this repo's
+  /// platforms that set one already use.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// The API host.
   static const String apiHost = 'api.pandalive.co.kr';
 

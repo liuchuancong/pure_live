@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
@@ -24,6 +25,7 @@ import 'package:live_sites/src/platforms/liveme/api/liveme_endpoints.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
+import 'package:live_sites/src/platforms/pandalive/api/pandalive_endpoints.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_endpoints.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
@@ -240,6 +242,30 @@ void main() {
       }
     });
 
+    test('no platform transport builds a request shape without naming a wait', () {
+      // The census that caught huya and niconico: a file can mention a
+      // timeout once and still build three requests. Count the shapes against
+      // the waits, file by file, so a request added without one fails here
+      // instead of in a room.
+      final offenders = <String>[];
+      for (final platform in Directory('lib/src/platforms').listSync()) {
+        if (platform is! Directory) continue;
+        final api = Directory('${platform.path}/api');
+        if (!api.existsSync()) continue;
+        for (final file in api.listSync()) {
+          if (file is! File || !file.path.endsWith('_http.dart')) continue;
+          final source = file.readAsStringSync();
+          final shapes = RegExp(r'LiveRequest\.(?:custom|get|post|postForm|head|form)\(').allMatches(source).length;
+          if (shapes == 0) continue;
+          final waits = RegExp('timeout:').allMatches(source).length;
+          if (waits < shapes) {
+            offenders.add('${file.path} builds $shapes and names $waits');
+          }
+        }
+      }
+      expect(offenders, isEmpty, reason: 'a request with no wait can hold the room open forever');
+    });
+
     test('every cap in the table is the same documented wait', () {
       for (final cap in [
         BilibiliEndpoints.requestTimeout,
@@ -253,6 +279,7 @@ void main() {
         KugouliveEndpoints.requestTimeout,
         LivemeEndpoints.requestTimeout,
         NiconicoEndpoints.requestTimeout,
+        PandaliveEndpoints.requestTimeout,
         ShowroomEndpoints.requestTimeout,
         SoopEndpoints.requestTimeout,
         TiktokEndpoints.requestTimeout,
