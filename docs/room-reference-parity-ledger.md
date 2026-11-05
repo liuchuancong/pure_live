@@ -455,3 +455,14 @@ PLAN-CHECK huya     没有注册 resolver
 - **删掉的死路**：`BigoSite.playPlaylist`（唯一调用者没了）与 `BigoStudioUse.input`（随之不可达）以及那句"play resolve 不再追问"的分支。**没删** `BigoHlsProtection`：它是"这房间为什么不能播"的根据，也是将来真要做还原时唯一已有的算法——本轮给它补了测试（seed 从 `VERSION=1,SEED=…` 的属性表里读、普通播放列表返回 null、transform 自反）。
 - 门：live_sites `dart analyze lib test` 0 issues、`dart test` **475 全绿**（上一轮那条搜索 lane 的 `site_facts_test` 红已自消）；app `dart analyze lib` 0 issues。**运行期待验**：进一间 bigo 房，画面位应该直接说原因而不是黑屏转圈；录像订阅同样应带这个原因失败。
 - **已知过窄之处**（写在这里，别当隐藏假设）：若哪天出现**不加扰**的 bigo 网页流，这条一律拒绝会把它一起拒了。到时候选的更细做法是：`getLines` 交回地址并在 `LivePlayLine` 上带一个"需要还原"的表达（P44 那节写过），由能转码的一方决定播或不播；**没有中继之前，这条拒绝仍是正确答案**。
+
+## 第十三轮（2026-11-05）：欠账清掉一笔，两条"参考有我们没有"被实测否掉
+
+| P52 | `2208ce785` | 档位记号补完 | 别的 lane 把 `player_surface.dart` 落地时顺手带走了我那两处 `displayLabel`（`git show HEAD:… \| grep -c displayLabel` = 2 ✓），所以欠账只剩多视图那两个显示位：`multiview_page.dart:1096`（每格的画质 chip）与 `:1101`（画质菜单条目）改用 `displayLabel` ⇒ 匿名要 1080P、平台答超清时，墙上那一格也不再替平台打保票。**身份不动**（`preferredQualityIndex` 仍按 `label`/`qualityId` 匹配，`room_controller.dart:1341`、`multiview_playback.dart:391` 都是匹配点不是显示位，逐处看过才改）。门：`dart analyze lib/modules/live/multiview` 0 issues、`flutter test test/live` 77 例中 76 绿（唯一红仍是录像 lane）。**踩到一次 format 越界**：`dart format` 把同一文件里别人旧的 `DsSegment(...)` 多行折成一行，已逐 hunk 还原后再提交（见 [[feedback-format-only-my-paths]]）。**⇒ 台账第 5 行的欠账已清，可以划掉。** |
+
+## 两条没做的"参考有、我们没有"（实测为不需要，别再当缺口搬）
+
+临时探针（`dart test` + 真 `createBuiltInLiveSites()`，走 7890；用完已删）：
+
+1. **`stripInvisiblePlaceholders`（参考 `live_core/json.dart:59`，宣称快手标题留 U+FFFC）——不搬。** 探针扫了 32 站里所有有匿名热门的站共 **526 间房**的 title / anchor.name / notice，按参考那张字符表（U+0000-08、0B、0C、0E-1F、7F-9F、FFF9-FFFC、FFFE、FFFF）逐 rune 检查：**命中 0**。⇒ 我们的解析层没把这批字符带进显示文本（各站 parser 自己已过滤或数据本就没有）。为没观察到的缺陷加一层全局清洗，等于给每条标题多一次扫描 + 一个新失败模式，**不做**。未覆盖面：聊天正文（要开 30+ 个 socket，本轮没测）；若真出现"弹幕里一个方块"，再按该站那条消息定位，别提前搬整张表。
+2. **参考的 21 条命名实体表（我们 `common/quality_label… 不，是 `common/normalization/html_entities.dart` 只有 14 条，缺 ensp/emsp/thinsp/ldquo/rdquo/lsquo/rsquo/yen/reg）——不补。** 同一批 526 间房里的这三类文本，用我们解码器自己的正则（`&([a-zA-Z][a-zA-Z0-9]{1,31});`）扫**残留引用**：**命中 0**。⇒ 要么平台不发，要么各站解码已过一遍；补那 8 条名字现在没有任何数据会走到，是"搬了没人读的表"（正是 P46/P50 那类债）。要补的时机是探针第一次真的扫到一个名字。
