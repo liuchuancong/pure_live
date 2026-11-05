@@ -31,6 +31,14 @@ abstract final class SoopEndpoints {
   /// The SOOP app's link scheme (`sooplive://player/live?…`).
   static const String appScheme = 'sooplive';
 
+  /// How long one SOOP request may take. The room's open awaits the stream
+  /// assignment and its key, and that interface sometimes answers and then
+  /// never finishes the response; an unbounded wait reads as a spinner that
+  /// never ends, while a timeout is a network failure the room can say and
+  /// `SoopPlayRecovery` can retry. 20 s, the cap the sibling platforms that
+  /// need one use.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// The single first-level category every area is listed under: 3.x's id
   /// and name, so areas keep their parent.
   static const ({String id, String name}) category = (id: '1', name: '热门');

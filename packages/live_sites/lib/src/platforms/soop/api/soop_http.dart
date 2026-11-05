@@ -36,6 +36,7 @@ final class SoopHttp {
           headers: SoopEndpoints.apiHeaders(cookie: cookie),
           site: soopSiteId,
           cancelToken: cancel,
+          timeout: SoopEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {
@@ -57,6 +58,7 @@ final class SoopHttp {
           headers: SoopEndpoints.apiHeaders(cookie: cookie),
           site: soopSiteId,
           cancelToken: cancel,
+          timeout: SoopEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {
