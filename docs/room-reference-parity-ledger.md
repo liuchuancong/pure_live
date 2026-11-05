@@ -4,7 +4,7 @@
 > 每轮先读本文件，挑队列最上面一项做完就勾选并补「运行记录」，**已核对为持平的条目不要重做**。
 > 参考是 v5 旧架构（`apps/pure_live/lib/features/live_play` + `packages/live_*`），只读，不改。
 
-## 当前状态（2026-11-05 收尾，先读这七行再挑活）
+## 当前状态（2026-11-05 收尾，先读这八行再挑活）
 
 1. **第 1 部分（桌面控件/弹幕列表/录制显示）**：与参考逐控件比过三轮并已持平或更强；`T13–T23`、`P27–P39` 是成果清单。**再动就是凭喜好重排**——参考底条动词与我们的"条 + ⋮ 菜单"分工按参考自己的 `menuEntriesOnBars` 规则等价（它把条上有的从菜单里删掉，我们把同类动词收进菜单，都是一个入口）。
 2. **第 2 部分（打开速度）**：网络三段已实测（bilibili 351 ms、douyu 471 ms；见「进房分段实测」）⇒ 剩下的只在**引擎侧**（create→open→首帧）。分段计时与详情面板已入库，但**缺一次真运行的 `room-open` 行**；没有它任何"再快一点"的改动都是猜。T24/T25 已判定**不是**速度原因，别当提速项重开。
@@ -13,6 +13,7 @@
 5. **欠账已清（2026-11-05 第十三轮）**：`displayLabel` 的显示位全部落地——房间的两处随别的 lane 的提交进了 HEAD（`player_surface.dart:430,1246`），多视图两处是 `2208ce785`（`:1099,:1105`）。别再当待办；新加画质显示位时直接用 `displayLabel`，身份仍用 `label`/`qualityId`。
 6. **决定只剩一个**：①**Bigo 已定案并落地**（用户拒绝回环中继 ⇒ `01075c532` 让 `getLines` 带可读原因失败，见「第十二轮」；不要再提做中继）。②Steam 的档位（P44 之后至少不再假装重开有效）要真生效，得决定改写后的 master 怎么交给引擎：**1** 环回中继只应答那一份文本，**2** 写临时文件以 `file://` 交出（证据与取舍见「第六次对照」）。**没点名之前不做**。
 7. 规矩本身也长了一条：**`git commit -- <文件>` 只挡别人的文件，挡不住同一文件里别人的 hunk**（`746fec7d7` 事故）；提交前逐 hunk 读 `git diff`。
+8. **四道护栏在 HEAD 上的现状（第十七轮实测）**：`check_architecture.ps1`、`check_responsive.ps1`、`check_settings_ia.ps1` 全绿；`check_prefs_manifest.ps1` 剩 **7 条**，逐条归属与证据见「第十七轮」——**2 条是判据本身看不见 helper（录像），5 条是点播登录态该进"故意不备份"名单而不是 `kBackedUpPrefs`（名单在 `tool/`，本轮不动）**，都不是直播间这条线的活，别再重新解剖。
 
 ## 车道规格
 
@@ -501,3 +502,28 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 | **音频模式 `headphones`** | **没有**。`setAudioOnly` 只有底条 wide 档一个入口，菜单 24 行里也没有 | ⇒ **P55** |
 
 | P55 | `9e1a470d6` | 手机能切音频模式 | 房间菜单在"画面能做的事"那一组里加一行（截图行之后）：`t.room.audioOnlyMode` / `t.room.restoreVideo` 现成两串（底条在用），`checked: room.audioOnly`，动词 `ref.read(roomProvider.notifier).setAudioOnly`。**不需要门控**：`setAudioOnly` 在没有 handle 时只记状态（`room_controller.dart:1119-1130`），不会挂一个打不开的门。为什么值得做：应用自己在房间进后台时会自动切到这个模式（`room_page.dart:523-532`），却给用手机看直播的人留了唯一一条不能主动选它的路——而省流量/省电恰恰是手机上最需要的。**零新串**（l10n 仍属别的 lane 在飞的树，没跑 slang）。门：`dart analyze lib/modules/live/room` 0 issues；**提交用的是"hunk 切分 + `git apply --cached`"**（`room_page.dart` 当时带着另一条 lane 的 SchedulerBinding→`_writeAfterFrame` 重构 4 个 hunk，他们的改动原样留在工作树）。运行期未验：手机上开房间 → ⋮ 里应有"音频模式"，点了画面停、声音继续；桌面宽窗仍然只有底条那一枚（一行一个入口）。 |
+
+## 第十七轮（2026-11-05）：四道护栏跑在 HEAD 上，清掉我那批积压提交欠下的两条
+
+第 1/3/4 部分的普查方向本轮没有新洞（见下面"模型字段普查见底"），于是把这轮花在**验证门本身**：今早 09:41–09:46 那批"按主题拆分"的积压提交把两道护栏弄红过，我在 HEAD 上重跑并归属。判据是同一命令在两个提交上的差：`2bec9260a`（09:35，批次之前）= IA 绿 / manifest 7 条，`16bed7c8c`（批次之后）= IA 2 条 / manifest 8 条 ⇒ 批次净增 3 条，其中 2 条属我。
+
+| 护栏，跑在 `git worktree add --detach ../pl-guard-head` 的 HEAD 上 | 本轮结束时 |
+| --- | --- |
+| `check_architecture.ps1` | Architecture checks passed |
+| `check_responsive.ps1` | responsive layout gate passed |
+| `check_settings_ia.ps1` | settings IA gate passed（404 hits，本轮由 406 并成 404） |
+| `check_prefs_manifest.ps1` | 7 条，与批次之前同数 ⇒ 我这两笔还清；逐条归属见下 |
+
+| P56 | `899b12877` | 搜索排除的平台能过备份、也能被别的窗口叫醒 | `5bdf4c654`（feat(search): align live search with the reference，我提的）把排除平台集写进 `search.allExcluded` 却没登记 ⇒ 备份丢这个选择、恢复或另一窗口写入后 `searchExcludedProvider` 仍持旧值。两处：`kBackedUpPrefs` 加 `('search.allExcluded', BackupPrefKind.string)`（**它是 controller 自己 `jsonEncode` 的一枚字符串，不是 `stringList`**，注释写进表里防下轮改错档），`kSettingsProviders` 加 `searchExcludedProvider`。**提交用的是 hunk 切分**：`settings_refresh.dart` 正被另一条 lane 改（`refreshSettings`/`refreshSettingsFromWidget` 的 post-frame 重构，36 增 8 删），我从 `git show HEAD:<path>` 出发只插我那两行、`git apply --cached` 后不带 pathspec 提交；提交后 `git diff --stat` 仍是 36/8，他们的 hunk 一字未动。`search.dart` barrel 不导出 `search_scope.dart`，所以按该文件里别的单符号 import 的写法直接 `show searchExcludedProvider`，没有为了两行去动模块 barrel。门：`dart analyze` 这两个文件 0 issues，manifest 门禁里我那两条归零。 |
+| P57 | `be1913c9e` | 局域网同步在设置搜索里只剩一行，和它自己画的那一行一致 | IA 门禁报 `lanSyncPaired`/`lanSyncNearby` 两枚命中"打开 LanSyncPane，但那一页渲染的文件里没有这两个词"。真因：`lan_sync_pane.dart:230-243` 把**已配对**与**附近**两类行放进同一个 `DsListSection`，段头是 `lanSyncDevices`，而目录仍按旧的"两个分节"登记三行 ⇒ 前两枚是幽灵行，搜"已配对"的人被许诺了一个页面上不存在的段。**修法选了目录侧**（一行 `_hit`，把两段的词并进 keywords）而不是给别人的页面重新加分节段头：那是音乐/局域网 lane 的版式决定，而"一行只说一次"这条量规在目录侧同样成立。副作用如实记：`lanSyncPaired`/`lanSyncNearby` 两串现在零消费者，**删它们要跑 slang，而 `lib/l10n` 是别人的在飞树 ⇒ 本轮没删**。门：`check_settings_ia.ps1` 在工作树与 HEAD 上都是 passed；`dart analyze` 该文件 0 issues；`dart format` 0 changed。 |
+
+**剩下 7 条 manifest 红灯的归属与证据（都不是直播间的活，下轮别重新解剖）**
+- **录像 2 条＝判据本身看不见 helper**：`recorder.pollingEnabled`/`autoStartOnBoot` 报"declares boolean while the call sites speak string"。实际写只有 `_write('recorder.pollingEnabled', value)`（`recording_settings.dart:506-510`、`:528-532`、恢复路径 `:737,:741`），`_write(String key, Object value)` 按运行期类型分派到 `setBool`；全仓没有这两枚键的 `setString`。**是 `tool/check_prefs_manifest.ps1` 的键↔档推断穿不过这两个 helper**，而 `tool/` 是禁区 ⇒ 不动判据。
+- 顺带量到一个真现象（录像 lane 自己在飞的方向，`10cf6c572` 把节奏挪到每间房之后）：`build()`（`recording_settings.dart:304-345`）重建 `RecordingScheduleSettings` 时**不读**这两枚键，注释写明"设计上就是开"；而调用方 `recorder_page.dart:176`、`room_page.dart:1786` 只把 setter 当"打开检测"的命令用、只写真 ⇒ 盘上的值恒为 `true`，恢复路径却会把旧文档里的 `false` 写回 state，重启又被默认 `true` 盖掉。这是"只写不读"的键，不是备份档的档别问题；改法（删键、或补 `_storedBool` 读回）归录像 lane，且 `recorder_page.dart` 在禁区里。
+- **点播 5 条**：`vod.app.accessKey`/`deviceId`/`mid` 是**登录态**，按 manifest 自己的文档和判据里 `$unbackedAllowed` 的先例（`check_prefs_manifest.ps1:353-368`，`hongguo.account.credentials`="登录 cookie 不进备份文档"）该走"故意不备份"名单，而那份名单在 `tool/` 里 ⇒ 不动；`vod.playback.apiType` 确实是普通偏好、该注册，但只注册它一枚会把另外三枚继续挂着红灯，而"点播 API 选择要不要跨机器走"是点播 lane 的决定 ⇒ 报，不改。`vodAppSessionProvider` 缺失效同理（它持的就是那三枚凭据的会话）。
+
+**模型字段普查见底（第四部分的一个方向可以关掉了）**：脚本对 `models/{message,gift,super_chat,anchor,audience,room,play}/*/*.dart` 逐类抽 `final <type> <name>;`，再数 `apps/pure_live/lib`（排除 `.g.dart`）里的 `\.name\b` 读者数与 `platforms/**` 里的 `name:` 生产者数。结果：**零读者且站侧有生产者的字段已经清零**，只剩 `LiveDanmakuStyle` 两枚 `fixedDurationMs`/`shadowOffset`——它们**生产者也是 0**，属于"样式接口留了口子没人用"，不是数据通路断。⇒ "谁生产谁消费"这条线在模型层到此为止；下轮要再找洞得换方向（装配点、显示位、参考的算法），别重跑这个普查。
+
+**更正第十五轮的一处措辞**：那一轮写"重建丢了头像、平台徽章、角色、名字色、**会员档（`membershipTier`）**"。前四项成立，`membershipTier` **不成立**：本轮普查 `packages/live_sites/lib/src/platforms/**` 里没有任何站点传过它（`MessageSender.normalized/of` 的这枚参数零调用），应用侧也零读者，只有 `message_sender.dart:17,36,48,68,79,121` 的声明与文档。所以那条字段从来没被丢掉过，谈不上"喂不进去"；参考侧同样只在 `GUARD_BUY` 礼物上带 `guardLevel`，发送者身上没有档。P54 的修复本身不受影响。
+
+**Bigo 那条冲突本轮复核过，仍未变**：`packages/live_sites/lib/src/core/live_site_ingest.dart` 与 `live_site_runtime_info.dart` 还是未跟踪/在飞（连同 `room_controller.dart`、`room_page.dart`、`stream_resolver.dart`、`player.dart`、`pubspec.yaml`、各端 plugin registrant），所以 P51（`01075c532`）那一刀切的 `unsupported` 继续成立，本轮**没有**碰 bigo 的任何文件，也没跑 `slang`/`build_runner`。
