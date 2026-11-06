@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -60,12 +61,8 @@ final class JdliveDanmakuProvider implements LiveDanmakuProvider {
 }
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
-/// test's own, so that the silence watchdog and a backoff step can be read
-/// out of a connection without waiting out the platform's patience.
-typedef JdliveTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+/// test's own.
+typedef JdliveTimers = DanmakuTimers;
 
 /// One comment connection: the website's guest `liveauth` and the socket its
 /// token opens, one socket per broadcast.
@@ -86,17 +83,20 @@ typedef JdliveTimers = ({
 ///   the server pushes nothing more for that broadcast, and a new one has a
 ///   new id.
 /// - Failures name the socket URL without its token.
-final class JdliveDanmakuSession implements LiveDanmakuSession {
-  /// The comments of [args]' broadcast over [site]. [now], [timers] and
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class JdliveDanmakuSession extends DanmakuSessionBase {
+  /// The comments of [args]' broadcast over [site]. [timers], [now] and
   /// [random] (the `liveauth` nonces) are injectable for tests.
   JdliveDanmakuSession({
     required this.args,
     required this.site,
-    JdliveTimers? timers,
+    super.timers,
     DateTime Function()? now,
     Random? random,
   }) : _now = now ?? DateTime.now,
-       _timers = timers ?? (after: Timer.new, every: Timer.periodic),
        _random = random ?? Random.secure();
 
   /// The broadcast this session joins.
@@ -106,10 +106,7 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
   final JdliveSite site;
 
   final DateTime Function() _now;
-  final JdliveTimers _timers;
   final Random _random;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
@@ -117,12 +114,7 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
   Timer? _retry;
   CancelToken? _auth;
   String? _maskKey;
-  int _generation = 0;
   int _failures = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Runs the first handshake; null once the socket is on its way, else why
   /// the broadcast has no chat to join.
@@ -132,7 +124,7 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: jdliveSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: jdliveSiteId, message: 'session is disposed');
     if (!JdliveEndpoints.isLiveId(args.liveId)) {
       return const LiveSiteError.notFound(siteId: jdliveSiteId, message: 'not a JD Live broadcast');
     }
@@ -141,10 +133,10 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     final JdliveChatAuth auth;
     try {
       final cancel = _auth = CancelToken();
@@ -159,10 +151,10 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
     } on CancelledFailure {
       return;
     } on Object catch (error) {
-      _failed(JdliveDanmakuCodec.redact('$error'), generation);
+      _failed(JdliveDanmakuCodec.redact('$error'), run);
       return;
     }
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     _maskKey = auth.maskKey;
     final SocketChannel socket;
     try {
@@ -173,12 +165,12 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
         connectTimeout: JdliveDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed(JdliveDanmakuCodec.redact('$error'), generation);
+      _failed(JdliveDanmakuCodec.redact('$error'), run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       // Closed or replaced while the handshake was in flight: close what we
-      // just opened instead of parking it on a dead generation.
+      // just opened instead of parking it on a dead run.
       try {
         await socket.close();
       } on Object {
@@ -188,16 +180,18 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
     }
     _socket = socket;
     _failures = 0;
-    _startWatchdog();
+    // An open socket counts as joined.
+    run.joined();
+    _startWatchdog(run);
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry(JdliveDanmakuCodec.redact('$error'));
+        if (run.isActive) _scheduleRetry(JdliveDanmakuCodec.redact('$error'), run);
       },
     );
   }
@@ -205,58 +199,55 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
   /// A handshake or socket that did not come to live: counted, and retried
   /// after the backoff's step; the budget's end is told once and closes the
   /// stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final frame = JdliveDanmakuCodec.decode(data, liveId: args.liveId, maskKey: _maskKey);
     for (final message in frame.messages) {
-      if (_disposed) return;
-      _report(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
-    if (frame.ended) _terminate('Broadcast ended');
+    if (frame.ended) _terminate('Broadcast ended', run);
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(JdliveDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(JdliveDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
   /// The socket is to be replaced after the backoff's step;
   /// [JdliveDanmakuCodec.maxReconnects] of them without a live one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > JdliveDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(JdliveDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(JdliveDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -280,26 +271,13 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport, the `liveauth` request in flight and the
+  /// protocol timers; safe when nothing is open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     _auth?.cancel();
     _auth = null;
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    _auth?.cancel();
-    _auth = null;
-    await _teardownSocket();
-    await _events.close();
   }
 }

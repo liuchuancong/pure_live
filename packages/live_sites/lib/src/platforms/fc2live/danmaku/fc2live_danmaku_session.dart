@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -63,12 +64,8 @@ final class Fc2LiveDanmakuProvider implements LiveDanmakuProvider {
 }
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a test's
-/// own, so that a heartbeat, a join timeout and a backoff step can be read out
-/// of a connection without waiting for the site's minute-long patience.
-typedef Fc2LiveTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+/// own.
+typedef Fc2LiveTimers = DanmakuTimers;
 
 /// One comment connection: a fresh grant and the control socket it authorizes.
 ///
@@ -96,11 +93,15 @@ typedef Fc2LiveTimers = ({
 ///   itself, and are kept across the run's sockets, each of which sends them
 ///   again.
 /// - Nothing reported names a grant's token or cookie.
-final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
-  /// The comments of [args]' channel over [site].
-  Fc2LiveDanmakuSession({required this.args, required this.site, Fc2LiveTimers? timers, DateTime Function()? now})
-    : _now = now ?? DateTime.now,
-      _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class Fc2LiveDanmakuSession extends DanmakuSessionBase {
+  /// The comments of [args]' channel over [site]. [timers] and [now] are
+  /// injectable for tests.
+  Fc2LiveDanmakuSession({required this.args, required this.site, super.timers, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The channel this session joins.
   final Fc2LiveDanmakuArgs args;
@@ -109,9 +110,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   final Fc2LiveSite site;
 
   final DateTime Function() _now;
-  final Fc2LiveTimers _timers;
 
-  final _events = StreamController<LiveMessage>.broadcast();
   final Fc2LiveAudience _audience = Fc2LiveAudience();
   final Fc2LiveNgList _ng = Fc2LiveNgList();
 
@@ -122,14 +121,8 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   Timer? _join;
   Timer? _retry;
   CancelToken? _grant;
-  int _generation = 0;
   int _nextHeartbeatId = 1;
   int _unconfirmed = 0;
-  bool _joined = false;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Takes the first grant and opens the first socket; null once one of them is
   /// on its way to being joined, else why the channel has no chat to join.
@@ -140,7 +133,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   /// the first handshake exactly like any later one.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: fc2LiveSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: fc2LiveSiteId, message: 'session is disposed');
     if (!Fc2LiveEndpoints.isChannelId(args.channelId)) {
       return const LiveSiteError.notFound(siteId: fc2LiveSiteId, message: 'not an FC2 channel');
     }
@@ -152,17 +145,16 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       return null;
     } on Fc2LiveFailure catch (failure) {
       if (!failure.isTransient) return failure.toLiveSiteError(fc2LiveSiteId);
-      _scheduleRetry(failure.message);
+      _scheduleRetry(failure.message, beginRun());
       return null;
     }
-    return await _openSocket(grant);
+    await _openSocket(grant, beginRun());
+    return null;
   }
 
-  Future<LiveSiteError?> _openSocket(Fc2LiveGrant grant) async {
-    final generation = ++_generation;
-    _joined = false;
+  Future<void> _openSocket(Fc2LiveGrant grant, DanmakuRun run) async {
     await _teardownSocket();
-    if (_disposed) return null;
+    if (!run.isActive) return;
     final Fc2LiveSocket socket;
     try {
       socket = await site.connect(
@@ -172,71 +164,72 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
         connectTimeout: Fc2LiveEndpoints.connectTimeout,
       );
     } on Object catch (error) {
-      final reason = Fc2LiveDanmakuCodec.redact('$error');
-      if (generation != _generation || _disposed) return null;
-      _scheduleRetry(reason);
-      return null;
+      _scheduleRetry(Fc2LiveDanmakuCodec.redact('$error'), run);
+      return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       // Disposed or replaced while the handshake was in flight: close what we
-      // just opened instead of parking it on a dead generation.
+      // just opened instead of parking it on a dead run.
       try {
         await socket.close();
       } on Object {
         // Already closed or broken.
       }
-      return null;
+      return;
     }
     _socket = socket;
     _subscription = socket.stream.listen(
       (data) {
-        if (generation != _generation || _disposed) return;
-        _onData(data, generation);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed${_closeOf(socket)}');
+        if (run.isActive) _scheduleRetry('socket closed${_closeOf(socket)}', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry(Fc2LiveDanmakuCodec.redact('$error'));
+        if (run.isActive) _scheduleRetry(Fc2LiveDanmakuCodec.redact('$error'), run);
       },
     );
-    _join = _timers.after(Fc2LiveDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) _scheduleRetry('no connect_complete in time');
+    _join = timers.after(Fc2LiveDanmakuCodec.joinTimeout, () {
+      if (run.isActive && !run.isJoined) _scheduleRetry('no connect_complete in time', run);
     });
     _startHeartbeat();
-    _startWatchdog();
-    return null;
+    _startWatchdog(run);
   }
 
   String _closeOf(Fc2LiveSocket socket) => socket.closeCode == null ? '' : ' (${socket.closeCode})';
 
-  void _onData(Object? data, int generation) {
-    if (generation != _generation || _disposed) return;
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final frame = Fc2LiveDanmakuCodec.decode(data);
     if (frame == null) return;
     switch (frame.name) {
       case 'connect_complete':
-        if (!_joined) {
-          _joined = true;
+        if (!run.isJoined) {
+          run.joined();
           _join?.cancel();
           _join = null;
         }
       case 'ng_comment':
         _ng.apply(frame.arguments);
       case 'comment':
-        Fc2LiveDanmakuCodec.comments(frame.arguments, ng: _ng).forEach(_report);
+        for (final message in Fc2LiveDanmakuCodec.comments(frame.arguments, ng: _ng)) {
+          if (!run.isActive) return;
+          run.message(message);
+        }
       case 'user_count':
-        _audience.update(frame.arguments).forEach(_report);
+        for (final message in _audience.update(frame.arguments)) {
+          if (!run.isActive) return;
+          run.message(message);
+        }
       case '_response_' when frame.arguments['status'] == 0:
         // The page's heartbeat was answered: this socket is the site's own.
         _unconfirmed = 0;
       case 'control_disconnection':
         final code = frame.arguments['code'];
-        _scheduleRetry('control_disconnection${code is int ? ' $code' : ''}');
+        _scheduleRetry('control_disconnection${code is int ? ' $code' : ''}', run);
       case 'move_server':
         // The site hands the viewer to another node; the page follows at once.
-        _renewNow();
+        _renewNow(run);
       // `initial_connect`, `connect_data`, `video_information`,
       // `point_information` and the rest carry nothing to show.
     }
@@ -244,17 +237,17 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
 
   /// A socket to be replaced after the backoff's step: [Fc2LiveDanmakuCodec.maxReconnects]
   /// of them without an answered heartbeat end the session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _unconfirmed += 1;
     if (_unconfirmed > Fc2LiveDanmakuCodec.maxReconnects) {
-      _terminate('Chat connection lost ($reason)');
+      _terminate('Chat connection lost ($reason)', run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(Fc2LiveDanmakuCodec.reconnectBaseDelay * _unconfirmed, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(Fc2LiveDanmakuCodec.reconnectBaseDelay * _unconfirmed, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
@@ -262,19 +255,22 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   /// A socket to be replaced at once (the site's own `move_server`): no
   /// backoff wait, but still counted against the reconnect budget — a node that
   /// ping-pongs this session between servers would otherwise reopen forever.
-  void _renewNow() {
+  void _renewNow(DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _unconfirmed += 1;
     if (_unconfirmed > Fc2LiveDanmakuCodec.maxReconnects) {
-      _terminate('Chat connection lost (the site kept moving this session)');
+      _terminate('Chat connection lost (the site kept moving this session)', run);
       return;
     }
     unawaited(_handshake());
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
+    if (isDisposed) return;
+    final run = beginRun();
+    await _teardownSocket();
+    if (!run.isActive) return;
     final Fc2LiveGrant grant;
     try {
       grant = await _grantRequest();
@@ -284,18 +280,18 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       // A channel that has become unplayable mid-run is not worth asking about
       // again; a breakdown is retried on the next step.
       if (!failure.isTransient) {
-        _terminate(failure.message);
+        _terminate(failure.message, run);
         return;
       }
-      _scheduleRetry(failure.message);
+      _scheduleRetry(failure.message, run);
       return;
     }
-    await _openSocket(grant);
+    await _openSocket(grant, run);
   }
 
   /// Takes the grant of the handshake under way: a request the session can
   /// cancel when it is closed while its two calls are still in flight, instead
-  /// of leaving them to answer into a dead generation.
+  /// of leaving them to answer into a dead run.
   Future<Fc2LiveGrant> _grantRequest() {
     final cancel = CancelToken();
     _grant = cancel;
@@ -306,15 +302,15 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(Fc2LiveDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(Fc2LiveDanmakuCodec.heartbeat(_nextHeartbeatId++));
+    _heartbeat = timers.every(Fc2LiveDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(Fc2LiveDanmakuCodec.heartbeat(_nextHeartbeatId++));
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(Fc2LiveDanmakuCodec.inactivityTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(Fc2LiveDanmakuCodec.inactivityTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -328,18 +324,15 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and the
   /// stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -366,26 +359,13 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport, the grant request in flight and the protocol
+  /// timers; safe when nothing is open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     _grant?.cancel();
     _grant = null;
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    _grant?.cancel();
-    _grant = null;
-    await _teardownSocket();
-    await _events.close();
   }
 }

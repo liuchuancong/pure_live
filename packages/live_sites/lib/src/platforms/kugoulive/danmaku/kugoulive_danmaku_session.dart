@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -62,10 +63,7 @@ final class KugouliveDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef KugouliveTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef KugouliveTimers = DanmakuTimers;
 
 /// One comment connection, as the website's room page joins anonymously.
 ///
@@ -88,17 +86,20 @@ typedef KugouliveTimers = ({
 /// - Chat of the room, its audience and its gifts are reported; gifts are
 ///   acknowledged as the page does, and a gift the server sends again (the
 ///   same `msgId`) is reported once.
-final class KugouliveDanmakuSession implements LiveDanmakuSession {
-  /// The comments of [args]' room over [site]. [now], [timers] and [random]
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class KugouliveDanmakuSession extends DanmakuSessionBase {
+  /// The comments of [args]' room over [site]. [timers], [now] and [random]
   /// (the login's session and device ids) are injectable for tests.
   KugouliveDanmakuSession({
     required this.args,
     required this.site,
-    KugouliveTimers? timers,
+    super.timers,
     DateTime Function()? now,
     Random? random,
   }) : _now = now ?? DateTime.now,
-       _timers = timers ?? (after: Timer.new, every: Timer.periodic),
        _random = random ?? Random.secure();
 
   /// The room this session joins.
@@ -108,10 +109,7 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   final KugouliveSite site;
 
   final DateTime Function() _now;
-  final KugouliveTimers _timers;
   final Random _random;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   /// The `msgId`s of the last gifts reported; the server repeats an
   /// unacknowledged gift twice, about 2 s apart.
@@ -135,13 +133,8 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   /// reconnect moves on to the next one, so a host that is down costs one
   /// attempt rather than the whole budget.
   int _endpoint = 0;
-  int _generation = 0;
   int _failures = 0;
   int _refusals = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Asks the scheduler and opens the first socket; null once it is on its
   /// way, else why the room has no chat to join.
@@ -151,7 +144,7 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: kugouliveSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: kugouliveSiteId, message: 'session is disposed');
     if (KugouliveDanmakuCodec.checkedRoom(args.roomId) == null) {
       return const LiveSiteError.notFound(siteId: kugouliveSiteId, message: 'not a Kugou Live room');
     }
@@ -168,10 +161,10 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   /// The scheduler, then a socket. A refusal of the scheduler ends the
   /// session; three failures are retried on the page's backoff first.
   Future<void> _start() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     if (!_usable) {
       Object? failure;
       for (var attempt = 0; attempt <= _dispatchRetryDelays.length; attempt++) {
@@ -180,24 +173,21 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
           failure = null;
           break;
         } on KugouliveDispatchRefusal catch (refusal) {
-          _terminate('$refusal');
+          _terminate('$refusal', run);
           return;
         } on Object catch (error) {
           failure = error;
           if (attempt < _dispatchRetryDelays.length) {
-            final done = Completer<void>();
-            _timers.after(_dispatchRetryDelays[attempt], done.complete);
-            await done.future;
-            if (_disposed || generation != _generation) return;
+            if (!await run.delay(_dispatchRetryDelays[attempt])) return;
           }
         }
       }
       if (_grant == null) {
-        _failed('dispatch: $failure', generation);
+        _failed('dispatch: $failure', run);
         return;
       }
     }
-    await _openSocket(generation);
+    await _openSocket(run);
   }
 
   /// Whether the kept token may go on a new socket: there is one, it is
@@ -217,16 +207,16 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
       headers: KugouliveDanmakuCodec.dispatchHeaders(args.roomId),
     );
     final grant = KugouliveDanmakuCodec.grant(response.text, status: response.status);
-    if (_disposed) return;
+    if (isDisposed) return;
     _grant = grant;
     _grantedAt = _now();
     _sent = false;
     _answered = false;
   }
 
-  Future<void> _openSocket(int generation) async {
+  Future<void> _openSocket(DanmakuRun run) async {
     final grant = _grant;
-    if (grant == null || _disposed || generation != _generation) return;
+    if (grant == null || !run.isActive) return;
     // The scheduler hands out several hosts (three in practice); a renewed
     // grant listing fewer keeps the turn within its own list.
     final endpoint = grant.endpoints[_endpoint % grant.endpoints.length];
@@ -239,10 +229,10 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
         connectTimeout: KugouliveDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed('$error', generation);
+      _failed('$error', run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       try {
         await socket.close();
       } on Object {
@@ -253,11 +243,12 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
     _socket = socket;
     _sent = true;
     _answered = false;
+    run.handshakeDone();
     _startHeartbeat();
-    _startWatchdog();
-    _join = _timers.after(KugouliveDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) {
-        _scheduleRetry('no login within ${KugouliveDanmakuCodec.joinTimeout.inSeconds} s');
+    _startWatchdog(run);
+    _join = timers.after(KugouliveDanmakuCodec.joinTimeout, () {
+      if (run.isActive && !run.isJoined) {
+        _scheduleRetry('no login within ${KugouliveDanmakuCodec.joinTimeout.inSeconds} s', run);
       }
     });
     socket.add(
@@ -272,25 +263,23 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
     );
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
 
-  bool get _joined => _everJoined && _answered && _refusals == 0 && _socket != null;
-
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final frame = KugouliveDanmakuCodec.decode(data, roomId: args.roomId);
     if (frame.ack case final ack?) _send(ack);
     if (frame.refusal case final refusal?) {
-      _refused(refusal);
+      _refused(refusal, run);
       return;
     }
     if (frame.joined) {
@@ -301,11 +290,12 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
       _sessionId = frame.sessionId ?? _sessionId;
       _join?.cancel();
       _join = null;
+      if (!run.isJoined) run.joined();
     }
     for (final message in frame.messages) {
-      if (_disposed) return;
+      if (!run.isActive) return;
       if (message.type == LiveMessageType.gift && !_firstGift(message.messageId)) continue;
-      _report(message);
+      run.message(message);
     }
   }
 
@@ -320,7 +310,7 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
 
   /// A refused login: the token is dropped when the server refused it, then
   /// a new socket; more than three refusals in a row end the session.
-  void _refused(KugouliveChatRefusal refusal) {
+  void _refused(KugouliveChatRefusal refusal, DanmakuRun run) {
     if (refusal.tokenRejected) {
       _grant = null;
     } else {
@@ -328,23 +318,23 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
     }
     _refusals += 1;
     if (_refusals > KugouliveDanmakuCodec.maxRefusals) {
-      _terminate('chat refused: $refusal');
+      _terminate('chat refused: $refusal', run);
       return;
     }
-    _scheduleRetry('login refused');
+    _scheduleRetry('login refused', run);
   }
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(KugouliveDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(KugouliveDanmakuCodec.heartbeat());
+    _heartbeat = timers.every(KugouliveDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(KugouliveDanmakuCodec.heartbeat());
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(KugouliveDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(KugouliveDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -358,18 +348,15 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -398,46 +385,35 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
 
   /// A handshake that did not come to live: counted, and retried after the
   /// backoff's step; the budget's end is told once and closes the stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
   /// The socket is to be replaced after the backoff's step, on the next of
   /// the scheduler's hosts; [KugouliveDanmakuCodec.maxReconnects] runs
   /// without a joined one end the session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > KugouliveDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
     _endpoint += 1;
-    final generation = _generation;
-    _retry = _timers.after(KugouliveDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(KugouliveDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_start());
     });
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }

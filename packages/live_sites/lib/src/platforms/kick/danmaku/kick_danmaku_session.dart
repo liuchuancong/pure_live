@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
@@ -85,7 +86,11 @@ final class KickDanmakuProvider implements LiveDanmakuProvider {
 ///   (`StopStreamBroadcast`) is only a notice: the socket stays subscribed,
 ///   so a broadcast restarted under the same chatroom resumes here, and the
 ///   silence that follows is the watchdog's business like any other.
-final class KickDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the opens and their callbacks guard
+/// with — is the shared base's ([DanmakuSessionBase]): every open is one
+/// [DanmakuRun], and the base drops whatever a dead one reports.
+final class KickDanmakuSession extends DanmakuSessionBase {
   /// A session for the channel in [args]; [connect] opens the socket.
   KickDanmakuSession({required this.args});
 
@@ -113,36 +118,29 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     reconnectPolicy: ReconnectPolicy(enabled: false),
   );
 
-  final _events = StreamController<LiveMessage>.broadcast();
   DanmakuSocket? _socket;
   Timer? _heartbeat;
   Timer? _watchdog;
   Timer? _joinTimer;
-  int _generation = 0;
-  bool _disposed = false;
-  bool _joined = false;
 
-  /// One reconnect in flight per generation (the watchdog and `onDone` both
-  /// fire on a dead socket; without this they would double-open).
+  /// One reconnect in flight per run (the watchdog and `onDone` both fire on
+  /// a dead socket; without this they would double-open).
   bool _reconnecting = false;
 
   /// Consecutive failed reconnects; a run that reaches [maxReconnectAttempts]
   /// gives up and closes [events] instead of retrying forever in silence.
   int _reconnectFailures = 0;
 
-  @override
-  Stream<LiveMessage> get events => _events.stream;
-
   /// Opens the socket and subscribes; null on success, else why the session
   /// could not start.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) {
+    if (isDisposed) {
       return const LiveSiteError.unsupported(siteId: kickSiteId, message: 'session is disposed');
     }
-    final generation = ++_generation;
-    _joined = false;
+    final run = beginRun();
     await _teardownSocket();
+    if (!run.isActive) return null;
     // The Pusher handshake is server-driven (it opens with
     // `pusher:connection_established`), so nothing is sent on open; the
     // subscription goes out from that frame in [_onFrame].
@@ -150,40 +148,43 @@ final class KickDanmakuSession implements LiveDanmakuSession {
       uri: KickDanmakuCodec.endpoint,
       config: _transport,
       onHandshake: (_) {},
-      onFrame: (data) => _onFrame(data, generation),
-      onLost: (cause) => _scheduleReconnect(generation, cause),
+      onFrame: (data) => _onFrame(data, run),
+      onLost: (cause) => _scheduleReconnect(run, cause),
     );
     _socket = socket;
     if (!await socket.start()) {
       return const LiveSiteError.network(siteId: kickSiteId, message: 'danmaku connect failed');
     }
-    _heartbeat = Timer.periodic(KickDanmakuCodec.heartbeatInterval, (_) {
-      if (_joined && generation == _generation && !_disposed) _send(KickDanmakuCodec.ping);
+    _heartbeat = timers.every(KickDanmakuCodec.heartbeatInterval, (_) {
+      if (run.isJoined && run.isActive) _send(KickDanmakuCodec.ping);
     });
-    _startWatchdog();
-    _joinTimer = Timer(KickDanmakuCodec.joinTimeout, () {
-      if (!_joined && generation == _generation && !_disposed) _scheduleReconnect(generation, 'join timeout');
+    _startWatchdog(run);
+    _joinTimer = timers.after(KickDanmakuCodec.joinTimeout, () {
+      if (!run.isJoined && run.isActive) _scheduleReconnect(run, 'join timeout');
     });
     return null;
   }
 
-  void _onFrame(Object data, int generation) {
-    if (generation != _generation || _disposed) return;
+  void _onFrame(Object data, DanmakuRun run) {
+    if (!run.isActive) return;
     _reconnectFailures = 0;
-    _startWatchdog();
+    _startWatchdog(run);
     final frame = KickDanmakuCodec.read(data, args);
     if (frame.established) {
       KickDanmakuCodec.subscribeAll(args).forEach(_send);
     }
     if (frame.ping) _send(KickDanmakuCodec.pong);
-    frame.messages.forEach(_events.add);
-    if (frame.joined) {
-      _joined = true;
+    for (final message in frame.messages) {
+      if (!run.isActive) return;
+      run.message(message);
+    }
+    if (frame.joined && !run.isJoined) {
+      run.joined();
       _joinTimer?.cancel();
       _joinTimer = null;
     }
     if (frame.error != null) {
-      _scheduleReconnect(generation, frame.error!);
+      _scheduleReconnect(run, frame.error!);
       return;
     }
     // `StopStreamBroadcast` is only a notice (as in the reference): the socket
@@ -191,10 +192,10 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     // resumes on this session. Silence afterwards is the watchdog's job.
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = Timer(inactivityTimeout, () {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
+    _watchdog = timers.after(inactivityTimeout, () {
+      if (run.isActive) _scheduleReconnect(run, 'socket silent');
     });
   }
 
@@ -204,13 +205,12 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     socket.send(frame);
   }
 
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
+  void _scheduleReconnect(DanmakuRun run, String reason) {
+    if (!run.isActive || _reconnecting) return;
     _reconnecting = true;
     unawaited(() async {
       // Back off briefly so a flapping endpoint is not hammered.
-      await Future<void>.delayed(const Duration(seconds: 2));
-      if (_disposed || staleGeneration != _generation) {
+      if (!await run.delay(const Duration(seconds: 2))) {
         _reconnecting = false;
         return;
       }
@@ -221,18 +221,19 @@ final class KickDanmakuSession implements LiveDanmakuSession {
       if (_reconnectFailures >= maxReconnectAttempts) {
         // Give up: report the loss on the stream instead of retrying forever,
         // and stop so a stale socket's reconnect is not scheduled again.
-        _generation++;
-        _joinTimer?.cancel();
-        _joinTimer = null;
-        _events.add(
-          LiveMessage.normalized(
-            type: LiveMessageType.system,
-            text: 'Danmaku connection lost',
-            color: LiveMessageColor.white,
-          ),
-        );
-        unawaited(_teardownSocket());
-        unawaited(_events.close());
+        final current = this.run;
+        if (current != null) {
+          current
+            ..exhausted('Danmaku connection lost')
+            ..message(
+              LiveMessage.normalized(
+                type: LiveMessageType.system,
+                text: 'Danmaku connection lost',
+                color: LiveMessageColor.white,
+              ),
+            );
+          unawaited(dispose());
+        }
       }
     }());
   }
@@ -242,27 +243,17 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
+    _joinTimer?.cancel();
+    _joinTimer = null;
     final socket = _socket;
     _socket = null;
     await socket?.stop();
   }
 
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation++;
-    _joinTimer?.cancel();
-    _joinTimer = null;
+  Future<void> stop() async {
     await _teardownSocket();
-  }
-
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation++;
-    _joinTimer?.cancel();
-    _joinTimer = null;
-    await _teardownSocket();
-    unawaited(_events.close());
   }
 }

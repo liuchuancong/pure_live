@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -58,12 +59,8 @@ final class TwitcastingDanmakuProvider implements LiveDanmakuProvider {
 }
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
-/// test's own, so that the silence watchdog and a backoff step can be read
-/// out of a connection without waiting out the platform's patience.
-typedef TwitcastingTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+/// test's own.
+typedef TwitcastingTimers = DanmakuTimers;
 
 /// One comment connection: the player's `eventpubsuburl.php` and the
 /// `event.pubsub` socket its answer opens, one socket per broadcast.
@@ -84,16 +81,15 @@ typedef TwitcastingTimers = ({
 ///   socket (the player's threshold), and a socket that errors or closes
 ///   likewise.
 /// - Failures name the socket URL without its signature.
-final class TwitcastingDanmakuSession implements LiveDanmakuSession {
-  /// The comments of [args]' broadcast over [site]. [now] and [timers] are
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class TwitcastingDanmakuSession extends DanmakuSessionBase {
+  /// The comments of [args]' broadcast over [site]. [timers] and [now] are
   /// injectable for tests.
-  TwitcastingDanmakuSession({
-    required this.args,
-    required this.site,
-    TwitcastingTimers? timers,
-    DateTime Function()? now,
-  }) : _now = now ?? DateTime.now,
-       _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+  TwitcastingDanmakuSession({required this.args, required this.site, super.timers, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The broadcast this session joins.
   final TwitcastingDanmakuArgs args;
@@ -102,23 +98,15 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
   final TwitcastingSite site;
 
   final DateTime Function() _now;
-  final TwitcastingTimers _timers;
 
   static const String _site = 'twitcasting';
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
   Timer? _watchdog;
   Timer? _retry;
   CancelToken? _resolve;
-  int _generation = 0;
   int _failures = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Runs the first handshake; null once the socket is on its way, else why
   /// the broadcast has no chat to join.
@@ -128,7 +116,7 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
     if (args.movieId <= 0) {
       return const LiveSiteError.notFound(siteId: _site, message: 'not a TwitCasting broadcast');
     }
@@ -137,10 +125,10 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     final Uri socketUrl;
     try {
       final cancel = _resolve = CancelToken();
@@ -157,10 +145,10 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
     } on CancelledFailure {
       return;
     } on Object catch (error) {
-      _failed(TwitcastingDanmakuCodec.redact('$error'), generation);
+      _failed(TwitcastingDanmakuCodec.redact('$error'), run);
       return;
     }
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     final SocketChannel socket;
     try {
       socket = await site.connect(
@@ -170,12 +158,12 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
         connectTimeout: TwitcastingDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed(TwitcastingDanmakuCodec.redact('$error'), generation);
+      _failed(TwitcastingDanmakuCodec.redact('$error'), run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       // Closed or replaced while the handshake was in flight: close what we
-      // just opened instead of parking it on a dead generation.
+      // just opened instead of parking it on a dead run.
       try {
         await socket.close();
       } on Object {
@@ -185,16 +173,18 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
     }
     _socket = socket;
     _failures = 0;
-    _startWatchdog();
+    // An open socket counts as joined.
+    run.joined();
+    _startWatchdog(run);
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry(TwitcastingDanmakuCodec.redact('$error'));
+        if (run.isActive) _scheduleRetry(TwitcastingDanmakuCodec.redact('$error'), run);
       },
     );
   }
@@ -202,56 +192,53 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
   /// A handshake or socket that did not come to live: counted, and retried
   /// after the backoff's step; the budget's end is told once and closes the
   /// stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     for (final message in TwitcastingDanmakuCodec.decode(data)) {
-      if (_disposed) return;
-      _report(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(TwitcastingDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(TwitcastingDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
   /// The socket is to be replaced after the backoff's step;
   /// [TwitcastingDanmakuCodec.maxReconnects] of them without a live one end
   /// the session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > TwitcastingDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(TwitcastingDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(TwitcastingDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -274,26 +261,13 @@ final class TwitcastingDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport, the URL request in flight and the protocol
+  /// timers; safe when nothing is open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     _resolve?.cancel();
     _resolve = null;
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    _resolve?.cancel();
-    _resolve = null;
-    await _teardownSocket();
-    await _events.close();
   }
 }

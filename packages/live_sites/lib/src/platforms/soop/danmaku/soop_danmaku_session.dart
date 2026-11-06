@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -59,10 +60,7 @@ final class SoopDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef SoopTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef SoopTimers = DanmakuTimers;
 
 /// One chat connection: one WebSocket per room.
 ///
@@ -83,12 +81,15 @@ typedef SoopTimers = ({
 ///   [SoopDanmakuCodec.maxReconnects] runs without an opened one ends the
 ///   session with a terminal system message. An open socket clears the
 ///   count.
-final class SoopDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class SoopDanmakuSession extends DanmakuSessionBase {
   /// The comments of [args]' room over [site]. [timers] and [joinDelay] are
   /// injectable for tests.
-  SoopDanmakuSession({required this.args, required this.site, SoopTimers? timers, Duration? joinDelay})
-    : _timers = timers ?? (after: Timer.new, every: Timer.periodic),
-      _joinDelay = joinDelay ?? SoopDanmakuCodec.joinDelay;
+  SoopDanmakuSession({required this.args, required this.site, super.timers, Duration? joinDelay})
+    : _joinDelay = joinDelay ?? SoopDanmakuCodec.joinDelay;
 
   /// The chat this session joins.
   final SoopDanmakuArgs args;
@@ -96,12 +97,8 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
   /// The site its socket connections come from.
   final SoopSite site;
 
-  final SoopTimers _timers;
-
   /// The pause between the login and the join packet.
   final Duration _joinDelay;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
@@ -109,13 +106,8 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
   Timer? _watchdog;
   Timer? _join;
   Timer? _retry;
-  int _generation = 0;
   int _failures = 0;
   int _endpointIndex = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the first socket; null once it is on its way, else why the room
   /// has no chat to join.
@@ -125,7 +117,7 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: soopSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: soopSiteId, message: 'session is disposed');
     if (!args.url.hasAuthority || args.chatNo.isEmpty) {
       return const LiveSiteError.contentUnavailable(siteId: soopSiteId, message: 'the room names no chat server');
     }
@@ -134,10 +126,10 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     final endpoints = SoopDanmakuCodec.endpoints(args);
     final endpoint = endpoints[_endpointIndex % endpoints.length];
     final SocketChannel socket;
@@ -149,13 +141,13 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
         connectTimeout: SoopDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      if (generation == _generation && !_disposed) {
+      if (run.isActive) {
         _endpointIndex = (_endpointIndex + 1) % endpoints.length;
-        _failed('$error', generation);
+        _failed('$error', run);
       }
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       try {
         await socket.close();
       } on Object {
@@ -168,46 +160,47 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
     _endpointIndex = 0;
     // An open socket counts as joined: the login goes out at once, the join
     // a pause later (3.x's `joinRoom`).
+    run.joined();
     _send(SoopDanmakuCodec.login);
-    _join = _timers.after(_joinDelay, () {
-      if (generation == _generation && !_disposed) _send(SoopDanmakuCodec.join(args.chatNo));
+    _join = timers.after(_joinDelay, () {
+      if (run.isActive) _send(SoopDanmakuCodec.join(args.chatNo));
     });
     _startHeartbeat();
-    _startWatchdog();
+    _startWatchdog(run);
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
 
-  void _onData(Object? data) {
+  void _onData(Object? data, DanmakuRun run) {
     // Chat comes in binary frames; text frames carry nothing to decode.
     if (data is! List<int>) return;
-    _startWatchdog();
+    _startWatchdog(run);
     for (final message in SoopDanmakuCodec.decode(data)) {
-      if (_disposed) return;
-      _events.add(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
   }
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(SoopDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(SoopDanmakuCodec.heartbeat);
+    _heartbeat = timers.every(SoopDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(SoopDanmakuCodec.heartbeat);
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(SoopDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(SoopDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -224,35 +217,36 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
   /// A handshake that did not come to a socket: counted, and retried after
   /// the backoff's step; the budget's end is told once and closes the
   /// stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
   /// The socket is to be replaced after the backoff's step;
   /// [SoopDanmakuCodec.maxReconnects] runs without an opened one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > SoopDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(SoopDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(SoopDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white));
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white));
     unawaited(dispose());
   }
 
@@ -279,22 +273,11 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }

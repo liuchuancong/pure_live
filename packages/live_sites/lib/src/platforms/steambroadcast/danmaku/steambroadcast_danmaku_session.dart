@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
@@ -91,7 +92,12 @@ typedef SteambroadcastTimers = ({Timer Function(Duration delay, void Function() 
 ///   asks `getbroadcastmpd` (Steam refuses an id that is no longer the
 ///   broadcaster's current one).
 /// - `getbroadcastmpd`'s `num_viewers` is reported whenever it is asked.
-final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the follow loop and its callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every
+/// [connect] is one [DanmakuRun] whose [DanmakuRun.delay] paces the loop,
+/// and the base drops whatever a dead one reports.
+final class SteambroadcastDanmakuSession extends DanmakuSessionBase {
   /// The comments of [args]' broadcast over [http]. [timers] and [elapsed]
   /// (the monotonic clock the chat log is followed by) are injectable for
   /// tests.
@@ -100,8 +106,8 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
     required this.http,
     SteambroadcastTimers? timers,
     Duration Function()? elapsed,
-  }) : _timers = timers ?? (after: Timer.new),
-       _elapsed = elapsed ?? _stopwatch();
+  }) : _elapsed = elapsed ?? _stopwatch(),
+       super(timers: timers == null ? null : (after: timers.after, every: Timer.periodic));
 
   /// The broadcast this session follows.
   final SteambroadcastDanmakuArgs args;
@@ -109,7 +115,6 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
   /// The transport the chat log is read over.
   final SteambroadcastHttp http;
 
-  final SteambroadcastTimers _timers;
   final Duration Function() _elapsed;
 
   static Duration Function() _stopwatch() {
@@ -117,20 +122,12 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
     return () => watch.elapsed;
   }
 
-  final _events = StreamController<LiveMessage>.broadcast();
   final SteambroadcastChatClock _clock = SteambroadcastChatClock();
 
   CancelToken? _cancel;
-  Timer? _wait;
-  Completer<bool>? _waiting;
   String? _broadcastId;
   SteambroadcastChat? _chat;
-  int _generation = 0;
   int _failures = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Starts following the chat log; null once it is on its way, else why the
   /// broadcast has no chat to join.
@@ -140,34 +137,34 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
     final steamId = args.steamId.trim();
     if (!SteambroadcastEndpoints.isSteamId(steamId)) {
       return const LiveSiteError.notFound(siteId: _site, message: 'not a Steam id');
     }
     _cancel = CancelToken();
     _broadcastId = SteambroadcastDanmakuCodec.broadcastIdOf(args.broadcastId);
-    unawaited(_follow());
+    unawaited(_follow(beginRun()));
     return null;
   }
 
-  /// One step after another until the session is disposed.
-  Future<void> _follow() async {
+  /// One step after another until the session is stopped or disposed.
+  Future<void> _follow(DanmakuRun run) async {
     final steamId = args.steamId.trim();
     var wait = Duration.zero;
-    while (await _delay(wait)) {
+    while (await run.delay(wait)) {
       try {
-        wait = await _step(steamId);
+        wait = await _step(steamId, run);
       } on SteambroadcastFailure catch (failure) {
         if (failure.kind == SteambroadcastFailureKind.streamUnavailable) {
-          _terminate(failure.message);
+          _terminate(failure.message, run);
           return;
         }
-        final next = _failed('$failure');
+        final next = _failed('$failure', run);
         if (next == null) return;
         wait = next;
       } on Object catch (error) {
-        final next = _failed('$error');
+        final next = _failed('$error', run);
         if (next == null) return;
         wait = next;
       }
@@ -176,8 +173,8 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
 
   /// Reads the window that is due (looking the chat up first when there is
   /// none) and returns the wait before the next one.
-  Future<Duration> _step(String steamId) async {
-    final chat = _chat ??= await _lookUp(steamId);
+  Future<Duration> _step(String steamId, DanmakuRun run) async {
+    final chat = _chat ??= await _lookUp(steamId, run);
     final time = _clock.window;
     final cancel = _cancel;
     final SteambroadcastChatWindow answer;
@@ -193,14 +190,14 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
       _clock.miss();
       rethrow;
     }
-    if (_disposed || (cancel?.isCancelled ?? false)) return Duration.zero;
+    if (!run.isActive || (cancel?.isCancelled ?? false)) return Duration.zero;
     _failures = 0;
     final now = _elapsed();
     // Window 0 is the latest history: it only sets the clock.
     if (time == 0) return _clock.sync(answer.next, answer.initialDelay ?? Duration.zero, now);
     for (final message in answer.messages) {
-      if (_disposed) return Duration.zero;
-      _report(message);
+      if (!run.isActive) return Duration.zero;
+      run.message(message);
     }
     return switch (answer.initialDelay) {
       final delay? when delay > Duration.zero => _clock.sync(answer.next, delay, now),
@@ -210,8 +207,8 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
 
   /// The chat log of the current broadcast: `getchatinfo` of the known
   /// broadcast id, else of the one `getbroadcastmpd` names now.
-  Future<SteambroadcastChat> _lookUp(String steamId) async {
-    final broadcastId = _broadcastId ?? await _currentBroadcast(steamId);
+  Future<SteambroadcastChat> _lookUp(String steamId, DanmakuRun run) async {
+    final broadcastId = _broadcastId ?? await _currentBroadcast(steamId, run);
     try {
       final response = await http.get(
         SteambroadcastDanmakuCodec.chatInfoUrl(steamId, broadcastId),
@@ -234,7 +231,7 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
   /// reporting its viewers. Offline, a restricted account or a broadcast for
   /// subscribers only is stream-unavailable (the session ends); no id
   /// otherwise is a failure like any other (waiting for the broadcast, say).
-  Future<String> _currentBroadcast(String steamId) async {
+  Future<String> _currentBroadcast(String steamId, DanmakuRun run) async {
     final response = await http.get(
       SteambroadcastEndpoints.mpdUrl(steamId),
       headers: SteambroadcastDanmakuCodec.headers(steamId),
@@ -243,7 +240,7 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
     );
     final broadcast = SteambroadcastRoomParser.broadcast(response.text, steamId: steamId, status: response.status);
     if (broadcast.viewers case final viewers?) {
-      _report(SteambroadcastDanmakuCodec.audience(viewers));
+      run.message(SteambroadcastDanmakuCodec.audience(viewers));
     }
     if (broadcast.state == SteambroadcastState.offline) {
       throw const SteambroadcastFailure(SteambroadcastFailureKind.streamUnavailable, 'Offline');
@@ -264,25 +261,14 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
     return _broadcastId = id;
   }
 
-  /// Waits [duration] (driven by the session's timers); false once the
-  /// session is disposed or restarted.
-  Future<bool> _delay(Duration duration) {
-    final done = _waiting = Completer<bool>();
-    final generation = _generation;
-    _wait = _timers.after(duration, () {
-      if (!done.isCompleted) done.complete(generation == _generation && !_disposed);
-    });
-    return done.future;
-  }
-
   /// Counts a failure: ends the session after too many in a row, reads from
   /// window 0 again at the fourth and looks the chat up again from the
   /// eighth. Returns the wait, or null when the session ended.
-  Duration? _failed(String detail) {
-    if (_disposed) return null;
+  Duration? _failed(String detail, DanmakuRun run) {
+    if (!run.isActive) return null;
     _failures++;
     if (_failures > SteambroadcastDanmakuCodec.maxFailures) {
-      _terminate(detail);
+      _terminate(detail, run);
       return null;
     }
     if (_failures >= SteambroadcastDanmakuCodec.resyncAfter) _clock.resync();
@@ -293,48 +279,24 @@ final class SteambroadcastDanmakuSession implements LiveDanmakuSession {
     return SteambroadcastDanmakuCodec.wait(_failures);
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing retries afterwards.
-  void _terminate(String reason) {
-    if (_disposed) return;
-    _breakWait();
-    _events.add(LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white));
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white));
     unawaited(dispose());
   }
 
-  /// Stops the pacing timer and ends the current wait.
-  void _breakWait() {
-    _wait?.cancel();
-    _wait = null;
-    final waiting = _waiting;
-    if (waiting != null && !waiting.isCompleted) waiting.complete(false);
-  }
-
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the chat log's request in flight, and forgets what a stopped
+  /// follow had; safe when nothing is open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
-    _breakWait();
+  Future<void> stop() async {
     _cancel?.cancel();
     _cancel = null;
     _chat = null;
     _broadcastId = null;
     _failures = 0;
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _breakWait();
-    _cancel?.cancel();
-    _cancel = null;
-    await _events.close();
   }
 }

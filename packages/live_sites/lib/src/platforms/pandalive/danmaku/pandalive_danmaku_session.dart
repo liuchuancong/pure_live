@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -58,10 +59,7 @@ final class PandaliveDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef PandaliveTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef PandaliveTimers = DanmakuTimers;
 
 /// One comment connection: one socket to the Centrifugo server per broadcast.
 ///
@@ -85,12 +83,15 @@ typedef PandaliveTimers = ({
 /// - [PandaliveDanmakuCodec.maxReconnects] runs without a joined one end the
 ///   session the same way, with a terminal system message.
 /// - Chat and hearts are reported.
-final class PandaliveDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class PandaliveDanmakuSession extends DanmakuSessionBase {
   /// The comments of [args]' broadcast over [site]. [timers] and [now] are
   /// injectable for tests.
-  PandaliveDanmakuSession({required this.args, required this.site, PandaliveTimers? timers, DateTime Function()? now})
-    : _now = now ?? DateTime.now,
-      _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+  PandaliveDanmakuSession({required this.args, required this.site, super.timers, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The broadcast this session joins.
   final PandaliveDanmakuArgs args;
@@ -102,9 +103,6 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
   static const String _site = 'pandalive';
 
   final DateTime Function() _now;
-  final PandaliveTimers _timers;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
@@ -116,15 +114,9 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
   String _channel = '';
   String? _token;
   bool _fresh = false;
-  bool _joined = false;
   int _commandId = PandaliveDanmakuCodec.subscribeId;
   int _refusals = 0;
   int _failures = 0;
-  int _generation = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the first socket; null once it is on its way, else why the
   /// broadcast has no chat to join.
@@ -134,7 +126,7 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
   /// returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) {
+    if (isDisposed) {
       return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
     }
     final checked = PandaliveDanmakuCodec.checked(args);
@@ -158,28 +150,27 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
-    _joined = false;
+    if (!run.isActive) return;
     if (!_tokenUsable) {
       try {
         final grant = await site.chatGrant(args.userId);
-        if (_disposed || generation != _generation) return;
+        if (!run.isActive) return;
         _channel = grant.channel;
         _token = grant.token;
         _fresh = true;
       } on PandaliveChatRefusal catch (refusal) {
         // The refusal's own text repeats `live/play:`, which this line already
         // says: the code alone is what the room should read.
-        _terminate('live/play refused the chat: ${refusal.code.isEmpty ? 'no reason' : refusal.code}');
+        _terminate('live/play refused the chat: ${refusal.code.isEmpty ? 'no reason' : refusal.code}', run);
         return;
       } on PandaliveFailure catch (failure) {
-        _failed('$failure', generation);
+        _failed('$failure', run);
         return;
       } on Object catch (error) {
-        _failed('$error', generation);
+        _failed('$error', run);
         return;
       }
     }
@@ -192,93 +183,94 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
         connectTimeout: PandaliveDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed('$error', generation);
+      _failed('$error', run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       await _closeSocket(socket);
       return;
     }
     _socket = socket;
     _fresh = false;
     _commandId = PandaliveDanmakuCodec.subscribeId;
+    run.handshakeDone();
     _startHeartbeat();
-    _startWatchdog();
-    _join = _timers.after(PandaliveDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) {
-        _scheduleRetry('no join within ${PandaliveDanmakuCodec.joinTimeout.inSeconds} s');
+    _startWatchdog(run);
+    _join = timers.after(PandaliveDanmakuCodec.joinTimeout, () {
+      if (run.isActive && !run.isJoined) {
+        _scheduleRetry('no join within ${PandaliveDanmakuCodec.joinTimeout.inSeconds} s', run);
       }
     });
     _send(PandaliveDanmakuCodec.connect(_token!));
     _send(PandaliveDanmakuCodec.subscribe(_channel));
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
 
   /// A handshake that did not come to live: counted, and retried after the
   /// backoff's step; the budget's end is told once and closes the stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final frame = PandaliveDanmakuCodec.decode(data, channel: _channel);
     if (frame.refusal case final refusal?) {
-      _refused(refusal);
+      _refused(refusal, run);
       return;
     }
     if (frame.expiresIn case final ttl?) {
       _renewal?.cancel();
-      _renewal = _timers.after(PandaliveDanmakuCodec.renewalDelay(ttl), () {
-        if (!_disposed) unawaited(_handshake());
+      _renewal = timers.after(PandaliveDanmakuCodec.renewalDelay(ttl), () {
+        if (!isDisposed) unawaited(_handshake());
       });
     }
-    if (frame.joined && !_joined) {
-      _joined = true;
+    if (frame.joined && !run.isJoined) {
+      run.joined();
       _join?.cancel();
       _join = null;
       _refusals = 0;
       _failures = 0;
     }
     for (final message in frame.messages) {
-      if (_disposed) return;
-      _report(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
   }
 
   /// A refused join: the socket is replaced; the refusal after the last
   /// retry ends the session.
-  void _refused(String refusal) {
+  void _refused(String refusal, DanmakuRun run) {
     _refusals += 1;
     if (_refusals > PandaliveDanmakuCodec.maxRefusals) {
-      _terminate('chat refused: $refusal');
+      _terminate('chat refused: $refusal', run);
       return;
     }
-    _scheduleRetry('chat refused: $refusal');
+    _scheduleRetry('chat refused: $refusal', run);
   }
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(PandaliveDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(PandaliveDanmakuCodec.ping(++_commandId));
+    _heartbeat = timers.every(PandaliveDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(PandaliveDanmakuCodec.ping(++_commandId));
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(PandaliveDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(PandaliveDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -292,18 +284,15 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -339,37 +328,26 @@ final class PandaliveDanmakuSession implements LiveDanmakuSession {
   /// The socket is to be replaced after the backoff's step;
   /// [PandaliveDanmakuCodec.maxReconnects] runs without a joined one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > PandaliveDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(PandaliveDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(PandaliveDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }

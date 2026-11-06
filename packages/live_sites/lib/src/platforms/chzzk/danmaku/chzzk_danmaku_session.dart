@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
@@ -98,7 +99,11 @@ final class ChzzkDanmakuProvider implements LiveDanmakuProvider {
 ///   session takes a token for it and moves its socket there. The site polls
 ///   this every 30 s; asking only while the chat is quiet costs one request per
 ///   three minutes on a small live instead of six.
-final class ChzzkDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the opens and their callbacks guard
+/// with — is the shared base's ([DanmakuSessionBase]): every open is one
+/// [DanmakuRun], and the base drops whatever a dead one reports.
+final class ChzzkDanmakuSession extends DanmakuSessionBase {
   /// A session for the chat in [args] over [http]. [random] picks the first
   /// server and [now] is the clock a donation without its own time is
   /// received at (tests).
@@ -162,29 +167,22 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
   final Random _random;
   final DateTime Function() _now;
 
-  final _events = StreamController<LiveMessage>.broadcast();
   final Set<String> _reported = {};
   DanmakuSocket? _socket;
   Timer? _join;
   Timer? _quiet;
   List<String> _servers = ChzzkDanmakuCodec.defaultServers;
   String _token = '';
-  int _generation = 0;
   int _server = 0;
   int _reconnectFailures = 0;
-  bool _disposed = false;
-  bool _joined = false;
   bool _reconnecting = false;
   bool _checking = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Asks for the servers and the token, opens the socket and joins; null on a
   /// join, else why chat could not start.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) {
+    if (isDisposed) {
       return const LiveSiteError.unsupported(siteId: chzzkSiteId, message: 'session is disposed');
     }
     final channel = args.chatChannelId.trim();
@@ -207,23 +205,23 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
   /// carries the ping and its silence watchdog, frames come to [_onData] and a
   /// socket that closed is reported to [_scheduleReconnect].
   Future<LiveSiteError?> _openSocket() async {
-    final generation = ++_generation;
-    _joined = false;
+    final run = beginRun();
     await _teardownSocket();
+    if (!run.isActive) return null;
     final endpoint = ChzzkDanmakuCodec.endpoints(_servers, _server).first;
     final socket = DanmakuSocket(
       uri: endpoint,
       config: _transport,
       onHandshake: (socket) => socket.send(ChzzkDanmakuCodec.join(args.chatChannelId, _token)),
-      onFrame: _onData,
-      onLost: (cause) => _scheduleReconnect(generation, cause),
+      onFrame: (data) => _onData(data, run),
+      onLost: (cause) => _scheduleReconnect(run, cause),
     );
     _socket = socket;
     if (!await socket.start()) {
       return LiveSiteError.network(siteId: chzzkSiteId, message: 'danmaku connect failed on $endpoint');
     }
-    _join = Timer(ChzzkDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) _scheduleReconnect(generation, 'join timed out');
+    _join = timers.after(ChzzkDanmakuCodec.joinTimeout, () {
+      if (run.isActive && !run.isJoined) _scheduleReconnect(run, 'join timed out');
     });
     return null;
   }
@@ -247,34 +245,34 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     for (var attempt = 0; attempt < tokenAttempts; attempt++) {
       if (attempt > 0) {
         await Future<void>.delayed(_tokenRetryDelay * attempt);
-        if (_disposed) return null;
+        if (isDisposed) return null;
       }
       try {
         final response = await http.get(ChzzkEndpoints.accessToken(channel), timeout: tokenTimeout);
-        if (_disposed) return null;
+        if (isDisposed) return null;
         if (response.status != 200) continue;
         if (ChzzkDanmakuCodec.accessToken(ChzzkHttp.json(response.text)) case final token?) return token;
       } on Object {
-        if (_disposed) return null;
+        if (isDisposed) return null;
       }
     }
     return null;
   }
 
-  void _onData(Object data) {
+  void _onData(Object data, DanmakuRun run) {
     _reconnectFailures = 0;
     final frame = ChzzkDanmakuCodec.decode(data, receivedAt: _now());
     if (frame.ping) _send(ChzzkDanmakuCodec.pong);
     for (final message in frame.messages) {
-      if (_isNew(message)) _report(message);
+      if (_isNew(message)) run.message(message);
     }
-    if (frame.pushed) _restartQuiet();
+    if (frame.pushed) _restartQuiet(run);
     switch (frame.joined) {
       case true:
-        _joined = true;
+        if (!run.isJoined) run.joined();
         _join?.cancel();
         _join = null;
-        _restartQuiet();
+        _restartQuiet(run);
         if (frame.sessionId.isNotEmpty) _send(ChzzkDanmakuCodec.recent(args.chatChannelId, frame.sessionId));
       case false:
         // The site's own client connects again on codes 302–304 (a broadcast
@@ -283,16 +281,15 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
         _join?.cancel();
         _join = null;
         if (frame.retry) {
-          final generation = _generation;
           unawaited(_teardownSocket());
-          _scheduleReconnect(generation, 'join refused (${frame.refusal ?? ''})');
+          _scheduleReconnect(run, 'join refused (${frame.refusal ?? ''})');
         } else {
-          _terminate('Join refused: ${frame.refusal ?? ''}');
+          _terminate('Join refused: ${frame.refusal ?? ''}', run);
         }
       case null:
         break;
     }
-    if (frame.closed) _terminate('Closed by the server');
+    if (frame.closed) _terminate('Closed by the server', run);
   }
 
   /// Whether [message] is to be reported: chat (the app's duplicate gate sees
@@ -305,19 +302,19 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     return true;
   }
 
-  void _restartQuiet() {
+  void _restartQuiet(DanmakuRun run) {
     _quiet?.cancel();
     _quiet = null;
     // Only a joined chat of a known channel has a live state worth asking for.
-    if (_disposed || !_joined || !isChannelId(args.channelId)) return;
-    _quiet = Timer(quietPeriod, () => unawaited(_checkLive()));
+    if (isDisposed || !run.isJoined || !isChannelId(args.channelId)) return;
+    _quiet = timers.after(quietPeriod, () => unawaited(_checkLive()));
   }
 
   /// The chat was quiet for [quietPeriod]: read the live's state once and move
   /// to its chat channel when that changed; otherwise wait again.
   Future<void> _checkLive() async {
     _quiet = null;
-    if (_disposed || _checking || _socket == null) return;
+    if (isDisposed || _checking || _socket == null) return;
     _checking = true;
     try {
       String? next;
@@ -327,22 +324,28 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
       } on Object {
         // Asked again after the next quiet period.
       }
-      if (_disposed) return;
+      if (isDisposed) return;
       if (next == null || next == args.chatChannelId) {
-        _restartQuiet();
+        final run = this.run;
+        if (run != null) _restartQuiet(run);
         return;
       }
       final token = await _askToken(next);
-      if (_disposed || token == null) {
-        _restartQuiet();
+      if (isDisposed || token == null) {
+        final run = this.run;
+        if (run != null) _restartQuiet(run);
         return;
       }
       args = ChzzkDanmakuArgs(channelId: args.channelId, chatChannelId: next);
       _token = token;
-      final generation = _generation;
+      final stale = run;
       await _teardownSocket();
       final failure = await _openSocket();
-      if (failure != null && generation == _generation) _terminate(failure.message);
+      // A move whose open failed is told only while no newer attempt took
+      // over; the open's own run always replaces the one captured here, as
+      // the original's generation guard did.
+      final opened = run;
+      if (failure != null && opened != null && identical(stale, opened)) _terminate(failure.message, opened);
     } finally {
       _checking = false;
     }
@@ -350,12 +353,11 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
 
   /// A socket that closed, errored, was refused or went silent is replaced on
   /// the next server; [maxReconnectAttempts] failures in a row end the session.
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
+  void _scheduleReconnect(DanmakuRun run, String reason) {
+    if (!run.isActive || _reconnecting) return;
     _reconnecting = true;
     unawaited(() async {
-      await Future<void>.delayed(Duration(seconds: _reconnectFailures + 1));
-      if (_disposed || staleGeneration != _generation) {
+      if (!await run.delay(Duration(seconds: _reconnectFailures + 1))) {
         _reconnecting = false;
         return;
       }
@@ -364,12 +366,11 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
       _reconnecting = false;
       if (failure == null) return;
       _reconnectFailures += 1;
-      if (_reconnectFailures >= maxReconnectAttempts) _terminate('$reason: ${failure.message}');
+      if (_reconnectFailures >= maxReconnectAttempts) {
+        final current = this.run;
+        if (current != null) _terminate('$reason: ${failure.message}', current);
+      }
     }());
-  }
-
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
   }
 
   void _send(String frame) {
@@ -378,19 +379,20 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     socket.send(frame);
   }
 
-  void _terminate(String reason) {
-    if (_disposed) return;
-    _generation++;
-    _joined = false;
-    _events.add(
-      LiveMessage.normalized(
-        type: LiveMessageType.system,
-        text: 'Danmaku connection lost ($reason)',
-        color: LiveMessageColor.white,
-      ),
-    );
-    unawaited(_teardownSocket());
-    unawaited(_events.close());
+  /// The session is over: the reason is told once, as a system message, and
+  /// the stream closes; nothing reconnects afterwards.
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted('Danmaku connection lost ($reason)')
+      ..message(
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: 'Danmaku connection lost ($reason)',
+          color: LiveMessageColor.white,
+        ),
+      );
+    unawaited(dispose());
   }
 
   Future<void> _teardownSocket() async {
@@ -401,24 +403,12 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     await socket?.stop();
   }
 
+  /// Releases the transport and the quiet-period watch; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation++;
-    _joined = false;
+  Future<void> stop() async {
     _quiet?.cancel();
     _quiet = null;
     await _teardownSocket();
-  }
-
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation++;
-    _joined = false;
-    _quiet?.cancel();
-    _quiet = null;
-    await _teardownSocket();
-    unawaited(_events.close());
   }
 }

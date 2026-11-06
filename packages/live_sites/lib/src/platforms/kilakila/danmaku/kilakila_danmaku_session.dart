@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -59,10 +60,7 @@ final class KilakilaDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef KilakilaTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef KilakilaTimers = DanmakuTimers;
 
 /// One comment connection: one Socket.IO socket per broadcast.
 ///
@@ -81,12 +79,15 @@ typedef KilakilaTimers = ({
 ///   joined one end the session the same way.
 /// - A combo hit or line that only repeats a count already reported for its
 ///   combo is left out (see [KilakilaGiftCombos]).
-final class KilakilaDanmakuSession implements LiveDanmakuSession {
-  /// The comments of [args]' broadcast over [site]. [now], [timers] and
-  /// [random] are injectable for tests.
-  KilakilaDanmakuSession({required this.args, required this.site, KilakilaTimers? timers, DateTime Function()? now})
-    : _now = now ?? DateTime.now,
-      _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class KilakilaDanmakuSession extends DanmakuSessionBase {
+  /// The comments of [args]' broadcast over [site]. [timers] and [now] are
+  /// injectable for tests.
+  KilakilaDanmakuSession({required this.args, required this.site, super.timers, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The broadcast this session joins.
   final KilakilaDanmakuArgs args;
@@ -95,9 +96,7 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
   final KilakilaSite site;
 
   final DateTime Function() _now;
-  final KilakilaTimers _timers;
 
-  final _events = StreamController<LiveMessage>.broadcast();
   final KilakilaGiftCombos _combos = KilakilaGiftCombos();
 
   SocketChannel? _socket;
@@ -106,14 +105,8 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
   Timer? _watchdog;
   Timer? _join;
   Timer? _retry;
-  int _generation = 0;
   int _failures = 0;
   int _refusals = 0;
-  bool _joined = false;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the first socket; null once it is on its way, else why the
   /// broadcast has no chat to join.
@@ -123,7 +116,7 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: kilakilaSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: kilakilaSiteId, message: 'session is disposed');
     if (!KilakilaEndpoints.isId(args.roomId)) {
       return const LiveSiteError.notFound(siteId: kilakilaSiteId, message: 'not a KilaKila broadcast');
     }
@@ -132,11 +125,10 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
-    _joined = false;
+    if (!run.isActive) return;
     final SocketChannel socket;
     try {
       socket = await site.connect(
@@ -146,10 +138,10 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
         connectTimeout: KilakilaDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed('$error', generation);
+      _failed('$error', run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       try {
         await socket.close();
       } on Object {
@@ -158,48 +150,49 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
       return;
     }
     _socket = socket;
+    run.handshakeDone();
     _startHeartbeat();
-    _startWatchdog();
-    _join = _timers.after(KilakilaDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) {
-        _scheduleRetry('no join within ${KilakilaDanmakuCodec.joinTimeout.inSeconds} s');
+    _startWatchdog(run);
+    _join = timers.after(KilakilaDanmakuCodec.joinTimeout, () {
+      if (run.isActive && !run.isJoined) {
+        _scheduleRetry('no join within ${KilakilaDanmakuCodec.joinTimeout.inSeconds} s', run);
       }
     });
     // The namespace join goes out as soon as the socket opens.
     _send(KilakilaDanmakuCodec.join(args.roomId));
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
 
   /// A handshake that did not come to live: counted, and retried after the
   /// backoff's step; the budget's end is told once and closes the stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final frame = KilakilaDanmakuCodec.decode(data, roomId: args.roomId);
     if (frame.refusal case final refusal?) {
-      _refused(refusal);
+      _refused(refusal, run);
       return;
     }
     if (frame.dropped) {
-      _scheduleRetry('the server left the room');
+      _scheduleRetry('the server left the room', run);
       return;
     }
-    if (frame.joined && !_joined) {
-      _joined = true;
+    if (frame.joined && !run.isJoined) {
+      run.joined();
       _join?.cancel();
       _join = null;
       _refusals = 0;
@@ -207,33 +200,33 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
       return;
     }
     for (final message in frame.messages) {
-      if (_disposed) return;
-      if (_combos.report(message)) _report(message);
+      if (!run.isActive) return;
+      if (_combos.report(message)) run.message(message);
     }
   }
 
   /// A refused join: the socket is replaced; the refusal after the last
   /// retry ends the session.
-  void _refused(String refusal) {
+  void _refused(String refusal, DanmakuRun run) {
     _refusals += 1;
     if (_refusals > KilakilaDanmakuCodec.maxRefusals) {
-      _terminate('join refused: $refusal');
+      _terminate('join refused: $refusal', run);
       return;
     }
-    _scheduleRetry('join refused: $refusal');
+    _scheduleRetry('join refused: $refusal', run);
   }
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(KilakilaDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(KilakilaDanmakuCodec.ping);
+    _heartbeat = timers.every(KilakilaDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(KilakilaDanmakuCodec.ping);
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(KilakilaDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(KilakilaDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -247,18 +240,15 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -288,37 +278,26 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
   /// The socket is to be replaced after the backoff's step;
   /// [KilakilaDanmakuCodec.maxReconnects] runs without a joined one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > KilakilaDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(KilakilaDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(KilakilaDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }
