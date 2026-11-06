@@ -11,8 +11,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_page_action.dart' show SettingsPageActionScope;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/surface/settings_widgets.dart'
-    show SettingsChoiceRow, SettingsConfigRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/shared/shared.dart';
@@ -403,10 +402,7 @@ final class CachePaneState extends ConsumerState<CachePane> {
               )
             else ...[
               if (stats != null && !stats.diskAvailable)
-                DsListRow(
-                  leading: const DsIcon(DsIcons.triangleAlert),
-                  title: Text(t.settings.cacheDiskUnavailable),
-                ),
+                DsListRow(leading: const DsIcon(DsIcons.triangleAlert), title: Text(t.settings.cacheDiskUnavailable)),
               DsListRow(
                 leading: const DsIcon(DsIcons.hardDrive),
                 title: Text(t.settings.cacheSize),
@@ -445,9 +441,7 @@ final class CachePaneState extends ConsumerState<CachePane> {
               DsListRow(
                 leading: const DsIcon(DsIcons.clock),
                 title: Text(t.settings.cacheLastCleanup),
-                detail: Text(
-                  stats?.lastCleanupAt == null ? t.settings.cacheNever : _formatTime(stats!.lastCleanupAt!),
-                ),
+                detail: Text(stats?.lastCleanupAt == null ? t.settings.cacheNever : _formatTime(stats!.lastCleanupAt!)),
               ),
               DsListRow(
                 leading: const DsIcon(DsIcons.image),
@@ -468,9 +462,7 @@ final class CachePaneState extends ConsumerState<CachePane> {
                         padding: const EdgeInsetsDirectional.only(start: DsSpace.s28),
                         child: Text(_groupLabel(t, group)),
                       ),
-                      detail: Text(
-                        '${formatCacheSize(groups[group]!.size)} · ${groups[group]!.count}',
-                      ),
+                      detail: Text('${formatCacheSize(groups[group]!.size)} · ${groups[group]!.count}'),
                     ),
             ],
           ],
@@ -516,7 +508,8 @@ final class CachePaneState extends ConsumerState<CachePane> {
               description: t.settings.cacheAutoCleanDesc,
               control: DsSwitch(
                 value: settings.autoClean,
-                onChanged: (value) => unawaited(ref.read(liveCacheSettingsProvider.notifier).setAutoClean(value: value)),
+                onChanged: (value) =>
+                    unawaited(ref.read(liveCacheSettingsProvider.notifier).setAutoClean(value: value)),
               ),
             ),
           ],
@@ -610,8 +603,7 @@ final class CachePaneState extends ConsumerState<CachePane> {
     );
   }
 
-  static String _sizeLabel(int megabytes) =>
-      megabytes >= 1024 ? '${megabytes ~/ 1024} GB' : '$megabytes MB';
+  static String _sizeLabel(int megabytes) => megabytes >= 1024 ? '${megabytes ~/ 1024} GB' : '$megabytes MB';
 
   static String _formatTime(DateTime value) {
     final local = value.toLocal();

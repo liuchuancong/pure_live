@@ -425,7 +425,10 @@ final class MusicRecommendHero extends ConsumerWidget {
                           opacity: 0.35,
                           child: Transform.scale(
                             scale: 1.5,
-                            child: Image(image: cachedImage(cover, policy: ImageCachePolicies.albumCover), fit: BoxFit.cover),
+                            child: Image(
+                              image: cachedImage(cover, policy: ImageCachePolicies.albumCover),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),

@@ -745,7 +745,12 @@ final class _ChatLine extends ConsumerWidget {
               child: DsAvatar(
                 image: avatarUrl.isEmpty
                     ? null
-                    : cachedImage(avatarUrl, policy: ImageCachePolicies.userAvatar, width: (avatarSize * 2).round(), height: (avatarSize * 2).round()),
+                    : cachedImage(
+                        avatarUrl,
+                        policy: ImageCachePolicies.userAvatar,
+                        width: (avatarSize * 2).round(),
+                        height: (avatarSize * 2).round(),
+                      ),
                 initials: avatarInitials(senderName),
                 toneIndex: DsAvatar.toneFor(senderName),
                 semanticLabel: senderName,
@@ -1316,7 +1321,12 @@ final class _GiftIcon extends StatelessWidget {
     final uri = Uri.tryParse(url);
     if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return fallback;
     return Image(
-      image: cachedImage(url, policy: ImageCachePolicies.chatEmote, width: (size * 2).round(), height: (size * 2).round()),
+      image: cachedImage(
+        url,
+        policy: ImageCachePolicies.chatEmote,
+        width: (size * 2).round(),
+        height: (size * 2).round(),
+      ),
       width: size,
       height: size,
       fit: BoxFit.contain,

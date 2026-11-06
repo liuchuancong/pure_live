@@ -82,7 +82,10 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                       imageFilter: ImageFilter.blur(sigmaX: kLiveGlassHeroFrostSigma, sigmaY: kLiveGlassHeroFrostSigma),
                       child: Transform.scale(
                         scale: 1.5,
-                        child: Image(image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover), fit: BoxFit.cover),
+                        child: Image(
+                          image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
@@ -428,7 +431,12 @@ final class _Artwork extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: radius,
-      child: DsImage(image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover), width: size, height: size, semanticLabel: track.title),
+      child: DsImage(
+        image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover),
+        width: size,
+        height: size,
+        semanticLabel: track.title,
+      ),
     );
   }
 }

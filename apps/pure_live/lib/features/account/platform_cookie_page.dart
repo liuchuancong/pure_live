@@ -324,7 +324,11 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
         child: Row(
           children: [
             if (avatar != null && avatar.isNotEmpty)
-              DsAvatar(image: cachedImage(avatar, policy: ImageCachePolicies.userAvatar), initials: avatarInitials(name), semanticLabel: name)
+              DsAvatar(
+                image: cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
+                initials: avatarInitials(name),
+                semanticLabel: name,
+              )
             else
               localizedSiteIcon(_site, size: 36) ?? const DsIcon(DsIcons.userRound, size: 36),
             const SizedBox(width: DsSpace.s12),

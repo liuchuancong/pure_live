@@ -266,7 +266,9 @@ final class _AlbumCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     return DsImage(
-      image: album.coverUri == null ? null : cachedImage(album.coverUri.toString(), policy: ImageCachePolicies.albumCover),
+      image: album.coverUri == null
+          ? null
+          : cachedImage(album.coverUri.toString(), policy: ImageCachePolicies.albumCover),
       width: size,
       height: size,
       semanticLabel: album.name,

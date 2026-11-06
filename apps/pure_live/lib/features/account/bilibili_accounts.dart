@@ -116,7 +116,11 @@ final class BilibiliAccountsGroup extends StatelessWidget {
       key: ValueKey(key),
       leading: avatar == null || avatar.isEmpty
           ? const DsIcon(DsIcons.userRound)
-          : DsAvatar(image: cachedImage(avatar, policy: ImageCachePolicies.userAvatar), initials: avatarInitials(name), semanticLabel: name),
+          : DsAvatar(
+              image: cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
+              initials: avatarInitials(name),
+              semanticLabel: name,
+            ),
       title: Text(name),
       description: Text(current ? '$uid · ${t.account.accountCurrent}' : uid),
       trailing: current

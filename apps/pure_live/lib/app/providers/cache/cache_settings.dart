@@ -68,17 +68,13 @@ final class LiveCacheSettings {
   final bool autoClean;
 
   /// The settings with the named fields replaced.
-  LiveCacheSettings copyWith({
-    bool? diskCacheEnabled,
-    int? maxMb,
-    CacheFreshness? freshness,
-    bool? autoClean,
-  }) => LiveCacheSettings(
-    diskCacheEnabled: diskCacheEnabled ?? this.diskCacheEnabled,
-    maxMb: maxMb ?? this.maxMb,
-    freshness: freshness ?? this.freshness,
-    autoClean: autoClean ?? this.autoClean,
-  );
+  LiveCacheSettings copyWith({bool? diskCacheEnabled, int? maxMb, CacheFreshness? freshness, bool? autoClean}) =>
+      LiveCacheSettings(
+        diskCacheEnabled: diskCacheEnabled ?? this.diskCacheEnabled,
+        maxMb: maxMb ?? this.maxMb,
+        freshness: freshness ?? this.freshness,
+        autoClean: autoClean ?? this.autoClean,
+      );
 
   /// The cache configuration this value describes.
   LiveCacheConfig toConfig() => LiveCacheConfig(

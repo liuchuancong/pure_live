@@ -1251,6 +1251,11 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
     final fallback = CoverFallback(title: episode.title, padding: const EdgeInsets.all(DsSpace.s8));
     final url = episode.coverUrl;
     if (url == null || url.isEmpty) return fallback;
-    return DsImage(image: cachedImage(url, policy: ImageCachePolicies.videoCover), aspectRatio: 16 / 9, semanticLabel: episode.title, fallback: fallback);
+    return DsImage(
+      image: cachedImage(url, policy: ImageCachePolicies.videoCover),
+      aspectRatio: 16 / 9,
+      semanticLabel: episode.title,
+      fallback: fallback,
+    );
   }
 }

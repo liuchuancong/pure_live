@@ -309,7 +309,9 @@ final class MusicAlbumCard extends StatelessWidget {
             spacing: DsSpace.s8,
             children: [
               DsImage(
-                image: album.coverUri == null ? null : cachedImage(album.coverUri.toString(), policy: ImageCachePolicies.albumCover),
+                image: album.coverUri == null
+                    ? null
+                    : cachedImage(album.coverUri.toString(), policy: ImageCachePolicies.albumCover),
                 aspectRatio: 1,
                 semanticLabel: album.name,
                 fallback: CoverFallback(title: album.name),

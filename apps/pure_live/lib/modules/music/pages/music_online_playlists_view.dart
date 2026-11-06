@@ -701,7 +701,9 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
                             child: first == null
                                 ? CoverFallback(title: info.name)
                                 : DsImage(
-                                    image: first.coverUri == null ? null : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
+                                    image: first.coverUri == null
+                                        ? null
+                                        : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
                                     aspectRatio: 1,
                                     semanticLabel: info.name,
                                     fallback: CoverFallback(title: first.title),

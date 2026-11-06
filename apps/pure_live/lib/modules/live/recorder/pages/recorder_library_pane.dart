@@ -885,7 +885,9 @@ final class _TakeRow extends StatelessWidget {
                             children: [
                               DsAvatar(
                                 initials: avatarInitials(avatarLabel),
-                                image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
+                                image: avatarUrl.isEmpty
+                                    ? null
+                                    : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
                                 size: DsSize.sm,
                                 semanticLabel: avatarLabel,
                               ),

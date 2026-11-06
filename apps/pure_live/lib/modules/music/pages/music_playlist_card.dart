@@ -93,7 +93,9 @@ final class MusicPlaylistCard extends StatelessWidget {
             Stack(
               children: [
                 DsImage(
-                  image: (coverUrl ?? '').isEmpty ? null : cachedImage(coverUrl!, policy: ImageCachePolicies.albumCover),
+                  image: (coverUrl ?? '').isEmpty
+                      ? null
+                      : cachedImage(coverUrl!, policy: ImageCachePolicies.albumCover),
                   aspectRatio: 1,
                   semanticLabel: title,
                   fallback: fallback,

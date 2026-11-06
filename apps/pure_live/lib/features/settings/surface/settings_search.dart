@@ -482,16 +482,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.dataCache, s.cacheApiMemory, 'api memory cache entries 接口 内存 缓存 条目'),
     _hit(SettingsSection.dataCache, s.cacheLastCleanup, 'last cleanup time 最后 清理 时间'),
     _hit(SettingsSection.dataCache, s.cacheCategoryBreakdown, 'cache by type category covers avatars 分类 类型 封面 头像'),
-    _hit(
-      SettingsSection.dataCache,
-      s.cacheDiskEnabled,
-      'disk cache enable images 磁盘 缓存 启用 图片 网络',
-    ),
-    _hit(
-      SettingsSection.dataCache,
-      s.cacheFreshness,
-      'cache freshness ttl update save data traffic 缓存 策略 有效期 更新 省流量',
-    ),
+    _hit(SettingsSection.dataCache, s.cacheDiskEnabled, 'disk cache enable images 磁盘 缓存 启用 图片 网络'),
+    _hit(SettingsSection.dataCache, s.cacheFreshness, 'cache freshness ttl update save data traffic 缓存 策略 有效期 更新 省流量'),
     _hit(SettingsSection.dataCache, s.cacheAutoClean, 'auto cleanup expired 自动 清理 过期'),
     _hit(SettingsSection.dataCache, s.cacheClearExpired, 'clear expired 清理 过期'),
     _hit(SettingsSection.dataCache, s.cacheClearImages, 'clear images pictures 清理 图片 封面 头像'),

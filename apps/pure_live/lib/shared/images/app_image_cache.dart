@@ -13,7 +13,8 @@ LiveCacheManager? _installed;
 /// The manager in force. A call before the boot installs one is a wiring bug,
 /// not a state a page should handle.
 LiveCacheManager get liveCacheManager =>
-    _installed ?? (throw StateError('The live cache is not installed; the app boot must call installLiveCacheManager.'));
+    _installed ??
+    (throw StateError('The live cache is not installed; the app boot must call installLiveCacheManager.'));
 
 /// The manager in force, or null before the boot installed one.
 LiveCacheManager? get installedLiveCacheManager => _installed;

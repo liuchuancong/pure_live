@@ -1322,7 +1322,9 @@ final class _AnchorCard extends StatelessWidget {
             children: [
               DsAvatar(
                 initials: avatarInitials(anchor.name),
-                image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!, policy: ImageCachePolicies.avatar),
+                image: anchor.avatarUrl == null
+                    ? null
+                    : cachedImage(anchor.avatarUrl!, policy: ImageCachePolicies.avatar),
                 size: DsSize.lg,
                 semanticLabel: anchor.name,
               ),

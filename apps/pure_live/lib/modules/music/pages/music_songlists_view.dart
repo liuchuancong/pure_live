@@ -793,7 +793,9 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                   child: first == null
                       ? CoverFallback(title: playlist.name)
                       : DsImage(
-                          image: first.coverUri == null ? null : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
+                          image: first.coverUri == null
+                              ? null
+                              : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
                           aspectRatio: 1,
                           semanticLabel: playlist.name,
                           fallback: CoverFallback(title: first.title),

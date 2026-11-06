@@ -1307,7 +1307,9 @@ final class _TaskCard extends ConsumerWidget {
                           children: [
                             DsAvatar(
                               initials: avatarInitials(anchor.isEmpty ? title : anchor),
-                              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
+                              image: avatarUrl.isEmpty
+                                  ? null
+                                  : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
                               size: DsSize.sm,
                               semanticLabel: anchor.isEmpty ? title : anchor,
                             ),

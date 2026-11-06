@@ -48,7 +48,12 @@ final class AudioOnlyCover extends StatelessWidget {
                                 child: Center(child: DsIcon(DsIcons.user, size: 32, color: Color(0x66FFFFFF))),
                               )
                             : Image(
-                                image: cachedImage(avatar, policy: ImageCachePolicies.avatar, width: size.toInt(), height: size.toInt()),
+                                image: cachedImage(
+                                  avatar,
+                                  policy: ImageCachePolicies.avatar,
+                                  width: size.toInt(),
+                                  height: size.toInt(),
+                                ),
                                 fit: BoxFit.cover,
                               ),
                       ),
