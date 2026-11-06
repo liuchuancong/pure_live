@@ -37,7 +37,7 @@
 - ✅ 录制显示态单表（938f619c2）：RecordingDisplayState 六态纯函数（word/tone/sortRank/showsOnBar），bar 与录制中心共用；v2 无任务槽位模型故 queued/preparing/深链不适用。参考 `shared/record/record_state.dart`。
 
 ## W6 录制吸收（media_core）
-- ⬜ 录制输入全走本地中继，停止=关输入让 FFmpeg EOF 自然收尾（5s 超时才强杀），坏尾包记"尾部截断"。参考 `live_record/src/capture.dart:120-127`。
+- 🟡 录制输入本地中继：渐进流（FLV/TS）可经 RecordingInputRelay 走回环字节管道，停止=关上游连接→FFmpeg EOF 自收尾→5s 排空窗才强杀；默认关（FfmpegRecordConfig.inputRelay），HLS 与中继起不来的回退直连。参考 `live_record/src/capture.dart:120-127`。落 media_core 737413b，150 测全绿。未做：坏尾包"尾部截断"记法（尾部截断语义已由 _secondPass 留尾段+失败分类承担）；HLS 保留窗口中继=W6 另一条；app 侧录制引擎尚未开此开关。
 - ✅ 分类退避：进程遗言分类器（401/403/404=需新签名、EOF/重置=地址到期、拒连/超时/解析失败=纯网络）；需新签名走 2s→15s 快车道且预算翻倍，纯网络失败不计次。参考 `policy.dart:19-46`、`recorder.dart:494-516`。落 media_core recording_failure_shape+backend 尾日志 2114ade，5 测，录制包 150 测全绿。
 - ✅ refreshAt 前 5s 预取新签名地址，快速恢复直接用。参考 `recorder.dart:1022-1061`。落 app 录制引擎：会话挂 leaseTimer/leasedFromUrl/prefetched，refreshTake 先消费预取（同源+租约未过期才收），预取自身带下一轮时钟。
 - ⬜ HLS 保留窗口+并发预下载（48 段/4 路/96MiB 上限）+跳段标记 CaptureCoverageGap。参考 `live_media/src/relay/hls_window.dart`。
