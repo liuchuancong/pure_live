@@ -812,11 +812,15 @@ final class _RankViewState extends ConsumerState<_RankView> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final browse = ref.watch(browseSettingsProvider);
     final controller = ref.read(hongguoRankProvider.notifier);
     final feed = ref.watch(hongguoRankProvider.select((boards) => boards[_board.name]));
     final held = feed ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
     final topics = controller.topicsOf(_board);
     final rows = controller.rowsOf(_board, _topic);
+    // The rows keep the place the board gave them; a list row's fallback
+    // place is a lookup into this one pass, not a scan of the board per row.
+    final placeOf = {for (var i = 0; i < rows.length; i++) rows[i].seriesId: i + 1};
     // Where this device left each title, so a hundred-place board reads as
     // 「which of these have I not opened」. One pass over the shelf's history
     // rather than a linear lookup per row.
@@ -824,7 +828,9 @@ final class _RankViewState extends ConsumerState<_RankView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (held.error != null && held.items.isEmpty) const _ServiceHint(),
+        // A renewal that failed behind rows still showing says so here; a
+        // board that never answered is the grid's own failure pane below.
+        if (held.error != null && held.items.isNotEmpty) const _ServiceHint(),
         Padding(
           padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: Column(
@@ -900,51 +906,63 @@ final class _RankViewState extends ConsumerState<_RankView> {
           ),
         ),
         Expanded(
-          // The board reads as the station app's own ranking: a row per
-          // title with its place, tags, blurb and heat, not a poster grid.
-          child: rows.isEmpty
-              ? (held.loading
-                    ? const Center(child: DsSpinner())
-                    : Center(
-                        child: DsEmptyState(
-                          icon: const DsIcon(DsIcons.trophy),
-                          title: Text(held.error != null ? t.hongguo.loadFailed : t.common.empty),
-                          description: Text(
-                            held.error ?? (_topic.isEmpty ? t.hongguo.noResultsDescription : t.hongguo.rankEmptyTopic),
-                          ),
-                          actions: held.error == null
-                              ? const []
-                              : [
-                                  DsButton(
-                                    onPressed: () => unawaited(controller.refresh(_board)),
-                                    child: Text(t.common.retry),
-                                  ),
-                                ],
-                        ),
-                      ))
-              : ListView.separated(
-                  padding: EdgeInsets.fromLTRB(
-                    _hongguoPageInset(context),
-                    DsSpace.s4,
-                    _hongguoPageInset(context),
-                    DsSpace.s24,
-                  ),
-                  itemCount: rows.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
-                  itemBuilder: (context, index) {
-                    final series = rows[index];
-                    return HongguoCardMenu(
-                      series: series,
-                      onOpen: () => _open(context, series),
-                      child: HongguoRankRow(
-                        series: series,
-                        position: index + 1,
-                        watched: watchedById[series.seriesId],
-                        onOpen: () => _open(context, series),
-                      ),
-                    );
-                  },
+          // The wall measures itself as a poster wall, the find page's rule:
+          // the gutter the grid keeps is the window's, so the count of posters
+          // is worked out of the width they are actually given. In the list
+          // layout the board reads as the station app's own ranking — a row
+          // per title with its place, tags, blurb and heat — and a wide
+          // window lays those rows out in several columns, as the reference's
+          // board does.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final content = constraints.maxWidth - feedGutter(context).horizontal;
+              return PagedCardGrid<HongguoSeries>(
+                items: rows,
+                layout: ref.watch(browseLayoutProvider),
+                cardExtent: hongguoPosterExtentForWidth(
+                  content,
+                  spacing: browse.crossSpacing,
+                  ceiling: browse.gridColumns,
                 ),
+                crossSpacing: browse.crossSpacing,
+                mainSpacing: browse.mainSpacing,
+                aspectRatio: kHongguoSeriesTileAspect,
+                listMainAxisExtent: kHongguoSeriesRowExtent,
+                itemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesCard(
+                    series: series,
+                    favoritable: true,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                listItemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoRankRow(
+                    series: series,
+                    position: placeOf[series.seriesId] ?? 1,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                // A board is read whole: the pager only slices what is in
+                // hand, and nothing pages behind it.
+                hasMore: false,
+                isLoading: held.loading,
+                onLoadMore: () async {},
+                error: held.items.isEmpty ? held.error : null,
+                onRetry: () => unawaited(controller.refresh(_board)),
+                onRefresh: () => controller.refresh(_board),
+                refreshError: held.error,
+                emptyIcon: HongguoView.rank.icon,
+                emptyTitle: t.common.empty,
+                emptyDescription: _topic.isEmpty ? t.hongguo.noResultsDescription : t.hongguo.rankEmptyTopic,
+              );
+            },
+          ),
         ),
       ],
     );
@@ -1027,24 +1045,24 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final browse = ref.watch(browseSettingsProvider);
     final library = ref.watch(hongguoLibraryProvider);
     final account = ref.watch(hongguoAccountProvider);
     final shelf = ref.watch(hongguoAccountFavoritesProvider);
+    // Where this device stands on each title the shelf holds, one pass per
+    // build — the local tab's cards read it, the account tab's do not.
+    final watchedById = _hongguoWatchedById(library.history);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              // 本机/账户, the areas page's segmented switch.
-              DsSegmentedControl<bool>(
-                segments: [
-                  DsSegment(value: false, label: Text(t.hongguo.localTab)),
-                  DsSegment(value: true, label: Text(t.hongguo.accountTab)),
-                ],
+          child: Builder(
+            builder: (context) {
+              final narrow = PageLayoutScope.isNarrow(context);
+              final tabs = DsTabs<bool>(
                 value: _account,
                 onChanged: (account) {
                   setState(() => _account = account);
@@ -1052,76 +1070,151 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                     unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
                   }
                 },
-              ),
-              if (!_account)
-                Builder(
-                  builder: (context) {
-                    final narrow = PageLayoutScope.isNarrow(context);
-                    final check = DsButton(
-                      size: DsSize.sm,
-                      variant: DsButtonVariant.secondary,
-                      leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                      onPressed: library.favorites.isEmpty || library.checking
-                          ? null
-                          : () => unawaited(ref.read(hongguoLibraryProvider.notifier).checkUpdates(force: true)),
-                      child: Text(t.hongguo.favoriteCheck),
-                    );
-                    // The shelf's one verb rides the shell's head on a narrow
-                    // page, the live module's phone rule.
-                    if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoFavorites, [check]);
-                    return Row(
+                style: _kShelfTabsStyle,
+                tabs: [
+                  DsTab<bool>(value: false, label: Text(t.hongguo.localTab)),
+                  DsTab<bool>(value: true, label: Text(t.hongguo.accountTab)),
+                ],
+              );
+              final check = DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.secondary,
+                leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                onPressed: library.favorites.isEmpty || library.checking
+                    ? null
+                    : () => unawaited(ref.read(hongguoLibraryProvider.notifier).checkUpdates(force: true)),
+                child: Text(t.hongguo.favoriteCheck),
+              );
+              // The local shelf's one reading of itself; the account tab has
+              // nothing to say until its read answers.
+              final status = _account ? null : _favoritesStatus(t, library);
+              // The shelf's one verb rides the shell's head on a narrow page,
+              // the live module's phone rule; beside the bar on a wide one.
+              if (narrow && !_account) {
+                publishPageHeadActions(context, ref, NavigationItem.hongguoFavorites, [check]);
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s8,
+                children: [
+                  // 本机/账户, the shelf bar's own measure: the status and the
+                  // verb share the bar's line on a wide window.
+                  SizedBox(
+                    height: 44,
+                    child: Row(
                       spacing: DsSpace.s8,
                       children: [
-                        Expanded(
-                          child: Text(
-                            _favoritesStatus(t, library),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTheme.of(context).typography.caption
-                                .copyWith(color: DsTheme.colorsOf(context).textMuted),
+                        Expanded(child: tabs),
+                        if (!_account && !narrow) ...[
+                          Flexible(
+                            child: Text(
+                              status!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                            ),
                           ),
-                        ),
-                        if (!narrow) check,
+                          check,
+                        ],
                       ],
-                    );
-                  },
-                ),
-            ],
+                    ),
+                  ),
+                  // A narrow window keeps the reading under the bar — the one
+                  // line the shell's head cannot carry for it.
+                  if (!_account && narrow)
+                    Text(
+                      status!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                ],
+              );
+            },
           ),
         ),
         Expanded(
           child: switch (true) {
             _ when _account && !account.signedIn => _SignInGate(message: t.hongguo.favoritesAccountOff),
-            _ when _account => _SeriesList(
-              rows: [for (final favorite in shelf.items) favorite.series],
-              loading: shelf.loading,
-              error: shelf.error,
-              emptyText: t.hongguo.favoritesAccountEmpty,
-              trailingOf: (series) => _IconAction(
-                icon: DsIcons.heartOff,
-                semanticLabel: t.hongguo.cloudFavoriteOff,
-                onPressed: () =>
-                    unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(series, add: false)),
-              ),
-            ),
-            _ => _SeriesList(
-              rows: [
-                for (final series in library.favorites) series.copyWith(hot: hongguoFavoriteLine(t, library, series)),
-              ],
-              loading: false,
-              error: null,
-              emptyText: t.hongguo.favoritesLocalEmpty,
-              // That line already reads 「共 80 集（+3）」; the count is said by
-              // it, not again in front of it.
-              withEpisodeCount: false,
-              trailingOf: (series) => _IconAction(
-                icon: DsIcons.heartOff,
-                semanticLabel: t.hongguo.unfavorite,
-                onPressed: () {
-                  ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
-                  showDsToast(context: context, title: t.hongguo.favoriteToggleOff);
-                },
-              ),
+            _ => LayoutBuilder(
+              builder: (context, constraints) {
+                final content = constraints.maxWidth - feedGutter(context).horizontal;
+                final local = !_account;
+                final rows = local
+                    ? [
+                        for (final series in library.favorites)
+                          series.copyWith(hot: hongguoFavoriteLine(t, library, series)),
+                      ]
+                    : [for (final favorite in shelf.items) favorite.series];
+                return PagedCardGrid<HongguoSeries>(
+                  items: rows,
+                  layout: ref.watch(browseLayoutProvider),
+                  cardExtent: hongguoPosterExtentForWidth(
+                    content,
+                    spacing: browse.crossSpacing,
+                    ceiling: browse.gridColumns,
+                  ),
+                  crossSpacing: browse.crossSpacing,
+                  mainSpacing: browse.mainSpacing,
+                  aspectRatio: kHongguoSeriesTileAspect,
+                  listMainAxisExtent: kHongguoSeriesRowExtent,
+                  itemBuilder: (context, series) => HongguoCardMenu(
+                    series: series,
+                    onOpen: () => _open(context, series),
+                    child: HongguoSeriesCard(
+                      series: series,
+                      // The local shelf's card keeps its corner heart; an
+                      // account row's kept state is the account's, and its
+                      // row's end — not a local heart — is how it leaves.
+                      favoritable: local,
+                      watched: local ? watchedById[series.seriesId] : null,
+                      onOpen: () => _open(context, series),
+                    ),
+                  ),
+                  listItemBuilder: (context, series) => HongguoCardMenu(
+                    series: series,
+                    onOpen: () => _open(context, series),
+                    child: local
+                        ? HongguoSeriesRow(
+                            series: series,
+                            watched: watchedById[series.seriesId],
+                            onOpen: () => _open(context, series),
+                            // That line already reads 「共 80 集（+3）」; the
+                            // count is said by it, not again in front of it.
+                            withEpisodeCount: false,
+                            trailing: _IconAction(
+                              icon: DsIcons.heartOff,
+                              semanticLabel: t.hongguo.unfavorite,
+                              onPressed: () {
+                                ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
+                                showDsToast(context: context, title: t.hongguo.favoriteToggleOff);
+                              },
+                            ),
+                          )
+                        : HongguoSeriesRow(
+                            series: series,
+                            onOpen: () => _open(context, series),
+                            trailing: _IconAction(
+                              icon: DsIcons.heartOff,
+                              semanticLabel: t.hongguo.cloudFavoriteOff,
+                              onPressed: () => unawaited(
+                                ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(series, add: false),
+                              ),
+                            ),
+                          ),
+                  ),
+                  // Both shelves are whole in hand: the pager slices what is
+                  // there, nothing asks for a next block behind it.
+                  hasMore: false,
+                  isLoading: !local && shelf.loading,
+                  onLoadMore: () async {},
+                  error: local ? null : shelf.error,
+                  onRefresh: local ? null : () => ref.read(hongguoAccountFavoritesProvider.notifier).refresh(),
+                  refreshError: local ? null : shelf.error,
+                  emptyIcon: HongguoView.favorites.icon,
+                  emptyTitle: local ? t.hongguo.favoritesLocalEmpty : t.hongguo.favoritesAccountEmpty,
+                );
+              },
             ),
           },
         ),
@@ -1140,6 +1233,12 @@ final class _HistoryView extends ConsumerStatefulWidget {
 }
 
 final class _HistoryViewState extends ConsumerState<_HistoryView> {
+  /// The room the head's one line asks for before the filter chips can share
+  /// it: tabs, three chips and two verbs at their smallest. Below it the chips
+  /// drop under the bar as a second compact row — the tabs and the verbs keep
+  /// the 44px line to the window's 300px floor.
+  static const double _kHistoryHeadChipsFloor = 640;
+
   bool _account = false;
 
   /// The local shelf's own filter: everything, what the viewer finished, and
@@ -1165,10 +1264,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
     );
     if (!confirmed || !mounted) return;
     ref.read(hongguoLibraryProvider.notifier).clearHistory();
-    setState(() {
-      _managing = false;
-      _selected.clear();
-    });
+    _leaveManaging();
     showDsToast(context: context, title: t.hongguo.historyCleared);
   }
 
@@ -1186,10 +1282,13 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
     );
     if (!confirmed || !mounted) return;
     ref.read(hongguoLibraryProvider.notifier).removeHistoryRows(_selected);
-    setState(() {
-      _managing = false;
-      _selected.clear();
-    });
+    _leaveManaging();
+  }
+
+  /// Forgets one row of this device's history; the shelf's own words say so.
+  void _removeRow(HongguoWatchProgress row) {
+    ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
+    showDsToast(context: context, title: context.t.hongguo.historyRemove);
   }
 
   void _leaveManaging() => setState(() {
@@ -1197,9 +1296,16 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
     _selected.clear();
   });
 
+  /// The row's own snapshot of the series, enough to render and open it.
+  HongguoSeries _rowSeries(HongguoWatchProgress row) =>
+      HongguoSeries(seriesId: row.seriesId, title: row.title, cover: row.cover, episodeCount: row.episodeCount);
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final browse = ref.watch(browseSettingsProvider);
     final library = ref.watch(hongguoLibraryProvider);
     final account = ref.watch(hongguoAccountProvider);
     final cloud = ref.watch(hongguoAccountHistoryProvider);
@@ -1212,96 +1318,110 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              DsSegmentedControl<bool>(
-                segments: [
-                  DsSegment(value: false, label: Text(t.hongguo.localTab)),
-                  DsSegment(value: true, label: Text(t.hongguo.accountTab)),
+          child: Builder(
+            builder: (context) {
+              final narrow = PageLayoutScope.isNarrow(context);
+              // The shelf's verbs: 管理/清空, and a lone 完成 while the mode
+              // runs — the batch's own destructive verb lives on the bar at
+              // the pane's bottom.
+              final actions = <Widget>[
+                if (!_account && library.history.isNotEmpty) ...[
+                  if (_managing)
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      onPressed: _leaveManaging,
+                      child: Text(t.hongguo.historyManageDone),
+                    )
+                  else ...[
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      leading: const DsIcon(DsIcons.listChecks, size: 14),
+                      onPressed: () => setState(() => _managing = true),
+                      child: Text(t.hongguo.historyManage),
+                    ),
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      leading: const DsIcon(DsIcons.trash2, size: 14),
+                      onPressed: () => unawaited(_clearHistory(t)),
+                      child: Text(t.hongguo.historyClear),
+                    ),
+                  ],
                 ],
+              ];
+              // The chips stay content (they thin the list); the shelf's verbs
+              // ride the shell's head on a narrow page.
+              if (narrow && !_account) {
+                publishPageHeadActions(context, ref, NavigationItem.hongguoHistory, actions);
+              }
+              final tabs = DsTabs<bool>(
                 value: _account,
                 onChanged: (account) {
-                  setState(() => _account = account);
+                  setState(() {
+                    _account = account;
+                    // The other tab's mode is not this one's; a batch left
+                    // behind would tick rows the viewer cannot see.
+                    _managing = false;
+                    _selected.clear();
+                  });
                   if (account && ref.read(hongguoAccountProvider).signedIn && cloud.items.isEmpty && !cloud.loading) {
                     unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
                   }
                 },
-              ),
-              if (!_account)
-                Builder(
-                  builder: (context) {
-                    final narrow = PageLayoutScope.isNarrow(context);
-                    final actions = <Widget>[
-                      if (library.history.isNotEmpty) ...[
-                        if (_managing) ...[
-                          DsButton(
-                            size: DsSize.sm,
-                            variant: DsButtonVariant.secondary,
-                            leading: const DsIcon(DsIcons.trash2, size: 14),
-                            onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(t)),
-                            child: Text(t.hongguo.historyManageDeleteCount(count: _selected.length)),
-                          ),
-                          DsButton(
-                            size: DsSize.sm,
-                            variant: DsButtonVariant.ghost,
-                            onPressed: _leaveManaging,
-                            child: Text(t.hongguo.historyManageDone),
-                          ),
-                        ] else ...[
-                          DsButton(
-                            size: DsSize.sm,
-                            variant: DsButtonVariant.ghost,
-                            leading: const DsIcon(DsIcons.listChecks, size: 14),
-                            onPressed: () => setState(() => _managing = true),
-                            child: Text(t.hongguo.historyManage),
-                          ),
-                          DsButton(
-                            size: DsSize.sm,
-                            variant: DsButtonVariant.ghost,
-                            leading: const DsIcon(DsIcons.trash2, size: 14),
-                            onPressed: () => unawaited(_clearHistory(t)),
-                            child: Text(t.hongguo.historyClear),
-                          ),
-                        ],
-                      ],
-                    ];
-                    // The chips stay content (they thin the list); the shelf's
-                    // verbs ride the shell's head on a narrow page.
-                    if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoHistory, actions);
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      spacing: DsSpace.s8,
-                      children: [
-                        Wrap(
+                style: _kShelfTabsStyle,
+                tabs: [
+                  DsTab<bool>(value: false, label: Text(t.hongguo.localTab)),
+                  DsTab<bool>(value: true, label: Text(t.hongguo.accountTab)),
+                ],
+              );
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final chipsOnLine = constraints.maxWidth >= _kHistoryHeadChipsFloor;
+                  final chips = [
+                    DsChip(
+                      label: Text(t.hongguo.filterAll),
+                      selected: _watched == 0,
+                      onChanged: (_) => setState(() => _watched = 0),
+                    ),
+                    DsChip(
+                      label: Text(t.hongguo.historyFilterWatched),
+                      selected: _watched == 1,
+                      onChanged: (_) => setState(() => _watched = 1),
+                    ),
+                    DsChip(
+                      label: Text(t.hongguo.historyFilterUnwatched),
+                      selected: _watched == 2,
+                      onChanged: (_) => setState(() => _watched = 2),
+                    ),
+                  ];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s8,
+                    children: [
+                      // The shelf bar, the live module's measure: tabs, the
+                      // filter chips and the verbs on one 44px line where the
+                      // window can hold them.
+                      SizedBox(
+                        height: 44,
+                        child: Row(
                           spacing: DsSpace.s8,
-                          runSpacing: DsSpace.s8,
                           children: [
-                            DsChip(
-                              label: Text(t.hongguo.filterAll),
-                              selected: _watched == 0,
-                              onChanged: (_) => setState(() => _watched = 0),
-                            ),
-                            DsChip(
-                              label: Text(t.hongguo.historyFilterWatched),
-                              selected: _watched == 1,
-                              onChanged: (_) => setState(() => _watched = 1),
-                            ),
-                            DsChip(
-                              label: Text(t.hongguo.historyFilterUnwatched),
-                              selected: _watched == 2,
-                              onChanged: (_) => setState(() => _watched = 2),
-                            ),
+                            Expanded(child: tabs),
+                            if (!_account && chipsOnLine) ...chips,
+                            if (!narrow) ...actions,
                           ],
                         ),
-                        if (!narrow && actions.isNotEmpty)
-                          Wrap(spacing: DsSpace.s8, runSpacing: DsSpace.s8, children: actions),
-                      ],
-                    );
-                  },
-                ),
-            ],
+                      ),
+                      // The chips' second row, where the line cannot hold
+                      // them; the bar keeps the tabs and the verbs.
+                      if (!_account && !chipsOnLine) Wrap(spacing: DsSpace.s8, runSpacing: DsSpace.s8, children: chips),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ),
         Expanded(
@@ -1316,17 +1436,137 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
               error: cloud.error,
               emptyText: t.hongguo.historyAccountEmpty,
             ),
-            _ => _ProgressList(
-              rows: rows,
-              managing: _managing,
-              selected: _selected,
-              onToggle: (id) => setState(() {
-                if (!_selected.remove(id)) _selected.add(id);
-              }),
-              emptyText: _watched == 0 ? null : t.common.empty,
+            _ => LayoutBuilder(
+              builder: (context, constraints) {
+                final content = constraints.maxWidth - feedGutter(context).horizontal;
+                return PagedCardGrid<HongguoWatchProgress>(
+                  items: rows,
+                  layout: ref.watch(browseLayoutProvider),
+                  cardExtent: hongguoPosterExtentForWidth(
+                    content,
+                    spacing: browse.crossSpacing,
+                    ceiling: browse.gridColumns,
+                  ),
+                  crossSpacing: browse.crossSpacing,
+                  mainSpacing: browse.mainSpacing,
+                  aspectRatio: kHongguoSeriesTileAspect,
+                  listMainAxisExtent: kHongguoSeriesRowExtent,
+                  itemBuilder: (context, row) {
+                    final series = _rowSeries(row);
+                    return HongguoCardMenu(
+                      series: series,
+                      onOpen: _managing ? null : () => _open(context, series),
+                      items: [
+                        if (!_managing)
+                          DsMenuItem(
+                            leading: const DsIcon(DsIcons.trash2),
+                            label: Text(t.hongguo.historyRemove),
+                            destructive: true,
+                            onPressed: () => _removeRow(row),
+                          ),
+                      ],
+                      child: HongguoSeriesCard(
+                        series: series,
+                        watched: row,
+                        onOpen: _managing ? null : () => _open(context, series),
+                      ),
+                    );
+                  },
+                  listItemBuilder: (context, row) {
+                    final series = _rowSeries(row);
+                    return HongguoCardMenu(
+                      series: series,
+                      onOpen: _managing ? null : () => _open(context, series),
+                      items: [
+                        if (!_managing)
+                          DsMenuItem(
+                            leading: const DsIcon(DsIcons.trash2),
+                            label: Text(t.hongguo.historyRemove),
+                            destructive: true,
+                            onPressed: () => _removeRow(row),
+                          ),
+                      ],
+                      child: HongguoSeriesRow(
+                        series: series,
+                        onOpen: _managing ? null : () => _open(context, series),
+                        // The shelf's own row says where this device stands,
+                        // in the words every other face of the title uses,
+                        // and the page adds only the clock playback stood on.
+                        watched: row,
+                        note: row.completed ? null : _clock(row.positionMs),
+                        // The stripe draws inside the row card's bottom edge,
+                        // not as a detached bar under it.
+                        progress: row.completed ? 1.0 : row.fraction,
+                        trailing: _managing
+                            ? DsCheckbox(
+                                value: _selected.contains(row.seriesId),
+                                semanticLabel: row.title,
+                                onChanged: (_) => setState(() {
+                                  if (!_selected.remove(row.seriesId)) _selected.add(row.seriesId);
+                                }),
+                              )
+                            : _IconAction(
+                                icon: DsIcons.trash2,
+                                semanticLabel: t.hongguo.historyRemove,
+                                onPressed: () => _removeRow(row),
+                              ),
+                      ),
+                    );
+                  },
+                  // The history is whole in hand: the pager slices, nothing
+                  // asks for a next block behind it.
+                  hasMore: false,
+                  isLoading: false,
+                  onLoadMore: () async {},
+                  emptyIcon: HongguoView.history.icon,
+                  emptyTitle: _watched == 0 ? t.hongguo.historyLocalEmpty : t.common.empty,
+                );
+              },
             ),
           },
         ),
+        // The batch's own verbs, on the bar at the pane's bottom while the
+        // mode runs — the recorder library's shape: what is ticked, the
+        // destructive bulk verb, and the way out of the mode.
+        if (_managing && !_account)
+          Container(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(top: BorderSide(color: colors.border)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              _hongguoPageInset(context),
+              DsSpace.s8,
+              _hongguoPageInset(context),
+              DsSpace.s8,
+            ),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    t.hongguo.historySelectedCount(count: _selected.length),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.small.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.dangerSoft,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.trash2, size: 16),
+                  onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(t)),
+                  child: Text(t.hongguo.historyManageDeleteCount(count: _selected.length)),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: _leaveManaging,
+                  child: Text(t.hongguo.historyManageDone),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -1344,8 +1584,30 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
   bool _online = true;
 
   @override
+  void initState() {
+    super.initState();
+    // The account's reservations are asked once per visit: an empty shelf
+    // fills itself rather than wait for a walk through the profile first.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _readIfNeeded();
+    });
+  }
+
+  /// Reads the account's reservations when nothing is in hand and no read is
+  /// running; the provider keeps what a rebuilt page would re-ask.
+  void _readIfNeeded() {
+    if (!ref.read(hongguoAccountProvider).signedIn) return;
+    final state = ref.read(hongguoReservationsProvider);
+    if (state.loading || state.online.isNotEmpty || state.upcoming.isNotEmpty) return;
+    unawaited(ref.read(hongguoReservationsProvider.notifier).refresh());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final browse = ref.watch(browseSettingsProvider);
     final account = ref.watch(hongguoAccountProvider);
     final state = ref.watch(hongguoReservationsProvider);
     return Column(
@@ -1353,29 +1615,114 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
-          child: DsSegmentedControl<bool>(
-            segments: [
-              DsSegment(value: true, label: Text(t.hongguo.reservationsOnline)),
-              DsSegment(value: false, label: Text(t.hongguo.reservationsUpcoming)),
-            ],
-            value: _online,
-            onChanged: (online) => setState(() => _online = online),
+          child: SizedBox(
+            height: 44,
+            child: Builder(
+              builder: (context) {
+                final narrow = PageLayoutScope.isNarrow(context);
+                final tabs = DsTabs<bool>(
+                  value: _online,
+                  onChanged: (online) {
+                    setState(() => _online = online);
+                    _readIfNeeded();
+                  },
+                  style: _kShelfTabsStyle,
+                  tabs: [
+                    DsTab<bool>(value: true, label: Text(t.hongguo.reservationsOnline)),
+                    DsTab<bool>(value: false, label: Text(t.hongguo.reservationsUpcoming)),
+                  ],
+                );
+                final refresh = DsButton(
+                  size: DsSize.sm,
+                  variant: DsButtonVariant.secondary,
+                  leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                  onPressed: state.loading
+                      ? null
+                      : () => unawaited(ref.read(hongguoReservationsProvider.notifier).refresh()),
+                  child: Text(t.hongguo.refresh),
+                );
+                // A narrow page keeps the bar alone; the reload rides the
+                // shell's head, as the other shelves' verbs do.
+                if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoReservations, [refresh]);
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    if (!narrow) ...[
+                      // The two halves' counts, said once beside the bar:
+                      // what is on, what is still to come.
+                      Flexible(
+                        child: Text(
+                          '${t.hongguo.reservationsOnlineCount(count: state.online.length)} · '
+                          '${t.hongguo.reservationsUpcomingCount(count: state.upcoming.length)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ),
+                      refresh,
+                    ],
+                  ],
+                );
+              },
+            ),
           ),
         ),
         Expanded(
           child: !account.signedIn
               ? _SignInGate(message: t.hongguo.reservationsOff)
-              : _SeriesList(
-                  rows: [
-                    for (final row in _online ? state.online : state.upcoming)
-                      // A waiting title speaks with its premiere date, as the
-                      // station app prints it under the name.
-                      row.series.copyWith(hot: row.series.hot.isNotEmpty ? row.series.hot : row.series.premiere),
-                  ],
-                  loading: state.loading,
-                  error: state.error,
-                  emptyText: _online ? t.hongguo.reservationsOnlineEmpty : t.hongguo.reservationsUpcomingEmpty,
-                  openable: hongguoSeriesOpenable,
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final content = constraints.maxWidth - feedGutter(context).horizontal;
+                    final rows = [
+                      for (final row in _online ? state.online : state.upcoming)
+                        // A waiting title speaks with its premiere date, as the
+                        // station app prints it under the name.
+                        row.series.copyWith(hot: row.series.hot.isNotEmpty ? row.series.hot : row.series.premiere),
+                    ];
+                    return PagedCardGrid<HongguoSeries>(
+                      items: rows,
+                      layout: ref.watch(browseLayoutProvider),
+                      cardExtent: hongguoPosterExtentForWidth(
+                        content,
+                        spacing: browse.crossSpacing,
+                        ceiling: browse.gridColumns,
+                      ),
+                      crossSpacing: browse.crossSpacing,
+                      mainSpacing: browse.mainSpacing,
+                      aspectRatio: kHongguoSeriesTileAspect,
+                      listMainAxisExtent: kHongguoSeriesRowExtent,
+                      // The listing's own semantics: a title the station has
+                      // not published yet — whose id is the reservation's —
+                      // is a card that says itself and opens nowhere.
+                      itemBuilder: (context, series) => HongguoCardMenu(
+                        series: series,
+                        onOpen: hongguoSeriesOpenable(series) ? () => _open(context, series) : null,
+                        child: HongguoSeriesCard(
+                          series: series,
+                          onOpen: hongguoSeriesOpenable(series) ? () => _open(context, series) : null,
+                        ),
+                      ),
+                      listItemBuilder: (context, series) => HongguoCardMenu(
+                        series: series,
+                        onOpen: hongguoSeriesOpenable(series) ? () => _open(context, series) : null,
+                        child: HongguoSeriesRow(
+                          series: series,
+                          onOpen: hongguoSeriesOpenable(series) ? () => _open(context, series) : null,
+                        ),
+                      ),
+                      // Both halves are whole in hand once read.
+                      hasMore: false,
+                      isLoading: state.loading,
+                      onLoadMore: () async {},
+                      error: state.error,
+                      onRetry: () => ref.read(hongguoReservationsProvider.notifier).refresh(),
+                      onRefresh: () => ref.read(hongguoReservationsProvider.notifier).refresh(),
+                      refreshError: state.error,
+                      emptyIcon: HongguoView.reservations.icon,
+                      emptyTitle: _online ? t.hongguo.reservationsOnlineEmpty : t.hongguo.reservationsUpcomingEmpty,
+                    );
+                  },
                 ),
         ),
       ],
@@ -1497,9 +1844,11 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
               ),
             ),
             // The app's own profile page leads with the viewer's shelves:
-            // one tile each, holding the count and the way in.
+            // one tile each, holding the count and the way in. The tiles sit
+            // at the card walls' gutter, not closer, so the page reads at the
+            // same rhythm as the shelves it opens.
             Row(
-              spacing: DsSpace.s8,
+              spacing: DsSpace.s16,
               children: [
                 Expanded(
                   child: _LibraryTile(
@@ -1727,7 +2076,14 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                   ),
                 ],
               ),
-              if (state.suggestions.isNotEmpty)
+              // The two chip walls name themselves, or they read as one: the
+              // words the field is asking for, and the words this device
+              // searched before.
+              if (state.suggestions.isNotEmpty) ...[
+                Text(
+                  t.hongguo.searchSuggestions,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
+                ),
                 Wrap(
                   spacing: DsSpace.s8,
                   runSpacing: DsSpace.s8,
@@ -1742,13 +2098,20 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                         },
                       ),
                   ],
-                )
+                ),
+              ]
+              // The ask behind the suggestions did not answer; the page says
+              // the suggestions are off and leaves the wire's own words out.
               else if (state.suggestionError != null)
                 Text(
-                  '${t.hongguo.suggestOff} · ${state.suggestionError}',
+                  t.hongguo.suggestOff,
                   style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
                 ),
-              if (state.query.isEmpty && state.history.isNotEmpty)
+              if (state.query.isEmpty && state.history.isNotEmpty) ...[
+                Text(
+                  t.hongguo.searchHistory,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
+                ),
                 Row(
                   spacing: DsSpace.s8,
                   children: [
@@ -1777,6 +2140,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                     ),
                   ],
                 ),
+              ],
             ],
           ),
         ),
@@ -1838,28 +2202,16 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
   }
 }
 
-/// A plain list of series rows, one trailing action each.
+/// The account shelf's rows, one design the grid mode's rows already speak:
+/// the platform's words under each name, its clock beside them, and an empty
+/// pane that says which half never answered.
 final class _SeriesList extends StatelessWidget {
-  const _SeriesList({
-    required this.rows,
-    required this.loading,
-    required this.error,
-    this.emptyText,
-    this.trailingOf,
-    this.openable,
-    this.withEpisodeCount = true,
-  });
+  const _SeriesList({required this.rows, required this.loading, required this.error, this.emptyText});
 
   final List<HongguoSeries> rows;
   final bool loading;
   final String? error;
   final String? emptyText;
-  final Widget Function(HongguoSeries series)? trailingOf;
-  final bool Function(HongguoSeries series)? openable;
-
-  /// False where the rows' own figure line already names the episode total, so
-  /// the listing line must not repeat it.
-  final bool withEpisodeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1878,7 +2230,7 @@ final class _SeriesList extends StatelessWidget {
     }
     if (rows.isEmpty) {
       return Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.heart), title: Text(emptyText ?? t.common.empty)),
+        child: DsEmptyState(icon: const DsIcon(DsIcons.history), title: Text(emptyText ?? t.common.empty)),
       );
     }
     return ListView.separated(
@@ -1887,107 +2239,10 @@ final class _SeriesList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
       itemBuilder: (context, index) {
         final series = rows[index];
-        final canOpen = openable == null || openable!(series);
         return HongguoCardMenu(
           series: series,
-          onOpen: canOpen ? () => _open(context, series) : null,
-          child: HongguoSeriesRow(
-            series: series,
-            onOpen: canOpen ? () => _open(context, series) : null,
-            trailing: trailingOf?.call(series),
-            withEpisodeCount: withEpisodeCount,
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// The local history's own rows: the stripe where playback stood, and a
-/// checkbox instead of the delete button while the shelf is being managed.
-final class _ProgressList extends ConsumerWidget {
-  const _ProgressList({
-    required this.rows,
-    this.managing = false,
-    this.selected = const {},
-    this.onToggle,
-    this.emptyText,
-  });
-
-  final List<HongguoWatchProgress> rows;
-
-  /// Whether the rows carry checkboxes for a batch removal.
-  final bool managing;
-
-  /// The rows ticked in that mode.
-  final Set<String> selected;
-
-  /// Flips one row's tick.
-  final ValueChanged<String>? onToggle;
-
-  /// What the empty shelf says; a shelf the filter emptied speaks for the
-  /// filter, not for the whole history.
-  final String? emptyText;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    if (rows.isEmpty) {
-      return Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.history), title: Text(emptyText ?? t.hongguo.historyLocalEmpty)),
-      );
-    }
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
-      itemCount: rows.length,
-      separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
-      itemBuilder: (context, index) {
-        final row = rows[index];
-        final series = HongguoSeries(
-          seriesId: row.seriesId,
-          title: row.title,
-          cover: row.cover,
-          episodeCount: row.episodeCount,
-        );
-        void remove() {
-          ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
-          showDsToast(context: context, title: t.hongguo.historyRemove);
-        }
-
-        return Column(
-          spacing: DsSpace.s4,
-          children: [
-            HongguoCardMenu(
-              series: series,
-              onOpen: managing ? null : () => _open(context, series),
-              items: [
-                if (!managing)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.trash2),
-                    label: Text(t.hongguo.historyRemove),
-                    destructive: true,
-                    onPressed: remove,
-                  ),
-              ],
-              child: HongguoSeriesRow(
-                series: series,
-                onOpen: managing ? null : () => _open(context, series),
-                // The shelf's own row says where this device stands, in the
-                // words every other face of the title uses, and the page adds
-                // only the clock playback stood on.
-                watched: row,
-                note: row.completed ? null : _clock(row.positionMs),
-                trailing: managing
-                    ? DsCheckbox(
-                        value: selected.contains(row.seriesId),
-                        semanticLabel: row.title,
-                        onChanged: (_) => onToggle?.call(row.seriesId),
-                      )
-                    : _IconAction(icon: DsIcons.trash2, semanticLabel: t.hongguo.historyRemove, onPressed: remove),
-              ),
-            ),
-            if (!row.completed) HongguoProgressStripe(fraction: row.fraction),
-          ],
+          onOpen: () => _open(context, series),
+          child: HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
         );
       },
     );

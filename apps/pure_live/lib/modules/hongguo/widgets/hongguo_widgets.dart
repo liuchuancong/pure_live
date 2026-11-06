@@ -694,7 +694,9 @@ final class HongguoSeriesRow extends ConsumerWidget {
   /// row for the same series, where the listing is one the viewer browses rather
   /// than one read by progress (收藏 and 历史 say it themselves). [note] is this
   /// page's own reading of the title — the history's clock — said once at the
-  /// listing line's end.
+  /// listing line's end. [progress] is the watched fraction the history holds,
+  /// drawn as [HongguoProgressStripe] along the card's bottom inner edge —
+  /// part of the card, not a bar stacked under it.
   const HongguoSeriesRow({
     required this.series,
     this.onOpen,
@@ -702,6 +704,7 @@ final class HongguoSeriesRow extends ConsumerWidget {
     this.withEpisodeCount = true,
     this.watched,
     this.note,
+    this.progress,
     this.poster,
     super.key,
   });
@@ -720,6 +723,12 @@ final class HongguoSeriesRow extends ConsumerWidget {
 
   /// The page's own reading, at the listing line's end; null when it has none.
   final String? note;
+
+  /// The share of the series this device has watched, 0..1; null when the
+  /// caller holds no reading of it. Non-null draws [HongguoProgressStripe]
+  /// along the card's bottom inner edge, the history's marker kept on the
+  /// card instead of stacked under it.
+  final double? progress;
 
   /// The row's own action, drawn at the row's end — the ✕ that drops the
   /// series from the page showing it, the box that picks it for a batch, the
@@ -740,50 +749,66 @@ final class HongguoSeriesRow extends ConsumerWidget {
       onPressed: onOpen,
       semanticLabel: series.title,
       style: const DsCardStyle(padding: EdgeInsets.zero),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              _RowPoster(series: series, poster: poster),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s4,
-                  children: [
-                    Text(
-                      series.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.bodyStrong.copyWith(color: colors.text),
+      // The watched stripe overlays the card instead of stacking under it:
+      // a row is one card, and its marker sits on the card's bottom inner
+      // edge, the way the cover card's chips belong to its cover.
+      child: Stack(
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
+              child: Row(
+                spacing: DsSpace.s12,
+                children: [
+                  _RowPoster(series: series, poster: poster),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s4,
+                      children: [
+                        Text(
+                          series.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                        ),
+                        if (line.isNotEmpty)
+                          Text(
+                            line,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        // The row's own third line, the way the room card's row
+                        // keeps a line for the follow tags: the listing's synopsis,
+                        // which a poster's fixed height never had room for.
+                        if (series.intro.isNotEmpty)
+                          Text(
+                            series.intro,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                      ],
                     ),
-                    if (line.isNotEmpty)
-                      Text(
-                        line,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    // The row's own third line, the way the room card's row
-                    // keeps a line for the follow tags: the listing's synopsis,
-                    // which a poster's fixed height never had room for.
-                    if (series.intro.isNotEmpty)
-                      Text(
-                        series.intro,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                      ),
-                  ],
-                ),
+                  ),
+                  ?trailing,
+                ],
               ),
-              ?trailing,
-            ],
+            ),
           ),
-        ),
+          if (progress != null)
+            PositionedDirectional(
+              // Inside the s8 band the row's own padding leaves at its foot,
+              // so the stripe never covers the poster or the three lines.
+              bottom: 0,
+              start: DsSpace.s12,
+              end: DsSpace.s12,
+              child: IgnorePointer(child: HongguoProgressStripe(fraction: progress!)),
+            ),
+        ],
       ),
     );
   }
@@ -821,7 +846,15 @@ final class HongguoRankRow extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final t = context.t;
     final rank = series.rank ?? position;
-    final leading = rank <= 3;
+    // The column grades its ink by place: the accent is the first place's
+    // alone, the second and third keep the primary and secondary inks a step
+    // below it, and every place after is the subtle ink any number is read in.
+    final tone = switch (rank) {
+      1 => colors.accentText,
+      2 => colors.text,
+      3 => colors.textMuted,
+      _ => colors.textSubtle,
+    };
     // The heat keeps the place the board gives it — beside the name — so the
     // listing line is built without the figure it would print a second time.
     // That line is the card's 「信息行」 switch's; the board's own marks — its
@@ -855,10 +888,7 @@ final class HongguoRankRow extends ConsumerWidget {
                   '$rank',
                   textAlign: TextAlign.center,
                   style: theme.typography.numeric(
-                    theme.typography.title.copyWith(
-                      color: leading ? colors.accentText : colors.textSubtle,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    theme.typography.title.copyWith(color: tone, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

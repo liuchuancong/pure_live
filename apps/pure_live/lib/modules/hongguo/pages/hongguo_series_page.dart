@@ -1,7 +1,9 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -17,13 +19,15 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
     show hongguoRelatedClientProvider, hongguoRelatedProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoCredentials;
+import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show kHongguoSite;
 import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedWork;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show HongguoCardMenu;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart'
-    show HongguoProgressStripe, HongguoSeriesRow, hongguoDurationText;
+    show HongguoProgressStripe, HongguoSeriesCard, HongguoShelf, hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
+import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
 /// One series' page: the series' own head, the episode shelf, its reviews and
 /// related works.
@@ -207,6 +211,35 @@ final class HongguoSeriesHead extends ConsumerStatefulWidget {
 final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
   bool _introExpanded = false;
 
+  /// Hands the series' public page to the system share sheet where the
+  /// platform has one — the vod season's share, pointed at a hongguo title —
+  /// with the link the station itself answers for; where the sheet will not
+  /// run, the link goes to the clipboard with a word of thanks, the player's
+  /// own share.
+  Future<void> _share() async {
+    final title = widget.detail.meta.title.trim();
+    final link = '$kHongguoSite/detail?series_id=${Uri.encodeComponent(widget.seriesId)}';
+    final platform = defaultTargetPlatform;
+    final sheet =
+        !kIsWeb &&
+        (platform == TargetPlatform.android ||
+            platform == TargetPlatform.iOS ||
+            platform == TargetPlatform.macOS ||
+            platform == TargetPlatform.windows);
+    if (sheet) {
+      try {
+        final text = title.isEmpty ? link : '$title\n$link';
+        await SharePlus.instance.share(ShareParams(text: text, subject: title.isEmpty ? null : title));
+        return;
+      } on Object {
+        // A platform without a usable sheet falls through to the clipboard.
+      }
+    }
+    if (!mounted) return;
+    await Clipboard.setData(ClipboardData(text: link));
+    if (mounted) showDsToast(context: context, title: context.t.hongguo.shareCopied);
+  }
+
   /// The checkpoint worth resuming — a finished series keeps its row in the
   /// history but is not resumed here.
   HongguoWatchProgress? _checkpoint() {
@@ -353,6 +386,12 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
                       unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(snapshot, add: true)),
                   child: Text(t.hongguo.cloudFavoriteOn),
                 ),
+              DsButton(
+                variant: DsButtonVariant.ghost,
+                leading: const DsIcon(DsIcons.share, size: 16),
+                onPressed: () => unawaited(_share()),
+                child: Text(t.hongguo.share),
+              ),
             ],
           ),
           if (meta.intro.isNotEmpty) _intro(context, meta.intro, theme, colors, t),
@@ -397,8 +436,9 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
   }
 }
 
-/// The series' related works: a row per season, live ones open, waiting
-/// ones reservable on the signed-in account.
+/// The series' related works: one row of the home shelves' poster cards, a
+/// season to a card, live ones open, waiting ones reservable from the card's
+/// own menu on the signed-in account.
 final class _RelatedSection extends ConsumerStatefulWidget {
   const _RelatedSection({required this.seriesId});
 
@@ -419,53 +459,64 @@ final class _RelatedSectionState extends ConsumerState<_RelatedSection> {
       if (mounted) unawaited(ref.read(hongguoRelatedProvider.notifier).open(widget.seriesId));
     });
     final account = ref.watch(hongguoAccountProvider);
+    // The row's figure line — the season, and whether the work runs or is yet
+    // to come — is what the card stamps on its cover, so the same words ride
+    // the series into the shelf and the card says its state where the row
+    // used to.
+    final works = <HongguoRelatedWork, HongguoSeries>{
+      for (final work in state.items)
+        work: work.series.copyWith(
+          hot: [
+            work.season,
+            if (work.upcoming) t.hongguo.relatedReserve else t.hongguo.relatedLive,
+          ].where((line) => line.isNotEmpty).join(' · '),
+        ),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Text(t.hongguo.related, style: theme.typography.title.copyWith(color: colors.text)),
-        if (state.loading && state.items.isEmpty) const Center(child: DsSpinner()),
-        if (state.error != null && state.items.isEmpty)
-          Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        HongguoShelf(
+          title: t.hongguo.related,
+          items: works.values.toList(),
+          loading: state.loading,
+          error: state.error,
+          onRetry: () => unawaited(ref.read(hongguoRelatedProvider.notifier).open(widget.seriesId)),
+          cardBuilder: (context, series) {
+            final work = works.entries.where((entry) => entry.value.seriesId == series.seriesId).first.key;
+            return _relatedCard(context, series, work, reservable: work.upcoming && account.signedIn);
+          },
+        ),
         if (!state.loading && state.items.isEmpty && state.error == null)
           Text(t.hongguo.relatedNone, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        for (final work in state.items) _relatedWork(context, work, reservable: work.upcoming && account.signedIn),
       ],
     );
   }
 
-  /// One related title as the shelf's row, inside the card's menu: the season
-  /// and whether the work runs or is yet to come take the figure line, and an
-  /// upcoming title keeps its reserve button but no open verb — the menu reads
-  /// the same answer, so it offers nothing this row cannot do.
-  Widget _relatedWork(BuildContext context, HongguoRelatedWork work, {required bool reservable}) {
-    final t = context.t;
+  /// One related title as the shelf's poster card, inside the card's menu:
+  /// an upcoming title keeps its reserve verb but no open one — a poster card
+  /// has no trailing button to hold the action, and the menu is where a page
+  /// hangs its own, so the signed-in viewer reserves from there while the
+  /// cover's line still says 预约. The menu reads the same answer, so it
+  /// offers nothing this card cannot do.
+  Widget _relatedCard(BuildContext context, HongguoSeries series, HongguoRelatedWork work, {required bool reservable}) {
     final open = work.upcoming ? null : () => _openRelated(context, work.series);
-    final series = work.series.copyWith(
-      hot: [
-        work.season,
-        if (work.upcoming) t.hongguo.relatedReserve else t.hongguo.relatedLive,
-      ].where((line) => line.isNotEmpty).join(' · '),
-    );
     return HongguoCardMenu(
       series: series,
       onOpen: open,
-      child: HongguoSeriesRow(
-        series: series,
-        onOpen: open,
-        trailing: reservable
-            ? DsButton(
-                size: DsSize.sm,
-                variant: DsButtonVariant.secondary,
-                onPressed: () {
-                  final credentials = ref.read(hongguoAccountProvider).credentials;
-                  if (credentials == null) return;
-                  unawaited(_reserve(context, credentials, work));
-                },
-                child: Text(t.hongguo.relatedReserve),
-              )
-            : null,
-      ),
+      items: [
+        if (reservable)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.bell),
+            label: Text(context.t.hongguo.relatedReserve),
+            onPressed: () {
+              final credentials = ref.read(hongguoAccountProvider).credentials;
+              if (credentials == null) return;
+              unawaited(_reserve(context, credentials, work));
+            },
+          ),
+      ],
+      child: HongguoSeriesCard(series: series, onOpen: open),
     );
   }
 }
