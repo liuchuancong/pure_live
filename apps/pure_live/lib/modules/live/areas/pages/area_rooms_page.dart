@@ -220,32 +220,32 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
 
     return Scaffold(
       backgroundColor: wallpaper ? const Color(0x00000000) : colors.surface,
-      appBar: AppBar(
-        backgroundColor: wallpaper ? colors.surface.withValues(alpha: 0.82) : colors.surface,
-        surfaceTintColor: const Color(0x00000000),
-        elevation: 0,
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        // The area follow sits beside the title, like the reference's
-        // FollowAreaButton: the followed-areas view and this page share it.
-        // The pull refresh has a button here too — this page has no head
-        // line to carry one, and a mouse is not a pulling thumb.
-        actions: [
-          if (state != null) _AreaFollowButton(area: state.area),
-          const SizedBox(width: DsSpace.s8),
-          const Center(child: LayoutToggle()),
-          const SizedBox(width: DsSpace.s8),
-          DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: context.t.common.refresh,
-            loading: state?.loading ?? false,
-            onPressed: state == null || state.loading ? null : () => unawaited(controller.reload()),
-            icon: const DsIcon(DsIcons.refreshCw, size: 16),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // The page's head in the pane header's shape: the area follow sits
+          // beside the title, like the reference's FollowAreaButton — the
+          // followed-areas view and this page share it. The pull refresh has
+          // a button here too — this page has no head line to carry one, and
+          // a mouse is not a pulling thumb.
+          PageHeader(
+            title: title,
+            actions: [
+              if (state != null) _AreaFollowButton(area: state.area),
+              const LayoutToggle(),
+              DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                semanticLabel: context.t.common.refresh,
+                loading: state?.loading ?? false,
+                onPressed: state == null || state.loading ? null : () => unawaited(controller.reload()),
+                icon: const DsIcon(DsIcons.refreshCw, size: 16),
+              ),
+            ],
           ),
-          const SizedBox(width: DsSpace.s8),
+          Expanded(child: body),
         ],
       ),
-      body: body,
     );
   }
 }
