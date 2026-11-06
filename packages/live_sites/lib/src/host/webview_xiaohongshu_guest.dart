@@ -86,9 +86,6 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
 
   Future<Object?> _run(Uri page, String script, CancelToken? cancel) async {
     if (cancel?.isCancelled ?? false) throw const CancelledFailure();
-    if (route() is HttpProxyRoute) {
-      throw const ProtocolFailure('the Xiaohongshu visitor browser cannot use the configured proxy');
-    }
     final done = _chain.then((_) => _runOnKept(page, script, cancel));
     _chain = done.then<void>((_) {}, onError: (Object _) {});
     return await done;
@@ -210,9 +207,6 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
   /// same visitor seat — the identity cache, not the page, serves repeats.
   Future<Object?> _runOneShot(Uri page, String script, CancelToken? cancel) async {
     if (cancel?.isCancelled ?? false) throw const CancelledFailure();
-    if (route() is HttpProxyRoute) {
-      throw const ProtocolFailure('the Xiaohongshu visitor browser cannot use the configured proxy');
-    }
     final run = browser.run(page: page, script: script, cancel: cancel);
     try {
       final value = await Future.any([
@@ -321,11 +315,15 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
     return '''
 const path = ${jsonEncode(path)};
 for (let n=0; n<400; n++) {
-  const s = window.__pureLiveXhs;
-  if (s && s.headers && typeof window._webmsxyw === 'function') {
+  if (typeof window._webmsxyw === 'function') {
+    // The page's own signer is enough for the public category and directory
+    // endpoints. The captured x-s-common (when the page has made a feed
+    // request) rides along, but a page that never does — the current list
+    // renders its first screen server-side — must not block the request.
+    const s = window.__pureLiveXhs;
     let headers;
     try {
-      headers = Object.assign({}, s.headers, window._webmsxyw(path));
+      headers = Object.assign({}, s && s.headers ? s.headers : {}, window._webmsxyw(path));
     } catch (e) {
       throw new Error('Visitor signer failed');
     }
@@ -334,12 +332,6 @@ for (let n=0; n<400; n++) {
     const body = await r.text();
     if (body.length > 2097152) throw new Error('Visitor response too large');
     return body;
-  }
-  if (n===30 && typeof window._webmsxyw === 'function') {
-    // The signer is there but the page has produced no captured feed
-    // traffic: poke the squarefeed once, so the site's own request
-    // interceptor signs it and the capture below picks the headers up.
-    fetch('https://live-room.xiaohongshu.com/api/sns/red/live/web/feed/v1/squarefeed?cursor_score=&source=13&category=&pre_source=&size=10', {credentials:'include'}).catch(()=>{});
   }
   await new Promise(resolve=>setTimeout(resolve,100));
 }
@@ -519,15 +511,9 @@ final class _OffscreenXiaohongshuKeptPage implements XiaohongshuKeptGuestPage {
     await _loaded.future;
     // The plugin's own default script budget is thirty seconds; the visit
     // scripts' poll may legitimately run longer, so the budget is ours.
-    final answer = _session.controller.callAsyncJavaScript(
-      script,
-      timeout: WebViewXiaohongshuGuest._scriptBudget,
-    );
+    final answer = _session.controller.callAsyncJavaScript(script, timeout: WebViewXiaohongshuGuest._scriptBudget);
     if (cancel == null) return await answer;
-    return await Future.any([
-      answer,
-      cancel.whenCancel.then<Object?>((_) => throw const _Cancelled()),
-    ]);
+    return await Future.any([answer, cancel.whenCancel.then<Object?>((_) => throw const _Cancelled())]);
   }
 
   @override
