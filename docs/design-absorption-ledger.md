@@ -69,7 +69,7 @@
 
 ## W11 UI 观感
 - ✅ OnVideoColors 全套角色（22 个在用语义角色+shade 渐变工厂）+InkOnColor WCAG 比值选墨（darkInkOn 双比值对比）。参考 `live_colors.dart:9,303`。落 shared/player/on_video_colors.dart，45 处字面量全收编（room 播放面/multiview/hongguo/iptv/vod/media_preview/录制指示），chat 名墨换 darkInkOn；数值沿用房间稿定案只改名不改色。
-- ⬜ WindowClassScope：约束级尺寸类 InheritedWidget（类变化才通知）+DisplayHinge 折叠避让+高度 compact 档。参考 `window_layout.dart:22,68`。
+- ✅ WindowClassScope：约束级尺寸类 InheritedWidget（类变化才通知，无界边回落窗口）+DisplayHinge 折叠避让（find/maybeOf/sideOf/splitRow）+高度 compact 档（短区 48）。参考 `window_layout.dart:22,68`。落 shared/layout/window_class.dart（宽类沿用 app 的 600/960 口径，高类 480/900），壳层包内容区+房间条接高度档，7 测。
 - ✅ RoomCard 纯数据入参：app 层映射、组件不 watch provider。参考 `live_ui/src/widgets/room_card.dart:25`。落 `RoomCardView`（纯渲染，3 测裸跑）+ `RoomCard` 壳只做 provider 解析，8 处调用方不变。
 
 ## 已核实不必吸收
