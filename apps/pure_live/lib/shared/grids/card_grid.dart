@@ -787,7 +787,7 @@ final class _GridFocusItemState extends State<_GridFocusItem> {
 }
 
 /// The bar over a feed whose refresh failed while the old cards stay: the
-/// reason, a retry, and the ✕ that closes it until the next failure.
+/// reason, a retry, and the red word that closes it until the next failure.
 final class _RefreshErrorBanner extends StatelessWidget {
   const _RefreshErrorBanner({required this.reason, required this.onRetry, required this.onDismiss});
 
@@ -819,12 +819,13 @@ final class _RefreshErrorBanner extends StatelessWidget {
             onPressed: onRetry,
             child: Text(t.common.retry),
           ),
-          DsButton.icon(
+          DsButton(
             variant: DsButtonVariant.ghost,
             size: DsSize.sm,
             onPressed: onDismiss,
             semanticLabel: t.common.close,
-            icon: const DsIcon(DsIcons.x),
+            style: DsButtonStyle(foreground: DsTheme.colorsOf(context).danger.text),
+            child: Text(t.common.close),
           ),
         ],
       ),
