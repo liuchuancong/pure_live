@@ -3,6 +3,7 @@
 library;
 
 export 'action_panel.dart';
+export 'card_hover_preview.dart';
 export 'choice_dialog.dart';
 export 'chrome_icon_button.dart';
 export 'cover_fallback.dart';
