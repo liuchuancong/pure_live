@@ -3,18 +3,57 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart' show XiaohongshuFailure, XiaohongshuFailureKind;
-import 'package:live_sites/webview_guest.dart' show WebViewXiaohongshuGuest, XiaohongshuGuestBrowser;
+import 'package:live_sites/webview_guest.dart'
+    show WebViewXiaohongshuGuest, XiaohongshuGuestBrowser, XiaohongshuKeptGuestPage;
 
 final class _Browser implements XiaohongshuGuestBrowser {
   final calls = <({Uri page, String script, CancelToken? cancel})>[];
+  final opens = <Uri>[];
+  final kept = <_KeptPage>[];
   Object? answer = '{}';
+
   @override
   Future<Object?> run({required Uri page, required String script, CancelToken? cancel}) async {
-    calls.add((page: page, script: script, cancel: cancel));
+    final keptPage = await keep(page: page, cancel: cancel);
+    try {
+      return await keptPage.run(script: script, cancel: cancel);
+    } finally {
+      await keptPage.release();
+    }
+  }
+
+  @override
+  Future<XiaohongshuKeptGuestPage> keep({required Uri page, CancelToken? cancel}) async {
+    opens.add(page);
+    final keptPage = _KeptPage(this, page);
+    kept.add(keptPage);
+    return keptPage;
+  }
+
+  Future<Object?> _answer() async {
     if (answer case final Completer<Object?> pending) return await pending.future;
     if (answer case final Exception error) throw error;
     return answer;
   }
+}
+
+final class _KeptPage implements XiaohongshuKeptGuestPage {
+  _KeptPage(this.browser, this.page);
+
+  final _Browser browser;
+  @override
+  final Uri page;
+  bool released = false;
+
+
+  @override
+  Future<Object?> run({required String script, CancelToken? cancel}) async {
+    browser.calls.add((page: page, script: script, cancel: cancel));
+    return await browser._answer();
+  }
+
+  @override
+  Future<void> release() async => released = true;
 }
 
 WebViewXiaohongshuGuest _guest(_Browser browser, {ProxyRoute Function()? route, DateTime Function()? now}) =>
@@ -32,6 +71,8 @@ void main() {
     await guest.categories();
     await guest.directory(category: '6', cursor: '9.75');
     expect(browser.calls.every((c) => c.page.toString() == 'https://www.xiaohongshu.com/livelist'), isTrue);
+    // The pagination burst keeps its page: one open, two signed fetches.
+    expect(browser.opens.length, 1);
     expect(browser.calls[0].script, contains('/api/sns/red/live/web/feed/category'));
     expect(browser.calls[1].script, contains('cursor_score=9.75&source=13&category=6'));
     expect(browser.calls[1].script, isNot(contains('synthetic-credential')));
@@ -43,11 +84,32 @@ void main() {
     expect(() => guest.directory(category: '../bad', cursor: '0'), throwsArgumentError);
   });
 
+  test('a kept page yields to another public page, to age, and to a failure', () async {
+    var now = DateTime.utc(2026, 11, 4);
+    final browser = _Browser();
+    final guest = _guest(browser, now: () => now);
+    await guest.categories();
+    // Age past the keep window: the next request reopens.
+    now = now.add(const Duration(minutes: 4));
+    await guest.categories();
+    expect(browser.opens.length, 2);
+    expect(browser.kept[0].released, isTrue);
+    // A failed run drops the page; the next request opens a fresh one.
+    browser.answer = Exception('stale page');
+    await expectLater(guest.categories(), throwsA(isA<ConnectFailure>()));
+    expect(browser.kept[1].released, isTrue);
+    browser.answer = '{}';
+    await guest.categories();
+    expect(browser.opens.length, 3);
+    expect(browser.kept[2].released, isFalse);
+  });
+
   test('cancel before creation avoids a browser; cancelled result is suppressed', () async {
     final browser = _Browser();
     final guest = _guest(browser);
     final cancel = CancelToken()..cancel();
     await expectLater(guest.categories(cancel: cancel), throwsA(isA<CancelledFailure>()));
+    expect(browser.opens, isEmpty);
     expect(browser.calls, isEmpty);
     final pending = Completer<Object?>();
     browser.answer = pending;
@@ -63,7 +125,7 @@ void main() {
     final browser = _Browser();
     final guest = _guest(browser, route: () => const HttpProxyRoute(host: '::1'));
     await expectLater(guest.categories(), throwsA(isA<ProtocolFailure>()));
-    expect(browser.calls, isEmpty);
+    expect(browser.opens, isEmpty);
     // The direct and system routes run: the page follows the OS proxy on its
     // own, which is what those routes already describe.
     final system = _guest(_Browser(), route: () => const SystemProxyRoute());
@@ -84,12 +146,12 @@ void main() {
     final first = await guest.pushIdentity('570000000000000017');
     expect(first.sid, 'synthetic-sid');
     expect(await guest.pushIdentity('570000000000000018'), same(first));
-    expect(browser.calls.length, 1);
+    expect(browser.opens.length, 1);
     await guest.pushIdentity('570000000000000018', refresh: true);
-    expect(browser.calls.length, 2);
+    expect(browser.opens.length, 2);
     now = now.add(const Duration(minutes: 6));
     await guest.pushIdentity('570000000000000018');
-    expect(browser.calls.length, 3);
+    expect(browser.opens.length, 3);
     expect(first.toString(), isNot(contains('synthetic-sid')));
     expect(browser.calls.first.page.path, '/livestream/570000000000000017');
   });

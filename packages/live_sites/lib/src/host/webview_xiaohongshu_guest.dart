@@ -13,10 +13,32 @@ abstract interface class XiaohongshuGuestBrowser {
   /// Loads the public [page], observes only read-only visitor traffic and
   /// runs [script]. Cancellation, failure and success all dispose the page.
   Future<Object?> run({required Uri page, required String script, CancelToken? cancel});
+
+  /// Opens the same read-only visitor visit on the public [page] and keeps
+  /// it for further scripts ([XiaohongshuKeptGuestPage.run]) until
+  /// [XiaohongshuKeptGuestPage.release], so a burst of directory pages —
+  /// the feed's pagination — loads the site once instead of once per page.
+  Future<XiaohongshuKeptGuestPage> keep({required Uri page, CancelToken? cancel});
 }
 
-/// Anonymous directory and RWP bootstrap. Browsers exist only during a
-/// request; playback and subsequent chat use the normal native transports.
+/// One kept visitor page: the loaded public page with its captured signer,
+/// answering further scripts without a reload until it is released.
+abstract interface class XiaohongshuKeptGuestPage {
+  /// The public page this kept visit loaded.
+  Uri get page;
+
+  /// Runs [script] on the kept page; the read-only contract of
+  /// [XiaohongshuGuestBrowser.run] applies unchanged.
+  Future<Object?> run({required String script, CancelToken? cancel});
+
+  /// Closes the page; further runs fail.
+  Future<void> release();
+}
+
+/// Anonymous directory and RWP bootstrap. A browser page exists for one
+/// request or one kept burst and is closed as soon as it is no longer the
+/// page a request needs; playback and subsequent chat use the normal native
+/// transports.
 final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
   /// Creates the visitor client. It never reads the account's cookie stores
   /// or signed-in state.
@@ -44,42 +66,104 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
   /// rule to an Android-only WebView proxy scope; none exists here).
   final ProxyRoute Function() route;
 
-  /// Temporary page implementation.
+  /// The page implementation: one visit per request, or one kept page per
+  /// burst of requests that name the same public page.
   final XiaohongshuGuestBrowser browser;
   final DateTime Function() _now;
   XiaohongshuPushIdentity? _identity;
   DateTime? _identityAt;
+
+  /// The kept visitor page and when its burst began. One page serves every
+  /// request naming the same public page — the directory's pagination — so
+  /// a load-more costs one signed fetch instead of a full site reload, and
+  /// a page another page replaces or that ages out is closed at once.
+  XiaohongshuKeptGuestPage? _kept;
+  DateTime? _keptAt;
+
+  /// Requests serialize on the kept page: the site's signer lives in one
+  /// JavaScript context, and concurrent scripts would race its capture.
+  Future<void> _chain = Future.value();
 
   Future<Object?> _run(Uri page, String script, CancelToken? cancel) async {
     if (cancel?.isCancelled ?? false) throw const CancelledFailure();
     if (route() is HttpProxyRoute) {
       throw const ProtocolFailure('the Xiaohongshu visitor browser cannot use the configured proxy');
     }
-    final run = browser.run(page: page, script: script, cancel: cancel);
+    final done = _chain.then((_) => _runOnKept(page, script, cancel));
+    _chain = done.then<void>((_) {}, onError: (Object _) {});
+    return await done;
+  }
+
+  Future<Object?> _runOnKept(Uri page, String script, CancelToken? cancel) async {
+    var kept = _kept;
+    if (kept != null) {
+      final age = _keptAt == null ? null : _now().difference(_keptAt!);
+      final stale = kept.page != page || (age != null && !age.isNegative && age >= _keepTtl);
+      if (stale) {
+        _kept = null;
+        _keptAt = null;
+        unawaited(kept.release());
+        kept = null;
+      }
+    }
+    if (kept == null) {
+      final opening = browser.keep(page: page, cancel: cancel);
+      try {
+        kept = await opening.timeout(_visitTimeout);
+      } on _Cancelled {
+        unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
+        throw const CancelledFailure();
+      } on TimeoutException {
+        unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
+        throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
+      } on CancelledFailure {
+        rethrow;
+      } on Object {
+        // Plugin and JS errors can include credentials. Keep diagnostics fixed.
+        unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
+        throw const ConnectFailure('the Xiaohongshu visitor page failed');
+      }
+      _kept = kept;
+      _keptAt = _now();
+    }
+    final answer = kept.run(script: script, cancel: cancel);
     try {
-      final value = cancel == null
-          ? await run.timeout(_visitTimeout)
-          : await Future.any([
-              run.timeout(_visitTimeout),
-              cancel.whenCancel.then<Object?>((_) => throw const _Cancelled()),
-            ]);
+      final value = await Future.any([
+        answer.timeout(_visitTimeout),
+        if (cancel != null) cancel.whenCancel.then<Object?>((_) => throw const _Cancelled()),
+      ]);
       if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+      // A busy burst keeps its page: the TTL slides with the last answer.
+      _keptAt = _now();
       return value;
     } on _Cancelled {
-      // The page still finishes closing itself; its late result is dropped.
-      unawaited(run.then<void>((_) {}, onError: (Object _) {}));
+      unawaited(answer.then<void>((_) {}, onError: (Object _) {}));
       throw const CancelledFailure();
+    } on TimeoutException {
+      // A stuck page is dropped, so the next request opens a fresh one.
+      unawaited(answer.then<void>((_) {}, onError: (Object _) {}));
+      await _dropKept();
+      throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
     } on CancelledFailure {
       rethrow;
-    } on TimeoutException {
-      throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
     } on Object {
-      // Plugin and JS errors can include credentials. Keep diagnostics fixed.
+      unawaited(answer.then<void>((_) {}, onError: (Object _) {}));
+      await _dropKept();
       throw const ConnectFailure('the Xiaohongshu visitor page failed');
     }
   }
 
+  Future<void> _dropKept() async {
+    final kept = _kept;
+    _kept = null;
+    _keptAt = null;
+    await kept?.release();
+  }
+
   static const Duration _visitTimeout = Duration(seconds: 30);
+
+  /// How long a kept visitor page stays open between requests.
+  static const Duration _keepTtl = Duration(minutes: 4);
 
   Future<String> _request(String path, CancelToken? cancel) async {
     final value = await _run(Uri.parse('https://www.xiaohongshu.com/livelist'), requestScript(path), cancel);
@@ -227,9 +311,9 @@ final class _Cancelled implements Exception {
   const new();
 }
 
-/// webview_all's offscreen session as the [XiaohongshuGuestBrowser]: one
-/// full-size but short-lived visitor page per request, deterministically
-/// released through `OffscreenWebViewSession.close`.
+/// webview_all's offscreen session as the [XiaohongshuGuestBrowser]: a
+/// full-size but short-lived visitor page per request or per kept burst,
+/// deterministically released through `OffscreenWebViewSession.close`.
 ///
 /// The reference kept Android on a dedicated-profile method channel; that
 /// native half does not exist here — every platform goes through the same
@@ -248,14 +332,25 @@ final class OffscreenXiaohongshuGuestBrowser implements XiaohongshuGuestBrowser 
 
   @override
   Future<Object?> run({required Uri page, required String script, CancelToken? cancel}) async {
+    final kept = await keep(page: page, cancel: cancel);
+    try {
+      return await kept.run(script: script, cancel: cancel);
+    } finally {
+      await kept.release();
+    }
+  }
+
+  @override
+  Future<XiaohongshuKeptGuestPage> keep({required Uri page, CancelToken? cancel}) async {
+    if (cancel?.isCancelled ?? false) throw const CancelledFailure();
     final session = await OffscreenWebViewSession.create();
+    final loaded = Completer<void>();
     try {
       final controller = session.controller;
       await controller.setUserAgent(_userAgent);
       // The capture script must sit in the page before the site's own
       // scripts run, so it registers before any feed request or RWP socket.
       await controller.addUserScript(const WebViewUserScript(source: WebViewXiaohongshuGuest.captureScript));
-      final loaded = Completer<void>();
       await controller.setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
@@ -263,26 +358,68 @@ final class OffscreenXiaohongshuGuestBrowser implements XiaohongshuGuestBrowser 
           },
         ),
       );
-      final visit = _visit(session, page, loaded, script);
-      if (cancel == null) return await visit;
-      // A cancelled request closes its page at once; the visit may still be
-      // mid-load and its late answer is dropped with the session.
-      unawaited(visit.then<void>((_) {}, onError: (Object _) {}));
-      return await Future.any([visit, cancel.whenCancel.then<Object?>((_) => throw const _Cancelled())]);
-    } finally {
+    } on Object {
       await session.close();
+      rethrow;
     }
+    final opened = _open(session, page, loaded);
+    if (cancel != null) {
+      // A cancelled open releases its own page when it lands; the late
+      // page of a lost race has no other owner.
+      unawaited(opened.then<void>((kept) => kept.release(), onError: (Object _) {}));
+      return await Future.any([
+        opened,
+        cancel.whenCancel.then<XiaohongshuKeptGuestPage>((_) => throw const _Cancelled()),
+      ]);
+    }
+    return await opened;
   }
 
-  static Future<Object?> _visit(
+  static Future<XiaohongshuKeptGuestPage> _open(
     OffscreenWebViewSession session,
     Uri page,
     Completer<void> loaded,
-    String script,
   ) async {
-    final controller = session.controller;
-    await controller.loadRequest(page);
-    await loaded.future;
-    return await controller.callAsyncJavaScript(script);
+    try {
+      await session.controller.loadRequest(page);
+    } on Object {
+      await session.close();
+      rethrow;
+    }
+    return _OffscreenXiaohongshuKeptPage(session, page, loaded);
+  }
+}
+
+/// The offscreen session as a kept page: it stays open until released, and
+/// every run answers on the already loaded page.
+final class _OffscreenXiaohongshuKeptPage implements XiaohongshuKeptGuestPage {
+  new(this._session, this.page, this._loaded);
+
+  final OffscreenWebViewSession _session;
+  final Completer<void> _loaded;
+
+  @override
+  final Uri page;
+
+  bool _released = false;
+
+  @override
+  Future<Object?> run({required String script, CancelToken? cancel}) async {
+    if (_released) throw const ConnectFailure('the Xiaohongshu visitor page is released');
+    if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+    await _loaded.future;
+    final answer = _session.controller.callAsyncJavaScript(script);
+    if (cancel == null) return await answer;
+    return await Future.any([
+      answer,
+      cancel.whenCancel.then<Object?>((_) => throw const _Cancelled()),
+    ]);
+  }
+
+  @override
+  Future<void> release() async {
+    if (_released) return;
+    _released = true;
+    await _session.close();
   }
 }
