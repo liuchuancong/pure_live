@@ -55,7 +55,7 @@
 - ⬜ 屏蔽三维：等级下限（null=未知永不屏蔽）、只显示彩色（r==g==b=灰）、协议标注疑似机器人。参考 `message_filter.dart:174-210`、`live_message.dart:376-385`。
 
 ## W9 测试面
-- 🟡 ReplayHttp 抓包回放传输：✅ 传输+单测 b7fdb3aa3；✅ 样板迁移 3/40（kugoulive/pandalive/liveme，2ca375867）；✅ 第二批 douyin+weibo×2+seventeenlive（11cba2bdc，50 个 schema 1 样本，签名形态真实+ignoredQuery 排除，篡改验证=坏样本响亮失败不假通过）。剩=序列型 4 文件（baidulive 1912 行/twitch/kuaishou danmaku/youtube danmaku）与 3 个不可回放形态（挂起/断流/连接故障，各留最小 fake），等 ReplayHttp 学会记录这些再收尾。
+- 🟡 ReplayHttp 抓包回放传输：✅ 传输+单测 b7fdb3aa3；✅ 样板迁移 3/40（kugoulive/pandalive/liveme，2ca375867）；✅ 第二批 douyin+weibo×2+seventeenlive（11cba2bdc，50 个 schema 1 样本）；✅ schema 2=序列应答+connect/hang/broken 三形态+opens/closed 观测面（live_net d230342ab，9 新测，schema 1 逐字节兼容）；✅ 收尾 twitch+kuaishou-danmaku+youtube-danmaku 序列迁移+三站残留 fake 全删（8524c9a38，33 样本，2233 全绿零断言语义变化）。参考 `live_media` 测试面。剩：baidulive 一站（1912 行 fake 等于重写，单独一批）。
 
 ## W10 大特性
 - ⬜ 回放抽象：ArchivePlaybackController 五平台统一面+decoder 退休握手（await entering/retirement）+路由表解耦。参考 `shared/rooms/archive_playback.dart`、`archive_navigation.dart`。
