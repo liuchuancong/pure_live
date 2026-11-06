@@ -9,10 +9,14 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
+import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
+import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_http.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_search_provider.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_directory_parser.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_guest.dart';
@@ -140,6 +144,8 @@ void main() {
       expect(categories.map((area) => area.areaName), ['全部', 'New category']);
       expect(categories.every((area) => area.platform == 'xiaohongshu'), isTrue);
       expect(categories.every((area) => area.parentAreaId == 'live' && area.parentAreaName == '小红书'), isTrue);
+      expect(categories.first.iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/xiaohongshu/0.png');
+      expect(categories.last.iconUrl, isNull, reason: 'a category with no bundled tile keeps the tag fallback');
     });
 
     test('a refusal, a missing list and an oversized body are errors, not empty', () {
@@ -339,6 +345,25 @@ void main() {
           isA<XiaohongshuFailure>().having((failure) => failure.kind, 'kind', XiaohongshuFailureKind.invalidArgument),
         ),
       );
+    });
+  });
+
+  group('search areas', () {
+    test('the guest categories are searchable with their tiles', () async {
+      final provider = XiaohongshuSearchProvider(site: _guestSite());
+      expect(provider.supportedTargets, contains(LiveSearchTarget.areas));
+      final page = _right(await provider.search(LiveSearchRequest.of(query: '游', target: LiveSearchTarget.areas)));
+      final areas = [
+        for (final hit in page.items)
+          if (hit is AreaSearchResult) hit.area,
+      ];
+      expect(areas.map((area) => area.areaName), ['游戏']);
+      expect(areas.single.iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/xiaohongshu/1.png');
+    });
+
+    test('a site without a visitor does not offer areas', () {
+      final provider = XiaohongshuSearchProvider(site: XiaohongshuSite(http: XiaohongshuHttp(_Never())));
+      expect(provider.supportedTargets, isNot(contains(LiveSearchTarget.areas)));
     });
   });
 

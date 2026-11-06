@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
@@ -28,7 +29,8 @@ final class XiaohongshuSearchProvider implements LiveSearchProvider {
   final XiaohongshuSite site;
 
   @override
-  Set<LiveSearchTarget> get supportedTargets => const {LiveSearchTarget.rooms};
+  Set<LiveSearchTarget> get supportedTargets =>
+      site.guest == null ? const {LiveSearchTarget.rooms} : const {LiveSearchTarget.rooms, LiveSearchTarget.areas};
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
@@ -41,6 +43,9 @@ final class XiaohongshuSearchProvider implements LiveSearchProvider {
       );
     }
     try {
+      if (request.target == LiveSearchTarget.areas) {
+        return right(await _searchAreas(request));
+      }
       final page = await site.search(request.query, page: request.page);
       return right(
         LivePage.of(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
@@ -50,5 +55,19 @@ final class XiaohongshuSearchProvider implements LiveSearchProvider {
     } on Object catch (error) {
       return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
+  }
+
+  /// The categories whose names contain [LiveSearchRequest.query]. The
+  /// directory is one short fixed list, so every match fits the first page;
+  /// the tiles ride on the [LiveArea]s the area provider hands out.
+  Future<LivePage<LiveSearchResult>> _searchAreas(LiveSearchRequest request) async {
+    if (request.page > 1) return LivePage.of(items: const <LiveSearchResult>[], hasMore: false);
+    final word = request.query.trim().toLowerCase();
+    final categories = await site.categories();
+    final areas = <LiveArea>[
+      for (final area in categories)
+        if (word.isEmpty || area.areaName.toLowerCase().contains(word)) area,
+    ];
+    return LivePage.of(items: [for (final area in areas) LiveSearchResult.area(area)], hasMore: false);
   }
 }

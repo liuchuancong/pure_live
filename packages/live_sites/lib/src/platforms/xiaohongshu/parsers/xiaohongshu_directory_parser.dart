@@ -11,6 +11,7 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_area_tiles.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 
@@ -56,6 +57,10 @@ abstract final class XiaohongshuDirectoryParser {
           areaName: name,
           parentAreaId: groupId,
           parentAreaName: groupName,
+          iconUrl: switch (xiaohongshuAreaTiles[id]) {
+            final path? => '${LiveArea.bundledIconPrefix}$path',
+            null => null,
+          },
         ),
       );
     }

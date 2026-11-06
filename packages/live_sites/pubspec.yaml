@@ -42,6 +42,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/areas/douyin/
+    - assets/areas/xiaohongshu/
     - assets/emo/atlas/
     - assets/emo/json/
     - assets/platforms/
