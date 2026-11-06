@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -111,7 +112,7 @@ final class MusicMineView extends ConsumerWidget {
                 child: first.coverUri == null
                     ? CoverFallback(title: first.title)
                     : DsImage(
-                        image: cachedImage(first.coverUri.toString()),
+                        image: cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
                         aspectRatio: 1,
                         semanticLabel: t.music.mineFavourites,
                         fallback: CoverFallback(title: first.title),

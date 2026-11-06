@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -188,7 +189,7 @@ final class MusicChartBoardHead extends ConsumerWidget {
               child: coverUrl.isEmpty
                   ? CoverFallback(title: catalog.name)
                   : DsImage(
-                      image: cachedImage(coverUrl),
+                      image: cachedImage(coverUrl, policy: ImageCachePolicies.albumCover),
                       aspectRatio: 1,
                       semanticLabel: catalog.name,
                       fallback: CoverFallback(title: catalog.name),

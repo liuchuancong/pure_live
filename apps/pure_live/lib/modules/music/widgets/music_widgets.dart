@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -86,7 +87,7 @@ final class MusicArtwork extends ConsumerWidget {
           ? MemoryImage(local)
           : track.coverUri == null
           ? null
-          : cachedImage(track.coverUri.toString()),
+          : cachedImage(track.coverUri.toString(), policy: ImageCachePolicies.albumCover),
       size: size,
       toneIndex: DsAvatar.toneFor(track.id),
       semanticLabel: track.title,

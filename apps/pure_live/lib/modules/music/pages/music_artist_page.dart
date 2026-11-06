@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -200,7 +201,7 @@ final class _ArtistHero extends ConsumerWidget {
         children: [
           ClipOval(
             child: DsImage(
-              image: avatarUri == null ? null : cachedImage(avatarUri.toString()),
+              image: avatarUri == null ? null : cachedImage(avatarUri.toString(), policy: ImageCachePolicies.avatar),
               width: 112,
               height: 112,
               semanticLabel: name,

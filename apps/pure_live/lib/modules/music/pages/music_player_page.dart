@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassHeroFrostSigma;
@@ -81,7 +82,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                       imageFilter: ImageFilter.blur(sigmaX: kLiveGlassHeroFrostSigma, sigmaY: kLiveGlassHeroFrostSigma),
                       child: Transform.scale(
                         scale: 1.5,
-                        child: Image(image: cachedImage(cover.toString()), fit: BoxFit.cover),
+                        child: Image(image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover), fit: BoxFit.cover),
                       ),
                     ),
                   ),
@@ -427,7 +428,7 @@ final class _Artwork extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: radius,
-      child: DsImage(image: cachedImage(cover.toString()), width: size, height: size, semanticLabel: track.title),
+      child: DsImage(image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover), width: size, height: size, semanticLabel: track.title),
     );
   }
 }
@@ -518,7 +519,7 @@ final class _VinylDiscState extends State<_VinylDisc> with SingleTickerProviderS
                             ),
                           )
                         : DsImage(
-                            image: cachedImage(cover.toString()),
+                            image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover),
                             width: label,
                             height: label,
                             semanticLabel: widget.track.title,

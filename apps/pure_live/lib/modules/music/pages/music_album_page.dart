@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -265,7 +266,7 @@ final class _AlbumCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     return DsImage(
-      image: album.coverUri == null ? null : cachedImage(album.coverUri.toString()),
+      image: album.coverUri == null ? null : cachedImage(album.coverUri.toString(), policy: ImageCachePolicies.albumCover),
       width: size,
       height: size,
       semanticLabel: album.name,

@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -361,7 +362,7 @@ final class _CommentTile extends StatelessWidget {
         children: [
           DsAvatar(
             initials: avatarInitials(comment.userName),
-            image: avatar == null ? null : cachedImage(avatar),
+            image: avatar == null ? null : cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
             size: DsSize.md,
             semanticLabel: comment.userName,
           ),

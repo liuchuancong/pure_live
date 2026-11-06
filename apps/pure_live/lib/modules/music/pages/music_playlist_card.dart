@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
@@ -92,7 +93,7 @@ final class MusicPlaylistCard extends StatelessWidget {
             Stack(
               children: [
                 DsImage(
-                  image: (coverUrl ?? '').isEmpty ? null : cachedImage(coverUrl!),
+                  image: (coverUrl ?? '').isEmpty ? null : cachedImage(coverUrl!, policy: ImageCachePolicies.albumCover),
                   aspectRatio: 1,
                   semanticLabel: title,
                   fallback: fallback,

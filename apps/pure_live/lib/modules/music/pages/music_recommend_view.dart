@@ -5,6 +5,7 @@ import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassCoverFrostSigma;
@@ -424,7 +425,7 @@ final class MusicRecommendHero extends ConsumerWidget {
                           opacity: 0.35,
                           child: Transform.scale(
                             scale: 1.5,
-                            child: Image(image: cachedImage(cover), fit: BoxFit.cover),
+                            child: Image(image: cachedImage(cover, policy: ImageCachePolicies.albumCover), fit: BoxFit.cover),
                           ),
                         ),
                       ),
@@ -439,7 +440,7 @@ final class MusicRecommendHero extends ConsumerWidget {
                       ClipRRect(
                         borderRadius: coverRadius,
                         child: DsImage(
-                          image: cover == null ? null : cachedImage(cover),
+                          image: cover == null ? null : cachedImage(cover, policy: ImageCachePolicies.albumCover),
                           width: coverSize,
                           height: coverSize,
                           semanticLabel: info.name,

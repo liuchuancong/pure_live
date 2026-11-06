@@ -6,6 +6,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart';
@@ -792,7 +793,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                   child: first == null
                       ? CoverFallback(title: playlist.name)
                       : DsImage(
-                          image: first.coverUri == null ? null : cachedImage(first.coverUri.toString()),
+                          image: first.coverUri == null ? null : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
                           aspectRatio: 1,
                           semanticLabel: playlist.name,
                           fallback: CoverFallback(title: first.title),
