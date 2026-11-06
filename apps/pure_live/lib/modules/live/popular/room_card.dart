@@ -617,7 +617,7 @@ final class _PlatformMark extends StatelessWidget {
       style: DsBadgeStyle(
         height: 28,
         padding: EdgeInsets.symmetric(horizontal: name.isEmpty ? DsSpace.s6 : DsSpace.s8),
-        background: const Color(0xB3000000),
+        background: OnVideoColors.scrim,
         foreground: OnVideoColors.foreground,
         borderRadius: BorderRadius.circular(8),
         // The platform is the first thing the card names: a step above the

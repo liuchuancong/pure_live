@@ -68,7 +68,7 @@ final class VodGestureTip extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20, vertical: DsSpace.s12),
             decoration: DsBoxDecoration(
-              color: const Color(0xCC000000),
+              color: OnVideoColors.scrimDeep,
               borderRadius: BorderRadius.circular(theme.radii.card),
             ),
             child: Column(
@@ -299,7 +299,7 @@ final class _VodSeekBarState extends State<VodSeekBar> {
             width: _frameWidth,
             height: _frameHeight,
             decoration: DsBoxDecoration(
-              color: const Color(0xCC000000),
+              color: OnVideoColors.scrimDeep,
               borderRadius: BorderRadius.circular(theme.radii.control(8)),
             ),
             clipBehavior: Clip.antiAlias,
@@ -459,7 +459,7 @@ final class VodSubtitleLayer extends StatelessWidget {
             style: theme.typography.body.copyWith(
               color: OnVideoColors.foreground,
               fontWeight: FontWeight.w600,
-              shadows: const [Shadow(color: Color(0xB3000000), blurRadius: 6, offset: Offset(0, 1))],
+              shadows: const [Shadow(color: OnVideoColors.scrim, blurRadius: 6, offset: Offset(0, 1))],
             ),
           ),
         ),

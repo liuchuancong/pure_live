@@ -971,7 +971,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // the only way back.
     if (presentation == PresentationMode.pip && presentationController.pipOwnsWindow) {
       return ColoredBox(
-        color: const Color(0xFF000000),
+        color: OnVideoColors.ground,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -1216,7 +1216,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                             ),
                           if (_error != null)
                             ColoredBox(
-                              color: const Color(0xB3000000),
+                              color: OnVideoColors.scrim,
                               child: Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -1505,7 +1505,10 @@ final class _DigitOsd extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     return DsSurface(
-      decoration: DsBoxDecoration(color: const Color(0xE6000000), borderRadius: BorderRadius.circular(DsRadii.pill)),
+      decoration: DsBoxDecoration(
+        color: OnVideoColors.coverDimHeavy,
+        borderRadius: BorderRadius.circular(DsRadii.pill),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20, vertical: DsSpace.s8),
         child: Row(
@@ -1561,7 +1564,7 @@ final class _InfoBar extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.bottomCenter,
           end: AlignmentDirectional.topCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
+          colors: [OnVideoColors.scrim, Color(0x00000000)],
         ),
       ),
       child: Padding(
@@ -1641,7 +1644,7 @@ final class _PipStrip extends StatelessWidget {
         gradient: LinearGradient(
           begin: AlignmentDirectional.topCenter,
           end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
+          colors: [OnVideoColors.scrim, Color(0x00000000)],
         ),
       ),
       padding: const EdgeInsetsDirectional.only(start: DsSpace.s8),
@@ -1655,7 +1658,7 @@ final class _PipStrip extends StatelessWidget {
             child: const SizedBox(
               width: 24,
               height: 32,
-              child: Center(child: DsIcon(DsIcons.dragHandle, size: 14, color: Color(0x99FFFFFF))),
+              child: Center(child: DsIcon(DsIcons.dragHandle, size: 14, color: OnVideoColors.inkSubtle)),
             ),
           ),
           Expanded(

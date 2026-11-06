@@ -29,6 +29,7 @@ import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show Vo
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart'
     show
         AudienceFormat,
@@ -955,7 +956,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
               if (handle != null)
                 MediaPlayerView(handle: handle, backgroundColor: colors.overlay)
               else
-                const ColoredBox(color: Color(0xFF000000)),
+                const ColoredBox(color: OnVideoColors.ground),
               // The pointer's vocabulary over the picture: a tap raises or puts
               // away the bar, a drag along it scrubs, a drag down it takes the
               // sound or the screen's brightness, a double tap on either side steps
@@ -1064,7 +1065,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                   },
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
+                                  style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                                 ),
                               ),
                               DsButton.icon(
@@ -1085,7 +1086,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                 vodDurationText(position),
                                 textAlign: TextAlign.center,
                                 style: theme.typography.numeric(
-                                  theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
+                                  theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                                 ),
                               ),
                             ),
@@ -1113,7 +1114,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                 vodDurationText(duration),
                                 textAlign: TextAlign.center,
                                 style: theme.typography.numeric(
-                                  theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
+                                  theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                                 ),
                               ),
                             ),

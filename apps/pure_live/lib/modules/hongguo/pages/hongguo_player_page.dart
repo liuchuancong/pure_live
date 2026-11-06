@@ -50,6 +50,7 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' sh
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
     show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
@@ -1672,7 +1673,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 if (handle != null)
                   MediaPlayerView(handle: handle, fit: fit.boxFit, backgroundColor: colors.overlay)
                 else
-                  const ColoredBox(color: Color(0xFF000000)),
+                  const ColoredBox(color: OnVideoColors.ground),
                 if (handle != null && danmaku.enabled && danmakuItems.isNotEmpty)
                   Positioned.fill(
                     child: HongguoDanmakuLayer(
@@ -1810,7 +1811,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 if (_error != null)
                   Positioned.fill(
                     child: ColoredBox(
-                      color: const Color(0x99000000),
+                      color: OnVideoColors.paneGlass,
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 440),
@@ -1940,7 +1941,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         gradient: LinearGradient(
           begin: AlignmentDirectional.topCenter,
           end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
+          colors: [OnVideoColors.scrim, Color(0x00000000)],
         ),
       ),
       child: Row(
@@ -2567,7 +2568,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 ? OnVideoColors.foreground
                 : lit
                 ? OnVideoColors.inkHover
-                : const Color(0x1FFFFFFF),
+                : OnVideoColors.chipFill,
             borderRadius: theme.radii.controlCorners(null, height),
           ),
           child: Row(
@@ -2758,7 +2759,7 @@ final class _RailAction extends StatelessWidget {
                       ? colors.accent
                       : lit
                       ? OnVideoColors.inkHover
-                      : const Color(0x66000000),
+                      : OnVideoColors.dimLight,
                   borderRadius: BorderRadius.circular(theme.radii.control(38)),
                 ),
                 child: DsIcon(
