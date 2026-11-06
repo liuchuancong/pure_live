@@ -101,11 +101,22 @@ final class ClipboardRoomWatcher extends ConsumerStatefulWidget {
 final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatcher> with WidgetsBindingObserver {
   final Set<String> _handled = {};
 
+  /// The scope's container, read while the element is active; a resumed
+  /// lifecycle callback can arrive after this element was deactivated, where
+  /// [ref] would look up a deactivated ancestor.
+  ProviderContainer? _container;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_check()));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _container = ProviderScope.containerOf(context, listen: false);
   }
 
   @override
@@ -120,7 +131,13 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
   }
 
   Future<void> _check() async {
-    if (!mounted || !ref.read(detectClipboardRoomsProvider) || !ref.read(isPrimaryWindowProvider)) return;
+    final container = _container;
+    if (!mounted ||
+        container == null ||
+        !container.read(detectClipboardRoomsProvider) ||
+        !container.read(isPrimaryWindowProvider)) {
+      return;
+    }
     String? text;
     try {
       text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
@@ -141,7 +158,7 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
     final t = navigatorContext.t;
     // The platform names itself the way every list names it, in the app's
     // own language; the parser only knows the id.
-    final site = ref.read(sitesProvider).getById(room.platform);
+    final site = container.read(sitesProvider).getById(room.platform);
     final platformName = site == null ? room.platform : localizedSiteName(site);
     final open = await showDsConfirm(
       context: navigatorContext,
@@ -152,7 +169,7 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
       icon: const DsIcon(DsIcons.clipboard),
     );
     if (open && mounted) {
-      await ref.read(appRouterProvider).push(RoomRoute(platform: room.platform, roomId: room.roomId).location);
+      await container.read(appRouterProvider).push(RoomRoute(platform: room.platform, roomId: room.roomId).location);
     }
   }
 

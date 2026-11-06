@@ -330,7 +330,18 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     if (room == null || capability == null) throw const _PaneOpenFailure('the pane holds no room');
     final answer = await capability.getLines(room: room, quality: quality);
     final lines = answer.fold((error) => throw _PaneOpenFailure(error.message), (lines) => lines);
-    return lines;
+    final site = ref.read(sitesProvider).getById(room.ref.platform);
+    if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
+    final ingest = await startLiveIngest(ref: ref, site: site, line: lines.first);
+    if (ingest == null) return lines;
+    if (session.disposed) {
+      await ingest.close();
+      return lines;
+    }
+    final previous = session.ingest;
+    session.ingest = ingest;
+    unawaited(previous?.close() ?? Future<void>.value());
+    return [ingestedLine(lines.first, ingest.inputUri), ...lines.skip(1)];
   }
 
   /// Fresh URLs for the plan the pane is on now; a recovery or an engine
@@ -519,9 +530,12 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       }());
     }
     unawaited(session.playback?.dispose() ?? Future<void>.value());
+    final ingest = session.ingest;
     session
       ..playback = null
-      ..handle = null;
+      ..handle = null
+      ..ingest = null;
+    unawaited(ingest?.close() ?? Future<void>.value());
     _sessions.remove(session);
   }
 
@@ -577,6 +591,9 @@ final class _PaneSession {
   bool paused = false;
   double volume;
   LivePlaybackController? playback;
+
+  /// The ingest relay this pane's lines play through, when the site needs one.
+  LiveIngestSession? ingest;
   // Cancelled in _release.
   // ignore: cancel_subscriptions
   StreamSubscription<PlayerHandle>? handles;

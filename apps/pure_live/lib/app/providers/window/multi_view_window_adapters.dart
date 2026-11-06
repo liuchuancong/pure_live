@@ -68,6 +68,7 @@ final class MultiViewPipWindow implements PipWindow {
       alwaysOnTop: _window.isAlwaysOnTop(),
       resizable: _window.isResizable(),
       skipTaskbar: _window.isHideAppTabFromTaskbar(),
+      visibleOnAllSpaces: _window.macos.isVisibleOnAllWorkspaces(),
       title: _window.getTitle(),
       titleBarStyle: _window.getTitleBarStyle(),
     );
@@ -82,7 +83,11 @@ final class MultiViewPipWindow implements PipWindow {
     required bool resizable,
     required bool skipTaskbar,
     required String title,
+    required bool visibleOnAllSpaces,
   }) async {
+    // The macos facade pins the window across Spaces there; the plugin makes
+    // it a no-op on Windows and Linux, where the concept does not exist.
+    _window.macos.setVisibleOnAllWorkspaces(visibleOnAllSpaces);
     _window
       ..setAlwaysOnTop(alwaysOnTop)
       ..setResizable(resizable)
@@ -101,6 +106,7 @@ final class MultiViewPipWindow implements PipWindow {
 
   @override
   Future<void> restore(PipWindowSnapshot snapshot) async {
+    _window.macos.setVisibleOnAllWorkspaces(snapshot.visibleOnAllSpaces);
     _window
       ..setAlwaysOnTop(snapshot.alwaysOnTop)
       ..setResizable(snapshot.resizable)

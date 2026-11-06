@@ -5,7 +5,6 @@ import 'dart:typed_data' show Uint8List;
 
 // `ffi` is already in the workspace graph (live_platform declares it); the
 // adapter stays here so only Windows pays for it.
-// ignore: depend_on_referenced_packages
 import 'package:ffi/ffi.dart';
 import 'package:live_net/live_net.dart';
 

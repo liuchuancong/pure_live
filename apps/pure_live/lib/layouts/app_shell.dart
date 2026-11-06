@@ -325,14 +325,20 @@ final class _AppShellState extends ConsumerState<AppShell> {
   /// The phone's bar carries the module's feeds. A page below them — a tool,
   /// history, settings — is not a tab.
   List<NavigationItem> _bottomTabs() => switch (widget.module) {
-    AppModule.live => (widget.homeMenuItems.isEmpty ? kHomeMenuItems : widget.homeMenuItems).take(_kMaxBottomTabs).toList(),
+    AppModule.live =>
+      (widget.homeMenuItems.isEmpty ? kHomeMenuItems : widget.homeMenuItems).take(_kMaxBottomTabs).toList(),
     AppModule.iptv => const [
       NavigationItem.channels,
       NavigationItem.iptvFavorites,
       NavigationItem.iptvRecent,
       NavigationItem.iptvGuide,
     ],
-    AppModule.vod => const [NavigationItem.vodSearch, NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc],
+    AppModule.vod => const [
+      NavigationItem.vodSearch,
+      NavigationItem.vod,
+      NavigationItem.vodRegions,
+      NavigationItem.vodPgc,
+    ],
     AppModule.music => const [
       NavigationItem.musicRecommend,
       NavigationItem.music,
@@ -382,10 +388,15 @@ final class _AppShellState extends ConsumerState<AppShell> {
       background: wallpaper ? colors.sidebar.withValues(alpha: 0.78) : null,
     );
     final sidebarWidth = sidebarStyle.width!;
+    // The rail's on-screen width: folded it renders the icon rail, not the
+    // stored width — measuring the head against the stored width made a
+    // folded rail shave room it did not occupy, stacking the toolbar of a
+    // window whose content had plenty for one line.
+    final railWidth = widget.expanded ? sidebarWidth : sidebarStyle.collapsedWidth!;
     // The head line: the page's search gives way before its verbs; only a page
     // with a list of its own to search gets either.
     final pageSearch = _pageSearch(t);
-    final headWidth = width - (narrow ? 0 : sidebarWidth);
+    final headWidth = width - (narrow ? 0 : railWidth);
     // The page's usable width — the content area minus the page's own insets —
     // decided once and published to the page (see PageLayoutScope): under the
     // toolbar breakpoint the page stacks its row and the head carries its
@@ -395,17 +406,19 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // PageHeadActions); the built-in feeds also offer theirs by name.
     final published = ref.watch(pageHeadActionsProvider);
     final verbs = pageNarrow
-        ? [
-            ..._pageVerbs(),
-            if (published case final head? when head.owner == widget.selected) ...head.actions,
-          ]
+        ? [..._pageVerbs(), if (published case final head? when head.owner == widget.selected) ...head.actions]
         : const <Widget>[];
-    final reserve = (verbs.isEmpty ? 0.0 : 48.0 + 48.0 * verbs.length) +
+    final reserve =
+        (verbs.isEmpty ? 0.0 : 48.0 + 48.0 * verbs.length) +
         (widget.selected == NavigationItem.logs ? 44.0 : 0.0) +
         (WindowChromeState.drawsStrip ? 0.0 : 48.0);
     final searchFieldWidth = math.min(_kToolbarSearchWidth, headWidth - 32 - 180 - reserve);
     final showField =
-        !narrow && !widget.tv && widget.settingsSection == null && pageSearch != null && searchFieldWidth >= _kToolbarSearchMinWidth;
+        !narrow &&
+        !widget.tv &&
+        widget.settingsSection == null &&
+        pageSearch != null &&
+        searchFieldWidth >= _kToolbarSearchMinWidth;
 
     Widget searchButton() => DsButton.icon(
       variant: DsButtonVariant.secondary,
@@ -619,7 +632,10 @@ final class _AppShellState extends ConsumerState<AppShell> {
                         onDragging: _setResizing,
                       )
                     else
-                      ColoredBox(color: colors.border, child: const SizedBox(width: 1, height: double.infinity)),
+                      ColoredBox(
+                        color: colors.border,
+                        child: const SizedBox(width: 1, height: double.infinity),
+                      ),
                     Expanded(
                       child: Column(
                         children: [
@@ -650,7 +666,10 @@ final class _AppShellState extends ConsumerState<AppShell> {
                                   Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: verbs),
                                 ],
                                 if (logsGear) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
-                                if (themeToggle) ...[const SizedBox(width: DsSpace.s8), const ThemeModeToggle(size: 36)],
+                                if (themeToggle) ...[
+                                  const SizedBox(width: DsSpace.s8),
+                                  const ThemeModeToggle(size: 36),
+                                ],
                               ],
                             ),
                           ),
@@ -698,7 +717,10 @@ final class _AppShellState extends ConsumerState<AppShell> {
               header: AppSwitcher(module: widget.module, onModule: widget.onModuleSelected),
               value: widget.selected,
               onChanged: pick,
-              style: DsSidebarStyle(width: kNavigationDrawerWidth, background: wallpaper ? const Color(0x00000000) : null),
+              style: DsSidebarStyle(
+                width: kNavigationDrawerWidth,
+                background: wallpaper ? const Color(0x00000000) : null,
+              ),
               children: [
                 for (final (index, group) in groups.indexed) ...[
                   if (index > 0) const SidebarDivider(),

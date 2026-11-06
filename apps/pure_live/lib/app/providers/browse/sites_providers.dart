@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/webview_guest.dart' show WebViewXiaohongshuGuest;
 
 import 'package:pure_live/app/providers/network/network_providers.dart'
     show networkFactoryProvider, proxySettingsProvider;
@@ -27,10 +28,17 @@ final sitesProvider = Provider<LiveSiteRegistry>((ref) {
       ? WinHttpLiveHttp(route: () => ref.read(proxySettingsProvider.notifier).route)
       : null;
   ref.onDispose(() => kickHttp?.close());
+  // The xiaohongshu visitor bootstrap: where an offscreen browser can run,
+  // short-lived pages read the site's public directory anonymously; without
+  // one the site keeps its sign-in-only scope.
+  final xiaohongshuGuest = WebViewXiaohongshuGuest.isAvailable
+      ? WebViewXiaohongshuGuest(route: () => ref.read(proxySettingsProvider.notifier).route)
+      : null;
   return LiveSiteRegistry(
     createBuiltInLiveSites(
       http: http,
       kickHttp: kickHttp,
+      xiaohongshuGuest: xiaohongshuGuest,
       // The douyu protocol reads this for every suspected chat, so the
       // shield page's switch bites the next line without a re-open.
       douyuFilterSuspectedAutomated: () => ref.read(danmakuFilterProvider).douyuSuspectedAutomated,

@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:pure_live/app/background/library/wallpaper_download_queue.dart' show wallpaperDownloadsProvider;
@@ -214,25 +215,52 @@ final List<ProviderOrFamily> kSettingsProviders = [
 /// the controllers (a backup restore): the controllers must read the new
 /// values. A controller that just wrote its own change does not need this.
 void refreshSettings(Ref ref) {
-  ref.read(settingsRevisionProvider.notifier).bump();
-  for (final provider in kSettingsProviders) {
+  void apply() {
     try {
-      ref.invalidate(provider);
+      ref.read(settingsRevisionProvider.notifier).bump();
+      for (final provider in kSettingsProviders) {
+        try {
+          ref.invalidate(provider);
+        } on Object {
+          // A provider that is not alive has nothing to rebuild.
+        }
+      }
     } on Object {
-      // A provider that is not alive has nothing to rebuild.
+      // The caller's provider was disposed before the deferred pass ran.
     }
   }
+
+  _afterBuild(apply);
 }
 
 /// [refreshSettings] from a widget, for actions whose writes bypass the
 /// settings controllers — a restored backup, above all.
 void refreshSettingsFromWidget(WidgetRef ref) {
-  ref.read(settingsRevisionProvider.notifier).bump();
-  for (final provider in kSettingsProviders) {
+  void apply() {
     try {
-      ref.invalidate(provider);
+      ref.read(settingsRevisionProvider.notifier).bump();
+      for (final provider in kSettingsProviders) {
+        try {
+          ref.invalidate(provider);
+        } on Object {
+          // A provider that is not alive has nothing to rebuild.
+        }
+      }
     } on Object {
-      // A provider that is not alive has nothing to rebuild.
+      // The widget was disposed before the deferred pass ran.
     }
+  }
+
+  _afterBuild(apply);
+}
+
+/// Runs [apply] outside the frame's build/finalize phases: invalidating a
+/// provider there is what Riverpod refuses as "tried to modify a provider
+/// while the widget tree was building".
+void _afterBuild(void Function() apply) {
+  if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+    SchedulerBinding.instance.addPostFrameCallback((_) => apply());
+  } else {
+    apply();
   }
 }

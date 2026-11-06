@@ -16,14 +16,14 @@ import 'package:media_core/media_core.dart'
         SourceProtocol,
         SourceType;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
-import 'package:pure_live/features/settings/surface/settings_preview.dart'
-    show SettingsPreviewCircleButton, SettingsPreviewTransportBar;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart' show PlayerBarButton;
 
-/// The clip's own stage: the app's media_core player with the reference
-/// viewer's transport under it — play/pause, a seekable bar with the
-/// timecode, and mute. A new address means a new decoder; the transport's
-/// own state (paused, muted) belongs to this widget alone.
+/// The clip's own stage: the app's media_core player with its transport in
+/// one row over the picture's bottom edge — skip ±10s, play/pause, a
+/// seekable bar with the timecode, mute — and the host page's own verbs
+/// appended at the row's end. A new address means a new decoder; the
+/// transport's own state (paused, muted) belongs to this widget alone.
 final class WallpaperVideoPlayer extends StatefulWidget {
   const WallpaperVideoPlayer({
     required this.uri,
@@ -32,7 +32,7 @@ final class WallpaperVideoPlayer extends StatefulWidget {
     this.blurSigma = 0,
     this.loop = true,
     this.onHandle,
-    this.barLeading = const [],
+    this.onBarVisibleChanged,
     this.barActions = const [],
     this.barHideAfter,
     super.key,
@@ -50,9 +50,11 @@ final class WallpaperVideoPlayer extends StatefulWidget {
   /// handle it builds next.
   final ValueChanged<PlayerHandle>? onHandle;
 
-  /// The host page's verbs at the bar's start, before play: a preview's
-  /// 上一项/下一项 sit where a player puts them.
-  final List<Widget> barLeading;
+  /// Told whether the transport row is actually on screen — the bar settles
+  /// away while a clip plays, and a host that parks its own verbs over the
+  /// picture (the preview's top-right actions, the edge arrows) hides them
+  /// with the bar rather than floating over a picture that asked to be alone.
+  final ValueChanged<bool>? onBarVisibleChanged;
 
   /// The host page's own verbs, appended after the transport in the bar's row.
   /// One bar over the picture is what a preview reads as — the alternative is
@@ -106,6 +108,11 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   bool _barVisible = true;
   Timer? _hideTimer;
 
+  /// The last value reported through the host's bar-visibility callback, so
+  /// the host hears
+  /// of changes rather than of every state tick.
+  bool _chromeReported = true;
+
   @override
   void initState() {
     super.initState();
@@ -116,6 +123,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   void _wakeBar() {
     if (widget.barHideAfter == null) return;
     if (!_barVisible) setState(() => _barVisible = true);
+    _notifyChrome();
     _scheduleHideBar();
   }
 
@@ -125,7 +133,21 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
     if (after == null || !_playing) return;
     _hideTimer = Timer(after, () {
       if (mounted && _playing) setState(() => _barVisible = false);
+      _notifyChrome();
     });
+  }
+
+  /// Whether the chrome is actually on screen: the bar itself, or any state
+  /// that keeps it (a paused clip never hides its bar). The host parks its own
+  /// verbs over the picture and follows this, so the two layers of chrome
+  /// appear and settle together.
+  bool get _chromeUp => _barVisible || !_playing;
+
+  void _notifyChrome() {
+    final up = _chromeUp;
+    if (up == _chromeReported) return;
+    _chromeReported = up;
+    widget.onBarVisibleChanged?.call(up);
   }
 
   @override
@@ -219,6 +241,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
         // the bar, so the play button is where the viewer left it.
         if (_playing && !wasPlaying) _scheduleHideBar();
         if (!_playing) _hideTimer?.cancel();
+        _notifyChrome();
       });
     } on Object {
       // The kernel never got a handle, so dispose's own teardown skips it —
@@ -247,6 +270,24 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
     final duration = _duration;
     if (handle == null || duration <= Duration.zero) return;
     await handle.seek(duration * fraction.clamp(0.0, 1.0));
+  }
+
+  /// Jumps [offset] from where the clip stands, held inside its length: the
+  /// bar's own ±10s, which a viewer reaches for on a take they want a moment
+  /// of. Public because the host page's gestures may want the same step.
+  Future<void> seekBy(Duration offset) async {
+    final handle = _handle;
+    final duration = _duration;
+    if (handle == null || duration <= Duration.zero) return;
+    _wakeBar();
+    final target = _position + offset;
+    if (target < Duration.zero) {
+      await handle.seek(Duration.zero);
+    } else if (target > duration) {
+      await handle.seek(duration);
+    } else {
+      await handle.seek(target);
+    }
   }
 
   Future<void> _toggleMute() async {
@@ -349,54 +390,69 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
               // idle pointer does.
               onEnter: (_) => _hideTimer?.cancel(),
               onExit: (_) => _scheduleHideBar(),
-              child: SettingsPreviewTransportBar(
-                controls: [
-                  ...widget.barLeading,
-                  SettingsPreviewCircleButton(
-                    icon: _playing ? DsIcons.pause : DsIcons.play,
-                    semanticLabel: _playing ? t.room.pause : t.room.play,
-                    onPressed: () => unawaited(_toggle()),
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x00000000), Color(0xB3000000)],
                   ),
-                  SettingsPreviewCircleButton(
-                    icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
-                    semanticLabel: _muted ? t.room.unmute : t.room.mute,
-                    onPressed: () => unawaited(_toggleMute()),
-                  ),
-                  const SizedBox(width: DsSpace.s4),
-                  ...widget.barActions,
-                ],
-                transport: Row(
-                  spacing: DsSpace.s4,
-                  children: [
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        _clock(_dragValue == null ? _position : total * _barValue),
-                        style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
-                      ),
-                    ),
-                    Expanded(
-                      child: DsSlider(
-                        value: _barValue,
-                        semanticLabel: t.settings.backgroundVideo,
-                        onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
-                        onChangeEnd: total <= Duration.zero
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
+                  // One row, the way every player in the app reads: the pure
+                  // transport on the left — skip back, play, skip forward, the
+                  // seek bar, the clock — then the host page's verbs, which
+                  // bring their own flexible room and carry the row's end.
+                  child: Row(
+                    spacing: DsSpace.s4,
+                    children: [
+                      PlayerBarButton(
+                        icon: DsIcons.goBackward10,
+                        label: t.common.previewSkipBack,
+                        onPressed: total <= Duration.zero
                             ? null
-                            : (value) {
-                                setState(() => _dragValue = null);
-                                unawaited(_seekTo(value));
-                              },
+                            : () => unawaited(seekBy(const Duration(seconds: -10))),
                       ),
-                    ),
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        _clock(total),
-                        textAlign: TextAlign.end,
-                        style: DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF)),
+                      PlayerBarButton(
+                        icon: _playing ? DsIcons.pause : DsIcons.play,
+                        label: _playing ? t.room.pause : t.room.play,
+                        onPressed: () => unawaited(_toggle()),
                       ),
-                    ),
-                  ],
+                      PlayerBarButton(
+                        icon: DsIcons.goForward10,
+                        label: t.common.previewSkipForward,
+                        onPressed: total <= Duration.zero ? null : () => unawaited(seekBy(const Duration(seconds: 10))),
+                      ),
+                      Expanded(
+                        child: DsSlider(
+                          value: _barValue,
+                          semanticLabel: t.settings.backgroundVideo,
+                          onChanged: total <= Duration.zero ? null : (value) => setState(() => _dragValue = value),
+                          onChangeEnd: total <= Duration.zero
+                              ? null
+                              : (value) {
+                                  setState(() => _dragValue = null);
+                                  unawaited(_seekTo(value));
+                                },
+                        ),
+                      ),
+                      SizedBox(
+                        width: 96,
+                        child: Text(
+                          '${_clock(_dragValue == null ? _position : total * _barValue)} / ${_clock(total)}',
+                          style: DsTheme.of(context).typography
+                              .numeric(DsTheme.of(context).typography.caption.copyWith(color: const Color(0xCCFFFFFF))),
+                        ),
+                      ),
+                      PlayerBarButton(
+                        icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
+                        label: _muted ? t.room.unmute : t.room.mute,
+                        onPressed: () => unawaited(_toggleMute()),
+                      ),
+                      ...widget.barActions,
+                    ],
+                  ),
                 ),
               ),
             ),
