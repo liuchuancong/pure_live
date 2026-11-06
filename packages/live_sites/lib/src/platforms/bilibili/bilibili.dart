@@ -14,6 +14,7 @@ export 'capabilities/bilibili_auth_provider.dart';
 export 'capabilities/bilibili_discovery_provider.dart';
 export 'capabilities/bilibili_link_resolver.dart';
 export 'capabilities/bilibili_play_lease_lookup.dart';
+export 'capabilities/bilibili_play_recovery.dart';
 export 'capabilities/bilibili_playback_provider.dart';
 export 'capabilities/bilibili_qr_login_session.dart';
 export 'capabilities/bilibili_room_provider.dart';

@@ -1,10 +1,22 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
+import 'package:live_sites/src/capabilities/live_playback_provider.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_playback_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_play_parser.dart';
 import 'package:test/test.dart';
+
+// Platform-internal code: constructor-name rules that govern the public
+// surface are relaxed here.
+// ignore_for_file: unnecessary_type_name_in_constructor
 
 /// The transport these cases never mean to use; a call is a test failure.
 final class _NoHttp implements LiveHttp {
@@ -39,6 +51,113 @@ BilibiliSite _site({String? cookie, int storedUid = 0, DateTime Function()? now}
 String _live(String rest) => 'https://live.bilibili.com/$rest';
 
 Uri _play(String query) => Uri.parse('https://d1.example.com/live.flv?$query');
+
+/// The instant the answers are judged at.
+final DateTime _now = DateTime.utc(2026, 11, 6, 12);
+
+/// A `getRoomPlayInfo` answer live on [host], with one FLV candidate whose
+/// `expires` sits an hour after [_now].
+Map<String, Object?> _liveOn(String host) => {
+  'code': 0,
+  'data': {
+    'live_status': 1,
+    'playurl_info': {
+      'playurl': {
+        'stream': [
+          {
+            'protocol_name': 'http_stream',
+            'format': [
+              {
+                'format_name': 'flv',
+                'codec': [
+                  {
+                    'codec_name': 'avc',
+                    'base_url': '/live.flv',
+                    'current_qn': 250,
+                    'accept_qn': [250],
+                    'url_info': [
+                      {
+                        'host': 'https://$host',
+                        'extra': '?expires=${_now.add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000}',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  },
+};
+
+/// The transport under the site: the guest buvid prelude once, then one
+/// `getRoomPlayInfo` answer per read — [hosts]' next host (the last
+/// repeats). When [carouselFrom] reads, the answer is a guest carousel
+/// without a stream, whose rotation video `getRoundPlayVideo` and
+/// `x/player/playurl` serve. The asks are recorded and the play reads
+/// counted.
+final class _PlayHttp implements LiveHttp {
+  _PlayHttp({required this.hosts, this.carouselFrom});
+
+  final List<String> hosts;
+  final int? carouselFrom;
+
+  final asked = <Uri>[];
+  int playReads = 0;
+
+  @override
+  Future<LiveResponse> send(LiveRequest request) async {
+    final url = request.url;
+    asked.add(url);
+    final body = switch (url.path) {
+      '/x/frontend/finger/spi' => {
+        'code': 0,
+        'data': {'b_3': 'b3-guest', 'b_4': 'b4-guest'},
+      },
+      '/xlive/web-room/v2/index/getRoomPlayInfo' => _playAnswer(),
+      '/live/getRoundPlayVideo' => {
+        'code': 0,
+        'data': {'bvid': 'BV1xx411c7mD', 'cid': 111, 'play_time': 5},
+      },
+      '/x/player/playurl' => {
+        'code': 0,
+        'data': {
+          'durl': [
+            {'url': 'https://vod.example/video.mp4'},
+          ],
+        },
+      },
+      _ => throw StateError('the test answers no ${url.path}'),
+    };
+    return LiveResponse(
+      statusCode: 200,
+      headers: const {'content-type': 'application/json; charset=utf-8'},
+      bodyBytes: Uint8List.fromList(utf8.encode(jsonEncode(body))),
+    );
+  }
+
+  Object _playAnswer() {
+    playReads++;
+    if (carouselFrom != null && playReads >= carouselFrom!) {
+      return {
+        'code': 0,
+        'data': {'live_status': 2},
+      };
+    }
+    final host = playReads - 1 < hosts.length ? hosts[playReads - 1] : hosts.last;
+    return _liveOn(host);
+  }
+
+  @override
+  Future<LiveStreamedResponse> open(LiveRequest request) => throw UnimplementedError();
+
+  @override
+  void close() {}
+}
+
+LiveRoom _playRoom() => LiveRoom.normalized(platform: bilibiliSiteId, roomId: '23058');
 
 void main() {
   group('which room an address names', () {
@@ -203,6 +322,47 @@ void main() {
       expect(past.expiresAt, DateTime.fromMillisecondsSinceEpoch(1789999000000, isUtc: true));
       expect(past.expiresAt!.isBefore(past.refreshAt), isFalse, reason: 'a dead address keeps the expiry it names');
       expect(past.refreshAt, past.expiresAt!.subtract(BilibiliPlayParser.leaseLead));
+    });
+  });
+
+  group('recovery', () {
+    test('recovery asks getRoomPlayInfo again and takes the fresh address', () async {
+      final api = _PlayHttp(hosts: ['edge-a.example', 'edge-b.example']);
+      final site = BilibiliSite(http: BilibiliHttp(api), now: () => _now, sleep: (_) async {});
+      final playback = site.capability<LivePlaybackProvider>()! as BilibiliPlaybackProvider;
+
+      final held = (await playback.getLines(room: _playRoom())).getOrElse((error) => fail('$error'));
+      expect(held, hasLength(1));
+      expect(held.single.url, startsWith('https://edge-a.example/live.flv'));
+      expect(api.asked, hasLength(2), reason: 'the guest buvid and the play answer');
+
+      final recovery = site.capability<LivePlayRecovery>();
+      expect(recovery, isNotNull);
+      final fresh = (await recovery!.refetchLines(room: _playRoom())).getOrElse((error) => fail('$error'));
+      expect(fresh, hasLength(1));
+      expect(
+        fresh.single.url,
+        startsWith('https://edge-b.example/live.flv'),
+        reason: 'the fresh answer names the host, never the kept one',
+      );
+      expect(api.playReads, 2, reason: 'recovery asked getRoomPlayInfo again');
+      expect(api.asked, hasLength(3), reason: 'the session it shares asks nothing beside the play');
+    });
+
+    test('a fresh answer that turned into a guest carousel plays the rotation video', () async {
+      final api = _PlayHttp(hosts: ['edge-a.example'], carouselFrom: 2);
+      final site = BilibiliSite(http: BilibiliHttp(api), now: () => _now, sleep: (_) async {});
+      final playback = site.capability<LivePlaybackProvider>()!;
+
+      expect((await playback.getLines(room: _playRoom())).getOrElse((error) => fail('$error')), hasLength(1));
+
+      final fresh = (await site.capability<LivePlayRecovery>()!.refetchLines(room: _playRoom()))
+          .getOrElse((error) => fail('$error'));
+      expect(fresh, hasLength(1));
+      expect(fresh.single.format.name, 'mp4', reason: 'the carousel fallback keeps its semantics');
+      expect(fresh.single.url, 'https://vod.example/video.mp4');
+      expect(api.playReads, 2, reason: 'the carousel is judged from the fresh play answer');
+      expect(api.asked, hasLength(5), reason: 'the play, then the rotation video and its file');
     });
   });
 }

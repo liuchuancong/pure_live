@@ -44,9 +44,19 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider, LivePlayba
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room.roomId, quality);
+
+  /// Lines after a failure (the recovery ask): `getRoomPlayInfo` is asked
+  /// again for the long id — bilibili keeps no play answer to replay — and
+  /// a carousel without a stream for this client still falls back to its
+  /// rotation video, judged from the fresh answer.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room.roomId, quality);
+
+  Future<Either<LiveSiteError, List<LivePlayLine>>> _lines(String roomId, LivePlayQuality? quality) async {
     try {
-      final longId = site.longId(room.roomId);
+      final longId = site.longId(roomId);
       if (quality?.qualityId == BilibiliPlayParser.carouselQualityId) return right(await _carousel(longId));
       final requested = int.tryParse(quality?.qualityId ?? '') ?? 0;
       final play = await _play(longId, requested);

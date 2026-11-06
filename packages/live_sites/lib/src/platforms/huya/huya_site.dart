@@ -281,19 +281,22 @@ final class HuyaSite implements LiveSite {
   /// with a millisecond `_`), coalesced within [_detailWindow]: a call that
   /// lands on a flying read joins it, and one inside the window reuses its
   /// answer. A non-numeric address is not-found without a request. The
-  /// streamer uid is remembered for the danmaku connection.
-  Future<HuyaProfile> detailRoom(String address) {
+  /// streamer uid is remembered for the danmaku connection. [fresh] skips
+  /// the share — the room is read again whatever the window holds (the play
+  /// recovery's ask) — and its answer is the one the window keeps.
+  Future<HuyaProfile> detailRoom(String address, {bool fresh = false}) {
     final id = address.trim();
     if (!HuyaRoomParser.isNumericId(id)) {
       throw HuyaFailure(HuyaFailureKind.notFound, 'room id "$id" is not a number');
     }
+    if (fresh) return _detailRoom(id);
     final flight = _detailFlights[id];
     if (flight != null) return flight;
     final cached = _details[id];
     if (cached != null && now().difference(cached.$2) < _detailWindow) return Future.value(cached.$1);
-    final fresh = _detailRoom(id);
-    _detailFlights[id] = fresh;
-    return fresh.whenComplete(() => _detailFlights.remove(id));
+    final read = _detailRoom(id);
+    _detailFlights[id] = read;
+    return read.whenComplete(() => _detailFlights.remove(id));
   }
 
   Future<HuyaProfile> _detailRoom(String id) async {

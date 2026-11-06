@@ -52,9 +52,23 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room: room, quality: quality);
+
+  /// Lines after a failure (the recovery ask): the room's `profileRoom` is
+  /// read again past the window one open shares it in, and every line is
+  /// signed with a token fetched now — never the kept answer, and no line
+  /// carried over from it.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room: room, quality: quality, fresh: true);
+
+  Future<Either<LiveSiteError, List<LivePlayLine>>> _lines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+    bool fresh = false,
+  }) async {
     try {
-      final profile = await _playable(room.roomId);
+      final profile = await _playable(room.roomId, fresh: fresh);
       final rid = profile.room.roomId;
       final cookie = site.cookie();
       // A replay plays its recording: an unsigned VOD playlist that does not
@@ -107,7 +121,10 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
           }(),
       ]);
       final seen = <String>{};
-      final lines = [for (final slot in slots) if (slot != null && seen.add(slot.url)) slot];
+      final lines = [
+        for (final slot in slots)
+          if (slot != null && seen.add(slot.url)) slot,
+      ];
       if (lines.isEmpty) throw last ?? const HuyaFailure(HuyaFailureKind.streamUnavailable, 'no line could be signed');
       return right(lines);
     } on HuyaFailure catch (failure) {
@@ -191,9 +208,10 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   /// The room's stream data, once it can be played: a live room with a
   /// stream, or a replay with a recording, unrestricted. A restricted room
   /// (paid, password, or a replay with no recording) and a room that is off
-  /// air are content-unavailable.
-  Future<HuyaProfile> _playable(String roomId) async {
-    final profile = await site.detailRoom(roomId);
+  /// air are content-unavailable. With [fresh] the room is read again
+  /// whatever the detail window holds.
+  Future<HuyaProfile> _playable(String roomId, {bool fresh = false}) async {
+    final profile = await site.detailRoom(roomId, fresh: fresh);
     final restriction = profile.room.broadcast.effectiveRestriction;
     if (restriction != LiveRestriction.none) {
       throw HuyaFailure(HuyaFailureKind.streamUnavailable, 'restricted room (${restriction.name})');

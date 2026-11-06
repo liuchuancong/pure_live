@@ -17,9 +17,7 @@ import 'package:live_sites/src/platforms/douyu/parsers/douyu_room_parser.dart';
 
 /// Douyu's playback: qualities from one metadata request, lines signed per
 /// CDN at a quality's rate.
-/// Douyu's playback: qualities from one metadata request, lines signed per CDN at a quality's rate.
 final class DouyuPlaybackProvider implements LivePlaybackProvider {
-  /// Serves [site].
   /// Serves [site].
   DouyuPlaybackProvider({required this.site});
 
@@ -27,10 +25,11 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
   final DouyuSite site;
 
   /// The CDN set each room's last metadata answer advertised, keyed by the
-  /// rid; `getLines` signs the committed rate on these.
+  /// rid; `getLines` signs the committed rate on these. The table is the
+  /// room's, not a play answer's: it is refreshed by the next metadata read
+  /// and never stands in for one.
   final Map<String, List<String>> _cdns = {};
 
-  @override
   @override
   Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
@@ -50,12 +49,25 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room: room, quality: quality);
+
+  /// Lines after a failure (the recovery ask): the play metadata is asked
+  /// for again (the rate `-1` `getH5PlayV1`, whose CDN set refreshes the
+  /// room's table in place), and every line is signed with a play request
+  /// sent now — never one of the answers already handed out.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room: room, quality: quality, freshTable: true);
+
+  Future<Either<LiveSiteError, List<LivePlayLine>>> _lines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+    bool freshTable = false,
+  }) async {
     try {
       final rid = await _ridOf(room.roomId);
       final rate = int.tryParse(quality?.qualityId ?? '') ?? -1;
-      final cdns = _cdns[rid] ?? await _refreshCdns(rid);
+      final cdns = freshTable ? await _refreshCdns(rid) : _cdns[rid] ?? await _refreshCdns(rid);
       final issuedAt = DateTime.now().toUtc();
       final cookie = site.identity().cookie;
       // Every CDN is asked at once, each into its own slot: one slow edge no
@@ -69,7 +81,13 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
             try {
               final play = await _play(rid, rate: rate, cdn: cdns[index]);
               final data = DouyuPlayParser.playData(play.text, status: play.status);
-              slots[index] = DouyuPlayParser.answer(data, roomId: rid, cdn: cdns[index], cookie: cookie, issuedAt: issuedAt);
+              slots[index] = DouyuPlayParser.answer(
+                data,
+                roomId: rid,
+                cdn: cdns[index],
+                cookie: cookie,
+                issuedAt: issuedAt,
+              );
             } on DouyuFailure catch (failure) {
               last = failure;
             }
