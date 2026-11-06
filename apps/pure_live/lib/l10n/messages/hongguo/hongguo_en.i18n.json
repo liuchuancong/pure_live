@@ -97,6 +97,7 @@
   "favorited": "Favorited",
   "unfavorite": "Remove from favorites",
   "likes": "likes",
+  "likesReadonly": "The like count comes from Hongguo; liking is not supported here",
   "favoriteToggleOn": "Added to favorites",
   "favoriteToggleOff": "Removed from favorites",
   "cloudFavoriteOn": "Added to account favorites",
@@ -260,5 +261,10 @@
   "downloadDeleteFailed": "Couldn't delete the file",
   "cardOpenSeries": "Open series page",
   "cardCopyLink": "Copy the series link",
-  "cardNoEpisodes": "This series has no episodes to download yet"
+  "cardNoEpisodes": "This series has no episodes to download yet",
+  "historySelectedCount": "{count: int} selected",
+  "reservationsOnlineCount": "{count: int} online",
+  "reservationsUpcomingCount": "{count: int} to air",
+  "searchSuggestions": "Suggestions",
+  "episodeNo": "Ep. {index: int}"
 }

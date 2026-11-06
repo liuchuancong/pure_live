@@ -1,7 +1,5 @@
 {
   "layoutLabel": "布局",
-  "selectHint": "点击格子选中，只有选中的格子有声音",
-  "selectedPane": "第 {index} 格 · 有声",
   "pickRoom": "选择房间",
   "openRoom": "进入直播间",
   "clearPane": "清空这一格",
@@ -28,9 +26,13 @@
   "pickerTabFollows": "关注",
   "pickerTabHistory": "历史记录",
   "pickerSearchShort": "搜索主播或标题",
-  "paneEmpty": "点击选台",
   "panePicking": "正在为这一格选台",
   "wallFailed": "无法读取多画面记录",
   "pickerNoMatch": "没有匹配的房间",
-  "searchHint": "搜索直播间添加到当前格子"
+  "searchHint": "搜索直播间添加到当前格子",
+  "addRoom": "添加直播间",
+  "wallFull": "格子已满，先关闭一格再添加",
+  "audibleFocus": "有声格子",
+  "setAudible": "设为有声",
+  "danmakuHint": "弹幕显示在有声的格子上"
 }

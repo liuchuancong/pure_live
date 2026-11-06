@@ -27,6 +27,7 @@
   "playerModeDesc": "播放页打开时舞台的样子：封面卡片、唱盘，或只让歌词占满舞台；播放页里可以随时切换。",
   "playerModeSwitch": "播放器模式",
   "playerModeStandard": "标准",
+  "playerModeCover": "封面",
   "playerModeVinyl": "黑胶",
   "playerModeLyrics": "歌词",
   "uiSpectrum": "播放频谱",
@@ -630,9 +631,8 @@
   "syncServerCopy": "复制",
   "syncServerErrorPort": "端口被占用或不可用",
   "syncServerDevices": "已认证设备",
-  "syncServerDevicesEmpty": "还没有已授权的设备。",
-  "syncServerDevicesView": "查看",
   "syncServerDevicesEmpty": "这里啥也没有 ┗( ▔, ▔ )┛",
+  "syncServerDevicesView": "查看",
   "syncServerDevicesTip": "💡 设备被移除后，再连接时需要重新输入连接码",
   "syncServerLastConnect": "最后连接时间：",
   "syncServerMobile": "移动端",
@@ -701,5 +701,8 @@
   "tagEditReadFailed": "读取文件标签失败",
   "syncClient": "客户端模式",
   "hkAssignments": "按键分配",
-  "sourcesImported": "已导入的源"
+  "sourcesImported": "已导入的源",
+  "hotSongs": "热门歌曲",
+  "songsSection": "歌曲 · {count: int}",
+  "albumTotalDuration": "约 {count: int} 分钟"
 }

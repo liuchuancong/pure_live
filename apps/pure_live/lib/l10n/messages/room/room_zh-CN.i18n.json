@@ -215,5 +215,8 @@
   "tabShield": "屏蔽",
   "newMessagesBelow": "以下为新消息",
   "newMessagesCount": "{count} 条新消息",
-  "fitShort": "比例"
+  "fitShort": "比例",
+  "watchedFor": "已看 {time: String}",
+  "danmakuMark": "弹",
+  "chatDrawerLabel": "弹幕列"
 }

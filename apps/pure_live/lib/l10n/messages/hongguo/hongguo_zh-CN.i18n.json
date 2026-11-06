@@ -97,6 +97,7 @@
   "favorited": "已收藏",
   "unfavorite": "取消收藏",
   "likes": "点赞",
+  "likesReadonly": "点赞数来自红果，本机暂不支持点赞",
   "favoriteToggleOn": "已加入本机收藏",
   "favoriteToggleOff": "已取消本机收藏",
   "cloudFavoriteOn": "已加入账户收藏",
@@ -260,5 +261,10 @@
   "downloadDeleteFailed": "文件未能删除",
   "cardOpenSeries": "打开剧集页",
   "cardCopyLink": "复制详情页链接",
-  "cardNoEpisodes": "这部剧还没有可下载的剧集"
+  "cardNoEpisodes": "这部剧还没有可下载的剧集",
+  "historySelectedCount": "已选 {count: int} 条",
+  "reservationsOnlineCount": "{count: int} 部在线",
+  "reservationsUpcomingCount": "{count: int} 部待播",
+  "searchSuggestions": "搜索建议",
+  "episodeNo": "第 {index: int} 话"
 }

@@ -73,5 +73,10 @@
   "previewDeleteTitle": "删除这个文件？",
   "previewDeleteBody": "「{name: String}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。",
   "previewDeleteFailed": "文件未能删除",
+  "previewSkipBack": "后退 10 秒",
+  "previewSkipForward": "前进 10 秒",
+  "previewLoop": "循环播放",
+  "previewDrawerLabel": "文件列",
+  "previewCollapseList": "收起列表",
   "rename": "重命名"
 }

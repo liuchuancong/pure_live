@@ -27,6 +27,7 @@
   "playerModeDesc": "How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.",
   "playerModeSwitch": "Player mode",
   "playerModeStandard": "Standard",
+  "playerModeCover": "Cover",
   "playerModeVinyl": "Vinyl",
   "playerModeLyrics": "Lyrics",
   "uiSpectrum": "Playback spectrum",
@@ -630,9 +631,8 @@
   "syncServerCopy": "Copy",
   "syncServerErrorPort": "Port is occupied or unavailable",
   "syncServerDevices": "Certified devices",
-  "syncServerDevicesEmpty": "No devices are authorized yet.",
-  "syncServerDevicesView": "View",
   "syncServerDevicesEmpty": "Nothing here ┗( ▔, ▔ )┛",
+  "syncServerDevicesView": "View",
   "syncServerDevicesTip": "💡 After a device is removed, reconnecting needs the connection code again",
   "syncServerLastConnect": "Last connection time:",
   "syncServerMobile": "Mobile",
@@ -701,5 +701,8 @@
   "tagEditReadFailed": "Reading the file's tags failed",
   "syncClient": "Client mode",
   "hkAssignments": "Key assignments",
-  "sourcesImported": "Imported sources"
+  "sourcesImported": "Imported sources",
+  "hotSongs": "Top songs",
+  "songsSection": "Songs · {count: int}",
+  "albumTotalDuration": "About {count} min"
 }

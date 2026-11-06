@@ -1,7 +1,5 @@
 {
   "layoutLabel": "Layout",
-  "selectHint": "Tap a pane to select it; only the selected pane plays sound.",
-  "selectedPane": "Pane {index} · sound",
   "pickRoom": "Pick a room",
   "openRoom": "Open room",
   "clearPane": "Clear this pane",
@@ -28,9 +26,13 @@
   "pickerTabFollows": "Follows",
   "pickerTabHistory": "History",
   "pickerSearchShort": "Search streamers or titles",
-  "paneEmpty": "Tap to pick",
   "panePicking": "Picking for this cell",
   "wallFailed": "The wall could not be read",
   "pickerNoMatch": "No matching room",
-  "searchHint": "Search a room for the current cell"
+  "searchHint": "Search a room for the current cell",
+  "addRoom": "Add room",
+  "wallFull": "The wall is full — clear a pane first",
+  "audibleFocus": "Audible pane",
+  "setAudible": "Make audible",
+  "danmakuHint": "Chat shows on the audible pane"
 }

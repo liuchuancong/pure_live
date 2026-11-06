@@ -92,6 +92,7 @@
   "noDescription": "这个视频没有简介。",
   "play": "播放",
   "pause": "暂停",
+  "nextPart": "下一P",
   "mute": "静音",
   "unmute": "取消静音",
   "volume": "音量",
@@ -232,5 +233,10 @@
   "appLoginFailed": "登录失败：{message}",
   "appLoginDone": "App 接口已登录",
   "appLoggedIn": "已登录 App 接口（UID {uid}）",
-  "appLogout": "退出 App 登录"
+  "appLogout": "退出 App 登录",
+  "liveFollowViewAll": "查看全部",
+  "playNow": "立即播放",
+  "share": "分享",
+  "linkCopied": "链接已复制",
+  "episodeNo": "第 {index: String} 话"
 }

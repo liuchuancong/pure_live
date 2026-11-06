@@ -205,5 +205,12 @@
   "reminderCancelAction": "Cancel reminder",
   "reminderSet": "Reminder set for “{title}”",
   "reminderRemoved": "Reminder cancelled",
-  "reminderStarted": "Starting now: {title}"
+  "reminderStarted": "Starting now: {title}",
+  "libraryTitle": "Channel library",
+  "librarySummary": "{playlists: int} playlists · {channels: int} channels",
+  "sourcesManager": "Sources",
+  "sourcesSummary": "{playlists: int} playlists · {guides: int} guides",
+  "recentRecords": "{count: int} records",
+  "previousChannel": "Previous channel",
+  "nextChannel": "Next channel"
 }

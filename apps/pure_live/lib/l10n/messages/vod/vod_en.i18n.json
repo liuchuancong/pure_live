@@ -92,6 +92,7 @@
   "noDescription": "This video has no description.",
   "play": "Play",
   "pause": "Pause",
+  "nextPart": "Next part",
   "mute": "Mute",
   "unmute": "Unmute",
   "volume": "Volume",
@@ -232,5 +233,10 @@
   "appLoginFailed": "Sign-in failed: {message}",
   "appLoginDone": "App interface signed in",
   "appLoggedIn": "App interface signed in (UID {uid})",
-  "appLogout": "Sign out of the app interface"
+  "appLogout": "Sign out of the app interface",
+  "liveFollowViewAll": "View all",
+  "playNow": "Play now",
+  "share": "Share",
+  "linkCopied": "Link copied",
+  "episodeNo": "EP {index: String}"
 }

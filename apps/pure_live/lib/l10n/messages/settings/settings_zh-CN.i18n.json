@@ -516,6 +516,7 @@
   "browseLayoutGroup": "卡片布局",
   "browseColumns": "每行卡片数",
   "browseAuto": "自动",
+  "phoneColumns": "手机端每行卡片数",
   "crossSpacing": "列间距",
   "crossSpacingDescription": "卡片网格里左右两张卡片之间的距离。",
   "mainSpacing": "行间距",

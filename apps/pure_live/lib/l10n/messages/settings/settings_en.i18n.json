@@ -516,6 +516,7 @@
   "browseLayoutGroup": "Card layout",
   "browseColumns": "Cards per row",
   "browseAuto": "Auto",
+  "phoneColumns": "Cards per row on phones",
   "crossSpacing": "Column spacing",
   "crossSpacingDescription": "The gap between two cards side by side in a grid.",
   "mainSpacing": "Row spacing",

@@ -1228,6 +1228,21 @@ class Translations$common$zh_CN {
 	/// zh-CN: '文件未能删除'
 	String get previewDeleteFailed => '文件未能删除';
 
+	/// zh-CN: '后退 10 秒'
+	String get previewSkipBack => '后退 10 秒';
+
+	/// zh-CN: '前进 10 秒'
+	String get previewSkipForward => '前进 10 秒';
+
+	/// zh-CN: '循环播放'
+	String get previewLoop => '循环播放';
+
+	/// zh-CN: '文件列'
+	String get previewDrawerLabel => '文件列';
+
+	/// zh-CN: '收起列表'
+	String get previewCollapseList => '收起列表';
+
 	/// zh-CN: '重命名'
 	String get rename => '重命名';
 }
@@ -1807,6 +1822,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '点赞'
 	String get likes => '点赞';
 
+	/// zh-CN: '点赞数来自红果，本机暂不支持点赞'
+	String get likesReadonly => '点赞数来自红果，本机暂不支持点赞';
+
 	/// zh-CN: '已加入本机收藏'
 	String get favoriteToggleOn => '已加入本机收藏';
 
@@ -2298,6 +2316,21 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '这部剧还没有可下载的剧集'
 	String get cardNoEpisodes => '这部剧还没有可下载的剧集';
+
+	/// zh-CN: '已选 {count: int} 条'
+	String historySelectedCount({required int count}) => '已选 ${count} 条';
+
+	/// zh-CN: '{count: int} 部在线'
+	String reservationsOnlineCount({required int count}) => '${count} 部在线';
+
+	/// zh-CN: '{count: int} 部待播'
+	String reservationsUpcomingCount({required int count}) => '${count} 部待播';
+
+	/// zh-CN: '搜索建议'
+	String get searchSuggestions => '搜索建议';
+
+	/// zh-CN: '第 {index: int} 话'
+	String episodeNo({required int index}) => '第 ${index} 话';
 }
 
 // Path: iptv
@@ -2928,6 +2961,27 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '预约节目开始：{title}'
 	String reminderStarted({required Object title}) => '预约节目开始：${title}';
+
+	/// zh-CN: '频道库'
+	String get libraryTitle => '频道库';
+
+	/// zh-CN: '{playlists: int} 个播放列表 · {channels: int} 个频道'
+	String librarySummary({required int playlists, required int channels}) => '${playlists} 个播放列表 · ${channels} 个频道';
+
+	/// zh-CN: '源管理'
+	String get sourcesManager => '源管理';
+
+	/// zh-CN: '{playlists: int} 个播放列表 · {guides: int} 个节目指南'
+	String sourcesSummary({required int playlists, required int guides}) => '${playlists} 个播放列表 · ${guides} 个节目指南';
+
+	/// zh-CN: '{count: int} 条记录'
+	String recentRecords({required int count}) => '${count} 条记录';
+
+	/// zh-CN: '上一频道'
+	String get previousChannel => '上一频道';
+
+	/// zh-CN: '下一频道'
+	String get nextChannel => '下一频道';
 }
 
 // Path: multiview
@@ -2940,12 +2994,6 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '布局'
 	String get layoutLabel => '布局';
-
-	/// zh-CN: '点击格子选中，只有选中的格子有声音'
-	String get selectHint => '点击格子选中，只有选中的格子有声音';
-
-	/// zh-CN: '第 {index} 格 · 有声'
-	String selectedPane({required Object index}) => '第 ${index} 格 · 有声';
 
 	/// zh-CN: '选择房间'
 	String get pickRoom => '选择房间';
@@ -3025,9 +3073,6 @@ class Translations$multiview$zh_CN {
 	/// zh-CN: '搜索主播或标题'
 	String get pickerSearchShort => '搜索主播或标题';
 
-	/// zh-CN: '点击选台'
-	String get paneEmpty => '点击选台';
-
 	/// zh-CN: '正在为这一格选台'
 	String get panePicking => '正在为这一格选台';
 
@@ -3039,6 +3084,21 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '搜索直播间添加到当前格子'
 	String get searchHint => '搜索直播间添加到当前格子';
+
+	/// zh-CN: '添加直播间'
+	String get addRoom => '添加直播间';
+
+	/// zh-CN: '格子已满，先关闭一格再添加'
+	String get wallFull => '格子已满，先关闭一格再添加';
+
+	/// zh-CN: '有声格子'
+	String get audibleFocus => '有声格子';
+
+	/// zh-CN: '设为有声'
+	String get setAudible => '设为有声';
+
+	/// zh-CN: '弹幕显示在有声的格子上'
+	String get danmakuHint => '弹幕显示在有声的格子上';
 }
 
 // Path: music
@@ -3132,6 +3192,9 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '标准'
 	String get playerModeStandard => '标准';
+
+	/// zh-CN: '封面'
+	String get playerModeCover => '封面';
 
 	/// zh-CN: '黑胶'
 	String get playerModeVinyl => '黑胶';
@@ -5154,6 +5217,15 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '已导入的源'
 	String get sourcesImported => '已导入的源';
+
+	/// zh-CN: '热门歌曲'
+	String get hotSongs => '热门歌曲';
+
+	/// zh-CN: '歌曲 · {count: int}'
+	String songsSection({required int count}) => '歌曲 · ${count}';
+
+	/// zh-CN: '约 {count: int} 分钟'
+	String albumTotalDuration({required int count}) => '约 ${count} 分钟';
 }
 
 // Path: navigation
@@ -6957,6 +7029,15 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '比例'
 	String get fitShort => '比例';
+
+	/// zh-CN: '已看 {time: String}'
+	String watchedFor({required String time}) => '已看 ${time}';
+
+	/// zh-CN: '弹'
+	String get danmakuMark => '弹';
+
+	/// zh-CN: '弹幕列'
+	String get chatDrawerLabel => '弹幕列';
 }
 
 // Path: search
@@ -8718,6 +8799,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '自动'
 	String get browseAuto => '自动';
+
+	/// zh-CN: '手机端每行卡片数'
+	String get phoneColumns => '手机端每行卡片数';
 
 	/// zh-CN: '列间距'
 	String get crossSpacing => '列间距';
@@ -12349,6 +12433,9 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '暂停'
 	String get pause => '暂停';
 
+	/// zh-CN: '下一P'
+	String get nextPart => '下一P';
+
 	/// zh-CN: '静音'
 	String get mute => '静音';
 
@@ -12771,6 +12858,21 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '退出 App 登录'
 	String get appLogout => '退出 App 登录';
+
+	/// zh-CN: '查看全部'
+	String get liveFollowViewAll => '查看全部';
+
+	/// zh-CN: '立即播放'
+	String get playNow => '立即播放';
+
+	/// zh-CN: '分享'
+	String get share => '分享';
+
+	/// zh-CN: '链接已复制'
+	String get linkCopied => '链接已复制';
+
+	/// zh-CN: '第 {index: String} 话'
+	String episodeNo({required String index}) => '第 ${index} 话';
 }
 
 // Path: wallpaper
@@ -14033,9 +14135,14 @@ extension on Translations {
 			'common.previewDeleteTitle' => '删除这个文件？',
 			'common.previewDeleteBody' => ({required String name}) => '「${name}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。',
 			'common.previewDeleteFailed' => '文件未能删除',
-			'common.rename' => '重命名',
+			'common.previewSkipBack' => '后退 10 秒',
 			_ => null,
 		} ?? switch (path) {
+			'common.previewSkipForward' => '前进 10 秒',
+			'common.previewLoop' => '循环播放',
+			'common.previewDrawerLabel' => '文件列',
+			'common.previewCollapseList' => '收起列表',
+			'common.rename' => '重命名',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -14219,6 +14326,7 @@ extension on Translations {
 			'hongguo.favorited' => '已收藏',
 			'hongguo.unfavorite' => '取消收藏',
 			'hongguo.likes' => '点赞',
+			'hongguo.likesReadonly' => '点赞数来自红果，本机暂不支持点赞',
 			'hongguo.favoriteToggleOn' => '已加入本机收藏',
 			'hongguo.favoriteToggleOff' => '已取消本机收藏',
 			'hongguo.cloudFavoriteOn' => '已加入账户收藏',
@@ -14383,6 +14491,11 @@ extension on Translations {
 			'hongguo.cardOpenSeries' => '打开剧集页',
 			'hongguo.cardCopyLink' => '复制详情页链接',
 			'hongguo.cardNoEpisodes' => '这部剧还没有可下载的剧集',
+			'hongguo.historySelectedCount' => ({required int count}) => '已选 ${count} 条',
+			'hongguo.reservationsOnlineCount' => ({required int count}) => '${count} 部在线',
+			'hongguo.reservationsUpcomingCount' => ({required int count}) => '${count} 部待播',
+			'hongguo.searchSuggestions' => '搜索建议',
+			'hongguo.episodeNo' => ({required int index}) => '第 ${index} 话',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -14537,6 +14650,8 @@ extension on Translations {
 			'iptv.catchupUnavailable' => '不可回看',
 			'iptv.playingCatchup' => '正在回看',
 			'iptv.catchupFailed' => '无法生成这个节目的回看地址',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importDefaultName' => '导入的播放列表',
 			'iptv.copySourceAddress' => '复制源地址',
 			'iptv.openSourceAddress' => '打开源地址',
@@ -14548,8 +14663,6 @@ extension on Translations {
 			'iptv.browseChannelNumberDesc' => '在频道名旁边一起显示它的号码。',
 			'iptv.browseReverse' => '换台反转',
 			'iptv.browseReverseDesc' => '让上键向下走、下键向上走。',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseClock' => '显示时间',
 			'iptv.browseClockDesc' => '播放时在标题旁显示当前时间。',
 			'iptv.browseProgrammeLine' => '显示当前节目',
@@ -14592,9 +14705,14 @@ extension on Translations {
 			'iptv.reminderSet' => ({required Object title}) => '已预约「${title}」',
 			'iptv.reminderRemoved' => '已取消预约',
 			'iptv.reminderStarted' => ({required Object title}) => '预约节目开始：${title}',
+			'iptv.libraryTitle' => '频道库',
+			'iptv.librarySummary' => ({required int playlists, required int channels}) => '${playlists} 个播放列表 · ${channels} 个频道',
+			'iptv.sourcesManager' => '源管理',
+			'iptv.sourcesSummary' => ({required int playlists, required int guides}) => '${playlists} 个播放列表 · ${guides} 个节目指南',
+			'iptv.recentRecords' => ({required int count}) => '${count} 条记录',
+			'iptv.previousChannel' => '上一频道',
+			'iptv.nextChannel' => '下一频道',
 			'multiview.layoutLabel' => '布局',
-			'multiview.selectHint' => '点击格子选中，只有选中的格子有声音',
-			'multiview.selectedPane' => ({required Object index}) => '第 ${index} 格 · 有声',
 			'multiview.pickRoom' => '选择房间',
 			'multiview.openRoom' => '进入直播间',
 			'multiview.clearPane' => '清空这一格',
@@ -14621,11 +14739,15 @@ extension on Translations {
 			'multiview.pickerTabFollows' => '关注',
 			'multiview.pickerTabHistory' => '历史记录',
 			'multiview.pickerSearchShort' => '搜索主播或标题',
-			'multiview.paneEmpty' => '点击选台',
 			'multiview.panePicking' => '正在为这一格选台',
 			'multiview.wallFailed' => '无法读取多画面记录',
 			'multiview.pickerNoMatch' => '没有匹配的房间',
 			'multiview.searchHint' => '搜索直播间添加到当前格子',
+			'multiview.addRoom' => '添加直播间',
+			'multiview.wallFull' => '格子已满，先关闭一格再添加',
+			'multiview.audibleFocus' => '有声格子',
+			'multiview.setAudible' => '设为有声',
+			'multiview.danmakuHint' => '弹幕显示在有声的格子上',
 			'music.title' => '音乐',
 			'music.tagline' => '搜索歌曲，在线收听',
 			'music.viewsLabel' => '音乐视图',
@@ -14654,6 +14776,7 @@ extension on Translations {
 			'music.playerModeDesc' => '播放页打开时舞台的样子：封面卡片、唱盘，或只让歌词占满舞台；播放页里可以随时切换。',
 			'music.playerModeSwitch' => '播放器模式',
 			'music.playerModeStandard' => '标准',
+			'music.playerModeCover' => '封面',
 			'music.playerModeVinyl' => '黑胶',
 			'music.playerModeLyrics' => '歌词',
 			'music.uiSpectrum' => '播放频谱',
@@ -15041,6 +15164,8 @@ extension on Translations {
 			'music.desktopLyricLockDesc' => '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。',
 			'music.desktopLyricStyleSection' => '样式',
 			'music.desktopLyricShow' => '显示与锁定',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricFontSize' => '字号',
 			'music.desktopLyricFontSizeDesc' => '桌面歌词的字体大小。',
 			'music.desktopLyricOpacity' => '不透明度',
@@ -15062,8 +15187,6 @@ extension on Translations {
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
 			'music.desktopLyricStrokeNone' => '无',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
 			'music.desktopLyricAlignment' => '对齐方式',
@@ -15330,6 +15453,9 @@ extension on Translations {
 			'music.syncClient' => '客户端模式',
 			'music.hkAssignments' => '按键分配',
 			'music.sourcesImported' => '已导入的源',
+			'music.hotSongs' => '热门歌曲',
+			'music.songsSection' => ({required int count}) => '歌曲 · ${count}',
+			'music.albumTotalDuration' => ({required int count}) => '约 ${count} 分钟',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -15552,6 +15678,8 @@ extension on Translations {
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
 			'recorder.verifyTitle' => '结束时校验文件',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
 			'recorder.tlsVerifyTitle' => '校验 HTTPS 证书',
 			'recorder.tlsVerifyDesc' => '关闭后接受自签名或代理抓包证书；无法确认服务器身份，存在中间人风险。',
@@ -15576,8 +15704,6 @@ extension on Translations {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.combineTitle' => '结束后合并为 MP4',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.combineDesc' => '录制结束后把分段原样拼接成一个 MP4，不重新编码；合并失败时保留分段。',
 			'recorder.combineDeleteOriginals' => '合并后删除原分段',
 			'recorder.combineDeleteOriginalsDesc' => '只留 MP4；关闭时把分段移入同目录的 original 文件夹，方便重新合并。',
@@ -15918,6 +16044,9 @@ extension on Translations {
 			'room.newMessagesBelow' => '以下为新消息',
 			'room.newMessagesCount' => ({required Object count}) => '${count} 条新消息',
 			'room.fitShort' => '比例',
+			'room.watchedFor' => ({required String time}) => '已看 ${time}',
+			'room.danmakuMark' => '弹',
+			'room.chatDrawerLabel' => '弹幕列',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -16063,6 +16192,8 @@ extension on Translations {
 			'settings.themeModeSystem' => '跟随系统',
 			'settings.themeModeLight' => '浅色',
 			'settings.themeModeDark' => '深色',
+			_ => null,
+		} ?? switch (path) {
 			'settings.followBackgroundTone' => '跟随背景明暗',
 			'settings.followBackgroundToneDescription' => '有背景时按壁纸明暗自动选浅色或深色；手动选主题即关闭。',
 			'settings.language' => '语言',
@@ -16090,8 +16221,6 @@ extension on Translations {
 			'settings.windowSize' => '窗口尺寸',
 			'settings.windowSizeDesc' => '启动时的窗口大小。',
 			'settings.windowWidth' => '宽度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.windowHeight' => '高度',
 			'settings.windowSizeRangeHint' => '宽度 400–16384，高度 300–16384（逻辑像素）。',
 			'settings.windowSizeOutOfRange' => '尺寸超出范围：宽 400–16384，高 300–16384。',
@@ -16501,6 +16630,7 @@ extension on Translations {
 			'settings.browseLayoutGroup' => '卡片布局',
 			'settings.browseColumns' => '每行卡片数',
 			'settings.browseAuto' => '自动',
+			'settings.phoneColumns' => '手机端每行卡片数',
 			'settings.crossSpacing' => '列间距',
 			'settings.crossSpacingDescription' => '卡片网格里左右两张卡片之间的距离。',
 			'settings.mainSpacing' => '行间距',
@@ -16576,6 +16706,8 @@ extension on Translations {
 			'settings.presetCompatDesc' => 'Android 专用：mediacodec_embed 直出表面并强制硬解。默认路径花屏、绿屏或音画不同步时使用。',
 			'settings.presetRtxVsr' => 'RTX 视频超分辨率',
 			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA 专用：d3d11va 硬解叠加 RTX Video Super Resolution，把低清源放大到高分屏。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.presetLowEnd' => '低配流畅',
 			'settings.presetLowEndDesc' => '软解线程上限 2、lowres 降采样、跳过环路滤波、小缓冲；核显或老机器用。',
 			'settings.presetStableNetwork' => '弱网稳定',
@@ -16604,8 +16736,6 @@ extension on Translations {
 			'settings.hardwareDecoderVdpau' => 'vdpau（NVIDIA Linux 旧接口）',
 			'settings.hardwareDecoderVdpauCopy' => 'vdpau-copy（VDPAU + 拷回内存）',
 			'settings.hardwareDecoderMediacodec' => 'mediacodec（Android 直通，推荐）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hardwareDecoderMediacodecCopy' => 'mediacodec-copy（Android + 拷回内存）',
 			'settings.customOutput' => '自定义驱动与硬件加速',
 			'settings.customOutputDesc' => '用所选输出与解码器替代「硬件解码」。',
@@ -17090,6 +17220,8 @@ extension on Translations {
 			'settings.wallpaperCategorySpiderMan' => '蜘蛛侠',
 			'settings.wallpaperCategoryGhibli' => '吉卜力',
 			'settings.wallpaperCategoryNaruto' => '火影忍者',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategorySciFi' => '科幻',
 			'settings.wallpaperCategoryAnimeWallhaven' => '日漫',
 			'settings.wallpaperCategoryAnimeGirls' => '动漫女孩',
@@ -17118,8 +17250,6 @@ extension on Translations {
 			'settings.tagSavedToast' => ({required String name}) => '已保存标签“${name}”',
 			'settings.tagDeletedToast' => ({required String name}) => '已删除标签“${name}”',
 			'settings.tagDeleteTitle' => ({required String name}) => '确定要永久删除标签“${name}”吗？',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} 个直播间会移出该标签，不会被取消关注。',
 			'settings.tagDeleteBody' => '该标签还没有直播间在使用。',
 			'settings.tagEmptyTitle' => '暂无自定义标签',
@@ -17604,6 +17734,8 @@ extension on Translations {
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectoryDefault' => '日志文件尚未就绪。',
 			'toolbox.logsOpenFolder' => '打开所在文件夹',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsLevelLabel' => '级别',
 			'toolbox.logsSave' => '保存到本地',
 			'toolbox.logsSaved' => '日志已保存',
@@ -17632,8 +17764,6 @@ extension on Translations {
 			'vod.regionGames' => '游戏',
 			'vod.regionGuichu' => '鬼畜',
 			'vod.regionMusic' => '音乐',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regionDance' => '舞蹈',
 			'vod.regionFilm' => '影视',
 			'vod.regionEntertainment' => '娱乐',
@@ -17705,6 +17835,7 @@ extension on Translations {
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',
+			'vod.nextPart' => '下一P',
 			'vod.mute' => '静音',
 			'vod.unmute' => '取消静音',
 			'vod.volume' => '音量',
@@ -17846,6 +17977,11 @@ extension on Translations {
 			'vod.appLoginDone' => 'App 接口已登录',
 			'vod.appLoggedIn' => ({required Object uid}) => '已登录 App 接口（UID ${uid}）',
 			'vod.appLogout' => '退出 App 登录',
+			'vod.liveFollowViewAll' => '查看全部',
+			'vod.playNow' => '立即播放',
+			'vod.share' => '分享',
+			'vod.linkCopied' => '链接已复制',
+			'vod.episodeNo' => ({required String index}) => '第 ${index} 话',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

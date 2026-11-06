@@ -474,6 +474,11 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewDeleteTitle => 'Delete this file?';
 	@override String previewDeleteBody({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.';
 	@override String get previewDeleteFailed => 'The file could not be deleted';
+	@override String get previewSkipBack => 'Back 10 seconds';
+	@override String get previewSkipForward => 'Forward 10 seconds';
+	@override String get previewLoop => 'Loop';
+	@override String get previewDrawerLabel => 'Files';
+	@override String get previewCollapseList => 'Collapse list';
 	@override String get rename => 'Rename';
 }
 
@@ -685,6 +690,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get favorited => 'Favorited';
 	@override String get unfavorite => 'Remove from favorites';
 	@override String get likes => 'likes';
+	@override String get likesReadonly => 'The like count comes from Hongguo; liking is not supported here';
 	@override String get favoriteToggleOn => 'Added to favorites';
 	@override String get favoriteToggleOff => 'Removed from favorites';
 	@override String get cloudFavoriteOn => 'Added to account favorites';
@@ -849,6 +855,11 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get cardOpenSeries => 'Open series page';
 	@override String get cardCopyLink => 'Copy the series link';
 	@override String get cardNoEpisodes => 'This series has no episodes to download yet';
+	@override String historySelectedCount({required int count}) => '${count} selected';
+	@override String reservationsOnlineCount({required int count}) => '${count} online';
+	@override String reservationsUpcomingCount({required int count}) => '${count} to air';
+	@override String get searchSuggestions => 'Suggestions';
+	@override String episodeNo({required int index}) => 'Ep. ${index}';
 }
 
 // Path: iptv
@@ -1065,6 +1076,13 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String reminderSet({required Object title}) => 'Reminder set for “${title}”';
 	@override String get reminderRemoved => 'Reminder cancelled';
 	@override String reminderStarted({required Object title}) => 'Starting now: ${title}';
+	@override String get libraryTitle => 'Channel library';
+	@override String librarySummary({required int playlists, required int channels}) => '${playlists} playlists · ${channels} channels';
+	@override String get sourcesManager => 'Sources';
+	@override String sourcesSummary({required int playlists, required int guides}) => '${playlists} playlists · ${guides} guides';
+	@override String recentRecords({required int count}) => '${count} records';
+	@override String get previousChannel => 'Previous channel';
+	@override String get nextChannel => 'Next channel';
 }
 
 // Path: multiview
@@ -1075,8 +1093,6 @@ class _Translations$multiview$en extends Translations$multiview$zh_CN {
 
 	// Translations
 	@override String get layoutLabel => 'Layout';
-	@override String get selectHint => 'Tap a pane to select it; only the selected pane plays sound.';
-	@override String selectedPane({required Object index}) => 'Pane ${index} · sound';
 	@override String get pickRoom => 'Pick a room';
 	@override String get openRoom => 'Open room';
 	@override String get clearPane => 'Clear this pane';
@@ -1103,11 +1119,15 @@ class _Translations$multiview$en extends Translations$multiview$zh_CN {
 	@override String get pickerTabFollows => 'Follows';
 	@override String get pickerTabHistory => 'History';
 	@override String get pickerSearchShort => 'Search streamers or titles';
-	@override String get paneEmpty => 'Tap to pick';
 	@override String get panePicking => 'Picking for this cell';
 	@override String get wallFailed => 'The wall could not be read';
 	@override String get pickerNoMatch => 'No matching room';
 	@override String get searchHint => 'Search a room for the current cell';
+	@override String get addRoom => 'Add room';
+	@override String get wallFull => 'The wall is full — clear a pane first';
+	@override String get audibleFocus => 'Audible pane';
+	@override String get setAudible => 'Make audible';
+	@override String get danmakuHint => 'Chat shows on the audible pane';
 }
 
 // Path: music
@@ -1145,6 +1165,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get playerModeDesc => 'How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.';
 	@override String get playerModeSwitch => 'Player mode';
 	@override String get playerModeStandard => 'Standard';
+	@override String get playerModeCover => 'Cover';
 	@override String get playerModeVinyl => 'Vinyl';
 	@override String get playerModeLyrics => 'Lyrics';
 	@override String get uiSpectrum => 'Playback spectrum';
@@ -1819,6 +1840,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncClient => 'Client mode';
 	@override String get hkAssignments => 'Key assignments';
 	@override String get sourcesImported => 'Imported sources';
+	@override String get hotSongs => 'Top songs';
+	@override String songsSection({required int count}) => 'Songs · ${count}';
+	@override String albumTotalDuration({required Object count}) => 'About ${count} min';
 }
 
 // Path: navigation
@@ -2450,6 +2474,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get newMessagesBelow => 'New messages below';
 	@override String newMessagesCount({required Object count}) => '${count} new messages';
 	@override String get fitShort => 'Fit';
+	@override String watchedFor({required String time}) => 'Watched ${time}';
+	@override String get danmakuMark => 'D';
+	@override String get chatDrawerLabel => 'Chat';
 }
 
 // Path: search
@@ -3049,6 +3076,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get browseLayoutGroup => 'Card layout';
 	@override String get browseColumns => 'Cards per row';
 	@override String get browseAuto => 'Auto';
+	@override String get phoneColumns => 'Cards per row on phones';
 	@override String get crossSpacing => 'Column spacing';
 	@override String get crossSpacingDescription => 'The gap between two cards side by side in a grid.';
 	@override String get mainSpacing => 'Row spacing';
@@ -4283,6 +4311,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get noDescription => 'This video has no description.';
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
+	@override String get nextPart => 'Next part';
 	@override String get mute => 'Mute';
 	@override String get unmute => 'Unmute';
 	@override String get volume => 'Volume';
@@ -4424,6 +4453,11 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get appLoginDone => 'App interface signed in';
 	@override String appLoggedIn({required Object uid}) => 'App interface signed in (UID ${uid})';
 	@override String get appLogout => 'Sign out of the app interface';
+	@override String get liveFollowViewAll => 'View all';
+	@override String get playNow => 'Play now';
+	@override String get share => 'Share';
+	@override String get linkCopied => 'Link copied';
+	@override String episodeNo({required String index}) => 'EP ${index}';
 }
 
 // Path: wallpaper
@@ -5210,9 +5244,14 @@ extension on TranslationsEn {
 			'common.previewDeleteTitle' => 'Delete this file?',
 			'common.previewDeleteBody' => ({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.',
 			'common.previewDeleteFailed' => 'The file could not be deleted',
-			'common.rename' => 'Rename',
+			'common.previewSkipBack' => 'Back 10 seconds',
 			_ => null,
 		} ?? switch (path) {
+			'common.previewSkipForward' => 'Forward 10 seconds',
+			'common.previewLoop' => 'Loop',
+			'common.previewDrawerLabel' => 'Files',
+			'common.previewCollapseList' => 'Collapse list',
+			'common.rename' => 'Rename',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -5396,6 +5435,7 @@ extension on TranslationsEn {
 			'hongguo.favorited' => 'Favorited',
 			'hongguo.unfavorite' => 'Remove from favorites',
 			'hongguo.likes' => 'likes',
+			'hongguo.likesReadonly' => 'The like count comes from Hongguo; liking is not supported here',
 			'hongguo.favoriteToggleOn' => 'Added to favorites',
 			'hongguo.favoriteToggleOff' => 'Removed from favorites',
 			'hongguo.cloudFavoriteOn' => 'Added to account favorites',
@@ -5560,6 +5600,11 @@ extension on TranslationsEn {
 			'hongguo.cardOpenSeries' => 'Open series page',
 			'hongguo.cardCopyLink' => 'Copy the series link',
 			'hongguo.cardNoEpisodes' => 'This series has no episodes to download yet',
+			'hongguo.historySelectedCount' => ({required int count}) => '${count} selected',
+			'hongguo.reservationsOnlineCount' => ({required int count}) => '${count} online',
+			'hongguo.reservationsUpcomingCount' => ({required int count}) => '${count} to air',
+			'hongguo.searchSuggestions' => 'Suggestions',
+			'hongguo.episodeNo' => ({required int index}) => 'Ep. ${index}',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -5714,6 +5759,8 @@ extension on TranslationsEn {
 			'iptv.catchupUnavailable' => 'No catch-up',
 			'iptv.playingCatchup' => 'Replaying',
 			'iptv.catchupFailed' => 'This programme cannot be replayed',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importDefaultName' => 'Imported playlist',
 			'iptv.copySourceAddress' => 'Copy the source address',
 			'iptv.openSourceAddress' => 'Open the source address',
@@ -5725,8 +5772,6 @@ extension on TranslationsEn {
 			'iptv.browseChannelNumberDesc' => 'Prints the dial number beside the channel name.',
 			'iptv.browseReverse' => 'Reverse channel stepping',
 			'iptv.browseReverseDesc' => 'Makes the up key step down the list and the down key step up.',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseClock' => 'Show the time',
 			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
 			'iptv.browseProgrammeLine' => 'Show the current programme',
@@ -5769,9 +5814,14 @@ extension on TranslationsEn {
 			'iptv.reminderSet' => ({required Object title}) => 'Reminder set for “${title}”',
 			'iptv.reminderRemoved' => 'Reminder cancelled',
 			'iptv.reminderStarted' => ({required Object title}) => 'Starting now: ${title}',
+			'iptv.libraryTitle' => 'Channel library',
+			'iptv.librarySummary' => ({required int playlists, required int channels}) => '${playlists} playlists · ${channels} channels',
+			'iptv.sourcesManager' => 'Sources',
+			'iptv.sourcesSummary' => ({required int playlists, required int guides}) => '${playlists} playlists · ${guides} guides',
+			'iptv.recentRecords' => ({required int count}) => '${count} records',
+			'iptv.previousChannel' => 'Previous channel',
+			'iptv.nextChannel' => 'Next channel',
 			'multiview.layoutLabel' => 'Layout',
-			'multiview.selectHint' => 'Tap a pane to select it; only the selected pane plays sound.',
-			'multiview.selectedPane' => ({required Object index}) => 'Pane ${index} · sound',
 			'multiview.pickRoom' => 'Pick a room',
 			'multiview.openRoom' => 'Open room',
 			'multiview.clearPane' => 'Clear this pane',
@@ -5798,11 +5848,15 @@ extension on TranslationsEn {
 			'multiview.pickerTabFollows' => 'Follows',
 			'multiview.pickerTabHistory' => 'History',
 			'multiview.pickerSearchShort' => 'Search streamers or titles',
-			'multiview.paneEmpty' => 'Tap to pick',
 			'multiview.panePicking' => 'Picking for this cell',
 			'multiview.wallFailed' => 'The wall could not be read',
 			'multiview.pickerNoMatch' => 'No matching room',
 			'multiview.searchHint' => 'Search a room for the current cell',
+			'multiview.addRoom' => 'Add room',
+			'multiview.wallFull' => 'The wall is full — clear a pane first',
+			'multiview.audibleFocus' => 'Audible pane',
+			'multiview.setAudible' => 'Make audible',
+			'multiview.danmakuHint' => 'Chat shows on the audible pane',
 			'music.title' => 'Music',
 			'music.tagline' => 'Search songs and listen online',
 			'music.viewsLabel' => 'Music views',
@@ -5831,6 +5885,7 @@ extension on TranslationsEn {
 			'music.playerModeDesc' => 'How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.',
 			'music.playerModeSwitch' => 'Player mode',
 			'music.playerModeStandard' => 'Standard',
+			'music.playerModeCover' => 'Cover',
 			'music.playerModeVinyl' => 'Vinyl',
 			'music.playerModeLyrics' => 'Lyrics',
 			'music.uiSpectrum' => 'Playback spectrum',
@@ -6218,6 +6273,8 @@ extension on TranslationsEn {
 			'music.desktopLyricLockDesc' => 'A locked window lets clicks pass through to the app underneath.',
 			'music.desktopLyricStyleSection' => 'Style',
 			'music.desktopLyricShow' => 'Show & lock',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricFontSize' => 'Font size',
 			'music.desktopLyricFontSizeDesc' => 'The overlay’s text size.',
 			'music.desktopLyricOpacity' => 'Opacity',
@@ -6239,8 +6296,6 @@ extension on TranslationsEn {
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
 			'music.desktopLyricStrokeNone' => 'None',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
 			'music.desktopLyricAlignment' => 'Alignment',
@@ -6507,6 +6562,9 @@ extension on TranslationsEn {
 			'music.syncClient' => 'Client mode',
 			'music.hkAssignments' => 'Key assignments',
 			'music.sourcesImported' => 'Imported sources',
+			'music.hotSongs' => 'Top songs',
+			'music.songsSection' => ({required int count}) => 'Songs · ${count}',
+			'music.albumTotalDuration' => ({required Object count}) => 'About ${count} min',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -6729,6 +6787,8 @@ extension on TranslationsEn {
 			'recorder.keepAliveTitle' => 'Keep recording in the background',
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
 			'recorder.verifyTitle' => 'Verify on stop',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
 			'recorder.tlsVerifyTitle' => 'Verify HTTPS certificates',
 			'recorder.tlsVerifyDesc' => 'Off accepts self-signed or proxy-intercepted certificates; the server\'s identity is then unverified and interception is possible.',
@@ -6753,8 +6813,6 @@ extension on TranslationsEn {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.combineTitle' => 'Join into one MP4',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
 			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
 			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
@@ -7095,6 +7153,9 @@ extension on TranslationsEn {
 			'room.newMessagesBelow' => 'New messages below',
 			'room.newMessagesCount' => ({required Object count}) => '${count} new messages',
 			'room.fitShort' => 'Fit',
+			'room.watchedFor' => ({required String time}) => 'Watched ${time}',
+			'room.danmakuMark' => 'D',
+			'room.chatDrawerLabel' => 'Chat',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -7240,6 +7301,8 @@ extension on TranslationsEn {
 			'settings.themeModeSystem' => 'Follow system',
 			'settings.themeModeLight' => 'Light',
 			'settings.themeModeDark' => 'Dark',
+			_ => null,
+		} ?? switch (path) {
 			'settings.followBackgroundTone' => 'Follow background brightness',
 			'settings.followBackgroundToneDescription' => 'Picks light or dark from the wallpaper; choosing a theme yourself turns it off.',
 			'settings.language' => 'Language',
@@ -7267,8 +7330,6 @@ extension on TranslationsEn {
 			'settings.windowSize' => 'Window size',
 			'settings.windowSizeDesc' => 'Window size at launch.',
 			'settings.windowWidth' => 'Width',
-			_ => null,
-		} ?? switch (path) {
 			'settings.windowHeight' => 'Height',
 			'settings.windowSizeRangeHint' => 'Width 400–16384, height 300–16384 (logical pixels).',
 			'settings.windowSizeOutOfRange' => 'Out of range: width 400–16384, height 300–16384.',
@@ -7678,6 +7739,7 @@ extension on TranslationsEn {
 			'settings.browseLayoutGroup' => 'Card layout',
 			'settings.browseColumns' => 'Cards per row',
 			'settings.browseAuto' => 'Auto',
+			'settings.phoneColumns' => 'Cards per row on phones',
 			'settings.crossSpacing' => 'Column spacing',
 			'settings.crossSpacingDescription' => 'The gap between two cards side by side in a grid.',
 			'settings.mainSpacing' => 'Row spacing',
@@ -7753,6 +7815,8 @@ extension on TranslationsEn {
 			'settings.presetCompatDesc' => 'On Android, switch to the mediacodec_embed surface and force mediacodec decoding. For devices where the default gl/ffmpeg path shows glitches, a green screen or drifting audio.',
 			'settings.presetRtxVsr' => 'RTX Video Super Resolution',
 			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA only: d3d11va decoding plus the RTX Video Super Resolution filter, upscaling low-definition sources onto high-resolution screens.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.presetLowEnd' => 'Smooth on weak hardware',
 			'settings.presetLowEndDesc' => 'Software decoding capped at 2 threads, lowres downsampling, skipped loop filters and a smaller buffer. Hands the CPU back to the picture; for iGPUs and old machines.',
 			'settings.presetStableNetwork' => 'Stable on weak networks',
@@ -7781,8 +7845,6 @@ extension on TranslationsEn {
 			'settings.hardwareDecoderVdpau' => 'vdpau (NVIDIA Linux legacy)',
 			'settings.hardwareDecoderVdpauCopy' => 'vdpau-copy (VDPAU + copy-back)',
 			'settings.hardwareDecoderMediacodec' => 'mediacodec (Android, recommended)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hardwareDecoderMediacodecCopy' => 'mediacodec-copy (Android + copy-back)',
 			'settings.customOutput' => 'Custom driver & hardware acceleration',
 			'settings.customOutputDesc' => 'Uses the chosen output and decoder instead of the hardware switch.',
@@ -8267,6 +8329,8 @@ extension on TranslationsEn {
 			'settings.wallpaperCategorySpiderMan' => 'Spider-Man',
 			'settings.wallpaperCategoryGhibli' => 'Ghibli',
 			'settings.wallpaperCategoryNaruto' => 'Naruto',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategorySciFi' => 'Sci-Fi',
 			'settings.wallpaperCategoryAnimeWallhaven' => 'Anime',
 			'settings.wallpaperCategoryAnimeGirls' => 'Anime Girls',
@@ -8295,8 +8359,6 @@ extension on TranslationsEn {
 			'settings.tagSavedToast' => ({required String name}) => 'Saved the tag “${name}”',
 			'settings.tagDeletedToast' => ({required String name}) => 'Deleted the tag “${name}”',
 			'settings.tagDeleteTitle' => ({required String name}) => 'Permanently delete the tag “${name}”?',
-			_ => null,
-		} ?? switch (path) {
 			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} followed rooms will leave this tag; the rooms stay followed.',
 			'settings.tagDeleteBody' => 'No room is using this tag yet.',
 			'settings.tagEmptyTitle' => 'No custom tags yet',
@@ -8781,6 +8843,8 @@ extension on TranslationsEn {
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
 			'toolbox.logsOpenFolder' => 'Open the folder',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsLevelLabel' => 'Level',
 			'toolbox.logsSave' => 'Save to file',
 			'toolbox.logsSaved' => 'Log saved',
@@ -8809,8 +8873,6 @@ extension on TranslationsEn {
 			'vod.regionGames' => 'Gaming',
 			'vod.regionGuichu' => 'Guichu',
 			'vod.regionMusic' => 'Music',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regionDance' => 'Dance',
 			'vod.regionFilm' => 'Film & TV',
 			'vod.regionEntertainment' => 'Entertainment',
@@ -8882,6 +8944,7 @@ extension on TranslationsEn {
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',
+			'vod.nextPart' => 'Next part',
 			'vod.mute' => 'Mute',
 			'vod.unmute' => 'Unmute',
 			'vod.volume' => 'Volume',
@@ -9023,6 +9086,11 @@ extension on TranslationsEn {
 			'vod.appLoginDone' => 'App interface signed in',
 			'vod.appLoggedIn' => ({required Object uid}) => 'App interface signed in (UID ${uid})',
 			'vod.appLogout' => 'Sign out of the app interface',
+			'vod.liveFollowViewAll' => 'View all',
+			'vod.playNow' => 'Play now',
+			'vod.share' => 'Share',
+			'vod.linkCopied' => 'Link copied',
+			'vod.episodeNo' => ({required String index}) => 'EP ${index}',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

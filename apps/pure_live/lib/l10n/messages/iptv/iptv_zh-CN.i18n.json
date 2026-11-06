@@ -205,5 +205,12 @@
   "reminderCancelAction": "取消预约",
   "reminderSet": "已预约「{title}」",
   "reminderRemoved": "已取消预约",
-  "reminderStarted": "预约节目开始：{title}"
+  "reminderStarted": "预约节目开始：{title}",
+  "libraryTitle": "频道库",
+  "librarySummary": "{playlists: int} 个播放列表 · {channels: int} 个频道",
+  "sourcesManager": "源管理",
+  "sourcesSummary": "{playlists: int} 个播放列表 · {guides: int} 个节目指南",
+  "recentRecords": "{count: int} 条记录",
+  "previousChannel": "上一频道",
+  "nextChannel": "下一频道"
 }

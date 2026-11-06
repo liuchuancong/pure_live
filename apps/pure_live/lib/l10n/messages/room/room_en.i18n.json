@@ -215,5 +215,8 @@
   "tabShield": "Shield",
   "newMessagesBelow": "New messages below",
   "newMessagesCount": "{count} new messages",
-  "fitShort": "Fit"
+  "fitShort": "Fit",
+  "watchedFor": "Watched {time: String}",
+  "danmakuMark": "D",
+  "chatDrawerLabel": "Chat"
 }

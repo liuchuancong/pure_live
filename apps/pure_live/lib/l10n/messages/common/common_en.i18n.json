@@ -73,5 +73,10 @@
   "previewDeleteTitle": "Delete this file?",
   "previewDeleteBody": "“{name: String}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.",
   "previewDeleteFailed": "The file could not be deleted",
+  "previewSkipBack": "Back 10 seconds",
+  "previewSkipForward": "Forward 10 seconds",
+  "previewLoop": "Loop",
+  "previewDrawerLabel": "Files",
+  "previewCollapseList": "Collapse list",
   "rename": "Rename"
 }
