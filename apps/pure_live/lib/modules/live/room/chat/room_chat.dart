@@ -38,10 +38,18 @@ final class RoomChatPanel extends ConsumerStatefulWidget {
   /// [translucent] leaves the panel's fill to its host: the theatre draws the
   /// column as a glass card over the picture, and a second opaque surface
   /// underneath would hide the glass.
-  const RoomChatPanel({this.translucent = false, super.key});
+  ///
+  /// [feedOnly] keeps the danmaku list alone, with the login word that concerns
+  /// it: a phone held sideways gives the chat a narrow column beside the
+  /// picture, where the tab bar and the composer would leave a line or two of
+  /// talk (the reference's landscape room shows its list and nothing else).
+  const RoomChatPanel({this.translucent = false, this.feedOnly = false, super.key});
 
   /// Whether the panel paints no fill of its own.
   final bool translucent;
+
+  /// Whether the panel is the danmaku list alone — no tabs, no composer.
+  final bool feedOnly;
 
   @override
   ConsumerState<RoomChatPanel> createState() => _RoomChatPanelState();
@@ -89,9 +97,24 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // the platform keeps no board.
     final tab = _tab;
     ref.listen(roomChatProvider, _chatArrived);
+    final fill = widget.translucent ? const Color(0x00000000) : colors.surface;
+    if (widget.feedOnly) {
+      // The danmaku tab's own list, not a second one: the narrow column reads
+      // and behaves exactly as the tab does, its boundary and count included.
+      return ColoredBox(
+        color: fill,
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ChatNoticeBar(),
+            Expanded(child: _ChatFeed()),
+          ],
+        ),
+      );
+    }
     final board = ref.watch(roomSuperChatsProvider);
     return ColoredBox(
-      color: widget.translucent ? const Color(0x00000000) : colors.surface,
+      color: fill,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

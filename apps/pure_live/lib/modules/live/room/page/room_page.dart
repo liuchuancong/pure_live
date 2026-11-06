@@ -4,7 +4,6 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show AppBar, Scaffold, kToolbarHeight;
-import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -58,7 +57,9 @@ import 'package:pure_live/shared/shared.dart';
 /// The layout follows the reference's inline shapes: from 840 px the
 /// picture and its facts take the left and the chat a column of the
 /// viewer's own width on the right; narrower windows stack the chat under
-/// the picture. Fullscreen,
+/// the picture. A phone held sideways — a window under 480 px tall — keeps
+/// the picture at the full height instead, with the chat's list in a narrow
+/// column beside it, whatever its width. Fullscreen,
 /// window fullscreen and PiP hand the whole page to the picture — those
 /// modes are media_core's presentation drivers, so the page only follows the
 /// state they publish.
@@ -124,6 +125,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// Whether the page is showing its portrait full-screen surface.
   bool _portraitFullscreen = false;
 
+  /// Whether the immersive layout's chat drawer is slid out. The drawer is
+  /// the chat's home once the picture owns the window: a glass column that
+  /// slides over the picture's end edge from a tab on that edge, and closes
+  /// when the pointer leaves it (or the tab is tapped again).
+  bool _immersiveChatOpen = false;
+
   /// Whether a room switch from the portrait full screen is in flight; the
   /// page keeps its surface while the next room opens on the same controller.
   bool _switchingPortraitRoom = false;
@@ -176,6 +183,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// The room's width at which the chat moves beside the picture (the
   /// reference's `wide` layout).
   static const double _wideBreakpoint = 840;
+
+  /// Windows shorter than this are a phone held sideways, whatever their width
+  /// (the reference's compact height, which wins over its wide breakpoint):
+  /// stacked, the chat would get a strip under a letterbox; split as on a
+  /// desktop, the column's card would leave it one line.
+  static const double _phoneLandscapeMaxHeight = 480;
+
+  /// The chat's column beside the picture on a phone held sideways (the
+  /// reference's `phoneLandscapeChatWidth`): the list alone, at the width a
+  /// line of talk still reads at without taking the picture's share.
+  static const double _phoneLandscapeChatWidth = 280;
 
   /// The stage's floor while the chat column is dragged wide: at the wide
   /// layout's own edge the column tops out under its 520 px cap rather than
@@ -286,6 +304,98 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
   }
 
+  /// Opens or closes the immersive layout's chat drawer.
+  void _setImmersiveChatOpen(bool value) {
+    if (_immersiveChatOpen == value) return;
+    setState(() => _immersiveChatOpen = value);
+  }
+
+  /// The immersive layout: the picture fills the window and the chat lives on
+  /// a glass drawer at the picture's end edge — a tab to summon it, a column
+  /// that slides over the picture, and it closes when the pointer leaves it.
+  /// A fullscreen room keeps every control the inline room has; the drawer is
+  /// only how the chat reaches them.
+  Widget _immersiveChatDrawer(Widget player) {
+    final t = context.t;
+    final room = ref.watch(roomProvider);
+    final colors = DsTheme.of(context).colors;
+    final width = MediaQuery.sizeOf(context).width;
+    final chatWidth = ref
+        .watch(chatPanelWidthProvider)
+        .clamp(kChatPanelWidthMin, math.min(kChatPanelWidthMax, width * 0.6))
+        .toDouble();
+    return Stack(
+      children: [
+        Positioned.fill(child: player),
+        PositionedDirectional(
+          top: 0,
+          bottom: 0,
+          end: 0,
+          child: MouseRegion(
+            onExit: _immersiveChatOpen ? (_) => _setImmersiveChatOpen(false) : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              width: _immersiveChatOpen ? chatWidth : 28,
+              child: _immersiveChatOpen
+                  ? RoomGlassCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: _RoomHero(room: room)),
+                              Padding(
+                                padding: const EdgeInsets.all(DsSpace.s4),
+                                child: DsButton.icon(
+                                  variant: DsButtonVariant.ghost,
+                                  size: DsSize.sm,
+                                  onPressed: () => _setImmersiveChatOpen(false),
+                                  icon: const DsIcon(DsIcons.panelRightClose),
+                                  semanticLabel: t.room.collapseChat,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Expanded(child: RoomChatPanel(translucent: true)),
+                        ],
+                      ),
+                    )
+                  : Center(
+                      child: MouseRegion(
+                        onEnter: (_) => _setImmersiveChatOpen(true),
+                        child: GestureDetector(
+                          onTap: () => _setImmersiveChatOpen(true),
+                          child: RoomGlassCard(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  DsIcon(DsIcons.chevronLeft, size: 14, color: colors.text),
+                                  for (final rune in t.room.chatDrawerLabel.runes)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 1),
+                                      child: Text(
+                                        String.fromCharCode(rune),
+                                        style: DsTheme.of(context).typography.caption.copyWith(color: colors.text),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Shows or leaves the portrait full-screen surface and publishes it: the
   /// route's chrome hides the window strip while this page owns the window,
   /// exactly as it does for fullscreen, and the page's own layout is the only
@@ -351,7 +461,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // The page may be destroyed while it fills the window; the next route
     // must get its window strip back.
     _writeAfterFrame(() => _immersiveNotifier.set(value: false));
-    _playlistNotifier.clearIfCurrent(_currentRoomKey);
+    _writeAfterFrame(() => _playlistNotifier.clearIfCurrent(_currentRoomKey));
     _routeObserver?.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
@@ -366,9 +476,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _backgroundGate = null;
     _slowTimer?.cancel();
     unawaited(_screenAwake.disable().catchError((Object _) {}));
-    _sleepTimerNotifier
-      ..onFire_ = null
-      ..start(null);
+    _sleepTimerNotifier.onFire_ = null;
+    _writeAfterFrame(() => _sleepTimerNotifier.start(null));
     if (_leaveToFloating && FloatingRoomPlayer.canShow) {
       // The room controller outlives this page; the overlay takes over its
       // handle until the viewer closes or re-enters the room. A handoff
@@ -403,7 +512,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// with the route transition reading a dead element. The write therefore
   /// rides the end of the frame, and it goes through a notifier captured
   /// while this page still existed, never through its own `ref`.
-  void _writeAfterFrame(void Function() write) => SchedulerBinding.instance.addPostFrameCallback((_) => write());
+  void _writeAfterFrame(void Function() write) => unawaited(Future<void>.delayed(Duration.zero, write));
 
   /// The reference's `applyFullscreenOrientationPolicy`: on a phone the
   /// fullscreen orientation policy decides which way the device turns as
@@ -667,6 +776,31 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     );
   }
 
+  /// A phone held sideways, outside fullscreen (the reference's `landscape`
+  /// layout, its choice A): the picture takes the whole height under the app
+  /// bar and the chat's list alone a 280 px column beside it.
+  ///
+  /// The room's card has no column to sit in here — at the head of the list it
+  /// left one line of talk on a phone's short side — so its name folds into the
+  /// picture's strip, which opens the details the card would ([player] is built
+  /// with that press). The quality and the line stay on the bar under the
+  /// picture, where every layout keeps them. The list is the chat panel's own,
+  /// drawn without its tabs and composer, so it reads the room's one feed; the
+  /// picture is the one surface every layout reparents, so turning the phone
+  /// moves it rather than rebuilding it.
+  Widget _buildPhoneLandscape(Widget player) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ColoredBox(color: kPlayerStageColor, child: player),
+        ),
+        const DsDivider.vertical(),
+        const SizedBox(width: _phoneLandscapeChatWidth, child: RoomChatPanel(feedOnly: true)),
+      ],
+    );
+  }
+
   double _pictureRatio(RoomState room) {
     final detected = room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
     final ratio = detected <= 0 || !detected.isFinite ? 16 / 9 : detected;
@@ -766,7 +900,19 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
     // The theatre is the wide room's arrangement, and this route owns the
     // window, so the page's own width is the measure its layout will take.
-    final wideWindow = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final windowSize = MediaQuery.sizeOf(context);
+    // A phone or tablet held sideways in a short window takes the landscape
+    // arrangement before any width is asked: the reference's compact height
+    // wins over its wide breakpoint, so a sideways phone never gets the
+    // desktop split (and its theatre) or the stacked column. A desktop window
+    // as short keeps the layout its width gives it. The window's shape decides,
+    // not the stream's: a portrait source sideways is still a short window.
+    final landscapePhone =
+        mobile &&
+        windowSize.height < _phoneLandscapeMaxHeight &&
+        windowSize.width > windowSize.height &&
+        windowSize.width >= LiveWindow.compact;
+    final wideWindow = !landscapePhone && windowSize.width >= _wideBreakpoint;
     final theater = ref.watch(roomTheaterProvider);
 
     /// Shows or hides the theatre. Turning it on unfolds the chat: the glass
@@ -898,8 +1044,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
     /// The picture surface, with the theatre's chat handed in as a page layer
     /// when the layout has one: the surface draws its own bars and catalogues
-    /// above that layer.
-    Widget playerWith({Widget? overlay, double bottomInset = 0}) => PlayerSurface(
+    /// above that layer. [onTitle] is the sideways phone's: the strip names the
+    /// room where its card used to, and the name opens the details.
+    Widget playerWith({Widget? overlay, double bottomInset = 0, VoidCallback? onTitle}) => PlayerSurface(
       key: _playerKey,
       roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
@@ -917,19 +1064,39 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       canEnterPortraitFullscreen: pictureRatio < 1,
       onPortraitFullscreen: () => _setPortraitFullscreen(true),
       onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
+      // The swipe up from the portrait full screen's bottom band, back to the
+      // panel: a touch screen's gesture, where the surface is the whole of it.
+      onPortraitRestore: _portraitFullscreen && mobile ? () => _setPortraitFullscreen(false) : null,
+      onTitle: onTitle,
+      // The room's own framing, not only the source's: a portrait frame the
+      // viewer chose sits over the room's art too, a landscape one keeps the
+      // stage's black — except on the portrait full screen, where a landscape
+      // room swiped to sits over the art as the reference draws it.
+      ambient: pictureRatio < 1 || _portraitFullscreen,
       overlay: overlay,
       bottomInset: bottomInset,
       theater: theater,
       // A presentation mode that owns the window has no chat to float, and a
       // narrow page stacks it under the picture.
       onTheater: wideWindow && !ownsWindow && !_portraitFullscreen ? toggleTheater : null,
-      roomMenu: roomMenuItems(context, ref, room, onClose: leave, shortcuts: shortcuts),
+      roomMenu: roomMenuItems(
+        context,
+        ref,
+        room,
+        onClose: leave,
+        shortcuts: shortcuts,
+        theater: theater,
+        onTheater: wideWindow && !ownsWindow && !_portraitFullscreen ? toggleTheater : null,
+      ),
     );
 
     final body = _portraitFullscreen
         ? _buildPortraitFullscreen(context, playerWith(), canSwipeRooms: swipeSwitch && mobile)
         : LayoutBuilder(
             builder: (context, constraints) {
+              if (landscapePhone) {
+                return _buildPhoneLandscape(playerWith(onTitle: () => unawaited(showRoomDetails(context))));
+              }
               final wide = constraints.maxWidth >= _wideBreakpoint;
               if (!wide) {
                 // The reference's narrow room: the picture, the strip with the
@@ -958,6 +1125,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                         ? RoomPanelStop.minimum
                         : RoomPanelStop.middle,
                     onCoverChanged: _setPanelCover,
+                    // Pulling the sheet past its lowest stop is the handle's own
+                    // way into the portrait full screen, by hand: a phone's,
+                    // where that full screen exists.
+                    onPortraitFullscreen: mobile ? () => _setPortraitFullscreen(true) : null,
                     picture: ColoredBox(
                       color: kPlayerStageColor,
                       child: playerWith(bottomInset: _panelCover),
@@ -1245,7 +1416,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       ColoredBox(
         color: kPlayerStageColor,
         child: ownsWindow
-            ? Scaffold(backgroundColor: kPlayerStageColor, body: playerWith())
+            ? Scaffold(backgroundColor: kPlayerStageColor, body: _immersiveChatDrawer(playerWith()))
             : Scaffold(
                 // The portrait full-screen surface is the page's own way of
                 // filling the window: it keeps its black stage and drops the
@@ -1487,6 +1658,18 @@ final class _FollowPill extends ConsumerWidget {
   }
 }
 
+/// Steps the picture's fit to its next choice and names it: the menu row's
+/// verb, where the bar once carried a chip for it. One preference, a handful
+/// of words, so cycling with a toast beats a dialog for a control this small.
+Future<void> _cyclePictureFit(BuildContext context, WidgetRef ref) async {
+  final t = context.t;
+  final settings = ref.read(playbackSettingsProvider);
+  final next = PlaybackFit.values[(settings.fit.index + 1) % PlaybackFit.values.length];
+  await ref.read(playbackSettingsProvider.notifier).setFit(next);
+  if (!context.mounted) return;
+  showDsToast(context: context, title: fitLabels(t)[next.index]);
+}
+
 /// The room's own actions, in one list.
 ///
 /// The page header's ⋮ and the player's overlay ⋮ show the same menu: in
@@ -1498,6 +1681,8 @@ List<Widget> roomMenuItems(
   RoomState room, {
   required VoidCallback onClose,
   required List<RoomShortcutBinding> shortcuts,
+  bool? theater,
+  VoidCallback? onTheater,
 }) {
   final t = context.t;
   final detail = room.room;
@@ -1621,6 +1806,23 @@ List<Widget> roomMenuItems(
               detected: room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
             ),
           ),
+        ),
+      // The picture's fit, cycled from the menu: the bar keeps to the two
+      // choices the stream offers, so the way the frame meets its box lives
+      // here — one press steps contain → cover → … and names the new fit.
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.aspectRatio),
+        label: Text(t.settings.fit),
+        onPressed: () => unawaited(_cyclePictureFit(context, ref)),
+      ),
+      // The theatre's own verb: the page decides where it exists (wide, not
+      // owning the window), and the menu is where it lives now that the bar
+      // keeps to the reference's arrangement.
+      if (onTheater != null)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.layoutHeaderSidebarRight),
+          label: Text(theater == true ? t.room.theaterOff : t.room.theaterOn),
+          onPressed: onTheater,
         ),
       // Only where a capture has a route: a backend without one would offer
       // a button that always answers "nothing".
@@ -1819,7 +2021,9 @@ Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom det
 /// the start time, the title — one press away from the details sheet.
 ///
 /// It sits under the picture on a phone and at the head of the chat column
-/// on a wide window, never over the picture itself.
+/// on a wide window, never over the picture itself. A phone held sideways has
+/// no column with room for it, so there its name folds into the picture's
+/// strip instead, and that name takes the card's press.
 final class _RoomHero extends ConsumerWidget {
   const _RoomHero({required this.room});
 
@@ -1859,6 +2063,7 @@ final class _RoomHero extends ConsumerWidget {
     final popularity = detail.audience.popularity;
     final started = detail.broadcast.startedAt;
     final live = detail.broadcast.isLiveNow;
+    final replay = detail.broadcast.isRecord;
     final caption = theme.typography.caption.copyWith(color: colors.textMuted);
     final numeric = theme.typography.numeric(caption);
     Widget metric(DsIconData icon, int value) => Row(
@@ -1918,13 +2123,19 @@ final class _RoomHero extends ConsumerWidget {
                               style: theme.typography.title.copyWith(color: colors.text),
                             ),
                           ),
-                          if (live) const _LiveBadge(),
+                          if (live)
+                            const _LiveBadge()
+                          else if (replay)
+                            // The same word the details panel says for the
+                            // same fact: this room plays a recording.
+                            DsBadge(dot: false, label: Text(t.favorites.statusReplay), status: DsStatus.info),
                         ],
                       ),
                       // A platform that sends neither figure gets no row at
                       // all: an empty one still costs its spacing and reads as
-                      // a hole under the name.
-                      if (online != null || (popularity != null && popularity != online))
+                      // a hole under the name. The figures are a broadcast's
+                      // numbers — a replay says what it is above instead.
+                      if (live && (online != null || (popularity != null && popularity != online)))
                         Row(
                           spacing: DsSpace.s12,
                           children: [

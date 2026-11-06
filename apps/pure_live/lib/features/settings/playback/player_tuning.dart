@@ -93,6 +93,13 @@ typedef PlayerTuning = ({
   PlayerPresetId preset,
 });
 
+/// The tuning a viewer who never opened the kernel page plays with.
+///
+/// `forceDestroy` is off by default: leaving a room parks its playback
+/// session in the app's standby (`RoomPlaybackStandby`) for the next one,
+/// the reference's own behaviour, instead of tearing the controller down
+/// per room. The switch stays for the viewer who would rather pay a fresh
+/// engine per room.
 const PlayerTuning kDefaultPlayerTuning = (
   customOutput: false,
   vo: 'auto',
@@ -104,7 +111,7 @@ const PlayerTuning kDefaultPlayerTuning = (
   deinterlace: 'auto',
   hwdecCodecs: 'all',
   audioExclusive: false,
-  forceDestroy: true,
+  forceDestroy: false,
   preset: PlayerPresetId.balanced,
 );
 
@@ -334,7 +341,8 @@ bool playerOutputChanged(PlayerTuning previous, PlayerTuning next) =>
 
 /// The options a playback surface stores for its next open: the output
 /// drivers (with the custom-output gate and the hardware-decoding switch),
-/// the codec mask, interpolation, the scale kernel, the Windows exclusive-audio
+/// the live input's seekable and protocol declarations, the codec mask,
+/// interpolation, the scale kernel, the Windows exclusive-audio
 /// switch, the active preset's engine properties and the app's proxy endpoint.
 /// The live room layers its full [playerTuningOptions] over them when the
 /// tuning changes.
@@ -344,6 +352,14 @@ List<EngineOption> playerStoredEngineOptions({
   required PlayerProxyEndpoint? proxy,
 }) => [
   ...playerOutputEngineOptions(hardwareDecoding: hardwareDecoding, tuning: tuning),
+  // The reference's first two live properties (3.x `applyNativeLiveProperties`):
+  // a live input is declared seekable so the demuxer skips its seekability
+  // probe, and the protocol list admits the streaming protocols (`rtmp`,
+  // `rtmps`, `rtsp`, `srt`) on top of the engine's own defaults. Stored with
+  // the outputs so every open — a new room, line, engine or recovery — is born
+  // with them; the app's keys take precedence over the adapter defaults.
+  const EngineOption('force-seekable', 'yes'),
+  const EngineOption('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt'),
   // The reference narrows the engine's codec list only when the pick differs
   // from `all`; the default leaves the engine's own list alone. Stored with
   // the outputs so a new line, engine or app start keeps a narrowed mask.

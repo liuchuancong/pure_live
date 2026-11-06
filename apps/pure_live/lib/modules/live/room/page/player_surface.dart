@@ -22,6 +22,9 @@ import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show Aud
 import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show takeRoomScreenshot;
 import 'package:pure_live/modules/live/room/page/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
+// The replay bar's clock words: the one duration formatter the app keeps
+// ("12:34" or "1:02:03"), the same the vod player's own bar reads.
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
@@ -125,6 +128,9 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.canEnterPortraitFullscreen = false,
     this.onPortraitFullscreen,
     this.onPortraitSwipe,
+    this.onPortraitRestore,
+    this.onTitle,
+    this.ambient = false,
     this.overlay,
     this.bottomInset = 0,
     this.theater = false,
@@ -176,6 +182,25 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// A vertical swipe in the middle third of the portrait full screen: +1
   /// for the next room, -1 for the previous (the page owns the list).
   final ValueChanged<int>? onPortraitSwipe;
+
+  /// The portrait full screen's way back to the page's own layout: an upward
+  /// swipe that starts in the picture's lowest band, or along its bottom bar
+  /// (the reference's swipe up to the panel). The page owns the presentation;
+  /// null where the swipe means nothing.
+  final VoidCallback? onPortraitRestore;
+
+  /// Opens the room's details from its name on the strip. A phone held
+  /// sideways has no column for the room's own card, so the strip names the
+  /// room in-page and its name takes the card's press; null leaves the strip
+  /// as its layout draws it.
+  final VoidCallback? onTitle;
+
+  /// Whether the frame sits over the room's own art instead of black bars (the
+  /// reference's ambient presentation): the page asks for it where the room
+  /// frames its stream as portrait, and on the portrait full screen whatever
+  /// the stream's shape. Only the viewer's contain fit takes it — the others
+  /// crop, stretch or size the frame on their own terms.
+  final bool ambient;
 
   /// How much of the picture's bottom edge a page layer covers: the narrow
   /// room's chat sheet rides over the stream, so the control bar and the strip
@@ -242,10 +267,22 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   int _brightness = 100;
   double _dragBrightness = 100;
 
-  /// A vertical drag in the portrait full screen's middle third that may
-  /// switch rooms instead of changing the volume.
+  /// What the picture's vertical drag in flight does, decided where it began;
+  /// null for nothing at all (a locked picture, or one begun on a system
+  /// gesture edge).
+  _PictureDrag? _pictureDrag;
+
+  /// Where that drag's finger went down. The system's gesture edges and the
+  /// portrait full screen's restore band are judged by where the gesture
+  /// started, not by where the finger had got to once it read as a drag.
+  DragDownDetails? _dragDown;
+
+  /// The room switch's travel down the picture (upwards negative), in the
+  /// portrait full screen's middle third.
   double _portraitSwipeDy = 0;
-  bool _swipingPortrait = false;
+
+  /// The restore swipe's travel up the picture, never below zero.
+  double _restoreTravel = 0;
 
   /// The flying danmaku held under the finger from pointer-down until the
   /// tap is confirmed (its panel opens) or the gesture turns out to be a
@@ -411,7 +448,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   static double _panelWidth(_Picker picker) => switch (picker) {
     _Picker.quality => 200,
     _Picker.line => 240,
-    _Picker.fit => 200,
   };
 
   /// The open picker's catalogue.
@@ -449,23 +485,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                 onPressed: () {
                   _hidePicker();
                   unawaited(controller.selectLine(index));
-                },
-              ),
-          ],
-        );
-      case _Picker.fit:
-        final current = ref.read(playbackSettingsProvider).fit;
-        return PlayerOverlayPanel(
-          title: t.settings.fit,
-          width: _panelWidth(picker),
-          children: [
-            for (final (index, option) in PlaybackFit.values.indexed)
-              PlayerPanelOption(
-                label: fitLabels(t)[index],
-                selected: option == current,
-                onPressed: () {
-                  _hidePicker();
-                  unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
                 },
               ),
           ],
@@ -640,7 +659,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   }
 
   /// Lets a held message fly on when the gesture turned out not to be its
-  /// tap (a double tap plays or pauses, a drag sets the volume).
+  /// tap (a double tap enters or leaves fullscreen, a drag sets the volume).
   void _releaseDanmaku() {
     _holdOrigin = null;
     _pressLocal = null;
@@ -712,6 +731,52 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     unawaited(ref.read(roomProvider.notifier).setVolume(next));
   }
 
+  /// The band along the portrait full screen's bottom edge an upward swipe
+  /// restores the page's layout from (the reference's `portraitRestoreZone`):
+  /// the bottom bar and as much again over it.
+  static const double _restoreZone = 96;
+
+  /// The bottom band an Android phone keeps for going home when the system
+  /// reports none (the reference's `androidGestureFallback`): HyperOS reports
+  /// only its top band while its bottom edge still goes home.
+  static const double _androidGestureFallback = 32;
+
+  /// What a vertical drag that went down at [down] and read as a drag at
+  /// [start] does (the reference's gesture layer).
+  ///
+  /// The portrait full screen's restore band is asked first, so the way back to
+  /// the chat is never read as a volume change. A drag that began on a system
+  /// gesture edge is the system's and changes nothing here. In the portrait
+  /// full screen the middle third switches rooms where the page offers it, as
+  /// it always has; the halves set the volume and the brightness everywhere.
+  _PictureDrag? _pictureDragAt(DragDownDetails? down, DragStartDetails start) {
+    if (_locked) return null;
+    final size = context.size ?? MediaQuery.sizeOf(context);
+    final origin = down?.localPosition ?? start.localPosition;
+    if (widget.onPortraitRestore != null && origin.dy >= size.height - _restoreZone) return _PictureDrag.restore;
+    if (_onSystemGestureEdge(down?.globalPosition.dy ?? start.globalPosition.dy)) return null;
+    final dx = start.localPosition.dx;
+    final middleThird = dx >= size.width / 3 && dx <= size.width * 2 / 3;
+    if (widget.portraitFullscreen && widget.onPortraitSwipe != null && middleThird) return _PictureDrag.switchRoom;
+    return _PictureDrag.adjust;
+  }
+
+  /// Whether a drag that went down [globalY] down the window began in the
+  /// system's own gesture band at its bottom or top edge (the reference's
+  /// A07.15): going home, or pulling the status bar down, must not also change
+  /// the volume, the brightness or the room. Global, because the picture need
+  /// not fill the window. The side edges are Back's, a sideways gesture no
+  /// vertical drag competes with, and are left alone. A desktop reports no
+  /// bands, so every drag there stays as it was.
+  bool _onSystemGestureEdge(double globalY) {
+    final insets = MediaQuery.systemGestureInsetsOf(context);
+    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final fallback = android ? _androidGestureFallback : 0.0;
+    final bottom = insets.bottom > 0 ? insets.bottom : fallback;
+    final height = MediaQuery.sizeOf(context).height;
+    return (bottom > 0 && globalY >= height - bottom) || (insets.top > 0 && globalY < insets.top);
+  }
+
   /// The flying layer's config from the live look; a compact surface passes
   /// its scaled geometry and the reference's smaller pending queue/caches,
   /// everything else comes from the one main configuration.
@@ -737,6 +802,13 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // picture states need to know the cover's owner is there.
     final roomInfo = room.room;
     final handle = room.handle;
+    // The player the picture mounts on: the committed handle when it exists,
+    // else the open's staged player (the sweep's engine, publishing itself
+    // through RoomState.player from the moment it accepts a line). Mounting
+    // for the staged engine is what lets the connect/probe window's frames
+    // paint the moment they are decoded, instead of waiting for the commit —
+    // which is itself that same player, so the mount never rebinds.
+    final player = handle ?? room.player;
     final transport = _transport;
     final picture = pictureStateOf(context.t, room, slow: ref.watch(roomSlowProvider));
     final style = ref.watch(danmakuStyleProvider);
@@ -790,12 +862,19 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (handle == null)
+              if (player == null)
                 const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
               else if (room.audioOnly && room.room != null)
                 AudioOnlyCover(room: room.room!)
               else
-                MediaPlayerView(handle: handle, fit: playback.fit.boxFit),
+                // The room's art fills the bars only under the contain fit, the
+                // one that keeps the whole frame and leaves bars to fill; the
+                // small window is cut to the frame's own shape by its driver.
+                _AmbientPicture(
+                  player: player,
+                  art: widget.ambient && playback.fit == PlaybackFit.contain && !mini ? _ambientArtOf(roomInfo) : '',
+                  child: MediaPlayerView(handle: player, fit: playback.fit.boxFit),
+                ),
               if (widget.barrage case final barrage? when showDanmaku)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -831,14 +910,15 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   ),
                 ),
               // The gesture layer: a tap shows or hides the bar, a double tap
-              // plays or pauses, a vertical drag and the wheel set the volume.
-              // The compact window keeps only the window verbs: dragging the
-              // picture moves the small window (its native caption is hidden) and
-              // a double press brings it back.
+              // enters or leaves fullscreen, a vertical drag and the wheel set
+              // the volume. The compact window keeps only the window verbs:
+              // dragging the picture moves the small window (its native caption
+              // is hidden) and a double press brings it back.
               //
-              // A paused picture keeps this too: the double tap is how the viewer
-              // comes back, and a stream that answers no gesture while it is
-              // stopped reads as a frozen player.
+              // A paused picture keeps this too: the tap still answers it, and a
+              // stream that answers no gesture while it is stopped reads as a
+              // frozen player. The way back to play is the bar's own button,
+              // which stays up for as long as the pause does.
               if (barOverPicture)
                 Listener(
                   onPointerSignal: (event) {
@@ -866,7 +946,15 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         widget.onLeave();
                         return;
                       }
-                      unawaited(ref.read(roomProvider.notifier).togglePlayPause());
+                      // The fullscreen button's own verb: the reference's double
+                      // tap, its button and F are one toggle, and play and pause
+                      // keep the bar's button. A catalogue left open would only
+                      // float over the picture in its new box, so the double
+                      // tap puts it away the way a single tap would.
+                      _hidePicker();
+                      final committed = widget.roomState.handle?.id;
+                      if (committed == null) return;
+                      unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(committed));
                     },
                     // The compact window is dragged by its picture: it has no
                     // caption of its own to grab. The main window is not — its
@@ -878,47 +966,73 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             if (window != null) unawaited(window.startDragging());
                           }
                         : null,
+                    // Where the finger went down decides what the drag is (see
+                    // _pictureDragAt); by its start it has already moved.
+                    onVerticalDragDown: mini ? null : (details) => _dragDown = details,
                     onVerticalDragStart: mini
                         ? null
                         : (details) {
                             _releaseDanmaku();
-                            if (_locked) return;
-                            final width = context.size?.width ?? MediaQuery.sizeOf(context).width;
-                            final swipe = widget.onPortraitSwipe;
-                            if (widget.portraitFullscreen &&
-                                swipe != null &&
-                                details.localPosition.dx >= width / 3 &&
-                                details.localPosition.dx <= width * 2 / 3) {
-                              _swipingPortrait = true;
-                              _portraitSwipeDy = 0;
-                              return;
+                            final drag = _pictureDragAt(_dragDown, details);
+                            _pictureDrag = drag;
+                            switch (drag) {
+                              case _PictureDrag.adjust:
+                                final width = context.size?.width ?? MediaQuery.sizeOf(context).width;
+                                _beginPictureDrag(details.localPosition.dx, width);
+                              case _PictureDrag.switchRoom:
+                                _portraitSwipeDy = 0;
+                              case _PictureDrag.restore:
+                                _restoreTravel = 0;
+                              case null:
+                                // Locked, or the system's edge: the drag is not
+                                // the picture's.
+                                break;
                             }
-                            _beginPictureDrag(details.localPosition.dx, width);
                           },
                     onVerticalDragUpdate: mini
                         ? null
                         : (details) {
-                            if (_swipingPortrait) {
-                              _portraitSwipeDy += details.delta.dy;
-                              return;
+                            switch (_pictureDrag) {
+                              case _PictureDrag.adjust:
+                                _dragPictureBy(details.delta.dy);
+                              case _PictureDrag.switchRoom:
+                                _portraitSwipeDy += details.delta.dy;
+                              case _PictureDrag.restore:
+                                _restoreTravel = (_restoreTravel - details.delta.dy).clamp(0.0, double.infinity);
+                              case null:
+                                break;
                             }
-                            _dragPictureBy(details.delta.dy);
                           },
                     onVerticalDragEnd: mini
                         ? null
                         : (details) {
-                            if (!_swipingPortrait) return;
-                            _swipingPortrait = false;
-                            final dy = _portraitSwipeDy + (details.primaryVelocity ?? 0) * 0.08;
-                            _portraitSwipeDy = 0;
-                            if (dy.abs() < 80) return;
-                            widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
+                            final drag = _pictureDrag;
+                            _pictureDrag = null;
+                            _dragDown = null;
+                            final velocity = details.primaryVelocity ?? 0;
+                            switch (drag) {
+                              case _PictureDrag.switchRoom:
+                                final dy = _portraitSwipeDy + velocity * 0.08;
+                                _portraitSwipeDy = 0;
+                                if (dy.abs() < 80) return;
+                                widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
+                              case _PictureDrag.restore:
+                                final upward = _restoreTravel;
+                                _restoreTravel = 0;
+                                if (_swipeRestoresPanel(upward: upward, velocity: velocity)) {
+                                  widget.onPortraitRestore?.call();
+                                }
+                              case _PictureDrag.adjust || null:
+                                break;
+                            }
                           },
                     onVerticalDragCancel: mini
                         ? null
                         : () {
-                            _swipingPortrait = false;
+                            _pictureDrag = null;
+                            _dragDown = null;
                             _portraitSwipeDy = 0;
+                            _restoreTravel = 0;
                           },
                     child: const SizedBox.expand(),
                   ),
@@ -941,8 +1055,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     // as a black screen with a sentence on it.
                     if (picture.dim == RoomPictureDim.cover && roomInfo != null) _RoomCoverBackdrop(room: roomInfo),
                     // A card that offers no verb must not eat the pointer: the
-                    // pause's own word is not a control, and the tap or double
-                    // tap that ends the pause has to reach the gesture layer
+                    // pause's own word is not a control, and the picture's tap,
+                    // double tap and drags have to reach the gesture layer
                     // under it. A card that does carry buttons keeps its scrim.
                     IgnorePointer(
                       ignoring: picture.actions.isEmpty,
@@ -1003,14 +1117,19 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     room: room,
                     onLeave: widget.onLeave,
                     onWake: _wake,
+                    onScreenshot: () => unawaited(_screenshot()),
+                    canScreenshot: handle.canCaptureScreenshot,
                     menuItems: widget.immersive ? widget.roomMenu : const [],
                     fullscreen: widget.immersive,
                     portraitExit: widget.portraitFullscreen,
                     // The page's own header already carries the avatar, the live
                     // ring, the counts and the title above the picture, so the
                     // strip only names the room once the chrome is gone — or on
-                    // a TV, where the title belongs on the screen itself.
-                    identity: widget.immersive || widget.tv,
+                    // a TV, where the title belongs on the screen itself, or on a
+                    // phone held sideways, whose room card has no column to sit
+                    // in and folds into the strip instead.
+                    identity: widget.immersive || widget.tv || widget.onTitle != null,
+                    onTitle: widget.onTitle,
                   ),
                 ),
               // The compact window's own strip: its caption is hidden, so this is
@@ -1058,28 +1177,30 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   child: MouseRegion(
                     onEnter: (_) => _hideTimer?.cancel(),
                     onExit: (_) => _scheduleHide(),
-                    child: _ControlBar(
-                      key: _barKey,
-                      handle: handle,
-                      transport: transport,
-                      onWake: _wake,
-                      onScreenshot: () => unawaited(_screenshot()),
-                      canScreenshot: handle.canCaptureScreenshot,
-                      streamPickers: ({required labelled}) => _StreamPickerRow(
-                        room: room,
-                        open: _openPicker,
-                        anchors: _pickerAnchors,
-                        labelled: labelled,
-                        onToggle: _togglePicker,
-                        onHoverOpen: _hoverPicker,
-                        onHoverClose: _hoverPickerClose,
+                    // The bar stands over the gesture layer and keeps the pointer
+                    // from it, yet it is the floor of the portrait full screen's
+                    // restore band: the swipe up is listened for here as well.
+                    child: _RestoreSwipe(
+                      onRestore: widget.onPortraitRestore,
+                      child: _ControlBar(
+                        key: _barKey,
+                        handle: handle,
+                        transport: transport,
+                        onWake: _wake,
+                        streamPickers: ({required labelled}) => _StreamPickerRow(
+                          room: room,
+                          open: _openPicker,
+                          anchors: _pickerAnchors,
+                          labelled: labelled,
+                          onToggle: _togglePicker,
+                          onHoverOpen: _hoverPicker,
+                          onHoverClose: _hoverPickerClose,
+                        ),
+                        autofocusPlay: widget.autofocusFirstControl,
+                        canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
+                        portraitFullscreen: widget.portraitFullscreen,
+                        onPortraitFullscreen: widget.onPortraitFullscreen,
                       ),
-                      autofocusPlay: widget.autofocusFirstControl,
-                      canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
-                      portraitFullscreen: widget.portraitFullscreen,
-                      onPortraitFullscreen: widget.onPortraitFullscreen,
-                      theater: widget.theater,
-                      onTheater: widget.onTheater,
                     ),
                   ),
                 )
@@ -1092,7 +1213,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   bottom: widget.bottomInset,
                   left: 0,
                   right: 0,
-                  child: _IdleWakeStrip(onWake: _wake),
+                  child: _RestoreSwipe(
+                    onRestore: widget.onPortraitRestore,
+                    child: _IdleWakeStrip(onWake: _wake),
+                  ),
                 ),
               // The stream's own numbers when the viewer asked for them: a small
               // glass panel under the top bar, over the picture and out of the
@@ -1193,12 +1317,131 @@ final class _RoomCoverBackdrop extends StatelessWidget {
   }
 }
 
-/// The stream's own catalogues: quality, line and the picture's fit.
+/// The art a portrait frame sits over: the room's cover, else the streamer's
+/// avatar (the reference's chain after its one platform's blurred frame, which
+/// no site here sends). Empty when the room has neither.
+String _ambientArtOf(LiveRoom? room) {
+  if (room == null) return '';
+  final cover = room.content.coverUrl.trim();
+  if (cover.isNotEmpty) return cover;
+  return (room.anchor?.avatarUrl ?? '').trim();
+}
+
+/// The largest box of [ratio] (width over height) inside [box]: where a frame
+/// fitted whole lands.
+Size _containedSize(double ratio, Size box) {
+  final byHeight = box.height * ratio;
+  return byHeight <= box.width ? Size(byHeight, box.height) : Size(box.width, box.width / ratio);
+}
+
+/// The picture, over the room's own art when [art] is given (the reference's
+/// ambient presentation of a portrait stream).
+///
+/// The engine paints its own black around a fitted frame, so art stacked
+/// behind a view the size of the stage would never be seen. The view is sized
+/// to the frame's own shape instead — the engine then has no bars left to
+/// paint — and the art takes the stage around it. Without art, or before the
+/// engine reports a shape, the view keeps the stage's full size, so the
+/// viewer's fit decides how the frame meets it exactly as before.
+///
+/// The tree keeps one shape whichever of the two it draws: a view that moved
+/// in and out of a wrapper would rebuild the engine's surface every time the
+/// frame's shape arrived or changed.
+final class _AmbientPicture extends StatelessWidget {
+  const _AmbientPicture({required this.player, required this.art, required this.child});
+
+  /// The player whose frame's shape the view follows.
+  final PlayerHandle player;
+
+  /// The art behind the frame; empty for none.
+  final String art;
+
+  /// The view itself.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final geometry = player.geometryController;
+    // The stream only says when to look again; the shape is read from the
+    // controller itself, so a player handed over mid-subscription is never
+    // drawn with the previous player's shape.
+    return StreamBuilder<GeometryState>(
+      stream: geometry.state,
+      builder: (context, _) {
+        final state = geometry.current;
+        final ratio = state.hasVideo ? state.aspectRatio : 0.0;
+        final framed = art.isNotEmpty && ratio > 0 && ratio.isFinite;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _AmbientBackdrop(art: framed ? art : ''),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final box = constraints.biggest;
+                final size = framed ? _containedSize(ratio, box) : box;
+                return Center(
+                  child: SizedBox(width: size.width, height: size.height, child: child),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// The room's art behind a portrait frame (the reference's `AmbientBackdrop`).
+///
+/// The image is decoded a couple of dozen pixels wide and drawn across the
+/// stage, which blurs it once, at decode time: a blur filter under a live
+/// picture would run again on every frame the picture paints. It is blown up a
+/// little past the stage so the soft image never shows an edge, under a light
+/// veil that keeps it the stage and the frame the thing on it.
+final class _AmbientBackdrop extends StatelessWidget {
+  const _AmbientBackdrop({required this.art});
+
+  /// The image's address; empty leaves the stage its own black.
+  final String art;
+
+  /// The width the art is decoded at, in physical pixels (the reference's 24):
+  /// small enough that drawn large it reads as a blur.
+  static const int _decodeWidth = 24;
+
+  @override
+  Widget build(BuildContext context) {
+    if (art.isEmpty) return const SizedBox.shrink();
+    // Clipped to the stage: the blown-up image would otherwise paint over the
+    // chat column or the room card beside it.
+    return RepaintBoundary(
+      child: ClipRect(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Transform.scale(
+              scale: 1.14,
+              child: Image(
+                image: ResizeImage(cachedImage(art), width: _decodeWidth),
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+              ),
+            ),
+            const ColoredBox(color: Color(0x26000000)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The stream's own catalogues: quality and line.
 ///
 /// They live in the bottom bar, beside the transport, because they change what
 /// is playing rather than who is playing: the strip above the picture names the
 /// room and carries its state, and a viewer looking for "why is this blurry"
-/// reaches for the bar they just used to unmute it.
+/// reaches for the bar they just used to unmute it. The picture's fit left for
+/// the page's menu, which keeps the bar to the two choices the stream offers.
 final class _StreamPickerRow extends ConsumerWidget {
   const _StreamPickerRow({
     required this.room,
@@ -1232,7 +1475,6 @@ final class _StreamPickerRow extends ConsumerWidget {
     final lineIndex = room.lineIndex.clamp(0, lines.isEmpty ? 0 : lines.length - 1);
     final line = lines.isEmpty ? null : lines[lineIndex];
     final quality = room.quality ?? (room.qualities.isEmpty ? null : room.qualities.first);
-    final fit = ref.watch(playbackSettingsProvider).fit;
     final tv = PlayerBarTier.tvOf(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1254,15 +1496,6 @@ final class _StreamPickerRow extends ConsumerWidget {
             label: _lineShortLabel(t, line, lineIndex),
             semanticLabel: t.room.lineLabel,
           ),
-        _button(
-          context,
-          picker: _Picker.fit,
-          icon: DsIcons.aspectRatio,
-          // The picker is named for what it chooses; the panel under it says
-          // which fit is on.
-          label: labelled ? t.room.fitShort : fitLabels(t)[fit.index],
-          semanticLabel: t.settings.fit,
-        ),
       ],
     );
   }
@@ -1356,13 +1589,22 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
     required this.onLeave,
     required this.onWake,
     required this.menuItems,
+    this.onScreenshot,
+    this.canScreenshot = false,
     this.fullscreen = false,
     this.portraitExit = false,
     this.identity = true,
+    this.onTitle,
   });
 
   final RoomState room;
   final VoidCallback onLeave;
+
+  /// Saves the frame on screen; null when the surface offers no action.
+  final VoidCallback? onScreenshot;
+
+  /// Whether the handle can capture a frame at all.
+  final bool canScreenshot;
 
   /// Resets the bars' auto-hide timer after a press.
   final VoidCallback onWake;
@@ -1382,16 +1624,35 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
   /// Whether the strip names the room. The page's own header already carries
   /// the avatar, the live ring, the counts and the title above the picture, so
   /// in-page the strip keeps only the presentation cluster; once the chrome is
-  /// gone (fullscreen, window fullscreen, portrait) the identity comes back.
+  /// gone (fullscreen, window fullscreen, portrait) the identity comes back,
+  /// and so it does on a phone held sideways, whose room card has no column.
   final bool identity;
+
+  /// Opens the room's details from its name: the strip of a phone held
+  /// sideways stands in for the room card, so the name takes the card's press
+  /// and the page's own app bar keeps the way back. Null for a strip whose
+  /// name is only a name.
+  final VoidCallback? onTitle;
 
   @override
   ConsumerState<_PlayerTopBar> createState() => _PlayerTopBarState();
 }
 
-/// The catalogues the control bar offers: the stream's quality, the line behind
-/// it and how the picture is fitted into its box.
-enum _Picker { quality, line, fit }
+/// The catalogues the control bar offers: the stream's quality and the line
+/// behind it. The picture's fit is the page's menu row, not a catalogue.
+enum _Picker { quality, line }
+
+/// What a vertical drag on the picture changes, decided where it began.
+enum _PictureDrag {
+  /// The volume, or on the left half the screen's brightness.
+  adjust,
+
+  /// The portrait full screen's middle third: the next or the previous room.
+  switchRoom,
+
+  /// The portrait full screen's lowest band: back to the page's own layout.
+  restore,
+}
 
 /// The strip above the picture: the room's presentation, and — where the page
 /// has no header of its own — who is streaming and whether it is live.
@@ -1430,6 +1691,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
     final live = detail?.broadcast.isLiveNow ?? false;
     final replay = detail?.broadcast.isRecord ?? false;
     final tv = PlayerBarTier.tvOf(context);
+    final onTitle = widget.onTitle;
     return LayoutBuilder(
       builder: (context, constraints) {
         // The same floor the control bar uses for its medium tier: below it a
@@ -1464,7 +1726,19 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
               mainAxisAlignment: MainAxisAlignment.end,
               spacing: DsSpace.s8,
               children: [
-                _DanmakuTogglePill(onWake: widget.onWake),
+                // The capture leads the verbs: the reference's row puts the
+                // frame-copy first, then where the picture goes, then the menu.
+                if (widget.canScreenshot && widget.onScreenshot != null)
+                  PlayerGlassPill(
+                    child: PlayerBarButton(
+                      icon: DsIcons.camera,
+                      label: t.room.screenshot,
+                      onPressed: () {
+                        widget.onWake();
+                        widget.onScreenshot!();
+                      },
+                    ),
+                  ),
                 _PresentationCluster(room: widget.room, onWake: widget.onWake, narrow: narrow, split: true),
                 menuPill,
               ],
@@ -1483,24 +1757,38 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
           child: Row(
             spacing: tv ? DsSpace.s12 : DsSpace.s8,
             children: [
-              PlayerGlassPill(
-                child: PlayerBarButton(
-                  icon: DsIcons.chevronLeft,
-                  label: widget.portraitExit ? t.room.portraitFullscreenExit : t.common.close,
-                  onPressed: widget.onLeave,
+              // A strip that stands in for the room card sits under the page's
+              // own app bar, which already carries the way back.
+              if (onTitle == null)
+                PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: DsIcons.chevronLeft,
+                    label: widget.portraitExit ? t.room.portraitFullscreenExit : t.common.close,
+                    onPressed: widget.onLeave,
+                  ),
                 ),
-              ),
               if (widget.fullscreen) const _PlayerClockBattery(),
               if (label != null)
                 Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    // The room's name takes the next size up on a TV: it is the
-                    // one line the viewer reads from the sofa.
-                    style: (tv ? theme.typography.heading : theme.typography.title).copyWith(color: _onVideo),
-                  ),
+                  child: onTitle == null
+                      ? Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          // The room's name takes the next size up on a TV: it is
+                          // the one line the viewer reads from the sofa.
+                          style: (tv ? theme.typography.heading : theme.typography.title).copyWith(color: _onVideo),
+                        )
+                      : Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: _StripTitle(
+                            label: label,
+                            onPressed: () {
+                              widget.onWake();
+                              onTitle();
+                            },
+                          ),
+                        ),
                 )
               else
                 const Spacer(),
@@ -1516,7 +1804,10 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                     ),
                   ),
                 ),
-              if (audience != null && constraints.maxWidth >= 480)
+              // The audience pill is a broadcast's number: a replay names
+              // itself instead, and its figures stay in the room card and
+              // the details panel.
+              if (audience != null && !replay && constraints.maxWidth >= 480)
                 PlayerGlassPill(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
@@ -1533,10 +1824,9 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                     ),
                   ),
                 ),
-              // The danmaku's switch, in every tier: a viewer who came for the
-              // lines and wants them off does not leave the picture to find
-              // the one control that is about the picture.
-              _DanmakuTogglePill(onWake: widget.onWake),
+              // The danmaku's switch lives on the bar below now, beside the
+              // transport it belongs to; the strip keeps the room's facts and
+              // the presentation verbs.
               cluster,
               menuPill,
             ],
@@ -1547,31 +1837,155 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
   }
 }
 
-/// The flying danmaku's own switch, as the strip draws it in both tiers.
-///
-/// One preference and one control, drawn twice: in-page it leads the row of
-/// overlay verbs, and in fullscreen the reference keeps it on the bar beside
-/// the play button — a viewer who wants the lines gone should not have to
-/// leave the picture to say so.
-final class _DanmakuTogglePill extends ConsumerWidget {
-  const _DanmakuTogglePill({required this.onWake});
+/// The room's name on the strip of a phone held sideways (the reference's
+/// `_StripTitle`): the streamer and the title, with a chevron that says the
+/// name opens something, and a press that shows the room's details — the room
+/// card's own press, since the strip is where that card folded into.
+final class _StripTitle extends StatelessWidget {
+  const _StripTitle({required this.label, required this.onPressed});
 
-  /// Resets the bars' auto-hide timer after the press.
+  /// The streamer and the title, as the strip names the room.
+  final String label;
+
+  /// Opens the room's details.
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final tv = PlayerBarTier.tvOf(context);
+    final corners = theme.radii.controlCorners(null, theme.sizes.sm);
+    return DsPressable(
+      semanticLabel: context.t.room.detailsHint,
+      onPressed: onPressed,
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s3),
+          decoration: DsBoxDecoration(color: lit ? _onVideoHover : null, borderRadius: corners),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (tv ? theme.typography.heading : theme.typography.title).copyWith(color: _onVideo),
+                ),
+              ),
+              DsIcon(DsIcons.chevronDown, size: tv ? 16 : 14, color: _onVideoMuted),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The flying danmaku's controls on the bar: the round 「弹」 switch beside the
+/// gear that opens its settings — the pair the reference draws at the bar's
+/// reading end. A viewer toggles the lines and tunes them without leaving the
+/// bar, and the switch's letter reads at every tier the bar is drawn at.
+final class _DanmakuBarCluster extends ConsumerWidget {
+  const _DanmakuBarCluster({required this.onWake});
+
+  /// Resets the bar's auto-hide timer after a press.
   final VoidCallback onWake;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(playbackSettingsProvider);
     final t = context.t;
-    return PlayerGlassPill(
-      child: PlayerBarButton(
-        icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-        label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-        selected: settings.danmakuVisible,
-        onPressed: () {
-          onWake();
-          unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible));
-        },
+    final theme = DsTheme.of(context);
+    final settings = ref.watch(playbackSettingsProvider);
+    final side = PlayerBarTier.controlSize(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s4,
+      children: [
+        DsPressable(
+          semanticLabel: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+          onPressed: () {
+            onWake();
+            unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible));
+          },
+          builder: (context, states, _) {
+            final on = settings.danmakuVisible;
+            return Container(
+              width: side,
+              height: side,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: on ? theme.colors.accent : const Color(0x00000000),
+                border: on ? null : Border.all(color: const Color(0x59FFFFFF)),
+              ),
+              child: Text(
+                t.room.danmakuMark,
+                style: theme.typography.caption.copyWith(
+                  color: on ? theme.colors.onAccent : _onVideoMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            );
+          },
+        ),
+        PlayerBarButton(
+          icon: DsIcons.slidersHorizontal,
+          label: t.settings.navDanmaku,
+          onPressed: () {
+            onWake();
+            unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location));
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// The time this visit has watched, on the bar beside the volume. A live
+/// stream has no position to draw, and this is the one number a viewer can
+/// still read off it — how long they have been here.
+final class _WatchElapsed extends StatefulWidget {
+  const _WatchElapsed();
+
+  @override
+  State<_WatchElapsed> createState() => _WatchElapsedState();
+}
+
+final class _WatchElapsedState extends State<_WatchElapsed> {
+  final DateTime _started = DateTime.now();
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final elapsed = DateTime.now().difference(_started);
+    String two(int value) => value.toString().padLeft(2, '0');
+    final time = elapsed.inHours > 0
+        ? '${elapsed.inHours}:${two(elapsed.inMinutes % 60)}:${two(elapsed.inSeconds % 60)}'
+        : '${two(elapsed.inMinutes)}:${two(elapsed.inSeconds % 60)}';
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
+      child: Text(
+        t.room.watchedFor(time: time),
+        style: theme.typography.numeric(theme.typography.caption.copyWith(color: _onVideoMuted)),
       ),
     );
   }
@@ -1684,6 +2098,17 @@ final class _PresentationCluster extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s8,
         children: [
+          if (castLine != null)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.cast,
+                label: t.room.cast,
+                onPressed: () {
+                  onWake();
+                  unawaited(showCastDialog(context, line: castLine, title: detail?.content.title));
+                },
+              ),
+            ),
           if (showRecord)
             PlayerGlassPill(
               child: PlayerBarButton(
@@ -1693,17 +2118,6 @@ final class _PresentationCluster extends ConsumerWidget {
                 onPressed: () {
                   onWake();
                   unawaited(toggleRoomRecording(context, ref));
-                },
-              ),
-            ),
-          if (castLine != null)
-            PlayerGlassPill(
-              child: PlayerBarButton(
-                icon: DsIcons.cast,
-                label: t.room.cast,
-                onPressed: () {
-                  onWake();
-                  unawaited(showCastDialog(context, line: castLine, title: detail?.content.title));
                 },
               ),
             ),
@@ -2066,20 +2480,22 @@ final class _PipButton extends StatelessWidget {
 
 /// The bar itself: the live position over the buffer, then the transport,
 /// the stream pickers, the danmaku switch and the presentation buttons.
-final class _ControlBar extends ConsumerWidget {
+///
+/// A replay room (the platform labels the broadcast a recording, or the
+/// loaded media reports a length) plays its own surface instead: the seek
+/// line over the buttons — position, the slider, duration — the vod page's
+/// bar shape. A live room keeps the buttons alone even when its engine
+/// reports a growing duration, which several HLS edges do.
+final class _ControlBar extends ConsumerStatefulWidget {
   const _ControlBar({
     required this.handle,
     required this.transport,
     required this.onWake,
-    this.onScreenshot,
-    this.canScreenshot = false,
     this.streamPickers,
     this.autofocusPlay = false,
     this.canEnterPortraitFullscreen = false,
     this.portraitFullscreen = false,
     this.onPortraitFullscreen,
-    this.theater = false,
-    this.onTheater,
     super.key,
   });
 
@@ -2091,13 +2507,7 @@ final class _ControlBar extends ConsumerWidget {
   /// Resets the bar's auto-hide timer after an interaction.
   final VoidCallback onWake;
 
-  /// Saves the frame on screen; null when the surface offers no action.
-  final VoidCallback? onScreenshot;
-
-  /// Whether the handle can capture a frame at all.
-  final bool canScreenshot;
-
-  /// The stream's own catalogues (quality, line, fit), placed beside the
+  /// The stream's own catalogues (quality, line), placed beside the
   /// transport where a viewer looks for them.
   ///
   /// Built with the bar's own width, because that is the box the result has to
@@ -2119,19 +2529,37 @@ final class _ControlBar extends ConsumerWidget {
   /// Enters portrait full screen.
   final VoidCallback? onPortraitFullscreen;
 
-  /// Whether the page is showing its theatre arrangement.
-  final bool theater;
+  @override
+  ConsumerState<_ControlBar> createState() => _ControlBarState();
+}
 
-  /// Shows or hides the theatre; null where the page offers none.
-  final VoidCallback? onTheater;
+final class _ControlBarState extends ConsumerState<_ControlBar> {
+  /// The replay seek the thumb is dragging, in seconds; null when the thumb
+  /// is not held. While it is held the readout follows the finger and the
+  /// transport's own position keeps arriving underneath — the vod page's
+  /// drag idiom, whose engine-side throttle keeps the stream of positions
+  /// smooth enough to drag against.
+  double? _dragSeconds;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void didUpdateWidget(_ControlBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A thumb held over a handle that is no longer the playing one drops its
+    // drag: the readout belongs to the engine that is on screen now.
+    if (!identical(oldWidget.handle, widget.handle) && _dragSeconds != null) {
+      _dragSeconds = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
     final room = ref.watch(roomProvider);
     final presentation = ref.watch(roomPresentationProvider);
     final controller = ref.read(roomProvider.notifier);
     final presentationController = ref.read(roomPresentationProvider.notifier);
+    final transport = widget.transport;
     final player = room.handle?.id;
     final playing = room.playback.playing;
     final muted = controller.muted;
@@ -2140,6 +2568,20 @@ final class _ControlBar extends ConsumerWidget {
     final tv = PlayerBarTier.tvOf(context);
     final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
     final recordingTask = task?.state == RecordingTaskState.recording ? task : null;
+    // The replay's surface: a room the platform labels a recording, or a
+    // room that is not on air whose loaded media reports a length (a VOD
+    // the label missed). A live room never flips, whatever its engine says,
+    // and a room still loading its detail keeps the live bar until it knows
+    // what it is.
+    final detail = room.room;
+    final liveRoom = detail?.broadcast.isLiveNow ?? true;
+    final replay = (detail?.broadcast.isRecord ?? false) || (!liveRoom && (transport?.hasDuration ?? false));
+    final duration = transport?.duration ?? Duration.zero;
+    final seekable = replay && duration.inMilliseconds > 0;
+    final position = _dragSeconds != null
+        ? Duration(milliseconds: (_dragSeconds! * 1000).round())
+        : transport?.position ?? Duration.zero;
+    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: _onVideo));
     return Container(
       padding: EdgeInsets.fromLTRB(
         tv ? DsSpace.s16 : DsSpace.s12,
@@ -2157,7 +2599,8 @@ final class _ControlBar extends ConsumerWidget {
       // A live stream has no timeline to draw: what used to sit above these
       // buttons was a seek bar that could not seek. The buffer and latency
       // facts live in the stats overlay and in the picture's own buffering
-      // state, so the bar is the buttons alone.
+      // state, so the live bar is the buttons alone — and a replay's one
+      // extra row is the timeline it can actually move.
       child: LayoutBuilder(
         builder: (context, constraints) {
           // The compact window (and a phone's 16:9 strip) has no room
@@ -2177,6 +2620,40 @@ final class _ControlBar extends ConsumerWidget {
           // cluster a viewer reaches for when the picture looks wrong, and the
           // danmaku has a home in the chat panel's header too.
           final crowded = constraints.maxWidth < 320;
+          // The replay's timeline, the vod page's own shape: the position,
+          // the slider, the duration — numeric ink, a drag that shows the
+          // finger's spot at once and seeks on the release.
+          final seekLine = seekable
+              ? Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    SizedBox(
+                      width: 54,
+                      child: Text(vodDurationText(position), textAlign: TextAlign.center, style: timeStyle),
+                    ),
+                    Expanded(
+                      child: DsSlider(
+                        value: position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
+                        max: duration.inMilliseconds.toDouble(),
+                        onChanged: (value) {
+                          widget.onWake();
+                          setState(() => _dragSeconds = value / 1000);
+                        },
+                        onChangeEnd: (value) {
+                          final seconds = value / 1000;
+                          setState(() => _dragSeconds = null);
+                          unawaited(widget.handle.seek(Duration(milliseconds: (seconds * 1000).round())));
+                        },
+                        semanticLabel: t.vod.progress,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 54,
+                      child: Text(vodDurationText(duration), textAlign: TextAlign.center, style: timeStyle),
+                    ),
+                  ],
+                )
+              : null;
           final bar = Row(
             // A TV bar spaces its controls wider: the remote jumps
             // between them, and a distant viewer needs the separation.
@@ -2185,9 +2662,9 @@ final class _ControlBar extends ConsumerWidget {
               PlayerBarButton(
                 icon: playing ? DsIcons.pause : DsIcons.play,
                 label: playing ? t.room.pause : t.room.play,
-                autofocus: autofocusPlay,
+                autofocus: widget.autofocusPlay,
                 onPressed: () {
-                  onWake();
+                  widget.onWake();
                   unawaited(controller.togglePlayPause());
                 },
               ),
@@ -2197,7 +2674,7 @@ final class _ControlBar extends ConsumerWidget {
                 icon: muted ? DsIcons.volumeOff : DsIcons.volume,
                 label: muted ? t.room.unmute : t.room.mute,
                 onPressed: () {
-                  onWake();
+                  widget.onWake();
                   unawaited(controller.setMuted(value: !muted));
                 },
               ),
@@ -2207,20 +2684,17 @@ final class _ControlBar extends ConsumerWidget {
                   child: DsSlider(
                     value: volume,
                     onChanged: (value) {
-                      onWake();
+                      widget.onWake();
                       unawaited(controller.setVolume(value));
                     },
                     semanticLabel: t.room.volume,
                   ),
                 ),
-                PlayerBarButton(
-                  icon: room.audioOnly ? DsIcons.video : DsIcons.headphones,
-                  label: room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
-                  onPressed: () {
-                    onWake();
-                    unawaited(controller.setAudioOnly(value: !room.audioOnly));
-                  },
-                ),
+                // The visit's clock: a live stream has no position, and this
+                // answers "how long have I been here" where a VOD bar would
+                // draw its time. A replay's time is the seek line's own, so
+                // the clock keeps to the live rooms it belongs to.
+                if (!replay) const _WatchElapsed(),
                 // A running capture is said here, beside the transport, as
                 // the reference does: the red dot and the word, the elapsed
                 // count with them, and a press ends it.
@@ -2232,7 +2706,7 @@ final class _ControlBar extends ConsumerWidget {
                     tv: tv,
                     label: t.room.stopRecording,
                     onStop: () {
-                      onWake();
+                      widget.onWake();
                       unawaited(toggleRoomRecording(context, ref));
                     },
                   ),
@@ -2244,70 +2718,60 @@ final class _ControlBar extends ConsumerWidget {
               // cluster a viewer reaches for when the picture looks wrong, so
               // it sits beside the transport. (The flying danmaku's switch
               // lives on the strip above, with the other overlay verbs.)
-              if (!pip) ?streamPickers?.call(labelled: wide),
-              // -- Capture, then the window verbs, then the way out of the
-              // picture's box. Recording and casting sit in the strip above
-              // with the room's state: they say where this picture goes, and
-              // a running capture has a state worth seeing at a glance.
-              if (wide && !pip && canScreenshot && onScreenshot != null)
-                PlayerBarButton(
-                  icon: DsIcons.camera,
-                  label: t.room.screenshot,
-                  onPressed: () {
-                    onWake();
-                    onScreenshot!();
-                  },
-                ),
+              if (!pip) ?widget.streamPickers?.call(labelled: wide),
+              // -- The danmaku's switch and its settings, the reading end of
+              // what is on the picture: the round 「弹」 beside the gear, the
+              // pair the reference draws.
+              if (!crowded && !pip) ...[const _BarDivider(), _DanmakuBarCluster(onWake: widget.onWake)],
+              // -- The window verbs, then the way out of the picture's box.
+              // Capture, record and cast sit in the strip above with the
+              // room's state: they say where this picture goes, and a running
+              // capture has a state worth seeing at a glance.
               if (wide && !pip && _desktop && player != null)
                 PlayerBarButton(
-                  icon: DsIcons.rectangleHorizontal,
+                  icon: presentation == PresentationMode.windowFullscreen ? DsIcons.shrink : DsIcons.expand,
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.room.windowFullscreenOff
                       : t.room.windowFullscreenOn,
                   selected: presentation == PresentationMode.windowFullscreen,
                   onPressed: () {
-                    onWake();
+                    widget.onWake();
                     unawaited(presentationController.toggleWindowFullscreen(player));
                   },
                 ),
               if (wide &&
                   !pip &&
-                  canEnterPortraitFullscreen &&
-                  !portraitFullscreen &&
+                  widget.canEnterPortraitFullscreen &&
+                  !widget.portraitFullscreen &&
                   presentation == PresentationMode.normal)
                 PlayerBarButton(
                   icon: DsIcons.rectangleVertical,
                   label: t.room.portraitFullscreen,
                   onPressed: () {
-                    onWake();
-                    onPortraitFullscreen?.call();
+                    widget.onWake();
+                    widget.onPortraitFullscreen?.call();
                   },
                 ),
-              // The theatre is the page's own arrangement, so the page
-              // decides where it exists; the bar only carries the verb.
-              if (wide && !pip && onTheater != null)
-                PlayerBarButton(
-                  icon: DsIcons.layoutHeaderSidebarRight,
-                  label: theater ? t.room.theaterOff : t.room.theaterOn,
-                  selected: theater,
-                  onPressed: () {
-                    onWake();
-                    onTheater!();
-                  },
-                ),
+              // The theatre's verb lives in the page's menu now, so the bar
+              // reads as the reference draws it: transport, the stream's
+              // catalogues, the danmaku pair, then the two ways out of the box.
               if (!pip && player != null)
                 PlayerBarButton(
-                  icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
+                  icon: immersive ? DsIcons.minimize : DsIcons.maximize,
                   label: immersive ? t.room.fullscreenOff : t.room.fullscreenOn,
                   selected: immersive,
                   onPressed: () {
-                    onWake();
+                    widget.onWake();
                     unawaited(presentationController.toggleFullscreen(player));
                   },
                 ),
             ],
           );
-          return bar;
+          // The timeline rides over the buttons, the vod bar's own order —
+          // and a live room's column keeps exactly the shape it had.
+          return seekLine == null
+              ? bar
+              : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s4, children: [seekLine, bar]);
         },
       ),
     );
@@ -2356,4 +2820,58 @@ final class _IdleWakeStrip extends StatelessWidget {
       child: const SizedBox(height: 14, width: double.infinity),
     ),
   );
+}
+
+/// Whether an upward swipe of [upward] pixels that ended at [velocity] (upwards
+/// negative) restores the page's layout from the portrait full screen (the
+/// reference's `swipeRestoresPanel`): 64 px of travel, or a flick of 850 px/s
+/// once 24 of them are behind it.
+bool _swipeRestoresPanel({required double upward, required double velocity}) =>
+    upward >= 64 || (velocity <= -850 && upward >= 24);
+
+/// The portrait full screen's bottom bar, or the strip that wakes it, taking
+/// the upward swipe back to the page's panel as well (the reference's
+/// `_SwipeUpRegion`).
+///
+/// Both stand over the picture's gesture layer and keep the pointer from it,
+/// yet they are the floor of the band the swipe starts from. The buttons under
+/// it keep their taps: a drag only wins once the finger moves. Without
+/// [onRestore] it listens for nothing, and the tree keeps its shape either way.
+final class _RestoreSwipe extends StatefulWidget {
+  const _RestoreSwipe({required this.onRestore, required this.child});
+
+  /// Restores the page's layout; null where the swipe means nothing.
+  final VoidCallback? onRestore;
+
+  /// The bar or the strip.
+  final Widget child;
+
+  @override
+  State<_RestoreSwipe> createState() => _RestoreSwipeState();
+}
+
+final class _RestoreSwipeState extends State<_RestoreSwipe> {
+  /// The swipe's travel up the bar, never below zero.
+  double _upward = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final restore = widget.onRestore;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onVerticalDragStart: restore == null ? null : (_) => _upward = 0,
+      onVerticalDragUpdate: restore == null
+          ? null
+          : (details) => _upward = (_upward - details.delta.dy).clamp(0.0, double.infinity),
+      onVerticalDragEnd: restore == null
+          ? null
+          : (details) {
+              final upward = _upward;
+              _upward = 0;
+              if (_swipeRestoresPanel(upward: upward, velocity: details.primaryVelocity ?? 0)) restore();
+            },
+      onVerticalDragCancel: restore == null ? null : () => _upward = 0,
+      child: widget.child,
+    );
+  }
 }

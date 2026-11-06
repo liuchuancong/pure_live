@@ -128,9 +128,9 @@ const Duration slowAfter = Duration(seconds: 8);
 
 /// The overlay state of the room as it stands — the mapping from the
 /// controller's facts onto what the viewer sees. An error field wins over
-/// the playback's states (it is the more specific answer); a room that is
-/// not live answers from its broadcast state; everything else reads the
-/// playback.
+/// the playback's states (it is the more specific answer); a room with
+/// nothing to play answers from its broadcast state; a live room and a
+/// replay read the playback.
 RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = false}) {
   // The failure wins over the missing detail: a room that never loaded
   // would otherwise stay on the "opening" spinner forever.
@@ -148,7 +148,13 @@ RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = fa
     return _of(RoomPictureKind.entering, t.room.openingRoom, busy: true);
   }
   final room = state.room!;
-  if (!room.broadcast.isLiveNow) {
+  // A replay plays its recording like a broadcast: the playback reads below
+  // judge it (the reference's `isPlayableNow`, which a replay passes — their
+  // plan even marks it on-demand so it seeks and ends). Only a room the app
+  // has nothing to start answers from its broadcast state. A carousel keeps
+  // its own card here too: the app offers no carousel verb yet, so its
+  // lines are not asked for.
+  if (!room.broadcast.isLiveNow && !room.broadcast.isRecord) {
     return _offline(t, room);
   }
   // Playback reads: the handle is the room's proof of a stream.
@@ -195,7 +201,9 @@ RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = fa
   };
 }
 
-/// The offline room's picture, named by what the platform said.
+/// The offline room's picture, named by what the platform said. A replay
+/// never lands here — it plays, so the playback reads above decide its
+/// state (`replayEnded` names its end).
 RoomPictureState _offline(Translations t, LiveRoom room) {
   final state = switch (room.broadcast.effectiveLiveStatus) {
     LiveStatus.banned => _of(
@@ -208,13 +216,6 @@ RoomPictureState _offline(Translations t, LiveRoom room) {
       RoomPictureKind.carousel,
       t.room.carousel,
       reason: t.room.carouselReason,
-      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
-      dim: RoomPictureDim.cover,
-    ),
-    LiveStatus.replay => _of(
-      RoomPictureKind.offline,
-      t.room.offlineTitle,
-      reason: t.room.offlineReplayReason,
       actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
       dim: RoomPictureDim.cover,
     ),

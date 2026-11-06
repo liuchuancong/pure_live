@@ -33,6 +33,7 @@ final class SleepTimerController extends Notifier<SleepTimerState> {
   /// Starts (or restarts) the timer for [minutes], or stops it: null or
   /// zero cancels the running one.
   void start(int? minutes) {
+    if (!ref.mounted) return;
     _cancel();
     final length = minutes;
     if (length == null || length <= 0) {
@@ -47,6 +48,7 @@ final class SleepTimerController extends Notifier<SleepTimerState> {
   int? _lastWhole;
 
   void _tick() {
+    if (!ref.mounted) return;
     final endsAt = _endsAt;
     if (endsAt == null) return;
     final remaining = endsAt.difference(DateTime.now().toUtc());

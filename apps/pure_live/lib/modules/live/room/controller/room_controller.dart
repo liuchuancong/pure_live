@@ -2,7 +2,6 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
@@ -52,8 +51,9 @@ enum RoomChatStatus { connecting, connected, unsupported, failed }
 typedef RoomChat = ({RoomChatStatus status, String? error});
 
 /// What the room page holds: the room as it stands, the qualities and the
-/// lines behind the chosen one, the playback's state and handle, and the
-/// danmaku the room's chat has delivered.
+/// lines behind the chosen one, the playback's state, the committed handle,
+/// the player the picture is mounted on, and the danmaku the room's chat has
+/// delivered.
 typedef RoomState = ({
   LiveRoom? room,
   List<LivePlayQuality> qualities,
@@ -62,6 +62,7 @@ typedef RoomState = ({
   LivePlayQuality? quality,
   PlayerCoreState playback,
   PlayerHandle? handle,
+  PlayerHandle? player,
   bool audioOnly,
   String? error,
   RoomChat chat,
@@ -75,6 +76,7 @@ RoomState _initial({bool audioOnly = false}) => (
   quality: null,
   playback: PlayerCoreState.idle,
   handle: null,
+  player: null,
   audioOnly: audioOnly,
   error: null,
   chat: (status: RoomChatStatus.connecting, error: null),
@@ -677,6 +679,10 @@ final class RoomController extends Notifier<RoomState> {
   LivePlaybackController? _playback;
   RoomPlaybackSession? _session;
   RoomPlaybackStandby? _standby;
+
+  /// The ingest relay the current lines play through (Bigo's scrambled HLS);
+  /// null when the site hands the player a directly playable source.
+  LiveIngestSession? _ingest;
   StreamSubscription<PlayerCoreState>? _states;
   StreamSubscription<PlayerHandle>? _handles;
   StreamSubscription<PlayerFailure>? _failures;
@@ -685,6 +691,16 @@ final class RoomController extends Notifier<RoomState> {
 
   /// The adapter events that carry the first decoded frame of an entry.
   StreamSubscription<PlayerAdapterEvent>? _frames;
+
+  /// The staged player the picture mounts on while an open is still in
+  /// flight, found by [_watchStagedSurface]; cancelled with the room.
+  Timer? _surfaceWatch;
+
+  /// Rises with every [_watchStagedSurface] start, so the command that began
+  /// an older watch stops only its own: a command landing mid-open (a retry
+  /// over a slow entry, a line from the picker) restarts the watch, and the
+  /// older await's end must not cancel the newer one's.
+  int _surfaceWatchGeneration = 0;
 
   /// The platform's own "the stored cookie was refused" events, for the site
   /// this room was opened from; cancelled with the room.
@@ -700,6 +716,13 @@ final class RoomController extends Notifier<RoomState> {
   /// How many times a chat the platform refused *for now* is opened again on
   /// the room's own, before the column's 重试 button is left to the viewer.
   static const int _kChatTransientRetries = 3;
+
+  /// How often the staged-player watcher polls the kernel while an open is in
+  /// flight. The sweep creates the player without announcing it, so the only
+  /// seam this side of media_core has is the kernel's own handle list; the
+  /// poll only has to land inside the open, and it stops the moment the
+  /// player commits.
+  static const Duration _kStagedSurfacePoll = Duration(milliseconds: 40);
 
   /// The pending automatic chat retry, and how many this room has spent.
   Timer? _chatRetry;
@@ -766,6 +789,10 @@ final class RoomController extends Notifier<RoomState> {
   bool _nameHintShown = false;
 
   LivePlayQuality? _wantedQuality;
+
+  /// Whether this room open has spent its one plain line read after a failed
+  /// plan read (see [_resolveLines]). Reset when a room opens.
+  bool _linesFallbackSpent = false;
 
   /// The request the current page asked for, so a detail failure can be
   /// retried even before a room object exists.
@@ -884,9 +911,11 @@ final class RoomController extends Notifier<RoomState> {
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
     _teardown();
+    _linesFallbackSpent = false;
     _openTiming = RoomOpenTiming(site: platform, roomId: roomId, proxy: _proxyForEntry);
     // Last visit's numbers describe last visit's room.
     ref.read(roomOpenRecordProvider.notifier).clear();
+    ref.read(roomChatNoticeProvider.notifier).clear();
     final epoch = _openEpoch;
     ref.read(roomSuperChatsProvider.notifier).clear();
     final settings = ref.read(playbackSettingsProvider);
@@ -1017,7 +1046,13 @@ final class RoomController extends Notifier<RoomState> {
   /// Moves playback to the line at [index] without re-reading the plan.
   Future<void> selectLine(int index) async {
     state = _with(lineIndex: index);
+    // A line switch over no committed handle — the picker's way out of a
+    // failed open — stages a fresh sweep, whose staged player carries the
+    // first frames the same way an open's does.
+    int? watch;
+    if (state.handle == null) watch = _watchStagedSurface();
     await _playback?.switchLine(index);
+    _stopStagedSurfaceWatch(watch);
     // Each line carries its own lease, so the timer is the new line's.
     _armLeaseRenewal();
   }
@@ -1026,7 +1061,13 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> retry() async {
     final playback = _playback;
     if (playback != null && state.room != null) {
+      // A retry over no committed handle is a fresh sweep (an open whose
+      // candidates all failed): its staged player carries the first frames
+      // the same way an open's does.
+      int? watch;
+      if (state.handle == null) watch = _watchStagedSurface();
       await playback.retry();
+      _stopStagedSurfaceWatch(watch);
       return;
     }
     final platform = _requestedPlatform;
@@ -1153,6 +1194,7 @@ final class RoomController extends Notifier<RoomState> {
     ref.read(roomChatProvider.notifier).clear();
     ref.read(roomShieldCountProvider.notifier).reset();
     ref.read(roomSuperChatsProvider.notifier).clear();
+    ref.read(roomChatNoticeProvider.notifier).clear();
   }
 
   /// Stops the room as its page leaves: the picture goes quiet now, the state
@@ -1166,14 +1208,19 @@ final class RoomController extends Notifier<RoomState> {
   void closeFromPage() {
     final leavingKey = state.room?.identityKey;
     _teardown();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!ref.mounted) return;
-      if (state.room?.identityKey != leavingKey) return;
-      state = _initial();
-      ref.read(roomChatProvider.notifier).clear();
-      ref.read(roomShieldCountProvider.notifier).reset();
-      ref.read(roomSuperChatsProvider.notifier).clear();
-    });
+    // The route unmounts while the tree is being torn down; the event queue
+    // runs after that frame's finalize, where a provider write is legal.
+    unawaited(
+      Future<void>.delayed(Duration.zero, () {
+        if (!ref.mounted) return;
+        if (state.room?.identityKey != leavingKey) return;
+        state = _initial();
+        ref.read(roomChatProvider.notifier).clear();
+        ref.read(roomShieldCountProvider.notifier).reset();
+        ref.read(roomSuperChatsProvider.notifier).clear();
+        ref.read(roomChatNoticeProvider.notifier).clear();
+      }),
+    );
   }
 
   /// Lands the viewer's current audio on a freshly attached engine; a line
@@ -1183,6 +1230,16 @@ final class RoomController extends Notifier<RoomState> {
       await handle.setVolume(_volume);
       await handle.setMute(muted: _muted || _globalMute);
       await handle.setAudioOnly(audioOnly: _audioOnly);
+    } on Object {
+      // A preference the engine refused is not a playback failure.
+    }
+  }
+
+  /// Loops a replay's recording on [handle]: its end seeks back to zero and
+  /// plays again, the kernel's own completion restart.
+  Future<void> _loopReplay(PlayerHandle handle) async {
+    try {
+      await handle.setLoop(loop: true);
     } on Object {
       // A preference the engine refused is not a playback failure.
     }
@@ -1408,7 +1465,12 @@ final class RoomController extends Notifier<RoomState> {
   /// "1080P" over a 720P picture is a lie the viewer can only catch by
   /// squinting. A plan that cannot be read falls back to the plain line read —
   /// what the room did before a platform could confirm anything — so the
-  /// confirmation never costs the stream its only route to a URL.
+  /// confirmation never costs the stream its only route to a URL. The
+  /// fallback is spent once per room open (see [_linesFallbackSpent]): a
+  /// second failed plan inside the same open surfaces the plan's error rather
+  /// than stacking another full read in front of the picture, and the
+  /// playback's own recovery keeps its read — that one runs after a failure,
+  /// not before the stream has started.
   Future<({List<LivePlayLine> lines, LivePlayQuality? served, LiveSiteError? error})> _resolveLines(
     LivePlaybackProvider capability,
     LiveRoom room,
@@ -1417,14 +1479,24 @@ final class RoomController extends Notifier<RoomState> {
     if (asked != null) {
       if (capability case final LivePlaybackPlanResolver resolver) {
         final plan = await resolver.resolvePlan(room: room, quality: asked);
+        LiveSiteError? planError;
         final read = plan.match<({List<LivePlayLine> lines, LivePlayQuality? served})?>(
-          (_) => null,
+          (error) {
+            planError = error;
+            return null;
+          },
           (value) => (
             lines: value.lines.toList(growable: false),
             served: resolveServedPlayQuality(plan: value, qualities: state.qualities, requested: asked),
           ),
         );
         if (read != null) return (lines: read.lines, served: read.served, error: null);
+        // The confirmed plan could not be read, and this open has already
+        // spent its fallback: hand the plan's own error back — the room
+        // surfaces it and the viewer's retry reaches the recovery, whose
+        // reads are not bounded.
+        if (_linesFallbackSpent) return (lines: const <LivePlayLine>[], served: null, error: planError);
+        _linesFallbackSpent = true;
       }
     }
     final plain = await capability.getLines(room: room, quality: asked);
@@ -1432,6 +1504,20 @@ final class RoomController extends Notifier<RoomState> {
       (error) => (lines: const <LivePlayLine>[], served: null, error: error),
       (lines) => (lines: lines, served: null, error: null),
     );
+  }
+
+  /// Starts the ingest the site's runtime info asks for (Bigo's per-segment
+  /// XOR), and answers the lines the player should open. A site without an
+  /// ingest need gets its lines back unchanged.
+  Future<List<LivePlayLine>> _ingested(LiveRoom room, List<LivePlayLine> lines) async {
+    final site = ref.read(sitesProvider).getById(room.ref.platform);
+    if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
+    final session = await startLiveIngest(ref: ref, site: site, line: lines.first);
+    if (session == null) return lines;
+    final previous = _ingest;
+    _ingest = session;
+    unawaited(previous?.close() ?? Future<void>.value());
+    return [ingestedLine(lines.first, session.inputUri), ...lines.skip(1)];
   }
 
   /// Names the tier that is actually playing.
@@ -1462,7 +1548,8 @@ final class RoomController extends Notifier<RoomState> {
     _session = session
       ..lineResolver = () => capability
           .getLines(room: room, quality: _wantedQuality)
-          .then((answer) => answer.fold((_) => const <LivePlayLine>[], (fresh) => fresh));
+          .then((answer) => answer.fold((_) => const <LivePlayLine>[], (fresh) => fresh))
+          .then((fresh) => _ingested(room, fresh));
     return session.playback;
   }
 
@@ -1498,8 +1585,8 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     if (epoch != _openEpoch) return;
-    final lines = resolved.lines;
-    if (lines.isEmpty) {
+    final resolvedLines = resolved.lines;
+    if (resolvedLines.isEmpty) {
       state = _with(lines: const [], error: 'the room has nothing to play');
       _reportOpenTiming(failed: true);
       return;
@@ -1507,6 +1594,22 @@ final class RoomController extends Notifier<RoomState> {
     // The platform's own word about what it served outranks the tier the room
     // asked for.
     if (resolved.served case final served?) _showServedQuality(served);
+    final List<LivePlayLine> lines;
+    try {
+      lines = await _ingested(room, resolvedLines);
+    } on Object catch (error) {
+      if (epoch == _openEpoch) {
+        state = _with(error: '$error');
+        _reportOpenTiming(failed: true);
+      }
+      return;
+    }
+    if (epoch != _openEpoch) {
+      final ingest = _ingest;
+      _ingest = null;
+      unawaited(ingest?.close() ?? Future<void>.value());
+      return;
+    }
     // A tier the platform cannot serve comes back as the media already
     // loaded: Steam lists one quality per variant of its master and answers
     // every one with the master itself, because its variants carry no audio
@@ -1534,8 +1637,13 @@ final class RoomController extends Notifier<RoomState> {
       _reportOpenTiming(failed: true);
     });
     _handles ??= playback.onHandleChanged.listen((handle) {
+      // The close of a parked room re-emits the handle it released, and a
+      // session reused by this room delivers it to this fresh subscription.
+      // A released engine is not a picture: this open's staged or committed
+      // player is.
+      if (handle.disposed) return;
       _lastHandle = handle;
-      state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
+      state = _with(handle: handle, player: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
       _watchVideoSize(handle);
       _watchFirstFrame(handle);
       // The player's pause and seek carry into the flying layer; the
@@ -1544,6 +1652,11 @@ final class RoomController extends Notifier<RoomState> {
       _pipeline?.bind(handle);
       unawaited(_applyAudioPreferences(handle));
       unawaited(_applyEnginePreferences(handle));
+      // A replay's recording runs to its end and starts over: the live
+      // pipeline reports no completed state of its own (a finished VOD would
+      // sit frozen until the stall watchdog re-opened the line), so the loop
+      // is what turns its end into a clean restart from zero.
+      if (state.room?.broadcast.isRecord ?? false) unawaited(_loopReplay(handle));
       // The line the engine actually took may not be the one asked for;
       // its lease is the one that has to be watched.
       _armLeaseRenewal();
@@ -1552,6 +1665,10 @@ final class RoomController extends Notifier<RoomState> {
     // input, so asking and hearing about it are the two ends of the segment
     // `opened` then splits.
     _openTiming?.markRequested();
+    // The sweep stages its engine without announcing it; the watcher hands
+    // that player to the picture from the moment it accepts a line, so the
+    // connect/probe window's frames are painted instead of dropped.
+    final watch = _watchStagedSurface();
     await playback.play(
       LiveSourceRequest(
         sources: roomSourcesOf(
@@ -1566,6 +1683,7 @@ final class RoomController extends Notifier<RoomState> {
       ),
       preferredBackend: ref.read(playerKernelBackendProvider).id,
     );
+    _stopStagedSurfaceWatch(watch);
     _armLeaseRenewal();
   }
 
@@ -1624,19 +1742,83 @@ final class RoomController extends Notifier<RoomState> {
     });
   }
 
-  /// The entry's first frame, from the only event that means it: the backend
-  /// reporting a decoded video frame.
+  /// The entry's first frame, from the events that mean a picture is coming.
   ///
-  /// The picture's geometry is not that. `videoSizeChanged` says the stream has
-  /// a size, which the demuxer learns while it is still probing — marking the
-  /// frame there hands the decoder's seconds to the network column and hides
-  /// the very split this measurement exists to make. A backend that cannot
-  /// report frames leaves the field as `-` rather than guessing.
+  /// On Windows the backend reports the decoded frame itself
+  /// (`PlayerAdapterVideoFrameProgress`, the estimated-vf-fps heartbeat) — the
+  /// truest mark, and the first choice. No other platform's adapter carries
+  /// that event, so the entry's `firstFrame=` field used to stay `-` there for
+  /// ever; on those platforms the stream's first reported size is the nearest
+  /// signal to a picture the engine gives, and it is what the stage's own
+  /// meaning counts ("the engine reported a picture with a size in it").
+  /// Whichever of the two arrives first marks the stage — `markFirstFrame`
+  /// keeps the first — so every platform answers the question the number
+  /// exists for, at the truthfulness its engine can deliver.
   void _watchFirstFrame(PlayerHandle handle) {
     unawaited(_frames?.cancel() ?? Future<void>.value());
     _frames = handle.adapterEvents.listen((event) {
-      if (event case PlayerAdapterVideoFrameProgress()) _openTiming?.markFirstFrame();
+      if (event case PlayerAdapterVideoFrameProgress() || PlayerAdapterVideoSizeChanged()) {
+        _openTiming?.markFirstFrame();
+      }
     });
+  }
+
+  /// Publishes the sweep's staged player as the picture's binding while the
+  /// open is still in flight, and answers the watch's generation for
+  /// [_stopStagedSurfaceWatch].
+  ///
+  /// The sweep commits a candidate only after verification — by which time the
+  /// first frame is already decoded — so a picture that mounts on the
+  /// committed handle alone leaves every frame of the connect/probe/decode
+  /// window in a texture nothing paints. The sweep creates that player without
+  /// announcing it, so this side polls the kernel's handle list until one
+  /// carries an opened source of this room's lines, and writes it to
+  /// [RoomState.player]: the surface mounts on it, and the first decoded frame
+  /// lands in a view that is already there. The committed handle is that same
+  /// object, so the mount survives the commit without a rebind.
+  int _watchStagedSurface() {
+    _surfaceWatch?.cancel();
+    final epoch = _openEpoch;
+    final generation = ++_surfaceWatchGeneration;
+    _surfaceWatch = Timer.periodic(_kStagedSurfacePoll, (timer) {
+      // A room that closed or moved on, or one whose player committed, has no
+      // staging left to watch.
+      if (!ref.mounted || epoch != _openEpoch) {
+        timer.cancel();
+        return;
+      }
+      final committed = state.handle;
+      if (committed != null) {
+        // The commit and the last publish are the same object; align them
+        // when a candidate died between the two (a poll that missed it).
+        if (!identical(state.player, committed)) state = _with(player: committed);
+        timer.cancel();
+        return;
+      }
+      // Only the newest opened candidate can be this room's: every open
+      // mints its own addresses, so another surface's player carries lines
+      // this room never asked for.
+      PlayerHandle? staged;
+      final lines = state.lines;
+      for (final handle in ref.read(playerKernelProvider).handles) {
+        final source = handle.source;
+        if (source == null || handle.disposed) continue;
+        if (lines.any((line) => Uri.tryParse(line.url) == source.uri)) staged = handle;
+      }
+      if (staged == null || identical(staged, state.player)) return;
+      state = _with(player: staged);
+    });
+    return generation;
+  }
+
+  /// Ends the watch [generation] began: the play it followed has returned
+  /// (committed, exhausted or superseded), so there is no staging of its own
+  /// left to publish. Null means this command started no watch; a newer watch
+  /// is left alone.
+  void _stopStagedSurfaceWatch(int? generation) {
+    if (generation == null || _surfaceWatchGeneration != generation) return;
+    _surfaceWatch?.cancel();
+    _surfaceWatch = null;
   }
 
   Future<void> _openDanmaku(LiveDanmakuProvider provider, LiveRoom room) async {
@@ -2037,6 +2219,7 @@ final class RoomController extends Notifier<RoomState> {
     LivePlayQuality? quality,
     PlayerCoreState? playback,
     PlayerHandle? handle,
+    PlayerHandle? player,
     bool? audioOnly,
     String? error,
     RoomChat? chat,
@@ -2048,6 +2231,7 @@ final class RoomController extends Notifier<RoomState> {
     quality: quality ?? state.quality,
     playback: playback ?? state.playback,
     handle: handle ?? state.handle,
+    player: player ?? state.player,
     audioOnly: audioOnly ?? state.audioOnly,
     error: error,
     chat: chat ?? state.chat,
@@ -2088,11 +2272,11 @@ final class RoomController extends Notifier<RoomState> {
     _geometry = null;
     _detailRefresh?.cancel();
     _detailRefresh = null;
-    if (ref.mounted) ref.read(roomChatNoticeProvider.notifier).clear();
     _leaseRenewal?.cancel();
     _leaseRenewal = null;
     _chatRetry?.cancel();
     _chatRetry = null;
+    _stopStagedSurfaceWatch(_surfaceWatchGeneration);
     _chatAttempts = 0;
     final session = _session;
     _session = null;
@@ -2106,6 +2290,9 @@ final class RoomController extends Notifier<RoomState> {
     }
     _preparedHandle = null;
     _lastHandle = null;
+    final ingest = _ingest;
+    _ingest = null;
+    unawaited(ingest?.close() ?? Future<void>.value());
     unawaited(_closeDanmaku());
   }
 

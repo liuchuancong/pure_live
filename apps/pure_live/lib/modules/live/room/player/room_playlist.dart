@@ -70,6 +70,7 @@ final class RoomPlaylistController extends Notifier<RoomPlaylist?> {
   /// The write therefore waits for the frame, and re-checks: a room opened
   /// meanwhile owns the list now.
   void clearIfCurrent(String key) {
+    if (!ref.mounted) return;
     if (state?.current.ref.identityKey != key) return;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (ref.mounted && state?.current.ref.identityKey == key) clear();
