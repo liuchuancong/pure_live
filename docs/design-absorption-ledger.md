@@ -32,7 +32,7 @@
 - ⬜ 断网态机：刷新无应答(连接/TLS/超时)=断网，不切线不扣预算，2s 探测、20s 宽限发布 network_lost，恢复即新预算重开原线路。参考 `session.dart:1632-1735`。
 
 ## W5 多画面与录制 UX
-- ⬜ 多画面预算：隐藏格 setPresentationVisible(false)+audioOnly、小格最低清晰度、晋升换清晰度、单弹幕连接按房间身份、进页"恢复上次"提议制、格子稳定 id+GlobalKey 防重建。参考 `multiview_controller.dart:857-871`、`wall.dart:85-101`。
+- 🟡 多画面预算（c6827016a）：✅ 小格最低清晰度/晋升换质（tap 升格+原大格回落）/进页"恢复上次？"提议制（拒绝=清文档）；⬜ 隐藏格停解码（v2 各布局全可见无消费者）与单弹幕连接（v2 多画面尚无弹幕）。参考 `multiview_controller.dart:857-871`、`wall.dart:85-101`。
 - ⬜ AutoRoomSwitch：只认真实状态、先刷新当前房两次、候选新鲜详情确认+仍需关注中、30s 健康复位、组内同步预约防撞。参考 `shared/rooms/auto_room_switch.dart`。
 - ✅ 录制显示态单表（938f619c2）：RecordingDisplayState 六态纯函数（word/tone/sortRank/showsOnBar），bar 与录制中心共用；v2 无任务槽位模型故 queued/preparing/深链不适用。参考 `shared/record/record_state.dart`。
 
