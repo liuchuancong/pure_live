@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:live_websocket/live_websocket.dart';
 
@@ -31,17 +32,37 @@ typedef DanmakuLost = void Function(String cause);
 final class DanmakuSocket {
   /// A socket for [uri] running [onHandshake] per connection, forwarding
   /// frames to [onFrame] and reporting an unrecoverable loss through
-  /// [onLost].
+  /// [onLost]. With [endpoints], every restart takes the next one around the
+  /// list — an edge that is itself down does not get retried forever — and
+  /// the socket only reports a loss once its own rotation is exhausted.
   DanmakuSocket({
-    required this.uri,
     required this.config,
     required this.onHandshake,
     required this.onFrame,
     required this.onLost,
-  });
+    required Uri uri,
+    List<Uri>? endpoints,
+    this.maxRotationAttempts = 8,
+    this.rotationBaseDelay = const Duration(seconds: 1),
+    this.channelFactory,
+  }) : endpoints = (endpoints == null || endpoints.isEmpty) ? <Uri>[uri] : endpoints;
 
-  /// The danmaku endpoint.
-  final Uri uri;
+  /// Builds the raw channel; null uses the platform default. Tests inject
+  /// one.
+  final WebSocketChannelFactory? channelFactory;
+
+  /// The danmaku endpoints, first to try first.
+  final List<Uri> endpoints;
+
+  /// The endpoint the rotation is at now (the first one before it moved).
+  Uri get uri => endpoints[_attempt % endpoints.length];
+
+  /// Failures in a row across the rotation before the loss is reported.
+  final int maxRotationAttempts;
+
+  /// The wait before the next endpoint; it grows by one step of itself
+  /// after every full round of the list, at most six.
+  final Duration rotationBaseDelay;
 
   /// Transport, heartbeat and reconnection settings for this protocol.
   final WebSocketConfig config;
@@ -62,6 +83,7 @@ final class DanmakuSocket {
   bool _live = false;
   bool _wasConnected = false;
   String? _lastError;
+  int _attempt = 0;
 
   /// Whether the socket holds a connection right now.
   bool get isConnected => _client?.isConnected ?? false;
@@ -71,7 +93,19 @@ final class DanmakuSocket {
     await stop();
     _wasConnected = false;
     _lastError = null;
-    final client = LiveWebSocketClient(uri: uri, config: config);
+    _attempt = 0;
+    final opened = await _openCurrent();
+    return opened;
+  }
+
+  /// Opens the socket on the endpoint the rotation is at now; false when
+  /// that endpoint could not be reached.
+  Future<bool> _openCurrent() async {
+    final client = LiveWebSocketClient(
+      uri: endpoints[_attempt % endpoints.length],
+      config: config,
+      channelFactory: channelFactory,
+    );
     _client = client;
     // Subscribed before connect: the frame stream drops what arrives first.
     _frames = client.messages.listen((frame) {
@@ -87,10 +121,16 @@ final class DanmakuSocket {
         onHandshake(this);
         return;
       }
-      // A socket that was live and whose reconnects ran out. A first attempt
-      // that never connected is the caller's to report, not a loss.
+      // A socket that was live and whose reconnects ran out. With several
+      // endpoints the socket rotates through the rest before giving up; a
+      // first attempt that never connected is the caller's to report, not a
+      // loss.
       if (state == WebSocketConnectionState.disconnected && _wasConnected) {
         _live = false;
+        if (endpoints.length > 1 && _attempt + 1 < maxRotationAttempts) {
+          unawaited(_rotateAfterLoss());
+          return;
+        }
         onLost(_lastError ?? 'connection closed');
         unawaited(stop());
       }
@@ -102,10 +142,28 @@ final class DanmakuSocket {
     // here decided "no connection" for a socket that had just opened and tore it
     // down — every site's danmaku then retried forever.
     if (!client.isConnected) {
-      await stop();
-      return false;
+      return await _afterFailedAttempt();
     }
     return true;
+  }
+
+  /// The next endpoint after a failed or lost one, while the rotation has
+  /// attempts left; null when it is exhausted and the loss is the caller's.
+  Future<bool> _afterFailedAttempt() async {
+    await stop();
+    _attempt++;
+    if (endpoints.length <= 1 || _attempt >= maxRotationAttempts) {
+      return false;
+    }
+    // A full round of the list means the edges themselves look down: the
+    // wait grows a step, and stops growing after six.
+    final round = _attempt ~/ endpoints.length;
+    final delay = rotationBaseDelay * (1 + math.min(round, 5));
+    _live = true;
+    await Future<void>.delayed(delay);
+    if (!_live) return false;
+    await _openCurrent();
+    return _client?.isConnected ?? false;
   }
 
   /// Sends [data] while connected; a sink that is not ready is the transport's
@@ -118,6 +176,20 @@ final class DanmakuSocket {
     } on Object {
       // A send racing a dropped connection is not the session's problem.
     }
+  }
+
+  /// The next endpoint after a live connection was lost: advance the
+  /// rotation, wait out the round's step, and open again. A loss is only
+  /// reported when the rotation itself is exhausted.
+  Future<void> _rotateAfterLoss() async {
+    await stop();
+    _attempt++;
+    final round = _attempt ~/ endpoints.length;
+    final delay = rotationBaseDelay * (1 + math.min(round, 5));
+    _live = true;
+    await Future<void>.delayed(delay);
+    if (!_live) return;
+    await _openCurrent();
   }
 
   /// Stops the socket without reporting a loss — an explicit disconnect, or a
