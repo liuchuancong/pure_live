@@ -178,6 +178,41 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
     await kept?.release();
   }
 
+  /// One full visitor visit that always closes its page: the identity
+  /// bootstrap's shape. The site's own RWP socket lives in that page, and
+  /// it must not stay open to compete with the app's push socket for the
+  /// same visitor seat — the identity cache, not the page, serves repeats.
+  Future<Object?> _runOneShot(Uri page, String script, CancelToken? cancel) async {
+    if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+    if (route() is HttpProxyRoute) {
+      throw const ProtocolFailure('the Xiaohongshu visitor browser cannot use the configured proxy');
+    }
+    final run = browser.run(page: page, script: script, cancel: cancel);
+    try {
+      final value = await Future.any([
+        run.timeout(_visitTimeout),
+        if (cancel != null) cancel.whenCancel.then<Object?>((_) => throw const _Cancelled()),
+      ]);
+      if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+      return value;
+    } on _Cancelled {
+      // The page still finishes closing itself; its late result is dropped.
+      unawaited(run.then<void>((_) {}, onError: (Object _) {}));
+      throw const CancelledFailure();
+    } on TimeoutException catch (error) {
+      unawaited(run.then<void>((_) {}, onError: (Object _) {}));
+      _noteIssue(error, 'running the visitor script');
+      throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
+    } on CancelledFailure {
+      rethrow;
+    } on Object catch (error) {
+      unawaited(run.then<void>((_) {}, onError: (Object _) {}));
+      _noteIssue(error, 'running the visitor script');
+      // Plugin and JS errors can include credentials. Keep diagnostics fixed.
+      throw const ConnectFailure('the Xiaohongshu visitor page failed');
+    }
+  }
+
   static const Duration _visitTimeout = Duration(seconds: 30);
 
   /// How long a kept visitor page stays open between requests.
@@ -217,7 +252,7 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
       final age = _now().difference(_identityAt!);
       if (!age.isNegative && age < const Duration(minutes: 5)) return kept;
     }
-    final value = await _run(XiaohongshuEndpoints.roomUrl(roomId), identityScript, cancel);
+    final value = await _runOneShot(XiaohongshuEndpoints.roomUrl(roomId), identityScript, cancel);
     if (value is! Map) throw const XiaohongshuFailure(XiaohongshuFailureKind.apiChanged, 'Missing visitor identity');
     String field(String key) {
       final item = value[key];

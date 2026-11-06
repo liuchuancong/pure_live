@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/danmaku/xiaohongshu_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_guest.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -131,10 +132,10 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
     final XiaohongshuPushIdentity identity;
     try {
       identity = await guest.pushIdentity(args.roomId, cancel: cancel);
-    } on Object {
-      return const LiveSiteError.authentication(
+    } on Object catch (error) {
+      return LiveSiteError.authentication(
         siteId: xiaohongshuSiteId,
-        message: 'the visitor bootstrap gave no push identity',
+        message: 'the visitor bootstrap gave no push identity (${_causeOf(error)})',
       );
     }
     if (generation != _generation || _disposed || cancel.isCancelled) {
@@ -259,8 +260,8 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
     final XiaohongshuPushIdentity identity;
     try {
       identity = await guest.pushIdentity(args.roomId, refresh: true, cancel: cancel);
-    } on Object {
-      _terminate('push credentials unavailable');
+    } on Object catch (error) {
+      _terminate('push credentials unavailable (${_causeOf(error)})');
       return;
     }
     if (generation != _generation || _disposed || (cancel?.isCancelled ?? false)) return;
@@ -397,4 +398,12 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
     await _teardownSocket();
     await _events.close();
   }
+
+  /// What a swallowed bootstrap failure may say: the fixed failure texts
+  /// carry no page content or credentials, and an unexpected error names
+  /// its type alone.
+  static String _causeOf(Object error) => switch (error) {
+    TransportFailure() || XiaohongshuFailure() => error.toString(),
+    _ => error.runtimeType.toString(),
+  };
 }
