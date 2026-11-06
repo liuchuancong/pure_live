@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
@@ -106,6 +106,11 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
         kept = null;
       }
     }
+    // Whether this call opened the page itself: a page reused from an
+    // earlier burst can have died since the last visit, and that failure
+    // retries once on a fresh page — a fresh page's own failure is the
+    // environment's answer and stands as thrown.
+    final reused = kept != null;
     if (kept == null) {
       final opening = browser.keep(page: page, cancel: cancel);
       try {
@@ -113,14 +118,15 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
       } on _Cancelled {
         unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
         throw const CancelledFailure();
-      } on TimeoutException {
+      } on TimeoutException catch (error) {
         unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
+        _noteIssue(error, 'opening the visitor page');
         throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
       } on CancelledFailure {
         rethrow;
-      } on Object {
-        // Plugin and JS errors can include credentials. Keep diagnostics fixed.
+      } on Object catch (error) {
         unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
+        _noteIssue(error, 'opening the visitor page');
         throw const ConnectFailure('the Xiaohongshu visitor page failed');
       }
       _kept = kept;
@@ -139,18 +145,30 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
     } on _Cancelled {
       unawaited(answer.then<void>((_) {}, onError: (Object _) {}));
       throw const CancelledFailure();
-    } on TimeoutException {
+    } on TimeoutException catch (error) {
       // A stuck page is dropped, so the next request opens a fresh one.
       unawaited(answer.then<void>((_) {}, onError: (Object _) {}));
       await _dropKept();
+      if (reused) return await _runOnKept(page, script, cancel);
+      _noteIssue(error, 'running the visitor script');
       throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
     } on CancelledFailure {
       rethrow;
-    } on Object {
+    } on Object catch (error) {
       unawaited(answer.then<void>((_) {}, onError: (Object _) {}));
       await _dropKept();
+      if (reused) return await _runOnKept(page, script, cancel);
+      _noteIssue(error, 'running the visitor script');
+      // Plugin and JS errors can include credentials. Keep diagnostics fixed.
       throw const ConnectFailure('the Xiaohongshu visitor page failed');
     }
+  }
+
+  /// Names the failing stage and the error's type, never its message: the
+  /// plugin's own text can carry page content or credentials, and the
+  /// visitor's diagnostics stay fixed — the console gets the shape only.
+  void _noteIssue(Object error, String stage) {
+    debugPrint('xhs guest: ${error.runtimeType} while $stage');
   }
 
   Future<void> _dropKept() async {

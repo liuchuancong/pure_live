@@ -10,6 +10,7 @@ final class _Browser implements XiaohongshuGuestBrowser {
   final calls = <({Uri page, String script, CancelToken? cancel})>[];
   final opens = <Uri>[];
   final kept = <_KeptPage>[];
+  final poisoned = <_KeptPage>{};
   Object? answer = '{}';
 
   @override
@@ -49,6 +50,7 @@ final class _KeptPage implements XiaohongshuKeptGuestPage {
   @override
   Future<Object?> run({required String script, CancelToken? cancel}) async {
     browser.calls.add((page: page, script: script, cancel: cancel));
+    if (browser.poisoned.contains(this)) throw Exception('this kept page died since the last visit');
     return await browser._answer();
   }
 
@@ -94,14 +96,23 @@ void main() {
     await guest.categories();
     expect(browser.opens.length, 2);
     expect(browser.kept[0].released, isTrue);
-    // A failed run drops the page; the next request opens a fresh one.
+    // A failing run on a reused page retries once on a fresh page; while
+    // the answer stays broken both attempts fail, so two pages were spent.
     browser.answer = Exception('stale page');
     await expectLater(guest.categories(), throwsA(isA<ConnectFailure>()));
     expect(browser.kept[1].released, isTrue);
+    expect(browser.kept[2].released, isTrue);
     browser.answer = '{}';
     await guest.categories();
-    expect(browser.opens.length, 3);
-    expect(browser.kept[2].released, isFalse);
+    expect(browser.opens.length, 4);
+    expect(browser.kept[3].released, isFalse);
+    // A page that died since the last visit recovers transparently: the
+    // poisoned reuse fails, the fresh retry answers.
+    browser.poisoned.add(browser.kept[3]);
+    await guest.categories();
+    expect(browser.opens.length, 5);
+    expect(browser.kept[3].released, isTrue);
+    expect(browser.kept[4].released, isFalse);
   });
 
   test('cancel before creation avoids a browser; cancelled result is suppressed', () async {
