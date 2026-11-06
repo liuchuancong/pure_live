@@ -15,7 +15,8 @@ import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart';
 /// The curve is the theory layer's prediction, recomputed from the same
 /// configuration the handles show — the two cannot drift apart because
 /// neither holds state. Dragging asks the controller for the new gain and
-/// the curve follows on the rebuild.
+/// the curve follows on the rebuild; the band being dragged reads its gain
+/// in a chip above the knob, and a double tap brings a band back to zero.
 final class MusicEqEditor extends ConsumerWidget {
   /// The editor shown inside the sound-effect page.
   const MusicEqEditor({super.key});
@@ -58,15 +59,25 @@ final class MusicEqEditor extends ConsumerWidget {
 
 /// The curve and the band handles share one board: the graph is painted from
 /// the configuration, and a gesture column per band turns vertical drags
-/// into gain changes.
-final class _EqBoard extends ConsumerWidget {
+/// into gain changes. The board owns the one fact the painters cannot hold —
+/// which band a finger is on — and hands it to that band's column, so its
+/// knob reads its gain and wears the focus ring.
+final class _EqBoard extends ConsumerStatefulWidget {
   const _EqBoard({required this.eq, required this.onBandChanged});
 
   final MusicEqConfig eq;
   final void Function(int band, double gain) onBandChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_EqBoard> createState() => _EqBoardState();
+}
+
+final class _EqBoardState extends ConsumerState<_EqBoard> {
+  /// The band a finger is on now; null between gestures.
+  int? _dragBand;
+
+  @override
+  Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -75,7 +86,7 @@ final class _EqBoard extends ConsumerWidget {
           children: [
             Positioned.fill(
               child: CustomPaint(
-                painter: _EqCurvePainter(eq: eq, colors: colors),
+                painter: _EqCurvePainter(eq: widget.eq, colors: colors),
               ),
             ),
             Positioned.fill(
@@ -84,11 +95,13 @@ final class _EqBoard extends ConsumerWidget {
                   for (var band = 0; band < kMusicEqFrequencies.length; band++)
                     Expanded(
                       child: _EqBandHandle(
-                        gain: eq.gains[band],
+                        gain: widget.eq.gains[band],
                         size: size,
                         colors: colors,
-                        enabled: eq.enabled,
-                        onChanged: (gain) => onBandChanged(band, gain),
+                        enabled: widget.eq.enabled,
+                        dragging: _dragBand == band,
+                        onDragState: (active) => setState(() => _dragBand = active ? band : null),
+                        onChanged: (gain) => widget.onBandChanged(band, gain),
                       ),
                     ),
                 ],
@@ -164,13 +177,17 @@ final class _EqCurvePainter extends CustomPainter {
 
 /// One band's drag column: a faint track and the knob, mapped top-to-bottom
 /// over the gain range. A drag reports continuously so the curve and the
-/// chain follow the finger.
+/// chain follow the finger; while it lasts the band reads its gain in a chip
+/// above the knob and the knob carries the focus ring. A double tap brings
+/// the band back to zero — the reset every band editor offers.
 final class _EqBandHandle extends StatelessWidget {
   const _EqBandHandle({
     required this.gain,
     required this.size,
     required this.colors,
     required this.enabled,
+    required this.dragging,
+    required this.onDragState,
     required this.onChanged,
   });
 
@@ -178,6 +195,14 @@ final class _EqBandHandle extends StatelessWidget {
   final Size size;
   final DsColors colors;
   final bool enabled;
+
+  /// Whether this column is the finger's band — the chip and the ring ride
+  /// on it.
+  final bool dragging;
+
+  /// Raises and lowers this band's finger state on the board.
+  final ValueChanged<bool> onDragState;
+
   final ValueChanged<double> onChanged;
 
   static const double _knobRadius = 6;
@@ -188,29 +213,85 @@ final class _EqBandHandle extends StatelessWidget {
   double _gainOf(double y, double height) => (kMusicEqMinGain + (1 - y / height) * (kMusicEqMaxGain - kMusicEqMinGain))
       .clamp(kMusicEqMinGain, kMusicEqMaxGain);
 
+  /// The gain as the chip says it: a sign and one decimal, the axis's own
+  /// unit implied.
+  String get _label => '${gain > 0 ? '+' : ''}${gain.toStringAsFixed(1)}';
+
   @override
   Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
     final y = _yOf(gain, size.height);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
+      onVerticalDragStart: enabled
+          ? (details) {
+              onDragState(true);
+              onChanged(_gainOf(details.localPosition.dy, size.height));
+            }
+          : null,
       onVerticalDragUpdate: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
+      onVerticalDragEnd: enabled ? (_) => onDragState(false) : null,
+      onVerticalDragCancel: enabled ? () => onDragState(false) : null,
       onTapDown: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _BandPainter(knobY: y, knobRadius: _knobRadius, colors: colors, enabled: enabled),
+      onDoubleTap: enabled ? () => onChanged(0) : null,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CustomPaint(
+            size: Size.infinite,
+            painter: _BandPainter(
+              knobY: y,
+              knobRadius: _knobRadius,
+              colors: colors,
+              enabled: enabled,
+              dragging: dragging,
+            ),
+          ),
+          // The dragged band's own reading: one chip above the knob, kept on
+          // the board even when the knob nears its top edge.
+          if (dragging)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: math.max(0, y - 30),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
+                  decoration: DsBoxDecoration(
+                    color: colors.accentTint,
+                    borderRadius: BorderRadius.circular(theme.radii.control(20)),
+                  ),
+                  child: Text(
+                    _label,
+                    style: theme.typography.numeric(
+                      theme.typography.caption.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-/// The knob and its vertical track, painted in the band's own column.
+/// The knob and its vertical track, painted in the band's own column; the
+/// finger's band draws a ring around its knob.
 final class _BandPainter extends CustomPainter {
-  const _BandPainter({required this.knobY, required this.knobRadius, required this.colors, required this.enabled});
+  const _BandPainter({
+    required this.knobY,
+    required this.knobRadius,
+    required this.colors,
+    required this.enabled,
+    required this.dragging,
+  });
 
   final double knobY;
   final double knobRadius;
   final DsColors colors;
   final bool enabled;
+  final bool dragging;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -221,10 +302,29 @@ final class _BandPainter extends CustomPainter {
     final x = size.width / 2;
     canvas.drawLine(Offset(x, 8), Offset(x, size.height - 8), track);
 
+    final knobY = this.knobY.clamp(8.0, size.height - 8.0);
     final knobPaint = Paint()..color = enabled ? colors.accent : colors.border;
-    canvas.drawCircle(Offset(x, knobY.clamp(8.0, size.height - 8.0)), knobRadius, knobPaint);
+    if (dragging) {
+      // The finger's band: a tinted halo under the knob and the ring around
+      // it — one column visibly held, the other nine quiet.
+      final halo = Offset(x, knobY);
+      canvas.drawCircle(halo, _dragRadius, Paint()..color = colors.accentTint);
+      canvas.drawCircle(
+        halo,
+        _dragRadius,
+        Paint()
+          ..color = colors.accent
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+    canvas.drawCircle(Offset(x, knobY), knobRadius, knobPaint);
   }
 
+  /// The focus ring's radius: a knob that grows a little under the finger.
+  static const double _dragRadius = 10;
+
   @override
-  bool shouldRepaint(_BandPainter oldDelegate) => oldDelegate.knobY != knobY || oldDelegate.enabled != enabled;
+  bool shouldRepaint(_BandPainter oldDelegate) =>
+      oldDelegate.knobY != knobY || oldDelegate.enabled != enabled || oldDelegate.dragging != dragging;
 }
