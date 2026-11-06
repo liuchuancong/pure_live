@@ -22,9 +22,9 @@ import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show k
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
 import 'package:pure_live/shared/shared.dart'
     show
-        HuyaVideoGlyph,
-        HuyaVideoIcon,
+        GlyphIcon,
         LiveWindow,
+        PlayerGlyph,
         avatarInitials,
         cachedImage,
         kAllPlatforms,
@@ -210,7 +210,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
             ),
             (false, false) when filtered.isEmpty => Center(
               child: DsEmptyState(
-                icon: const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
+                icon: const GlyphIcon(PlayerGlyph.recordCamera),
                 title: Text(takes.isEmpty ? t.recorder.emptyLibraryTitle : t.recorder.emptySearchTitle),
                 description: Text(
                   takes.isEmpty ? t.recorder.emptyLibraryDescription : t.recorder.emptySearchDescription,
@@ -811,7 +811,7 @@ final class _TakeRow extends StatelessWidget {
                     DsButton(
                       variant: DsButtonVariant.primary,
                       size: DsSize.sm,
-                      leading: const HuyaVideoIcon(HuyaVideoGlyph.play, size: 14),
+                      leading: const GlyphIcon(PlayerGlyph.play, size: 14),
                       onPressed: ok ? onPlay : null,
                       child: Text(t.recorder.playRecording),
                     ),
@@ -998,7 +998,7 @@ final class _TakeCoverState extends ConsumerState<_TakeCover> {
               semanticLabel: widget.take.roomTitle,
               fallback: DecoratedBox(
                 decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
-                child: Center(child: HuyaVideoIcon(HuyaVideoGlyph.recordCamera, size: 20, color: colors.accentText)),
+                child: Center(child: GlyphIcon(PlayerGlyph.recordCamera, size: 20, color: colors.accentText)),
               ),
             ),
           ),

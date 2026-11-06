@@ -123,7 +123,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       description: live ? t.recorder.addBodyLive(title: title) : t.recorder.addBodyOffline(title: title),
       confirmLabel: live ? t.recorder.addStartNow : t.recorder.addArm,
       cancelLabel: t.common.cancel,
-      icon: const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
+      icon: const GlyphIcon(PlayerGlyph.recordCamera),
     );
     if (!confirmed || !mounted) return;
     final id = '${room.ref.platform}:${room.ref.roomId}';
@@ -489,7 +489,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               child: attention.isEmpty
                   ? Center(
                       child: DsEmptyState(
-                        icon: const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
+                        icon: const GlyphIcon(PlayerGlyph.recordCamera),
                         title: Text(
                           total == 0
                               ? t.recorder.emptyTitle
@@ -1228,7 +1228,7 @@ final class _TaskCard extends ConsumerWidget {
         : DsButton(
             variant: DsButtonVariant.primary,
             size: DsSize.sm,
-            leading: const HuyaVideoIcon(HuyaVideoGlyph.play, size: 14),
+            leading: const GlyphIcon(PlayerGlyph.play, size: 14),
             onPressed: onStartNow,
             child: Text(t.recorder.startRecording),
           );

@@ -285,8 +285,8 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                             ),
                             MediaBarButton(
                               icon: room.playback.playing ? DsIcons.pause : DsIcons.play,
-                              glyphBuilder: (_, color, size) => HuyaVideoIcon(
-                                room.playback.playing ? HuyaVideoGlyph.pause : HuyaVideoGlyph.play,
+                              glyphBuilder: (_, color, size) => GlyphIcon(
+                                room.playback.playing ? PlayerGlyph.pause : PlayerGlyph.play,
                                 size: size,
                                 color: color,
                               ),

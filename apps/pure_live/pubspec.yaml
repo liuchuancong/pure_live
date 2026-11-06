@@ -163,7 +163,7 @@ flutter:
   assets:
     - assets/tray/ # 系统托盘图标
     - assets/icon/ # 启动页的品牌图（母图）
-    - assets/app/icons/huya/ # 播放器的虎牙图标集（白模可染色）
+    - assets/app/icons/player/ # 播放器图标集（白模可染色）
     - assets/preview/ # 设置预览页的舞台背景
     - assets/fonts/free_font.json # 国内免费字体清单（jaywcjlove/free-font）
     - assets/fonts/google_font_categories.json # Google 字体分类（font_picker 的 constants）

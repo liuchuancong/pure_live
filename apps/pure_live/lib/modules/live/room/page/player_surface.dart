@@ -1261,6 +1261,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     child: PlayerGlassPill(
                       child: PlayerBarButton(
                         icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                        glyphBuilder: (_, color, size) =>
+                            GlyphIcon(_locked ? PlayerGlyph.unlocked : PlayerGlyph.locked, size: size, color: color),
                         label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
                         size: 50,
                         iconSize: 22,
@@ -1707,6 +1709,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                   items: widget.menuItems,
                   builder: (context, controller, _) => PlayerBarButton(
                     icon: DsIcons.ellipsisVertical,
+                    glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.more, size: size, color: color),
                     label: t.common.more,
                     onPressed: () {
                       widget.onWake();
@@ -1897,42 +1900,25 @@ final class _DanmakuBarCluster extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
     final settings = ref.watch(playbackSettingsProvider);
-    final side = PlayerBarTier.controlSize(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s4,
       children: [
-        DsPressable(
-          semanticLabel: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+        PlayerBarButton(
+          icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+          glyphBuilder: (_, color, size) =>
+              GlyphIcon(settings.danmakuVisible ? PlayerGlyph.barrageOn : PlayerGlyph.barrageOff, size: size, color: color),
+          label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+          selected: settings.danmakuVisible,
           onPressed: () {
             onWake();
             unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible));
           },
-          builder: (context, states, _) {
-            final on = settings.danmakuVisible;
-            return Container(
-              width: side,
-              height: side,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: on ? theme.colors.accent : const Color(0x00000000),
-                border: on ? null : Border.all(color: const Color(0x59FFFFFF)),
-              ),
-              child: Text(
-                t.room.danmakuMark,
-                style: theme.typography.caption.copyWith(
-                  color: on ? theme.colors.onAccent : _onVideoMuted,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            );
-          },
         ),
         PlayerBarButton(
           icon: DsIcons.slidersHorizontal,
+          glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.barrageSettings, size: size, color: color),
           label: t.settings.navDanmaku,
           onPressed: () {
             onWake();
@@ -2113,6 +2099,7 @@ final class _PresentationCluster extends ConsumerWidget {
             PlayerGlassPill(
               child: PlayerBarButton(
                 icon: DsIcons.disc,
+                glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.recordCamera, size: size, color: color),
                 label: recording ? t.room.stopRecording : t.room.record,
                 selected: recording,
                 onPressed: () {
@@ -2125,6 +2112,9 @@ final class _PresentationCluster extends ConsumerWidget {
             PlayerGlassPill(
               child: PlayerBarButton(
                 icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+                glyphBuilder: (context, color, size) => presentation == PresentationMode.pip
+                    ? DsIcon(DsIcons.pictureInPictureExit, size: size, color: color)
+                    : GlyphIcon(PlayerGlyph.miniVideo, size: size, color: color),
                 label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
                 selected: presentation == PresentationMode.pip,
                 onPressed: () {
@@ -2166,6 +2156,7 @@ final class _PresentationCluster extends ConsumerWidget {
           else if (showRecord)
             PlayerBarButton(
               icon: DsIcons.disc,
+              glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.recordCamera, size: size, color: color),
               label: t.room.record,
               onPressed: () {
                 onWake();
@@ -2175,6 +2166,9 @@ final class _PresentationCluster extends ConsumerWidget {
           if (showPip)
             PlayerBarButton(
               icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+              glyphBuilder: (context, color, size) => presentation == PresentationMode.pip
+                  ? DsIcon(DsIcons.pictureInPictureExit, size: size, color: color)
+                  : GlyphIcon(PlayerGlyph.miniVideo, size: size, color: color),
               label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
               selected: presentation == PresentationMode.pip,
               onPressed: () {
@@ -2436,22 +2430,22 @@ final class _PipBar extends ConsumerWidget {
             onStop: () => unawaited(toggleRoomRecording(context, ref)),
           ),
           _PipButton(
-            icon: HuyaVideoIcon(playing ? HuyaVideoGlyph.pause : HuyaVideoGlyph.play, size: 14, color: _onVideoMuted),
+            icon: GlyphIcon(playing ? PlayerGlyph.pause : PlayerGlyph.play, size: 14, color: _onVideoMuted),
             label: playing ? t.room.pause : t.room.play,
             onPressed: () => unawaited(controller.togglePlayPause()),
           ),
           _PipButton(
-            icon: DsIcon(muted ? DsIcons.volumeOff : DsIcons.volume, size: 14, color: _onVideoMuted),
+            icon: GlyphIcon(muted ? PlayerGlyph.volumeOff : PlayerGlyph.volumeOn, size: 14, color: _onVideoMuted),
             label: muted ? t.room.unmute : t.room.mute,
             onPressed: () => unawaited(controller.setMuted(value: !muted)),
           ),
           _PipButton(
-            icon: const HuyaVideoIcon(HuyaVideoGlyph.miniVideo, size: 14, color: _onVideoMuted),
+            icon: const GlyphIcon(PlayerGlyph.miniVideo, size: 14, color: _onVideoMuted),
             label: t.room.pipOff,
             onPressed: onRestore,
           ),
           _PipButton(
-            icon: const DsIcon(DsIcons.x, size: 14, color: _onVideoMuted),
+            icon: const GlyphIcon(PlayerGlyph.close, size: 14, color: _onVideoMuted),
             label: t.common.close,
             onPressed: onClose,
           ),
@@ -2670,7 +2664,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               PlayerBarButton(
                 icon: playing ? DsIcons.pause : DsIcons.play,
                 glyphBuilder: (_, color, size) =>
-                    HuyaVideoIcon(playing ? HuyaVideoGlyph.pause : HuyaVideoGlyph.play, size: size, color: color),
+                    GlyphIcon(playing ? PlayerGlyph.pause : PlayerGlyph.play, size: size, color: color),
                 label: playing ? t.room.pause : t.room.play,
                 autofocus: widget.autofocusPlay,
                 onPressed: () {
@@ -2682,6 +2676,8 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               // be silencable with one thumb.
               PlayerBarButton(
                 icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+                glyphBuilder: (_, color, size) =>
+                    GlyphIcon(muted ? PlayerGlyph.volumeOff : PlayerGlyph.volumeOn, size: size, color: color),
                 label: muted ? t.room.unmute : t.room.mute,
                 onPressed: () {
                   widget.onWake();
@@ -2740,10 +2736,10 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               if (wide && !pip && _desktop && player != null)
                 PlayerBarButton(
                   icon: presentation == PresentationMode.windowFullscreen ? DsIcons.shrink : DsIcons.expand,
-                  glyphBuilder: (_, color, size) => HuyaVideoIcon(
+                  glyphBuilder: (_, color, size) => GlyphIcon(
                     presentation == PresentationMode.windowFullscreen
-                        ? HuyaVideoGlyph.fullscreenExit
-                        : HuyaVideoGlyph.fullscreenEnter,
+                        ? PlayerGlyph.fullscreenExit
+                        : PlayerGlyph.fullscreenEnter,
                     size: size,
                     color: color,
                   ),
@@ -2775,8 +2771,8 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               if (!pip && player != null)
                 PlayerBarButton(
                   icon: immersive ? DsIcons.minimize : DsIcons.maximize,
-                  glyphBuilder: (_, color, size) => HuyaVideoIcon(
-                    immersive ? HuyaVideoGlyph.fullscreenExit : HuyaVideoGlyph.fullscreenEnter,
+                  glyphBuilder: (_, color, size) => GlyphIcon(
+                    immersive ? PlayerGlyph.fullscreenExit : PlayerGlyph.fullscreenEnter,
                     size: size,
                     color: color,
                   ),

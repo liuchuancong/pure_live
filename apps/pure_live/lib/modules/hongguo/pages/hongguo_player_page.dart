@@ -1433,7 +1433,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             DsButton(
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
-              leading: const DsIcon(DsIcons.share, size: 16),
+              leading: const GlyphIcon(PlayerGlyph.share, size: 16),
               onPressed: () => unawaited(_shareSeries()),
               child: Text(t.hongguo.share),
             ),
@@ -1584,6 +1584,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               ),
             _RailAction(
               icon: DsIcons.star,
+              glyph: const GlyphIcon(PlayerGlyph.star, size: 20, color: playerInk),
               label: favored ? t.hongguo.favorited : t.hongguo.favorite,
               count: meta.followedCount > 0 ? AudienceFormat.format(meta.followedCount) : null,
               selected: favored,
@@ -1596,7 +1597,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 count: episode.commentCount > 0 ? AudienceFormat.format(episode.commentCount) : null,
                 onPressed: _openComments,
               ),
-            _RailAction(icon: DsIcons.share, label: t.hongguo.share, onPressed: () => unawaited(_shareSeries())),
+            _RailAction(icon: DsIcons.share, glyph: const GlyphIcon(PlayerGlyph.share, size: 20, color: playerInk), label: t.hongguo.share, onPressed: () => unawaited(_shareSeries())),
           ],
         );
       },
@@ -1949,6 +1950,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           PlayerGlassPill(
             child: PlayerBarButton(
               icon: DsIcons.minimize2,
+              glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.fullscreenExit, size: size, color: color),
               label: t.hongguo.exitFullscreen,
               autofocus: true,
               onPressed: () => unawaited(_toggleFullscreen()),
@@ -2098,6 +2100,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     ],
                     builder: (context, anchor, _) => PlayerBarButton(
                       icon: DsIcons.ellipsisVertical,
+                      glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.more, size: size, color: color),
                       label: t.common.more,
                       onPressed: () {
                         _wake();
@@ -2209,6 +2212,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   ),
                   PlayerBarButton(
                     icon: immersive ? DsIcons.minimize2 : DsIcons.maximize2,
+                    glyphBuilder: (_, color, size) =>
+                        GlyphIcon(immersive ? PlayerGlyph.fullscreenExit : PlayerGlyph.fullscreenEnter, size: size, color: color),
                     label: immersive ? t.hongguo.exitFullscreen : t.hongguo.fullscreen,
                     onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
                   ),
@@ -2692,10 +2697,14 @@ final class _RailAction extends StatelessWidget {
     required this.onPressed,
     this.count,
     this.selected = false,
+    this.glyph,
   });
 
   /// The glyph in the disc.
   final DsIconData icon;
+
+  /// A picture glyph drawn instead of [icon] when set.
+  final Widget? glyph;
 
   /// The action's name, for the tooltip and screen readers.
   final String label;
@@ -2740,7 +2749,7 @@ final class _RailAction extends StatelessWidget {
                       : const Color(0x66000000),
                   borderRadius: BorderRadius.circular(theme.radii.control(38)),
                 ),
-                child: DsIcon(icon, size: theme.sizes.iconLg, color: selected ? colors.onAccent : playerInk),
+                child: glyph ?? DsIcon(icon, size: theme.sizes.iconLg, color: selected ? colors.onAccent : playerInk),
               ),
               if (count case final figure?)
                 Text(

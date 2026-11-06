@@ -17,7 +17,7 @@ import 'package:media_core/media_core.dart'
         SourceType;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart' show PlayerBarButton;
+import 'package:pure_live/shared/shared.dart' show GlyphIcon, PlayerBarButton, PlayerGlyph;
 
 /// The clip's own stage: the app's media_core player with its transport in
 /// one row over the picture's bottom edge — skip ±10s, play/pause, a
@@ -409,6 +409,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                     children: [
                       PlayerBarButton(
                         icon: DsIcons.goBackward10,
+                        glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.back, size: size, color: color),
                         label: t.common.previewSkipBack,
                         onPressed: total <= Duration.zero
                             ? null
@@ -416,11 +417,14 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                       ),
                       PlayerBarButton(
                         icon: _playing ? DsIcons.pause : DsIcons.play,
+                        glyphBuilder: (_, color, size) =>
+                            GlyphIcon(_playing ? PlayerGlyph.pause : PlayerGlyph.play, size: size, color: color),
                         label: _playing ? t.room.pause : t.room.play,
                         onPressed: () => unawaited(_toggle()),
                       ),
                       PlayerBarButton(
                         icon: DsIcons.goForward10,
+                        glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.forward, size: size, color: color),
                         label: t.common.previewSkipForward,
                         onPressed: total <= Duration.zero ? null : () => unawaited(seekBy(const Duration(seconds: 10))),
                       ),

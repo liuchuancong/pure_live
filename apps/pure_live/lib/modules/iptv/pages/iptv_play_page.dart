@@ -950,7 +950,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
               ),
           ],
           builder: (context, controller, _) =>
-              _IconButton(semanticLabel: t.common.more, icon: DsIcons.ellipsisVertical, onPressed: controller.toggle),
+              _IconButton(
+          semanticLabel: t.common.more,
+          icon: DsIcons.ellipsisVertical,
+          glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.more, size: size, color: color),
+          onPressed: controller.toggle,
+        ),
         )
       else
         for (final verb in verbs)
@@ -1423,10 +1428,14 @@ final class _IconButton extends StatelessWidget {
     required this.onPressed,
     this.selected = false,
     this.onDark = false,
+    this.glyphBuilder,
   });
 
   final String semanticLabel;
   final DsIconData icon;
+
+  /// Draws a picture glyph instead of [icon], tinted the bar's state color.
+  final Widget Function(BuildContext context, Color color, double size)? glyphBuilder;
   final VoidCallback? onPressed;
 
   /// Draws the glyph at full strength: a switch that is on.
@@ -1446,6 +1455,7 @@ final class _IconButton extends StatelessWidget {
       onDark: onDark,
       tooltip: false,
       zoomsOnTv: false,
+      glyphBuilder: glyphBuilder,
     );
   }
 }
@@ -1677,8 +1687,20 @@ final class _PipStrip extends StatelessWidget {
             onPressed: onMute,
             onDark: true,
           ),
-          _IconButton(semanticLabel: t.room.pipOff, icon: DsIcons.expand, onPressed: onRestore, onDark: true),
-          _IconButton(semanticLabel: t.common.close, icon: DsIcons.x, onPressed: onClose, onDark: true),
+          _IconButton(
+            semanticLabel: t.room.pipOff,
+            icon: DsIcons.expand,
+            glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.miniVideo, size: size, color: color),
+            onPressed: onRestore,
+            onDark: true,
+          ),
+          _IconButton(
+            semanticLabel: t.common.close,
+            icon: DsIcons.x,
+            glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.close, size: size, color: color),
+            onPressed: onClose,
+            onDark: true,
+          ),
         ],
       ),
     );

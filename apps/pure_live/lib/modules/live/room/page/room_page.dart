@@ -1763,7 +1763,7 @@ List<Widget> roomMenuItems(
         DsMenuItem(
           leading: recording
               ? const DsIcon(DsIcons.squareStop)
-              : const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
+              : const GlyphIcon(PlayerGlyph.recordCamera),
           label: Text(recording ? t.room.stopRecording : t.room.record),
           onPressed: () => unawaited(toggleRoomRecording(context, ref)),
         ),
