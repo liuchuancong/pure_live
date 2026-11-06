@@ -8,6 +8,7 @@ export 'api/tiktok_http.dart';
 export 'capabilities/tiktok_discovery_provider.dart';
 export 'capabilities/tiktok_link_resolver.dart';
 export 'capabilities/tiktok_play_lease_lookup.dart';
+export 'capabilities/tiktok_play_recovery.dart';
 export 'capabilities/tiktok_playback_provider.dart';
 export 'capabilities/tiktok_room_provider.dart';
 export 'capabilities/tiktok_room_refresh.dart';

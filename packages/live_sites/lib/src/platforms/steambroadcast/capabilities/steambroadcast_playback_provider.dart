@@ -49,4 +49,19 @@ final class SteambroadcastPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: siteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: `getbroadcastmpd` and the master are read again,
+  /// never the kept answer (the CDN host and paths change between answers).
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.refetchLinesOf(room.roomId, quality));
+    } on SteambroadcastFailure catch (failure) {
+      return left(failure.toLiveSiteError(siteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: siteId, message: '$error', cause: error));
+    }
+  }
 }

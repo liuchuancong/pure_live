@@ -215,6 +215,15 @@ typedef ChzzkCategoryPage = ({List<LiveArea> areas, Map<String, String>? next});
 abstract final class ChzzkRoomParser {
   static final RegExp _categoryType = RegExp(r'^[A-Za-z_]{1,32}$');
 
+  /// The notice of a region-locked live (`krOnlyViewing`, or hidden abroad).
+  static const String regionNotice = '当前地区受到播放限制。';
+
+  /// The notice of an adult live (the platform's own login and age check).
+  static const String adultNotice = '成人直播需要登录 CHZZK 并通过年龄验证，本应用暂时无法播放。';
+
+  /// The notice of a live the website can rewind.
+  static const String timeMachineNotice = '这场直播在 CHZZK 网页上可以回看，本应用只播放实时画面。';
+
   /// The web page of [channelId] — the room's own link.
   static String link(String channelId) => ChzzkEndpoints.roomUrl(channelId);
 
@@ -366,12 +375,13 @@ abstract final class ChzzkRoomParser {
     final name = text(channel['channelName']);
     final title = text(row['liveTitle']);
     final LiveRestriction? restriction;
+    final String? notice;
     if (regionLocked(row)) {
-      restriction = LiveRestriction.regionBlocked;
+      (restriction, notice) = (LiveRestriction.regionBlocked, regionNotice);
     } else if (row['adult'] == true) {
-      restriction = LiveRestriction.adult;
+      (restriction, notice) = (LiveRestriction.adult, adultNotice);
     } else {
-      restriction = paid(row) ? null : LiveRestriction.none;
+      (restriction, notice) = (paid(row) ? null : LiveRestriction.none, null);
     }
     final viewers = online(row);
     return LiveRoom.normalized(
@@ -380,6 +390,7 @@ abstract final class ChzzkRoomParser {
       content: RoomContent.of(
         title: title.isEmpty ? name : title,
         coverUrl: cover(row['liveImageUrl'], row['defaultThumbnailImageUrl']),
+        notice: notice,
       ),
       anchor: LiveAnchor.normalized(
         platform: _site,
@@ -558,6 +569,16 @@ abstract final class ChzzkRoomParser {
   /// introduction, its start, its restriction and its reason for not playing.
   static LiveRoom room(ChzzkChannel owner, ChzzkLive? live) {
     if (live == null || !live.isLive) return channelCard(owner, status: LiveStatus.offline);
+    final String? notice;
+    if (live.krOnly || live.abroadBlind) {
+      notice = regionNotice;
+    } else if (live.adult && live.media.isEmpty) {
+      notice = adultNotice;
+    } else if (live.timeMachine) {
+      notice = timeMachineNotice;
+    } else {
+      notice = live.adult ? adultNotice : null;
+    }
     return LiveRoom.normalized(
       platform: _site,
       roomId: owner.id,
@@ -565,6 +586,7 @@ abstract final class ChzzkRoomParser {
         title: live.title,
         coverUrl: live.cover,
         introduction: owner.description.isEmpty ? null : owner.description,
+        notice: notice,
       ),
       anchor: LiveAnchor.normalized(
         platform: _site,

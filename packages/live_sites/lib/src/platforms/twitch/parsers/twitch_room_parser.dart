@@ -41,6 +41,17 @@ abstract final class TwitchRoomParser {
     ];
   }
 
+  /// [tags] with each empty name taken from [fallback] (the same tags asked
+  /// for in English): Twitch has no Chinese name for some tags (Gambling). A
+  /// tag [fallback] cannot name keeps its empty name.
+  static List<TwitchTag> namedTags(List<TwitchTag> tags, List<TwitchTag> fallback) {
+    final names = {for (final tag in fallback) tag.id: tag.name};
+    return [
+      for (final tag in tags)
+        if (tag.name.isNotEmpty) tag else (id: tag.id, name: names[tag.id] ?? ''),
+    ];
+  }
+
   /// One `BrowsePage_AllDirectories` envelope: the directories of [tag] as
   /// areas (the game id, the slug `DirectoryPage_Game` needs, the box art),
   /// and the cursor of the next page when `pageInfo` says there is one. An

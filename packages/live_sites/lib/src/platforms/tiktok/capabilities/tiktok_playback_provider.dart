@@ -48,4 +48,20 @@ final class TiktokPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: tiktokSiteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: the user's LIVE is read again even when its
+  /// streams are kept, since the held pull URLs may be why the fresh read is
+  /// wanted.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, force: true));
+    } on TiktokFailure catch (failure) {
+      return left(failure.toLiveSiteError(tiktokSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: tiktokSiteId, message: '$error', cause: error));
+    }
+  }
 }

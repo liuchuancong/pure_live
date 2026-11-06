@@ -109,34 +109,36 @@ abstract final class YoutubeRoomParser {
     );
   }
 
-  /// One directory or search card from a `videoRenderer` (or the `live`
-  /// variant): a live room keyed by its channel id, its LIVE badge or a
-  /// "watching" line deciding the status. A renderer without a `videoId` is
-  /// not a card (null).
+  /// One live directory or search card from a `videoRenderer`: a live room
+  /// keyed by its channel id. A row that is not live (no LIVE NOW badge, no
+  /// LIVE overlay, no "watching" line, or an upcoming broadcast) is null, as
+  /// is one without a channel id, video id, title or name — a row that names
+  /// nothing the room can key on.
   static LiveRoom? card(Object? renderer) {
     final item = jsonObject(renderer);
-    final videoId = jsonString(item?['videoId']);
-    if (item == null || videoId == null) return null;
+    final videoId = jsonString(item?['videoId']) ?? '';
+    if (item == null || !YoutubeEndpoints.videoIdPattern.hasMatch(videoId)) return null;
     final byline = findFirst(item, 'browseEndpoint');
     final channelId = jsonString(fields(byline)['browseId']) ?? '';
     final name = label(item['title']);
     final author = label(item['ownerText'] ?? item['shortBylineText'] ?? item['longBylineText']);
+    if (!YoutubeEndpoints.channelIdPattern.hasMatch(channelId) || name.isEmpty || author.isEmpty) return null;
     final watching = _renderWatchers(item);
-    final live = _hasLiveBadge(item) || watching != null;
+    if (!_liveRow(item, watching)) return null;
     return LiveRoom.normalized(
       platform: youtubeSiteId,
-      roomId: channelId.isNotEmpty ? channelId : videoId,
+      roomId: channelId,
       content: RoomContent.of(title: name, coverUrl: lastThumbnail(item['thumbnail'])),
       anchor: LiveAnchor.normalized(
         platform: youtubeSiteId,
         anchorId: channelId,
         name: author,
-        profileUrl: channelId.startsWith('UC') ? '${YoutubeEndpoints.origin}/channel/$channelId' : null,
+        profileUrl: '${YoutubeEndpoints.origin}/channel/$channelId',
       ),
       audience: RoomAudience.of(onlineViewers: watching, primaryMetric: LiveAudienceMetricType.onlineViewers),
       broadcast: RoomBroadcast.of(
-        liveStatus: live ? LiveStatus.live : LiveStatus.offline,
-        restriction: live ? LiveRestriction.none : null,
+        liveStatus: LiveStatus.live,
+        restriction: _membersOnly(item) ? LiveRestriction.subscribersOnly : LiveRestriction.none,
       ),
       links: RoomLinks.of(webUrl: YoutubeEndpoints.watchUrl(videoId)),
     );
@@ -151,13 +153,47 @@ abstract final class YoutubeRoomParser {
     return found;
   }
 
-  /// The rooms of a `search` or `browse` page, deduped by identity.
-  static List<LiveRoom> rooms(Object? node) {
+  /// The rooms of a `search` or `browse` page: one card per channel, deduped
+  /// by identity.
+  static List<LiveRoom> rooms(Object? node) => listing(node, search: false).rooms;
+
+  /// The live cards of a browse ([search] false) or search answer, and the
+  /// continuation of a later search page:
+  ///
+  /// - a row is live with the LIVE NOW badge, the LIVE overlay or a
+  ///   "watching" count; ended and upcoming rows are left out, and a channel's
+  ///   later rows are left out with it (one card per channel, the first);
+  /// - a live row without a channel id, video id, title or name is skipped
+  ///   (every live row malformed is api-changed), and a browse answer without
+  ///   any video row is api-changed;
+  /// - a search answer's last continuation token is the next page only when
+  ///   it had a live row.
+  static ({List<LiveRoom> rooms, String? continuation}) listing(Object? node, {required bool search}) {
+    final what = search ? 'search' : 'browse';
+    final rows = videoRenderers(node);
+    if (!search && rows.isEmpty) {
+      throw YouTubeFailure(YoutubeFailureKind.apiChanged, '$what: no video rows');
+    }
+    final rooms = <LiveRoom>[];
     final seen = <String>{};
-    return [
-      for (final renderer in videoRenderers(node))
-        if (card(renderer) case final room? when seen.add(room.identityKey)) room,
-    ];
+    var live = 0;
+    var malformed = 0;
+    for (final row in rows) {
+      final item = jsonObject(row);
+      if (item == null || item.containsKey('upcomingEventData')) continue;
+      if (!_liveRow(item, _renderWatchers(item))) continue;
+      live++;
+      final room = card(item);
+      if (room == null) {
+        malformed++;
+      } else if (seen.add(room.roomId)) {
+        rooms.add(room);
+      }
+    }
+    if (live > 0 && malformed == live) {
+      throw YouTubeFailure(YoutubeFailureKind.apiChanged, '$what: all $live live rows malformed');
+    }
+    return (rooms: rooms, continuation: live > 0 && search ? nextContinuation(node) : null);
   }
 
   /// The last `continuationItemRenderer` token of a page — the "load more"
@@ -266,14 +302,29 @@ abstract final class YoutubeRoomParser {
     return null;
   }
 
-  /// Whether a card carries a `LIVE` badge (search's live rows do).
-  static bool _hasLiveBadge(Map<String, dynamic> item) {
+  /// Whether a row shows a live broadcast: a `BADGE_STYLE_TYPE_LIVE_NOW`
+  /// badge, a `LIVE` thumbnail overlay, or a "watching" count. An upcoming
+  /// broadcast (`upcomingEventData`) is never live, whatever else it names.
+  static bool _liveRow(Map<String, dynamic> item, int? watching) {
+    if (watching != null) return true;
     for (final badge in jsonList(item['badges'])) {
-      if (label(findFirst(badge, 'metadataBadgeRenderer')).toUpperCase() == 'LIVE') return true;
+      if (jsonString(fields(fields(badge)['metadataBadgeRenderer'])['style']) == 'BADGE_STYLE_TYPE_LIVE_NOW') {
+        return true;
+      }
     }
     for (final overlay in jsonList(item['thumbnailOverlays'])) {
-      if (findFirst(overlay, 'thumbnailOverlayTimeStatusRenderer') != null) continue;
-      if (label(findFirst(overlay, 'accessibility')).toUpperCase().contains('LIVE')) return true;
+      if (jsonString(fields(fields(overlay)['thumbnailOverlayTimeStatusRenderer'])['style']) == 'LIVE') return true;
+    }
+    return false;
+  }
+
+  /// Whether a row carries a members-only badge (its broadcast is for
+  /// channel members).
+  static bool _membersOnly(Map<String, dynamic> item) {
+    for (final badge in jsonList(item['badges'])) {
+      if (jsonString(fields(fields(badge)['metadataBadgeRenderer'])['style']) == 'BADGE_STYLE_TYPE_MEMBERS_ONLY') {
+        return true;
+      }
     }
     return false;
   }

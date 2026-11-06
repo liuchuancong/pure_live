@@ -8,6 +8,7 @@ export 'api/steambroadcast_http.dart';
 export 'capabilities/steambroadcast_area_provider.dart';
 export 'capabilities/steambroadcast_discovery_provider.dart';
 export 'capabilities/steambroadcast_link_resolver.dart';
+export 'capabilities/steambroadcast_play_recovery.dart';
 export 'capabilities/steambroadcast_playback_provider.dart';
 export 'capabilities/steambroadcast_room_provider.dart';
 export 'capabilities/steambroadcast_room_refresh.dart';

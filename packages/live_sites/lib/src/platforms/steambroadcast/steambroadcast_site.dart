@@ -9,6 +9,7 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -28,6 +29,7 @@ import 'package:live_sites/src/platforms/steambroadcast/api/steambroadcast_http.
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_area_provider.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_discovery_provider.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_link_resolver.dart';
+import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_play_recovery.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_playback_provider.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_room_provider.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_room_refresh.dart';
@@ -428,6 +430,29 @@ final class SteambroadcastSite implements LiveSite {
     return [SteambroadcastRoomParser.line(data, wanted)];
   }
 
+  /// Fresh lines after a failure (the recovery ask): `getbroadcastmpd` and
+  /// the HLS master read again — two requests, never the kept answer, and
+  /// without the mini profile (the line needs no name). A variant the fresh
+  /// master no longer has plays the adaptive quality, and says so.
+  Future<List<LivePlayLine>> refetchLinesOf(String roomId, LivePlayQuality? quality) async {
+    final steamId = _steamId(roomId);
+    final wanted = quality?.qualityId ?? SteambroadcastEndpoints.qualityId;
+    if (wanted != SteambroadcastEndpoints.qualityId && !SteambroadcastRoomParser.isVariantId(wanted)) {
+      throw SteambroadcastFailure(SteambroadcastFailureKind.streamUnavailable, 'quality $wanted is not offered');
+    }
+    final broadcast = await _scoped((token) async {
+      final fresh = await _mpd(steamId, (name: '', avatar: ''), token);
+      return await _withMaster(fresh, token);
+    });
+    final data = SteambroadcastRoomParser.roomData(broadcast);
+    final error = data.streamError;
+    if (error != null) throw error;
+    final offered = data.qualities.any((option) => option.qualityId == wanted);
+    // A variant gone from the fresh master plays the adaptive quality; the
+    // kept answer is never reused.
+    return [SteambroadcastRoomParser.line(data, offered ? wanted : SteambroadcastEndpoints.qualityId)];
+  }
+
   // Capability wiring ---------------------------------------------------------
 
   SteambroadcastRoomProvider? _room;
@@ -439,6 +464,7 @@ final class SteambroadcastSite implements LiveSite {
   SteambroadcastLinkResolver? _link;
   SteambroadcastRoomRefresh? _refresh;
   SteambroadcastStatusCheck? _status;
+  SteambroadcastPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when Steam Broadcast does not
   /// support it (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -453,6 +479,7 @@ final class SteambroadcastSite implements LiveSite {
     final link = _link ??= SteambroadcastLinkResolver(site: this);
     final refresh = _refresh ??= SteambroadcastRoomRefresh(site: this);
     final status = _status ??= SteambroadcastStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= SteambroadcastPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -463,6 +490,7 @@ final class SteambroadcastSite implements LiveSite {
       const (LiveLinkResolver) => link as T,
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

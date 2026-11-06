@@ -7,6 +7,7 @@ import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -25,6 +26,7 @@ import 'package:live_sites/src/platforms/tiktok/api/tiktok_http.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_discovery_provider.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_link_resolver.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_play_recovery.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_playback_provider.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_room_provider.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_room_refresh.dart';
@@ -191,10 +193,12 @@ final class TiktokSite implements LiveSite {
   /// The stream data of [roomId]: the one its room entry brought, or a fresh
   /// entry — the capabilities are asked by room id alone. A room known not
   /// to play (offline, restricted, without a readable stream) says why,
-  /// without a request.
-  Future<TiktokRoomData> _playable(String roomId) async {
+  /// without a request. [force] skips the kept data and reads the answer
+  /// again (recovery: the held pull URLs may be dead, and the fresh ones
+  /// serve the room's later asks).
+  Future<TiktokRoomData> _playable(String roomId, {bool force = false}) async {
     final username = _username(roomId);
-    final known = _streams[username];
+    final known = force ? null : _streams[username];
     if (known == null) {
       await detail(username);
       return _streams[username]!;
@@ -207,13 +211,14 @@ final class TiktokSite implements LiveSite {
   /// The qualities of the streams [roomId]'s entry brought (one per tier and
   /// codec, H.264 first while "prefer H.264" is on); a room without an entry
   /// yet is entered first.
-  Future<List<LivePlayQuality>> qualitiesOf(String roomId) async =>
-      TiktokRoomParser.qualities(await _playable(roomId), preferH264: _preferH264());
+  Future<List<LivePlayQuality>> qualitiesOf(String roomId, {bool force = false}) async =>
+      TiktokRoomParser.qualities(await _playable(roomId, force: force), preferH264: _preferH264());
 
   /// The lines of [quality] (the best one under the current preference when
   /// it is null): FLV then HLS, with the media headers and the leases.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async =>
-      TiktokRoomParser.lines(await _playable(roomId), quality, preferH264: _preferH264());
+  /// [force] reads the user's LIVE again first.
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool force = false}) async =>
+      TiktokRoomParser.lines(await _playable(roomId, force: force), quality, preferH264: _preferH264());
 
   // Directory -----------------------------------------------------------------
 
@@ -237,6 +242,7 @@ final class TiktokSite implements LiveSite {
   TiktokLinkResolver? _link;
   TiktokRoomRefresh? _refresh;
   TiktokStatusCheck? _status;
+  TiktokPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when TikTok does not support it
   /// (ARCHITECTURE.md §4.1): no chat (the reference adapter ships no
@@ -252,6 +258,7 @@ final class TiktokSite implements LiveSite {
     final link = _link ??= TiktokLinkResolver(site: this);
     final refresh = _refresh ??= TiktokRoomRefresh(site: this);
     final status = _status ??= TiktokStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= TiktokPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveDiscoveryProvider) => discovery as T,
@@ -263,6 +270,7 @@ final class TiktokSite implements LiveSite {
       const (LiveAreaProvider) => null,
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

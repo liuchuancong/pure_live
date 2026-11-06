@@ -397,9 +397,11 @@ final class TwitchSite implements LiveSite {
   /// of a round go out together in batches of at most 35 operations. A failed
   /// first round fails the catalog; a failed later round ends those tags with
   /// the pages they have (an anonymous client is asked for an integrity token
-  /// there).
+  /// there). Names are Chinese; a tag Twitch has no Chinese name for takes its
+  /// English one from one more tags request.
   Future<List<LiveArea>> categories() async {
-    final tags = TwitchRoomParser.tags(await gql(TwitchEndpoints.tagsOperation(), what: 'SearchCategoryTags'));
+    var tags = TwitchRoomParser.tags(await gql(TwitchEndpoints.tagsOperation(), what: 'SearchCategoryTags'));
+    if (tags.any((tag) => tag.name.isEmpty)) tags = await _namedTags(tags);
     final areas = {for (final tag in tags) tag.id: <LiveArea>[]};
     final seen = <String>{};
     var pages = [for (final tag in tags) (tag: tag, cursor: null as String?)];
@@ -424,6 +426,21 @@ final class TwitchSite implements LiveSite {
             if (area.shortName case final slug? when slug.isNotEmpty) MapEntry(area.areaId, slug),
       ]);
     return [for (final tag in tags) ...areas[tag.id]!];
+  }
+
+  /// [tags] with English names for those without a Chinese one. The names are
+  /// cosmetic: when that request fails the tags keep their empty names.
+  Future<List<TwitchTag>> _namedTags(List<TwitchTag> tags) async {
+    try {
+      final english = await gql(
+        TwitchEndpoints.tagsOperation(),
+        what: 'SearchCategoryTags (en)',
+        language: TwitchEndpoints.englishLanguage,
+      );
+      return TwitchRoomParser.namedTags(tags, TwitchRoomParser.tags(english));
+    } on TwitchFailure {
+      return tags;
+    }
   }
 
   /// One page of directories for each of [pages], in batches of at most 35

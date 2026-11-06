@@ -256,6 +256,23 @@ void main() {
         TwitchFailureKind.apiChanged,
       );
     });
+
+    test('namedTags fills an empty Chinese name from the English answer', () {
+      final named = TwitchRoomParser.namedTags([
+        const (id: '507800', name: '游戏'),
+        const (id: 'c7', name: ''),
+        const (id: 'd4', name: ''),
+      ], const [
+        (id: '507800', name: 'Games'),
+        (id: 'c7', name: 'Gambling'),
+        (id: 'zz', name: 'Not Asked'),
+      ]);
+      expect(named, [
+        const (id: '507800', name: '游戏'),
+        const (id: 'c7', name: 'Gambling'),
+        const (id: 'd4', name: ''),
+      ], reason: 'a Chinese name is kept, and a tag the English answer cannot name stays empty');
+    });
   });
 
   group('the directories', () {

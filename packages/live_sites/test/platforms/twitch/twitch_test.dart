@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_cookie_refusal_feed.dart';
+import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_cookie_refusal_feed.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
@@ -40,6 +41,17 @@ final class _FakeHttp implements LiveHttp {
 
 /// A `PlaybackAccessToken` answer with an unrestricted token.
 const String _token = '{"data":{"streamPlaybackAccessToken":{"value":"{}","signature":"sig"}}}';
+
+/// One Chinese-named tag, one Twitch has no Chinese name for.
+String _tags(String first, String second) =>
+    '{"data":{"searchCategoryTags":[{"id":"t1","tagName":"$first"},{"id":"t2","tagName":"$second"}]}}';
+
+/// A directory batch: one envelope per name, each naming one directory of
+/// that name (one page per tag, the walk ends there).
+String _directories(List<String> names) => '[${[
+  for (final name in names)
+    '{"data":{"directoriesWithTags":{"edges":[{"node":{"id":"g1","slug":"g","displayName":"$name"}}]}}}',
+].join(',')}]';
 
 void main() {
   group('cookie refusals', () {
@@ -78,6 +90,52 @@ void main() {
 
       expect(refusals, isEmpty);
       expect(http.requests.single.headers['cookie'], _cookie);
+    });
+  });
+
+  group('the catalog languages', () {
+    test('a tag with no Chinese name asks a second time in English', () async {
+      final http = _FakeHttp([
+        (status: 200, body: _tags('游戏', '')),
+        (status: 200, body: _tags('Games', 'Gambling')),
+        (status: 200, body: _directories(['第一个', '第二个'])),
+      ]);
+      final site = TwitchSite(http: TwitchHttp(http));
+
+      final areas = await site.categories();
+
+      expect(http.requests, hasLength(3));
+      expect(http.requests.first.headers['accept-language'], TwitchEndpoints.acceptLanguage);
+      expect(http.requests[1].headers['accept-language'], TwitchEndpoints.englishLanguage);
+      expect(http.requests[1].headers.containsKey('cookie'), isFalse, reason: 'the English ask stays anonymous');
+      expect(
+        [for (final area in areas) if (area.parentAreaId == 't2') area.parentAreaName],
+        ['Gambling'],
+      );
+    });
+
+    test('a failed English ask keeps the empty names', () async {
+      final http = _FakeHttp([
+        (status: 200, body: _tags('游戏', '')),
+        (status: 500, body: ''),
+        (status: 200, body: _directories(['第一个', '第二个'])),
+      ]);
+      final site = TwitchSite(http: TwitchHttp(http));
+
+      final areas = await site.categories();
+
+      expect(http.requests, hasLength(3));
+      expect([for (final area in areas) if (area.parentAreaId == 't2') area.parentAreaName], ['']);
+    });
+
+    test('every tag named asks once', () async {
+      final http = _FakeHttp([(status: 200, body: _tags('游戏', '派对')), (status: 200, body: _directories(['一', '二']))]);
+      final site = TwitchSite(http: TwitchHttp(http));
+
+      await site.categories();
+
+      expect(http.requests, hasLength(2));
+      expect(http.requests.first.headers['accept-language'], TwitchEndpoints.acceptLanguage);
     });
   });
 }

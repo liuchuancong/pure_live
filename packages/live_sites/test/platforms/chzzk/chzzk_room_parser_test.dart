@@ -79,6 +79,7 @@ ChzzkLive _live({
   bool krOnly = false,
   bool abroadBlind = false,
   bool paid = false,
+  bool timeMachine = false,
   String area = '배틀그라운드',
   String? chatChannelId = 'chat-1',
   int? online = 120,
@@ -96,6 +97,7 @@ ChzzkLive _live({
   krOnly: krOnly,
   abroadBlind: abroadBlind,
   paid: paid,
+  timeMachine: timeMachine,
   chatChannelId: chatChannelId,
 );
 
@@ -645,6 +647,46 @@ void main() {
       expect(ChzzkRoomParser.danmakuArgs(_owner, _live(isLive: false)), isNull);
       expect(ChzzkRoomParser.danmakuArgs(_owner, _live(chatChannelId: null)), isNull);
       expect(ChzzkRoomParser.danmakuArgs(_owner, null), isNull);
+    });
+
+    test('a live the viewer cannot watch or rewind says so on the room', () {
+      expect(
+        ChzzkRoomParser.room(_owner, _live(krOnly: true)).content.notice,
+        ChzzkRoomParser.regionNotice,
+        reason: 'region-locked, also when only the lists say ABROAD',
+      );
+      expect(ChzzkRoomParser.room(_owner, _live(abroadBlind: true)).content.notice, ChzzkRoomParser.regionNotice);
+      expect(
+        ChzzkRoomParser.room(_owner, _live(adult: true)).content.notice,
+        ChzzkRoomParser.adultNotice,
+        reason: 'an adult live without playback data',
+      );
+      expect(
+        ChzzkRoomParser.room(_owner, _live(adult: true, media: [_masterMedia])).content.notice,
+        ChzzkRoomParser.adultNotice,
+        reason: 'an adult live with playback is playable here, but named',
+      );
+      expect(
+        ChzzkRoomParser.room(
+          _owner,
+          _live(timeMachine: true, media: [_masterMedia]),
+        ).content.notice,
+        ChzzkRoomParser.timeMachineNotice,
+      );
+      expect(ChzzkRoomParser.room(_owner, _live(media: [_masterMedia])).content.notice, isNull);
+      final row = ChzzkRoomParser.liveCard(
+        _liveRow(override: {'adult': true}),
+        _channel(),
+        _cid,
+      );
+      expect(row.content.notice, ChzzkRoomParser.adultNotice);
+      final locked = ChzzkRoomParser.liveCard(
+        _liveRow(override: {'krOnlyViewing': true}),
+        _channel(),
+        _cid,
+      );
+      expect(locked.content.notice, ChzzkRoomParser.regionNotice);
+      expect(locked.broadcast.restriction, LiveRestriction.regionBlocked);
     });
   });
 

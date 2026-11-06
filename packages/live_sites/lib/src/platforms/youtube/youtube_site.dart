@@ -429,29 +429,31 @@ final class YoutubeSite implements LiveSite {
 
   // Catalog and search --------------------------------------------------------
 
-  /// The Live hub (`youtube.com/live`): one page of live rooms and, though the
-  /// hub pages, the continuation a later page would use. The broadcast each
-  /// live card shows is remembered for its channel.
+  /// The Live hub (`youtube.com/live`): one page of live rooms (ended and
+  /// upcoming rows are left out; a page without any video row is api-changed).
+  /// The broadcast each live card shows is remembered for its channel.
   Future<({List<LiveRoom> rooms, String? continuation})> hub() async {
     final response = await post('browse', YoutubeEndpoints.browseBody());
     final node = _decoded(response.text, 'browse');
-    final rooms = YoutubeRoomParser.rooms(node);
-    _rememberListing(rooms);
-    return (rooms: rooms, continuation: YoutubeRoomParser.nextContinuation(node));
+    final listing = YoutubeRoomParser.listing(node, search: false);
+    _rememberListing(listing.rooms);
+    return (rooms: listing.rooms, continuation: listing.continuation);
   }
 
   /// One search page: [query] fresh (the literal Live filter), or the
-  /// [continuation] token a later page was handed. The broadcast each live
-  /// card shows is remembered for its channel.
+  /// [continuation] token a later page was handed. A page whose live rows were
+  /// all malformed is api-changed, and a page without a live row names no
+  /// continuation (the list ends). The broadcast each live card shows is
+  /// remembered for its channel.
   Future<({List<LiveRoom> rooms, String? continuation})> searchPage(String query, {String? continuation}) async {
     final body = continuation == null
         ? YoutubeEndpoints.searchPage1Body(query)
         : YoutubeEndpoints.searchContinuationBody(continuation);
     final response = await post('search', body, referer: '${YoutubeEndpoints.origin}/results?search_query=');
     final node = _decoded(response.text, 'search');
-    final rooms = YoutubeRoomParser.rooms(node);
-    _rememberListing(rooms);
-    return (rooms: rooms, continuation: YoutubeRoomParser.nextContinuation(node));
+    final listing = YoutubeRoomParser.listing(node, search: true);
+    _rememberListing(listing.rooms);
+    return (rooms: listing.rooms, continuation: listing.continuation);
   }
 
   /// [text] decoded as JSON for [what]; a malformed body is an api-changed

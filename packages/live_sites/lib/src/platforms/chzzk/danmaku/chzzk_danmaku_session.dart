@@ -79,8 +79,8 @@ final class ChzzkDanmakuProvider implements LiveDanmakuProvider {
 ///   sends the read-only join; an accepted join asks the recent 50 lines, and a
 ///   join unanswered within [ChzzkDanmakuCodec.joinTimeout] drops the socket. A
 ///   refused join ends the session, except [ChzzkDanmakuCodec.retryCodes]
-///   (302–304), on which the site also reconnects; `cmd` 90102 ends it the same
-///   way.
+///   (302–304), on which the site's client connects again (the socket is
+///   replaced on the next server); `cmd` 90102 ends it the same way.
 /// - The ping every [ChzzkDanmakuCodec.heartbeatInterval] and the 30 s silence
 ///   watchdog are the transport heartbeat (the server answers the ping, so the
 ///   timeout marks a dead socket); a server ping is still answered at once. The
@@ -277,7 +277,18 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
         _restartQuiet();
         if (frame.sessionId.isNotEmpty) _send(ChzzkDanmakuCodec.recent(args.chatChannelId, frame.sessionId));
       case false:
-        _terminate('Join refused: ${frame.refusal ?? ''}');
+        // The site's own client connects again on codes 302–304 (a broadcast
+        // moving between chat servers); the rest end the session, as the
+        // server closes the socket after any refusal.
+        _join?.cancel();
+        _join = null;
+        if (frame.retry) {
+          final generation = _generation;
+          unawaited(_teardownSocket());
+          _scheduleReconnect(generation, 'join refused (${frame.refusal ?? ''})');
+        } else {
+          _terminate('Join refused: ${frame.refusal ?? ''}');
+        }
       case null:
         break;
     }

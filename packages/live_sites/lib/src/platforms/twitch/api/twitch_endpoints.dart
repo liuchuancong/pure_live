@@ -55,9 +55,14 @@ abstract final class TwitchEndpoints {
   /// earlier.
   static const int tagPageLimit = 50;
 
-  /// `Accept-Language`: the web client's own value, so Twitch answers in
-  /// English (a game's `displayName`, else its `name`).
-  static const String acceptLanguage = 'en-US,en;q=0.9';
+  /// `Accept-Language` of every request: Chinese names for category tags,
+  /// directories and games (a game's `displayName`, else its `name`); 3.x
+  /// asked for English.
+  static const String acceptLanguage = 'zh-CN,zh;q=0.9,en;q=0.8';
+
+  /// `Accept-Language` of the one request for English tag names, for the tags
+  /// Twitch has no Chinese name for.
+  static const String englishLanguage = 'en-US,en;q=0.9';
 
   /// The broadcast languages the 3.x client always filtered by (Chinese and
   /// Korean); nothing is filtered unless the caller gives languages.
