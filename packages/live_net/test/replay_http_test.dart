@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -39,6 +40,37 @@ void _sample(
       'response': {'status': status, 'headers': headers},
       'raw': {'sha256': '', 'length': utf8.encode(body).length},
       'body': 'body.json',
+      'scrubbed': <Object>[],
+      'tool': 'replay_http_test',
+    }),
+  );
+}
+
+/// Writes `<root>/<name>/meta.json` as a hand-written schema-2 sample; every
+/// answer names its body file among [bodies] (an answer without one has an
+/// empty body).
+void _sample2(
+  Directory root,
+  String name, {
+  required String url,
+  required List<Map<String, Object>> answers,
+  String method = 'GET',
+  String? requestBody,
+  Map<String, String> bodies = const {},
+}) {
+  final directory = Directory('${root.path}/$name')..createSync();
+  for (final entry in bodies.entries) {
+    File('${directory.path}/${entry.key}').writeAsStringSync(entry.value);
+  }
+  File('${directory.path}/meta.json').writeAsStringSync(
+    jsonEncode({
+      'schema': 2,
+      'platform': 'example',
+      'sample': name,
+      'capturedAt': '2026-11-07T12:00:00Z',
+      'route': 'direct',
+      'request': {'method': method, 'url': url, 'headers': <String, String>{}, 'body': ?requestBody},
+      'answers': answers,
       'scrubbed': <Object>[],
       'tool': 'replay_http_test',
     }),
@@ -315,6 +347,213 @@ void main() {
         throwsA(isA<CancelledFailure>()),
       );
       expect(http.requests, hasLength(2));
+    });
+  });
+
+  group('schema 2', () {
+    test('a sequence answers in call order and repeats its last answer', () async {
+      final root = await _root();
+      _sample2(
+        root,
+        'S01-poll',
+        url: 'https://api.example.test/feed',
+        answers: [
+          {'status': 200, 'body': 'body-1.json'},
+          {'status': 500},
+          {'status': 200, 'body': 'body-3.json', 'headers': {'content-type': 'application/json'}},
+        ],
+        bodies: {'body-1.json': '{"poll":1}', 'body-3.json': '{"poll":3}'},
+      );
+      final http = ReplayHttp.fixtures(root.path, ['S01-poll']);
+      final request = LiveRequest.get(Uri.parse('https://api.example.test/feed'));
+
+      final answers = [await http.send(request), await http.send(request), await http.send(request), await http.send(request)];
+
+      expect([for (final answer in answers) answer.text], ['{"poll":1}', '', '{"poll":3}', '{"poll":3}'],
+          reason: 'the last answer repeats once the sequence runs out');
+      expect(answers[2].headers, {'content-type': 'application/json'});
+      expect(answers[1].isOk, isFalse);
+      expect(http.requests, hasLength(4));
+    });
+
+    test('a connect answer fails the request before any response, send or open', () async {
+      final root = await _root();
+      _sample2(root, 'S01-offline', url: 'https://api.example.test/room', answers: [
+        {'kind': 'connect', 'description': 'dns down'},
+      ]);
+      final http = ReplayHttp.fixtures(root.path, ['S01-offline']);
+      final request = LiveRequest.get(Uri.parse('https://api.example.test/room'));
+
+      await expectLater(
+        http.send(request),
+        throwsA(isA<ConnectFailure>().having((failure) => failure.description, 'description', 'dns down')),
+      );
+      await expectLater(http.open(request), throwsA(isA<ConnectFailure>()));
+      expect(http.requests, hasLength(2), reason: 'the failed requests are recorded all the same');
+    });
+
+    test('a sequence may mix a connect failure and a response, call by call', () async {
+      final root = await _root();
+      _sample2(
+        root,
+        'S01-flaky',
+        url: 'https://api.example.test/room',
+        answers: [
+          {'kind': 'connect', 'description': 'down'},
+          {'status': 200, 'body': 'body-2.json'},
+        ],
+        bodies: {'body-2.json': '{"room":2}'},
+      );
+      final http = ReplayHttp.fixtures(root.path, ['S01-flaky']);
+      final request = LiveRequest.get(Uri.parse('https://api.example.test/room'));
+
+      await expectLater(http.send(request), throwsA(isA<ConnectFailure>()));
+      expect((await http.send(request)).text, '{"room":2}');
+      expect((await http.send(request)).text, '{"room":2}', reason: 'the response repeats');
+      expect(http.requests, hasLength(3));
+    });
+
+    test('a hang answer never completes until the caller cancels, then fails as cancelled', () async {
+      final root = await _root();
+      _sample2(root, 'S01-hold', url: 'https://api.example.test/slow', answers: [
+        {'kind': 'hang'},
+      ]);
+      final http = ReplayHttp.fixtures(root.path, ['S01-hold']);
+
+      final token = CancelToken();
+      final pending = http.send(LiveRequest.get(Uri.parse('https://api.example.test/slow'), cancelToken: token));
+      var answered = false;
+      unawaited(pending.then((_) => answered = true, onError: (Object _) => answered = true));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(answered, isFalse, reason: 'the host accepted and never answers');
+      expect(http.requests, hasLength(1));
+
+      token.cancel('left the page');
+      await expectLater(
+        pending,
+        throwsA(isA<CancelledFailure>().having((failure) => failure.cause, 'cause', 'left the page')),
+      );
+
+      final openToken = CancelToken();
+      final opened = http.open(LiveRequest.get(Uri.parse('https://api.example.test/slow'), cancelToken: openToken));
+      openToken.cancel('gone');
+      await expectLater(opened, throwsA(isA<CancelledFailure>()));
+      expect(http.requests, hasLength(2));
+    });
+
+    test('a broken answer streams its chunks and ends closed, interrupted or stalled', () async {
+      final root = await _root();
+      _sample2(
+        root,
+        'S01-cut',
+        url: 'https://cdn.example.test/live.flv',
+        answers: [
+          {'kind': 'broken', 'body': 'body.flv', 'chunks': [3, 4], 'end': 'closed'},
+        ],
+        bodies: {'body.flv': 'abcdefghij'},
+      );
+      final http = ReplayHttp.fixtures(root.path, ['S01-cut']);
+      final request = LiveRequest.get(Uri.parse('https://cdn.example.test/live.flv'));
+
+      final read = await http.open(request) as ReplayStreamedResponse;
+      expect(await read.stream.toList(), [
+        utf8.encode('abc'),
+        utf8.encode('defg'),
+      ], reason: 'the last three bytes never arrive');
+      expect(read.closed, isFalse, reason: 'a body read to its end is not the consumer ending it');
+      expect(http.opens.single, same(read));
+
+      // A buffered send holds the bytes the chunks delivered.
+      expect((await http.send(request)).text, 'abcdefg');
+    });
+
+    test('an interrupted broken answer fails the stream and the buffered send', () async {
+      final root = await _root();
+      _sample2(
+        root,
+        'S01-reset',
+        url: 'https://cdn.example.test/live.flv',
+        answers: [
+          {'kind': 'broken', 'body': 'body.flv', 'chunks': [3], 'end': 'interrupted'},
+        ],
+        bodies: {'body.flv': 'abcdefghij'},
+      );
+      final http = ReplayHttp.fixtures(root.path, ['S01-reset']);
+      final request = LiveRequest.get(Uri.parse('https://cdn.example.test/live.flv'));
+
+      final read = await http.open(request);
+      await expectLater(read.stream.toList(), throwsA(isA<ProtocolFailure>()));
+      await expectLater(http.send(request), throwsA(isA<ProtocolFailure>()));
+    });
+
+    test('a stalled broken answer ends only when the consumer stops reading', () async {
+      final root = await _root();
+      _sample2(
+        root,
+        'S01-stall',
+        url: 'https://cdn.example.test/live.flv',
+        answers: [
+          {'kind': 'broken', 'body': 'body.flv', 'chunks': [3, 7], 'end': 'stalled'},
+        ],
+        bodies: {'body.flv': 'abcdefghij'},
+      );
+      final http = ReplayHttp.fixtures(root.path, ['S01-stall']);
+      final read =
+          (await http.open(LiveRequest.get(Uri.parse('https://cdn.example.test/live.flv'))))
+              as ReplayStreamedResponse;
+
+      final iterator = StreamIterator(read.stream);
+      final chunks = <String>[for (var n = 0; n < 2 && await iterator.moveNext(); n++) utf8.decode(iterator.current)];
+      expect(chunks, ['abc', 'defghij']);
+      await iterator.cancel();
+      expect(read.closed, isTrue, reason: 'the consumer stopped a stream that never ends');
+    });
+
+    test('a response the consumer closes reports closed and reads back empty', () async {
+      final root = await _root();
+      _sample2(
+        root,
+        'S01-refused',
+        url: 'https://cdn.example.test/live.flv',
+        answers: [
+          {'status': 404},
+        ],
+      );
+      final http = ReplayHttp.fixtures(root.path, ['S01-refused']);
+      final read =
+          (await http.open(LiveRequest.get(Uri.parse('https://cdn.example.test/live.flv'))))
+              as ReplayStreamedResponse;
+
+      await read.close();
+      expect(read.closed, isTrue);
+      expect(await read.stream.toList(), isEmpty, reason: 'reading after a close ends without an error');
+      await read.close();
+      expect(http.opens, hasLength(1));
+    });
+
+    test('a sample the meta cannot spell fails the load loudly', () async {
+      final root = await _root();
+      _sample2(root, 'S01-heavy', url: 'https://cdn.example.test/live.flv', answers: [
+        {'kind': 'broken', 'body': 'body.flv', 'chunks': [50]},
+      ], bodies: {'body.flv': 'abc'});
+      _sample2(root, 'S01-mystery', url: 'https://api.example.test/room', answers: [
+        {'kind': 'quantum'},
+      ]);
+      Directory('${root.path}/S01-ancient').createSync();
+      File('${root.path}/S01-ancient/meta.json').writeAsStringSync(
+        jsonEncode({
+          'schema': 3,
+          'platform': 'example',
+          'sample': 'S01-ancient',
+          'request': {'method': 'GET', 'url': 'https://api.example.test/room'},
+          'response': {'status': 200, 'headers': <String, String>{}},
+          'body': 'body.json',
+        }),
+      );
+
+      expect(() => ReplayHttp.fixtures(root.path, ['S01-heavy']), throwsArgumentError);
+      expect(() => ReplayHttp.fixtures(root.path, ['S01-mystery']), throwsArgumentError);
+      expect(() => ReplayHttp.fixtures(root.path, ['S01-ancient']), throwsArgumentError);
     });
   });
 }

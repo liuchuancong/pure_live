@@ -39,9 +39,44 @@
 // repeated header such as `set-cookie`). Signatures, tokens, sessions and
 // clocks in the URL or the body are recorded with stand-in values; the test
 // leaves those names out of matching through `ReplayHttp.ignoredQuery`.
+//
+// Schema 2 extends what one sample can answer, for shapes the wire has that a
+// single response cannot spell: the same request form answered differently
+// call by call, a request the host accepts and never answers, a connect-phase
+// failure, and a body that breaks mid-flight. `request` means the same as in
+// schema 1 (the `body` key stays optional: without it the sample answers
+// every request to the method, host, path and query); the answers live in an
+// `answers` list, consumed in call order, and the LAST answer repeats once
+// the list runs out (a poll loop keeps hearing the last recorded answer; a
+// test that pins the call count asserts it through `ReplayHttp.requests`).
+// Every answer object carries a `kind`, default `response`:
+//
+//   {"status": 401, "headers": {...}, "body": "body-2.json"}
+//       an ordinary answer; `headers` and `body` are optional (no body key
+//       means an empty body), and `body` names a file in the sample
+//       directory like the schema-1 `body`.
+//   {"kind": "connect", "description": "dns down"}
+//       the request fails with a `ConnectFailure` before any answer.
+//   {"kind": "hang"}
+//       the request is accepted and never answered — the returned future
+//       stays pending until the request's cancel token is cancelled, which
+//       fails it with a `CancelledFailure` (as a caller's timeout or
+//       cancellation observes on the wire).
+//   {"kind": "broken", "status": 200, "headers": {...}, "body": "body.flv",
+//    "chunks": [8, 33], "end": "closed"}
+//       the head of the answer is normal but the body breaks: the body file
+//       is streamed in the listed chunk sizes (bytes beyond the listed sizes
+//       never arrive), and then the stream ends as `end` says — `closed`
+//       (the default) completes it, `interrupted` fails it with a
+//       `ProtocolFailure`, and `stalled` leaves it open with nothing more to
+//       come (the server that stopped talking). A broken answer is meant for
+//       `open`; `send` hands out the bytes the chunks delivered (and fails
+//       for `interrupted`).
 
 // kareki: ignore_for_file=test_only_used
 // Test support has no production consumer by design.
+// ignore_for_file: unnecessary_type_name_in_constructor -- this SDK has no
+// `new.named` shorthand: a named constructor must repeat its type name.
 
 import 'dart:async';
 import 'dart:convert';
@@ -53,6 +88,65 @@ import 'package:live_net/src/contracts/request.dart';
 import 'package:live_net/src/contracts/response.dart';
 import 'package:live_net/src/contracts/streamed_response.dart';
 import 'package:live_net/src/contracts/transport_failure.dart';
+
+/// One answer a sample can give, in the order its requests arrive. The
+/// shapes are the schema-2 `answers` entries (see the file header); a
+/// hand-built sample carries exactly one [_ResponseAnswer].
+sealed class _Answer {
+  const _Answer();
+}
+
+/// An ordinary recorded response.
+final class _ResponseAnswer extends _Answer {
+  new({required this.statusCode, required this.headers, required this.bodyBytes});
+
+  final int statusCode;
+  final Map<String, List<String>> headers;
+  final Uint8List bodyBytes;
+}
+
+/// A request that fails before any answer (the connection did not happen).
+final class _ConnectAnswer extends _Answer {
+  const new(this.description);
+
+  final String description;
+}
+
+/// A request the host accepted and never answers.
+final class _HangAnswer extends _Answer {
+  const new();
+}
+
+/// A normal answer head whose body breaks after the declared chunks.
+final class _BrokenAnswer extends _Answer {
+  const new({
+    required this.statusCode,
+    required this.headers,
+    required this.bodyBytes,
+    required this.chunks,
+    required this.end,
+  });
+
+  final int statusCode;
+  final Map<String, List<String>> headers;
+
+  /// The full recorded body; [chunks] cut what arrives out of it.
+  final Uint8List bodyBytes;
+  final List<int> chunks;
+  final _StreamEnd end;
+}
+
+/// How a broken body ends.
+enum _StreamEnd {
+  /// The stream completes after the chunks (the server closed early).
+  closed,
+
+  /// The stream fails after the chunks (the connection broke mid-flight).
+  interrupted,
+
+  /// The stream stays open with nothing more to come.
+  stalled,
+}
 
 /// One recorded exchange to replay.
 final class ReplaySample {
@@ -67,12 +161,32 @@ final class ReplaySample {
     this.headers = const {},
     this.form,
     this.json,
-  });
+  }) : _answers = [
+        _ResponseAnswer(statusCode: statusCode, headers: headers, bodyBytes: bodyBytes),
+      ];
 
-  /// Loads `<directory>/meta.json` and the body file it names (the layout
-  /// at the top of this file).
+  ReplaySample._({
+    required this.method,
+    required this.url,
+    required List<_Answer> answers,
+    this.form,
+    this.json,
+  }) : _answers = answers,
+       statusCode = _firstResponse(answers)?.statusCode ?? 0,
+       headers = _firstResponse(answers)?.headers ?? const {},
+       bodyBytes = _firstResponse(answers)?.bodyBytes ?? Uint8List(0);
+
+  /// Loads `<directory>/meta.json` and the body files it names (the schema-1
+  /// and schema-2 layouts at the top of this file).
   factory load(String directory) {
     final meta = jsonDecode(File('$directory/meta.json').readAsStringSync()) as Map<String, dynamic>;
+    final schema = meta['schema'];
+    if (schema == 2) return ReplaySample._schema2(directory, meta);
+    if (schema == 1) return ReplaySample._schema1(directory, meta);
+    throw ArgumentError('replay sample $directory: unsupported schema $schema (1 or 2)');
+  }
+
+  factory ReplaySample._schema1(String directory, Map<String, dynamic> meta) {
     final request = meta['request'] as Map<String, dynamic>;
     final response = meta['response'] as Map<String, dynamic>;
     final body = request['body'];
@@ -81,17 +195,90 @@ final class ReplaySample {
       method: request['method'] as String,
       url: Uri.parse(request['url'] as String),
       statusCode: response['status'] as int,
-      headers: {
-        for (final entry in (response['headers'] as Map<String, dynamic>? ?? const {}).entries)
-          entry.key.toLowerCase(): entry.value is List
-              ? [for (final value in entry.value as List) '$value']
-              : ['${entry.value}'],
-      },
+      headers: _headersOf(response['headers']),
       bodyBytes: File('$directory/${meta['body']}').readAsBytesSync(),
       form: body is String && json == null ? Uri.splitQueryString(body) : null,
       json: json,
     );
   }
+
+  factory ReplaySample._schema2(String directory, Map<String, dynamic> meta) {
+    final request = meta['request'] as Map<String, dynamic>;
+    final answers = meta['answers'];
+    if (answers is! List || answers.isEmpty) {
+      throw ArgumentError('replay sample $directory: schema 2 needs a non-empty "answers" list');
+    }
+    final body = request['body'];
+    final json = body is String ? _decodeJson(body) : null;
+    return ReplaySample._(
+      method: request['method'] as String,
+      url: Uri.parse(request['url'] as String),
+      form: body is String && json == null ? Uri.splitQueryString(body) : null,
+      json: json,
+      answers: [for (final answer in answers) _parseAnswer(directory, answer)],
+    );
+  }
+
+  /// One schema-2 answer object (see the file header for the shapes).
+  static _Answer _parseAnswer(String directory, Object? answer) {
+    if (answer is! Map<String, dynamic>) {
+      throw ArgumentError('replay sample $directory: every answer is an object');
+    }
+    switch (answer['kind'] ?? 'response') {
+      case 'response':
+        return _ResponseAnswer(
+          statusCode: (answer['status'] ?? 200) as int,
+          headers: _headersOf(answer['headers']),
+          bodyBytes: answer['body'] == null
+              ? Uint8List(0)
+              : File('$directory/${answer['body']}').readAsBytesSync(),
+        );
+      case 'connect':
+        return _ConnectAnswer('${answer['description'] ?? 'connection failed'}');
+      case 'hang':
+        return const _HangAnswer();
+      case 'broken':
+        final bodyBytes = answer['body'] == null
+            ? Uint8List(0)
+            : File('$directory/${answer['body']}').readAsBytesSync();
+        final chunks = [for (final chunk in answer['chunks'] as List? ?? const []) chunk as int];
+        if (chunks.fold(0, (total, chunk) => total + chunk) > bodyBytes.length) {
+          throw ArgumentError('replay sample $directory: the chunks deliver more than the body holds');
+        }
+        final end = switch (answer['end'] ?? 'closed') {
+          'closed' => _StreamEnd.closed,
+          'interrupted' => _StreamEnd.interrupted,
+          'stalled' => _StreamEnd.stalled,
+          final other => throw ArgumentError('replay sample $directory: "$other" is not a broken-stream end'),
+        };
+        return _BrokenAnswer(
+          statusCode: (answer['status'] ?? 200) as int,
+          headers: _headersOf(answer['headers']),
+          bodyBytes: bodyBytes,
+          chunks: chunks,
+          end: end,
+        );
+      case final other:
+        throw ArgumentError(
+          'replay sample $directory: "$other" is not an answer kind (response, connect, hang, broken)',
+        );
+    }
+  }
+
+  /// [headers] as the samples spell them: one string or a list per header,
+  /// keyed by lower-case name.
+  static Map<String, List<String>> _headersOf(Object? headers) => {
+    for (final entry in ((headers as Map<String, dynamic>?) ?? const {}).entries)
+      entry.key.toLowerCase(): entry.value is List
+          ? [for (final value in entry.value as List) '$value']
+          : ['${entry.value}'],
+  };
+
+  /// The first ordinary answer of [answers], whose recording the public
+  /// fields describe (they exist for introspection; the replay answers
+  /// through [_answers]).
+  static _ResponseAnswer? _firstResponse(List<_Answer> answers) =>
+      answers.whereType<_ResponseAnswer>().firstOrNull;
 
   /// [body] decoded when it is a JSON object or array, else null.
   static Object? _decodeJson(String body) {
@@ -104,20 +291,23 @@ final class ReplaySample {
     }
   }
 
+  /// The answers this sample gives, in call order (the last one repeats).
+  final List<_Answer> _answers;
+
   /// Recorded method.
   final String method;
 
   /// Recorded URL (signatures scrubbed).
   final Uri url;
 
-  /// Recorded status code.
+  /// Status of the first ordinary answer (0 when none).
   final int statusCode;
 
-  /// Recorded headers by lower-case name; a repeated header keeps every
-  /// value.
+  /// Headers of the first ordinary answer, by lower-case name; a repeated
+  /// header keeps every value.
   final Map<String, List<String>> headers;
 
-  /// Recorded body, after content decoding.
+  /// Body of the first ordinary answer, after content decoding.
   final Uint8List bodyBytes;
 
   /// Recorded form fields of a form POST, or null.
@@ -134,9 +324,12 @@ final class ReplaySample {
 /// compared. The first matching sample answers; a request without one throws
 /// a [StateError], failing the test.
 ///
+/// A sample with more than one answer (schema 2) gives them in call order and
+/// repeats its last one once they run out. A request whose cancel token is
+/// already cancelled fails with [CancelledFailure], as on the wire.
+///
 /// [samples] is read on every request, so a test whose platform changes its
-/// answer midway puts the new sample first there. A request whose cancel
-/// token is already cancelled fails with [CancelledFailure], as on the wire.
+/// answer midway puts the new sample first there.
 final class ReplayHttp implements LiveHttp {
   /// Replays a copy of [samples].
   new(List<ReplaySample> samples, {this.ignoredQuery = const {}}) : samples = [...samples];
@@ -155,40 +348,125 @@ final class ReplayHttp implements LiveHttp {
   /// too).
   final List<LiveRequest> requests = [];
 
+  /// Every streamed response [open] handed out, in order, so a test can ask
+  /// through [ReplayStreamedResponse.closed] how its consumption ended.
+  final List<ReplayStreamedResponse> opens = [];
+
+  /// How many requests each sample has answered, send or open alike.
+  final Map<ReplaySample, int> _calls = {};
+
   @override
   Future<LiveResponse> send(LiveRequest request) async {
-    final sample = _answer(request);
-    return LiveResponse(
-      statusCode: sample.statusCode,
-      headers: _joined(sample.headers),
-      setCookies: sample.headers['set-cookie'] ?? const [],
-      bodyBytes: sample.bodyBytes,
-    );
+    final answer = _answer(request);
+    return switch (answer) {
+      _ResponseAnswer(:final statusCode, :final headers, :final bodyBytes) => LiveResponse(
+        statusCode: statusCode,
+        headers: _joined(headers),
+        setCookies: headers['set-cookie'] ?? const [],
+        bodyBytes: bodyBytes,
+      ),
+      _ConnectAnswer(:final description) => throw ConnectFailure(description),
+      _HangAnswer() => await _hung(request),
+      _BrokenAnswer(:final statusCode, :final headers, :final bodyBytes, :final chunks, :final end) => switch (end) {
+        _StreamEnd.interrupted => throw const ProtocolFailure('connection closed mid-body'),
+        // A buffered reader holds the bytes that arrived before the break.
+        _ => LiveResponse(
+          statusCode: statusCode,
+          headers: _joined(headers),
+          setCookies: headers['set-cookie'] ?? const [],
+          bodyBytes: _cut(bodyBytes, chunks),
+        ),
+      },
+    };
   }
 
   @override
   Future<LiveStreamedResponse> open(LiveRequest request) async {
-    final sample = _answer(request);
-    return _ReplayStreamedResponse(
-      statusCode: sample.statusCode,
-      headers: _joined(sample.headers),
-      bytes: sample.bodyBytes,
+    final answer = _answer(request);
+    if (answer is _ConnectAnswer) throw ConnectFailure(answer.description);
+    if (answer is _HangAnswer) return await _hung(request);
+    final (statusCode, headers, chunks, interrupted, stalled) = switch (answer) {
+      _ResponseAnswer(:final statusCode, :final headers, :final bodyBytes) => (
+        statusCode,
+        _joined(headers),
+        [bodyBytes],
+        false,
+        false,
+      ),
+      _BrokenAnswer(:final statusCode, :final headers, :final bodyBytes, :final chunks, :final end) => (
+        statusCode,
+        _joined(headers),
+        _chunksOf(bodyBytes, chunks),
+        end == _StreamEnd.interrupted,
+        end == _StreamEnd.stalled,
+      ),
+      _HangAnswer() || _ConnectAnswer() => throw StateError('handled above'),
+    };
+    final response = ReplayStreamedResponse(
+      statusCode: statusCode,
+      headers: headers,
+      chunks: chunks,
+      interrupted: interrupted,
+      stalled: stalled,
     );
+    opens.add(response);
+    return response;
   }
 
   /// Nothing to release.
   @override
   void close() {}
 
-  ReplaySample _answer(LiveRequest request) {
+  /// The answer [request] gets: the matching sample's next one, or its last
+  /// again once the answers ran out.
+  _Answer _answer(LiveRequest request) {
     requests.add(request);
     if (request.cancelToken.isCancelled) throw CancelledFailure(cause: request.cancelToken.reason);
     for (final sample in samples) {
-      if (_matches(sample, request)) return sample;
+      if (_matches(sample, request)) {
+        final call = _calls.update(sample, (count) => count + 1, ifAbsent: () => 0);
+        return sample._answers[call < sample._answers.length ? call : sample._answers.length - 1];
+      }
     }
     final bytes = request.bodyBytes;
     final body = bytes != null ? '${bytes.length} body bytes' : request.body;
     throw StateError('No recorded sample for $request${body == null ? '' : ' ($body)'}');
+  }
+
+  /// A future that stays pending until [request]'s cancel token is cancelled,
+  /// then fails as cancelled — the host that accepts and never answers.
+  Future<T> _hung<T>(LiveRequest request) {
+    final completer = Completer<T>();
+    unawaited(
+      request.cancelToken.whenCancel.then((reason) {
+        if (!completer.isCompleted) completer.completeError(CancelledFailure(cause: reason));
+      }),
+    );
+    return completer.future;
+  }
+
+  /// The bytes of [bodyBytes] the [chunks] deliver.
+  static Uint8List _cut(Uint8List bodyBytes, List<int> chunks) {
+    final cut = Uint8List(chunks.fold(0, (total, chunk) => total + chunk));
+    var target = 0;
+    var source = 0;
+    for (final chunk in chunks) {
+      cut.setRange(target, target + chunk, bodyBytes, source);
+      target += chunk;
+      source += chunk;
+    }
+    return cut;
+  }
+
+  /// [bodyBytes] cut into the [chunks] to stream.
+  static List<Uint8List> _chunksOf(Uint8List bodyBytes, List<int> chunks) {
+    final cut = <Uint8List>[];
+    var offset = 0;
+    for (final chunk in chunks) {
+      cut.add(Uint8List.sublistView(bodyBytes, offset, offset + chunk));
+      offset += chunk;
+    }
+    return cut;
   }
 
   bool _matches(ReplaySample sample, LiveRequest request) {
@@ -243,16 +521,32 @@ final class ReplayHttp implements LiveHttp {
   };
 }
 
-/// The recorded body as one chunk, sent once the stream is listened to;
-/// [close] before that ends the stream empty.
-final class _ReplayStreamedResponse implements LiveStreamedResponse {
-  new({required this.statusCode, required this.headers, required Uint8List bytes}) {
+/// A replayed streamed answer: its body arrives in the declared chunks once
+/// the stream is listened to and ends as the answer declared (after the
+/// chunks, or interrupted, or not at all while the server stalls). [close]
+/// before that ends the stream empty.
+///
+/// [closed] says whether the CONSUMER ended the response itself — a [close]
+/// call, or a stream subscription cancelled before the declared end arrived.
+/// A body read to its end is not closed.
+final class ReplayStreamedResponse implements LiveStreamedResponse {
+  /// A response streaming [chunks] and then completing, failing
+  /// ([interrupted]) or never ending ([stalled]).
+  new({
+    required this.statusCode,
+    required this.headers,
+    required List<Uint8List> chunks,
+    bool interrupted = false,
+    bool stalled = false,
+  }) {
     _controller = StreamController<Uint8List>(
-      onListen: () => scheduleMicrotask(() {
-        if (!_closed) _controller.add(bytes);
-        unawaited(_controller.close());
-      }),
+      onCancel: () {
+        // Fires for an abandoned stream and again after a done event; only
+        // the abandonment is the consumer ending it.
+        if (!_ended) _cancelled = true;
+      },
     );
+    _controller.onListen = () => scheduleMicrotask(() => _deliver(chunks, interrupted, stalled));
   }
 
   @override
@@ -262,13 +556,36 @@ final class _ReplayStreamedResponse implements LiveStreamedResponse {
   final Map<String, String> headers;
 
   late final StreamController<Uint8List> _controller;
+  bool _ended = false;
   bool _closed = false;
+  bool _cancelled = false;
+
+  /// Whether the consumer ended this response: [close] called, or the stream
+  /// subscription cancelled before the declared end arrived.
+  bool get closed => _closed || _cancelled;
 
   @override
   Stream<Uint8List> get stream => _controller.stream;
 
   @override
-  Future<void> close() async {
+  Future<void> close() {
     _closed = true;
+    _ended = true;
+    // The done event goes to a listener there is; nobody must wait for it —
+    // a response closed before its first listen has none to deliver to.
+    if (!_controller.isClosed) unawaited(_controller.close());
+    return Future.value();
+  }
+
+  /// Puts the whole body on the stream in one go — every chunk and the end
+  /// land in this one microtask, so a consumer reads them in order and can
+  /// only stop before the end while the stream is still open.
+  void _deliver(List<Uint8List> chunks, bool interrupted, bool stalled) {
+    if (_controller.isClosed) return; // closed before the first listen: nothing to deliver
+    chunks.forEach(_controller.add);
+    if (stalled) return; // the server stopped talking; ending it is the consumer's
+    _ended = true;
+    if (interrupted) _controller.addError(const ProtocolFailure('connection closed mid-body'));
+    unawaited(_controller.close());
   }
 }
