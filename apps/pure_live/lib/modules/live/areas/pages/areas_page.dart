@@ -390,6 +390,17 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // The page's own bar sits above the category tabs: the platform tabs
+        // above belong to the page toolbar, and the feed's built-in bar would
+        // otherwise appear below the second tab row. The four pixels stay
+        // reserved so a refresh does not push the tabs down.
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: inset),
+          child: SizedBox(
+            height: 4,
+            child: state.loading && state.areas.isNotEmpty ? const RefreshProgressBar() : null,
+          ),
+        ),
         if (searching)
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
@@ -443,6 +454,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
               items: items,
               pageSize: _areaPageSize,
               hasMore: false,
+              showRefreshProgress: false,
               isLoading: state.loading,
               onLoadMore: () async {},
               crossSpacing: settings.crossSpacing,
@@ -451,6 +463,10 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
               // Poster tiles are small: their own measure fits several
               // across a window, while the row keeps the feed's card width.
               cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+              // A row card's icon and two lines need a phone's whole width;
+              // two columns would overflow its own 3.4 ratio.
+              oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
+              compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
               error: state.error?.message,
               onRetry: () => controller.refresh(widget.platform),
               // A pull reloads the catalogue; a failure keeps the areas and
@@ -486,6 +502,8 @@ final class _FollowedAreas extends ConsumerWidget {
         mainSpacing: settings.mainSpacing,
         aspectRatio: areaCardAspectRatio(tileLayout),
         cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+        oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
+        compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
         isLoading: true,
         itemBuilder: (_, _) => const SizedBox.shrink(),
       );
@@ -522,6 +540,8 @@ final class _FollowedAreas extends ConsumerWidget {
       mainSpacing: settings.mainSpacing,
       aspectRatio: areaCardAspectRatio(tileLayout),
       cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
+      compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
       itemBuilder: cardBuilder,
     );
   }

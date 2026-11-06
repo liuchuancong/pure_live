@@ -17,6 +17,10 @@ enum AreaCardLayout {
 /// card, so every page that lays areas out lays them out the same.
 const double kAreaTileDesignWidth = 170;
 
+/// The row card's compact height: one full-width row keeps the icon and its
+/// two lines, but does not stretch to the poster ratio.
+const double kAreaRowDesignHeight = 72;
+
 /// The grid aspect of [AreaCardLayout.tile] and [AreaCardLayout.row]: the
 /// tile's own measure, and the row's wide band. Every page that lays areas
 /// out asks this one.

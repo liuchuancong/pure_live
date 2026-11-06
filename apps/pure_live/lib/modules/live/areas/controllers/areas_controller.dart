@@ -46,9 +46,14 @@ final class AreasCatalogController extends Notifier<Map<String, PlatformAreasSta
   }
 
   /// Loads [platform]'s areas again (a retry from its error state).
-  Future<void> refresh(String platform) => _load(platform);
+  Future<void> refresh(String platform) => _load(platform, useCache: false);
 
-  Future<void> _load(String platform) async {
+  /// The catalogue's short-lived copy: a platform's areas change rarely, so
+  /// the API memory cache answers a tab opened again within the TTL without
+  /// another round trip. An explicit refresh bypasses it.
+  static const Duration _areasTtl = Duration(minutes: 30);
+
+  Future<void> _load(String platform, {bool useCache = true}) async {
     final current = catalogOf(platform);
     if (current.loading) return;
     state = {...state, platform: (areas: current.areas, loading: true, error: null)};
@@ -57,12 +62,23 @@ final class AreasCatalogController extends Notifier<Map<String, PlatformAreasSta
       state = {...state, platform: (areas: const [], loading: false, error: null)};
       return;
     }
+    final api = ref.read(liveCacheManagerProvider).api;
+    if (useCache) {
+      final cached = api.get('areas:$platform');
+      if (cached is List<LiveArea> && state.containsKey(platform)) {
+        state = {...state, platform: (areas: cached, loading: false, error: null)};
+        return;
+      }
+    }
     final answer = await capability.getAreas();
     final open = state[platform];
     if (open == null) return;
     answer.match(
       (error) => state = {...state, platform: (areas: open.areas, loading: false, error: error)},
-      (areas) => state = {...state, platform: (areas: areas.toList(), loading: false, error: null)},
+      (areas) {
+        api.set('areas:$platform', areas.toList(), ttl: _areasTtl);
+        state = {...state, platform: (areas: areas.toList(), loading: false, error: null)};
+      },
     );
   }
 }

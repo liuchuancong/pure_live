@@ -438,7 +438,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                 DsProgressBar(
                   value: progress,
                   semanticLabel: t.favorites.refresh,
-                  style: const DsProgressBarStyle(height: 2.5),
+                  style: const DsProgressBarStyle(height: 4),
                 ),
             ],
           ),

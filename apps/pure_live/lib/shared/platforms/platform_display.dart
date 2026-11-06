@@ -1,7 +1,9 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
 
 /// A platform's display name in the app's current language, falling back
 /// through the manifests' localized names to their stable id.
@@ -34,7 +36,8 @@ Widget? localizedSiteIcon(LiveSite? site, {double size = 16}) {
   final ImageProvider<Object>? image = switch (icon.type) {
     LiveAssetType.bundled =>
       (icon.path ?? '').trim().isEmpty ? null : AssetImage(icon.path!.trim(), package: 'live_sites'),
-    LiveAssetType.remote => icon.uri == null ? null : NetworkImage(icon.uri.toString()),
+    LiveAssetType.remote =>
+      icon.uri == null ? null : cachedImage(icon.uri.toString(), policy: ImageCachePolicies.platformIcon),
     LiveAssetType.platformDefault => null,
   };
   if (image == null) return null;

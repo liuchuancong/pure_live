@@ -1,5 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LiveArea;
 
 import 'package:pure_live/shared/images/images.dart' show cachedImage;
@@ -35,7 +36,7 @@ final class AreaIcon extends StatelessWidget {
     final image = switch ((url, bundled)) {
       (_, final String path) => path.isEmpty ? null : AssetImage(path, package: 'live_sites'),
       ('', _) => null,
-      _ => cachedImage(url),
+      _ => cachedImage(url, policy: ImageCachePolicies.categoryCover),
     };
     final fallback = ColoredBox(
       color: colors.channel,
