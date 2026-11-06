@@ -191,6 +191,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final showLink = link != null && link == _checkedLink && linkState.resolved != null;
     final failed = ref.watch(searchFailuresProvider);
     final failureNames = [for (final id in failed) _platformName(id)].join('、');
+    final excluded = ref.watch(searchExcludedProvider);
     final view = _viewOf(search);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final platforms = [kSearchAllPlatforms, ...allPlatformIds];
@@ -354,7 +355,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: Text(
-              searchCoverageText(context.t, SearchCapabilities.of(scope)),
+              searchCoverageText(context.t, SearchCapabilities.of(scope), _platformName(scope)),
               style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
             ),
           ),
@@ -419,10 +420,42 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               ],
             ),
           ),
+        // The scope's sentence (the reference's scope line): "all" counts the
+        // platforms it asks — in the anchors' target, the ones that can
+        // answer it. A single platform's own line already sits under the
+        // target segments. It opens the scope panel, where the excluded
+        // platforms and every platform's words live.
+        if (scope == kSearchAllPlatforms)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s4),
+            child: DsPressable(
+              onPressed: () => unawaited(_openScope()),
+              builder: (context, states, _) {
+                final colors = DsTheme.colorsOf(context);
+                return Row(
+                  children: [
+                    DsIcon(DsIcons.info, size: 14, color: colors.accent),
+                    const SizedBox(width: DsSpace.s3),
+                    Expanded(
+                      child: Text(
+                        _scopeSentence(context, search, scope: scope, platformIds: allPlatformIds, excluded: excluded),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
         Expanded(
           child: _SearchResults(
             search: view,
             targets: targets,
+            unsupportedCoverage: scope == kSearchAllPlatforms
+                ? null
+                : searchCoverageText(context.t, SearchCapabilities.of(scope), _platformName(scope)),
             hasHiddenOffline: !_includeOffline && view.target == LiveSearchTarget.rooms && search.rooms.isNotEmpty,
             onShowOffline: () => setState(() => _includeOffline = true),
           ),
@@ -683,6 +716,41 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
 
   static String? _linkIn(String text) => RegExp(r'https?://[^\s，。；;“”‘’<>]+').firstMatch(text)?.group(0);
 
+  /// The scope's sentence (the reference's scope line): a single platform
+  /// names what it finds, "all" counts the platforms it asks — in the
+  /// anchors' target, the platforms that can answer it at all.
+  String _scopeSentence(
+    BuildContext context,
+    SearchState search, {
+    required String scope,
+    required List<String> platformIds,
+    required Set<String> excluded,
+  }) {
+    final t = context.t;
+    if (scope != kSearchAllPlatforms) {
+      final capability = SearchCapabilities.of(scope);
+      if (search.target == LiveSearchTarget.anchors && !capability.anchors) {
+        return t.search.anchorUnsupported(site: _platformName(scope));
+      }
+      return searchCoverageText(t, capability, _platformName(scope));
+    }
+    if (search.target == LiveSearchTarget.anchors) {
+      final names = [
+        for (final id in platformIds)
+          if (!excluded.contains(id) && SearchCapabilities.of(id).anchors) _platformName(id),
+      ];
+      return t.search.anchorPlatforms(sites: names.join('、'));
+    }
+    final chosen = [
+      for (final id in platformIds)
+        if (!excluded.contains(id) && SearchCapabilities.of(id).native) id,
+    ];
+    final left = platformIds.length - chosen.length;
+    return left > 0
+        ? t.search.scopeSummaryExcluded(count: '${chosen.length}', total: '${platformIds.length}', excluded: '$left')
+        : t.search.scopeSummary(count: '${chosen.length}');
+  }
+
   String _sortLabel(BuildContext context, _SearchSort sort) => switch (sort) {
     _SearchSort.smart => context.t.search.sortSmart,
     _SearchSort.platform => context.t.search.sortPlatform,
@@ -928,6 +996,7 @@ final class _SearchResults extends ConsumerWidget {
     required this.targets,
     required this.hasHiddenOffline,
     required this.onShowOffline,
+    this.unsupportedCoverage,
   });
 
   /// The search being shown.
@@ -935,6 +1004,10 @@ final class _SearchResults extends ConsumerWidget {
 
   /// The targets the site searches; empty when it cannot search at all.
   final List<LiveSearchTarget> targets;
+
+  /// What the chosen platform finds, said in its own words; the generic
+  /// sentence when null (the "all" scope cannot be unsupported).
+  final String? unsupportedCoverage;
 
   /// Whether the only hits were non-playable rooms the offline filter hid.
   final bool hasHiddenOffline;
@@ -953,7 +1026,7 @@ final class _SearchResults extends ConsumerWidget {
           child: DsEmptyState(
             icon: const DsIcon(DsIcons.searchX),
             title: Text(t.search.unsupportedTitle),
-            description: Text(t.search.unsupportedDescription),
+            description: Text(unsupportedCoverage ?? t.search.unsupportedDescription),
           ),
         );
       }

@@ -2514,10 +2514,10 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get webSearchExternalFailed => 'Could not open the system browser';
 	@override String get webSearchFailed => 'The page failed to load';
 	@override String get sort => 'Sort';
-	@override String get sortSmart => 'Smart';
-	@override String get sortPlatform => 'By platform';
-	@override String get sortAudience => 'By audience';
-	@override String get sortFollowers => 'By followers';
+	@override String get sortSmart => 'Smart: live → audience → followers';
+	@override String get sortPlatform => 'Platform order first';
+	@override String get sortAudience => 'Audience first';
+	@override String get sortFollowers => 'Followers first';
 	@override String get includeOffline => 'Include offline';
 	@override String get filterTitle => 'Filters';
 	@override String get filterReset => 'Reset';
@@ -2532,14 +2532,14 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get scopeDomesticOnly => 'Domestic only';
 	@override String get scopeSelectAll => 'Select all';
 	@override String get scopeApply => 'Done';
-	@override String get coverageLiveOnly => 'Finds rooms that are live now';
-	@override String get coverageLiveAndOffline => 'Finds live and some offline rooms';
-	@override String get coverageChannelLookup => 'Looks up a channel id or link';
-	@override String get coverageRoomLookup => 'Looks up a room id or link';
-	@override String get coverageShowcaseSnapshot => 'Filters the current showcase';
-	@override String get coverageLocalChannels => 'Searches channels imported here';
-	@override String get coverageWebOnly => 'Web search only';
-	@override String get coverageUnavailable => 'No search';
+	@override String coverageLiveOnly({required String site}) => '${site}: finds rooms that are live now.';
+	@override String coverageLiveAndOffline({required String site}) => '${site}: finds live rooms and some offline ones; filter with “Include offline”.';
+	@override String coverageChannelLookup({required String site}) => '${site}: channel id or link only; finds offline channels, no keywords or nicknames.';
+	@override String coverageRoomLookup({required String site}) => '${site}: room id or live link only; no nickname search.';
+	@override String coverageShowcaseSnapshot({required String site}) => '${site}: an id or link finds the room exactly; any other word filters the platform\'s current showcase by nickname, offline streamers excluded.';
+	@override String coverageLocalChannels({required String site}) => '${site}: searches the channels imported on this device.';
+	@override String coverageWebOnly({required String site}) => '${site}: no in-app search — browse the popular and area pages, or paste a live link.';
+	@override String coverageUnavailable({required String site}) => '${site}: no in-app search — browse the popular and area pages, or paste a live link.';
 	@override String get partialFailureTitle => 'Some platforms returned nothing';
 	@override String partialFailureDescription({required String platforms}) => 'The network or a proxy may have blocked these: ${platforms}';
 	@override String get partialFailureRetry => 'Retry';
@@ -2550,6 +2550,32 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get webVersion => 'Open web version';
 	@override String get webVersionTitle => 'No in-app list here';
 	@override String get webVersionDescription => 'Open the platform\'s web version in the app to see its rooms.';
+	@override String get coverageShortLiveOnly => 'Finds live rooms only';
+	@override String get coverageShortLiveAndOffline => 'Finds live rooms and some offline ones';
+	@override String get coverageShortChannelLookup => 'Channel id or link only';
+	@override String get coverageShortRoomLookup => 'Room id or live link only';
+	@override String get coverageShortShowcase => 'A nickname filter over the current showcase';
+	@override String get coverageShortLocal => 'Searches imported channels';
+	@override String get coverageShortUnavailable => 'Search is unavailable';
+	@override String get noteKuaishou => 'Kuaishou: guest searches may be limited; sign in to a platform account and retry, or paste an official share link to open the room directly.';
+	@override String get noteKuaishouShort => 'Guest searches may be limited; official share links work — sign in and retry';
+	@override String get noteAcfun => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.';
+	@override String get noteAcfunShort => 'Finds creators live and offline';
+	@override String get noteTwitcasting => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.';
+	@override String get noteTwitcastingShort => 'Keywords find live channels only';
+	@override String get noteKilakila => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.';
+	@override String get noteKilakilaShort => 'Find anchors by nickname, UID or link';
+	@override String get noteWeibo => 'Weibo: a session id or live link finds the room exactly; other words filter the current showcase by nickname, and the live state is confirmed on entering.';
+	@override String get noteWeiboShort => 'Session id or live link only';
+	@override String get noteYoutube => 'YouTube: keywords find live channels only; a channel link, @handle or video link finds an offline channel too.';
+	@override String get noteYoutubeShort => 'Keywords find live channels only';
+	@override String get scopeTagAnchors => 'Anchors';
+	@override String get scopeTagWeb => 'Web';
+	@override String get scopeTagsHint => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.';
+	@override String scopeSummary({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.';
+	@override String scopeSummaryExcluded({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.';
+	@override String anchorUnsupported({required String site}) => '${site} cannot search streamers; switch to “Rooms”.';
+	@override String anchorPlatforms({required String sites}) => 'Anchor search covers: ${sites}.';
 }
 
 // Path: settings
@@ -7184,10 +7210,10 @@ extension on TranslationsEn {
 			'search.webSearchExternalFailed' => 'Could not open the system browser',
 			'search.webSearchFailed' => 'The page failed to load',
 			'search.sort' => 'Sort',
-			'search.sortSmart' => 'Smart',
-			'search.sortPlatform' => 'By platform',
-			'search.sortAudience' => 'By audience',
-			'search.sortFollowers' => 'By followers',
+			'search.sortSmart' => 'Smart: live → audience → followers',
+			'search.sortPlatform' => 'Platform order first',
+			'search.sortAudience' => 'Audience first',
+			'search.sortFollowers' => 'Followers first',
 			'search.includeOffline' => 'Include offline',
 			'search.filterTitle' => 'Filters',
 			'search.filterReset' => 'Reset',
@@ -7202,14 +7228,14 @@ extension on TranslationsEn {
 			'search.scopeDomesticOnly' => 'Domestic only',
 			'search.scopeSelectAll' => 'Select all',
 			'search.scopeApply' => 'Done',
-			'search.coverageLiveOnly' => 'Finds rooms that are live now',
-			'search.coverageLiveAndOffline' => 'Finds live and some offline rooms',
-			'search.coverageChannelLookup' => 'Looks up a channel id or link',
-			'search.coverageRoomLookup' => 'Looks up a room id or link',
-			'search.coverageShowcaseSnapshot' => 'Filters the current showcase',
-			'search.coverageLocalChannels' => 'Searches channels imported here',
-			'search.coverageWebOnly' => 'Web search only',
-			'search.coverageUnavailable' => 'No search',
+			'search.coverageLiveOnly' => ({required String site}) => '${site}: finds rooms that are live now.',
+			'search.coverageLiveAndOffline' => ({required String site}) => '${site}: finds live rooms and some offline ones; filter with “Include offline”.',
+			'search.coverageChannelLookup' => ({required String site}) => '${site}: channel id or link only; finds offline channels, no keywords or nicknames.',
+			'search.coverageRoomLookup' => ({required String site}) => '${site}: room id or live link only; no nickname search.',
+			'search.coverageShowcaseSnapshot' => ({required String site}) => '${site}: an id or link finds the room exactly; any other word filters the platform\'s current showcase by nickname, offline streamers excluded.',
+			'search.coverageLocalChannels' => ({required String site}) => '${site}: searches the channels imported on this device.',
+			'search.coverageWebOnly' => ({required String site}) => '${site}: no in-app search — browse the popular and area pages, or paste a live link.',
+			'search.coverageUnavailable' => ({required String site}) => '${site}: no in-app search — browse the popular and area pages, or paste a live link.',
 			'search.partialFailureTitle' => 'Some platforms returned nothing',
 			'search.partialFailureDescription' => ({required String platforms}) => 'The network or a proxy may have blocked these: ${platforms}',
 			'search.partialFailureRetry' => 'Retry',
@@ -7220,6 +7246,32 @@ extension on TranslationsEn {
 			'search.webVersion' => 'Open web version',
 			'search.webVersionTitle' => 'No in-app list here',
 			'search.webVersionDescription' => 'Open the platform\'s web version in the app to see its rooms.',
+			'search.coverageShortLiveOnly' => 'Finds live rooms only',
+			'search.coverageShortLiveAndOffline' => 'Finds live rooms and some offline ones',
+			'search.coverageShortChannelLookup' => 'Channel id or link only',
+			'search.coverageShortRoomLookup' => 'Room id or live link only',
+			'search.coverageShortShowcase' => 'A nickname filter over the current showcase',
+			'search.coverageShortLocal' => 'Searches imported channels',
+			'search.coverageShortUnavailable' => 'Search is unavailable',
+			'search.noteKuaishou' => 'Kuaishou: guest searches may be limited; sign in to a platform account and retry, or paste an official share link to open the room directly.',
+			'search.noteKuaishouShort' => 'Guest searches may be limited; official share links work — sign in and retry',
+			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
+			'search.noteAcfunShort' => 'Finds creators live and offline',
+			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
+			'search.noteTwitcastingShort' => 'Keywords find live channels only',
+			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
+			'search.noteKilakilaShort' => 'Find anchors by nickname, UID or link',
+			'search.noteWeibo' => 'Weibo: a session id or live link finds the room exactly; other words filter the current showcase by nickname, and the live state is confirmed on entering.',
+			'search.noteWeiboShort' => 'Session id or live link only',
+			'search.noteYoutube' => 'YouTube: keywords find live channels only; a channel link, @handle or video link finds an offline channel too.',
+			'search.noteYoutubeShort' => 'Keywords find live channels only',
+			'search.scopeTagAnchors' => 'Anchors',
+			'search.scopeTagWeb' => 'Web',
+			'search.scopeTagsHint' => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.',
+			'search.scopeSummary' => ({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.',
+			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.',
+			'search.anchorUnsupported' => ({required String site}) => '${site} cannot search streamers; switch to “Rooms”.',
+			'search.anchorPlatforms' => ({required String sites}) => 'Anchor search covers: ${sites}.',
 			'settings.title' => 'Settings',
 			'settings.navGeneral' => 'Browsing & window',
 			'settings.navPersonalization' => 'Personalization',
@@ -7275,6 +7327,8 @@ extension on TranslationsEn {
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
 			'settings.backupDescription' => 'Local backups, restores and WebDAV sync.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.aboutDescription' => 'Version, licences and project links.',
 			'settings.browsingPageDescription' => 'Cards and lists, how dense the follows page is, the audience metric and the room card.',
 			'settings.windowPageDescription' => 'Caption, room windows, close behaviour, window size and display rate.',
@@ -7301,8 +7355,6 @@ extension on TranslationsEn {
 			'settings.themeModeSystem' => 'Follow system',
 			'settings.themeModeLight' => 'Light',
 			'settings.themeModeDark' => 'Dark',
-			_ => null,
-		} ?? switch (path) {
 			'settings.followBackgroundTone' => 'Follow background brightness',
 			'settings.followBackgroundToneDescription' => 'Picks light or dark from the wallpaper; choosing a theme yourself turns it off.',
 			'settings.language' => 'Language',
@@ -7789,6 +7841,8 @@ extension on TranslationsEn {
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.iptvSyncDesc' => 'Re-downloads network playlists and guides; local sources stay untouched.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
@@ -7815,8 +7869,6 @@ extension on TranslationsEn {
 			'settings.presetCompatDesc' => 'On Android, switch to the mediacodec_embed surface and force mediacodec decoding. For devices where the default gl/ffmpeg path shows glitches, a green screen or drifting audio.',
 			'settings.presetRtxVsr' => 'RTX Video Super Resolution',
 			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA only: d3d11va decoding plus the RTX Video Super Resolution filter, upscaling low-definition sources onto high-resolution screens.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.presetLowEnd' => 'Smooth on weak hardware',
 			'settings.presetLowEndDesc' => 'Software decoding capped at 2 threads, lowres downsampling, skipped loop filters and a smaller buffer. Hands the CPU back to the picture; for iGPUs and old machines.',
 			'settings.presetStableNetwork' => 'Stable on weak networks',
@@ -8303,6 +8355,8 @@ extension on TranslationsEn {
 			'settings.audienceHeatOnlyGroup' => 'Platforms with heat or total views only',
 			'settings.audienceHeatOnlyDesc' => 'Their public APIs give no concurrent count; cards still show heat or total views.',
 			'settings.backgroundSolid' => 'Solid',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGradient' => 'Gradient',
 			'settings.backgroundPresets' => 'Presets',
 			'settings.backgroundLibraryTitle' => 'Wallpaper library',
@@ -8329,8 +8383,6 @@ extension on TranslationsEn {
 			'settings.wallpaperCategorySpiderMan' => 'Spider-Man',
 			'settings.wallpaperCategoryGhibli' => 'Ghibli',
 			'settings.wallpaperCategoryNaruto' => 'Naruto',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperCategorySciFi' => 'Sci-Fi',
 			'settings.wallpaperCategoryAnimeWallhaven' => 'Anime',
 			'settings.wallpaperCategoryAnimeGirls' => 'Anime Girls',
@@ -8817,6 +8869,8 @@ extension on TranslationsEn {
 			'toolbox.nodeTesting' => 'Testing',
 			'toolbox.nodeUntested' => 'Not tested',
 			'toolbox.nodeReachable' => 'Reachable',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
 			'toolbox.nodeHint' => 'Run a check to test this platform.',
@@ -8843,8 +8897,6 @@ extension on TranslationsEn {
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
 			'toolbox.logsOpenFolder' => 'Open the folder',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsLevelLabel' => 'Level',
 			'toolbox.logsSave' => 'Save to file',
 			'toolbox.logsSaved' => 'Log saved',

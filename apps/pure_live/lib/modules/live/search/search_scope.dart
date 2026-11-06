@@ -144,6 +144,15 @@ final class _SearchScopePanelState extends State<_SearchScopePanel> {
 
     Widget group(String title, List<LiveSite> members) {
       if (members.isEmpty) return const SizedBox.shrink();
+      Widget tag(String text) => Container(
+        margin: const EdgeInsets.only(left: DsSpace.s3),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: colors.textMuted.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(text, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+      );
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s4,
@@ -178,8 +187,19 @@ final class _SearchScopePanelState extends State<_SearchScopePanel> {
                     onChanged: _chosen == 1 && !_excluded.contains(site.manifest.id)
                         ? null
                         : (value) => _toggle(site.manifest.id, included: value ?? false),
-                    label: Text(localizedSiteName(site)),
-                    description: Text(searchCoverageText(t, SearchCapabilities.of(site.manifest.id)), style: muted),
+                    label: Wrap(
+                      spacing: DsSpace.s3,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(localizedSiteName(site)),
+                        if (SearchCapabilities.of(site.manifest.id).anchors) tag(t.search.scopeTagAnchors),
+                        if (SearchCapabilities.of(site.manifest.id).webSearch) tag(t.search.scopeTagWeb),
+                      ],
+                    ),
+                    description: Text(
+                      searchCoverageShortText(t, SearchCapabilities.of(site.manifest.id)),
+                      style: muted,
+                    ),
                   ),
                 ),
               ],
@@ -199,7 +219,10 @@ final class _SearchScopePanelState extends State<_SearchScopePanel> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
           children: [
-            Text(t.search.scopeHint, style: theme.typography.body.copyWith(color: colors.textMuted)),
+            Text(
+              '${t.search.scopeHint}\n${t.search.scopeTagsHint}',
+              style: theme.typography.body.copyWith(color: colors.textMuted, height: 1.5),
+            ),
             Row(
               spacing: DsSpace.s8,
               children: [

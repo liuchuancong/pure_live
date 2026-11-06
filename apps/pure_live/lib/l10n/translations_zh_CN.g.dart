@@ -7132,20 +7132,20 @@ class Translations$search$zh_CN {
 	/// zh-CN: '排序'
 	String get sort => '排序';
 
-	/// zh-CN: '综合'
-	String get sortSmart => '综合';
+	/// zh-CN: '综合：直播→观众→粉丝'
+	String get sortSmart => '综合：直播→观众→粉丝';
 
-	/// zh-CN: '按平台'
-	String get sortPlatform => '按平台';
+	/// zh-CN: '平台优先：按主页顺序'
+	String get sortPlatform => '平台优先：按主页顺序';
 
-	/// zh-CN: '按人气'
-	String get sortAudience => '按人气';
+	/// zh-CN: '观众优先'
+	String get sortAudience => '观众优先';
 
-	/// zh-CN: '按关注'
-	String get sortFollowers => '按关注';
+	/// zh-CN: '粉丝优先'
+	String get sortFollowers => '粉丝优先';
 
-	/// zh-CN: '显示离线'
-	String get includeOffline => '显示离线';
+	/// zh-CN: '包含未开播'
+	String get includeOffline => '包含未开播';
 
 	/// zh-CN: '筛选'
 	String get filterTitle => '筛选';
@@ -7186,29 +7186,29 @@ class Translations$search$zh_CN {
 	/// zh-CN: '完成'
 	String get scopeApply => '完成';
 
-	/// zh-CN: '只搜正在直播的房间'
-	String get coverageLiveOnly => '只搜正在直播的房间';
+	/// zh-CN: '{site: String}：只能搜到正在直播的房间。'
+	String coverageLiveOnly({required String site}) => '${site}：只能搜到正在直播的房间。';
 
-	/// zh-CN: '搜索正在直播和部分离线房间'
-	String get coverageLiveAndOffline => '搜索正在直播和部分离线房间';
+	/// zh-CN: '{site: String}：能搜到直播中和部分未开播的房间，可用“包含未开播”筛选。'
+	String coverageLiveAndOffline({required String site}) => '${site}：能搜到直播中和部分未开播的房间，可用“包含未开播”筛选。';
 
-	/// zh-CN: '只按频道 ID 或链接查找'
-	String get coverageChannelLookup => '只按频道 ID 或链接查找';
+	/// zh-CN: '{site: String}：只能用频道链接或频道号查找，能查到未开播的频道，不支持昵称和关键词。'
+	String coverageChannelLookup({required String site}) => '${site}：只能用频道链接或频道号查找，能查到未开播的频道，不支持昵称和关键词。';
 
-	/// zh-CN: '只按房间号或链接查找'
-	String get coverageRoomLookup => '只按房间号或链接查找';
+	/// zh-CN: '{site: String}：只能用房间号或直播链接查找，不支持昵称搜索。'
+	String coverageRoomLookup({required String site}) => '${site}：只能用房间号或直播链接查找，不支持昵称搜索。';
 
-	/// zh-CN: '只筛当前推荐列表'
-	String get coverageShowcaseSnapshot => '只筛当前推荐列表';
+	/// zh-CN: '{site: String}：输入号码或粘贴链接可精确查找；其他关键词只在平台当前推荐的直播里按昵称筛选，搜不到未开播的主播。'
+	String coverageShowcaseSnapshot({required String site}) => '${site}：输入号码或粘贴链接可精确查找；其他关键词只在平台当前推荐的直播里按昵称筛选，搜不到未开播的主播。';
 
-	/// zh-CN: '只搜本机导入的频道'
-	String get coverageLocalChannels => '只搜本机导入的频道';
+	/// zh-CN: '{site: String}：搜索本机已导入的频道。'
+	String coverageLocalChannels({required String site}) => '${site}：搜索本机已导入的频道。';
 
-	/// zh-CN: '仅支持网页搜索'
-	String get coverageWebOnly => '仅支持网页搜索';
+	/// zh-CN: '{site: String}：暂不支持搜索，可从热门、分区进入，或粘贴直播链接。'
+	String coverageWebOnly({required String site}) => '${site}：暂不支持搜索，可从热门、分区进入，或粘贴直播链接。';
 
-	/// zh-CN: '不支持搜索'
-	String get coverageUnavailable => '不支持搜索';
+	/// zh-CN: '{site: String}：暂不支持搜索，可从热门、分区进入，或粘贴直播链接。'
+	String coverageUnavailable({required String site}) => '${site}：暂不支持搜索，可从热门、分区进入，或粘贴直播链接。';
 
 	/// zh-CN: '部分平台没有返回结果'
 	String get partialFailureTitle => '部分平台没有返回结果';
@@ -7239,6 +7239,84 @@ class Translations$search$zh_CN {
 
 	/// zh-CN: '可以在应用内打开该平台的网页版查看直播间。'
 	String get webVersionDescription => '可以在应用内打开该平台的网页版查看直播间。';
+
+	/// zh-CN: '只能搜到正在直播的房间'
+	String get coverageShortLiveOnly => '只能搜到正在直播的房间';
+
+	/// zh-CN: '能搜到直播中和部分未开播的房间'
+	String get coverageShortLiveAndOffline => '能搜到直播中和部分未开播的房间';
+
+	/// zh-CN: '只能用频道链接或频道号查找'
+	String get coverageShortChannelLookup => '只能用频道链接或频道号查找';
+
+	/// zh-CN: '只能用房间号或直播链接查找'
+	String get coverageShortRoomLookup => '只能用房间号或直播链接查找';
+
+	/// zh-CN: '只在平台当前推荐的直播里按昵称筛选'
+	String get coverageShortShowcase => '只在平台当前推荐的直播里按昵称筛选';
+
+	/// zh-CN: '搜索本机已导入的频道'
+	String get coverageShortLocal => '搜索本机已导入的频道';
+
+	/// zh-CN: '暂不支持搜索'
+	String get coverageShortUnavailable => '暂不支持搜索';
+
+	/// zh-CN: '快手：游客搜索可能受限；可在平台账号中登录后重试，或粘贴官方分享链接直接打开直播间。'
+	String get noteKuaishou => '快手：游客搜索可能受限；可在平台账号中登录后重试，或粘贴官方分享链接直接打开直播间。';
+
+	/// zh-CN: '游客搜索可能受限；支持官方分享短链，可登录后重试'
+	String get noteKuaishouShort => '游客搜索可能受限；支持官方分享短链，可登录后重试';
+
+	/// zh-CN: 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。'
+	String get noteAcfun => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。';
+
+	/// zh-CN: '能搜到直播中和未开播的作者'
+	String get noteAcfunShort => '能搜到直播中和未开播的作者';
+
+	/// zh-CN: 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。'
+	String get noteTwitcasting => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。';
+
+	/// zh-CN: '关键词只能搜到正在直播的频道'
+	String get noteTwitcastingShort => '关键词只能搜到正在直播的频道';
+
+	/// zh-CN: '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。'
+	String get noteKilakila => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。';
+
+	/// zh-CN: '可按昵称、UID 或链接查找主播'
+	String get noteKilakilaShort => '可按昵称、UID 或链接查找主播';
+
+	/// zh-CN: '微博：输入场次号或粘贴直播链接可精确查找；其他关键词只在当前推荐的直播里按昵称筛选，开播状态进入后确认。'
+	String get noteWeibo => '微博：输入场次号或粘贴直播链接可精确查找；其他关键词只在当前推荐的直播里按昵称筛选，开播状态进入后确认。';
+
+	/// zh-CN: '只能用场次号或直播链接精确查找'
+	String get noteWeiboShort => '只能用场次号或直播链接精确查找';
+
+	/// zh-CN: 'YouTube：关键词只能搜到正在直播的频道；粘贴频道链接、@名称或视频链接可查到未开播的频道。'
+	String get noteYoutube => 'YouTube：关键词只能搜到正在直播的频道；粘贴频道链接、@名称或视频链接可查到未开播的频道。';
+
+	/// zh-CN: '关键词只能搜到正在直播的频道'
+	String get noteYoutubeShort => '关键词只能搜到正在直播的频道';
+
+	/// zh-CN: '主播'
+	String get scopeTagAnchors => '主播';
+
+	/// zh-CN: '网页'
+	String get scopeTagWeb => '网页';
+
+	/// zh-CN: '“主播”：能搜主播；“网页”：能打开平台的网页搜索。'
+	String get scopeTagsHint => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。';
+
+	/// zh-CN: '同时搜索 {count: String} 个平台，各平台能搜到的范围不同，点此查看。'
+	String scopeSummary({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。';
+
+	/// zh-CN: '同时搜索 {count: String} 个平台（共 {total: String} 个，已排除 {excluded: String} 个），点此查看或修改。'
+	String scopeSummaryExcluded({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。';
+
+	/// zh-CN: '{site: String} 不支持主播搜索，请切换到“直播间”。'
+	String anchorUnsupported({required String site}) => '${site} 不支持主播搜索，请切换到“直播间”。';
+
+	/// zh-CN: '主播搜索支持：{sites: String}。'
+	String anchorPlatforms({required String sites}) => '主播搜索支持：${sites}。';
 }
 
 // Path: settings
@@ -16075,11 +16153,11 @@ extension on Translations {
 			'search.webSearchExternalFailed' => '无法打开系统浏览器',
 			'search.webSearchFailed' => '页面加载失败',
 			'search.sort' => '排序',
-			'search.sortSmart' => '综合',
-			'search.sortPlatform' => '按平台',
-			'search.sortAudience' => '按人气',
-			'search.sortFollowers' => '按关注',
-			'search.includeOffline' => '显示离线',
+			'search.sortSmart' => '综合：直播→观众→粉丝',
+			'search.sortPlatform' => '平台优先：按主页顺序',
+			'search.sortAudience' => '观众优先',
+			'search.sortFollowers' => '粉丝优先',
+			'search.includeOffline' => '包含未开播',
 			'search.filterTitle' => '筛选',
 			'search.filterReset' => '重置',
 			'search.linkDetected' => '检测到直播间链接',
@@ -16093,14 +16171,14 @@ extension on Translations {
 			'search.scopeDomesticOnly' => '仅国内',
 			'search.scopeSelectAll' => '全选',
 			'search.scopeApply' => '完成',
-			'search.coverageLiveOnly' => '只搜正在直播的房间',
-			'search.coverageLiveAndOffline' => '搜索正在直播和部分离线房间',
-			'search.coverageChannelLookup' => '只按频道 ID 或链接查找',
-			'search.coverageRoomLookup' => '只按房间号或链接查找',
-			'search.coverageShowcaseSnapshot' => '只筛当前推荐列表',
-			'search.coverageLocalChannels' => '只搜本机导入的频道',
-			'search.coverageWebOnly' => '仅支持网页搜索',
-			'search.coverageUnavailable' => '不支持搜索',
+			'search.coverageLiveOnly' => ({required String site}) => '${site}：只能搜到正在直播的房间。',
+			'search.coverageLiveAndOffline' => ({required String site}) => '${site}：能搜到直播中和部分未开播的房间，可用“包含未开播”筛选。',
+			'search.coverageChannelLookup' => ({required String site}) => '${site}：只能用频道链接或频道号查找，能查到未开播的频道，不支持昵称和关键词。',
+			'search.coverageRoomLookup' => ({required String site}) => '${site}：只能用房间号或直播链接查找，不支持昵称搜索。',
+			'search.coverageShowcaseSnapshot' => ({required String site}) => '${site}：输入号码或粘贴链接可精确查找；其他关键词只在平台当前推荐的直播里按昵称筛选，搜不到未开播的主播。',
+			'search.coverageLocalChannels' => ({required String site}) => '${site}：搜索本机已导入的频道。',
+			'search.coverageWebOnly' => ({required String site}) => '${site}：暂不支持搜索，可从热门、分区进入，或粘贴直播链接。',
+			'search.coverageUnavailable' => ({required String site}) => '${site}：暂不支持搜索，可从热门、分区进入，或粘贴直播链接。',
 			'search.partialFailureTitle' => '部分平台没有返回结果',
 			'search.partialFailureDescription' => ({required String platforms}) => '这些平台可能被网络或代理拦住了：${platforms}',
 			'search.partialFailureRetry' => '重试',
@@ -16111,6 +16189,32 @@ extension on Translations {
 			'search.webVersion' => '打开网页版',
 			'search.webVersionTitle' => '这里没有内置列表',
 			'search.webVersionDescription' => '可以在应用内打开该平台的网页版查看直播间。',
+			'search.coverageShortLiveOnly' => '只能搜到正在直播的房间',
+			'search.coverageShortLiveAndOffline' => '能搜到直播中和部分未开播的房间',
+			'search.coverageShortChannelLookup' => '只能用频道链接或频道号查找',
+			'search.coverageShortRoomLookup' => '只能用房间号或直播链接查找',
+			'search.coverageShortShowcase' => '只在平台当前推荐的直播里按昵称筛选',
+			'search.coverageShortLocal' => '搜索本机已导入的频道',
+			'search.coverageShortUnavailable' => '暂不支持搜索',
+			'search.noteKuaishou' => '快手：游客搜索可能受限；可在平台账号中登录后重试，或粘贴官方分享链接直接打开直播间。',
+			'search.noteKuaishouShort' => '游客搜索可能受限；支持官方分享短链，可登录后重试',
+			'search.noteAcfun' => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。',
+			'search.noteAcfunShort' => '能搜到直播中和未开播的作者',
+			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
+			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
+			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
+			'search.noteKilakilaShort' => '可按昵称、UID 或链接查找主播',
+			'search.noteWeibo' => '微博：输入场次号或粘贴直播链接可精确查找；其他关键词只在当前推荐的直播里按昵称筛选，开播状态进入后确认。',
+			'search.noteWeiboShort' => '只能用场次号或直播链接精确查找',
+			'search.noteYoutube' => 'YouTube：关键词只能搜到正在直播的频道；粘贴频道链接、@名称或视频链接可查到未开播的频道。',
+			'search.noteYoutubeShort' => '关键词只能搜到正在直播的频道',
+			'search.scopeTagAnchors' => '主播',
+			'search.scopeTagWeb' => '网页',
+			'search.scopeTagsHint' => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。',
+			'search.scopeSummary' => ({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。',
+			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。',
+			'search.anchorUnsupported' => ({required String site}) => '${site} 不支持主播搜索，请切换到“直播间”。',
+			'search.anchorPlatforms' => ({required String sites}) => '主播搜索支持：${sites}。',
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
 			'settings.navPersonalization' => '个性化',
@@ -16166,6 +16270,8 @@ extension on Translations {
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
 			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.aboutDescription' => '版本、开源许可与项目链接。',
 			'settings.browsingPageDescription' => '卡片与列表、关注页密度、观众指标与房间卡片。',
 			'settings.windowPageDescription' => '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。',
@@ -16192,8 +16298,6 @@ extension on Translations {
 			'settings.themeModeSystem' => '跟随系统',
 			'settings.themeModeLight' => '浅色',
 			'settings.themeModeDark' => '深色',
-			_ => null,
-		} ?? switch (path) {
 			'settings.followBackgroundTone' => '跟随背景明暗',
 			'settings.followBackgroundToneDescription' => '有背景时按壁纸明暗自动选浅色或深色；手动选主题即关闭。',
 			'settings.language' => '语言',
@@ -16680,6 +16784,8 @@ extension on Translations {
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
@@ -16706,8 +16812,6 @@ extension on Translations {
 			'settings.presetCompatDesc' => 'Android 专用：mediacodec_embed 直出表面并强制硬解。默认路径花屏、绿屏或音画不同步时使用。',
 			'settings.presetRtxVsr' => 'RTX 视频超分辨率',
 			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA 专用：d3d11va 硬解叠加 RTX Video Super Resolution，把低清源放大到高分屏。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.presetLowEnd' => '低配流畅',
 			'settings.presetLowEndDesc' => '软解线程上限 2、lowres 降采样、跳过环路滤波、小缓冲；核显或老机器用。',
 			'settings.presetStableNetwork' => '弱网稳定',
@@ -17194,6 +17298,8 @@ extension on Translations {
 			'settings.audienceHeatOnlyGroup' => '仅热度或累计观看的平台',
 			'settings.audienceHeatOnlyDesc' => '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。',
 			'settings.backgroundSolid' => '纯色',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
 			'settings.backgroundLibraryTitle' => '壁纸图库',
@@ -17220,8 +17326,6 @@ extension on Translations {
 			'settings.wallpaperCategorySpiderMan' => '蜘蛛侠',
 			'settings.wallpaperCategoryGhibli' => '吉卜力',
 			'settings.wallpaperCategoryNaruto' => '火影忍者',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperCategorySciFi' => '科幻',
 			'settings.wallpaperCategoryAnimeWallhaven' => '日漫',
 			'settings.wallpaperCategoryAnimeGirls' => '动漫女孩',
@@ -17708,6 +17812,8 @@ extension on Translations {
 			'toolbox.nodeTesting' => '测速中',
 			'toolbox.nodeUntested' => '未测速',
 			'toolbox.nodeReachable' => '正常',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',
@@ -17734,8 +17840,6 @@ extension on Translations {
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectoryDefault' => '日志文件尚未就绪。',
 			'toolbox.logsOpenFolder' => '打开所在文件夹',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsLevelLabel' => '级别',
 			'toolbox.logsSave' => '保存到本地',
 			'toolbox.logsSaved' => '日志已保存',
