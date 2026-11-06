@@ -9,11 +9,12 @@ import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart' show iptvEpgProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show IptvGuideRow, iptvClockLabel, iptvDayLabel, iptvStartOfDay;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPageHead;
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// Where the guide page pays for a group column of its own beside the picker.
@@ -40,11 +41,12 @@ const double _kGuidePickerWidthWithRail = 280;
 /// channel they mean, and the channel page already hands them that column.
 ///
 /// The day's panel opens with its own head — the channel it belongs to, what
-/// is on air right now with its progress, the day being read and the way into
-/// the player — the same anchor the player's info strip draws. Without it the
-/// list of a day's programmes is anonymous as soon as the channel picker
-/// scrolls away, and the day control sits in the page header above the seam
-/// between the two panes, attached to neither.
+/// is on air right now with its progress, and the way into the player — the
+/// same anchor the player's info strip draws. Without it the list of a day's
+/// programmes is anonymous as soon as the channel picker scrolls away. The
+/// day itself is walked from the page head: the steps and the way back to
+/// today sit at its end, one line above both panes, beside the guide source
+/// and the channel count the page reads.
 ///
 /// The webtv reference puts the same three panes (group, channel, programme)
 /// beside its player; here the player is its own route, and this page is the
@@ -147,9 +149,11 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final library = ref.watch(iptvLibraryProvider).value;
+    // The head names the guide the days are read from: the source the manager
+    // holds as active, quiet while none stands — the count the picker walks
+    // is the coverage line either way.
+    final epg = ref.watch(iptvEpgProvider);
     final query = _search.text.trim().toLowerCase();
     final groups = _groupFilterOf(library, open: _group);
     // The picker walks the library's visible sequence — the one the channel
@@ -183,38 +187,32 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
         ? t.iptv.zapperEmptyGroup
         : null;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    // The head's coverage line: how many channels the picker walks under the
+    // open filter, prefixed by the guide source the days are read from while
+    // one stands.
+    final coverage = t.iptv.channelCount(count: channels.length);
+    final activeGuide = epg.sources.where((source) => source.id == epg.activeId).firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The page's one tool line, the live module's measure: the count it
-        // answers with; the guide's own verbs live in its panel head.
+        // The page's head is the module's shared one: the title, the guide it
+        // reads over the count the picker walks, and the day's verbs at its
+        // end — the steps and the way back to today, moved up from the panel
+        // head so the day is walked from the one line above both panes.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-          child: SizedBox(
-            height: 44,
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: t.iptv.guideTitle,
-                      style: theme.typography.labelStrong.copyWith(color: colors.text),
-                    ),
-                    TextSpan(
-                      text: '  ·  ',
-                      style: theme.typography.small.copyWith(color: colors.textSubtle),
-                    ),
-                    TextSpan(
-                      text: t.iptv.channelCount(count: channels.length),
-                      style: theme.typography.small.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+          child: IptvPageHead(
+            title: t.iptv.guideTitle,
+            description: activeGuide == null ? coverage : '${activeGuide.name} · $coverage',
+            actions: [
+              _DayStepper(
+                label: iptvDayLabel(t, _day, now),
+                isToday: _day == iptvStartOfDay(now),
+                onPrevious: () => _stepDay(-1),
+                onNext: () => _stepDay(1),
+                onToday: () => setState(() => _day = iptvStartOfDay(DateTime.now())),
               ),
-            ),
+            ],
           ),
         ),
         Expanded(
@@ -242,7 +240,6 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
                   emptyNote: emptyNote,
                   schedule: schedule,
                   slot: slot,
-                  day: _day,
                   now: now,
                   hasGuide: hasGuide,
                   onReplay: (programme) {
@@ -257,9 +254,6 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
                     final open = selected;
                     if (open != null) unawaited(_toggleFavourite(open));
                   },
-                  onPreviousDay: () => _stepDay(-1),
-                  onNextDay: () => _stepDay(1),
-                  onToday: () => setState(() => _day = iptvStartOfDay(DateTime.now())),
                 );
                 if (LiveWindow.isExpanded(constraints.maxWidth)) {
                   return Row(
@@ -341,10 +335,10 @@ IptvProgrammeSlot _slotOf(List<EpgProgramme> schedule, DateTime now) {
   return IptvProgrammeSlot(at: now, current: current, next: next);
 }
 
-/// The day's own controls: the date between the steps, and the way back to
-/// today without reading the label. The way back is only offered when the
-/// panel is not already on today — a step onto the day already open does
-/// nothing.
+/// The day's own controls, hosted at the end of the page head's actions: the
+/// date between the steps, and the way back to today without reading the
+/// label. The way back is only offered when the guide is not already on
+/// today — a step onto the day already open does nothing.
 final class _DayStepper extends StatelessWidget {
   const _DayStepper({
     required this.label,
@@ -571,15 +565,11 @@ final class _SchedulePanel extends ConsumerWidget {
     required this.emptyNote,
     required this.schedule,
     required this.slot,
-    required this.day,
     required this.now,
     required this.hasGuide,
     required this.onReplay,
     required this.onPlay,
     required this.onFavourite,
-    required this.onPreviousDay,
-    required this.onNextDay,
-    required this.onToday,
   });
 
   final IptvChannel? channel;
@@ -593,7 +583,6 @@ final class _SchedulePanel extends ConsumerWidget {
   /// The programme on air now and the one after it, for the day being shown;
   /// null for a day the clock has already passed or not yet reached.
   final IptvProgrammeSlot? slot;
-  final DateTime day;
   final DateTime now;
 
   /// Whether a guide source stands behind this channel at all — the panel
@@ -603,9 +592,6 @@ final class _SchedulePanel extends ConsumerWidget {
   final void Function(EpgProgramme programme) onReplay;
   final VoidCallback onPlay;
   final VoidCallback onFavourite;
-  final VoidCallback onPreviousDay;
-  final VoidCallback onNextDay;
-  final VoidCallback onToday;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -632,15 +618,10 @@ final class _SchedulePanel extends ConsumerWidget {
           _ScheduleHead(
             channel: open,
             slot: slot,
-            day: day,
-            now: now,
             showNumber: browse.showChannelNumber,
             showProgramme: browse.showProgrammeLine,
             onPlay: onPlay,
             onFavourite: onFavourite,
-            onPreviousDay: onPreviousDay,
-            onNextDay: onNextDay,
-            onToday: onToday,
           ),
           const DsDivider(),
           Expanded(
@@ -681,8 +662,9 @@ final class _SchedulePanel extends ConsumerWidget {
 
 /// The head of the day's panel: the channel it belongs to (its logo, name,
 /// dial number and group — the last two under the same browse switches the
-/// channel list reads), what is on air now with its progress, the day being
-/// walked, and the way into the player beside the heart.
+/// channel list reads), what is on air now with its progress, and the way
+/// into the player beside the heart. The day being read is no part of it —
+/// that walk lives at the page head's end, the one line above both panes.
 ///
 /// The panel is a card of one channel's day, so the channel's own name has to
 /// live in it: the picker at its side marks the choice, but on a narrow window
@@ -692,28 +674,18 @@ final class _ScheduleHead extends StatelessWidget {
   const _ScheduleHead({
     required this.channel,
     required this.slot,
-    required this.day,
-    required this.now,
     required this.showNumber,
     required this.showProgramme,
     required this.onPlay,
     required this.onFavourite,
-    required this.onPreviousDay,
-    required this.onNextDay,
-    required this.onToday,
   });
 
   final IptvChannel channel;
   final IptvProgrammeSlot? slot;
-  final DateTime day;
-  final DateTime now;
   final bool showNumber;
   final bool showProgramme;
   final VoidCallback onPlay;
   final VoidCallback onFavourite;
-  final VoidCallback onPreviousDay;
-  final VoidCallback onNextDay;
-  final VoidCallback onToday;
 
   @override
   Widget build(BuildContext context) {
@@ -760,13 +732,6 @@ final class _ScheduleHead extends StatelessWidget {
         ),
       ],
     );
-    final stepper = _DayStepper(
-      label: iptvDayLabel(t, day, now),
-      isToday: day == iptvStartOfDay(now),
-      onPrevious: onPreviousDay,
-      onNext: onNextDay,
-      onToday: onToday,
-    );
     final actions = Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s3,
@@ -786,40 +751,22 @@ final class _ScheduleHead extends StatelessWidget {
       ],
     );
     final programme = showProgramme ? _programmeLine(context) : null;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final top = LiveWindow.stacksToolbar(constraints.maxWidth)
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s6,
-                children: [
-                  Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(child: identity),
-                      actions,
-                    ],
-                  ),
-                  Align(alignment: AlignmentDirectional.centerStart, child: stepper),
-                ],
-              )
-            : Row(
-                spacing: DsSpace.s12,
-                children: [
-                  Expanded(child: identity),
-                  stepper,
-                  actions,
-                ],
-              );
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s6,
-            children: [top, ?programme],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s6,
+        children: [
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(child: identity),
+              actions,
+            ],
           ),
-        );
-      },
+          ?programme,
+        ],
+      ),
     );
   }
 

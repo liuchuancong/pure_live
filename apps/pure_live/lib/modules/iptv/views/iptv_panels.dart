@@ -6,6 +6,66 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/shared/shared.dart' show cachedImage;
 
+/// The module's one page head: the 44px line every IPTV page opens with —
+/// the title, a muted description beside it, and the page's verbs at the
+/// end. The reference's `head44` row. A page applies its own inset padding
+/// around it and draws its own control lines under it; the row never folds
+/// the verbs — the title and description give way first, so the verbs stay
+/// visible to the width the module already supports — and a page whose verbs
+/// ride the shell's head instead passes none.
+final class IptvPageHead extends StatelessWidget {
+  const IptvPageHead({required this.title, this.description, this.actions = const <Widget>[], super.key});
+
+  /// The page's name, in the head's strong label.
+  final String title;
+
+  /// The muted facts beside the name — the counts, a search's tally. Null
+  /// leaves the title alone on the line.
+  final String? description;
+
+  /// The page's verbs, laid out at the row's end.
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return SizedBox(
+      height: 44,
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: title,
+                    style: theme.typography.labelStrong.copyWith(color: colors.text),
+                  ),
+                  if (description != null) ...[
+                    TextSpan(
+                      text: '  ·  ',
+                      style: theme.typography.small.copyWith(color: colors.textSubtle),
+                    ),
+                    TextSpan(
+                      text: description,
+                      style: theme.typography.small.copyWith(color: colors.textMuted),
+                    ),
+                  ],
+                ],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          ...actions,
+        ],
+      ),
+    );
+  }
+}
+
 /// The module's one way to draw a channel's mark: the playlist's own
 /// `tvg-logo` picture where it names one, the module's tv glyph where it does
 /// not. Never the channel's name — `DsAvatar`'s initials are 「up to two

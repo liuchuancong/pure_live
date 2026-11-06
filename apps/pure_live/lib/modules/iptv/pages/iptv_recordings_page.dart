@@ -9,6 +9,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvPageHead;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
 
@@ -57,20 +58,12 @@ final class IptvRecordingsPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // The module's one head row: the page's name with its verb beside
+        // it, drawn by the shared component the other module pages use.
+        // Nothing runs under the name yet, so the head carries no count.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-          child: SizedBox(
-            height: 44,
-            child: Row(
-              spacing: DsSpace.s12,
-              children: [
-                Expanded(
-                  child: Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
-                ),
-                if (!narrow) settings,
-              ],
-            ),
-          ),
+          child: IptvPageHead(title: t.navigation.record, actions: [if (!narrow) settings]),
         ),
         if (attention.isNotEmpty)
           Padding(

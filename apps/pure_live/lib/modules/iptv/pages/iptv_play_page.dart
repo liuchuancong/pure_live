@@ -892,12 +892,21 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final slot = channel == null ? null : library?.programmeSlot(channel);
     final canStep = channel != null && (library?.zapSequence(reverse: browse.reverseChannels).length ?? 0) > 1;
     final replay = _catchup;
+    // The line under the title: a status pill (on air, upcoming, replaying)
+    // followed by the programme's name — the reference's ON AIR tag inside a
+    // muted facts line, not one flat string wearing the badge's colour. The
+    // replay keeps its own accent pill whether or not the programme line is
+    // being shown.
     final subtitle = replay != null
-        ? '${t.iptv.playingCatchup} · ${replay.title}'
+        ? (badge: t.iptv.playingCatchup, text: replay.title, accent: true)
         : !browse.showProgrammeLine
         ? null
         : switch (slot?.title) {
-            final programme? => '${slot!.current != null ? t.iptv.onAir : t.iptv.upNext} · $programme',
+            final programme? => (
+              badge: slot?.current != null ? t.iptv.onAir : t.iptv.upNext,
+              text: programme,
+              accent: slot?.current != null,
+            ),
             _ => null,
           };
     // The header's verbs, spelled once: flat glyphs while the title has room,
@@ -1034,7 +1043,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 2,
+                          spacing: DsSpace.s3,
                           children: [
                             Text(
                               channel == null
@@ -1047,14 +1056,20 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                               overflow: TextOverflow.ellipsis,
                               style: theme.typography.title.copyWith(color: colors.text),
                             ),
-                            if (subtitle != null)
-                              Text(
-                                subtitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.caption.copyWith(
-                                  color: replay != null ? colors.accent : colors.textMuted,
-                                ),
+                            if (subtitle case final sub?)
+                              Row(
+                                spacing: DsSpace.s6,
+                                children: [
+                                  _HeaderStatusBadge(label: sub.badge, accent: sub.accent),
+                                  Flexible(
+                                    child: Text(
+                                      sub.text,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                    ),
+                                  ),
+                                ],
                               ),
                           ],
                         ),
@@ -1074,14 +1089,18 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           selected: _favourite,
                           onPressed: () => unawaited(_toggleFavourite(channel)),
                         ),
+                      // The zap pair: these step channels, not the guide's
+                      // days, so their names say 上一频道/下一频道 instead of
+                      // borrowing the day stepper's words; the arrows match
+                      // the up and down keys, which keep their own bindings.
                       if (channel != null && canStep && !headerNarrow) ...[
                         _IconButton(
-                          semanticLabel: t.iptv.previousDay,
+                          semanticLabel: t.iptv.previousChannel,
                           icon: DsIcons.chevronUp,
                           onPressed: () => _switchChannel(-1),
                         ),
                         _IconButton(
-                          semanticLabel: t.iptv.nextDay,
+                          semanticLabel: t.iptv.nextChannel,
                           icon: DsIcons.chevronDown,
                           onPressed: () => _switchChannel(1),
                         ),
@@ -1427,6 +1446,41 @@ final class _IconButton extends StatelessWidget {
       onDark: onDark,
       tooltip: false,
       zoomsOnTv: false,
+    );
+  }
+}
+
+/// The status pill beside the channel's name in the header: the reference's
+/// ON AIR tag — an outlined pill in the accent that says the programme is
+/// on now (or being replayed), and the same outline in muted ink when the
+/// named programme has yet to start.
+final class _HeaderStatusBadge extends StatelessWidget {
+  const _HeaderStatusBadge({required this.label, required this.accent});
+
+  /// The words, e.g. 正在播出 or 正在回看.
+  final String label;
+
+  /// Draws the accent outline: the programme is on air or replaying. The
+  /// upcoming state keeps the muted ink so a live channel still stands out.
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final ink = accent ? colors.accent : colors.textMuted;
+    return DsBadge(
+      dot: false,
+      label: Text(label),
+      style: DsBadgeStyle(
+        height: 18,
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6),
+        background: const Color(0x00000000),
+        foreground: ink,
+        borderColor: ink,
+        borderRadius: BorderRadius.circular(5),
+        textStyle: theme.typography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }

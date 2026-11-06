@@ -24,10 +24,21 @@ enum _SourceFilter { all, playlists, guides }
 /// `p:<playlist id>` and `g:<guide id>` keys, first shown first.
 const String _sourceOrderPref = 'iptv.sources.order';
 
+/// The kind filter's tab bar: 44 tall, starting flush with the strip that
+/// holds it, and no hairline under the row — the panel's own rule below the
+/// toolbar already draws that line, the measure the music module's feed
+/// tabs fixed for the same 44px bar shape.
+const DsTabsStyle _sourceFilterTabsStyle = DsTabsStyle(
+  height: 44,
+  padding: EdgeInsets.zero,
+  dividerColor: Color(0x00000000),
+);
+
 /// The IPTV source manager, in the reference's resource-panel shape: the
-/// guide in use, then one table over the playlists and guides with a kind
-/// filter, a search, the shared sync-all action, per-row sync/delete and the
-/// guide switches.
+/// 44px head that names the surface, counts what it holds and carries the
+/// page's verbs (import, the shared sync-all, the order editor), then the
+/// guide in use, and one table over the playlists and guides with a kind
+/// filter, a search, per-row sync/delete and the guide switches.
 ///
 /// The update *schedule* — the interval, the bulk switch, how many guides it
 /// covers — is not here. It is one setting with one home, Settings → IPTV;
@@ -269,6 +280,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final sources = ref.watch(iptvSourcesProvider);
     final epg = ref.watch(iptvEpgProvider);
@@ -289,12 +301,60 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
       for (final item in all)
         if (_keeps(item) && _matches(item, _query)) item,
     ];
+    // The head's three verbs, the reference's 导入 / 全部同步 / 排序 line.
+    // One import entry stands over the playlist and guide flows, so the
+    // row keeps the mockup's three actions and the toolbar below holds
+    // nothing but the filters.
+    final actions = [
+      DsMenuAnchor(
+        semanticLabel: t.iptv.importAction,
+        items: [
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.plus),
+            label: Text(t.iptv.importPlaylist),
+            onPressed: blocked ? null : () => unawaited(runIptvPlaylistImport(context)),
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.calendarClock),
+            label: Text(t.iptv.importGuide),
+            onPressed: blocked ? null : () => unawaited(runIptvGuideImport(context)),
+          ),
+        ],
+        builder: (context, controller, _) => DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          onPressed: blocked ? null : controller.toggle,
+          leading: const DsIcon(DsIcons.plus, size: 15),
+          child: Text(t.iptv.importAction),
+        ),
+      ),
+      DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        loading: round != null,
+        onPressed: canSync ? () => unawaited(syncAllIptvSources(context, ref)) : null,
+        leading: const DsIcon(DsIcons.refreshCw, size: 15),
+        child: Text(t.iptv.syncAll),
+      ),
+      DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        onPressed: all.isNotEmpty ? () => _startSorting(all) : null,
+        leading: const DsIcon(DsIcons.listOrdered, size: 15),
+        child: Text(t.iptv.editOrder),
+      ),
+    ];
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
         children: [
+          IptvPageHead(
+            title: t.iptv.sourcesManager,
+            description: t.iptv.sourcesSummary(playlists: sources.playlists.length, guides: epg.sources.length),
+            actions: actions,
+          ),
           _ActiveGuideCard(
             active: active,
             canChoose: epg.sources.isNotEmpty && !settingsBlocked,
@@ -308,11 +368,6 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
               count: rows.length,
               search: _search,
               onQuery: (value) => setState(() => _query = value),
-              canSync: canSync,
-              onSync: () => unawaited(syncAllIptvSources(context, ref)),
-              syncing: round != null,
-              canEditOrder: all.isNotEmpty,
-              onEditOrder: () => _startSorting(all),
             ),
             child: _SourcesTable(
               rows: rows,
@@ -646,8 +701,10 @@ final class _SyncStrip extends StatelessWidget {
   }
 }
 
-/// The resources table's toolbar: kind filter, count, search and the
-/// shared sync-all action.
+/// The resources table's toolbar: the kind filter as the module's 44px tab
+/// bar, the visible count and the search. The page's verbs — import, sync
+/// all, edit order — live in the head row above, so this bar only narrows
+/// the list.
 final class _SourcesToolbar extends StatelessWidget {
   const _SourcesToolbar({
     required this.filter,
@@ -655,11 +712,6 @@ final class _SourcesToolbar extends StatelessWidget {
     required this.count,
     required this.search,
     required this.onQuery,
-    required this.canSync,
-    required this.onSync,
-    required this.syncing,
-    required this.canEditOrder,
-    required this.onEditOrder,
   });
 
   final _SourceFilter filter;
@@ -667,25 +719,21 @@ final class _SourcesToolbar extends StatelessWidget {
   final int count;
   final TextEditingController search;
   final ValueChanged<String> onQuery;
-  final bool canSync;
-  final VoidCallback onSync;
-  final bool syncing;
-  final bool canEditOrder;
-  final VoidCallback onEditOrder;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final segments = DsSegmentedControl<_SourceFilter>(
+    final tabs = DsTabs<_SourceFilter>(
       value: filter,
       onChanged: onFilter,
+      style: _sourceFilterTabsStyle,
       semanticLabel: t.iptv.viewLabel,
-      segments: [
-        DsSegment(value: _SourceFilter.all, label: Text(t.iptv.filterAll)),
-        DsSegment(value: _SourceFilter.playlists, label: Text(t.iptv.filterPlaylists)),
-        DsSegment(value: _SourceFilter.guides, label: Text(t.iptv.filterGuides)),
+      tabs: [
+        DsTab(value: _SourceFilter.all, label: Text(t.iptv.filterAll)),
+        DsTab(value: _SourceFilter.playlists, label: Text(t.iptv.filterPlaylists)),
+        DsTab(value: _SourceFilter.guides, label: Text(t.iptv.filterGuides)),
       ],
     );
     final countText = Text(
@@ -698,60 +746,22 @@ final class _SourcesToolbar extends StatelessWidget {
       semanticLabel: t.iptv.searchSources,
       onChanged: onQuery,
     );
-    final sync = DsButton(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      loading: syncing,
-      onPressed: canSync ? onSync : null,
-      leading: const DsIcon(DsIcons.refreshCw, size: 15),
-      child: Text(t.iptv.syncAll),
-    );
-    final edit = DsButton(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      onPressed: canEditOrder ? onEditOrder : null,
-      leading: const DsIcon(DsIcons.listOrdered, size: 15),
-      child: Text(t.iptv.editOrder),
-    );
     return LayoutBuilder(
       builder: (context, constraints) {
         if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
           return Row(
             spacing: DsSpace.s12,
             children: [
-              segments,
+              Expanded(child: tabs),
               countText,
-              const Spacer(),
-              edit,
               SizedBox(width: 200, child: field),
-              sync,
             ],
           );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
-          children: [
-            segments,
-            Row(
-              children: [
-                Expanded(child: countText),
-                const SizedBox(width: DsSpace.s8),
-                IptvIconAction(
-                  icon: DsIcons.listOrdered,
-                  label: t.iptv.editOrder,
-                  onPressed: canEditOrder ? onEditOrder : null,
-                ),
-                IptvIconAction(
-                  icon: DsIcons.refreshCw,
-                  label: t.iptv.syncAll,
-                  busy: syncing,
-                  onPressed: canSync ? onSync : null,
-                ),
-              ],
-            ),
-            field,
-          ],
+          children: [tabs, countText, field],
         );
       },
     );
