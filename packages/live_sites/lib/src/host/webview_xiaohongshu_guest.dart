@@ -463,13 +463,23 @@ final class OffscreenXiaohongshuGuestBrowser implements XiaohongshuGuestBrowser 
     }
     final opened = _open(session, page, loaded);
     if (cancel != null) {
-      // A cancelled open releases its own page when it lands; the late
-      // page of a lost race has no other owner.
-      unawaited(opened.then<void>((kept) => kept.release(), onError: (Object _) {}));
-      return await Future.any([
+      final answer = Future.any([
         opened,
         cancel.whenCancel.then<XiaohongshuKeptGuestPage>((_) => throw const _Cancelled()),
       ]);
+      // A cancelled open releases its own page when it lands — but only
+      // when the cancellation won the race: a page this call returns has
+      // an owner, and releasing it under the caller left every script
+      // running on a closed page.
+      unawaited(
+        answer.then<void>(
+          (_) {},
+          onError: (Object _) {
+            unawaited(opened.then<void>((kept) => kept.release(), onError: (Object _) {}));
+          },
+        ),
+      );
+      return await answer;
     }
     return await opened;
   }
