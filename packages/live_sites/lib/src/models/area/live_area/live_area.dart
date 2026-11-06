@@ -77,6 +77,11 @@ abstract class LiveArea implements Built<LiveArea, LiveAreaBuilder> {
   /// The serializer built_value registers in [serializers].
   static Serializer<LiveArea> get serializer => _$liveAreaSerializer;
 
+  /// The [iconUrl] prefix that marks a picture bundled with this package:
+  /// the rest is its package-relative asset path, e.g.
+  /// `asset:assets/areas/douyin/101.png`.
+  static const String bundledIconPrefix = 'asset:';
+
   /// The platform the area belongs to, normalized lowercase.
   String get platform;
 
@@ -92,7 +97,8 @@ abstract class LiveArea implements Built<LiveArea, LiveAreaBuilder> {
   /// The parent group's display name.
   String? get parentAreaName;
 
-  /// The area's icon.
+  /// The area's icon: a network address, or a picture bundled with this
+  /// package when prefixed with [bundledIconPrefix].
   String? get iconUrl;
 
   /// A shorter display name, when the platform offers one.

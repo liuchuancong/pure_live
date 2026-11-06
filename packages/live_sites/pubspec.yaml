@@ -41,6 +41,7 @@ dev_dependencies:
 # no longer ships).
 flutter:
   assets:
+    - assets/areas/douyin/
     - assets/emo/atlas/
     - assets/emo/json/
     - assets/platforms/

@@ -4,8 +4,9 @@ import 'package:live_sites/live_sites.dart' show LiveArea;
 
 import 'package:pure_live/shared/images/images.dart' show cachedImage;
 
-/// An area's picture: the icon the site ships, or the tag tile when it ships
-/// none — either way the square keeps its place beside the name.
+/// An area's picture: the icon the site ships, a tile bundled with
+/// `live_sites` for a catalogue that ships none, or the tag tile when neither
+/// exists — either way the square keeps its place beside the name.
 final class AreaIcon extends StatelessWidget {
   /// The tile for [area].
   const AreaIcon({required this.area, this.side, this.radius, super.key});
@@ -26,6 +27,16 @@ final class AreaIcon extends StatelessWidget {
     final colors = theme.colors;
     final side = this.side ?? theme.sizes.md;
     final url = (area.iconUrl ?? '').trim();
+    final bundled = url.startsWith(LiveArea.bundledIconPrefix)
+        ? url.substring(LiveArea.bundledIconPrefix.length).trim()
+        : null;
+    // A site without a picture of its own ships a bundled tile instead
+    // (Douyin's catalogue); every other icon is a network address.
+    final image = switch ((url, bundled)) {
+      (_, final String path) => path.isEmpty ? null : AssetImage(path, package: 'live_sites'),
+      ('', _) => null,
+      _ => cachedImage(url),
+    };
     final fallback = ColoredBox(
       color: colors.channel,
       child: Center(
@@ -37,15 +48,9 @@ final class AreaIcon extends StatelessWidget {
       height: side,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius ?? theme.radii.control(side)),
-        child: url.isEmpty
+        child: image == null
             ? fallback
-            : DsImage(
-                image: cachedImage(url),
-                width: side,
-                height: side,
-                semanticLabel: area.areaName,
-                fallback: fallback,
-              ),
+            : DsImage(image: image, width: side, height: side, semanticLabel: area.areaName, fallback: fallback),
       ),
     );
   }

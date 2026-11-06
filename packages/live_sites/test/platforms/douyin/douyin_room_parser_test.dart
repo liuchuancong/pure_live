@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
@@ -302,6 +303,28 @@ void main() {
       expect(areas[2].parentAreaId, '21153,1', reason: 'a game belongs to the sub-partition it was listed under');
       expect(areas.map((area) => area.areaName), ['游戏', '射击', '绝地求生', 'APEX', '竞技']);
       expect(areas.every((area) => area.platform == 'douyin'), isTrue);
+    });
+
+    test('a known partition carries its bundled tile, an unknown one none', () {
+      Map<String, Object?> node(String id, String title) => {
+        'partition': {'id_str': id, 'type': '4', 'title': title},
+      };
+      final page = _page([
+        _jsonRow('0', {
+          'nodes': {
+            'categoryData': [
+              {
+                ...node('101', '聊天'),
+                'sub_partition': [node('1011032', '三角洲行动'), node('999', '新分类')],
+              },
+            ],
+          },
+        }),
+      ]);
+      final areas = DouyinRoomParser.areas(page);
+      expect(areas[0].iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/douyin/101.png');
+      expect(areas[1].iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/douyin/1011032.png');
+      expect(areas[2].iconUrl, isNull);
     });
 
     test('a page that names no categories changed the API', () {

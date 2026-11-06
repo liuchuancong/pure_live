@@ -19,6 +19,30 @@ import 'package:live_sites/src/platforms/douyin/parsers/douyin_play_parser.dart'
 
 const _site = 'douyin';
 
+/// Douyin's category payload names each partition but ships no picture, so
+/// the catalogue draws these bundled tiles instead (`assets/areas/douyin/`),
+/// keyed by the partition's `id_str`. The art comes from Bilibili's and
+/// Douyu's public category icons. An id the map does not know keeps the
+/// shared tag fallback.
+const Map<String, String> _areaIcons = {
+  '101': 'assets/areas/douyin/101.png',
+  '102': 'assets/areas/douyin/102.png',
+  '103': 'assets/areas/douyin/103.png',
+  '104': 'assets/areas/douyin/104.png',
+  '105': 'assets/areas/douyin/105.png',
+  '106': 'assets/areas/douyin/106.png',
+  '107': 'assets/areas/douyin/107.png',
+  '108': 'assets/areas/douyin/108.png',
+  '1011032': 'assets/areas/douyin/1011032.png',
+  '1010045': 'assets/areas/douyin/1010045.png',
+  '1010017': 'assets/areas/douyin/1010017.png',
+  '1010014': 'assets/areas/douyin/1010014.png',
+  '1010032': 'assets/areas/douyin/1010032.png',
+  '1010146': 'assets/areas/douyin/1010146.png',
+  '1010037': 'assets/areas/douyin/1010037.png',
+  '1010026': 'assets/areas/douyin/1010026.png',
+};
+
 /// One room answer (enter, reflow or room page): the room as the adapter
 /// builds it, this broadcast's room_id (danmaku, deep links), the stream
 /// description (`room.stream_url`, live only), the visitor id a room page
@@ -138,6 +162,7 @@ abstract final class DouyinRoomParser {
             areaName: partition.name,
             parentAreaId: parent.id,
             parentAreaName: parent.name,
+            iconUrl: _bundledAreaIcon(partition.id),
           )
         : null;
     return [
@@ -149,6 +174,14 @@ abstract final class DouyinRoomParser {
             ?area(_partition(_jsonObject(game)?['partition']), partition),
         ],
     ];
+  }
+
+  /// The bundled tile of area id [areaId] (`id_str,type`), when
+  /// [_areaIcons] knows its raw `id_str`; null keeps the tag fallback.
+  static String? _bundledAreaIcon(String areaId) {
+    final comma = areaId.lastIndexOf(',');
+    final path = _areaIcons[comma > 0 ? areaId.substring(0, comma) : areaId];
+    return path == null ? null : '${LiveArea.bundledIconPrefix}$path';
   }
 
   /// The `partition` and `partition_type` of an area id `id_str,type`;
