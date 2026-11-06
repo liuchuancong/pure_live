@@ -34,9 +34,26 @@ import 'package:pure_live/l10n/translations.dart' show TranslationProvider;
 Future<void> main(List<String> arguments) async {
   final boot = await bootstrap();
   if (boot.failed) {
-    runApp(StartupErrorPage(error: boot.error!));
+    // The rescue screen: retry runs the boot from the top, and a success
+    // hands control over here again — attaching the real app in place of
+    // the error page.
+    runApp(
+      StartupErrorPage(
+        error: boot.error!,
+        onRetry: () async {
+          final next = await bootstrap();
+          if (!next.failed) _launch(next);
+        },
+      ),
+    );
     return;
   }
+  _launch(boot);
+}
+
+/// Takes a good boot to its shell: the single-window path on phones and
+/// TVs, the window collection on the desktop.
+void _launch(Boot boot) {
   final runtime = boot.runtime;
   if (runtime.environment.runtime.formFactor != FormFactor.desktop) {
     runApp(
