@@ -38,9 +38,7 @@ void main() {
     test('an ended program keeps the scope; a broadcaster room has no notice', () {
       expect(NiconicoRoomParser.notice(_watch(status: NiconicoProgramStatus.ended)), _scope);
       expect(
-        NiconicoRoomParser.notice(
-          _watch(roomId: 'user/123', access: NiconicoAccess.loginRequired),
-        ),
+        NiconicoRoomParser.notice(_watch(roomId: 'user/123', access: NiconicoAccess.loginRequired)),
         '此节目要求登录官方站点。',
       );
       expect(

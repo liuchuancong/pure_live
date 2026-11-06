@@ -328,6 +328,12 @@ void main() {
       expect(PandaliveRoomParser.liveCard(_media({'isAdult': true}))!.content.notice, PandaliveEndpoints.adultNotice);
     });
 
+    test('a live card names the broadcaster by its number', () {
+      expect(PandaliveRoomParser.liveCard(_media())!.anchor?.anchorId, '$_index');
+      expect(PandaliveRoomParser.liveCard(_media({'userIdx': null}))!.anchor?.anchorId, '');
+      expect(PandaliveRoomParser.liveCard(_media({'userIdx': 0}))!.anchor?.anchorId, '');
+    });
+
     test('a broadcaster card is the person, live or not', () {
       expect(PandaliveRoomParser.profileCard({'blockService': true, 'userId': _id, 'userIdx': _index}), isNull);
       expect(PandaliveRoomParser.profileCard({'userId': _id}), isNull, reason: 'a row without a number is not a card');

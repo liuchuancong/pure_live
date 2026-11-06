@@ -223,6 +223,15 @@ abstract final class YoutubeRoomParser {
     return _viewers(label(findFirst(primary, 'viewCountText')));
   }
 
+  /// The live viewer count of an `updated_metadata` answer: the first
+  /// `videoViewCountRenderer` marked live, its "1,256 watching now" figure;
+  /// null when it names none.
+  static int? viewers(String body) {
+    final renderer = jsonObject(findFirst(decodeJson(body), 'videoViewCountRenderer'));
+    if (renderer == null || !truthy(renderer['isLive'])) return null;
+    return _viewers(label(renderer['viewCount']));
+  }
+
   /// YouTube's "N watching" figure (English `K`/`M` suffixes): the trailing
   /// word is stripped before parsing so its `w` is never read as 万. Null when
   /// the text names no number.

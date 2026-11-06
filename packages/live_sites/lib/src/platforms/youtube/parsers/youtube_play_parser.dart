@@ -17,6 +17,12 @@ import 'package:live_sites/src/platforms/youtube/parsers/youtube_json.dart';
 /// and, when the resolution carried one, its `width`.
 typedef YoutubeVariant = ({String url, int? width, int? height, double fps, LiveStreamCodec? codec, int? bandwidth});
 
+/// One quality a broadcast offers before ordering: its quality id, its
+/// label without the composite suffixes, the protocol that serves it
+/// (`hls`, `http`, `dash`), the height and frame rate it plays at (no
+/// height for the automatic sources) and the codec the platform declared.
+typedef YoutubeQuality = ({String id, String label, String protocol, int? height, double fps, LiveStreamCodec? codec});
+
 /// Pure parsing of YouTube playback: the ANDROID `player` answer's
 /// `streamingData` (an `hlsManifestUrl`, a `dashManifestUrl`, progressive
 /// `formats`) and the HLS master text fetched from that url. A live broadcast's
@@ -57,17 +63,21 @@ abstract final class YoutubePlayParser {
     return variants;
   }
 
-  /// The qualities a broadcast offers: the HLS variants (primary), then the
-  /// progressive `formats[]`, then a single `dash:auto` when a DASH manifest is
-  /// present. An unparseable or empty HLS tier collapses to `hls:auto`
-  /// ("HLS 自动"). Best first.
+  /// The qualities a broadcast offers: the HLS variants, the progressive
+  /// `formats[]`, and a single `dash:auto` when a DASH manifest is present
+  /// (`hls:auto` when the HLS master offers no readable variant). Best first
+  /// by the platform's own ranking ([_qualitySort]) — so a progressive tier
+  /// interleaves with the HLS variants by height — then by id. Each quality
+  /// is labelled `<label>[ · <codec>] · <PROTOCOL>`:
+  /// `1080p · H264 · HLS`, `360p · H264 · HTTP`, `HLS 自动 · HLS`,
+  /// `DASH 自动 · DASH`.
   static List<LivePlayQuality> qualities({
     required List<YoutubeVariant> variants,
     String? hlsManifestUrl,
     String? dashManifestUrl,
     List<Map<String, dynamic>> progressive = const [],
   }) {
-    final qualities = <LivePlayQuality>[];
+    final candidates = <YoutubeQuality>[];
     final seen = <String>{};
     for (final variant in variants) {
       final height = variant.height;
@@ -75,12 +85,17 @@ abstract final class YoutubePlayParser {
           ? 'hls:auto'
           : 'hls:$height:${_fpsPart(variant.fps)}:${variant.codec?.name ?? 'unknown'}';
       if (!seen.add(id)) continue;
-      qualities.add(
-        LivePlayQuality.of(label: height == null ? 'HLS 自动' : '${height}p', qualityId: id, codec: variant.codec),
-      );
+      candidates.add((
+        id: id,
+        label: height == null ? 'HLS 自动' : '${height}p',
+        protocol: 'hls',
+        height: height,
+        fps: variant.fps,
+        codec: variant.codec,
+      ));
     }
-    if (hlsManifestUrl != null && variants.isEmpty) {
-      qualities.add(LivePlayQuality.of(label: 'HLS 自动', qualityId: 'hls:auto'));
+    if (hlsManifestUrl != null && variants.isEmpty && seen.add('hls:auto')) {
+      candidates.add((id: 'hls:auto', label: 'HLS 自动', protocol: 'hls', height: null, fps: 0, codec: null));
     }
     for (final format in progressive) {
       final itag = jsonString(format['itag']);
@@ -88,19 +103,59 @@ abstract final class YoutubePlayParser {
       final id = 'http:$itag';
       if (!seen.add(id)) continue;
       final height = jsonInt(format['height']);
-      qualities.add(
-        LivePlayQuality.of(
-          label: jsonString(format['qualityLabel']) ?? (height == null ? 'MP4 $itag' : '${height}p'),
-          qualityId: id,
-          codec: _codecOf(format),
-        ),
-      );
+      candidates.add((
+        id: id,
+        label: jsonString(format['qualityLabel']) ?? (height == null ? 'MP4 $itag' : '${height}p'),
+        protocol: 'http',
+        height: height,
+        fps: jsonDouble(format['fps']) ?? 0,
+        codec: _codecOf(format),
+      ));
     }
     if (dashManifestUrl != null && seen.add('dash:auto')) {
-      qualities.add(LivePlayQuality.of(label: 'DASH 自动', qualityId: 'dash:auto'));
+      candidates.add((id: 'dash:auto', label: 'DASH 自动', protocol: 'dash', height: null, fps: 0, codec: null));
     }
-    final total = qualities.length;
-    return [for (final (index, quality) in qualities.indexed) quality.rebuild((b) => b..platformOrder = total - index)];
+    final ordered = candidates
+      ..sort((left, right) {
+        final rank = _qualitySort(right).compareTo(_qualitySort(left));
+        return rank != 0 ? rank : left.id.compareTo(right.id);
+      });
+    final total = ordered.length;
+    return [
+      for (final (index, candidate) in ordered.indexed)
+        LivePlayQuality.of(
+          label: _qualityLabel(candidate.label, candidate.protocol, candidate.codec),
+          qualityId: candidate.id,
+          platformOrder: total - index,
+          codec: candidate.codec,
+        ),
+    ];
+  }
+
+  /// The platform's own rank of a source: height × 1000 + frame rate (up to
+  /// three digits) + the protocol's rank (HLS 30, progressive 20, DASH 10);
+  /// the automatic sources have no height.
+  static int _qualitySort(YoutubeQuality quality) =>
+      (quality.height ?? 0) * 1000 +
+      quality.fps.round().clamp(0, 999) +
+      switch (quality.protocol) {
+        'hls' => 30,
+        'http' => 20,
+        'dash' => 10,
+        _ => 0,
+      };
+
+  /// `<label>[ · <codec>] · <PROTOCOL>`: the codec appended when declared
+  /// (`H264`, `H265`, `AV1`, `VP9`), the protocol always.
+  static String _qualityLabel(String label, String protocol, LiveStreamCodec? codec) {
+    final declared = switch (codec) {
+      LiveStreamCodec.avc => 'H264',
+      LiveStreamCodec.hevc => 'H265',
+      LiveStreamCodec.av1 => 'AV1',
+      LiveStreamCodec.vp9 => 'VP9',
+      _ => null,
+    };
+    return '$label${declared == null ? '' : ' · $declared'} · ${protocol.toUpperCase()}';
   }
 
   /// The playable lines for [qualityId] (the default tier when null): the
@@ -274,11 +329,15 @@ abstract final class YoutubePlayParser {
 
   static LiveStreamCodec? _codecOfCodecs(String codecs) => hlsVideoCodecOf(codecs);
 
-  /// The codec of a progressive `formats[]` entry: its `codecs` hint, else its
-  /// `mimetype` (`video/mp4; codecs="avc1…"`), mapped as a CODES string.
+  /// The codec of a progressive `formats[]` entry: its `codecs` hint, else the
+  /// `codecs="…"` quoted inside its `mimeType` (`video/mp4; codecs="avc1…"`) —
+  /// both mapped as a CODES string.
   static LiveStreamCodec? _codecOf(Map<String, dynamic> format) {
     final codecs = jsonString(format['codecs']) ?? '';
     if (codecs.isNotEmpty) return _codecOfCodecs(codecs);
-    return _codecOfCodecs(jsonString(format['mimeType']) ?? '');
+    final mime = jsonString(format['mimeType']) ?? '';
+    if (mime.isEmpty) return null;
+    final quoted = RegExp(r'codecs\s*=\s*"([^"]*)"').firstMatch(mime);
+    return _codecOfCodecs(quoted?.group(1) ?? mime);
   }
 }

@@ -490,41 +490,66 @@ void main() {
       );
     });
 
-    test('one entry per resolution and bandwidth', () {
+    test('a variant without a resolution aborts the master', () {
+      const body =
+          '#EXTM3U\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=6000000\nno_resolution.m3u8\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=1000,RESOLUTION=640x360\nlow.m3u8\n';
+      expect(_failure(() => _variants(body)).kind, NiconicoFailureKind.apiChanged);
+      expect(_failure(() => _variants(body)).message, 'master: variant without a resolution');
+    });
+
+    test('two variants naming one WxH@bandwidth abort the master', () {
       const body =
           '#EXTM3U\n'
           '#EXT-X-STREAM-INF:BANDWIDTH=1000,RESOLUTION=640x360\na.m3u8\n'
           '#EXT-X-STREAM-INF:BANDWIDTH=1000,RESOLUTION=640x360\nb.m3u8\n';
-      expect(_variants(body), hasLength(1));
+      expect(_failure(() => _variants(body)).kind, NiconicoFailureKind.apiChanged);
+      expect(_failure(() => _variants(body)).message, 'master: ambiguous quality selector 640x360@1000');
+      const distinct =
+          '#EXTM3U\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=1000,RESOLUTION=640x360\na.m3u8\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=2000,RESOLUTION=640x360\nb.m3u8\n';
+      expect(_variants(distinct), hasLength(2), reason: 'a different bandwidth is a different selector');
+    });
+
+    test('the same height is ordered by width, then bandwidth', () {
+      const body =
+          '#EXTM3U\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=4000000,RESOLUTION=1024x720\nb.m3u8\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=1280x720\na.m3u8\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=500000,RESOLUTION=640x360\nc.m3u8\n'
+          '#EXT-X-STREAM-INF:BANDWIDTH=900000,RESOLUTION=640x360\nd.m3u8\n';
       expect(
-        _variants(body).single.url,
-        'https://livedelivery.dlive.nicovideo.jp/hls/playlists/b.m3u8',
-        reason: 'the later line names the same variant, so it is the one kept',
+        [for (final variant in _variants(body)) '${variant.width}x${variant.height}@${variant.bandwidth}'],
+        ['1280x720@1000000', '1024x720@4000000', '640x360@900000', '640x360@500000'],
+        reason: 'width breaks a height tie ahead of bandwidth; bandwidth breaks a width tie',
       );
     });
   });
 
   group('qualities, the pick and the line', () {
-    test('one quality per variant, named by its resolution tier', () {
+    test("one quality per variant, labelled the site's own W×H · bandwidth bps", () {
       final variants = _variants(_masterBody);
       final qualities = NiconicoPlayParser.qualities(variants);
       expect(
         [for (final quality in qualities) (quality.qualityId, quality.label, quality.platformOrder, quality.codec)],
         [
-          ('1920x1080@6000000', '1080P 高清', 3, LiveStreamCodec.avc),
-          ('1280x720@3000000', '720P 清晰', 2, LiveStreamCodec.hevc),
-          ('640x360@1200000', '360P 极速', 1, null),
+          ('1920x1080@6000000', '1920×1080 · 6000000 bps', 3, LiveStreamCodec.avc),
+          ('1280x720@3000000', '1280×720 · 3000000 bps', 2, LiveStreamCodec.hevc),
+          ('640x360@1200000', '640×360 · 1200000 bps', 1, null),
         ],
       );
       expect(NiconicoPlayParser.qualities(const []), isEmpty);
     });
 
-    test('the pick is the named variant, else the best', () {
+    test("the pick is the named variant; an unknown id is the caller's mistake", () {
       final variants = _variants(_masterBody);
       expect(NiconicoPlayParser.pick(variants, '1280x720@3000000')?.height, 720);
       expect(NiconicoPlayParser.pick(variants, ' 1280x720@3000000 ')?.height, 720);
-      expect(NiconicoPlayParser.pick(variants, '999x999@1')?.height, 1080);
       expect(NiconicoPlayParser.pick(variants, null)?.height, 1080);
+      expect(NiconicoPlayParser.pick(variants, '')?.height, 1080, reason: 'no preference is the best one');
+      expect(() => NiconicoPlayParser.pick(variants, '999x999@1'), throwsArgumentError);
       expect(NiconicoPlayParser.pick(const [], '1280x720@3000000'), isNull);
     });
 

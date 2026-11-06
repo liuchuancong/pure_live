@@ -202,12 +202,14 @@ final class AcfunSite implements LiveSite {
   }
 
   /// `startPlay` for [id]. A refused session is dropped and the request made
-  /// once more with a new one; a second refusal reports it. An ended broadcast
-  /// is stream-unavailable and a paid show has no broadcast data; both keep the
+  /// once more with a new one; a second refusal reports it. [freshSession]
+  /// asks even the first attempt with a brand-new visitor (a danmaku refresh
+  /// needs one: tickets are per session). An ended broadcast is
+  /// stream-unavailable and a paid show has no broadcast data; both keep the
   /// session.
-  Future<({AcfunPlayResult result, AcfunVisitor visitor})> startPlay(String id) async {
+  Future<({AcfunPlayResult result, AcfunVisitor visitor})> startPlay(String id, {bool freshSession = false}) async {
     for (var attempt = 0; ; attempt++) {
-      final visitor = await session(fresh: attempt > 0);
+      final visitor = await session(fresh: freshSession || attempt > 0);
       final response = await http.postForm(
         AcfunEndpoints.startPlay(visitor),
         fields: {'authorId': id, 'pullStreamType': 'FLV'},
@@ -278,11 +280,12 @@ final class AcfunSite implements LiveSite {
       );
 
   /// Danmaku arguments from a new visitor session and a new `startPlay`
-  /// (tickets are per session). A broadcast that ended, or a paid show with no
-  /// tickets, is stream-unavailable.
+  /// (tickets are per session, so a refresh never reuses the five-minute
+  /// session: a dead ticket's answer must not come back). A broadcast that
+  /// ended, or a paid show with no tickets, is stream-unavailable.
   Future<AcfunDanmakuArgs> danmakuArgsFromSession(String authorId) async {
     final id = authorId.trim();
-    final play = await startPlay(id);
+    final play = await startPlay(id, freshSession: true);
     final data = play.result.data;
     if (data == null) {
       throw AcfunFailure(AcfunFailureKind.streamUnavailable, '$id: restricted room (${play.result.restriction.name})');

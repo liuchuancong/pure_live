@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:live_sites/src/common/hls/hls_master.dart';
-import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -266,10 +265,13 @@ abstract final class NiconicoPlayParser {
   // Master playlist -----------------------------------------------------------
 
   /// The video variants of the master playlist [body] read from [source], best
-  /// first (height, then bandwidth). A refused or gone master (401/403 risk,
-  /// 404/410 unavailable, 429 rate, 5xx network) throws its [NiconicoFailure];
-  /// a body that is not a playlist is `apiChanged`, and a playlist with no
-  /// usable variant is stream-unavailable.
+  /// first (height, then width, then bandwidth). A refused or gone master
+  /// (401/403 risk, 404/410 unavailable, 429 rate, 5xx network) throws its
+  /// [NiconicoFailure]; a body that is not a playlist is `apiChanged`, and a
+  /// playlist with no usable variant is stream-unavailable. A variant without
+  /// a resolution, or two naming the same `WxH@BANDWIDTH`, cannot be picked
+  /// exactly, so the whole master is `apiChanged` rather than a shortened
+  /// table that drops them.
   static List<NiconicoVariant> variants(String body, {required Uri source, int status = 200}) {
     switch (status) {
       case 200:
@@ -294,54 +296,56 @@ abstract final class NiconicoPlayParser {
     // answer below. Relative URIs are resolved against the source here so no
     // part of the master's own query is copied onto a variant.
     final parsed = parseHlsMaster(body, masterUrl: source);
-    final variants = <String, NiconicoVariant>{};
+    final variants = <NiconicoVariant>[];
+    final selectors = <String>{};
     for (final entry in parsed?.master.variants ?? const <HlsVariant>[]) {
       final url = resolveHlsVariantUri(entry.uri, master: source);
       final bandwidth = entry.bandwidth;
       final width = entry.width;
       final height = entry.height;
-      if (url.scheme != 'https' ||
-          url.host.isEmpty ||
-          bandwidth <= 0 ||
-          width == null ||
-          height == null ||
-          !_resolution.hasMatch('${width}x$height')) {
+      // A variant the viewer cannot pick exactly (no resolution), or one that
+      // repeats a `WxH@BANDWIDTH` an earlier line named, makes the whole
+      // master untrustworthy: apiChanged, not a silently shorter table.
+      if (width == null || height == null) {
+        throw const NiconicoFailure(NiconicoFailureKind.apiChanged, 'master: variant without a resolution');
+      }
+      if (url.scheme != 'https' || url.host.isEmpty || bandwidth <= 0 || !_resolution.hasMatch('${width}x$height')) {
         continue;
       }
-      final key = '${width}x$height@$bandwidth';
-      variants[key] = (
+      final selector = '${width}x$height@$bandwidth';
+      if (!selectors.add(selector)) {
+        throw NiconicoFailure(NiconicoFailureKind.apiChanged, 'master: ambiguous quality selector $selector');
+      }
+      variants.add((
         url: '$url',
         width: width,
         height: height,
         bandwidth: bandwidth,
         codec: hlsVideoCodecOf(entry.codecs),
         frameRate: entry.frameRate ?? 0,
-      );
+      ));
     }
     if (variants.isEmpty) {
       throw const NiconicoFailure(NiconicoFailureKind.streamUnavailable, 'master: no video variant');
     }
-    final result = variants.values.toList()
-      ..sort((a, b) {
-        final byHeight = b.height.compareTo(a.height);
-        return byHeight != 0 ? byHeight : b.bandwidth.compareTo(a.bandwidth);
-      });
-    return result;
+    variants.sort((a, b) {
+      final byHeight = b.height.compareTo(a.height);
+      if (byHeight != 0) return byHeight;
+      final byWidth = b.width.compareTo(a.width);
+      return byWidth != 0 ? byWidth : b.bandwidth.compareTo(a.bandwidth);
+    });
+    return variants;
   }
 
   /// The [variants] as qualities, best first: the id is `WxH@BANDWIDTH` (a
-  /// re-read master names the same variant), the label that resolution turned
-  /// into a tier name (`720P 清晰`).
+  /// re-read master names the same variant), the label the site's own
+  /// `W×H · BANDWIDTH bps` (`1920×1080 · 6000000 bps`).
   static List<LivePlayQuality> qualities(List<NiconicoVariant> variants) {
     final total = variants.length;
     return [
       for (final (index, variant) in variants.indexed)
         LivePlayQuality.of(
-          label: LiveQualityLabel.normalize(
-            platform: 'niconico',
-            rawLabel: '',
-            resolution: '${variant.width}x${variant.height}',
-          ),
+          label: '${variant.width}×${variant.height} · ${variant.bandwidth} bps',
           qualityId: '${variant.width}x${variant.height}@${variant.bandwidth}',
           platformOrder: total - index,
           codec: variant.codec,
@@ -349,14 +353,17 @@ abstract final class NiconicoPlayParser {
     ];
   }
 
-  /// The variant [qualityId] names (the id, `WxH@BANDWIDTH`), else the best
-  /// one, or null when there are no [variants].
+  /// The variant [qualityId] names (the id, `WxH@BANDWIDTH`): the best one
+  /// when [qualityId] is empty (no preference), null when there are no
+  /// [variants]. An id the master does not offer (stale, another room's) is
+  /// the caller's mistake: an [ArgumentError], never the best variant
+  /// quietly swapped in.
   static NiconicoVariant? pick(List<NiconicoVariant> variants, String? qualityId) {
     if (variants.isEmpty) return null;
     final id = qualityId?.trim() ?? '';
     if (id.isEmpty) return variants.first;
     return variants.where((variant) => '${variant.width}x${variant.height}@${variant.bandwidth}' == id).firstOrNull ??
-        variants.first;
+        (throw ArgumentError.value(qualityId, 'qualityId', 'not a quality of this master'));
   }
 
   /// The playable line of the master the seat granted: [variant]'s playlist URL

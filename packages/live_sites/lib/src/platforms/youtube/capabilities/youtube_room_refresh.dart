@@ -10,7 +10,9 @@ import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// Youtube rooms, refreshed: the player and next answers room entry makes.
+/// Youtube rooms, refreshed: the pageless refresh (`navigation/resolve_url`,
+/// the `player` answer, the viewer count of `updated_metadata`), falling back
+/// to the player and next answers room entry makes.
 final class YoutubeRoomRefresh implements LiveRoomRefresh {
   /// Serves [site].
   YoutubeRoomRefresh({required this.site});
@@ -21,7 +23,7 @@ final class YoutubeRoomRefresh implements LiveRoomRefresh {
   @override
   Future<Either<LiveSiteError, LiveRoom>> getRoomForRefresh({required String roomId}) async {
     try {
-      return right(await site.detail(roomId));
+      return right(await site.refreshRoom(roomId));
     } on YouTubeFailure catch (failure) {
       return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
@@ -30,6 +32,13 @@ final class YoutubeRoomRefresh implements LiveRoomRefresh {
   }
 
   @override
-  Future<Either<LiveSiteError, LiveRoom>> getRoomForRecording({required String roomId}) =>
-      getRoomForRefresh(roomId: roomId);
+  Future<Either<LiveSiteError, LiveRoom>> getRoomForRecording({required String roomId}) async {
+    try {
+      return right(await site.detail(roomId));
+    } on YouTubeFailure catch (failure) {
+      return left(failure.toLiveSiteError(youtubeSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
+    }
+  }
 }

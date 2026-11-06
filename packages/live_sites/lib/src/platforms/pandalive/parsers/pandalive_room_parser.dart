@@ -236,7 +236,8 @@ abstract final class PandaliveRoomParser {
   /// name, viewers now, this broadcast's cumulative viewers (`playCnt`),
   /// fans, the start, and the restriction its flags show, with that
   /// restriction's notice; live, or a replay for a rerun. The card id is
-  /// the login id; the broadcaster's number rides on the anchor's profile.
+  /// the login id; the anchor id is the broadcaster's number (`userIdx`), as
+  /// in the rooms and the BJ search, empty without one.
   /// Null for a row without a broadcaster id or that is not on air.
   static LiveRoom? liveCard(Map<String, dynamic> row) {
     final id = PandaliveEndpoints.normalizeUserId(row['userId']);
@@ -245,6 +246,7 @@ abstract final class PandaliveRoomParser {
     final restriction = restrictionOf(row);
     final status = onAirStatus(row);
     final category = PandaliveJson.text(row['category']);
+    final index = PandaliveJson.positive(row['userIdx']);
     return LiveRoom.normalized(
       platform: PandaliveEndpoints.siteId,
       roomId: id,
@@ -255,7 +257,7 @@ abstract final class PandaliveRoomParser {
       ),
       anchor: LiveAnchor.normalized(
         platform: PandaliveEndpoints.siteId,
-        anchorId: id,
+        anchorId: index == null ? '' : '$index',
         name: nick,
         avatarUrl: _blankless(PandaliveJson.image(row['userImg'])),
         liveStatus: status,

@@ -329,9 +329,9 @@ final class PandaliveSite implements LiveSite {
   }
 
   /// A refresh: the member answer alone, without the play request a first
-  /// visit makes.
-  Future<LiveRoom> refreshRoom(String roomId) async =>
-      PandaliveRoomParser.profileRoom(await _member(_checkedId(roomId)));
+  /// visit makes; a broadcaster listed as live comes back as its broadcast,
+  /// with the restriction its flags show and that restriction's notice.
+  Future<LiveRoom> refreshRoom(String roomId) => refresh(roomId);
 
   // Streams --------------------------------------------------------------------
 
