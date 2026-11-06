@@ -64,10 +64,7 @@ final class HongguoCoverCache {
 
   Future<File?> _convert(String url) async {
     final key = _keyOf(url);
-    final existing = await liveCacheManager.image.existingFile(
-      identity: 'hongguo-png:$key',
-      policy: _pngPolicy,
-    );
+    final existing = await liveCacheManager.image.existingFile(identity: 'hongguo-png:$key', policy: _pngPolicy);
     if (existing != null) {
       return existing;
     }
@@ -117,8 +114,7 @@ final class HongguoCoverCache {
 
 /// The image provider for one cover: a HEIC still through the converter,
 /// everything else straight to the app's image cache.
-ImageProvider hongguoCoverImage(String url, {int? width, int? height}) =>
-    HongguoCoverCache.isHeic(url)
+ImageProvider hongguoCoverImage(String url, {int? width, int? height}) => HongguoCoverCache.isHeic(url)
     ? HongguoCoverImage(url, width: width, height: height)
     : cachedImage(url, policy: ImageCachePolicies.liveRoomCover, width: width, height: height);
 
@@ -143,26 +139,30 @@ final class HongguoCoverImage extends ImageProvider<HongguoCoverImage> {
 
   @override
   ImageStreamCompleter loadImage(HongguoCoverImage key, ImageDecoderCallback decode) =>
-      OneFrameImageStreamCompleter(_frameOf(key));
+      OneFrameImageStreamCompleter(_frameOf(key, decode));
 
-  static Future<ImageInfo> _frameOf(HongguoCoverImage key) async {
+  static Future<ImageInfo> _frameOf(HongguoCoverImage key, ImageDecoderCallback decode) async {
     final file = await HongguoCoverCache.instance.pngFor(key.url);
     if (file == null) throw StateError('cover conversion failed: ${key.url}');
     final buffer = await ui.ImmutableBuffer.fromUint8List(await file.readAsBytes());
-    final codec = await ui.instantiateImageCodecWithSize(
-      buffer,
-      getTargetSize: (intrinsicWidth, intrinsicHeight) {
-        var targetWidth = key.width;
-        var targetHeight = key.height;
-        if (targetWidth != null && targetWidth > intrinsicWidth) {
-          targetWidth = intrinsicWidth;
-        }
-        if (targetHeight != null && targetHeight > intrinsicHeight) {
-          targetHeight = intrinsicHeight;
-        }
-        return ui.TargetImageSize(width: targetWidth, height: targetHeight);
-      },
-    );
+    // A resizing wrapper hands this provider a callback that refuses a second
+    // target size, so the callback is used only when no box was asked for.
+    final codec = key.width == null && key.height == null
+        ? await decode(buffer)
+        : await ui.instantiateImageCodecWithSize(
+            buffer,
+            getTargetSize: (intrinsicWidth, intrinsicHeight) {
+              var targetWidth = key.width;
+              var targetHeight = key.height;
+              if (targetWidth != null && targetWidth > intrinsicWidth) {
+                targetWidth = intrinsicWidth;
+              }
+              if (targetHeight != null && targetHeight > intrinsicHeight) {
+                targetHeight = intrinsicHeight;
+              }
+              return ui.TargetImageSize(width: targetWidth, height: targetHeight);
+            },
+          );
     try {
       final frame = await codec.getNextFrame();
       return ImageInfo(image: frame.image);
