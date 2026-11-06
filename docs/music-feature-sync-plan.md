@@ -65,7 +65,7 @@
 | 移动到其他列表（批量） | 多选工具行「移动到」：选择器排除源列表（参考 excludeListId），目标去重加入（按 addToTop 定位）后从源列表移除（参考 moveListMusics）（提交 `c830f90b9`） | ✅ |
 | 重复歌曲查重去重 | 卡片菜单「重复歌曲」：`duplicateTrackGroups` 按参考 filterDuplicateMusic 归一（去括注变体/标点/空白）分组，对话框逐条播放/移除 + 一键保留每组第一首（提交 `f2ce85222`） | ✅ |
 | 列表内搜索 | 详情页头部搜索钮 + 搜索框：`searchPlaylistTrackIndexes` 按参考 searchListMusic 三档全匹配（歌名/歌手/专辑各档保原序）+ 剩余子序列匹配按 similar 降序，点击结果按原索引续播，搜索态禁用上下移（提交 `105f4647e`） | ✅ |
-| 歌曲换源（手动，搜其他源替换+缓存） | 解析失败自动跨源匹配（`music_source_match.dart`）；手动换源：歌曲菜单「歌曲换源」对话框（参考 MusicToggleModal：全源并发搜、逐源 tab、行内试听、确认），选择进 `music_source_swaps.dart` 持久缓存表且 `resolveWithToggle` 优先走换源结果，歌单内另以 `replaceTrack` 原位替换（提交 `5261a8190`） | ✅ |
+| 歌曲换源（手动，搜其他源替换+缓存） | 解析失败自动跨源匹配（`music_source_match.dart`）；手动换源：歌曲菜单「歌曲换源」对话框（参考 MusicToggleModal：全源并发搜、逐源 tab、行内试听、确认），选择进 `music_source_swaps.dart` 持久缓存表且 `resolveWithToggle` 优先走换源结果，歌单内另以 `replaceTrack` 原位替换（提交 `5261a8190`）。本轮（提交 `7ce0e0e30`）`findSameSong` 由单一严格等式改三档让步：严格同名同歌手 → 同名且歌手互为子集 → 仅同名，三档共用 ±5 秒时长硬闸，且按档序整体扫描（专辑冲突的候选让位给严格命中，缺专辑仍能匹配）；同源自匹配仍被排除 | ✅ |
 | 本地歌曲编辑标签（元数据编辑） | 歌曲菜单「编辑标签」（本地歌曲）：对话框（参考 MetadataEditModal：读文件标签预填，歌名/艺术家/专辑/LRC 歌词/封面，150 字上限，文件名解析 歌名-艺术家 双序，封面选择/移除/在线匹配，歌词在线匹配带翻译合并）；写入只回写改动部分（`music_tag_writer.dart` 纯 Dart：mp3 重写 ID3v2.3+v1 尾刷新、flac 重写 Vorbis comment+PICTURE 块，其余格式 toast 不支持），保存后重扫本地库（提交 `c6672dbf3`；配套 media_core 修 flac 图片块按规范序解析 `009273d`） | ✅ |
 | 多选（区间选择/反选） | 多选工具行加 单选/区间 DsSegmentedControl + 全选↔反选切换：单选点按=勾/去并移锚，区间点按=以锚为界的整段替换（首点=单选该行、点锚=清空、锚不动），全选满员时按钮变反选=清空（参考 mobile MultipleModeBar + List.handleSelect 语义；提交 `550f023a2`） | ✅ |
 | 添加本地歌曲（文件进列表） | 歌单卡片菜单「添加本地歌曲」：多选音频文件（引擎 LocalMusicSource 全扩展名过滤），逐文件读标签入列（标签缺失/损坏回退文件名、不丢文件，与本地库扫描同构：id=路径/sourceId=local/专辑+trackNumber+year 元数据齐），`addTracks` 去重按 addToTop 定位，已添加 N 首/都在列表中双 toast（参考 desktop useMenu+addLocalFile、mobile listAction；提交 `67fd41993`） | ✅ |
@@ -91,6 +91,7 @@
 | 歌曲详情（元数据弹窗） | `MusicSongRow._showDetails` | ✅ |
 | 歌词编辑/偏移持久化管理 | `music_lyric_overrides.dart` | ✅ |
 | 已播列表去重（随机不重复）/自动清空 | 随机不重复由内核 PlayQueue 每轮置换保证（耗尽即重排一轮，全部重新参与，内核文档注明与 lx-music 同语义）；本轮补参考 `player.isAutoCleanPlayedList`（默认关，词表照抄）：播放设置页开关存 `music.play.autoCleanPlayedList`；同列表点歌（playAll 同内容重放/队列行 play/playAt）在随机模式下重建洗牌、列表内所有歌曲重新参与随机（=参考 clearPlayedList），换列表恒新开一轮，设置关时同列表续播保留去重池（参考 `setting || prevListId != listId` 规则照抄）（提交 `268814b28`） | ✅ |
+| 音质不足自动降级（请求档取不到链时逐档下探） | `sources/lx_platform_source.dart` `lxQualityLadder`：按 `rankedQualities`（hires→flac24bit→flac→320k→192k→128k）从请求档起逐档问脚本/兜底端点，只保留「脚本声明」∩「歌曲标有」的档，128k 恒作地板；请求档无论是否在白名单都先试一次；命中的档写回 `TrackSource.quality`，UI 显示实际播放档而非用户所点档。此前一次问不到就 `StateError`（提交 `7ce0e0e30`） | ✅ |
 | 预加载下一首 / URL 过期刷新 | 内核已接全链（实查 `audio_playback_controller.dart`）：每曲起播即 `_prefetchNext` 预热下一曲 URL+歌词（`queue.indexAfter` mode-aware，单曲循环自动跳过），结果入 `_resolved` 且切曲时 `_openTrack` 直接消费未过期条目——比参考"最后 10 秒静音探测、结果不落播放路径"更强；URL 带 `expiresAt`，过期即重解析，加载失败 `refreshSourceOnError` 一次性刷新、起播成功即补预算（`prefetchNext`/`refreshSourceOnError` 默认开，app 构造 `AudioPlaybackConfig` 未覆盖） | ✅ |
 | 临时列表（稍后播放入队顶） | `playNext` insertNext | ✅ |
 | 通知栏/锁屏控制 + 封面 | 内核媒体会话 | ✅ |
@@ -164,3 +165,29 @@
 3. 取最靠前的 🟡/⬜，按其 v2 落点实现一批（一次一批）；l10n 两语言 json 同步加键后在 `apps/pure_live` 目录跑 `dart run slang`（先 grep 新键）；收尾 `dart analyze` 零问题 + `flutter test test/music` 全过。
 4. 只 stage 本轮自己改的文件；提交（英文小写 conventional）→ `git push origin v2` → 台账该条改 ✅ 附哈希。UI 不写测试。
 5. 参考行为拿不准时先读对应参考文件（判定基线给出的路径），不凭记忆写。
+
+## 轮转记录
+
+### 2026-11-06 音质降级 + 跨源匹配让步（提交 `7ce0e0e30`）
+
+审查参考 `E:\study\lx-music-desktop-master`（`src/common/utils/musicQualities.js`、`src/renderer/store/songAction`、`src/renderer/utils/musicSdk/*` 的 `getSelectPlayUrl`）后对照本仓 music 模块，落地两处真实缺口：
+
+- **音质降级阶梯**（F 新行）：参考取链是「按 `playQuality` 优先，取不到逐档降到 128k」；本仓只问一次就抛 `StateError`，用户点 flac 而该曲只有 320k 时直接播放失败。现按 `lxQualityLadder` 逐档下探，并让 UI 报实际档位。
+- **跨源匹配让步**（E 换源行）：`findSameSong` 原要求 `title`/`artist`/`album` 三串全等 + 时长相等，其他源普遍缺专辑或歌手分隔符不同（`/` vs `、`），自动换源几乎不命中。改为三档让步 + ±5 秒硬闸。
+- 新增 `test/music/music_quality_ladder_test.dart` 10 例（阶梯下探、请求档必试、`auto` 自顶、无档位表取全部声明档、128k 地板；匹配器档序优先、缺专辑可配、歌手写法不同可配、时长不符拒配、不返同源）。
+- `test/music/music_pages_providers_test.dart` 两处既存红修复并写明理由：`musicLocalProvider` 需 boot 注入 `storagePathsProvider`（设计上抛 `UnimplementedError`、无测试缝隙）、`musicOnlineHotTags/musicCatalogs/musicHotSearches` 经具体 `DioFactory` 拨真实站点——两条从读取清单移除而非伪造。`flutter test test/music` 由 1 红转 125 全绿。
+- `features/settings/surface/settings_search.dart` 补登记 4 条此前搜不到的音乐设置行：音频输出设备、下载并发数、桌面歌词对齐、同步Forget密钥。
+
+审过但**不**照抄的项（附判据）：
+
+- 「只收当前歌单页」—— 逐源核到请求参数：在线歌单（`playlistDetail`）本仓已整表拉取（wy `/weapi/v3/playlist/detail` `n: 100000`、tx `song_num: 100000`、mg 歌曲页 `pageSize: '100000'`、kg 读 `special/single/<id>-5-9999.html` 一次给全 rows、kw `while (rows.length < total)` 按 `pn`/`rn: 1000` 逐页走完）；专辑（`album`）mg 已 `while` 分页（上限 200 首）、kg 单请求 `pagesize: 200`、kw 单请求 `rn: 1000`、wy `/weapi/v1/album/<id>` 与 tx `fcg_v8_album_info_cp` 的端点本身整表应答。参考同为单请求或同量上限，本仓无此缺口。超长专辑（>200 首）在 kg/mg 会截，两条上限与参考一致，留此备案。
+- 「播放卡住无自愈」—— 引擎侧 `media_core_audio/audio_playback_controller.dart` 已有 `_armLoadTimeout`，app 层再挂看门狗属重复。
+- 桌面端独有、本仓结构上不适用：窗口缩放/换肤引擎、OpenAPI 之外的 oAuth 面板。以下四条参考有、本仓暂缺，列入待选：`focus_search_input` 快捷键、每列表滚动位置还原、已解析 URL 持久化（换源双写）、全局设置导出导入。
+
+### 待用户决策（下一轮候选）
+
+1. **歌词兜底**：`packages/live_vod/lib/src/lyric_lookup.dart`（LRCLIB）+ `lyric_query.dart` 有零调用点=死代码。接法应在 `musicSourceListProvider` 侧包一层「脚本无词→查 LRCLIB」的装饰源，返回 `MusicLyricPayload`；**不能**写进 `musicLyricOverridesProvider`（那张表是观看者手动关联的持久化）。
+2. `focus_search_input` 快捷键（进音乐页聚焦搜索框）。
+3. 每个歌单记住滚动位置。
+4. 已解析播放 URL 持久化 + 手动换源双写。
+5. 全局设置导出/导入。
