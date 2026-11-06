@@ -113,30 +113,14 @@ final class SearchController extends Notifier<SearchState> {
   }
 
   /// The targets [scope] actually searches, in the canonical rooms,
-  /// anchors, areas order; "all" searches rooms everywhere and streamers
-  /// and areas wherever a platform can answer them, one platform the
-  /// targets it offers.
+  /// anchors, areas order; "all" keeps all three targets whatever the
+  /// viewer has excluded — a chip that vanishes because every platform
+  /// able to answer it happens to be excluded reads as a bug, and a scope
+  /// that ends up unable to serve one says so in its results. One platform
+  /// offers the targets its own capability declares.
   List<LiveSearchTarget> supportedTargetsOf(String scope) {
     if (scope == kSearchAllPlatforms) {
-      final excluded = ref.read(searchExcludedProvider);
-      final nativeTls = ref.read(nativeTlsPlatformsProvider);
-      bool offers(LiveSearchTarget target) => ref
-          .read(sitesProvider)
-          .all
-          .where(
-            (site) =>
-                !excluded.contains(site.manifest.id) &&
-                !SiteFacts.isRetired(site.manifest.id) &&
-                (!SiteFacts.requiresNativeTls.contains(site.manifest.id) || nativeTls.contains(site.manifest.id)),
-          )
-          .any((site) => site.capability<LiveSearchProvider>()?.supportedTargets.contains(target) ?? false);
-      // "All" searches rooms everywhere and streamers and areas wherever a
-      // platform can answer them, as the reference's all-platforms scope does.
-      return [
-        LiveSearchTarget.rooms,
-        if (offers(LiveSearchTarget.anchors)) LiveSearchTarget.anchors,
-        if (offers(LiveSearchTarget.areas)) LiveSearchTarget.areas,
-      ];
+      return [LiveSearchTarget.rooms, LiveSearchTarget.anchors, LiveSearchTarget.areas];
     }
     final offered =
         ref.read(sitesProvider).getById(scope)?.capability<LiveSearchProvider>()?.supportedTargets ??
