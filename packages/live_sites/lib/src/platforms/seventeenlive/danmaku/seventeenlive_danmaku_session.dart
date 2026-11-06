@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
@@ -105,7 +106,14 @@ final class SeventeenLiveDanmakuProvider implements LiveDanmakuProvider {
 /// - The messages of a backlog an `ATTACHED` announces (`HAS_BACKLOG`) are marked
 ///   replayed, up to the first message Ably published at the attach or later, so
 ///   the duplicate gate shows them for as long as a resume reaches back (B-26).
-final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation every open and its callbacks guard with —
+/// is the shared base's ([DanmakuSessionBase]): every open is one [DanmakuRun],
+/// the reconnect waits are [DanmakuRun.delay]s, and the base drops whatever a
+/// dead one reports. The `_sockets` count and the reattach watch stay this
+/// session's own bookkeeping: they guard a same-socket reattach against a socket
+/// that was replaced underneath, which one run does not tell apart.
+final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
   /// A session for the chat of [args] over [http]. [now] is the clock the
   /// super chats, the backlog cut and the resume staleness are read at (tests).
   SeventeenLiveDanmakuSession({required this.args, required this.http, DateTime Function()? now})
@@ -142,13 +150,12 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
 
   final DateTime Function() _now;
 
-  final _events = StreamController<LiveMessage>.broadcast();
-  final CancelToken _cancel = CancelToken();
   final LinkedHashSet<String> _seen = LinkedHashSet<String>();
 
   DanmakuSocket? _socket;
   Timer? _join;
   Timer? _reattachWatch;
+  CancelToken? _cancel;
   String? _token;
   SeventeenLiveConnectionDetails? _connection;
   String? _channelSerial;
@@ -160,22 +167,17 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
   bool _reattaching = false;
   bool _joined = false;
   bool _reconnecting = false;
-  bool _disposed = false;
   int _refusals = 0;
   int _sockets = 0;
   int _endpoint = 0;
-  int _generation = 0;
   int _reconnectFailures = 0;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Asks a token when the session holds none, opens a socket and attaches the
   /// room's channel; null once the socket is open, else why the session could not
   /// start. The `ATTACHED` that joins is what ends the join timer.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) {
+    if (isDisposed) {
       return const LiveSiteError.unsupported(siteId: seventeenliveSiteId, message: 'session is disposed');
     }
     return await _openSocket();
@@ -186,16 +188,16 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
   /// last serial. The endpoint is never named in a failure: its query carries the
   /// token and the key.
   Future<LiveSiteError?> _openSocket() async {
-    final generation = ++_generation;
+    final run = beginRun();
     _joined = false;
     _socketReset();
     await _teardownSocket();
     final token = _token;
     if (token == null) {
-      final asked = await _renew(generation);
+      final asked = await _renew(run);
       if (asked case final failure?) return failure;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       return const LiveSiteError.unsupported(siteId: seventeenliveSiteId, message: 'session is closed');
     }
     final endpoint = SeventeenLiveDanmakuCodec.withToken(
@@ -209,53 +211,54 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
       uri: endpoint,
       config: _transport,
       onHandshake: (_) {},
-      onFrame: (data) => _onData(data, generation),
-      onLost: (cause) => _scheduleReconnect(generation, cause),
+      onFrame: (data) => _onData(data, run),
+      onLost: (cause) => _scheduleReconnect(run, cause),
     );
     _socket = socket;
     if (!await socket.start()) {
       return const LiveSiteError.network(siteId: seventeenliveSiteId, message: 'danmaku connect failed');
     }
     _sockets += 1;
-    _join = Timer(SeventeenLiveDanmakuCodec.joinTimeout, () {
-      if (_disposed || generation != _generation || _joined) return;
+    _join = timers.after(SeventeenLiveDanmakuCodec.joinTimeout, () {
+      if (!run.isActive || _joined) return;
       // An attach sent and not answered: the channel is suspended, so its serial
       // goes (ably-js's own rule) and the socket is replaced.
       if (_attachPending) _channelSerial = null;
-      _scheduleReconnect(generation, 'attach timed out');
+      _scheduleReconnect(run, 'attach timed out');
     });
     return null;
   }
 
   /// Asks `messenger/auth` and keeps its token. Another provider ends the
   /// session; every other failure is returned for the caller to retry.
-  Future<LiveSiteError?> _renew(int generation) async {
+  Future<LiveSiteError?> _renew(DanmakuRun run) async {
     final String token;
+    final cancel = _cancel = CancelToken();
     try {
       final response = await http.post(
         SeventeenLiveEndpoints.authUrl,
         headers: SeventeenLiveDanmakuCodec.authHeaders,
-        cancel: _cancel,
+        cancel: cancel,
       );
       token = SeventeenLiveDanmakuCodec.grant(response.text, status: response.status);
     } on SeventeenLiveFailure catch (failure) {
       if (failure.kind == SeventeenLiveFailureKind.chatRefused) {
-        _terminate(failure.message);
+        _terminate(failure.message, run);
         return failure.toLiveSiteError(seventeenliveSiteId);
       }
       return failure.toLiveSiteError(seventeenliveSiteId);
     } on Object catch (error) {
       return LiveSiteError.unexpected(siteId: seventeenliveSiteId, message: '$error', cause: error);
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       return const LiveSiteError.unsupported(siteId: seventeenliveSiteId, message: 'session is closed');
     }
     _token = token;
     return null;
   }
 
-  void _onData(Object data, int generation) {
-    if (generation != _generation || _disposed) return;
+  void _onData(Object data, DanmakuRun run) {
+    if (!run.isActive) return;
     _reconnectFailures = 0;
     final now = _now();
     _lastActivity = now;
@@ -279,47 +282,50 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
         _joined = true;
         _join?.cancel();
         _join = null;
+        if (!run.isJoined) run.joined();
       case SeventeenLiveSignal.detached:
-        _detached(frame.error);
+        _detached(frame.error, run);
       case SeventeenLiveSignal.disconnected:
         if (frame.error case final error? when error.isTokenError) {
-          _tokenRefused(error);
+          _tokenRefused(error, run);
         } else {
-          _scheduleReconnect(generation, 'server disconnected');
+          _scheduleReconnect(run, 'server disconnected');
         }
       case SeventeenLiveSignal.connectionError:
         final error = frame.error!;
         if (error.isTokenError) {
-          _tokenRefused(error);
+          _tokenRefused(error, run);
         } else {
-          _terminate('Ably error $error');
+          _terminate('Ably error $error', run);
           return;
         }
       case SeventeenLiveSignal.channelError:
-        _terminate('Channel refused: ${frame.error}');
+        _terminate('Channel refused: ${frame.error}', run);
         return;
       case SeventeenLiveSignal.reauthorize:
-        unawaited(_reauthorize(generation));
+        unawaited(_reauthorize(run));
     }
     // The backlog is over once a message published at the attach or later came.
     if (frame.entries.any((entry) => entry.publishedAt != null && !entry.replayed)) _backlogBefore = null;
     for (final entry in frame.entries) {
-      if (_disposed || generation != _generation) return;
+      if (!run.isActive) return;
       // A message sent again after a resume, or twice: reported once.
       if (entry.id.isNotEmpty && !_firstSight(entry.id)) continue;
       // While the stream is paused (and in the figures that end the pause) the
       // viewers are 0; the last count stays (B-25).
       final paused = _muted == true || entry.muted == true;
       for (final message in entry.messages) {
-        if (_disposed || generation != _generation) return;
+        if (!run.isActive) return;
         if (message.payload case final LiveAudienceUpdate update when update.value == 0 && paused) continue;
-        _report(message);
+        run.message(message);
       }
       if (entry.muted case final muted?) {
-        if (_muteNotice(muted: muted, id: entry.id, replayed: entry.replayed) case final notice?) _report(notice);
+        if (_muteNotice(muted: muted, id: entry.id, replayed: entry.replayed) case final notice?) {
+          run.message(notice);
+        }
       }
       if (entry.ended) {
-        _terminate(seventeenLiveBroadcastEnded);
+        _terminate(seventeenLiveBroadcastEnded, run);
         return;
       }
     }
@@ -336,23 +342,22 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
   /// does; a detach while that attach is pending, or no answer within the join
   /// limit, drops the socket and the serial. A detach is a refusal: one too many
   /// ends the session.
-  void _detached(SeventeenLiveAblyError? error) {
+  void _detached(SeventeenLiveAblyError? error, DanmakuRun run) {
     if (++_refusals > SeventeenLiveDanmakuCodec.maxRefusals) {
-      _terminate(error == null ? 'Channel detached' : 'Channel detached: $error');
+      _terminate(error == null ? 'Channel detached' : 'Channel detached: $error', run);
       return;
     }
     if (_reattaching) {
       _channelSerial = null;
-      _scheduleReconnect(_generation, 'channel detached again');
+      _scheduleReconnect(run, 'channel detached again');
       return;
     }
     _reattaching = true;
     final sockets = _sockets;
-    final generation = _generation;
-    _reattachWatch = Timer(SeventeenLiveDanmakuCodec.joinTimeout, () {
-      if ((_socket?.isConnected ?? false) && _generation == generation && _reattaching && _sockets == sockets) {
+    _reattachWatch = timers.after(SeventeenLiveDanmakuCodec.joinTimeout, () {
+      if ((_socket?.isConnected ?? false) && run.isActive && _reattaching && _sockets == sockets) {
         _channelSerial = null;
-        _scheduleReconnect(generation, 'reattach timed out');
+        _scheduleReconnect(run, 'reattach timed out');
       }
     });
     _attach();
@@ -360,23 +365,23 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
 
   /// The server refused the token: drop it (the next handshake asks a new one)
   /// and the socket, unless this is one refusal too many.
-  void _tokenRefused(SeventeenLiveAblyError error) {
+  void _tokenRefused(SeventeenLiveAblyError error, DanmakuRun run) {
     _token = null;
     if (++_refusals > SeventeenLiveDanmakuCodec.maxRefusals) {
-      _terminate('Token refused: $error');
+      _terminate('Token refused: $error', run);
       return;
     }
-    _scheduleReconnect(_generation, 'token refused');
+    _scheduleReconnect(run, 'token refused');
   }
 
   /// The server asked for a new token: ask `messenger/auth` and send it on the
   /// same socket. A failure is left to the server, which drops the socket with a
   /// token error when the old token lapses.
-  Future<void> _reauthorize(int generation) async {
+  Future<void> _reauthorize(DanmakuRun run) async {
     final sockets = _sockets;
-    final asked = await _renew(generation);
+    final asked = await _renew(run);
     if (asked != null) return;
-    if (_disposed || generation != _generation || _sockets != sockets) return;
+    if (!run.isActive || _sockets != sockets) return;
     _send(SeventeenLiveDanmakuCodec.reauthorize(_token!));
   }
 
@@ -423,12 +428,11 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
 
   /// A socket that closed, errored or went silent is replaced on the next host;
   /// [maxReconnectAttempts] failures in a row end the session.
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
+  void _scheduleReconnect(DanmakuRun run, String reason) {
+    if (!run.isActive || _reconnecting) return;
     _reconnecting = true;
     unawaited(() async {
-      await Future<void>.delayed(Duration(seconds: _reconnectFailures + 1));
-      if (_disposed || staleGeneration != _generation) {
+      if (!await run.delay(Duration(seconds: _reconnectFailures + 1))) {
         _reconnecting = false;
         return;
       }
@@ -437,12 +441,13 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
       _reconnecting = false;
       if (failure == null) return;
       _reconnectFailures += 1;
-      if (_reconnectFailures >= maxReconnectAttempts) _terminate('$reason: ${failure.message}');
+      if (_reconnectFailures >= maxReconnectAttempts) {
+        // The open's own run is the one to tell: the one that armed this retry
+        // ended when the open began.
+        final current = this.run;
+        if (current != null) _terminate('$reason: ${failure.message}', current);
+      }
     }());
-  }
-
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
   }
 
   void _send(String frame) {
@@ -454,19 +459,18 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
   /// The chat is over: one system line says why, then the stream ends. Protocol
   /// refusals (an Ably error, a channel that will not attach, a stream that
   /// ended) are terminal here the way the reference's `run.closed` was.
-  void _terminate(String reason) {
-    if (_disposed) return;
-    _generation++;
-    _joined = false;
-    _events.add(
-      LiveMessage.normalized(
-        type: LiveMessageType.system,
-        text: 'Danmaku connection lost ($reason)',
-        color: LiveMessageColor.white,
-      ),
-    );
-    unawaited(_teardownSocket());
-    unawaited(_events.close());
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: 'Danmaku connection lost ($reason)',
+          color: LiveMessageColor.white,
+        ),
+      );
+    unawaited(dispose());
   }
 
   Future<void> _teardownSocket() async {
@@ -477,25 +481,14 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
     await socket?.stop();
   }
 
-  /// Stops delivery and leaves the token, the resume key and the channel serial
-  /// for the next [connect].
+  /// Releases the token request in flight, the transport and the protocol
+  /// timers; safe when nothing is open.
   @override
-  Future<void> disconnect() async {
-    _generation++;
+  Future<void> stop() async {
     _joined = false;
     _socketReset();
+    _cancel?.cancel();
+    _cancel = null;
     await _teardownSocket();
-  }
-
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation++;
-    _joined = false;
-    _socketReset();
-    _cancel.cancel();
-    await _teardownSocket();
-    unawaited(_events.close());
   }
 }

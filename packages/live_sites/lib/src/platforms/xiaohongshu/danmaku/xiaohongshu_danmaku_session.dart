@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:live_net/live_net.dart';
-import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -19,10 +19,7 @@ import 'package:live_websocket/live_websocket.dart';
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef XiaohongshuDanmakuTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef XiaohongshuDanmakuTimers = DanmakuTimers;
 
 /// One read-only chat connection: the RWP socket of one broadcast, over a
 /// [XiaohongshuGuest] bootstrap and a [SocketChannel].
@@ -52,16 +49,22 @@ typedef XiaohongshuDanmakuTimers = ({
 ///   Chat ids already shown are dropped across reconnects
 ///   ([XiaohongshuDanmakuCodec.maxSeenMessages] remembered); a new connect
 ///   run forgets them.
-final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation and socket-epoch accounting the
+/// bootstrap, the socket callbacks and the retries guard with — is the shared
+/// base's ([DanmakuSessionBase]): one [DanmakuRun] per [connect] (the old
+/// `_generation`), whose [DanmakuRun.isActive] absorbs the disposed check, and
+/// the per-socket epoch stays this session's own bookkeeping so a retry armed
+/// for a superseded socket finds itself stale.
+final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   /// The chat of [args]' broadcast for [guest]'s visitor identity, sockets
   /// opened by [connector]. [timers] is injectable for tests.
   XiaohongshuDanmakuSession({
     required this.args,
     required this.guest,
     SocketConnector? connector,
-    XiaohongshuDanmakuTimers? timers,
-  }) : _connector = connector ?? webSocketConnect,
-       _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+    super.timers,
+  }) : _connector = connector ?? webSocketConnect;
 
   /// The broadcast this session subscribes to.
   final XiaohongshuDanmakuArgs args;
@@ -71,8 +74,6 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
 
   /// How the chat's socket is connected.
   final SocketConnector _connector;
-
-  final XiaohongshuDanmakuTimers _timers;
 
   /// Beat period (the reference's `heartbeatInterval`).
   static const Duration heartbeatInterval = Duration(seconds: 30);
@@ -87,7 +88,6 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
   /// Failed reconnects in a row before the session is abandoned.
   static const int maxReconnectAttempts = 8;
 
-  final _events = StreamController<LiveMessage>.broadcast();
   final Set<String> _seen = {};
 
   SocketChannel? _socket;
@@ -97,7 +97,6 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
   Timer? _retry;
   XiaohongshuPushIdentity? _identity;
   CancelToken? _cancel;
-  int _generation = 0;
   int _socketEpoch = 0;
   int _serial = 0;
   int _step = 0;
@@ -105,18 +104,14 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
   int _reconnectFailures = 0;
   String _expected = '';
   bool _channelLive = false;
-  bool _disposed = false;
   bool _joined = false;
   bool _reconnecting = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Asks for the visitor identity and opens the first socket; null once it
   /// is on its way, else why chat could not start.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) {
+    if (isDisposed) {
       return const LiveSiteError.unsupported(siteId: xiaohongshuSiteId, message: 'session is disposed');
     }
     if (!XiaohongshuEndpoints.isRoomId(args.roomId)) {
@@ -127,7 +122,7 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
     }
     _seen.clear();
     _reconnectFailures = 0;
-    final generation = ++_generation;
+    final run = beginRun();
     final cancel = _cancel = CancelToken();
     final XiaohongshuPushIdentity identity;
     try {
@@ -138,24 +133,24 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
         message: 'the visitor bootstrap gave no push identity (${_causeOf(error)})',
       );
     }
-    if (generation != _generation || _disposed || cancel.isCancelled) {
+    if (!run.isActive || cancel.isCancelled) {
       return const LiveSiteError.unsupported(siteId: xiaohongshuSiteId, message: 'session is disposed');
     }
     _identity = identity;
-    return await _open(generation, identity);
+    return await _open(run, identity);
   }
 
   /// Opens one socket for [identity]: the channel, its subscriptions, the
   /// beat, the bootstrap watch, and the handshake as soon as it is up; null
   /// when the socket came up, else why it did not. Each open is one socket
   /// epoch, so a retry armed for a superseded socket finds itself stale.
-  Future<LiveSiteError?> _open(int generation, XiaohongshuPushIdentity identity) async {
+  Future<LiveSiteError?> _open(DanmakuRun run, XiaohongshuPushIdentity identity) async {
     final epoch = ++_socketEpoch;
     _joined = false;
     _step = 0;
     _channelLive = false;
     await _teardownSocket();
-    if (generation != _generation || _disposed) return null;
+    if (!run.isActive) return null;
     final SocketChannel socket;
     try {
       socket = await _connector(
@@ -171,44 +166,45 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
         cause: error,
       );
     }
-    if (generation != _generation || epoch != _socketEpoch || _disposed) {
+    if (!run.isActive || epoch != _socketEpoch) {
       unawaited(socket.close());
       return null;
     }
     _socket = socket;
     _channelLive = true;
+    run.handshakeDone();
     _startBeat();
     _subscription = socket.stream.listen(
       (data) {
-        if (epoch == _socketEpoch && !_disposed) _onData(data);
+        if (epoch == _socketEpoch && run.isActive) _onData(data, run);
       },
       onDone: () {
         _channelLive = false;
-        if (epoch == _socketEpoch && generation == _generation && !_disposed) _scheduleReconnect('socket closed');
+        if (epoch == _socketEpoch && run.isActive) _scheduleReconnect('socket closed', run);
       },
       onError: (Object error) {
         _channelLive = false;
-        if (epoch == _socketEpoch && generation == _generation && !_disposed) _scheduleReconnect('$error');
+        if (epoch == _socketEpoch && run.isActive) _scheduleReconnect('$error', run);
       },
     );
     _expected = _nextId();
-    _join = _timers.after(joinTimeout, () {
-      if (epoch == _socketEpoch && generation == _generation && !_disposed && !_joined) {
-        _scheduleReconnect('bootstrap did not finish');
+    _join = timers.after(joinTimeout, () {
+      if (epoch == _socketEpoch && run.isActive && !_joined) {
+        _scheduleReconnect('bootstrap did not finish', run);
       }
     });
     _send(XiaohongshuDanmakuCodec.handshake(_expected, identity));
     return null;
   }
 
-  void _onData(Object? data) {
+  void _onData(Object? data, DanmakuRun run) {
     final frame = XiaohongshuDanmakuCodec.envelope(data);
     if (frame == null) return;
     if (frame['t'] == 2 && frame['m'] == _expected) {
       final code = XiaohongshuDanmakuCodec.ackCode(frame);
       if (code == null) return;
       if (code != 0) {
-        _refused();
+        _refused(run);
         return;
       }
       _expected = _nextId();
@@ -225,6 +221,7 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
         _joined = true;
         _join?.cancel();
         _join = null;
+        if (!run.isJoined) run.joined();
         _send(XiaohongshuDanmakuCodec.viewerHeart(_nextId(), args.roomId, _identity?.uid ?? ''));
       }
       return;
@@ -234,46 +231,45 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
         if (!_seen.add(message.messageId)) continue;
         if (_seen.length > XiaohongshuDanmakuCodec.maxSeenMessages) _seen.remove(_seen.first);
       }
-      _report(message);
+      run.message(message);
     }
   }
 
   /// A refused step: the handshake's first refusal renews the identity once
   /// and starts over; anything else ends the session.
-  void _refused() {
+  void _refused(DanmakuRun run) {
     _join?.cancel();
     _join = null;
     if (_step == 0 && _renewals++ == 0) {
       _step = -1;
       _expected = '';
-      unawaited(_renew());
+      unawaited(_renew(run));
       return;
     }
-    _terminate('push credentials unavailable');
+    _terminate('push credentials unavailable', run);
   }
 
   /// A fresh identity (`refresh: true`) and a fresh socket, within the same
   /// session; a refused renewal ends it.
-  Future<void> _renew() async {
-    final generation = _generation;
+  Future<void> _renew(DanmakuRun run) async {
     final cancel = _cancel;
     final XiaohongshuPushIdentity identity;
     try {
       identity = await guest.pushIdentity(args.roomId, refresh: true, cancel: cancel);
     } on Object catch (error) {
-      _terminate('push credentials unavailable (${_causeOf(error)})');
+      _terminate('push credentials unavailable (${_causeOf(error)})', run);
       return;
     }
-    if (generation != _generation || _disposed || (cancel?.isCancelled ?? false)) return;
+    if (!run.isActive || (cancel?.isCancelled ?? false)) return;
     _identity = identity;
-    final failure = await _open(generation, identity);
-    if (failure != null && generation == _generation && !_disposed) _terminate(failure.message);
+    final failure = await _open(run, identity);
+    if (failure != null && run.isActive) _terminate(failure.message, run);
   }
 
   void _startBeat() {
     _beat?.cancel();
-    _beat = _timers.every(heartbeatInterval, (_) {
-      if (_disposed || !_channelLive) return;
+    _beat = timers.every(heartbeatInterval, (_) {
+      if (isDisposed || !_channelLive) return;
       _send(XiaohongshuDanmakuCodec.control(_nextId(), 6, {}));
       _send(XiaohongshuDanmakuCodec.viewerHeart(_nextId(), args.roomId, _identity?.uid ?? ''));
       _send(XiaohongshuDanmakuCodec.transportHeartbeat);
@@ -285,15 +281,14 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
   /// visitor identity in use is kept, as the reference's normal reconnects
   /// keep theirs. A retry armed for a socket that has since been superseded
   /// finds itself stale and does nothing.
-  void _scheduleReconnect(String reason) {
-    if (_disposed || _reconnecting) return;
+  void _scheduleReconnect(String reason, DanmakuRun run) {
+    if (!run.isActive || _reconnecting) return;
     _reconnecting = true;
-    final generation = _generation;
     final epoch = _socketEpoch;
-    _retry = _timers.after(Duration(seconds: _reconnectFailures + 1), () {
+    _retry = timers.after(Duration(seconds: _reconnectFailures + 1), () {
       _retry = null;
       unawaited(() async {
-        if (_disposed || generation != _generation || epoch != _socketEpoch) {
+        if (!run.isActive || epoch != _socketEpoch) {
           _reconnecting = false;
           return;
         }
@@ -302,22 +297,18 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
           _reconnecting = false;
           return;
         }
-        final failure = await _open(generation, identity);
+        final failure = await _open(run, identity);
         _reconnecting = false;
-        if (_disposed || generation != _generation) return;
+        if (!run.isActive) return;
         if (failure == null) return;
         _reconnectFailures += 1;
         if (_reconnectFailures >= maxReconnectAttempts) {
-          _terminate('$reason: ${failure.message}');
+          _terminate('$reason: ${failure.message}', run);
           return;
         }
-        _scheduleReconnect(reason);
+        _scheduleReconnect(reason, run);
       }());
     });
-  }
-
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
   }
 
   void _send(String frame) {
@@ -334,21 +325,19 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
 
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    _generation++;
-    _joined = false;
-    _cancel?.cancel();
-    unawaited(_teardownSocket());
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(
-        type: LiveMessageType.system,
-        text: 'Danmaku connection lost ($reason)',
-        color: LiveMessageColor.white,
-      ),
-    );
-    unawaited(_events.close());
+  void _terminate(String reason, DanmakuRun run) {
+    if (run.isActive) {
+      run
+        ..exhausted(reason)
+        ..message(
+          LiveMessage.normalized(
+            type: LiveMessageType.system,
+            text: 'Danmaku connection lost ($reason)',
+            color: LiveMessageColor.white,
+          ),
+        );
+    }
+    unawaited(dispose());
   }
 
   void _cancelTimers() {
@@ -376,27 +365,12 @@ final class XiaohongshuDanmakuSession implements LiveDanmakuSession {
   /// Stops delivery, leaving the session able to [connect] again; an
   /// in-flight bootstrap request is cancelled with the run it belonged to.
   @override
-  Future<void> disconnect() async {
-    _generation++;
+  Future<void> stop() async {
     _joined = false;
     _cancelTimers();
     _cancel?.cancel();
     _cancel = null;
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation++;
-    _joined = false;
-    _cancelTimers();
-    _cancel?.cancel();
-    _cancel = null;
-    await _teardownSocket();
-    await _events.close();
   }
 
   /// What a swallowed bootstrap failure may say: the fixed failure texts

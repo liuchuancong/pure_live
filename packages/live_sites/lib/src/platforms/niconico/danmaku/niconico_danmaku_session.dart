@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
@@ -84,7 +85,12 @@ final class _Refused implements Exception {
 /// the loop and returns once the first seat joined (null) or could not
 /// (a failure); [disconnect] and [dispose] stop it and close the seat; [dispose]
 /// also closes the stream.
-final class NiconicoDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the loop and its callbacks guard with — is
+/// the shared base's ([DanmakuSessionBase]): one [DanmakuRun] per [connect],
+/// whose [DanmakuRun.delay] paces the seat and backoff waits, and the base drops
+/// whatever a dead one reports.
+final class NiconicoDanmakuSession extends DanmakuSessionBase {
   /// A session for the room [roomId] over [http]. [openSeat] boots a watching
   /// seat (the site's [NiconicoSite.openSeat]); [now] times the windows' waits.
   NiconicoDanmakuSession({required this.roomId, required this.http, required this.openSeat, DateTime Function()? now})
@@ -139,64 +145,56 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     return bounded + windowGrace;
   }
 
-  final _events = StreamController<LiveMessage>.broadcast();
   CancelToken _cancel = CancelToken();
-  bool _running = false;
-  bool _disposed = false;
-  int _generation = 0;
   int _failures = 0;
   int _openWindows = 0;
   int? _lastViewers;
   NiconicoSeat? _seat;
   Completer<LiveSiteError?>? _first;
 
-  @override
-  Stream<LiveMessage> get events => _events.stream;
-
   /// Seats and follows the comment server in the background; returns once the
-  /// first seat joined (null) or could not (why). A second call is ignored.
+  /// first seat joined (null) or could not (why). A second call while the loop
+  /// is under way is ignored.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) {
+    if (isDisposed) {
       return const LiveSiteError.unsupported(siteId: niconicoSiteId, message: 'session is disposed');
     }
-    if (_running) return null;
-    final generation = ++_generation;
-    _running = true;
+    if (run != null) return null;
     _failures = 0;
     _lastViewers = null;
     _cancel = CancelToken();
     final first = _first = Completer<LiveSiteError?>();
-    unawaited(_loop(generation));
+    unawaited(_loop(beginRun()));
     return await first.future;
   }
 
-  Future<void> _loop(int generation) async {
+  Future<void> _loop(DanmakuRun run) async {
     try {
-      while (_running && !_disposed && generation == _generation) {
+      while (run.isActive) {
         final NiconicoSeat seat;
         try {
           seat = await openSeat(roomId);
         } on Object catch (error) {
-          if (!await _failed(error, permanent: _unwatchable(error), generation: generation)) return;
+          if (!await _failed(error, permanent: _unwatchable(error), run: run)) return;
           continue;
         }
-        if (_stopped(generation)) {
+        if (!run.isActive) {
           await seat.close();
           return;
         }
         _seat = seat;
         final Object? end;
         try {
-          end = await _read(seat, generation);
+          end = await _read(seat, run);
         } finally {
           _seat = null;
           await seat.close();
         }
-        if (_stopped(generation)) return;
+        if (!run.isActive) return;
         if (end == null) return;
-        if (_endsProgram(end, generation)) continue;
-        if (!await _failed(end, generation: generation)) return;
+        if (_endsProgram(end, run)) continue;
+        if (!await _failed(end, run: run)) return;
       }
     } finally {
       _settle();
@@ -206,9 +204,9 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
   /// Follows [seat]'s comment server while it lasts. Returns why it stopped (the
   /// seat ended, a window said the program ended, the server refused the view,
   /// no comment server), or null when the run ended.
-  Future<Object?> _read(NiconicoSeat seat, int generation) async {
-    final view = await _messageServer(seat, generation);
-    if (_stopped(generation)) return null;
+  Future<Object?> _read(NiconicoSeat seat, DanmakuRun run) async {
+    final view = await _messageServer(seat, run);
+    if (!run.isActive) return null;
     if (view == null) {
       if (seat.isClosed) return await seat.done ?? const NiconicoFailure(NiconicoFailureKind.network, 'seat closed');
       return 'the seat named no comment server within ${messageServerTimeout.inMilliseconds} ms';
@@ -229,15 +227,15 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     final windows = <String>{};
     var at = 'now';
     try {
-      while (_running && !_disposed && generation == _generation) {
+      while (run.isActive) {
         if (seatEnd case final reason?) return reason;
         try {
-          at = '${await _view(view, at, cancel, windows, end, generation)}';
+          at = '${await _view(view, at, cancel, windows, end, run)}';
         } on Object catch (error) {
-          if (_stopped(generation)) return null;
+          if (!run.isActive) return null;
           if (seatEnd case final reason?) return reason;
           if (error is _Refused && error.status >= 400 && error.status < 500) return error;
-          if (!await _failed(error, generation: generation)) return null;
+          if (!await _failed(error, run: run)) return null;
         }
       }
       return null;
@@ -248,12 +246,12 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
 
   /// The seat's comment server once named; null when the seat ended, the run
   /// ended, or it took too long.
-  Future<Uri?> _messageServer(NiconicoSeat seat, int generation) async {
+  Future<Uri?> _messageServer(NiconicoSeat seat, DanmakuRun run) async {
     for (var waited = Duration.zero; ; waited += messageServerPoll) {
       final view = seat.messageServer;
       if (view != null || seat.isClosed) return view;
       if (waited >= messageServerTimeout) return null;
-      if (!await _sleep(messageServerPoll, generation)) return null;
+      if (!await run.delay(messageServerPoll)) return null;
     }
   }
 
@@ -265,7 +263,7 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     CancelToken cancel,
     Set<String> windows,
     void Function(Object) end,
-    int generation,
+    DanmakuRun run,
   ) async {
     final response = await http.openStream(
       NiconicoDanmakuCodec.viewUrl(view, at),
@@ -285,11 +283,11 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
       } on FormatException {
         continue;
       }
-      if (_stopped(generation)) break;
-      _joined();
+      if (!run.isActive) break;
+      _joined(run);
       switch (entry.kind) {
         case NiconicoViewEntryKind.segment:
-          if (entry.window case final window?) _open(window, cancel, windows, end, generation);
+          if (entry.window case final window?) _open(window, cancel, windows, end, run);
         case NiconicoViewEntryKind.next:
           next = entry.next ?? next;
         case NiconicoViewEntryKind.previous:
@@ -308,14 +306,14 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     CancelToken cancel,
     Set<String> windows,
     void Function(Object) end,
-    int generation,
+    DanmakuRun run,
   ) {
     final key = '${window.uri}';
     if (windows.contains(key) || _openWindows >= maxOpenWindows) return;
     windows.add(key);
     if (windows.length > rememberedWindows) windows.remove(windows.first);
     _openWindows++;
-    unawaited(_window(window, cancel, end, generation).whenComplete(() => _openWindows--));
+    unawaited(_window(window, cancel, end, run).whenComplete(() => _openWindows--));
   }
 
   /// Reports the messages of [window] as they stream; a failure loses only the
@@ -324,7 +322,7 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     NiconicoCommentWindow window,
     CancelToken cancel,
     void Function(Object) end,
-    int generation,
+    DanmakuRun run,
   ) async {
     final reader = _reader;
     try {
@@ -339,14 +337,14 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
         return;
       }
       await for (final bytes in NiconicoDanmakuCodec.delimited(response.stream)) {
-        if (_stopped(generation) || cancel.isCancelled) return;
+        if (!run.isActive || cancel.isCancelled) return;
         final LiveMessage? message;
         try {
           message = reader.read(bytes);
         } on FormatException {
           continue;
         }
-        if (message != null) _report(message);
+        if (message != null) _report(message, run);
         if (reader.endedProgram) {
           end(const _ProgramEnded());
           return;
@@ -361,36 +359,37 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
 
   /// Reports [message]; an audience figure only when it changed since the last
   /// one reported.
-  void _report(LiveMessage message) {
+  void _report(LiveMessage message, DanmakuRun run) {
     if (message.payload case LiveAudienceUpdate(:final value)) {
       if (value == _lastViewers) return;
       _lastViewers = value;
     }
-    _events.add(message);
+    run.message(message);
   }
 
   /// Counts a failure: ends the run when [permanent] or when too many came in a
   /// row, else waits. True when the run goes on.
-  Future<bool> _failed(Object error, {required int generation, bool permanent = false}) async {
-    if (_stopped(generation)) return false;
+  Future<bool> _failed(Object error, {required DanmakuRun run, bool permanent = false}) async {
+    if (!run.isActive) return false;
     final detail = '$error';
     if (permanent) {
-      _terminal(detail);
+      _terminal(detail, run);
       return false;
     }
     _failures++;
     if (_failures > maxFailures) {
-      _terminal(detail);
+      _terminal(detail, run);
       return false;
     }
     _settle();
-    return await _sleep(backoff(_failures), generation);
+    return await run.delay(backoff(_failures));
   }
 
   /// The comment server answered: the failures in a row are over.
-  void _joined() {
+  void _joined(DanmakuRun run) {
     _failures = 0;
     _programJustEnded = false;
+    if (!run.isJoined) run.joined();
     _settle();
   }
 
@@ -399,12 +398,12 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
   /// notice is reported once, the reader and viewer count reset, and the next
   /// seat is taken at once. An end before a later seat answered is treated as a
   /// failure (the watch page still showed the ended program).
-  bool _endsProgram(Object end, int generation) {
-    if (_stopped(generation)) return false;
+  bool _endsProgram(Object end, DanmakuRun run) {
+    if (!run.isActive) return false;
     final bySeat = end is! _ProgramEnded && _isProgramEnd(end);
     if (end is! _ProgramEnded && !bySeat) return false;
     if (_programJustEnded) return false;
-    if (bySeat) _events.add(NiconicoDanmakuCodec.programEnded());
+    if (bySeat) run.message(NiconicoDanmakuCodec.programEnded());
     _programJustEnded = true;
     _reader = NiconicoMessageReader();
     _lastViewers = null;
@@ -430,20 +429,6 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
 
   static bool _isProgramEnd(Object end) => end is NiconicoFailure && end.message.contains('END_PROGRAM');
 
-  bool _stopped(int generation) => !_running || _disposed || generation != _generation;
-
-  Future<bool> _sleep(Duration delay, int generation) async {
-    final completer = Completer<bool>();
-    final timer = Timer(delay, () => completer.complete(_running && !_disposed && generation == _generation));
-    unawaited(
-      _cancel.whenCancel.then((_) {
-        timer.cancel();
-        if (!completer.isCompleted) completer.complete(false);
-      }),
-    );
-    return await completer.future;
-  }
-
   static Future<void> _discard(LiveStreamedResponse response) async {
     try {
       await response.close();
@@ -452,40 +437,30 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _terminal(String reason) {
-    _running = false;
+  /// The run is over: [connect] is told why it could not join, the reason is
+  /// told once as a system message, and the stream closes; nothing reconnects
+  /// afterwards.
+  void _terminal(String reason, DanmakuRun run) {
     final first = _first;
     if (first != null && !first.isCompleted) {
       first.complete(const LiveSiteError.network(siteId: niconicoSiteId, message: 'comment server failed'));
     }
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: '弹幕连接已中断 ($reason)', color: LiveMessageColor.white),
-    );
-    unawaited(_events.close());
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: '弹幕连接已中断 ($reason)', color: LiveMessageColor.white),
+      );
+    unawaited(dispose());
   }
 
+  /// Cancels the comment requests in flight and closes the seat; safe when
+  /// nothing is open.
   @override
-  Future<void> disconnect() async {
-    _running = false;
-    _generation++;
+  Future<void> stop() async {
     _cancel.cancel();
     final seat = _seat;
     _seat = null;
     await seat?.close();
     _settle();
-  }
-
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _running = false;
-    _generation++;
-    _cancel.cancel();
-    final seat = _seat;
-    _seat = null;
-    await seat?.close();
-    _settle();
-    unawaited(_events.close());
   }
 }
