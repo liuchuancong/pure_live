@@ -1672,20 +1672,21 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             unawaited(_setMuted(muted: !_effectivelyMuted));
                           },
                   ),
-                  if (!compact)
-                    SizedBox(
-                      width: 96,
-                      child: DsSlider(
-                        value: _effectivelyMuted ? 0 : _volume,
-                        onChanged: handle == null
-                            ? null
-                            : (value) {
-                                _wake();
-                                unawaited(_setVolume(value));
-                              },
-                        semanticLabel: t.vod.volume,
-                      ),
+                  // The volume slider fits every width: a compact window
+                  // narrows it rather than losing it.
+                  SizedBox(
+                    width: compact ? 72 : 96,
+                    child: DsSlider(
+                      value: _effectivelyMuted ? 0 : _volume,
+                      onChanged: handle == null
+                          ? null
+                          : (value) {
+                              _wake();
+                              unawaited(_setVolume(value));
+                            },
+                      semanticLabel: t.vod.volume,
                     ),
+                  ),
                   // Only the fitted bar has spare width to split its clusters
                   // with; a scrolling one keeps the verbs right after.
                   if (!compact) const Spacer(),
@@ -1797,17 +1798,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         builder: (context, states, _) {
           final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Container(
-            height: theme.sizes.sm,
+            height: theme.sizes.md,
             padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
             decoration: DsBoxDecoration(
               color: lit ? playerInkHover : null,
-              borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+              borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s4,
               children: [
-                DsIcon(DsIcons.skipForward, size: theme.sizes.iconSm, color: playerInkMuted),
+                DsIcon(DsIcons.skipForward, size: theme.sizes.iconLg, color: playerInkMuted),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 110),
                   child: Text(
@@ -1855,17 +1856,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             builder: (context, states, _) {
               final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
               return Container(
-                height: theme.sizes.sm,
+                height: theme.sizes.md,
                 padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
                 decoration: DsBoxDecoration(
                   color: lit ? playerInkHover : null,
-                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                  borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s4,
                   children: [
-                    DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
+                    DsIcon(icon, size: theme.sizes.iconLg, color: playerInkMuted),
                     if (!compact)
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 110),
@@ -2187,7 +2188,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               children: [
                 DsAvatar(
                   initials: avatarInitials(uploader),
-                  image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+                  image: avatar == null || avatar.isEmpty
+                      ? null
+                      : cachedImage(avatar, policy: ImageCachePolicies.avatar),
                   size: DsSize.sm,
                   toneIndex: DsAvatar.toneFor(uploader),
                   semanticLabel: uploader,

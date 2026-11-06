@@ -2185,6 +2185,27 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   // The clock the row carries: where the episode is, and how
                   // long it runs — the bar's own reading of the seek line.
                   Text('${hongguoDurationText(position)} / ${hongguoDurationText(duration)}', style: timeStyle),
+                  // Mute and the volume slider ride with the transport at
+                  // every width: a compact window narrows the slider rather
+                  // than losing it, and mute stays one thumb away.
+                  PlayerBarButton(
+                    iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                    label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_setMuted(muted: !_effectivelyMuted));
+                          },
+                  ),
+                  SizedBox(
+                    width: compact ? 72 : 96,
+                    child: DsSlider(
+                      value: _effectivelyMuted ? 0 : _volume,
+                      onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
+                      semanticLabel: t.hongguo.volume,
+                    ),
+                  ),
                   const Spacer(),
                   _pickerButton(
                     panel: _HongguoPanel.episodes,
@@ -2251,17 +2272,17 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             builder: (context, states, _) {
               final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
               return Container(
-                height: theme.sizes.sm,
+                height: theme.sizes.md,
                 padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
                 decoration: DsBoxDecoration(
                   color: lit ? playerInkHover : null,
-                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                  borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s4,
                   children: [
-                    DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
+                    DsIcon(icon, size: theme.sizes.iconLg, color: playerInkMuted),
                     if (!compact)
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
