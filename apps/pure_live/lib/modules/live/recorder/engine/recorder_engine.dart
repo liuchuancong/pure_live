@@ -27,7 +27,8 @@ import 'package:pure_live/modules/live/recorder/engine/recording_chat_writer.dar
 import 'package:pure_live/modules/live/recorder/engine/recording_claim.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_finalize_lock.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_take_move.dart';
-import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart' show resolveRecordableStream;
+import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
+    show RecordableStream, resolveRecordableStream;
 import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/danmaku/danmaku.dart' show danmakuSaveFormatsProvider;
 
@@ -49,6 +50,10 @@ const Duration _kChatTimeout = Duration(seconds: 20);
 /// hangs would leave the take frozen with nothing writing to disk, which is a
 /// worse failure than re-opening an address that may still work.
 const Duration _kTakeRefreshTimeout = Duration(seconds: 20);
+
+/// How long before a lease's refresh time the next address is
+/// minted: the reference's five-second lead.
+const Duration _kLeasePrefetchLead = Duration(seconds: 5);
 
 /// The marker that proves a folder is this app's recording root.
 const String _kRecordMarker = '.pure_live_recording_root';
@@ -152,8 +157,24 @@ final class _LiveRecording {
   /// segments first, so its line is asked again.
   int lineOffset = 0;
 
+  /// The lease timer: when the line carries a lease, the engine
+  /// mints the next signed address before the lease ends, so the
+  /// re-open that needs it starts with the URL in hand instead of a resolve
+  /// round-trip after the stream already died.
+  Timer? leaseTimer;
+
+  /// The source URL the lease prefetch is minting for; an answer for any
+  /// other source is dropped.
+  String? leasedFromUrl;
+
+  /// The stream minted ahead of the lease's end, waiting for the re-open
+  /// that needs it.
+  RecordableStream? prefetched;
+
   Future<void> quiet() async {
     _quieted = true;
+    leaseTimer?.cancel();
+    leaseTimer = null;
     _ticker?.cancel();
     _ticker = null;
     _chatTicker?.cancel();
@@ -688,8 +709,54 @@ final class RecorderEngine {
       .._states = backend.onStateChanged.listen((state) => unawaited(_onState(task.id, state)))
       .._ticker = Timer.periodic(_kProgressWrite, (_) => unawaited(_writeProgress(task.id)));
     if (settings.recordDanmaku) unawaited(_openChat(session));
+    _armLeasePrefetch(session, sourceUrl: line.url, line: line);
     _ensureCacheTrimTimer();
     return null;
+  }
+
+  /// Arms the timer that mints the next signed address shortly before the
+  /// line's lease ends. A line without a lease (an address that does not
+  /// expire) needs no prefetch.
+  void _armLeasePrefetch(_LiveRecording session, {required String sourceUrl, required LivePlayLine line}) {
+    final lease = line.lease;
+    session.leaseTimer?.cancel();
+    session.leaseTimer = null;
+    if (lease == null) return;
+    session.leasedFromUrl = sourceUrl;
+    final wait = lease.refreshAt.difference(DateTime.now()) - _kLeasePrefetchLead;
+    session.leaseTimer = Timer(
+      wait.isNegative ? Duration.zero : wait,
+      () => unawaited(_prefetchLease(session, sourceUrl)),
+    );
+  }
+
+  /// Mints the next address for [sourceUrl] while the take still runs on it:
+  /// opportunistic — a failure never touches the healthy capture — and the
+  /// minted stream waits on the session for the re-open that needs it.
+  Future<void> _prefetchLease(_LiveRecording session, String sourceUrl) async {
+    session.leaseTimer = null;
+    bool owns() => identical(_sessions[session.task.id], session) && session.leasedFromUrl == sourceUrl;
+    if (!owns()) return;
+    final site = _ref.read(sitesProvider).getById(session.task.platform);
+    if (site == null) return;
+    try {
+      final stream = await resolveRecordableStream(
+        site: site,
+        platform: session.task.platform,
+        roomId: session.task.roomId,
+        qualityLabel: session.task.quality,
+        lineOffset: session.lineOffset,
+      ).timeout(_kTakeRefreshTimeout);
+      if (!owns()) return;
+      session.prefetched = stream;
+      // The minted line carries its own lease: the one after this mints on
+      // its clock.
+      _armLeasePrefetch(session, sourceUrl: stream.line.url, line: stream.line);
+    } on Object {
+      // Nothing minted: the re-open's own refresh still answers, a round
+      // trip later. Try again on the lead interval's clock.
+      session.leaseTimer = Timer(_kLeasePrefetchLead, () => unawaited(_prefetchLease(session, sourceUrl)));
+    }
   }
 
   /// Opens the chat file and its own platform connection for [session].
@@ -1699,6 +1766,21 @@ final class RecorderEngine {
     final session = id == null ? null : _sessions[id];
     if (session == null) return (url: source.value, headers: source.headers);
     final task = session.task;
+    // The address minted before the lease ended answers first: the re-open
+    // starts on it without the resolve round-trip, and the hole the drop
+    // left stays as small as the prefetch could make it. Only a mint for
+    // this exact source counts, and only while the lease says it is still
+    // good.
+    final prefetched = session.prefetched;
+    if (prefetched != null && session.leasedFromUrl == source.value) {
+      final lease = prefetched.line.lease;
+      final fresh = lease == null || lease.expiresAt == null || lease.expiresAt!.isAfter(DateTime.now());
+      session.prefetched = null;
+      if (fresh) {
+        session.leasedFromUrl = prefetched.line.url;
+        return (url: prefetched.line.url, headers: _sourceHeaders(prefetched.line));
+      }
+    }
     // The backend's state still names the attempt that just ended: a line that
     // played for an hour before its signature expired reports the bytes it
     // wrote, and one refused before it sent a packet reports nothing.
