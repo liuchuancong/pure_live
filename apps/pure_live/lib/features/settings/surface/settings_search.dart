@@ -525,11 +525,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.vodPlayback, s.vodQuality, 'bilibili quality 视频 清晰度'),
     _hit(SettingsSection.vodPlayback, t.vod.openingSpeed, 'speed rate opening 倍速 播放 速度'),
     _hit(SettingsSection.vodPlayback, t.vod.finishAction, 'finish end next part exit related 播完 结束 下一集 退出 推荐'),
-    _hit(
-      SettingsSection.vodPlayback,
-      t.vod.skipHeadTailSwitch,
-      'opening ending head tail skip auto 片头 片尾 跳过 自动 正片',
-    ),
+    _hit(SettingsSection.vodPlayback, t.vod.skipHeadTailSwitch, 'opening ending head tail skip auto 片头 片尾 跳过 自动 正片'),
     _hit(SettingsSection.vodPlayback, t.vod.longPressSpeed, 'hold press rate speed 长按 倍速 按住 速度 松手'),
     _hit(
       SettingsSection.vodPlayback,
@@ -591,6 +587,17 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'music hotkeys global bindings shortcuts 音乐 快捷键 全局 按键',
     ),
     _hit(SettingsSection.musicSync, t.music.syncClient, 'music sync client server open api 音乐 同步 客户端 服务端 接口'),
+    _hit(SettingsSection.musicSync, t.music.syncForgetKey, 'sync device pair forget unpair remove 同步 已配对 设备 解除 忘记 配对'),
+    _hit(
+      SettingsSection.musicDownload,
+      t.music.downloadMaxConcurrent,
+      'download concurrent lanes parallel threads 下载 并发 同时 数量 线程',
+    ),
+    _hit(
+      SettingsSection.musicDesktopLyric,
+      t.music.desktopLyricAlignment,
+      'desktop lyric align left center right 桌面歌词 对齐 居中 靠右',
+    ),
     _hit(SettingsSection.musicEq, t.music.eqSection, 'music eq equalizer sound effects effects chain 音乐 均衡器 音效'),
     // The module's own page, row by row: the rate the player is asked for and
     // what that rate does to the key, the queue's habits, the display's two
@@ -599,6 +606,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.music, t.music.preservesPitch, 'pitch key semitone detune 音调 音高 补偿 变调'),
     _hit(SettingsSection.music, t.music.rememberProgress, 'resume position last listened 记住 进度 上次 续播'),
     _hit(SettingsSection.music, t.music.autoCleanPlayedList, 'played list clear automatically 已播 列表 自动 清空'),
+    _hit(SettingsSection.music, t.music.audioOutput, 'audio output device speaker headphone 音频 输出 设备 扬声器 耳机'),
     _hit(SettingsSection.musicInterface, t.music.playerMode, 'player page mode default open 播放器 模式 页面 默认'),
     _hit(SettingsSection.musicInterface, t.music.uiRecommendBanner, 'recommend home head picture banner 推荐 页 头图 横幅'),
     _hit(SettingsSection.musicInterface, t.music.uiBlurredBackdrop, 'backdrop blur frosted artwork 播放页 模糊 背景 磨砂'),

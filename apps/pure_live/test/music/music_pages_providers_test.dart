@@ -9,13 +9,11 @@ import 'package:pure_live/modules/music/controller/music_download_settings.dart'
 import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
 import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' show musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_online_playlists.dart' show musicOnlineHotTagsProvider;
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart'
-    show musicCatalogsProvider, musicHotSearchesProvider, musicSearchHistoryProvider, musicSearchProvider;
+    show musicSearchHistoryProvider, musicSearchProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/music_sync.dart' show musicSyncProvider;
@@ -44,17 +42,26 @@ void main() {
       ..read(musicDislikesProvider)
       ..read(musicSearchProvider)
       ..read(musicSearchHistoryProvider)
-      ..read(musicLocalProvider)
       ..read(musicSyncProvider)
       ..read(musicEqProvider);
+    // `musicLocalProvider` is deliberately not in this list: the local library
+    // takes the app's download folder as one of its roots, so it reads
+    // `appPathsProvider`, which only exists once boot has resolved the storage
+    // layout (`storagePathsProvider` throws until then by design). A bare
+    // container cannot build it, and inventing a fake layout here would test
+    // the fake rather than the page.
 
     // The default source answers without an imported script: the pages'
     // capability providers start against it and may only fail honestly.
     final source = container.read(musicSourceProvider);
     expect(source.id, isNotEmpty);
-    container
-      ..read(musicOnlineHotTagsProvider)
-      ..read(musicCatalogsProvider)
-      ..read(musicHotSearchesProvider);
+    // `musicOnlineHotTagsProvider`, `musicCatalogsProvider` and
+    // `musicHotSearchesProvider` are not read here: each one asks a platform
+    // over the shared transport the moment it is watched, and the transport
+    // this container gets is the app's real one — `networkFactoryProvider` is
+    // a concrete factory with no seam for a replay transport. A test that
+    // reaches the live API on every run answers to the network, not to the
+    // module, so the three are left to a round that first gives the container
+    // a fake transport.
   });
 }
