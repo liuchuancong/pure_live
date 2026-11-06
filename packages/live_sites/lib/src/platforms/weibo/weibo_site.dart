@@ -16,6 +16,9 @@ import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
+import 'package:live_sites/src/models/enums/live_play_format_source.dart';
+import 'package:live_sites/src/models/enums/live_stream_codec.dart';
+import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
@@ -33,6 +36,7 @@ import 'package:live_sites/src/platforms/weibo/parsers/weibo_failure.dart';
 import 'package:live_sites/src/platforms/weibo/parsers/weibo_json.dart';
 import 'package:live_sites/src/platforms/weibo/parsers/weibo_room_parser.dart';
 import 'package:live_sites/src/platforms/weibo/weibo_manifest.dart';
+import 'package:live_sites/src/platforms/weibo/weibo_streams.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -217,46 +221,87 @@ final class WeiboSite implements LiveSite {
 
   /// The one quality the broadcast plays: the reference's 原始流
   /// ([WeiboEndpoints.original]) live, 原画 ([WeiboEndpoints.replay]) for its
-  /// recording (18-5). The room's kept detail answers when there is one; else
-  /// the detail is read once. A broadcast whose detail does not play is
-  /// refused with its reason.
-  Future<List<LivePlayQuality>> qualitiesOf(String roomId) async {
+  /// recording (18-5). The room's own detail handle answers when there is
+  /// one ([data]), then the kept detail; else the detail is read once. A
+  /// broadcast whose detail does not play is refused with its reason.
+  Future<List<LivePlayQuality>> qualitiesOf(String roomId, {WeiboRoomData? data}) async {
     final id = _broadcastId(roomId);
-    final data = _details[id] ?? await _read(id);
-    final error = WeiboRoomParser.unplayable(data);
+    final known = data ?? _details[id] ?? await _read(id);
+    final error = WeiboRoomParser.unplayable(known);
     if (error != null) throw error;
-    return [WeiboRoomParser.qualityOf(data)!];
+    return [WeiboRoomParser.qualityOf(known)!];
+  }
+
+  /// The qualities of [roomId] with the public transcoding profiles a bounded
+  /// FLV probe confirms (the reference's quality discovery): 原画 — the
+  /// broadcast's own address, its codec observed — and the 1080/480 AVC
+  /// transcodes when they answer, plus the API's own 720 AVC as 超清. A
+  /// replay, an address that is not a canonical unsigned public FLV, and a
+  /// profile the probe cannot confirm leave the one quality alone. Probes run
+  /// together, each bounded by [WeiboStreams.probeTimeout]; the room's own
+  /// handle ([data]) spares the detail read.
+  Future<List<LivePlayQuality>> discoveredQualities(String roomId, {WeiboRoomData? data}) async {
+    final id = _broadcastId(roomId);
+    final baseline = await qualitiesOf(id, data: data);
+    final known = data ?? _details[id]!;
+    if (known.status != WeiboEndpoints.liveStatusCode) return baseline;
+    final candidates = WeiboStreams.candidates(known.mediaUrls);
+    if (candidates.isEmpty) return baseline;
+    final found = await Future.wait([
+      for (final candidate in candidates)
+        () async {
+          final codec = await WeiboStreams.probe(http.http, candidate.url);
+          if (codec == null || (candidate.avcOnly && codec != LiveStreamCodec.avc)) return null;
+          return candidate.quality(codec);
+        }(),
+    ]);
+    return [
+      ?found[0],
+      ?found[1],
+      LivePlayQuality.of(
+        label: '超清',
+        qualityId: WeiboEndpoints.originalQualityId,
+        platformOrder: 2000,
+        codec: LiveStreamCodec.avc,
+      ),
+      ?found[2],
+    ];
   }
 
   /// The lines of the broadcast:
+  /// - a probed profile ([WeiboStreams.knows], `weibo-source`,
+  ///   `weibo-1080-avc`, `weibo-480-avc`): [_variantLines].
   /// - [WeiboEndpoints.original] (or the default when [quality] is null and
-  ///   the kept detail is live): as the site answers now. The detail is read
+  ///   the detail is live): as the site answers now. The detail is read
   ///   again (one request), must still be the same anchor's, live and
   ///   playable; a broadcast that ended meanwhile is stream-unavailable,
   ///   never its replay.
-  /// - [WeiboEndpoints.replay]: the recording of the room's kept detail,
-  ///   without a request (an unsigned VOD); without a kept detail the detail
-  ///   is read once.
+  /// - [WeiboEndpoints.replay]: the recording of the room's detail, without
+  ///   a request (an unsigned VOD); without one the detail is read once.
   ///
-  /// Another quality, a kept detail that does not play it, or a broadcast
-  /// that has switched off or is restricted is refused, with the reason.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
+  /// Another quality, a detail that does not play it, or a broadcast that has
+  /// switched off or is restricted is refused, with the reason. The room's
+  /// own handle ([data]) answers before the kept one.
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, WeiboRoomData? data}) async {
     final id = _broadcastId(roomId);
     final asked = quality?.qualityId?.trim();
     const replayId = WeiboEndpoints.replayQualityId;
     const originalId = WeiboEndpoints.originalQualityId;
+    if (asked != null && WeiboStreams.knows(asked)) {
+      return await _variantLines(id, asked, data: data);
+    }
     if (asked != null && asked != originalId && asked != replayId) {
       throw WeiboFailure(WeiboFailureKind.streamUnavailable, 'quality $asked is not offered');
     }
-    final known = _details[id];
+    final known = data ?? _details[id];
     var want = asked;
     if (want == null) {
-      final data = known ?? await _read(id);
-      _gate(data, null);
-      want = WeiboRoomParser.qualityOf(data)!.qualityId!;
-      if (data.status == WeiboEndpoints.replayStatusCode) return WeiboRoomParser.replayLines(data.replayUrl!);
+      final held = known ?? await _read(id);
+      _gate(held, null);
+      want = WeiboRoomParser.qualityOf(held)!.qualityId!;
+      if (held.status == WeiboEndpoints.replayStatusCode) return WeiboRoomParser.replayLines(held.replayUrl!);
       // A fresh read above already answers for the live case.
-      if (known == null) return WeiboRoomParser.lines(data.mediaUrls);
+      if (known == null) return WeiboRoomParser.lines(held.mediaUrls);
     } else if (known != null && want == replayId) {
       _gate(known, want);
       return WeiboRoomParser.replayLines(known.replayUrl!);
@@ -282,6 +327,38 @@ final class WeiboSite implements LiveSite {
   Future<WeiboRoomData> _read(String id, {int? ownerId}) async {
     await detail(id, ownerId: ownerId);
     return _details[id]!;
+  }
+
+  /// The one line of the probed profile [asked] (`weibo-source`,
+  /// `weibo-1080-avc`, `weibo-480-avc`): a detail that is known not to play is
+  /// refused without a request, the live access is re-checked with the detail
+  /// read again (as every live playback does), the profile is rebuilt from
+  /// the fresh answer's own address — a caller-supplied URL is never opened —
+  /// and the address is probed once more for its codec. A broadcast that no
+  /// longer plays, a profile it does not offer, and one that answers nothing
+  /// usable are refused with the reason.
+  Future<List<LivePlayLine>> _variantLines(String id, String asked, {WeiboRoomData? data}) async {
+    final known = data ?? _details[id];
+    if (known != null) _gate(known, WeiboEndpoints.originalQualityId);
+    final fresh = await _read(id, ownerId: known?.ownerId);
+    _gate(fresh, WeiboEndpoints.originalQualityId);
+    final candidate = WeiboStreams.candidates(fresh.mediaUrls).where((item) => item.id == asked).firstOrNull;
+    if (candidate == null) {
+      throw WeiboFailure(WeiboFailureKind.streamUnavailable, 'quality $asked is not offered by this broadcast');
+    }
+    final codec = await WeiboStreams.probe(http.http, candidate.url);
+    if (codec == null || (candidate.avcOnly && codec != LiveStreamCodec.avc)) {
+      throw WeiboFailure(WeiboFailureKind.streamUnavailable, 'quality $asked is unavailable');
+    }
+    return [
+      LivePlayLine.of(
+        url: '${candidate.url}',
+        format: LiveStreamFormat.flv,
+        formatSource: LivePlayFormatSource.declared,
+        codec: codec,
+        lineLabel: 'alicdn',
+      ),
+    ];
   }
 
   /// Why [data] does not play quality [asked] (either when null): ended or

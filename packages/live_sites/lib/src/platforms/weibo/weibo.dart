@@ -18,3 +18,4 @@ export 'parsers/weibo_json.dart';
 export 'parsers/weibo_room_parser.dart';
 export 'weibo_manifest.dart';
 export 'weibo_site.dart';
+export 'weibo_streams.dart';
