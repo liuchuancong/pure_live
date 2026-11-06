@@ -26,11 +26,18 @@ final class MediaBarButton extends StatelessWidget {
     this.size,
     this.iconSize,
     this.focusNode,
+    this.glyphBuilder,
     super.key,
   });
 
   /// The glyph.
   final DsIconData icon;
+
+  /// Draws a picture glyph instead of [icon]: it receives the color and the
+  /// size the vector glyph would have drawn with — the bar's states (dimmed
+  /// when disabled, tinted when selected) ride in that color, so a bitmap
+  /// glyph keeps them by taking the tint.
+  final Widget Function(BuildContext context, Color color, double size)? glyphBuilder;
 
   /// The name screen readers announce, and the tooltip's words.
   final String label;
@@ -85,6 +92,21 @@ final class MediaBarButton extends StatelessWidget {
         final focused = states.contains(WidgetState.focused);
         final lit = states.contains(WidgetState.hovered) || focused;
         final corners = theme.radii.controlCorners(null, side);
+        final glyphSide = iconSize ?? theme.sizes.iconSm;
+        final glyphColor = onDark
+            ? !enabled
+                  ? const Color(0x66FFFFFF)
+                  : selected
+                  ? playerInk
+                  : const Color(0xCCFFFFFF)
+            : !enabled
+            ? colors.textSubtle
+            : selected
+            ? colors.text
+            : colors.textMuted;
+        final glyph = glyphBuilder != null
+            ? glyphBuilder!(context, glyphColor, glyphSide)
+            : DsIcon(icon, size: glyphSide, color: glyphColor);
         return Container(
           width: side,
           height: side,
@@ -98,23 +120,7 @@ final class MediaBarButton extends StatelessWidget {
                   borderRadius: corners,
                 )
               : null,
-          child: Center(
-            child: DsIcon(
-              icon,
-              size: iconSize ?? theme.sizes.iconSm,
-              color: onDark
-                  ? !enabled
-                        ? const Color(0x66FFFFFF)
-                        : selected
-                        ? playerInk
-                        : const Color(0xCCFFFFFF)
-                  : !enabled
-                  ? colors.textSubtle
-                  : selected
-                  ? colors.text
-                  : colors.textMuted,
-            ),
-          ),
+          child: Center(child: glyph),
         );
       },
     );

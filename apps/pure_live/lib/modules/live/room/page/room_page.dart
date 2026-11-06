@@ -1761,7 +1761,9 @@ List<Widget> roomMenuItems(
       // the cast target.
       if (line != null || recording)
         DsMenuItem(
-          leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc),
+          leading: recording
+              ? const DsIcon(DsIcons.squareStop)
+              : const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
           label: Text(recording ? t.room.stopRecording : t.room.record),
           onPressed: () => unawaited(toggleRoomRecording(context, ref)),
         ),

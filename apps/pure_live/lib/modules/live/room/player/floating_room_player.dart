@@ -285,6 +285,11 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                             ),
                             MediaBarButton(
                               icon: room.playback.playing ? DsIcons.pause : DsIcons.play,
+                              glyphBuilder: (_, color, size) => HuyaVideoIcon(
+                                room.playback.playing ? HuyaVideoGlyph.pause : HuyaVideoGlyph.play,
+                                size: size,
+                                color: color,
+                              ),
                               label: room.playback.playing ? t.room.pause : t.room.play,
                               onPressed: () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
                               tooltip: false,

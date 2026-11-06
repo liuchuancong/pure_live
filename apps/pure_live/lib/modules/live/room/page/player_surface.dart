@@ -2436,17 +2436,25 @@ final class _PipBar extends ConsumerWidget {
             onStop: () => unawaited(toggleRoomRecording(context, ref)),
           ),
           _PipButton(
-            icon: playing ? DsIcons.pause : DsIcons.play,
+            icon: HuyaVideoIcon(playing ? HuyaVideoGlyph.pause : HuyaVideoGlyph.play, size: 14, color: _onVideoMuted),
             label: playing ? t.room.pause : t.room.play,
             onPressed: () => unawaited(controller.togglePlayPause()),
           ),
           _PipButton(
-            icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+            icon: DsIcon(muted ? DsIcons.volumeOff : DsIcons.volume, size: 14, color: _onVideoMuted),
             label: muted ? t.room.unmute : t.room.mute,
             onPressed: () => unawaited(controller.setMuted(value: !muted)),
           ),
-          _PipButton(icon: DsIcons.expand, label: t.room.pipOff, onPressed: onRestore),
-          _PipButton(icon: DsIcons.x, label: t.common.close, onPressed: onClose),
+          _PipButton(
+            icon: const HuyaVideoIcon(HuyaVideoGlyph.miniVideo, size: 14, color: _onVideoMuted),
+            label: t.room.pipOff,
+            onPressed: onRestore,
+          ),
+          _PipButton(
+            icon: const DsIcon(DsIcons.x, size: 14, color: _onVideoMuted),
+            label: t.common.close,
+            onPressed: onClose,
+          ),
         ],
       ),
     );
@@ -2458,7 +2466,7 @@ final class _PipBar extends ConsumerWidget {
 final class _PipButton extends StatelessWidget {
   const _PipButton({required this.icon, required this.label, required this.onPressed});
 
-  final DsIconData icon;
+  final Widget icon;
   final String label;
   final VoidCallback onPressed;
 
@@ -2472,7 +2480,7 @@ final class _PipButton extends StatelessWidget {
       builder: (context, states, child) => SizedBox(
         width: 28,
         height: 28,
-        child: Center(child: DsIcon(icon, size: 14, color: _onVideoMuted)),
+        child: Center(child: icon),
       ),
     );
   }
@@ -2661,6 +2669,8 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
             children: [
               PlayerBarButton(
                 icon: playing ? DsIcons.pause : DsIcons.play,
+                glyphBuilder: (_, color, size) =>
+                    HuyaVideoIcon(playing ? HuyaVideoGlyph.pause : HuyaVideoGlyph.play, size: size, color: color),
                 label: playing ? t.room.pause : t.room.play,
                 autofocus: widget.autofocusPlay,
                 onPressed: () {
@@ -2730,6 +2740,13 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               if (wide && !pip && _desktop && player != null)
                 PlayerBarButton(
                   icon: presentation == PresentationMode.windowFullscreen ? DsIcons.shrink : DsIcons.expand,
+                  glyphBuilder: (_, color, size) => HuyaVideoIcon(
+                    presentation == PresentationMode.windowFullscreen
+                        ? HuyaVideoGlyph.fullscreenExit
+                        : HuyaVideoGlyph.fullscreenEnter,
+                    size: size,
+                    color: color,
+                  ),
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.room.windowFullscreenOff
                       : t.room.windowFullscreenOn,
@@ -2758,6 +2775,11 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               if (!pip && player != null)
                 PlayerBarButton(
                   icon: immersive ? DsIcons.minimize : DsIcons.maximize,
+                  glyphBuilder: (_, color, size) => HuyaVideoIcon(
+                    immersive ? HuyaVideoGlyph.fullscreenExit : HuyaVideoGlyph.fullscreenEnter,
+                    size: size,
+                    color: color,
+                  ),
                   label: immersive ? t.room.fullscreenOff : t.room.fullscreenOn,
                   selected: immersive,
                   onPressed: () {

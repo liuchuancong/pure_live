@@ -9,6 +9,7 @@ export 'cast_dialog.dart';
 export 'compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
 export 'emoji_atlas_loader.dart' show loadEmojiAtlas;
 export 'fullscreen_orientation.dart';
+export 'huya_video_icon.dart';
 export 'media_bar_button.dart';
 export 'player_bar_tier.dart';
 export 'player_overlay.dart';

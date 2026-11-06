@@ -123,7 +123,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       description: live ? t.recorder.addBodyLive(title: title) : t.recorder.addBodyOffline(title: title),
       confirmLabel: live ? t.recorder.addStartNow : t.recorder.addArm,
       cancelLabel: t.common.cancel,
-      icon: const DsIcon(DsIcons.disc3),
+      icon: const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
     );
     if (!confirmed || !mounted) return;
     final id = '${room.ref.platform}:${room.ref.roomId}';
@@ -238,19 +238,41 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       for (final task in store.tasks)
         if (task.platform != kIptvRecordingPlatform) task,
     ];
+    // The files page's toolbar answers for this module's half of the shared
+    // tree, so the takes it counts and filters are the same cut the pane under
+    // it lists.
+    final scopedLibraryTakes = scopeLibraryTakes(
+      ref.watch(recordingLibraryProvider).value ?? const <RecordingTake>[],
+      excluded: const {kIptvRecordingPlatform},
+    );
     // A chip's count is a count of the rows that chip can show — the tasks the
     // page still owns. Counting every stored row instead would print a number
     // the list under it never reaches, because a saved take lives in the library.
-    // One platform cuts both lists — the subscriptions here and the files
-    // pane below — through the centre's own filter.
-    final platformFilter = ref.watch(recorderPlatformFilterProvider);
+    // One platform cuts both lists — the subscriptions here and the files page
+    // below — through the centre's own filter, whose choices are the union of
+    // the two: a site either page holds is pickable from either page.
+    final platformChoices = recorderPlatformsOf({
+      ...liveTasks.map((task) => task.platform),
+      ...scopedLibraryTakes.map((take) => take.platformId),
+    }, _platformName);
+    final chosen = ref.watch(recorderPlatformFilterProvider);
+    // A choice the two lists no longer offer (its last subscription dropped,
+    // its last take deleted) reads as 全部 everywhere — and the stale value is
+    // put back after the frame, so the pane and the button agree again.
+    final platformFilter = platformChoices.contains(chosen) ? chosen : kAllPlatforms;
+    if (chosen != platformFilter) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ref.read(recorderPlatformFilterProvider) == chosen) {
+          ref.read(recorderPlatformFilterProvider.notifier).selected = kAllPlatforms;
+        }
+      });
+    }
     final listed = platformFilter == kAllPlatforms
         ? liveTasks
         : [
             for (final task in liveTasks)
               if (task.platform == platformFilter) task,
           ];
-    final taskPlatforms = recorderPlatformsOf(liveTasks.map((task) => task.platform), _platformName);
     final counts = <_RecorderFilter, int>{
       for (final filter in _RecorderFilter.values) filter: listed.where(filter.matches).length,
     };
@@ -288,20 +310,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     // The files page's toolbar answers for this module's half of the shared
     // tree, so the takes it counts and filters are the same cut the pane under
     // it lists.
-    final scopedLibraryTakes = scopeLibraryTakes(
-      ref.watch(recordingLibraryProvider).value ?? const <RecordingTake>[],
-      excluded: const {kIptvRecordingPlatform},
-    );
     final libraryTakes = platformFilter == kAllPlatforms
         ? scopedLibraryTakes
         : [
             for (final take in scopedLibraryTakes)
               if (take.platformId == platformFilter) take,
           ];
-    final filePlatforms = recorderPlatformsOf(
-      scopedLibraryTakes.map((take) => take.platformId),
-      _platformName,
-    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -365,7 +379,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                 DsSegment(value: RecorderCenterTab.files, label: Text(t.recorder.tabFiles)),
               ],
             );
-            final toolbar = RecorderLibraryToolbar(platforms: filePlatforms, nameOf: _platformName);
+            final toolbar = RecorderLibraryToolbar(platforms: platformChoices, nameOf: _platformName);
             // A stacked toolbar hands the settings and the files verbs to the
             // shell's head line; this row keeps the page switch alone.
             if (narrow) {
@@ -377,7 +391,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   onPressed: _openSettings,
                   icon: const DsIcon(DsIcons.settings, size: 16),
                 ),
-                if (files) RecorderLibraryToolbarMore(platforms: filePlatforms, nameOf: _platformName),
+                if (files) RecorderLibraryToolbarMore(platforms: platformChoices, nameOf: _platformName),
               ]);
               return Row(spacing: DsSpace.s8, children: [switchRow]);
             }
@@ -390,7 +404,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               inset: inset,
               narrow: narrow,
               statusFilter: statusFilter,
-              platforms: taskPlatforms,
+              platforms: platformChoices,
               nameOf: _platformName,
               attention: attention,
               total: listed.length,
@@ -417,6 +431,8 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               showHeading: false,
               // Its verbs ride the page switch's own line, above.
               showToolbar: false,
+              // The centre's own platform choice cuts this list.
+              useCentrePlatformFilter: true,
               // Channels are the IPTV module's own list.
               excludedPlatforms: const {kIptvRecordingPlatform},
               onPlay: (around, take) => unawaited(_playLibraryTake(around, take)),
@@ -473,7 +489,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               child: attention.isEmpty
                   ? Center(
                       child: DsEmptyState(
-                        icon: const DsIcon(DsIcons.video),
+                        icon: const HuyaVideoIcon(HuyaVideoGlyph.recordCamera),
                         title: Text(
                           total == 0
                               ? t.recorder.emptyTitle
@@ -1212,7 +1228,7 @@ final class _TaskCard extends ConsumerWidget {
         : DsButton(
             variant: DsButtonVariant.primary,
             size: DsSize.sm,
-            leading: const DsIcon(DsIcons.play, size: 14),
+            leading: const HuyaVideoIcon(HuyaVideoGlyph.play, size: 14),
             onPressed: onStartNow,
             child: Text(t.recorder.startRecording),
           );
