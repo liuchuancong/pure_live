@@ -18,8 +18,8 @@
 - ✅ 关注/历史回写（85bce4a96 关注整批/冷却/unknown/重绑/详情回填；1acc536b4 历史整批+工作池）：房间详情合并回关注卡、整批一次写回、失败置 unknown+5min 冷却、bindToFollow 校 id。参考 `room_controller.dart:840-844`、`follow_refresher.dart:32-117`。
 
 ## W3 房间体验
-- ⬜ ChatFeed：每帧至多一次通知、礼物独立配额（150/500 行、10 行/秒、贵礼豁免）、上滑暂停列表 removalsSince 补删、布局重建保滚动位。参考 `chat_feed.dart:132-338`。
-- ⬜ 双向屏蔽：blockUser/blockKeyword 立即 removeWhere 已显示行（含飞行层），本地消息豁免。参考 `room_controller.dart:1791-1814`。
+- ✅ ChatFeed（e0748b332）：每帧批通知+本地发送即刷、礼物配额 150/500+每秒 10 行贵礼豁免、combo replace、removalsSince、RoomChatListMemory 保滚动/暂停/未读标。参考 `chat_feed.dart:132-338`。
+- ✅ 双向屏蔽（e0748b332）：屏蔽即从列表与飞行层移除（gift 航线句含），本地行豁免；计数语义不变。参考 `room_controller.dart:1791-1814`。
 - ✅ RoomPanelKind 面板总线（f0e856116）：枚举现覆盖 details/sleepTimer 两常驻侧板（对话框带临时参数保持直开，总线文件注明取舍）；Scope 回退 sheet；互斥=routeSettings 名 popUntil。后续录制/弹幕设置面板=加枚举值+一 case。参考 `shared/panels/room_panel.dart`。
 - ✅ SuperChat 同事件判定（575936a0a）：有 id 按 id；无 id 轮询榜单带 hasEstimatedStartTime 按展示窗口重叠匹配（专用方法不进 ==）。参考 `live_message.dart:491-544`。修 `room_super_chats.dart:63` 全字段 Set。
 - ✅ 观众数分层排序键（575936a0a；B 站 1 值回退进 mergedWith 与进房）：档位 3 在线/2 可在线/1 热度/0 无，identityKey 稳定兜底；B 站详情=1 且前值≥1000 回退旧值。参考 `audience.dart:310-345`、`live_room.dart:506-575`。
