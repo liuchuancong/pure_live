@@ -16,23 +16,16 @@ class _$LiveSearchRequest extends LiveSearchRequest {
   @override
   final int pageSize;
 
-  factory _$LiveSearchRequest([
-    void Function(LiveSearchRequestBuilder)? updates,
-  ]) => (LiveSearchRequestBuilder()..update(updates))._build();
+  factory _$LiveSearchRequest([void Function(LiveSearchRequestBuilder)? updates]) =>
+      (LiveSearchRequestBuilder()..update(updates))._build();
 
-  _$LiveSearchRequest._({
-    required this.query,
-    required this.target,
-    required this.page,
-    required this.pageSize,
-  }) : super._();
+  _$LiveSearchRequest._({required this.query, required this.target, required this.page, required this.pageSize})
+    : super._();
   @override
-  LiveSearchRequest rebuild(void Function(LiveSearchRequestBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LiveSearchRequest rebuild(void Function(LiveSearchRequestBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
-  LiveSearchRequestBuilder toBuilder() =>
-      LiveSearchRequestBuilder()..replace(this);
+  LiveSearchRequestBuilder toBuilder() => LiveSearchRequestBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -66,8 +59,7 @@ class _$LiveSearchRequest extends LiveSearchRequest {
   }
 }
 
-class LiveSearchRequestBuilder
-    implements Builder<LiveSearchRequest, LiveSearchRequestBuilder> {
+class LiveSearchRequestBuilder implements Builder<LiveSearchRequest, LiveSearchRequestBuilder> {
   _$LiveSearchRequest? _$v;
 
   String? _query;
@@ -119,26 +111,10 @@ class LiveSearchRequestBuilder
     final _$result =
         _$v ??
         _$LiveSearchRequest._(
-          query: BuiltValueNullFieldError.checkNotNull(
-            query,
-            r'LiveSearchRequest',
-            'query',
-          ),
-          target: BuiltValueNullFieldError.checkNotNull(
-            target,
-            r'LiveSearchRequest',
-            'target',
-          ),
-          page: BuiltValueNullFieldError.checkNotNull(
-            page,
-            r'LiveSearchRequest',
-            'page',
-          ),
-          pageSize: BuiltValueNullFieldError.checkNotNull(
-            pageSize,
-            r'LiveSearchRequest',
-            'pageSize',
-          ),
+          query: BuiltValueNullFieldError.checkNotNull(query, r'LiveSearchRequest', 'query'),
+          target: BuiltValueNullFieldError.checkNotNull(target, r'LiveSearchRequest', 'target'),
+          page: BuiltValueNullFieldError.checkNotNull(page, r'LiveSearchRequest', 'page'),
+          pageSize: BuiltValueNullFieldError.checkNotNull(pageSize, r'LiveSearchRequest', 'pageSize'),
         );
     replace(_$result);
     return _$result;

@@ -19,11 +19,9 @@ class _$PlayGeometry extends PlayGeometry {
   factory _$PlayGeometry([void Function(PlayGeometryBuilder)? updates]) =>
       (PlayGeometryBuilder()..update(updates))._build();
 
-  _$PlayGeometry._({this.width, this.height, this.frameRate, this.bitrateKbps})
-    : super._();
+  _$PlayGeometry._({this.width, this.height, this.frameRate, this.bitrateKbps}) : super._();
   @override
-  PlayGeometry rebuild(void Function(PlayGeometryBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  PlayGeometry rebuild(void Function(PlayGeometryBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   PlayGeometryBuilder toBuilder() => PlayGeometryBuilder()..replace(this);
@@ -60,8 +58,7 @@ class _$PlayGeometry extends PlayGeometry {
   }
 }
 
-class PlayGeometryBuilder
-    implements Builder<PlayGeometry, PlayGeometryBuilder> {
+class PlayGeometryBuilder implements Builder<PlayGeometry, PlayGeometryBuilder> {
   _$PlayGeometry? _$v;
 
   int? _width;
@@ -109,13 +106,7 @@ class PlayGeometryBuilder
 
   _$PlayGeometry _build() {
     final _$result =
-        _$v ??
-        _$PlayGeometry._(
-          width: width,
-          height: height,
-          frameRate: frameRate,
-          bitrateKbps: bitrateKbps,
-        );
+        _$v ?? _$PlayGeometry._(width: width, height: height, frameRate: frameRate, bitrateKbps: bitrateKbps);
     replace(_$result);
     return _$result;
   }

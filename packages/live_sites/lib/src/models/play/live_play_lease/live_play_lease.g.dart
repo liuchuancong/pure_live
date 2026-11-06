@@ -17,14 +17,9 @@ class _$LivePlayLease extends LivePlayLease {
   factory _$LivePlayLease([void Function(LivePlayLeaseBuilder)? updates]) =>
       (LivePlayLeaseBuilder()..update(updates))._build();
 
-  _$LivePlayLease._({
-    required this.refreshAt,
-    this.expiresAt,
-    required this.requiresReconnect,
-  }) : super._();
+  _$LivePlayLease._({required this.refreshAt, this.expiresAt, required this.requiresReconnect}) : super._();
   @override
-  LivePlayLease rebuild(void Function(LivePlayLeaseBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LivePlayLease rebuild(void Function(LivePlayLeaseBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   LivePlayLeaseBuilder toBuilder() => LivePlayLeaseBuilder()..replace(this);
@@ -58,8 +53,7 @@ class _$LivePlayLease extends LivePlayLease {
   }
 }
 
-class LivePlayLeaseBuilder
-    implements Builder<LivePlayLease, LivePlayLeaseBuilder> {
+class LivePlayLeaseBuilder implements Builder<LivePlayLease, LivePlayLeaseBuilder> {
   _$LivePlayLease? _$v;
 
   DateTime? _refreshAt;
@@ -72,8 +66,7 @@ class LivePlayLeaseBuilder
 
   bool? _requiresReconnect;
   bool? get requiresReconnect => _$this._requiresReconnect;
-  set requiresReconnect(bool? requiresReconnect) =>
-      _$this._requiresReconnect = requiresReconnect;
+  set requiresReconnect(bool? requiresReconnect) => _$this._requiresReconnect = requiresReconnect;
 
   LivePlayLeaseBuilder() {
     LivePlayLease._initialize(this);
@@ -107,11 +100,7 @@ class LivePlayLeaseBuilder
     final _$result =
         _$v ??
         _$LivePlayLease._(
-          refreshAt: BuiltValueNullFieldError.checkNotNull(
-            refreshAt,
-            r'LivePlayLease',
-            'refreshAt',
-          ),
+          refreshAt: BuiltValueNullFieldError.checkNotNull(refreshAt, r'LivePlayLease', 'refreshAt'),
           expiresAt: expiresAt,
           requiresReconnect: BuiltValueNullFieldError.checkNotNull(
             requiresReconnect,

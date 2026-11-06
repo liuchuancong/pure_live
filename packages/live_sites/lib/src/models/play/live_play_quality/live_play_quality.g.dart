@@ -29,8 +29,7 @@ class _$LivePlayQuality extends LivePlayQuality {
     this.codec,
   }) : super._();
   @override
-  LivePlayQuality rebuild(void Function(LivePlayQualityBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LivePlayQuality rebuild(void Function(LivePlayQualityBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   LivePlayQualityBuilder toBuilder() => LivePlayQualityBuilder()..replace(this);
@@ -70,8 +69,7 @@ class _$LivePlayQuality extends LivePlayQuality {
   }
 }
 
-class LivePlayQualityBuilder
-    implements Builder<LivePlayQuality, LivePlayQualityBuilder> {
+class LivePlayQualityBuilder implements Builder<LivePlayQuality, LivePlayQualityBuilder> {
   _$LivePlayQuality? _$v;
 
   String? _label;
@@ -84,13 +82,11 @@ class LivePlayQualityBuilder
 
   int? _platformOrder;
   int? get platformOrder => _$this._platformOrder;
-  set platformOrder(int? platformOrder) =>
-      _$this._platformOrder = platformOrder;
+  set platformOrder(int? platformOrder) => _$this._platformOrder = platformOrder;
 
   bool? _isPlaybackUnconfirmed;
   bool? get isPlaybackUnconfirmed => _$this._isPlaybackUnconfirmed;
-  set isPlaybackUnconfirmed(bool? isPlaybackUnconfirmed) =>
-      _$this._isPlaybackUnconfirmed = isPlaybackUnconfirmed;
+  set isPlaybackUnconfirmed(bool? isPlaybackUnconfirmed) => _$this._isPlaybackUnconfirmed = isPlaybackUnconfirmed;
 
   LiveStreamCodec? _codec;
   LiveStreamCodec? get codec => _$this._codec;
@@ -130,17 +126,9 @@ class LivePlayQualityBuilder
     final _$result =
         _$v ??
         _$LivePlayQuality._(
-          label: BuiltValueNullFieldError.checkNotNull(
-            label,
-            r'LivePlayQuality',
-            'label',
-          ),
+          label: BuiltValueNullFieldError.checkNotNull(label, r'LivePlayQuality', 'label'),
           qualityId: qualityId,
-          platformOrder: BuiltValueNullFieldError.checkNotNull(
-            platformOrder,
-            r'LivePlayQuality',
-            'platformOrder',
-          ),
+          platformOrder: BuiltValueNullFieldError.checkNotNull(platformOrder, r'LivePlayQuality', 'platformOrder'),
           isPlaybackUnconfirmed: BuiltValueNullFieldError.checkNotNull(
             isPlaybackUnconfirmed,
             r'LivePlayQuality',

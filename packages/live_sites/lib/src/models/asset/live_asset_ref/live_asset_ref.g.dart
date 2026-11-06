@@ -19,11 +19,9 @@ class _$LiveAssetRef extends LiveAssetRef {
   factory _$LiveAssetRef([void Function(LiveAssetRefBuilder)? updates]) =>
       (LiveAssetRefBuilder()..update(updates))._build();
 
-  _$LiveAssetRef._({required this.type, this.path, this.uri, this.fallback})
-    : super._();
+  _$LiveAssetRef._({required this.type, this.path, this.uri, this.fallback}) : super._();
   @override
-  LiveAssetRef rebuild(void Function(LiveAssetRefBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LiveAssetRef rebuild(void Function(LiveAssetRefBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   LiveAssetRefBuilder toBuilder() => LiveAssetRefBuilder()..replace(this);
@@ -60,8 +58,7 @@ class _$LiveAssetRef extends LiveAssetRef {
   }
 }
 
-class LiveAssetRefBuilder
-    implements Builder<LiveAssetRef, LiveAssetRefBuilder> {
+class LiveAssetRefBuilder implements Builder<LiveAssetRef, LiveAssetRefBuilder> {
   _$LiveAssetRef? _$v;
 
   LiveAssetType? _type;
@@ -77,8 +74,7 @@ class LiveAssetRefBuilder
   set uri(Uri? uri) => _$this._uri = uri;
 
   LiveAssetRefBuilder? _fallback;
-  LiveAssetRefBuilder get fallback =>
-      _$this._fallback ??= LiveAssetRefBuilder();
+  LiveAssetRefBuilder get fallback => _$this._fallback ??= LiveAssetRefBuilder();
   set fallback(LiveAssetRefBuilder? fallback) => _$this._fallback = fallback;
 
   LiveAssetRefBuilder();
@@ -114,11 +110,7 @@ class LiveAssetRefBuilder
       _$result =
           _$v ??
           _$LiveAssetRef._(
-            type: BuiltValueNullFieldError.checkNotNull(
-              type,
-              r'LiveAssetRef',
-              'type',
-            ),
+            type: BuiltValueNullFieldError.checkNotNull(type, r'LiveAssetRef', 'type'),
             path: path,
             uri: uri,
             fallback: _fallback?.build(),
@@ -129,11 +121,7 @@ class LiveAssetRefBuilder
         _$failedField = 'fallback';
         _fallback?.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'LiveAssetRef',
-          _$failedField,
-          e.toString(),
-        );
+        throw BuiltValueNestedFieldError(r'LiveAssetRef', _$failedField, e.toString());
       }
       rethrow;
     }

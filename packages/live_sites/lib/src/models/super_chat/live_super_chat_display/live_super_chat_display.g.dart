@@ -6,11 +6,9 @@ part of 'live_super_chat_display.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<SuperChatDisplay> _$superChatDisplaySerializer =
-    _$SuperChatDisplaySerializer();
+Serializer<SuperChatDisplay> _$superChatDisplaySerializer = _$SuperChatDisplaySerializer();
 
-class _$SuperChatDisplaySerializer
-    implements StructuredSerializer<SuperChatDisplay> {
+class _$SuperChatDisplaySerializer implements StructuredSerializer<SuperChatDisplay> {
   @override
   final Iterable<Type> types = const [SuperChatDisplay, _$SuperChatDisplay];
   @override
@@ -24,15 +22,9 @@ class _$SuperChatDisplaySerializer
   }) {
     final result = <Object?>[
       'backgroundColor',
-      serializers.serialize(
-        object.backgroundColor,
-        specifiedType: const FullType(String),
-      ),
+      serializers.serialize(object.backgroundColor, specifiedType: const FullType(String)),
       'backgroundBottomColor',
-      serializers.serialize(
-        object.backgroundBottomColor,
-        specifiedType: const FullType(String),
-      ),
+      serializers.serialize(object.backgroundBottomColor, specifiedType: const FullType(String)),
     ];
 
     return result;
@@ -53,20 +45,11 @@ class _$SuperChatDisplaySerializer
       final Object? value = iterator.current;
       switch (key) {
         case 'backgroundColor':
-          result.backgroundColor =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(String),
-                  )!
-                  as String;
+          result.backgroundColor = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
           break;
         case 'backgroundBottomColor':
           result.backgroundBottomColor =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(String),
-                  )!
-                  as String;
+              serializers.deserialize(value, specifiedType: const FullType(String))! as String;
           break;
       }
     }
@@ -81,21 +64,15 @@ class _$SuperChatDisplay extends SuperChatDisplay {
   @override
   final String backgroundBottomColor;
 
-  factory _$SuperChatDisplay([
-    void Function(SuperChatDisplayBuilder)? updates,
-  ]) => (SuperChatDisplayBuilder()..update(updates))._build();
+  factory _$SuperChatDisplay([void Function(SuperChatDisplayBuilder)? updates]) =>
+      (SuperChatDisplayBuilder()..update(updates))._build();
 
-  _$SuperChatDisplay._({
-    required this.backgroundColor,
-    required this.backgroundBottomColor,
-  }) : super._();
+  _$SuperChatDisplay._({required this.backgroundColor, required this.backgroundBottomColor}) : super._();
   @override
-  SuperChatDisplay rebuild(void Function(SuperChatDisplayBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  SuperChatDisplay rebuild(void Function(SuperChatDisplayBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
-  SuperChatDisplayBuilder toBuilder() =>
-      SuperChatDisplayBuilder()..replace(this);
+  SuperChatDisplayBuilder toBuilder() => SuperChatDisplayBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -123,19 +100,16 @@ class _$SuperChatDisplay extends SuperChatDisplay {
   }
 }
 
-class SuperChatDisplayBuilder
-    implements Builder<SuperChatDisplay, SuperChatDisplayBuilder> {
+class SuperChatDisplayBuilder implements Builder<SuperChatDisplay, SuperChatDisplayBuilder> {
   _$SuperChatDisplay? _$v;
 
   String? _backgroundColor;
   String? get backgroundColor => _$this._backgroundColor;
-  set backgroundColor(String? backgroundColor) =>
-      _$this._backgroundColor = backgroundColor;
+  set backgroundColor(String? backgroundColor) => _$this._backgroundColor = backgroundColor;
 
   String? _backgroundBottomColor;
   String? get backgroundBottomColor => _$this._backgroundBottomColor;
-  set backgroundBottomColor(String? backgroundBottomColor) =>
-      _$this._backgroundBottomColor = backgroundBottomColor;
+  set backgroundBottomColor(String? backgroundBottomColor) => _$this._backgroundBottomColor = backgroundBottomColor;
 
   SuperChatDisplayBuilder() {
     SuperChatDisplay._initialize(this);
