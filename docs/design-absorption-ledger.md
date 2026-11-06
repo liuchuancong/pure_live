@@ -4,13 +4,13 @@
 规则：主会话串行提交（pathspec 精确、英语叙述、commit 前必 analyze）；media_core 侧遵守 fast-iteration（无注释/无测试/用户自测，analyze+commit 必做）；另一会话 WIP 文件不碰。
 
 ## W0 立即修
-- ⬜ 代理 DIRECT 绕过：`proxy_http_overrides.dart` 的 findProxy 不看 uri，LAN 同步配对/DLNA SOAP 全被送代理。参考 `live_net/src/io_http.dart:30`。修法=findProxy 按 uri 判断回环/私网/链路本地/`.local` → 'DIRECT'，规则放 live_net。
+- ✅ 代理 DIRECT 绕过（5e193e4df）：`proxy_http_overrides.dart` 的 findProxy 不看 uri，LAN 同步配对/DLNA SOAP 全被送代理。参考 `live_net/src/io_http.dart:30`。修法=findProxy 按 uri 判断回环/私网/链路本地/`.local` → 'DIRECT'，规则放 live_net。
 
 ## W1 小而高价值
-- ⬜ mpv 有界直播缓冲：cache-secs 6 / demuxer-readahead 2s / 缓存 32MiB、缓冲 4MiB 上限。参考 `live_player/src/mpv_options.dart:152-161`。落 media_core media_kit 适配器 engine options。
-- ⬜ 启动失败自救页：替身 UI+重试+导出日志+预置系统语言翻译；存储失败不再吞掉继续跑。参考 `app/launch_failure.dart:16`。
-- ⬜ 备份 .previous 原子写：.part→旧文件改名 .previous→part 转正，失败回滚；启动先恢复中断。参考 `live_store/src/backup/backup_service.dart:168-204`。修 `backup_actions.dart:149` 直接 writeAsString。
-- ⬜ 历史按所见删除：clear(shown) 事务内比对 lastWatchedAt，变了的保留。参考 `live_store/src/rooms.dart:189-199`。修 `history_repository.dart:65` 裸 deleteAll。
+- ✅ mpv 有界直播缓冲（e90544d8f，落 app balanced 预设）：cache-secs 6 / demuxer-readahead 2s / 缓存 32MiB、缓冲 4MiB 上限。参考 `live_player/src/mpv_options.dart:152-161`。落 media_core media_kit 适配器 engine options。
+- ✅ 启动失败自救页（62c0ad088；存储失败保留优雅降级语义）：替身 UI+重试+导出日志+预置系统语言翻译；存储失败不再吞掉继续跑。参考 `app/launch_failure.dart:16`。
+- ✅ 备份 .part 原子写（1db04bb46；快照式命名无覆盖故 .previous 不需要）：.part→旧文件改名 .previous→part 转正，失败回滚；启动先恢复中断。参考 `live_store/src/backup/backup_service.dart:168-204`。修 `backup_actions.dart:149` 直接 writeAsString。
+- ✅ 历史按所见删除（8d2a07099）：clear(shown) 事务内比对 lastWatchedAt，变了的保留。参考 `live_store/src/rooms.dart:189-199`。修 `history_repository.dart:65` 裸 deleteAll。
 
 ## W2 数据面
 - ⬜ 还原前差异预览：对每部分按身份键集合差（新增/删除/设置项变化数），全入口共用对话框；跨入口互斥锁。参考 `shared/backup/backup_data.dart:253-367`、`backup_service.dart:158`。
