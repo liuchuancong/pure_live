@@ -308,15 +308,16 @@ final class _BandPainter extends CustomPainter {
       // The finger's band: a tinted halo under the knob and the ring around
       // it — one column visibly held, the other nine quiet.
       final halo = Offset(x, knobY);
-      canvas.drawCircle(halo, _dragRadius, Paint()..color = colors.accentTint);
-      canvas.drawCircle(
-        halo,
-        _dragRadius,
-        Paint()
-          ..color = colors.accent
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
-      );
+      canvas
+        ..drawCircle(halo, _dragRadius, Paint()..color = colors.accentTint)
+        ..drawCircle(
+          halo,
+          _dragRadius,
+          Paint()
+            ..color = colors.accent
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
     }
     canvas.drawCircle(Offset(x, knobY), knobRadius, knobPaint);
   }
