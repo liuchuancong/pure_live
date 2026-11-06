@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart' show PageLayoutScope;
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart' show musicSonglistSearchProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
@@ -16,6 +17,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, SonglistSearch;
+import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
@@ -48,6 +50,11 @@ final class MusicLibraryView extends ConsumerStatefulWidget {
   @override
   ConsumerState<MusicLibraryView> createState() => MusicLibraryViewState();
 }
+
+/// The head tab strip's two answers, the strings the tabs carry: the songs
+/// ask and the 歌单 ask.
+const String _kSongsTab = 'songs';
+const String _kSonglistsTab = 'songlists';
 
 final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
   /// The display page the wide window's pager shows over the accumulated
@@ -259,7 +266,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       body = history.isEmpty && hot.isEmpty
           ? Center(
               child: DsEmptyState(
-                icon: const DsIcon(DsIcons.music),
+                icon: DsIcon(MusicView.library.icon),
                 title: Text(t.music.searchIdleTitle),
                 description: Text(t.music.searchIdleDescription),
               ),
@@ -354,7 +361,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       // A wide window pages the answers by number — one display page is the
       // local slice, the pager asks the source for one more page past the
       // hand — and a narrow one appends as the viewer scrolls.
-      final wide = MediaQuery.sizeOf(context).width >= 768;
+      final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
       final page = _pageOf(state.songs.length);
       if (!wide) {
         body = NotificationListener<ScrollNotification>(
@@ -430,66 +437,96 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       }
     }
 
+    // The pane's width decision is the shell's, never a local measure — the
+    // live module's history-head rule: wide, the source rail closes the tabs'
+    // line; narrow (under the shell's toolbar floor, about 640 of pane once
+    // the shell's own chrome is paid) it wraps under the bar as its own
+    // compact row instead.
+    final narrow = PageLayoutScope.isNarrow(context);
+
+    // The reference's source rail: every platform plus the 'all' choice that
+    // searches them at once. It steers the songs, not the songlists.
+    Widget sourceRail() {
+      return DsChoiceChips<String>(
+        options: [
+          DsChipOption(
+            value: kMusicSearchAllSourceId,
+            label: Text(
+              settings.sourceNameType == MusicSourceNameType.alias ? t.music.sourceAliasAll : t.music.searchSourceAll,
+            ),
+          ),
+          for (final entry in sourceNames.entries) DsChipOption(value: entry.key, label: Text(entry.value)),
+        ],
+        value: sourceId,
+        onChanged: (id) {
+          ref.read(musicSearchSourceIdProvider.notifier).source = id;
+          if (state.query.isNotEmpty) unawaited(controller.search(state.query));
+        },
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: DsSearchField(
-                  controller: search,
-                  autofocus: true,
-                  focusNode: _focus,
-                  placeholder: t.music.searchHint,
-                  onChanged: _onTyped,
-                  onSubmitted: (value) {
-                    // The submit commits at once: the pending debounce ask drops
-                    // and the overlay closes because the word is the query now.
-                    _suggestDebounce?.cancel();
-                    setState(() => _typed = value);
-                    unawaited(controller.search(value));
-                  },
-                ),
-              ),
-              // The reference's search-type switch: songs or songlists.
-              DsSegmentedControl<bool>(
-                segments: [
-                  DsSegment(value: false, label: Text(t.music.searchTypeSongs)),
-                  DsSegment(value: true, label: Text(t.music.searchTypeSonglists)),
-                ],
-                value: _songlist,
-                onChanged: (songlist) => setState(() => _songlist = songlist),
-              ),
-            ],
+          child: DsSearchField(
+            controller: search,
+            autofocus: true,
+            focusNode: _focus,
+            placeholder: t.music.searchHint,
+            onChanged: _onTyped,
+            onSubmitted: (value) {
+              // The submit commits at once: the pending debounce ask drops
+              // and the overlay closes because the word is the query now.
+              _suggestDebounce?.cancel();
+              setState(() => _typed = value);
+              unawaited(controller.search(value));
+            },
           ),
         ),
-        // The reference's source rail: every platform plus the 'all' choice
-        // that searches them at once. It steers the songs, not the songlists.
-        if (!_songlist)
-          Padding(
-            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-            child: DsChoiceChips<String>(
-              options: [
-                DsChipOption(
-                  value: kMusicSearchAllSourceId,
-                  label: Text(
-                    settings.sourceNameType == MusicSourceNameType.alias
-                        ? t.music.sourceAliasAll
-                        : t.music.searchSourceAll,
-                  ),
-                ),
-                for (final entry in sourceNames.entries) DsChipOption(value: entry.key, label: Text(entry.value)),
-              ],
-              value: sourceId,
-              onChanged: (id) {
-                ref.read(musicSearchSourceIdProvider.notifier).source = id;
-                if (state.query.isNotEmpty) unawaited(controller.search(state.query));
+        // The head's one 44px line, the module's own tab grammar: the
+        // reference's search-type switch reads as tabs — 歌曲 / 歌单 — and,
+        // while the songs answer is the one showing, the source rail closes
+        // the line's end. The rail keeps its natural width up to a cap and
+        // scrolls inside it, so a long rail cannot crowd the tabs.
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+          child: SizedBox(
+            height: 44,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: DsTabs<String>(
+                        value: _songlist ? _kSonglistsTab : _kSongsTab,
+                        onChanged: (tab) => setState(() => _songlist = tab == _kSonglistsTab),
+                        style: kMusicFeedTabsStyle,
+                        tabs: [
+                          DsTab(value: _kSongsTab, label: Text(t.music.searchTypeSongs)),
+                          DsTab(value: _kSonglistsTab, label: Text(t.music.searchTypeSonglists)),
+                        ],
+                        semanticLabel: t.music.searchTypeSongs,
+                      ),
+                    ),
+                    if (!narrow && !_songlist)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.55),
+                        child: sourceRail(),
+                      ),
+                  ],
+                );
               },
             ),
           ),
+        ),
+        // A narrow pane wraps the rail under the bar as its own compact row —
+        // every source stays one tap away instead of hiding behind a
+        // switcher, the live module's rule for a stacked head.
+        if (narrow && !_songlist)
+          Padding(padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8), child: sourceRail()),
         Expanded(
           child: showTips
               ? _tips(word)

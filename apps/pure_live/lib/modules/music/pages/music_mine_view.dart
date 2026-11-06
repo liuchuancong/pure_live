@@ -10,6 +10,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
@@ -33,16 +34,20 @@ final class MusicMineView extends ConsumerWidget {
     if (favourites.isEmpty && recent.isEmpty) {
       return Center(
         child: DsEmptyState(
-          icon: const DsIcon(DsIcons.library),
+          icon: DsIcon(MusicView.mine.icon),
           title: Text(t.music.mineEmptyTitle),
           description: Text(t.music.mineEmptyDescription),
         ),
       );
     }
+    // One section: its tool line — the named count, and the verbs that act on
+    // the whole section beside it, the module's caption-plus-tools row — over
+    // the table itself.
     Widget section(
       String title,
       List<audio.MusicTrack> songs, {
       required Future<void> Function(audio.MusicTrack track) remove,
+      Widget? trailing,
       bool caption = true,
     }) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -51,9 +56,17 @@ final class MusicMineView extends ConsumerWidget {
         if (caption)
           Padding(
             padding: EdgeInsets.symmetric(horizontal: inset),
-            child: Text(
-              '$title · ${t.music.songsCount(count: songs.length)}',
-              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    '$title · ${t.music.songsCount(count: songs.length)}',
+                    style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+                  ),
+                ),
+                ?trailing,
+              ],
             ),
           ),
         DsListSection(
@@ -82,8 +95,11 @@ final class MusicMineView extends ConsumerWidget {
     Widget favouritesHeader() {
       final first = favourites.first;
       final total = favourites.fold(Duration.zero, (sum, track) => sum + (track.duration ?? Duration.zero));
+      // The head keeps the page's gutter and the module's top measure, the
+      // same head the boards and the playlist details draw: the cover at 72,
+      // the list named over its facts, the verbs beside the text.
       return Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s20, DsSpace.s8, DsSpace.s20, 0),
+        padding: EdgeInsetsDirectional.fromSTEB(inset, DsSpace.s4, inset, 0),
         child: Row(
           spacing: DsSpace.s16,
           children: [
@@ -155,21 +171,21 @@ final class MusicMineView extends ConsumerWidget {
           if (favourites.isNotEmpty) favouritesHeader(),
           if (favourites.isNotEmpty)
             section(t.music.mineFavourites, favourites, remove: favouriteController.remove, caption: false),
-          if (recent.isNotEmpty) ...[
-            section(t.music.mineRecent, recent, remove: recentController.remove),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: inset),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(recentController.clear()),
-                  child: Text(t.music.clearRecent),
-                ),
+          if (recent.isNotEmpty)
+            // The 清空 verb belongs on the section's own tool line, at its end
+            // where the rest of the module puts the verbs that act on the
+            // whole list.
+            section(
+              t.music.mineRecent,
+              recent,
+              remove: recentController.remove,
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(recentController.clear()),
+                child: Text(t.music.clearRecent),
               ),
             ),
-          ],
         ],
       ),
     );

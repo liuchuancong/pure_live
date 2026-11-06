@@ -19,7 +19,8 @@ import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
 import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
     show MusicLyricAlignment, MusicLyricsSettings, musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback.dart'
+    show musicAudioDevicesProvider, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
     show MusicPlayerMode, MusicUiElement, musicPlayerModeProvider, musicStageOverrideProvider, musicUiSettingsProvider;
@@ -155,6 +156,19 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                                 onPressed: () => _openStagePanels(context),
                                 icon: const DsIcon(DsIcons.listMusic),
                               ),
+                            // The song's own verbs ride in the header, as the
+                            // reference's PlayDetail does: the tier it plays
+                            // at, the way to save it, and the runtime menu —
+                            // the stage keeps the song and the transport
+                            // keeps movement.
+                            const MusicQualityPill(),
+                            DsButton.icon(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              semanticLabel: t.music.download,
+                              onPressed: () => unawaited(downloadTrackWithToast(context, ref, track)),
+                              icon: const DsIcon(DsIcons.download),
+                            ),
                             const _PlayerMenu(),
                           ],
                         );
@@ -242,8 +256,6 @@ final class _StageState extends ConsumerState<_Stage> {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final state = ref.watch(musicPlayerProvider);
-    final favourites = ref.watch(musicFavouritesProvider);
-    final favouriteController = ref.read(musicFavouritesProvider.notifier);
     final track = state.track!;
     // The settings hold the default; the switch under the stage sets this
     // run's own choice without rewriting that default.
@@ -347,61 +359,35 @@ final class _StageState extends ConsumerState<_Stage> {
                     ),
                 ],
               ),
-              // The reference stage's pill row: the song's own verbs —
-              // collecting, saving and reading the comments — sit beside its
-              // name, leaving the transport to movement alone. The stage's
-              // shape and the sound's effects join them, since both are read
-              // here; a wrap, so a narrow phone folds the row instead of
-              // clipping a control.
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    semanticLabel: favourites.contains(track) ? t.music.unfavourite : t.music.favourite,
-                    onPressed: () => unawaited(favouriteController.toggle(track)),
-                    icon: DsIcon(DsIcons.heart, size: 16, color: favourites.contains(track) ? colors.accent : null),
-                  ),
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    semanticLabel: t.music.download,
-                    onPressed: () => unawaited(downloadTrackWithToast(context, ref, track)),
-                    icon: const DsIcon(DsIcons.download, size: 16),
-                  ),
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    semanticLabel: t.music.comments,
-                    onPressed: () => unawaited(
-                      showDsDialog<void>(
-                        context: context,
-                        builder: (context) => MusicCommentsDialog(track: track),
-                      ),
+              // The stage's three shapes as a segmented control: the sleeve,
+              // the record and the words chosen where they are seen — the
+              // reference's three player modes. It sets this run's choice;
+              // the settings row stays the default. A narrow stage still
+              // falls back to the sleeve for the record, and the control
+              // says so.
+              Center(
+                child: DsSegmentedControl<MusicPlayerMode>(
+                  value: playerMode,
+                  semanticLabel: t.music.playerModeSwitch,
+                  onChanged: (mode) => ref.read(musicStageOverrideProvider.notifier).choose(mode),
+                  segments: [
+                    DsSegment(
+                      value: MusicPlayerMode.standard,
+                      icon: const DsIcon(DsIcons.image, size: 16),
+                      label: Text(t.music.playerModeCover),
                     ),
-                    icon: const DsIcon(DsIcons.messageCircle, size: 16),
-                  ),
-                  // The song's own tier rides with its verbs: the listener can
-                  // see what is playing and ask for another without leaving
-                  // the stage.
-                  const MusicQualityPill(),
-                  _StageModePill(
-                    mode: playerMode,
-                    onChanged: (mode) => ref.read(musicStageOverrideProvider.notifier).choose(mode),
-                  ),
-                  // The effect centre as its own screen above the player, the
-                  // same page the mini bar opens.
-                  DsButton.icon(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    semanticLabel: t.music.eqCenter,
-                    onPressed: () => unawaited(context.push(RouteNames.musicEffects)),
-                    icon: const DsIcon(DsIcons.audioLines, size: 16),
-                  ),
-                ],
+                    DsSegment(
+                      value: MusicPlayerMode.vinyl,
+                      icon: const DsIcon(DsIcons.disc, size: 16),
+                      label: Text(t.music.playerModeVinyl),
+                    ),
+                    DsSegment(
+                      value: MusicPlayerMode.lyrics,
+                      icon: const DsIcon(DsIcons.captions, size: 16),
+                      label: Text(t.music.playerModeLyrics),
+                    ),
+                  ],
+                ),
               ),
               // The engine's own taps, drawn live: nothing until the first
               // frames arrive, so a backend without taps leaves the stage
@@ -411,57 +397,6 @@ final class _StageState extends ConsumerState<_Stage> {
           ),
         );
       },
-    );
-  }
-}
-
-/// The stage's shape as a pill: the mode in force and the other two a tap
-/// away, so the sleeve, the record and the words are chosen where they are
-/// seen. It sets this run's choice; the settings row stays the default.
-final class _StageModePill extends StatelessWidget {
-  const _StageModePill({required this.mode, required this.onChanged});
-
-  /// The stage in force.
-  final MusicPlayerMode mode;
-
-  /// Takes the chosen stage.
-  final ValueChanged<MusicPlayerMode> onChanged;
-
-  static DsIconData _icon(MusicPlayerMode mode) => switch (mode) {
-    MusicPlayerMode.standard => DsIcons.image,
-    MusicPlayerMode.vinyl => DsIcons.disc,
-    MusicPlayerMode.lyrics => DsIcons.captions,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    return DsMenuAnchor(
-      semanticLabel: t.music.playerModeSwitch,
-      items: [
-        for (final option in MusicPlayerMode.values)
-          DsMenuItem(
-            leading: DsIcon(_icon(option)),
-            label: Text(option.label(t)),
-            checked: option == mode,
-            onPressed: () => onChanged(option),
-          ),
-      ],
-      builder: (context, controller, _) => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        semanticLabel: t.music.playerModeSwitch,
-        onPressed: controller.toggle,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s4,
-          children: [
-            DsIcon(_icon(mode), size: 14),
-            Text(mode.label(t), style: theme.typography.caption),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -659,8 +594,9 @@ final class _TonearmPainter extends CustomPainter {
   bool shouldRepaint(_TonearmPainter oldDelegate) => oldDelegate.colors != colors;
 }
 
-/// The player's more menu: the reference's runtime verbs — rate, sleep timer,
-/// lyric delay and secondary tracks, desktop lyrics, download and playlists.
+/// The player's more menu: the reference's runtime verbs — the effect centre,
+/// the output device, rate, sleep timer, lyric delay and secondary tracks,
+/// desktop lyrics, download and playlists.
 final class _PlayerMenu extends ConsumerStatefulWidget {
   const _PlayerMenu();
 
@@ -800,9 +736,20 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
     );
   }
 
+  /// Sends the sound to [name] and re-reads the devices so the menu's mark
+  /// follows the choice — the same rule the bar's speaker menu keeps.
+  Future<void> _selectAudioDevice(String name) async {
+    await ref.read(musicPlayerProvider.notifier).selectAudioDevice(name);
+    if (!mounted) return;
+    ref.invalidate(musicAudioDevicesProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    // Read only to decide whether a picker is worth showing: a single output
+    // offers no choice, the same rule the bar and the settings row follow.
+    final devices = ref.watch(musicAudioDevicesProvider).value ?? const [];
     final (track, sleepRemaining, currentRate, pauseAfter, queueLength) = ref.watch(
       musicPlayerProvider.select(
         (state) =>
@@ -877,6 +824,13 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             ),
           ],
         ),
+        // The effect centre as its own screen above the player, the same
+        // page the mini bar opens.
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.audioLines),
+          label: Text(t.music.eqCenter),
+          onPressed: () => unawaited(context.push(RouteNames.musicEffects)),
+        ),
         DsMenuItem.submenu(
           leading: const DsIcon(DsIcons.clock),
           label: Text(
@@ -904,6 +858,22 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             ),
           ],
         ),
+        // Where the sound goes, when the engine has more than one place to
+        // send it — the same device list the bar's speaker and the settings
+        // row offer.
+        if (devices.length > 1)
+          DsMenuItem.submenu(
+            leading: const DsIcon(DsIcons.speaker),
+            label: Text(t.music.audioOutput),
+            submenu: [
+              for (final device in devices)
+                DsMenuItem(
+                  label: Text(device.description.isEmpty ? device.name : device.description),
+                  checked: device.selected,
+                  onPressed: () => unawaited(_selectAudioDevice(device.name)),
+                ),
+            ],
+          ),
         DsMenuItem.submenu(
           leading: const DsIcon(DsIcons.hourglass),
           label: Text('${t.music.lyricOffset} · ${_offsetLabel(t, lyrics.lyricOffsetMs)}'),
@@ -1202,8 +1172,9 @@ final class _Volume extends StatelessWidget {
 
 /// The transport dock under the detail: the seek, the clock and the engine's
 /// own verbs, fixed at the bottom while the stage scrolls — the reference's
-/// play bar. The volume sits at the leading end where the window has room for
-/// it; a phone leaves it to the hardware keys and keeps the transport centred.
+/// play bar. The song's heart rides at the trailing end beside the volume,
+/// where the window has room for it; a phone keeps the transport centred and
+/// leaves the volume to the hardware keys.
 final class _TransportBar extends ConsumerStatefulWidget {
   const _TransportBar();
 
@@ -1221,6 +1192,10 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
     final theme = DsTheme.of(context);
     final state = ref.watch(musicPlayerProvider);
     final controller = ref.read(musicPlayerProvider.notifier);
+    final favourites = ref.watch(musicFavouritesProvider);
+    final favouriteController = ref.read(musicFavouritesProvider.notifier);
+    final track = state.track!;
+    final loved = favourites.contains(track);
     final duration = state.duration;
     final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : state.position;
     final total = duration.inMilliseconds;
@@ -1287,6 +1262,16 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
         ),
       ],
     );
+    // The song's heart at the trailing end of the movement verbs: solid in
+    // the accent once collected, so the state reads at a glance, the same
+    // heart the bar and the lists speak with.
+    final favourite = DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.lg,
+      semanticLabel: loved ? t.music.unfavourite : t.music.favourite,
+      onPressed: () => unawaited(favouriteController.toggle(track)),
+      icon: DsIcon(DsIcons.heart, color: loved ? colors.accent : null, fill: loved),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -1302,25 +1287,30 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
             seek,
             LayoutBuilder(
               builder: (context, constraints) {
-                if (constraints.maxWidth < 600) return Center(child: transport);
+                // The movement verbs, a breath of space, then the song's
+                // heart and the volume where the window affords it; a phone
+                // centres transport and heart and leaves the volume to the
+                // hardware keys.
+                if (constraints.maxWidth < 600) {
+                  return Center(
+                    child: Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s12, children: [transport, favourite]),
+                  );
+                }
                 return Row(
                   children: [
-                    Expanded(
-                      child: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 180),
-                          child: _Volume(
-                            volume: state.volume,
-                            muted: state.muted,
-                            onVolume: (value) => unawaited(controller.setVolume(value)),
-                            onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
-                          ),
-                        ),
-                      ),
-                    ),
+                    const Expanded(child: SizedBox()),
                     transport,
                     const Expanded(child: SizedBox()),
+                    favourite,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 180),
+                      child: _Volume(
+                        volume: state.volume,
+                        muted: state.muted,
+                        onVolume: (value) => unawaited(controller.setVolume(value)),
+                        onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
+                      ),
+                    ),
                   ],
                 );
               },

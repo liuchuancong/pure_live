@@ -12,6 +12,7 @@ import 'package:pure_live/modules/music/controller/music_playback.dart' show mus
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart'
     show musicCatalogItemsProvider, musicCatalogsProvider;
+import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
@@ -33,7 +34,7 @@ final class MusicChartsView extends ConsumerWidget {
       loading: () => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
       error: (error, _) => Center(
         child: DsEmptyState(
-          icon: const DsIcon(DsIcons.cloudOff),
+          icon: DsIcon(MusicView.toplists.icon),
           title: Text(t.music.chartsFailed),
           description: Text('$error'),
           actions: [DsButton(onPressed: () => ref.invalidate(musicCatalogsProvider), child: Text(t.common.retry))],
@@ -43,7 +44,7 @@ final class MusicChartsView extends ConsumerWidget {
         if (boards.isEmpty) {
           return Center(
             child: DsEmptyState(
-              icon: const DsIcon(DsIcons.chartColumn),
+              icon: DsIcon(MusicView.toplists.icon),
               title: Text(t.music.chartsEmptyTitle),
               description: Text(t.music.chartsEmptyDescription),
             ),
@@ -279,7 +280,7 @@ final class MusicChartItems extends ConsumerWidget {
       loading: () => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
       error: (error, _) => Center(
         child: DsEmptyState(
-          icon: const DsIcon(DsIcons.cloudOff),
+          icon: DsIcon(MusicView.toplists.icon),
           title: Text(t.music.chartsFailed),
           description: Text('$error'),
           actions: [
@@ -290,7 +291,7 @@ final class MusicChartItems extends ConsumerWidget {
       data: (songs) => songs.isEmpty
           ? Center(
               child: DsEmptyState(
-                icon: const DsIcon(DsIcons.chartColumn),
+                icon: DsIcon(MusicView.toplists.icon),
                 title: Text(t.music.chartsEmptyTitle),
                 description: Text(t.music.chartsEmptyDescription),
               ),
@@ -301,9 +302,13 @@ final class MusicChartItems extends ConsumerWidget {
                 if (offset == 0) return const MusicSongTableHeader();
                 final index = offset - 1;
                 final song = songs[index];
+                // The board is a ranking, not a plain list: the # column
+                // prints the place, and the three first wear the accent —
+                // the reference's 排名列进 # 列,前三名高亮.
                 return MusicSongRow(
                   track: song,
                   number: index + 1,
+                  ranked: true,
                   playing: playingId == song.id,
                   favourite: favourites.contains(song),
                   onPlay: () => unawaited(playerController.playAll(songs, index: index)),

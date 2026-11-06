@@ -13,6 +13,7 @@ import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_tag_edit.dart';
@@ -274,7 +275,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
               : state.error != null
               ? Center(
                   child: DsEmptyState(
-                    icon: const DsIcon(DsIcons.folderOpen),
+                    icon: DsIcon(MusicView.local.icon),
                     title: Text(t.music.localFailed),
                     description: Text(state.error!),
                     actions: [DsButton(onPressed: () => unawaited(controller.rescan()), child: Text(t.common.retry))],
@@ -283,7 +284,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
               : state.tracks.isEmpty
               ? Center(
                   child: DsEmptyState(
-                    icon: const DsIcon(DsIcons.folderOpen),
+                    icon: DsIcon(MusicView.local.icon),
                     title: Text(t.music.localEmptyTitle),
                     description: Text(t.music.localEmptyDescription),
                     actions: [

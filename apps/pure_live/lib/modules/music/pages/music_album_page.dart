@@ -11,6 +11,7 @@ import 'package:pure_live/modules/music/controller/music_browse.dart';
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show MusicAlbum;
+import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart' show showAddTracksToPlaylistDialog;
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicArtist;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart';
@@ -56,7 +57,7 @@ final class MusicAlbumPage extends ConsumerWidget {
                 Expanded(
                   child: musicAlbumSourceIn(ref.watch(musicSourceListProvider), sourceId) == null
                       ? MusicBrowseUnsupported(
-                          icon: DsIcons.discAlbum,
+                          icon: MusicView.library.icon,
                           title: t.music.albumUnsupported,
                           sourceName: musicBrowseSourceLabel(ref, t, sourceId),
                         )
@@ -94,14 +95,14 @@ final class _AlbumBody extends ConsumerWidget {
             if (tracks.isEmpty) {
               return Center(
                 child: DsEmptyState(
-                  icon: const DsIcon(DsIcons.discAlbum),
+                  icon: DsIcon(MusicView.library.icon),
                   title: Text(t.music.albumEmptyTitle),
                   description: Text(t.music.albumEmptyDescription),
                 ),
               );
             }
             return ListView.builder(
-              padding: const EdgeInsets.only(bottom: DsSpace.s24),
+              padding: const EdgeInsets.only(bottom: DsSpace.s16),
               itemCount: tracks.length + 1,
               itemBuilder: (context, offset) {
                 if (offset == 0) {
@@ -109,7 +110,7 @@ final class _AlbumBody extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _AlbumHero(album: detail.album, sourceId: request.sourceId, tracks: tracks),
-                      const SizedBox(height: DsSpace.s8),
+                      MusicBrowseSection(title: t.music.songsSection(count: tracks.length)),
                       const MusicSongTableHeader(),
                     ],
                   );
@@ -122,9 +123,10 @@ final class _AlbumBody extends ConsumerWidget {
   }
 }
 
-/// The album's cover and credits above its songs: the cover large enough to
-/// read, the artist a link into their page, and the two verbs the page
-/// exists for — play it, or file it in a list.
+/// The album's cover and credits above its songs: the cover at the design's
+/// measure, the artist a link inside the one muted facts line — artist,
+/// year, count, runtime — and the two verbs the page exists for — play it,
+/// or file it in a list.
 final class _AlbumHero extends ConsumerWidget {
   const _AlbumHero({required this.album, required this.sourceId, required this.tracks});
 
@@ -141,10 +143,17 @@ final class _AlbumHero extends ConsumerWidget {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final sourceName = musicBrowseSourceLabel(ref, t, sourceId);
     final year = album.year;
+    // The runtimes the platform did size add up to the line's about-N-minutes;
+    // an unsized track simply doesn't count toward it.
+    final knownSeconds = tracks.fold<int>(0, (total, track) {
+      final duration = track.duration;
+      return total + (duration == null || duration.inMilliseconds <= 0 ? 0 : duration.inSeconds);
+    });
     final facts = [
-      sourceName,
-      t.music.songsCount(count: album.trackCount > 0 ? album.trackCount : tracks.length),
       if (year != null) '$year',
+      t.music.songsCount(count: album.trackCount > 0 ? album.trackCount : tracks.length),
+      if (knownSeconds > 0) t.music.albumTotalDuration(count: (knownSeconds / 60).ceil()),
+      sourceName,
     ].join(' · ');
     final player = ref.read(musicPlayerProvider.notifier);
     final actions = Wrap(
@@ -164,21 +173,42 @@ final class _AlbumHero extends ConsumerWidget {
         ),
       ],
     );
-    final artist = album.artist.isEmpty
-        ? null
-        : DsLink(
-            label: album.artist,
-            style: DsLinkStyle(textStyle: theme.typography.body.copyWith(color: colors.textMuted)),
-            onPressed: () =>
-                openMusicArtist(context, sourceId: sourceId, artist: album.artist, artistId: album.artistId),
-          );
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 640;
-        final cover = _AlbumCover(album: album, size: wide ? 200 : 148);
+        // The design's head cover: one 148 square for both arrangements.
+        final cover = _AlbumCover(album: album, size: 148);
+        // The facts line reads as the design's one muted row, the artist a
+        // word of that line — the link that opens their page.
+        final artistName = album.artist;
+        final factsLine = Text.rich(
+          TextSpan(
+            children: [
+              if (artistName.isNotEmpty) ...[
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: DsLink(
+                    label: artistName,
+                    inline: true,
+                    style: DsLinkStyle(textStyle: theme.typography.caption.copyWith(color: colors.textMuted)),
+                    onPressed: () =>
+                        openMusicArtist(context, sourceId: sourceId, artist: artistName, artistId: album.artistId),
+                  ),
+                ),
+                const TextSpan(text: ' · '),
+              ],
+              TextSpan(text: facts),
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: wide ? TextAlign.start : TextAlign.center,
+          style: theme.typography.caption.copyWith(color: colors.textMuted),
+        );
         final words = Column(
           crossAxisAlignment: wide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-          spacing: DsSpace.s8,
+          spacing: DsSpace.s6,
           children: [
             Text(
               album.name.isEmpty ? t.music.songAlbumUnknown : album.name,
@@ -187,27 +217,27 @@ final class _AlbumHero extends ConsumerWidget {
               textAlign: wide ? TextAlign.start : TextAlign.center,
               style: theme.typography.heading.copyWith(color: colors.text),
             ),
-            ?artist,
-            Text(
-              facts,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: wide ? TextAlign.start : TextAlign.center,
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
+            factsLine,
             const SizedBox(height: DsSpace.s4),
             actions,
           ],
         );
         return Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s16),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: wide
               ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s20,
+                  // The design's head: the meta hugs the cover's bottom edge,
+                  // a breath of s4 above it.
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  spacing: DsSpace.s16,
                   children: [
                     cover,
-                    Expanded(child: words),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: DsSpace.s4),
+                        child: words,
+                      ),
+                    ),
                   ],
                 )
               : Column(

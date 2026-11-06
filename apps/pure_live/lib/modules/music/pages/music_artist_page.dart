@@ -114,7 +114,7 @@ final class _ArtistBody extends ConsumerWidget {
                     sourceId: request.sourceId,
                   ),
                 ),
-                SliverToBoxAdapter(child: MusicBrowseSection(title: t.music.searchTypeSongs)),
+                SliverToBoxAdapter(child: MusicBrowseSection(title: t.music.hotSongs)),
                 if (detail.songs.isEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
@@ -141,7 +141,7 @@ final class _ArtistBody extends ConsumerWidget {
                       padding: EdgeInsets.symmetric(horizontal: inset),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s12,
+                        spacing: DsSpace.s16,
                         children: [
                           for (final album in detail.albums)
                             MusicAlbumCard(
@@ -153,7 +153,7 @@ final class _ArtistBody extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s24)),
+                const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s16)),
               ],
             );
           },
@@ -161,8 +161,9 @@ final class _ArtistBody extends ConsumerWidget {
   }
 }
 
-/// The artist's identity above their lists: the avatar at reading size, the
-/// name, what the page holds, and the verbs that play it all.
+/// The artist's identity above their lists: the avatar at the design's oval
+/// reading size, the name, what the page holds, and the verbs that play the
+/// hot songs — or file them in a list.
 final class _ArtistHero extends ConsumerWidget {
   const _ArtistHero({
     required this.name,
@@ -187,15 +188,15 @@ final class _ArtistHero extends ConsumerWidget {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final facts = [
       musicBrowseSourceLabel(ref, t, sourceId),
-      if (songs.isNotEmpty) t.music.songsCount(count: songs.length),
       if (albumCount > 0) t.music.albumsCount(count: albumCount),
+      if (songs.isNotEmpty) t.music.songsCount(count: songs.length),
     ].join(' · ');
     final player = ref.read(musicPlayerProvider.notifier);
     return Padding(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s20,
+        spacing: DsSpace.s16,
         children: [
           ClipOval(
             child: DsImage(
@@ -209,7 +210,7 @@ final class _ArtistHero extends ConsumerWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s8,
+              spacing: DsSpace.s6,
               children: [
                 Text(
                   name,
@@ -223,7 +224,8 @@ final class _ArtistHero extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.typography.caption.copyWith(color: colors.textMuted),
                 ),
-                if (songs.isNotEmpty)
+                if (songs.isNotEmpty) ...[
+                  const SizedBox(height: DsSpace.s4),
                   Wrap(
                     spacing: DsSpace.s8,
                     runSpacing: DsSpace.s8,
@@ -231,7 +233,7 @@ final class _ArtistHero extends ConsumerWidget {
                       DsButton(
                         leading: const DsIcon(DsIcons.play),
                         onPressed: () => unawaited(player.playAll(songs)),
-                        child: Text(t.music.playAll),
+                        child: Text(t.music.hotSongs),
                       ),
                       DsButton(
                         variant: DsButtonVariant.secondary,
@@ -241,6 +243,7 @@ final class _ArtistHero extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ],
               ],
             ),
           ),

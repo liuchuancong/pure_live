@@ -45,8 +45,8 @@ final class MusicStagePanelsState extends ConsumerState<MusicStagePanels> {
             style: kMusicFeedTabsStyle,
             tabs: [
               DsTab<int>(value: 0, label: Text(t.music.lyrics)),
-              DsTab<int>(value: 1, label: Text(t.music.comments)),
-              DsTab<int>(value: 2, label: Text(t.music.queueTitle)),
+              DsTab<int>(value: 1, label: Text(t.music.queueTitle)),
+              DsTab<int>(value: 2, label: Text(t.music.comments)),
               DsTab<int>(value: 3, label: Text(t.music.mineRecent)),
             ],
             semanticLabel: t.music.lyrics,
@@ -55,8 +55,8 @@ final class MusicStagePanelsState extends ConsumerState<MusicStagePanels> {
         Expanded(
           child: switch (_tab) {
             0 => const MusicLyricsPanel(),
-            1 => const _CommentsTab(),
-            2 => const MusicQueuePanel(),
+            1 => const MusicQueuePanel(),
+            2 => const _CommentsTab(),
             _ => const _RecentPanel(),
           },
         ),

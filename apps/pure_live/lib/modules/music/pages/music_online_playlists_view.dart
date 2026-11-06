@@ -22,6 +22,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists;
+import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
@@ -64,6 +65,56 @@ final class MusicSonglistTabs extends ConsumerWidget {
         ),
         ...actions,
       ],
+    );
+  }
+}
+
+/// The 44px back row both playlist details share, on the browse header's
+/// anatomy: back, then the page's name start-aligned, and the detail's verbs
+/// following it — no spacer carries them to the far end.
+final class MusicDetailBackRow extends StatelessWidget {
+  /// The back row under [title], leaving to [onBack], carrying [actions].
+  const MusicDetailBackRow({required this.title, required this.onBack, this.actions = const <Widget>[], super.key});
+
+  /// The page's name, the kind of thing being browsed.
+  final String title;
+
+  /// The tap that walks back.
+  final VoidCallback onBack;
+
+  /// The detail's own verbs, drawn beside the title.
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return SizedBox(
+      height: 44,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              semanticLabel: t.common.back,
+              onPressed: onBack,
+              icon: const DsIcon(DsIcons.chevronLeft),
+            ),
+            Flexible(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
+            ),
+            ...actions,
+          ],
+        ),
+      ),
     );
   }
 }
@@ -298,7 +349,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
           Padding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s16),
             child: Center(
-              child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineUnsupported)),
+              child: DsEmptyState(icon: DsIcon(MusicView.songlists.icon), title: Text(t.music.onlineUnsupported)),
             ),
           )
         else
@@ -311,7 +362,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               ),
               (null, AsyncValue(hasError: true), _, _, _) => Center(
                 child: DsEmptyState(
-                  icon: const DsIcon(DsIcons.listMusic),
+                  icon: DsIcon(MusicView.songlists.icon),
                   title: Text(t.music.onlineLoadFailed),
                   actions: [
                     DsButton(
@@ -348,7 +399,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               ),
               (_, _, final pageError, false, true) => Center(
                 child: DsEmptyState(
-                  icon: const DsIcon(DsIcons.listMusic),
+                  icon: DsIcon(MusicView.songlists.icon),
                   title: Text(pageError != null ? t.music.onlineLoadFailed : t.music.onlineEmpty),
                   actions: [
                     if (pageError != null)
@@ -589,49 +640,41 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s20, 0),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.common.back,
-                onPressed: onBack,
-                icon: const DsIcon(DsIcons.chevronLeft),
-              ),
-              const Spacer(),
-              detail.when(
-                skipLoadingOnReload: true,
-                data: (entry) {
-                  final (_, tracks) = entry;
-                  return DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    leading: const DsIcon(DsIcons.plus, size: 16),
-                    onPressed: tracks.isEmpty ? null : () => unawaited(_import(context, ref, tracks)),
-                    child: Text(t.music.onlineImport),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (error, stackTrace) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
+        // The back row the playlist details share: back, the rail's name,
+        // and the import verb following — it only draws once the platform
+        // has answered with tracks to take.
+        MusicDetailBackRow(
+          title: t.music.songlistTabOnline,
+          onBack: onBack,
+          actions: [
+            detail.when(
+              skipLoadingOnReload: true,
+              data: (entry) {
+                final (_, tracks) = entry;
+                return MusicToolAction(
+                  label: t.music.onlineImport,
+                  icon: DsIcons.plus,
+                  available: tracks.isNotEmpty,
+                  onPressed: () => unawaited(_import(context, ref, tracks)),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (error, stackTrace) => const SizedBox.shrink(),
+            ),
+          ],
         ),
         Expanded(
           child: detail.when(
             skipLoadingOnReload: true,
             loading: () => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
             error: (error, stackTrace) => Center(
-              child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineLoadFailed)),
+              child: DsEmptyState(icon: DsIcon(MusicView.songlists.icon), title: Text(t.music.onlineLoadFailed)),
             ),
             data: (entry) {
               final (info, tracks) = entry;
               if (tracks.isEmpty) {
                 return Center(
-                  child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineEmpty)),
+                  child: DsEmptyState(icon: DsIcon(MusicView.songlists.icon), title: Text(t.music.onlineEmpty)),
                 );
               }
               final first = tracks.firstOrNull;
@@ -639,9 +682,14 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // The detail head's rhythm, the mockup's measure: the
+                  // cover leads, the name and its facts line follow, and the
+                  // play verbs close the block — bottom-set so the verbs sit
+                  // on the cover's edge.
                   Padding(
-                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       spacing: DsSpace.s16,
                       children: [
                         ClipRRect(
@@ -660,49 +708,56 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
                           ),
                         ),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: DsSpace.s4,
-                            children: [
-                              Text(
-                                info.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.heading.copyWith(color: colors.text),
-                              ),
-                              Text(
-                                // Creator, plays, size, length — each part only
-                                // when the platform said it, so the line never
-                                // opens with a bare separator.
-                                [
-                                  if (info.author.isNotEmpty) info.author,
-                                  if (info.playCount > 0)
-                                    t.music.playsCount(count: AudienceFormat.format(info.playCount)),
-                                  t.music.songsCount(count: tracks.length),
-                                  if (total > Duration.zero) musicDurationText(total),
-                                ].join(' · '),
-                                style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                              ),
-                              Row(
-                                spacing: DsSpace.s8,
-                                children: [
-                                  DsButton(
-                                    variant: DsButtonVariant.primary,
-                                    size: DsSize.sm,
-                                    leading: const DsIcon(DsIcons.play, size: 16),
-                                    onPressed: () => unawaited(player.playAll(tracks)),
-                                    child: Text(t.music.playAll),
-                                  ),
-                                  DsButton(
-                                    variant: DsButtonVariant.secondary,
-                                    size: DsSize.sm,
-                                    leading: const DsIcon(DsIcons.shuffle, size: 16),
-                                    onPressed: () => unawaited(player.playAll([...tracks]..shuffle(math.Random()))),
-                                    child: Text(t.music.modeRandom),
-                                  ),
-                                ],
-                              ),
-                            ],
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: DsSpace.s4),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              spacing: DsSpace.s6,
+                              children: [
+                                Text(
+                                  info.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.heading.copyWith(color: colors.text),
+                                ),
+                                Text(
+                                  // Creator, plays, size, length — each part only
+                                  // when the platform said it, so the line never
+                                  // opens with a bare separator.
+                                  [
+                                    if (info.author.isNotEmpty) info.author,
+                                    if (info.playCount > 0)
+                                      t.music.playsCount(count: AudienceFormat.format(info.playCount)),
+                                    t.music.songsCount(count: tracks.length),
+                                    if (total > Duration.zero) musicDurationText(total),
+                                  ].join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                ),
+                                const SizedBox(height: DsSpace.s4),
+                                Wrap(
+                                  spacing: DsSpace.s8,
+                                  runSpacing: DsSpace.s8,
+                                  children: [
+                                    DsButton(
+                                      variant: DsButtonVariant.primary,
+                                      size: DsSize.sm,
+                                      leading: const DsIcon(DsIcons.play, size: 16),
+                                      onPressed: () => unawaited(player.playAll(tracks)),
+                                      child: Text(t.music.playAll),
+                                    ),
+                                    DsButton(
+                                      variant: DsButtonVariant.secondary,
+                                      size: DsSize.sm,
+                                      leading: const DsIcon(DsIcons.shuffle, size: 16),
+                                      onPressed: () => unawaited(player.playAll([...tracks]..shuffle(math.Random()))),
+                                      child: Text(t.music.modeRandom),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

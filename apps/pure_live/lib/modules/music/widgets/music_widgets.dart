@@ -108,6 +108,7 @@ final class MusicSongRow extends ConsumerWidget {
     required this.onPlay,
     required this.onFavourite,
     this.number,
+    this.ranked = false,
     this.onRemove,
     this.onPlayNext,
     this.onAddToPlaylist,
@@ -138,6 +139,14 @@ final class MusicSongRow extends ConsumerWidget {
   /// The song's place in the list, printed in the leading column; null
   /// leaves the column empty (the row then leads with its art alone).
   final int? number;
+
+  /// Whether that place is a chart standing: the top three numerals then
+  /// grade their ink by it — the accent is the first place's alone and the
+  /// heaviest weight there, the second and third keep the primary and muted
+  /// inks a step below it, and every place after is the subtle ink any
+  /// number is read in. An unranked list keeps all its numerals in that
+  /// last ink.
+  final bool ranked;
 
   /// Removes the song from the list it is drawn in, when the list owns one.
   final VoidCallback? onRemove;
@@ -308,6 +317,21 @@ final class MusicSongRow extends ConsumerWidget {
     final artist = subtitle ?? track.artist;
     final disliked = ref.watch(musicDislikesProvider).contains(musicTrackKey(track));
     final duration = _durationText(track.duration);
+    // The leading numeral's ink: a ranked list grades it like the board's
+    // column — the accent is the first place's alone and carries the
+    // heaviest weight, the second and third step down through the primary
+    // and muted inks, and every place after keeps the subtle ink any number
+    // is read in. The song on air keeps its bars over any of it.
+    TextStyle indexStyle() => switch (ranked ? number : null) {
+      1 => theme.typography.numeric(
+        theme.typography.caption.copyWith(color: colors.accentText, fontWeight: FontWeight.w700),
+      ),
+      2 => theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text, fontWeight: FontWeight.w600)),
+      3 => theme.typography.numeric(
+        theme.typography.caption.copyWith(color: colors.textMuted, fontWeight: FontWeight.w600),
+      ),
+      _ => theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+    };
     return DsPressable(
       onPressed: selecting ? onSelected : onPlay,
       builder: (context, states, _) {
@@ -335,13 +359,7 @@ final class MusicSongRow extends ConsumerWidget {
                     width: _kSongIndexWidth,
                     child: playing
                         ? DsIcon(DsIcons.audioLines, size: 16, color: colors.accent)
-                        : Text(
-                            '${number ?? ''}',
-                            textAlign: TextAlign.center,
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
+                        : Text('${number ?? ''}', textAlign: TextAlign.center, style: indexStyle()),
                   ),
                   MusicArtwork(track: track),
                   Expanded(

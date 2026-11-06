@@ -2,6 +2,8 @@ import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart';
@@ -164,8 +166,10 @@ final class MusicPlaylistCard extends StatelessWidget {
 
 /// A playlist collection drawn as the room feed's grid: a wide window pages
 /// it by number — the wheel's end asks the pager for its next page — while a
-/// narrow one appends the source's next page as the viewer scrolls.
-final class MusicPlaylistGrid<T> extends StatefulWidget {
+/// narrow one appends the source's next page as the viewer scrolls. Its gaps
+/// and columns are the browsing settings', not this module's own: the wall
+/// breathes the same air the home feed does.
+final class MusicPlaylistGrid<T> extends ConsumerStatefulWidget {
   /// A grid over [items].
   const MusicPlaylistGrid({
     required this.items,
@@ -204,10 +208,10 @@ final class MusicPlaylistGrid<T> extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
 
   @override
-  State<MusicPlaylistGrid<T>> createState() => _MusicPlaylistGridState<T>();
+  ConsumerState<MusicPlaylistGrid<T>> createState() => _MusicPlaylistGridState<T>();
 }
 
-final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
+final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T>> {
   /// One ask in flight at a time: the scroll fires per frame while the
   /// viewer moves.
   bool _asking = false;
@@ -263,24 +267,51 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final browse = ref.watch(browseSettingsProvider);
           final padding = feedGutter(context, custom: widget.padding, top: DsSpace.s8, bottom: DsSpace.s16);
           final content = (constraints.maxWidth - padding.horizontal).clamp(0.0, double.infinity);
-          // The fewest columns that keep a card within the wide measure,
-          // less one when that would leave a card narrower than the narrow
-          // one — a phone shows two or three, a laptop five or six.
-          double width(int columns) => (content - DsSpace.s12 * (columns - 1)) / columns;
-          var columns = 1;
-          while (width(columns) > kMusicPlaylistCardMaxWidth) {
-            columns++;
+          // The viewer's gaps, not this module's own: every feed that follows
+          // the browsing settings keeps its cards the same distance apart.
+          final spacing = browse.crossSpacing;
+          // One card's share of the row at [columns] columns.
+          double width(int columns) => (content - spacing * (columns - 1)) / columns;
+          // The count the wall has always taken on width alone: the fewest
+          // columns that keep a card within the wide measure, less one when
+          // that would leave a card narrower than the narrow one.
+          int columnsOfWidth() {
+            var columns = 1;
+            while (width(columns) > kMusicPlaylistCardMaxWidth) {
+              columns++;
+            }
+            if (columns > 1 && width(columns) < kMusicPlaylistCardMinWidth) columns--;
+            return columns;
           }
-          if (columns > 1 && width(columns) < kMusicPlaylistCardMinWidth) columns--;
-          final extent = width(columns) + 0.01;
+
+          // The columns the wall takes under the viewer's settings: a phone —
+          // a row too narrow for two cards at the narrow measure — keeps the
+          // mobile column count directly, cards a little narrower for it;
+          // elsewhere the viewer's ceiling lowers the width-derived count,
+          // and a ceiling of none leaves that count to say.
+          var columns = columnsOfWidth();
+          if (content <= 0) {
+            columns = 1;
+          } else if (content < kMusicPlaylistCardMinWidth * 2 + spacing) {
+            columns = browse.phoneColumns;
+          } else {
+            final capped = cappedColumnsForWidth(
+              content,
+              spacing: spacing,
+              ceiling: browse.gridColumns,
+              minWidth: kMusicPlaylistCardMinWidth,
+            );
+            if (capped > 0) columns = capped;
+          }
           return GridView.builder(
             padding: padding,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: extent,
-              mainAxisSpacing: DsSpace.s12,
-              crossAxisSpacing: DsSpace.s12,
+              maxCrossAxisExtent: columnExtentForWidth(content, columns, spacing),
+              mainAxisSpacing: browse.mainSpacing,
+              crossAxisSpacing: spacing,
               mainAxisExtent: width(columns) + kMusicPlaylistInfoHeight,
             ),
             itemCount: items.length + (widget.isLoading && hasMore ? 1 : 0),
@@ -298,7 +329,7 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
     // The grid keeps the page's gutter, the live module's measure.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     if (!wide) return _grid(widget.items, pagesOnScrollToEnd: false, hasMore: widget.hasMore);
