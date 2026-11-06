@@ -1382,7 +1382,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         ),
       if (pipAvailable)
         PlayerBarButton(
-          icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+          iconAsset: presentation == PresentationMode.pip ? 'assets/icons/pip-exit.svg' : 'assets/icons/pip.svg',
           label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
           selected: presentation == PresentationMode.pip,
           onPressed: () {
@@ -1646,7 +1646,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                 children: [
                   PlayerBarButton(
-                    icon: playing ? DsIcons.pause : DsIcons.play,
+                    iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                     label: playing ? t.vod.pause : t.vod.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
@@ -1662,7 +1662,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // the rail beside it) keeps the jump to any part.
                   if (_hasNextPart) _vodNextPartChip(t, compact: compact),
                   PlayerBarButton(
-                    icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
+                    iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                     label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
                     onPressed: handle == null
                         ? null
@@ -1720,7 +1720,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // The danmaku's switch and its settings, the reading end of
                   // what is on the picture: the pair the room's bar draws.
                   PlayerBarButton(
-                    icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+                    iconAsset: 'assets/icons/danmaku.svg',
                     label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
                     selected: danmakuVisible,
                     onPressed: handle == null
@@ -1733,7 +1733,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                           },
                   ),
                   PlayerBarButton(
-                    icon: DsIcons.slidersHorizontal,
+                    iconAsset: 'assets/icons/danmaku-settings.svg',
                     label: t.settings.navDanmaku,
                     onPressed: () {
                       _wake();
@@ -1745,7 +1745,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // then the system fullscreen the phone turns for.
                   if (_desktop && presentation != PresentationMode.pip)
                     PlayerBarButton(
-                      icon: presentation == PresentationMode.windowFullscreen ? DsIcons.shrink : DsIcons.expand,
+                      iconAsset: presentation == PresentationMode.windowFullscreen
+                          ? 'assets/icons/fullscreen-exit.svg'
+                          : 'assets/icons/fullscreen-enter.svg',
                       label: presentation == PresentationMode.windowFullscreen
                           ? t.room.windowFullscreenOff
                           : t.room.windowFullscreenOn,

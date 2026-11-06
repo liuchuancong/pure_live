@@ -2172,7 +2172,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                 children: [
                   PlayerBarButton(
-                    icon: playing ? DsIcons.pause : DsIcons.play,
+                    iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                     label: playing ? t.hongguo.pause : t.hongguo.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
