@@ -45,7 +45,7 @@
 
 ## W7 传输吸收（media_core）
 - 🟡 FLV 关键帧拼接续期：字节级决策层全量移植（FlvTagProbe/Policy 关键帧对齐+平移计算/Plan 切换窗口/Timeline 输出台账，320 行零 I/O）。参考 `flv_splicer.dart:144-496`。落 media_core_ingest 11a49b3。评估结论：播放路径无缝（mpv 内部拉流，Dart 无字节接点）；缺的桥=media_core_ingest 的 FLV loopback 中继 I/O 层约 500 行，决策层已备好，待立项。
-- ⬜ HLS 中继内换址：已下发子列表改指新址；不断连地址仅 refreshAt 预取。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。
+- 🟡 HLS 中继内换址：LoopbackIngestRelay.renewAddress（根 manifest 改指新址、玩家回环地址不变、已改写子列表照常解析）已落 media_core_ingest 33ac392。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。余：FfmpegIngestRelay 的进程内换址（同目录第二轮 FFmpeg）+app 侧 refreshAt 接线（待首个声明 expiringUrl 的站点）。
 
 ## W8 live_sites 基座
 - 🟡 弹幕连接基座：Run 令牌按代际失效、sealed 状态事件（连接中/握手完成/已加入/重连中/耗尽）、消息单出口清洗不可见字符——基座+14 测已落；showroom/yy/picarto/missevan/sixroom 五 session 迁移（2210 测全绿）。参考 `live_danmaku/src/connection_base.dart:16-160`。余 13 个待迁（fc2live/jdlive/twitcasting/kilakila/soop/pandalive/kugoulive 同构可套；chzzk/kick/seventeenlive=DanmakuSocket 家族；niconico/xiaohongshu/steambroadcast 特殊形态）。
