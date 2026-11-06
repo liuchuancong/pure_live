@@ -8,6 +8,8 @@ import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
+import 'package:live_sites/src/platforms/cc/api/cc_http.dart';
+import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
@@ -33,6 +35,8 @@ import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
 import 'package:live_sites/src/platforms/liveme/liveme_site.dart';
+import 'package:live_sites/src/platforms/looklive/api/looklive_http.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
@@ -60,6 +64,7 @@ import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 import 'package:live_sites/src/platforms/weibo/api/weibo_http.dart';
 import 'package:live_sites/src/platforms/weibo/weibo_site.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_http.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu.dart' show XiaohongshuGuest;
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
@@ -80,6 +85,10 @@ import 'package:live_websocket/live_websocket.dart' show exactWebSocketConnect;
 /// null keeps the web's Top chat. [huyaPreferH264] reads huya's "优先 H.264"
 /// (on by default). [douyuFilterSuspectedAutomated] reads douyu's
 /// "过滤疑似机器人弹幕" for every suspected chat; null keeps them.
+/// [xiaohongshuGuest] is the visitor-directory seam (the app's
+/// `WebViewXiaohongshuGuest`): where a short-lived browser can run, the
+/// xiaohongshu directory is read anonymously through it; null keeps the
+/// sign-in-only directory, exactly as before.
 List<LiveSite> createBuiltInLiveSites({
   LiveHttp? http,
   // Kick's API host refuses Flutter's TLS fingerprint; the app hands a
@@ -93,6 +102,7 @@ List<LiveSite> createBuiltInLiveSites({
   bool Function()? douyuFilterSuspectedAutomated,
   bool Function()? douyuForceRenew,
   List<LiveHttp>? twitchGqlFallbacks,
+  XiaohongshuGuest? xiaohongshuGuest,
 }) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
@@ -105,6 +115,7 @@ List<LiveSite> createBuiltInLiveSites({
     HuyaSite(http: HuyaHttp(transport), preferH264: huyaPreferH264),
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),
+    CcSite(http: CcHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
     YoutubeSite(http: YouTubeHttp(transport), allChat: youtubeAllChat),
     TwitchSite(
@@ -122,13 +133,14 @@ List<LiveSite> createBuiltInLiveSites({
     InkeSite(http: InkeHttp(transport)),
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
+    LookliveSite(http: LookliveHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
     MissevanSite(http: MissevanHttp(transport)),
     PandaliveSite(http: PandaliveHttp(transport)),
     ShowroomSite(http: ShowroomHttp(transport)),
     SixroomSite(http: SixroomHttp(transport)),
     LivemeSite(http: LivemeHttp(transport)),
-    XiaohongshuSite(http: XiaohongshuHttp(transport)),
+    XiaohongshuSite(http: XiaohongshuHttp(transport), guest: xiaohongshuGuest),
     YySite(http: YyHttp(transport), connect: exactWebSocketConnect),
     SoopSite(http: SoopHttp(transport), connect: exactWebSocketConnect),
     SteambroadcastSite(http: SteambroadcastHttp(transport)),
