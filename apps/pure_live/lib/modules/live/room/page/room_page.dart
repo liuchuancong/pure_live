@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show AppBar, Scaffold, kToolbarHeight;
+import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -1521,7 +1521,9 @@ PreferredSizeWidget _roomAppBar(
   final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
   // The bar grows on a wide window to carry the two-line title; the caption
   // buttons fill whatever height it has, so their hover reaches both edges.
-  final height = wide ? 64.0 : kToolbarHeight;
+  // A short area (a phone held sideways, a split screen) takes the compact
+  // toolbar so the picture keeps its room.
+  final height = wide ? 64.0 : WindowClassScope.toolbarHeightOf(context);
   final leading = Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -2143,10 +2145,8 @@ final class _RoomHero extends ConsumerWidget {
     return DsPressable(
       semanticLabel: t.room.detailsHint,
       onPressed: () => unawaited(showRoomDetails(context)),
-      builder: (context, states, child) => ColoredBox(
-        color: states.contains(WidgetState.hovered) ? colors.hover : OnVideoColors.clear,
-        child: child,
-      ),
+      builder: (context, states, child) =>
+          ColoredBox(color: states.contains(WidgetState.hovered) ? colors.hover : OnVideoColors.clear, child: child),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s16, DsSpace.s12, DsSpace.s12),
         child: Column(
