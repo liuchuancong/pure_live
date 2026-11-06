@@ -1,11 +1,13 @@
 import 'dart:async' show TimeoutException, Timer, unawaited;
 import 'dart:io' show File;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveDanmakuProvider, LiveRoom;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
@@ -92,6 +94,12 @@ enum _RecorderFilter {
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
   _RecorderFilter _filter = _RecorderFilter.all;
+
+  /// How many rows one task page holds.
+  static const int _taskPageSize = 20;
+
+  /// The task list's shown page; a filter change starts it again.
+  int _taskPage = 1;
 
   @override
   void initState() {
@@ -279,7 +287,10 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       // The first tab lines up with the rows under it, and the bar's hairline
       // stops with the tabs instead of running to the window's right edge.
       style: const DsTabsStyle(padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
-      onChanged: (value) => setState(() => _filter = value),
+      onChanged: (value) => setState(() {
+        _filter = value;
+        _taskPage = 1;
+      }),
       tabs: [
         for (final filter in _RecorderFilter.values)
           DsTab(value: filter, label: Text(_filterLabel(t, filter)), count: counts[filter] ?? 0),
@@ -298,59 +309,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             for (final take in scopedLibraryTakes)
               if (take.platformId == platformFilter) take,
           ];
-    final filePlatforms = recorderPlatformsOf(
-      scopedLibraryTakes.map((take) => take.platformId),
-      _platformName,
-    );
+    final filePlatforms = recorderPlatformsOf(scopedLibraryTakes.map((take) => take.platformId), _platformName);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s12),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.accentTint,
-                  borderRadius: BorderRadius.circular(theme.radii.card),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(narrow ? DsSpace.s8 : DsSpace.s12),
-                  child: DsIcon(DsIcons.video, size: narrow ? 22 : 28, color: colors.accentText),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
-                  children: [
-                    Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
-                    // A phone keeps the name alone: the sentence under it costs
-                    // the row the room the list needs.
-                    if (!narrow)
-                      Text(
-                        t.recorder.centerSubtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                  ],
-                ),
-              ),
-              if (!narrow)
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.settings, size: 16),
-                  onPressed: _openSettings,
-                  child: Text(t.recorder.settingsOpen),
-                ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           // The centre's two pages on the left, the files page's own verbs on
           // the same line: the filter and the refresh narrow what is under
           // them, so they belong to the page switch rather than to a second
@@ -366,6 +330,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ],
             );
             final toolbar = RecorderLibraryToolbar(platforms: filePlatforms, nameOf: _platformName);
+            final settingsButton = DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.settings, size: 16),
+              onPressed: _openSettings,
+              child: Text(t.recorder.settingsOpen),
+            );
             // A stacked toolbar hands the settings and the files verbs to the
             // shell's head line; this row keeps the page switch alone.
             if (narrow) {
@@ -381,7 +352,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ]);
               return Row(spacing: DsSpace.s8, children: [switchRow]);
             }
-            return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar]);
+            return Row(spacing: DsSpace.s8, children: [switchRow, const Spacer(), if (files) toolbar, settingsButton]);
           }(),
         ),
         if (ref.watch(recorderCenterTabProvider) == RecorderCenterTab.tasks)
@@ -442,6 +413,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required Map<String, LiveRoom> rooms,
   }) {
     final t = context.t;
+    final pageCount = math.max(1, (attention.length / _taskPageSize).ceil());
+    final page = _taskPage.clamp(1, pageCount);
+    final shown = attention.skip((page - 1) * _taskPageSize).take(_taskPageSize).toList();
     // The rows take the page's whole width: the table spreads its columns
     // across it, and the cards read as rows of one worklist instead of a
     // column stranded in the window's left half.
@@ -507,12 +481,23 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             spacing: DsSpace.s8,
-                            children: [for (final task in attention) ..._taskCards(context, task, rooms)],
+                            children: [for (final task in shown) ..._taskCards(context, task, rooms)],
                           ),
                         ),
                       ),
                     ),
             ),
+            if (attention.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
+                child: Center(
+                  child: DsPagination(
+                    page: page,
+                    pageCount: pageCount,
+                    onChanged: (next) => setState(() => _taskPage = next),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1302,7 +1287,7 @@ final class _TaskCard extends ConsumerWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: DsImage(
-                      image: cover.isEmpty ? null : cachedImage(cover),
+                      image: cover.isEmpty ? null : cachedImage(cover, policy: ImageCachePolicies.videoCover),
                       width: coverWidth,
                       height: coverHeight,
                       semanticLabel: title,
@@ -1322,7 +1307,7 @@ final class _TaskCard extends ConsumerWidget {
                           children: [
                             DsAvatar(
                               initials: avatarInitials(anchor.isEmpty ? title : anchor),
-                              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
                               size: DsSize.sm,
                               semanticLabel: anchor.isEmpty ? title : anchor,
                             ),

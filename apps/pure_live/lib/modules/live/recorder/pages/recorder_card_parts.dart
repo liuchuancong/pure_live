@@ -76,18 +76,17 @@ final class RecorderTagChip extends StatelessWidget {
 
 /// The recorder centre's platform filter: the current site's name (or 全部),
 /// opening the platform wall. Both lists — the subscriptions and the recorded
-/// files — read the same choice.
+/// files — read the same choice, and [platforms] offers the union of the two,
+/// so a site either page holds is pickable from either page.
+///
+/// The glyph is the popular page's platform-wall chevron, the same affordance
+/// for "every platform in a panel".
 final class RecorderPlatformFilterButton extends ConsumerWidget {
-  /// Creates the filter; [platforms] are the site ids the list holds, named by
+  /// Creates the filter; [platforms] are the site ids the lists hold, named by
   /// [nameOf]. A compact button shows the glyph alone.
-  const RecorderPlatformFilterButton({
-    required this.platforms,
-    required this.nameOf,
-    this.compact = false,
-    super.key,
-  });
+  const RecorderPlatformFilterButton({required this.platforms, required this.nameOf, this.compact = false, super.key});
 
-  /// The site ids the list holds.
+  /// The site ids the lists hold.
   final List<String> platforms;
 
   /// A site id's display name.
@@ -117,14 +116,14 @@ final class RecorderPlatformFilterButton extends ConsumerWidget {
         size: DsSize.sm,
         semanticLabel: '${t.recorder.filterPlatformGroup}, $label',
         onPressed: open,
-        icon: const DsIcon(DsIcons.antenna, size: 16),
+        icon: const DsIcon(DsIcons.chevronDown, size: 16),
       );
     }
     return DsButton(
       variant: DsButtonVariant.secondary,
       size: DsSize.sm,
       semanticLabel: '${t.recorder.filterPlatformGroup}, $label',
-      leading: const DsIcon(DsIcons.antenna, size: 14),
+      leading: const DsIcon(DsIcons.chevronDown, size: 14),
       onPressed: open,
       child: Text(label),
     );

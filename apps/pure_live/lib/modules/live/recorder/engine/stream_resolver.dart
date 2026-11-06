@@ -51,6 +51,9 @@ Future<RecordableStream> resolveRecordableStream({
   final roomProvider = site.capability<LiveRoomProvider>();
   final playbackProvider = site.capability<LivePlaybackProvider>();
   if (roomProvider == null || playbackProvider == null) throw const NoRecordableStream.noStream();
+  // A stream that needs the ingest relay is a playback-only path for now: the
+  // recorder would otherwise write the protected bytes and call it a take.
+  if (site.runtimeInfo.ingest != null) throw const NoRecordableStream.noStream();
   final roomAnswer = await roomProvider.getRoom(roomId);
   final room = roomAnswer.fold((_) => null, (answer) => answer);
   if (room == null) throw const NoRecordableStream.noStream();

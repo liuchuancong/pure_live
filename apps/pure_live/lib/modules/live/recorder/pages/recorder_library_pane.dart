@@ -1,9 +1,11 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show File;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart' show appPathsProvider, sitesProvider;
 import 'package:pure_live/features/media_preview/media_preview_item.dart';
@@ -21,7 +23,14 @@ import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' 
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
 import 'package:pure_live/shared/shared.dart'
-    show LiveWindow, avatarInitials, cachedImage, kAllPlatforms, localizedSiteIcon, showActionsPanel, showPlatformPickerPanel;
+    show
+        LiveWindow,
+        avatarInitials,
+        cachedImage,
+        kAllPlatforms,
+        localizedSiteIcon,
+        showActionsPanel,
+        showPlatformPickerPanel;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -90,6 +99,13 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
 }
 
 final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane> {
+  /// How many takes one file page holds.
+  static const int _pageSize = 30;
+
+  /// The file list's shown page; a new platform or order starts it again.
+  int _page = 1;
+  String _pageKey = '';
+
   /// The days the viewer folded away; a day key, not a title.
   final Set<String> _collapsed = {};
 
@@ -145,11 +161,23 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
     final inset = LiveWindow.pageInset(width);
     final root = ref.watch(appPathsProvider).recordings.path;
     final controller = ref.read(recordingLibraryProvider.notifier);
+    final pageKey = '$platformFilter/${filter.sort.name}';
+    if (pageKey != _pageKey) {
+      _pageKey = pageKey;
+      _page = 1;
+      // A selection made under another cut would delete files the viewer can
+      // no longer see; a filter change starts both the page and the mark over.
+      _selected.clear();
+    }
+    final pageCount = math.max(1, (filtered.length / _pageSize).ceil());
+    final page = _page.clamp(1, pageCount);
+    final shown = filtered.skip((page - 1) * _pageSize).take(_pageSize).toList();
+    final shownKeys = {for (final take in shown) take.filePath ?? take.folder};
     // The days in the shown order; the grouping never reorders, it follows
-    // the sort.
+    // the sort. A day split across pages repeats its header on each page.
     final daySet = <String>{};
     final days = <String>[
-      for (final take in filtered)
+      for (final take in shown)
         if (daySet.add(take.day)) take.day,
     ];
     return Column(
@@ -202,9 +230,16 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
                 ],
               ),
             ),
-            (false, false) => _dayGroups(filtered, days, inset),
+            (false, false) => _dayGroups(shown, days, inset),
           },
         ),
+        if (filtered.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+            child: Center(
+              child: DsPagination(page: page, pageCount: pageCount, onChanged: (next) => setState(() => _page = next)),
+            ),
+          ),
         if (_selected.isNotEmpty)
           Container(
             decoration: BoxDecoration(
@@ -216,12 +251,14 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
               spacing: DsSpace.s8,
               children: [
                 DsCheckbox(
-                  value: _selected.length == filtered.length && filtered.isNotEmpty,
+                  value: shownKeys.isNotEmpty && shownKeys.every(_selected.contains),
                   semanticLabel: t.recorder.selectAll,
                   onChanged: (value) => setState(() {
-                    _selected
-                      ..clear()
-                      ..addAll(value == true ? filtered.map((take) => take.filePath ?? take.folder) : const []);
+                    if (value == true) {
+                      _selected.addAll(shownKeys);
+                    } else {
+                      _selected.removeAll(shownKeys);
+                    }
                   }),
                 ),
                 Expanded(
@@ -252,7 +289,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   /// whose layout extent exceeds its paint extent once a pinned child sits
   /// inside it, which aborts the viewport's layout and leaves the next pointer
   /// event hit-testing slivers that were never laid out.
-  Widget _dayGroups(List<RecordingTake> filtered, List<String> days, double inset) {
+  Widget _dayGroups(List<RecordingTake> shown, List<String> days, double inset) {
     final t = context.t;
     return Padding(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s12),
@@ -263,9 +300,9 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
               child: _DayHeader(
                 title: _dayTitle(day),
                 summary: t.recorder.groupSummary(
-                  count: filtered.where((take) => take.day == day).length,
+                  count: shown.where((take) => take.day == day).length,
                   size: formatRecordingBytes(
-                    filtered.where((take) => take.day == day).fold<int>(0, (total, take) => total + take.bytes),
+                    shown.where((take) => take.day == day).fold<int>(0, (total, take) => total + take.bytes),
                   ),
                 ),
                 collapsed: _collapsed.contains(day),
@@ -277,7 +314,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
             if (!_collapsed.contains(day))
               SliverList(
                 delegate: SliverChildListDelegate([
-                  for (final take in filtered)
+                  for (final take in shown)
                     if (take.day == day)
                       _TakeRow(
                         take: take,
@@ -552,12 +589,10 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
                 DsListRow(
                   leading: const DsIcon(DsIcons.antenna, size: 16),
                   title: Text(t.recorder.filterPlatformGroup),
-                  detail: Text(
-                    switch (ref.watch(recorderPlatformFilterProvider)) {
-                      final id when id != kAllPlatforms => nameOf(id),
-                      _ => t.recorder.filterAll,
-                    },
-                  ),
+                  detail: Text(switch (ref.watch(recorderPlatformFilterProvider)) {
+                    final id when id != kAllPlatforms => nameOf(id),
+                    _ => t.recorder.filterAll,
+                  }),
                   onPressed: () {
                     Navigator.of(context).pop();
                     unawaited(
@@ -566,8 +601,9 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
                         platforms: [kAllPlatforms, ...platforms],
                         current: ref.read(recorderPlatformFilterProvider),
                         nameOf: (id) => id == kAllPlatforms ? t.recorder.filterAll : nameOf(id),
-                        iconOf: (id) =>
-                            id == kAllPlatforms ? null : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
+                        iconOf: (id) => id == kAllPlatforms
+                            ? null
+                            : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
                         onChanged: (id) => ref.read(recorderPlatformFilterProvider.notifier).selected = id,
                       ),
                     );
@@ -849,7 +885,7 @@ final class _TakeRow extends StatelessWidget {
                             children: [
                               DsAvatar(
                                 initials: avatarInitials(avatarLabel),
-                                image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                                image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
                                 size: DsSize.sm,
                                 semanticLabel: avatarLabel,
                               ),
