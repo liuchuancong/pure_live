@@ -58,17 +58,24 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
       final cdns = _cdns[rid] ?? await _refreshCdns(rid);
       final issuedAt = DateTime.now().toUtc();
       final cookie = site.identity().cookie;
-      final answers = <({LivePlayLine line, int? rate})>[];
+      // Every CDN is asked at once, each into its own slot: one slow edge no
+      // longer delays the lines behind it, and the slots keep the site's own
+      // CDN order in the answer.
+      final slots = List<({LivePlayLine line, int? rate})?>.filled(cdns.length, null);
       DouyuFailure? last;
-      for (final cdn in cdns) {
-        try {
-          final play = await _play(rid, rate: rate, cdn: cdn);
-          final data = DouyuPlayParser.playData(play.text, status: play.status);
-          answers.add(DouyuPlayParser.answer(data, roomId: rid, cdn: cdn, cookie: cookie, issuedAt: issuedAt));
-        } on DouyuFailure catch (failure) {
-          last = failure;
-        }
-      }
+      await Future.wait([
+        for (var index = 0; index < cdns.length; index++)
+          () async {
+            try {
+              final play = await _play(rid, rate: rate, cdn: cdns[index]);
+              final data = DouyuPlayParser.playData(play.text, status: play.status);
+              slots[index] = DouyuPlayParser.answer(data, roomId: rid, cdn: cdns[index], cookie: cookie, issuedAt: issuedAt);
+            } on DouyuFailure catch (failure) {
+              last = failure;
+            }
+          }(),
+      ]);
+      final answers = [for (final slot in slots) ?slot];
       if (answers.isEmpty) {
         throw last ?? const DouyuFailure(DouyuFailureKind.streamUnavailable, 'no CDN answered');
       }

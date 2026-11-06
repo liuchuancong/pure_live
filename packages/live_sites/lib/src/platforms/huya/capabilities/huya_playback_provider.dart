@@ -79,28 +79,35 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
       final bitRate = int.tryParse(quality?.qualityId ?? '') ?? 0;
       final viewerUid = await site.viewerUid();
       final issuedAt = DateTime.now().toUtc();
-      final seen = <String>{};
-      final lines = <LivePlayLine>[];
+      // Every line is signed at once into its own slot: a slow token answer
+      // no longer delays the lines behind it, and the slots keep the
+      // multiLine order the room offered.
+      final slots = List<LivePlayLine?>.filled(profile.lines.length, null);
       HuyaFailure? last;
-      for (final line in profile.lines) {
-        try {
-          final signed = await _sign(line, viewerUid);
-          final answer = HuyaPlayParser.answer(
-            line,
-            antiCode: signed.antiCode,
-            bitRate: bitRate,
-            roomId: rid,
-            cookie: cookie,
-            issuedAt: issuedAt,
-            token: signed.window,
-            hevc: !site.preferH264(),
-          );
-          if (seen.add(answer.url)) lines.add(answer);
-        } on HuyaFailure catch (failure) {
-          // One line that cannot be signed is dropped alone.
-          last = failure;
-        }
-      }
+      await Future.wait([
+        for (var index = 0; index < profile.lines.length; index++)
+          () async {
+            final line = profile.lines[index];
+            try {
+              final signed = await _sign(line, viewerUid);
+              slots[index] = HuyaPlayParser.answer(
+                line,
+                antiCode: signed.antiCode,
+                bitRate: bitRate,
+                roomId: rid,
+                cookie: cookie,
+                issuedAt: issuedAt,
+                token: signed.window,
+                hevc: !site.preferH264(),
+              );
+            } on HuyaFailure catch (failure) {
+              // One line that cannot be signed is dropped alone.
+              last = failure;
+            }
+          }(),
+      ]);
+      final seen = <String>{};
+      final lines = [for (final slot in slots) if (slot != null && seen.add(slot.url)) slot];
       if (lines.isEmpty) throw last ?? const HuyaFailure(HuyaFailureKind.streamUnavailable, 'no line could be signed');
       return right(lines);
     } on HuyaFailure catch (failure) {

@@ -266,19 +266,46 @@ final class HuyaSite implements LiveSite {
 
   // Room detail ---------------------------------------------------------------
 
+  /// How long one `profileRoom` answer serves the room's callers. One room
+  /// open reads the room three times — the entry detail, the quality list
+  /// and the line signing — and each used to be a full page fetch of its
+  /// own; within this window they share one read, the way the reference's
+  /// entry keeps its `qualities` stage at zero requests. A lease renewal's
+  /// re-signed lines read the same templates: only the signatures age.
+  static const Duration _detailWindow = Duration(seconds: 3);
+
+  final Map<String, Future<HuyaProfile>> _detailFlights = {};
+  final Map<String, (HuyaProfile, DateTime)> _details = {};
+
   /// The `profileRoom` of the numeric room [address] (past its public cache
-  /// with a millisecond `_`). A non-numeric address is not-found without a
-  /// request. The streamer uid is remembered for the danmaku connection.
-  Future<HuyaProfile> detailRoom(String address) async {
+  /// with a millisecond `_`), coalesced within [_detailWindow]: a call that
+  /// lands on a flying read joins it, and one inside the window reuses its
+  /// answer. A non-numeric address is not-found without a request. The
+  /// streamer uid is remembered for the danmaku connection.
+  Future<HuyaProfile> detailRoom(String address) {
     final id = address.trim();
     if (!HuyaRoomParser.isNumericId(id)) {
       throw HuyaFailure(HuyaFailureKind.notFound, 'room id "$id" is not a number');
     }
+    final flight = _detailFlights[id];
+    if (flight != null) return flight;
+    final cached = _details[id];
+    if (cached != null && now().difference(cached.$2) < _detailWindow) return Future.value(cached.$1);
+    final fresh = _detailRoom(id);
+    _detailFlights[id] = fresh;
+    return fresh.whenComplete(() => _detailFlights.remove(id));
+  }
+
+  Future<HuyaProfile> _detailRoom(String id) async {
     final response = await http.get(
       HuyaEndpoints.profileRoom(id, now().millisecondsSinceEpoch),
       headers: {...webHeaders(), 'cache-control': 'no-cache', 'pragma': 'no-cache'},
     );
     final profile = HuyaRoomParser.profile(response.text, requestedId: id, status: response.status);
+    // The window only ever holds the rooms being opened; the sweep keeps a
+    // burst of room hops from growing it without bound.
+    if (_details.length > 64) _details.clear();
+    _details[id] = (profile, now());
     if (profile.presenterUid > 0) _rememberUid(id, profile.presenterUid);
     return profile;
   }
