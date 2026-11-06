@@ -114,7 +114,7 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
     if (kept == null) {
       final opening = browser.keep(page: page, cancel: cancel);
       try {
-        kept = await opening.timeout(_visitTimeout);
+        kept = await opening.timeout(_openTimeout);
       } on _Cancelled {
         unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
         throw const CancelledFailure();
@@ -127,7 +127,7 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
       } on Object catch (error) {
         unawaited(opening.then<void>((page) => page.release(), onError: (Object _) {}));
         _noteIssue(error, 'opening the visitor page');
-        throw const ConnectFailure('the Xiaohongshu visitor page failed');
+        throw _visitFailure(error);
       }
       _kept = kept;
       _keptAt = _now();
@@ -159,8 +159,7 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
       await _dropKept();
       if (reused) return await _runOnKept(page, script, cancel);
       _noteIssue(error, 'running the visitor script');
-      // Plugin and JS errors can include credentials. Keep diagnostics fixed.
-      throw const ConnectFailure('the Xiaohongshu visitor page failed');
+      throw _visitFailure(error);
     }
   }
 
@@ -169,6 +168,31 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
   /// visitor's diagnostics stay fixed — the console gets the shape only.
   void _noteIssue(Object error, String stage) {
     debugPrint('xhs guest: ${error.runtimeType} while $stage');
+  }
+
+  /// The visit scripts' own refusal words. They are fixed strings with no
+  /// page content or credentials, so they may surface; a plugin error that
+  /// carries none keeps the generic text.
+  static const List<String> _visitRefusals = [
+    'Visitor directory unavailable',
+    'Visitor directory refused',
+    'Visitor response too large',
+    'Visitor chat unavailable',
+    'Visitor handshake refused',
+  ];
+
+  /// The failure a visit's error maps to: the script's own refusal word
+  /// when it carries one — the site not serving the visitor feed, refusing
+  /// the signed fetch, refusing the push handshake — and the generic text
+  /// for everything else.
+  Exception _visitFailure(Object error) {
+    final text = error.toString();
+    for (final refusal in _visitRefusals) {
+      if (text.contains(refusal)) {
+        return XiaohongshuFailure(XiaohongshuFailureKind.network, 'the visitor page said: $refusal');
+      }
+    }
+    return const ConnectFailure('the Xiaohongshu visitor page failed');
   }
 
   Future<void> _dropKept() async {
@@ -208,12 +232,17 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
     } on Object catch (error) {
       unawaited(run.then<void>((_) {}, onError: (Object _) {}));
       _noteIssue(error, 'running the visitor script');
-      // Plugin and JS errors can include credentials. Keep diagnostics fixed.
-      throw const ConnectFailure('the Xiaohongshu visitor page failed');
+      throw _visitFailure(error);
     }
   }
 
-  static const Duration _visitTimeout = Duration(seconds: 30);
+  /// The open's budget: the public page must answer its load in this.
+  static const Duration _openTimeout = Duration(seconds: 30);
+
+  /// The script's budget: the page may still be settling, and the script
+  /// itself waits for the site's own feed traffic before signing — a slow
+  /// load must not eat the whole window.
+  static const Duration _visitTimeout = Duration(seconds: 45);
 
   /// How long a kept visitor page stays open between requests.
   static const Duration _keepTtl = Duration(minutes: 4);
@@ -285,7 +314,7 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
     }
     return '''
 const path = ${jsonEncode(path)};
-for (let n=0; n<250; n++) {
+for (let n=0; n<400; n++) {
   const s = window.__pureLiveXhs;
   if (s && s.headers && typeof window._webmsxyw === 'function') {
     const headers = Object.assign({}, s.headers, window._webmsxyw(path));
@@ -305,7 +334,7 @@ throw new Error('Visitor directory unavailable');
   /// sends a test comment, reaction, follow or account request on our behalf.
   @visibleForTesting
   static const String identityScript = '''
-for (let n=0; n<250; n++) {
+for (let n=0; n<400; n++) {
   const s=window.__pureLiveXhs;
   if(s && s.identity) return s.identity;
   if(s && s.refused) throw new Error('Visitor handshake refused');
