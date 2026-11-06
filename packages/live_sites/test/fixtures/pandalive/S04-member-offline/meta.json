@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "platform": "pandalive",
+  "sample": "S04-member-offline",
+  "capturedAt": "2026-11-06T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://api.pandalive.co.kr/v1/member/bj",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "accept-language": "ko-KR,ko;q=0.9,en;q=0.8",
+      "origin": "https://www.pandalive.co.kr",
+      "referer": "https://www.pandalive.co.kr/play/tester_1",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "body": "userId=tester_1&info=media"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "460271e87552749ad12bb24b58de347c8b45e1e1f981b5aa5fdd2bf10f9addee",
+    "length": 254
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer pandalive_site_test's fake built, not a capture"
+}

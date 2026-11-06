@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "platform": "kugoulive",
+  "sample": "S04-room-unstated",
+  "capturedAt": "2026-11-06T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://service2.fanxing.kugou.com/roomcen/room/web/cdn/getEnterRoomInfo?roomId=1234567",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://fanxing.kugou.com",
+      "referer": "https://fanxing.kugou.com/"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "91af48e69e60e2af2e8c5c396fdb5010e976787dbd126e14ccadaac9fa20032e",
+    "length": 119
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer kugoulive_site_test's fake built, not a capture"
+}

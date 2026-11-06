@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "platform": "liveme",
+  "sample": "S04-profile-live",
+  "capturedAt": "2026-11-06T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://live.liveme.com/user/getinfo?alias=liveme&tongdun_black_box=1&os=web&_time=1793966400000&h5=1&thirdchannel=6&userid=932385543319330816",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "accept-language": "en-US,en;q=0.9",
+      "origin": "https://www.liveme.com",
+      "referer": "https://www.liveme.com/livehot"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "e2fd2914e187b1f5ff9179c8311c4dd5c4ecf18b0117624d9f934a8ba9741b06",
+    "length": 189
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer liveme_site_test's fake built, not a capture"
+}

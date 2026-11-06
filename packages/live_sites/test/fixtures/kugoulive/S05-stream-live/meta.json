@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "platform": "kugoulive",
+  "sample": "S05-stream-live",
+  "capturedAt": "2026-11-06T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://fx1.service.kugou.com/video/pc/live/pull/mutiline/streamaddr?std_rid=1234567&std_plat=7&std_kid=0&streamType=1-2-4-5-8&ua=fx-flash&targetLiveTypes=1-5-6&version=1000&supportEncryptMode=1&appid=1010&_=1793966400000",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://fanxing.kugou.com",
+      "referer": "https://fanxing.kugou.com/"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "809447dc8dc6c9149a0bbad51b4044c714c4ddb50ef23ce1a13c0c147a1cdbfc",
+    "length": 207
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer kugoulive_site_test's fake built, not a capture"
+}
