@@ -48,6 +48,18 @@ enum PlayerPresetId {
   /// mpv properties layered over the base tuning for this recipe.
   Map<String, String> get extraProperties => switch (this) {
     PlayerPresetId.rtxVsr => const {'vf': 'd3d11vpp=scale=2:scaling-mode=nvidia'},
+    PlayerPresetId.balanced => const {
+      // The bounded live buffer: memory only, a small forward and back
+      // window, and the back cache may not borrow the unused forward
+      // reserve. Without it the demuxer drifts minutes behind the stream
+      // and a stall replays a growing backlog instead of catching up.
+      'cache': 'yes',
+      'cache-secs': '6',
+      'demuxer-max-bytes': '33554432',
+      'demuxer-max-back-bytes': '4194304',
+      'demuxer-donate-buffer': 'no',
+      'demuxer-readahead-secs': '2',
+    },
     PlayerPresetId.lowEnd => const {
       'vd-lavc-threads': '2',
       'vd-lavc-o': 'lowres=1',
@@ -68,7 +80,7 @@ enum PlayerPresetId {
       'framedrop': 'decoder+vo',
       'network-timeout': '8',
     },
-    _ => const {},
+    PlayerPresetId.compat => const {},
   };
 
   static PlayerPresetId fromName(Object? name) =>
@@ -395,6 +407,8 @@ const Map<String, String> _presetNeutralProperties = {
   'vd-lavc-skiploopfilter': 'default',
   'audio-buffer': '0.2',
   'demuxer-max-bytes': '100663296',
+  'demuxer-max-back-bytes': '52428800',
+  'demuxer-donate-buffer': 'yes',
   'demuxer-readahead-secs': '8',
   'cache-secs': '30',
   'cache': 'yes',
