@@ -13,8 +13,9 @@ import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 // ignore_for_file: unnecessary_type_name_in_constructor
 
 /// Xiaohongshu's rooms: the entry of one share page (the card, the state
-/// and the pull addresses), and the directory — which is always empty,
-/// since no public list is reachable anonymously.
+/// and the pull addresses), and the directory — empty without a visitor
+/// bootstrap, the guest feed's pages once one is injected (the site's
+/// [XiaohongshuSite.directory] decides).
 ///
 /// A room id is a broadcast room: 1–20 digits without a leading zero;
 /// anything else is not-found, without a request. An ended room is offline,
@@ -40,8 +41,8 @@ final class XiaohongshuRoomProvider implements LiveRoomProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
-      final page = await site.directory(request.page);
-      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
+      final page = await site.directory(request.page, cursor: request.cursor);
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on XiaohongshuFailure catch (failure) {
       return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {

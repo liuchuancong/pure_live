@@ -1,0 +1,288 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_guest.dart';
+import 'package:webview_all/webview_all.dart';
+
+/// The finite browser operation, isolated from the WebView plugin for testing.
+abstract interface class XiaohongshuGuestBrowser {
+  /// Loads the public [page], observes only read-only visitor traffic and
+  /// runs [script]. Cancellation, failure and success all dispose the page.
+  Future<Object?> run({required Uri page, required String script, CancelToken? cancel});
+}
+
+/// Anonymous directory and RWP bootstrap. Browsers exist only during a
+/// request; playback and subsequent chat use the normal native transports.
+final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
+  /// Creates the visitor client. It never reads the account's cookie stores
+  /// or signed-in state.
+  new({required this.route, XiaohongshuGuestBrowser? browser, DateTime Function()? now})
+    : browser = browser ?? const OffscreenXiaohongshuGuestBrowser(),
+      _now = now ?? DateTime.now;
+
+  /// Whether this device can run a short-lived visitor page at all.
+  ///
+  /// webview_all's own runtime capability: the same check
+  /// `OffscreenWebViewSession.create` performs, asked without building a
+  /// controller first. The composition root consults this before wiring the
+  /// guest into the site, so a host without an offscreen browser keeps the
+  /// sign-in-only directory instead of failing at the first open.
+  static bool get isAvailable => WebViewPlatform.instance?.supportsOffscreenWebViews ?? false;
+
+  /// The proxy route in force right now (`proxySettingsProvider`'s answer,
+  /// read per request like the other seams).
+  ///
+  /// The visitor page runs on webview_all, which has no proxy override: its
+  /// traffic follows the operating system's own proxy settings, which the
+  /// direct and system routes already describe. An explicit in-app HTTP
+  /// proxy would be bypassed by the page, so a configured one refuses the
+  /// visitor instead of leaking traffic past it (the reference passed the
+  /// rule to an Android-only WebView proxy scope; none exists here).
+  final ProxyRoute Function() route;
+
+  /// Temporary page implementation.
+  final XiaohongshuGuestBrowser browser;
+  final DateTime Function() _now;
+  XiaohongshuPushIdentity? _identity;
+  DateTime? _identityAt;
+
+  Future<Object?> _run(Uri page, String script, CancelToken? cancel) async {
+    if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+    if (route() is HttpProxyRoute) {
+      throw const ProtocolFailure('the Xiaohongshu visitor browser cannot use the configured proxy');
+    }
+    final run = browser.run(page: page, script: script, cancel: cancel);
+    try {
+      final value = cancel == null
+          ? await run.timeout(_visitTimeout)
+          : await Future.any([
+              run.timeout(_visitTimeout),
+              cancel.whenCancel.then<Object?>((_) => throw const _Cancelled()),
+            ]);
+      if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+      return value;
+    } on _Cancelled {
+      // The page still finishes closing itself; its late result is dropped.
+      unawaited(run.then<void>((_) {}, onError: (Object _) {}));
+      throw const CancelledFailure();
+    } on CancelledFailure {
+      rethrow;
+    } on TimeoutException {
+      throw const TimeoutFailure('the Xiaohongshu visitor page took too long');
+    } on Object {
+      // Plugin and JS errors can include credentials. Keep diagnostics fixed.
+      throw const ConnectFailure('the Xiaohongshu visitor page failed');
+    }
+  }
+
+  static const Duration _visitTimeout = Duration(seconds: 30);
+
+  Future<String> _request(String path, CancelToken? cancel) async {
+    final value = await _run(Uri.parse('https://www.xiaohongshu.com/livelist'), requestScript(path), cancel);
+    if (value is! String || value.length > XiaohongshuEndpoints.responseLimit) {
+      throw const XiaohongshuFailure(XiaohongshuFailureKind.apiChanged, 'Invalid visitor response');
+    }
+    return value;
+  }
+
+  @override
+  Future<String> categories({CancelToken? cancel}) => _request('/api/sns/red/live/web/feed/category', cancel);
+
+  @override
+  Future<String> directory({required String category, required String cursor, CancelToken? cancel}) {
+    if (!RegExp(r'^\d{1,8}$').hasMatch(category) || cursor.isEmpty || cursor.length > 128) {
+      throw ArgumentError('Invalid directory request');
+    }
+    final query =
+        'cursor_score=${Uri.encodeComponent(cursor)}&source=13&category=${Uri.encodeComponent(category)}&pre_source=&extra_info=%7B%22image_formats%22:[%22jpg%22,%22webp%22,%22avif%22]%7D&size=27';
+    return _request('/api/sns/red/live/web/feed/v1/squarefeed?$query', cancel);
+  }
+
+  @override
+  Future<XiaohongshuPushIdentity> pushIdentity(String roomId, {bool refresh = false, CancelToken? cancel}) async {
+    if (!XiaohongshuEndpoints.isRoomId(roomId)) throw ArgumentError.value(roomId, 'roomId');
+    if (cancel?.isCancelled ?? false) throw const CancelledFailure();
+    if (refresh) {
+      _identity = null;
+      _identityAt = null;
+    }
+    final kept = _identity;
+    if (kept != null && _identityAt != null) {
+      final age = _now().difference(_identityAt!);
+      if (!age.isNegative && age < const Duration(minutes: 5)) return kept;
+    }
+    final value = await _run(XiaohongshuEndpoints.roomUrl(roomId), identityScript, cancel);
+    if (value is! Map) throw const XiaohongshuFailure(XiaohongshuFailureKind.apiChanged, 'Missing visitor identity');
+    String field(String key) {
+      final item = value[key];
+      if (item is! String || item.isEmpty || item.length > 4096) {
+        throw const XiaohongshuFailure(XiaohongshuFailureKind.apiChanged, 'Incomplete visitor identity');
+      }
+      return item;
+    }
+
+    final identity = XiaohongshuPushIdentity(
+      sid: field('sid'),
+      uid: field('uid'),
+      deviceId: field('deviceId'),
+      fingerprint: field('fingerprint'),
+      userAgent: field('userAgent'),
+    );
+    _identityAt = _now();
+    return _identity = identity;
+  }
+
+  /// Uses the currently served website signer; no copied or hard-coded
+  /// signature algorithm. Only the two public directory endpoints qualify.
+  @visibleForTesting
+  static String requestScript(String path) {
+    final uri = Uri.parse(path);
+    if (uri.hasScheme ||
+        uri.hasAuthority ||
+        !const ['/api/sns/red/live/web/feed/category', '/api/sns/red/live/web/feed/v1/squarefeed'].contains(uri.path)) {
+      throw ArgumentError.value(path, 'path');
+    }
+    return '''
+const path = ${jsonEncode(path)};
+for (let n=0; n<250; n++) {
+  const s = window.__pureLiveXhs;
+  if (s && s.headers && typeof window._webmsxyw === 'function') {
+    const headers = Object.assign({}, s.headers, window._webmsxyw(path));
+    const r = await fetch('https://live-room.xiaohongshu.com'+path, {headers, credentials:'include'});
+    if (r.status !== 200) throw new Error('Visitor directory refused');
+    const body = await r.text();
+    if (body.length > 2097152) throw new Error('Visitor response too large');
+    return body;
+  }
+  await new Promise(resolve=>setTimeout(resolve,100));
+}
+throw new Error('Visitor directory unavailable');
+''';
+  }
+
+  /// Only an acknowledged visitor handshake is returned. The page never
+  /// sends a test comment, reaction, follow or account request on our behalf.
+  @visibleForTesting
+  static const String identityScript = '''
+for (let n=0; n<250; n++) {
+  const s=window.__pureLiveXhs;
+  if(s && s.identity) return s.identity;
+  if(s && s.refused) throw new Error('Visitor handshake refused');
+  await new Promise(resolve=>setTimeout(resolve,100));
+}
+throw new Error('Visitor chat unavailable');
+''';
+
+  /// Observes the site's own feed headers and RWP auth ack, keeping them in
+  /// the ephemeral page. No general HTTP or account bridge exists.
+  @visibleForTesting
+  static const String captureScript = '''
+(()=>{
+  if(window.__pureLiveXhs)return;
+  const state=window.__pureLiveXhs={};
+  const wanted=k=>['x-s-common','xy-common-params','accept'].includes(k.toLowerCase());
+  const feed=url=>{try{const u=new URL(url,location.href);return u.hostname==='live-room.xiaohongshu.com'&&u.pathname==='/api/sns/red/live/web/feed/v1/squarefeed';}catch{return false;}};
+  const save=(url,headers)=>{
+    if(!feed(url))return;
+    const h={};new Headers(headers).forEach((v,k)=>{if(wanted(k))h[k]=v;});
+    if(h['x-s-common'])state.headers=h;
+  };
+  const X=XMLHttpRequest.prototype,open=X.open,set=X.setRequestHeader,send=X.send;
+  X.open=function(method,url,...rest){this.__plUrl=String(url);this.__plHeaders={};return open.call(this,method,url,...rest);};
+  X.setRequestHeader=function(k,v){if(wanted(String(k)))this.__plHeaders[k]=String(v);return set.call(this,k,v);};
+  X.send=function(...args){save(this.__plUrl,this.__plHeaders);return send.apply(this,args);};
+  const fetch=window.fetch;
+  window.fetch=function(input,options){save(typeof input==='string'?input:input.url,options?.headers||input?.headers);return fetch.apply(this,arguments);};
+  const Socket=window.WebSocket;
+  window.WebSocket=class extends Socket {
+    constructor(...args){
+      super(...args);
+      if(String(args[0])!=='wss://apppush-rws.xiaohongshu.com/rwp')return;
+      this.__plRwp=true;
+      this.addEventListener('message',event=>{
+        try{const f=JSON.parse(event.data);if(f.m!==this.__plAuthId)return;
+          if(f.b?.a?.c===0)state.identity=this.__plIdentity;else state.refused=true;
+        }catch{}
+      });
+    }
+    send(data){
+      if(this.__plRwp)try{const f=JSON.parse(data),b=f.b?.d?.b;
+        if(f.t===2&&f.b?.d?.s===0&&b?.appId==='xhs-pc'&&b.authInfo?.authType==='generic'){
+          this.__plAuthId=f.m;
+          this.__plIdentity={sid:b.authInfo.sid,uid:b.authInfo.uid,deviceId:b.deviceInfo?.deviceId,fingerprint:b.deviceInfo?.fingerprint,userAgent:navigator.userAgent};
+        }
+      }catch{}
+      return super.send(data);
+    }
+  };
+})();
+''';
+}
+
+final class _Cancelled implements Exception {
+  const new();
+}
+
+/// webview_all's offscreen session as the [XiaohongshuGuestBrowser]: one
+/// full-size but short-lived visitor page per request, deterministically
+/// released through `OffscreenWebViewSession.close`.
+///
+/// The reference kept Android on a dedicated-profile method channel; that
+/// native half does not exist here — every platform goes through the same
+/// offscreen session. There is no incognito flag in webview_all, so the page
+/// shares the platform cookie jar; it only ever visits public pages and the
+/// captured credentials live in its `window` object, which dies with the
+/// page.
+final class OffscreenXiaohongshuGuestBrowser implements XiaohongshuGuestBrowser {
+  /// Creates the browser.
+  const new();
+
+  /// The desktop Chrome user agent the site's own web app expects; the
+  /// reference's non-Android pages ran under the same one.
+  static const String _userAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+  @override
+  Future<Object?> run({required Uri page, required String script, CancelToken? cancel}) async {
+    final session = await OffscreenWebViewSession.create();
+    try {
+      final controller = session.controller;
+      await controller.setUserAgent(_userAgent);
+      // The capture script must sit in the page before the site's own
+      // scripts run, so it registers before any feed request or RWP socket.
+      await controller.addUserScript(const WebViewUserScript(source: WebViewXiaohongshuGuest.captureScript));
+      final loaded = Completer<void>();
+      await controller.setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (!loaded.isCompleted) loaded.complete();
+          },
+        ),
+      );
+      final visit = _visit(session, page, loaded, script);
+      if (cancel == null) return await visit;
+      // A cancelled request closes its page at once; the visit may still be
+      // mid-load and its late answer is dropped with the session.
+      unawaited(visit.then<void>((_) {}, onError: (Object _) {}));
+      return await Future.any([visit, cancel.whenCancel.then<Object?>((_) => throw const _Cancelled())]);
+    } finally {
+      await session.close();
+    }
+  }
+
+  static Future<Object?> _visit(
+    OffscreenWebViewSession session,
+    Uri page,
+    Completer<void> loaded,
+    String script,
+  ) async {
+    final controller = session.controller;
+    await controller.loadRequest(page);
+    await loaded.future;
+    return await controller.callAsyncJavaScript(script);
+  }
+}

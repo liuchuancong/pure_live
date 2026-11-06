@@ -22,11 +22,46 @@ abstract final class XiaohongshuEndpoints {
   /// (3.x's search session).
   static const Duration shortLinkTimeout = Duration(seconds: 12);
 
+  /// The directory notice of a shell without a visitor bootstrap (zh.json
+  /// `xiaohongshu_directory_scope`, reworded for users): the empty directory
+  /// shows this beside it.
+  static const String directoryScope = '此设备暂时无法加载小红书直播列表和弹幕。可以搜索直播房间号或粘贴直播分享链接观看；关注仅保留这一场直播。';
+
+  /// The key of [directoryScope] (3.x's zh.json key).
+  static const String directoryNoticeKey = 'xiaohongshu_directory_scope';
+
+  /// The directory notice of a shell with a visitor bootstrap (zh.json
+  /// `xiaohongshu_guest_directory_scope`): the guest directory shows this
+  /// beside it.
+  static const String guestDirectoryScope = '可按分类浏览公开直播，也可以搜索房间号或粘贴直播分享链接。关注仅保留这一场直播，主播下次开播需要重新导入。';
+
+  /// The key of [guestDirectoryScope] (3.x's zh.json key).
+  static const String guestDirectoryNoticeKey = 'xiaohongshu_guest_directory_scope';
+
+  /// The score the feed's first page asks for, and the category id its
+  /// unfiltered listing asks with.
+  static const String firstCursor = '0';
+
+  /// A feed cursor: the server's opaque score, kept as text. [maxCursorLength]
+  /// bounds it; anything longer is a caller error.
+  static const int maxCursorLength = 128;
+
+  /// Longest a compatibility page walk may spend replaying cursors.
+  static const Duration directoryDeadline = Duration(seconds: 45);
+
+  /// Highest page the compatibility walk reaches (3.x's replay budget).
+  static const int maxDirectoryPage = 20;
+
   static final RegExp _roomIdPattern = RegExp(r'^[1-9][0-9]{0,19}$');
+
+  static final RegExp _categoryIdPattern = RegExp(r'^\d{1,8}$');
 
   /// Whether [value] is a broadcast room id: 1–20 digits without a leading
   /// zero.
   static bool isRoomId(String value) => _roomIdPattern.hasMatch(value);
+
+  /// Whether [value] is a directory category id: 1–8 digits.
+  static bool isCategoryId(String value) => _categoryIdPattern.hasMatch(value);
 
   /// The share page of [roomId], also the room's link.
   static Uri roomUrl(String roomId) => Uri.parse('$origin/livestream/$roomId');

@@ -12,13 +12,15 @@ import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// Xiaohongshu's recommendations: always empty, as the directory (3.x's
-/// `getRecommendRooms` read the directory, and no public list is reachable
-/// anonymously — only recommendation pages exist, and they need a signed
-/// login request).
+/// Xiaohongshu's discovery feed: the visitor directory's unfiltered listing
+/// (the platform's own 热门 square) when a guest is injected, and always
+/// empty without one (3.x showed its directory notice instead — no public
+/// list is reachable anonymously).
 ///
-/// The platform has no personalized feed the adapter could ask; a page
-/// below 1 is a caller error, never an empty page.
+/// A caller that carries [LivePageRequest.cursor] forward costs one request
+/// per page; a caller that names only a page number is walked there by the
+/// site's cursor replay. A page below 1 is a caller error, never an empty
+/// page.
 final class XiaohongshuDiscoveryProvider implements LiveDiscoveryProvider {
   /// Serves [site].
   XiaohongshuDiscoveryProvider({required this.site});
@@ -30,8 +32,8 @@ final class XiaohongshuDiscoveryProvider implements LiveDiscoveryProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.directory(request.page);
-      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
+      final page = await site.directory(request.page, cursor: request.cursor);
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on XiaohongshuFailure catch (failure) {
       return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {
