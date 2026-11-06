@@ -421,6 +421,10 @@ abstract final class NiconicoRoomParser {
     );
     final title = jsonString(row['title'])?.trim() ?? '';
     if (title.isEmpty) throw const NiconicoFailure(NiconicoFailureKind.apiChanged, 'list: title missing');
+    // The provider's name, else the social group's: a card without either has
+    // no anchor to show, so the row is malformed and drops (like the title).
+    final nick = jsonString(name)?.trim() ?? '';
+    if (nick.isEmpty) throw const NiconicoFailure(NiconicoFailureKind.apiChanged, 'list: name missing');
     return LiveRoom.normalized(
       platform: _site,
       roomId: roomId,
@@ -431,8 +435,11 @@ abstract final class NiconicoRoomParser {
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: id,
-        name: jsonString(name) ?? '',
-        avatarUrl: publicImage(icon) ?? publicImage(social?['thumbnailImageUrl']),
+        name: nick,
+        // A channel's program provider has an empty icon; the search row's
+        // social group names its own picture `thumbnailUrl` (the watch page's
+        // `thumbnailImageUrl` is another shape).
+        avatarUrl: publicImage(icon) ?? publicImage(social?['thumbnailUrl']),
       ),
       area: LiveArea.of(platform: _site, areaId: NiconicoEndpoints.areaId, areaName: 'niconico'),
       audience: RoomAudience.of(totalViewers: count, primaryMetric: LiveAudienceMetricType.totalViewers),
@@ -520,11 +527,28 @@ abstract final class NiconicoRoomParser {
 
   // Helpers -------------------------------------------------------------------
 
-  static Uri? _socket(Object? value, Object? frontend) {
-    final raw = value is String ? value : null;
-    if (raw == null || frontend is! int || frontend <= 0 || frontend > 9999) return null;
+  /// The seat's WebSocket with `frontend_id` added. A `webSocketUrl` that is
+  /// not a string, or a `frontendId` outside 1–9999, or an address that is
+  /// not the seat endpoint written as `wss://a.live2.nicovideo.jp` followed
+  /// by a path and one value per query parameter (over 8192 characters, a
+  /// repeated parameter), is `apiChanged` — the page promised a seat and did
+  /// not deliver one, which the player cannot work around.
+  static Uri _socket(Object? value, Object? frontend) {
+    if (value is! String) {
+      throw const NiconicoFailure(NiconicoFailureKind.apiChanged, 'watch page: webSocketUrl missing');
+    }
+    final raw = value;
+    if (frontend is! int || frontend <= 0 || frontend > 9999) {
+      throw NiconicoFailure(NiconicoFailureKind.apiChanged, 'watch page: frontendId $frontend');
+    }
     final uri = Uri.tryParse(raw);
-    if (uri == null || !isSeatSocket(uri)) return null;
+    if (raw.length > 8192 ||
+        uri == null ||
+        !isSeatSocket(uri) ||
+        !raw.startsWith('wss://${NiconicoEndpoints.seatHost}${uri.path}?') ||
+        uri.queryParametersAll.values.any((values) => values.length != 1)) {
+      throw const NiconicoFailure(NiconicoFailureKind.apiChanged, 'watch page: unexpected webSocketUrl');
+    }
     return uri.replace(queryParameters: {...uri.queryParameters, 'frontend_id': '$frontend'});
   }
 

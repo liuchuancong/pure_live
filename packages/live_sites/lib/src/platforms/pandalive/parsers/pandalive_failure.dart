@@ -36,6 +36,10 @@ enum PandaliveFailureKind {
   /// no HLS master or no video variant.
   streamUnavailable,
 
+  /// The broadcast plays only for a logged-in, adult-verified member: the
+  /// anonymous adapter cannot ever have it (`needAdult`, `needLogin`).
+  needsLogin,
+
   /// A request the caller got wrong: a page outside what the platform ever
   /// served, an area that is not one of the two directories, a keyword with
   /// a control character.
@@ -64,6 +68,7 @@ final class PandaliveFailure implements Exception {
     PandaliveFailureKind.riskControl => LiveSiteError.rateLimit(siteId: siteId, message: message),
     PandaliveFailureKind.rateLimited => LiveSiteError.rateLimit(siteId: siteId, message: message),
     PandaliveFailureKind.streamUnavailable => LiveSiteError.contentUnavailable(siteId: siteId, message: message),
+    PandaliveFailureKind.needsLogin => LiveSiteError.authentication(siteId: siteId, message: message),
     PandaliveFailureKind.invalidArgument => LiveSiteError.invalidArgument(siteId: siteId, message: message),
   };
 

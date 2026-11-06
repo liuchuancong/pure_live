@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
@@ -8,6 +9,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/pandalive/api/pandalive_endpoints.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_failure.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_json.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_room_parser.dart';
@@ -248,6 +250,19 @@ void main() {
         PandaliveRoomParser.restrictionError(LiveRestriction.adult, 'live/play: needAdult').message,
         'live/play: needAdult (adult)',
       );
+    });
+
+    test('an adult or login-gated broadcast is an authentication refusal', () {
+      final adult = PandaliveRoomParser.restrictionError(LiveRestriction.adult, 'live/play: needAdult');
+      final login = PandaliveRoomParser.restrictionError(LiveRestriction.needsLogin, 'live/play: needLogin');
+      expect(adult.kind, PandaliveFailureKind.needsLogin);
+      expect(login.kind, PandaliveFailureKind.needsLogin);
+      expect(adult.toLiveSiteError(pandaliveSiteId), isA<LiveSiteAuthenticationError>());
+      expect(login.toLiveSiteError(pandaliveSiteId), isA<LiveSiteAuthenticationError>());
+      // Every other gate stays a plain unavailable answer.
+      final password = PandaliveRoomParser.restrictionError(LiveRestriction.password, 'live/play: needPassword');
+      expect(password.kind, PandaliveFailureKind.streamUnavailable);
+      expect(password.toLiveSiteError(pandaliveSiteId), isA<LiveSiteContentUnavailable>());
     });
 
     test('a refusal names a restriction before the flags do', () {

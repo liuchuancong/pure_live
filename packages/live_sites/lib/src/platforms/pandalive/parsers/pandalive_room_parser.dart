@@ -146,9 +146,9 @@ abstract final class PandaliveRoomParser {
   }
 
   /// The failure of a refused answer: `유저 정보가 없습니다` (no such
-  /// broadcaster) is not-found, an adult or fans-only broadcast
-  /// (`needAdult`, `needLogin`) stream-unavailable for its login, another
-  /// code stream-unavailable, a refusal without a code api-changed.
+  /// broadcaster) is not-found, a broadcast kept for a logged-in adult
+  /// (`needAdult`, `needLogin`) needs that login, another code is
+  /// stream-unavailable, a refusal without a code api-changed.
   static PandaliveFailure refusal(Map<String, dynamic> data, {required String what}) {
     final message = PandaliveJson.text(data['message']);
     final code = refusalCode(data);
@@ -157,6 +157,7 @@ abstract final class PandaliveRoomParser {
     }
     return switch (code) {
       '' => PandaliveFailure(PandaliveFailureKind.apiChanged, '$what refused: $message'),
+      'needAdult' || 'needLogin' => PandaliveFailure(PandaliveFailureKind.needsLogin, '$what: $code'),
       _ => PandaliveFailure(PandaliveFailureKind.streamUnavailable, '$what: $code'),
     };
   }
@@ -195,9 +196,15 @@ abstract final class PandaliveRoomParser {
     return code == 'needLogin' ? LiveRestriction.needsLogin : LiveRestriction.unplayable;
   }
 
-  /// Why a broadcast with [restriction] cannot be played.
-  static PandaliveFailure restrictionError(LiveRestriction restriction, String what) =>
-      PandaliveFailure(PandaliveFailureKind.streamUnavailable, '$what (${restriction.name})');
+  /// Why a broadcast with [restriction] cannot be played: an adult or login
+  /// restriction needs the site's login, the rest has nothing to play.
+  static PandaliveFailure restrictionError(LiveRestriction restriction, String what) => PandaliveFailure(
+    switch (restriction) {
+      LiveRestriction.adult || LiveRestriction.needsLogin => PandaliveFailureKind.needsLogin,
+      _ => PandaliveFailureKind.streamUnavailable,
+    },
+    '$what (${restriction.name})',
+  );
 
   /// The notice of a broadcast with [restriction]: adult, password, fans
   /// only, other conditions, else (none, or not known) the chat notice.

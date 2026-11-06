@@ -439,7 +439,8 @@ abstract final class AcfunDanmakuProtocol {
   static LiveMessage _giftMessage(AcfunProtoMessage user, LiveGift gift, int? millis, {String id = ''}) =>
       LiveMessage.normalized(
         type: LiveMessageType.gift,
-        text: '${gift.name} x${gift.count}',
+        // The shared gift line: the name, or the id when the table gave none.
+        text: '${gift.name.isEmpty ? gift.giftId : gift.name} ×${gift.count}',
         sender: _sender(user),
         color: LiveMessageColor.white,
         payload: gift,

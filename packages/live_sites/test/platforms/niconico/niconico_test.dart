@@ -1,4 +1,5 @@
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_room_parser.dart';
 import 'package:test/test.dart';
 
@@ -56,6 +57,92 @@ void main() {
       expect(room.content.notice, '节目尚未开始。 $_scope');
       expect(room.content.title, '番組');
       expect(room.roomId, 'lv123');
+    });
+  });
+
+  group('search rows (S02-search-channel shape)', () {
+    // The channel row of the upstream fixture: its supplier has a name but no
+    // icons, and the channel icon rides the social group's `thumbnailUrl`.
+    Map<String, dynamic> channelRow() => {
+      'nicoliveProgramId': 'lv351483018',
+      'title': '番組',
+      'status': 'ON_AIR',
+      'providerType': 'channel',
+      'watchPageUrl': 'https://live.nicovideo.jp/watch/lv351483018',
+      'supplier': {'name': '有限会社阿部珈琲館'},
+      'socialGroup': {
+        'id': 'ch2611887',
+        'name': 'A-beans. エービーンズチャンネル',
+        'thumbnailUrl': 'https://secure-dcdn.cdn.nimg.jp/comch/channel-icon/128x128/ch2611887.jpg',
+      },
+      'statistics': {'watchCount': 12},
+      'beginTime': 1790534283,
+    };
+
+    test('a channel card falls back to the social group picture', () {
+      final room = NiconicoRoomParser.listRoom(channelRow(), search: true);
+      expect(room.roomId, 'ch2611887');
+      expect(room.anchor?.avatarUrl, 'https://secure-dcdn.cdn.nimg.jp/comch/channel-icon/128x128/ch2611887.jpg');
+    });
+
+    test('a row with neither a provider nor a social name drops', () {
+      final row = channelRow()
+        ..['supplier'] = <String, dynamic>{}
+        ..remove('socialGroup');
+      expect(() => NiconicoRoomParser.listRoom(row, search: true), throwsA(isA<NiconicoFailure>()));
+    });
+  });
+
+  group('the seat socket of a watch page', () {
+    Map<String, dynamic> data({Object? webSocketUrl, Object? frontendId}) => {
+      'program': {
+        'nicoliveProgramId': 'lv123',
+        'title': '番組',
+        'providerType': 'community',
+        'status': 'ON_AIR',
+        'supplier': {'supplierType': 'user', 'programProviderId': 123, 'name': '配信者'},
+        'statistics': {'watchCount': 1},
+        'beginTime': 1790534283,
+      },
+      'programWatch': {'condition': {'needLogin': false}},
+      'userProgramWatch': {'isCountryRestrictionTarget': false, 'canWatch': true},
+      'site': {'relive': {'webSocketUrl': webSocketUrl}, 'frontendId': frontendId},
+    };
+
+    test('a good socket gains the frontend id', () {
+      final watch = NiconicoRoomParser.watchData(
+        data(
+          webSocketUrl: 'wss://a.live2.nicovideo.jp/wsapi/v2/watch/123?audience_token=t',
+          frontendId: 7,
+        ),
+        roomId: 'user/123',
+      );
+      expect(watch.socket, isNotNull);
+      expect(watch.socket!.queryParameters['frontend_id'], '7');
+    });
+
+    test('a malformed socket or frontend id is apiChanged, not a seatless room', () {
+      expect(
+        () => NiconicoRoomParser.watchData(
+          data(webSocketUrl: 'wss://a.live2.nicovideo.jp/wsapi/v2/watch/123', frontendId: 7),
+          roomId: 'user/123',
+        ),
+        throwsA(isA<NiconicoFailure>()),
+      );
+      expect(
+        () => NiconicoRoomParser.watchData(
+          data(webSocketUrl: 'wss://other.example/wsapi/v2/watch/123?audience_token=t', frontendId: 7),
+          roomId: 'user/123',
+        ),
+        throwsA(isA<NiconicoFailure>()),
+      );
+      expect(
+        () => NiconicoRoomParser.watchData(
+          data(webSocketUrl: 'wss://a.live2.nicovideo.jp/wsapi/v2/watch/123?audience_token=t', frontendId: 0),
+          roomId: 'user/123',
+        ),
+        throwsA(isA<NiconicoFailure>()),
+      );
     });
   });
 }

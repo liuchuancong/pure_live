@@ -93,7 +93,7 @@ void main() {
     test('a table gift is priced in AC coins, with its combo and per-send id', () {
       final message = AcfunDanmakuProtocol.gift(_giftSignal(), gifts: _gifts)!;
       expect(message.type, LiveMessageType.gift);
-      expect(message.text, '快乐水 x2');
+      expect(message.text, '快乐水 ×2');
       expect(message.messageId, '42:c1:3');
       expect(message.sender?.userId, '42');
       expect(message.sender?.userName, 'Ann');
@@ -137,7 +137,7 @@ void main() {
     test('a banana is the free gift, named by the table or by the platform', () {
       final known = AcfunDanmakuProtocol.banana(_bananaSignal(), gifts: _gifts)!;
       final knownGift = known.payload! as LiveGift;
-      expect(known.text, '香蕉 x5');
+      expect(known.text, '香蕉 ×5');
       expect(knownGift.value.unit, LiveGiftUnit.free);
       expect(knownGift.value.unitPrice, isNull);
       expect(knownGift.combo.comboKey, '');
