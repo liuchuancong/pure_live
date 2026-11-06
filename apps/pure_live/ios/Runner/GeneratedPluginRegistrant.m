@@ -24,10 +24,10 @@
 @import battery_plus;
 #endif
 
-#if __has_include(<better_player_plus/BetterPlayerPlugin.h>)
-#import <better_player_plus/BetterPlayerPlugin.h>
+#if __has_include(<better_player_ios/BetterPlayerPlugin.h>)
+#import <better_player_ios/BetterPlayerPlugin.h>
 #else
-@import better_player_plus;
+@import better_player_ios;
 #endif
 
 #if __has_include(<bonsoir_darwin/SwiftBonsoirPlugin.h>)

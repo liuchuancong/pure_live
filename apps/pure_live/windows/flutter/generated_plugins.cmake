@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   battery_plus
+  better_player_windows
   bonsoir_windows
   cloud_firestore
   connectivity_plus

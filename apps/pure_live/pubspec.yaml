@@ -100,6 +100,7 @@ dependencies:
   media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core } # 播放器内核
   media_core_logging: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging } # 内核日志中枢（MediaCoreLog，桥进 live_log）
   media_core_live: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
+  media_core_ingest: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ingest } # 回环转封装/逐段还原
   media_core_media_kit: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit } # mpv 后端
   media_core_ijk_player: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player } # Android/iOS 内核
   media_core_better_player: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player } # Android/iOS 内核
@@ -132,6 +133,7 @@ dependencies:
   desktop_drop: ^0.8.4
   google_fonts: 9.0.0
   chinese_font_library: 1.3.0
+  ffi: any
 dev_dependencies:
   # 代码生成
   build_runner: ^2.16.2 # 运行代码生成器

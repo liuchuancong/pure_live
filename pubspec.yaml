@@ -64,6 +64,7 @@ dependency_overrides:
   hooks: ^2.2.0
   # 播放内核走本地 C:/Users/XA-158/projects/flutter/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
   media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core }
+  media_core_logging: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging }
   media_core_native: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_native }
   platform: ^3.2.0
   test_api: ^0.7.15

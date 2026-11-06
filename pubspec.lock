@@ -169,14 +169,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
-  better_player_plus:
+  better_player:
     dependency: transitive
     description:
-      name: better_player_plus
-      sha256: "49c02ec4d975cf0da3f55c3bf07a4eb3eeab2b417790d8fa3e29a77947cb02f1"
+      name: better_player
+      sha256: fc16e4e5bbf6054b5d7f6800a9bc2a6dc0f08eddb2b9c584ffc00ad5ee6dc5d5
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.33.0"
+  better_player_android:
+    dependency: transitive
+    description:
+      name: better_player_android
+      sha256: "15e8d4b1110c9a5698c86ee2739bf3ddd11d664a95cc9b508a6f40486f45e669"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.11.0"
+  better_player_ios:
+    dependency: transitive
+    description:
+      name: better_player_ios
+      sha256: "62ce0e84ceb5ecf5eb2769b56d1b5ed78a8cf013dce906d98019ba176d838edd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.11.1"
+  better_player_linux:
+    dependency: transitive
+    description:
+      name: better_player_linux
+      sha256: "9ae04211ec973a26df67baef4737a4827bb74b70c7b16b995d961402f8b18c56"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
+  better_player_macos:
+    dependency: transitive
+    description:
+      name: better_player_macos
+      sha256: "75d60dab69bb31f22b0ab83afbfa19229bb5f437122e1008512c6d79a992a845"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.1"
+  better_player_platform_interface:
+    dependency: transitive
+    description:
+      name: better_player_platform_interface
+      sha256: "470cc8ff4082d3273bb5fb167c19d0bf4dbdfd90562e9f644703c7dc3adc2786"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.7.1"
+  better_player_web:
+    dependency: transitive
+    description:
+      name: better_player_web
+      sha256: "57ad884b8673e836fb98e76d0110d3a887eeb6786853cdda00815dd43d00dc6c"
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  better_player_windows:
+    dependency: transitive
+    description:
+      name: better_player_windows
+      sha256: "654581b95a743ca790833a4e211e1ff754678d79fecb944267fe3541c6e3627e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.2"
   blit:
     dependency: transitive
     description:
@@ -553,14 +609,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.0"
-  csslib:
+  cupertino_icons:
     dependency: transitive
     description:
-      name: csslib
-      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
+      name: cupertino_icons
+      sha256: b7cc2390aac296c083bea762859413eb1cf5b630c70e0c7e4d831018f762a8b2
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.2"
+    version: "2.0.0"
   cupertino_ui:
     dependency: transitive
     description:
@@ -1222,14 +1278,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_widget_from_html_core:
-    dependency: transitive
-    description:
-      name: flutter_widget_from_html_core
-      sha256: "530f2e3cc57be1a00f8bfae1b0000064e8a6df0cf1fb4d48a80f85afde9b39b7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.17.4"
   fluttertoast:
     dependency: transitive
     description:
@@ -1375,14 +1423,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  html:
-    dependency: transitive
-    description:
-      name: html
-      sha256: "43b67b8f43321ab066817dfac5619596c98bb1b61624e77203bb4351785f9699"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.15.7"
   http:
     dependency: transitive
     description:
@@ -1679,6 +1719,13 @@ packages:
       relative: false
     source: path
     version: "0.1.0"
+  media_core_ingest:
+    dependency: transitive
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ingest"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_core_live:
     dependency: transitive
     description:
@@ -1687,7 +1734,7 @@ packages:
     source: path
     version: "0.1.0"
   media_core_logging:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_logging"
       relative: true
@@ -2802,6 +2849,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.1"
+  visibility_detector:
+    dependency: transitive
+    description:
+      name: visibility_detector
+      sha256: dd5cc11e13494f432d15939c3aa8ae76844c42b723398643ce9addb88a5ed420
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0+2"
   vm_service:
     dependency: transitive
     description:

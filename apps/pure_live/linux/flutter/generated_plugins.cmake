@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links_linux
+  better_player_linux
   desktop_drop
   device_screen_brightness
   dynamic_color
