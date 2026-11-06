@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
-import 'package:flutter/material.dart' show AppBar, Scaffold;
+import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +50,6 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' sh
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
     show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
@@ -1251,30 +1250,30 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         },
         child: Scaffold(
           backgroundColor: colors.surface,
-          appBar: AppBar(
-            backgroundColor: colors.surface,
-            surfaceTintColor: const Color(0x00000000),
-            elevation: 0,
-            title: Text(
-              _episode == null
-                  ? detail?.meta.title ?? t.hongguo.opening
-                  : '${detail?.meta.title ?? ''} · ${t.hongguo.episodeLabel(index: _episode!.index)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageHeader(
+                title: _episode == null
+                    ? detail?.meta.title ?? t.hongguo.opening
+                    : '${detail?.meta.title ?? ''} · ${t.hongguo.episodeLabel(index: _episode!.index)}',
+              ),
+              Expanded(
+                child: _loading && detail == null
+                    ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+                    : _error != null && detail == null
+                    ? Center(
+                        child: DsEmptyState(
+                          icon: const DsIcon(DsIcons.cloudOff),
+                          title: Text(t.hongguo.loadFailed),
+                          description: Text(_error!),
+                          actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
+                        ),
+                      )
+                    : _body(context, detail),
+              ),
+            ],
           ),
-          body: _loading && detail == null
-              ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
-              : _error != null && detail == null
-              ? Center(
-                  child: DsEmptyState(
-                    icon: const DsIcon(DsIcons.cloudOff),
-                    title: Text(t.hongguo.loadFailed),
-                    description: Text(_error!),
-                    actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
-                  ),
-                )
-              : _body(context, detail),
         ),
       ),
     );
@@ -2762,12 +2761,18 @@ final class _RailAction extends StatelessWidget {
                       : const Color(0x66000000),
                   borderRadius: BorderRadius.circular(theme.radii.control(38)),
                 ),
-                child: DsIcon(icon, size: theme.sizes.iconLg, color: selected ? colors.onAccent : OnVideoColors.foreground),
+                child: DsIcon(
+                  icon,
+                  size: theme.sizes.iconLg,
+                  color: selected ? colors.onAccent : OnVideoColors.foreground,
+                ),
               ),
               if (count case final figure?)
                 Text(
                   figure,
-                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontSize: 11)),
+                  style: theme.typography.numeric(
+                    theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontSize: 11),
+                  ),
                 ),
             ],
           );
