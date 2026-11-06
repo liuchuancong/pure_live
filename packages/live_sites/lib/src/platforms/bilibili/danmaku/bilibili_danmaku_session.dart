@@ -76,17 +76,24 @@ final class BilibiliDanmakuProvider implements LiveDanmakuProvider {
 /// [BilibiliDanmakuProtocol.inactivityTimeout] is dropped. What the transport
 /// cannot know is this protocol's own join: the auth packet goes out when the
 /// socket opens and [BilibiliDanmakuProtocol.joinTimeout] later without a
-/// `code 0` reply counts as a loss, as does a rejection. Each loss re-opens on
-/// the next gateway of the credential list after a growing back off (the
-/// transport's automatic reconnect stays on the dead gateway), and after
-/// [BilibiliDanmakuProtocol.maxReconnectAttempts] failed attempts a terminal
-/// system message closes [events]. Text frames are ignored: the protocol only
-/// speaks binary.
+/// `code 0` reply counts as a loss, as does a rejection. A transport loss
+/// re-opens on the next gateway of the credential list after a growing back
+/// off (the transport's automatic reconnect stays on the dead gateway). An
+/// auth rejection is the token being refused, so re-opening with it would only
+/// be refused again: fresh credentials are fetched ([BilibiliDanmakuArgs.
+/// refresh], at most [maxCredentialRefreshes] per [connect]) and the new
+/// endpoint list joined from its start; none coming ends the session. A
+/// transport loss that survives [BilibiliDanmakuProtocol.maxReconnectAttempts]
+/// attempts ends it too, with a terminal system message on [events]. Text
+/// frames are ignored: the protocol only speaks binary.
 final class BilibiliDanmakuSession implements LiveDanmakuSession {
   /// A session for the room in [args]; [connect] opens the socket. [gifts] is
   /// the platform's gift table, asked for once without holding the join back
   /// (D07.4: it fills in what a gift packet leaves out).
-  BilibiliDanmakuSession({required this.args, this.gifts, Random? random}) : _random = random ?? Random.secure();
+  BilibiliDanmakuSession({required BilibiliDanmakuArgs args, this.gifts, Random? random})
+    : args = args,
+      _current = args,
+      _random = random ?? Random.secure();
 
   /// The room this session joined.
   final BilibiliDanmakuArgs args;
@@ -98,11 +105,19 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
   /// How many reconnects in a row may fail before the session is abandoned.
   static const int maxReconnectAttempts = BilibiliDanmakuProtocol.maxReconnectAttempts;
 
+  /// How often a rejected auth may ask for fresh credentials per [connect]
+  /// (the reference's budget; the refresh carries the site's own retry
+  /// schedule, so these are cheap rounds).
+  static const int maxCredentialRefreshes = 3;
+
   /// The handshake budget of one attempt.
   static const Duration _connectTimeout = Duration(seconds: 10);
 
   final Random _random;
   final _events = StreamController<LiveMessage>.broadcast();
+
+  /// The credentials in use; [args] until a rejected auth brought fresh ones.
+  BilibiliDanmakuArgs _current;
   DanmakuSocket? _socket;
   Timer? _join;
   int _server = 0;
@@ -112,6 +127,13 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
   /// A drop already in flight (the join timeout, the watchdog and a rejection
   /// all fire on the same dead socket).
   bool _dropping = false;
+
+  /// A credential round already in flight (the reply of a rejected socket and
+  /// a second packet in the same message both report the rejection).
+  bool _rejoining = false;
+
+  /// Credential refreshes spent since [connect].
+  int _credentialRefreshes = 0;
 
   /// Consecutive failed attempts; any frame means the connection is healthy
   /// again and resets the run.
@@ -127,17 +149,20 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
   /// Opens the socket, sends the auth packet and waits for the reply; null on
   /// success, else why it could not start.
   @override
-  Future<LiveSiteError?> connect() => _open();
+  Future<LiveSiteError?> connect() {
+    _credentialRefreshes = 0;
+    return _open();
+  }
 
   /// Opens one connection, on the next gateway of the credential list.
   Future<LiveSiteError?> _open() async {
     await _teardownSocket();
-    final servers = args.servers.isEmpty ? [Uri.parse(BilibiliEndpoints.danmakuGateway)] : args.servers;
+    final servers = _current.servers.isEmpty ? [Uri.parse(BilibiliEndpoints.danmakuGateway)] : _current.servers;
     final endpoint = servers[_server++ % servers.length];
     final socket = DanmakuSocket(
       uri: endpoint,
       config: WebSocketConfig(
-        headers: args.headers,
+        headers: _current.headers,
         connectTimeout: _connectTimeout,
         // A retry here would reconnect to the same gateway; the rotation of
         // the credential list and the re-auth are this session's to run.
@@ -170,10 +195,10 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
   void _sendAuth(DanmakuSocket socket) {
     socket.send(
       BilibiliDanmakuProtocol.auth(
-        uid: args.uid,
-        roomId: args.roomId,
-        buvid: args.buvid,
-        token: args.token,
+        uid: _current.uid,
+        roomId: _current.roomId,
+        buvid: _current.buvid,
+        token: _current.token,
         queueUuid: BilibiliDanmakuProtocol.queueUuid(_random),
       ),
     );
@@ -202,7 +227,8 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
   void _send(Uint8List packet) => _socket?.send(packet);
 
   /// The auth reply: `code 0` accepts (join complete — heartbeat now, then
-  /// every 30 s), anything else rejects and replaces the socket.
+  /// every 30 s), anything else rejects the credentials and asks for fresh
+  /// ones before the socket is replaced.
   void _authReply(int code) {
     if (code == 0) {
       if (_joined) return;
@@ -213,12 +239,49 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
       return;
     }
     _joined = false;
-    _drop('auth rejected (code $code)');
+    _join?.cancel();
+    _join = null;
+    unawaited(_rejoin(code));
+  }
+
+  /// Answers a rejected auth: fresh credentials, joined from their first
+  /// endpoint; none coming (the refresh failed, handed out no token, or the
+  /// budget of [maxCredentialRefreshes] is spent) ends the session — the
+  /// platform has refused this room's chat, and reopening with the refused
+  /// token would only be refused again. A fresh socket that cannot even be
+  /// opened is a transport loss, not a credential one: the gateway schedule
+  /// takes the fresh token from there.
+  Future<void> _rejoin(int code) async {
+    if (_disposed || _rejoining || _dropping) return;
+    _rejoining = true;
+    try {
+      await _teardownSocket();
+      BilibiliDanmakuArgs? refreshed;
+      if (_credentialRefreshes < maxCredentialRefreshes) {
+        _credentialRefreshes += 1;
+        try {
+          refreshed = await _current.refresh?.call();
+        } on Object {
+          // Reported as unavailable below.
+        }
+      }
+      if (_disposed) return;
+      if (refreshed != null && refreshed.token.isNotEmpty) {
+        _current = refreshed;
+        _server = 0;
+        if (await _open() == null) return;
+        await _retry('danmaku connect failed');
+        return;
+      }
+      _loseConnection('auth rejected (code $code): credentials unavailable');
+    } finally {
+      _rejoining = false;
+    }
   }
 
   /// Drops the current socket and re-opens it on the next gateway.
   void _drop(String cause) {
-    if (_disposed || _dropping) return;
+    if (_disposed || _dropping || _rejoining) return;
     _dropping = true;
     unawaited(() async {
       await _teardownSocket();
@@ -229,6 +292,8 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
 
   Future<void> _retry(String cause) async {
     while (!_disposed) {
+      // A rejected auth owns the socket while it brings fresh credentials.
+      if (_rejoining) return;
       _reconnectFailures++;
       if (_reconnectFailures > maxReconnectAttempts) {
         _loseConnection(cause);
@@ -236,7 +301,7 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
       }
       // Grow the back off with the run so a flapping gateway is not hammered.
       await Future<void>.delayed(BilibiliDanmakuProtocol.reconnectBase * _reconnectFailures);
-      if (_disposed) return;
+      if (_disposed || _rejoining) return;
       if (await _open() == null) return;
     }
   }

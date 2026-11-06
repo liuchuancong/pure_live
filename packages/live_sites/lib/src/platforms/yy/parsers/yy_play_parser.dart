@@ -155,7 +155,9 @@ abstract final class YyPlayParser {
   /// no lease. Mobile HLS URLs carry the issue time in `t`, not an expiry:
   /// they get none.
   static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
-    if (url.path.toLowerCase().endsWith('.m3u8')) return null;
+    // A FLV URL only: mobile HLS carries its issue time in `t`, not an
+    // expiry, and anything else carries no `t` signature at all.
+    if (!url.path.toLowerCase().endsWith('.flv')) return null;
     final expiry = int.tryParse(url.queryParameters['t'] ?? '');
     if (expiry == null || expiry < 1000000000) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expiry * 1000, isUtc: true);

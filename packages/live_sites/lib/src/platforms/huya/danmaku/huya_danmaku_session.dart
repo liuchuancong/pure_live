@@ -239,8 +239,10 @@ final class _HuyaSuperChats {
 
   final HuyaDanmakuSession _session;
   final Future<List<LiveSuperChatMessage>> Function()? _fetch;
-  // Insertion ordered, so the oldest entry is forgotten first.
-  final Set<LiveSuperChatMessage> _reported = {};
+  // Insertion ordered, so the oldest entry is forgotten first. Matched by
+  // event, not by equality: the board rebuilds a fetched entry's start from
+  // the clock of each poll.
+  final List<LiveSuperChatMessage> _reported = [];
   Future<void>? _refreshing;
   bool _queued = false;
 
@@ -287,7 +289,9 @@ final class _HuyaSuperChats {
 
   /// Reports [entry] unless this run already did; whether it did now.
   bool report(LiveSuperChatMessage entry) {
-    if (_session._stopped || !_reported.add(entry)) return false;
+    if (_session._stopped) return false;
+    if (_reported.any((reported) => HuyaDanmakuProtocol.sameEvent(entry, reported))) return false;
+    _reported.add(entry);
     _session._emit(HuyaDanmakuProtocol.superChatMessage(entry));
     while (_reported.length > HuyaDanmakuProtocol.maxRememberedSuperChats) {
       _reported.remove(_reported.first);

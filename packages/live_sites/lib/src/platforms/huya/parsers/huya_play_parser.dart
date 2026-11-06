@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -131,10 +132,12 @@ abstract final class HuyaPlayParser {
 
   /// Qualities of a live room's `profileRoom` [data]: the rate list is
   /// `liveData.bitRateInfo` (a JSON string or a list), else
-  /// `stream.flv.rateArray`. The id is the bit rate (0 is the source); blank
+  /// `stream.flv.rateArray`. The id is the bit rate (0 is the source); null
   /// names and negative rates are dropped, the first of a rate wins, the
-  /// source first then by rate. Without rates, one `原画` at 0 — never an
-  /// invented transcode.
+  /// source first then by rate. A blank name labels its rate through
+  /// [LiveQualityLabel.normalize] (the bitrate's own word, `8M`), never a
+  /// bare number. Without rates, one `原画` at 0 — never an invented
+  /// transcode.
   static List<LivePlayQuality> qualities(Map<String, dynamic> data) {
     Object? info = jsonObject(data['liveData'])?['bitRateInfo'];
     if (info is String) {
@@ -154,7 +157,7 @@ abstract final class HuyaPlayParser {
       final item = jsonObject(raw);
       final name = jsonString(item?['sDisplayName']);
       final rate = jsonInt(item?['iBitRate']);
-      if (name == null || name.isEmpty || rate == null || rate < 0 || !seen.add(rate)) continue;
+      if (name == null || rate == null || rate < 0 || !seen.add(rate)) continue;
       named.add((name: name, rate: rate));
     }
     if (named.isEmpty) named.add((name: '原画', rate: 0));
@@ -162,7 +165,12 @@ abstract final class HuyaPlayParser {
     return [
       for (final (index, entry) in sorted.indexed)
         LivePlayQuality.of(
-          label: entry.name,
+          label: LiveQualityLabel.normalize(
+            platform: 'huya',
+            rawLabel: entry.name,
+            id: entry.rate,
+            bitrate: entry.rate > 0 ? entry.rate * 1000 : null,
+          ),
           qualityId: '${entry.rate}',
           platformOrder: sorted.length - index,
           codec: LiveStreamCodec.avc,

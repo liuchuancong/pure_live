@@ -116,8 +116,8 @@ abstract final class DouyuDanmakuProtocol {
   }
 
   /// The messages of one server [frame] for room [roomId]: chat
-  /// (`chatmsg`), super chats (`comm_chatmsg`, `voice_trlt`) and gifts
-  /// (`dgb`); other packets are ignored. A packet that fails to decode is
+  /// (`chatmsg`), super chats (`comm_chatmsg`, `voice_trlt`), gifts
+  /// (`dgb`) and mutes (`newblackres`); other packets are ignored. A packet that fails to decode is
   /// skipped without losing the others. [filterSuspectedAutomated] is read
   /// for each suspected chat, so a changed setting applies at once. [gifts]
   /// prices and pictures the gifts it knows.
@@ -146,6 +146,7 @@ abstract final class DouyuDanmakuProtocol {
           'comm_chatmsg' => _superChat(fields),
           'voice_trlt' => _voiceSuperChat(fields),
           'dgb' => gift(fields, roomId, gifts: gifts),
+          'newblackres' => _ban(fields, roomId),
           _ => null,
         };
         if (message != null) messages.add(message);
@@ -248,7 +249,7 @@ abstract final class DouyuDanmakuProtocol {
     final end = int.tryParse(item['etime'] ?? '');
     final start = int.tryParse(item['acptime'] ?? '');
     final cents = int.tryParse(item['realPrice'] ?? '');
-    if (end == null || start == null || cents == null) return null;
+    if (end == null || start == null || cents == null || cents <= 0 || end <= start) return null;
     final avatars = DouyuStt.list(item['uat'] ?? '');
     final avatar = avatars.length > 1 ? avatars[1] : '';
     return _superChatMessage(
@@ -327,6 +328,21 @@ abstract final class DouyuDanmakuProtocol {
   static String _id(String? value) {
     final id = int.tryParse(value?.trim() ?? '') ?? 0;
     return id > 0 ? '$id' : '';
+  }
+
+  /// `newblackres`: a viewer (`dnic`) muted by `snic`, shown as a red chat
+  /// line without a sender, as the reference shows it.
+  static LiveMessage? _ban(Map<String, String> fields, String roomId) {
+    final packetRoomId = fields['rid'] ?? '';
+    if (packetRoomId.isNotEmpty && roomId.isNotEmpty && packetRoomId != roomId) return null;
+    final actor = (fields['snic'] ?? '').trim();
+    final target = (fields['dnic'] ?? '').trim();
+    if (target.isEmpty) return null;
+    return LiveMessage.normalized(
+      text: actor.isEmpty ? '$target 被禁言' : '$target 被 $actor 禁言',
+      sender: MessageSender.normalized(),
+      color: color(1),
+    );
   }
 
   /// The feed line carries who paid and what they said, as bilibili's does;

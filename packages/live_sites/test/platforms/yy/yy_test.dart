@@ -121,6 +121,11 @@ void main() {
       expect(YyPlayParser.lease(Uri.parse('https://cdn.example/live.m3u8?t=${_epoch(_at(600))}'), _issuedAt), isNull);
       expect(YyPlayParser.lease(Uri.parse('https://cdn.example/live.flv'), _issuedAt), isNull);
       expect(YyPlayParser.lease(_flv(999999999), _issuedAt), isNull);
+      expect(
+        YyPlayParser.lease(Uri.parse('https://cdn.example/live.mp4?t=${_epoch(_at(600))}'), _issuedAt),
+        isNull,
+        reason: 'only a FLV carries the t signature the lease reads',
+      );
     });
 
     test('an expired URL is no lease unless the caller allows it', () {

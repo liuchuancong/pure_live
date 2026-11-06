@@ -298,6 +298,27 @@ void main() {
       expect(line.effectiveColor.b, 0xFF);
     });
 
+    test('an unmasked original name wins over a masked rich-user name', () {
+      final line = BilibiliDanmakuProtocol.decode(
+        _notice(
+          _chatWith(
+            _chatMeta(
+              rich: {
+                'user': {
+                  'base': {
+                    'name': '观***1',
+                    'origin_info': {'name': 'full-name'},
+                  },
+                },
+              },
+            ),
+            'hello',
+          ),
+        ),
+      ).messages.single;
+      expect(line.effectiveSender.userName, 'full-name');
+    });
+
     test('a colour the platform did not name reads as white, and a seconds timestamp as seconds', () {
       final frame = BilibiliDanmakuProtocol.decode(
         {

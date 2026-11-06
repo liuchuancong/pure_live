@@ -76,6 +76,7 @@ final class BilibiliDanmakuArgs {
     required this.servers,
     required this.buvid,
     required this.headers,
+    this.refresh,
   });
 
   /// The canonical long room id (the auth packet's `roomid`).
@@ -95,6 +96,10 @@ final class BilibiliDanmakuArgs {
 
   /// UA, Origin, Referer (long id) and the cookie.
   final Map<String, String> headers;
+
+  /// Fetches fresh credentials with the full retry schedule — after an auth
+  /// rejection, or when room entry had to go on without a token.
+  final Future<BilibiliDanmakuArgs> Function()? refresh;
 
   /// The auth packet's `roomid` as the number the protocol asks for; 0 when
   /// the id is not a number (a guest-only fallback).
@@ -454,6 +459,7 @@ final class BilibiliSite implements LiveSite {
           servers: result.value.servers,
           buvid: cookieField(result.cookie, 'buvid3') ?? '',
           headers: BilibiliEndpoints.mediaHeaders('$numeric', cookie: result.cookie),
+          refresh: () => danmakuArgs(longId),
         );
       } on BilibiliFailure catch (failure) {
         last = failure;

@@ -466,7 +466,9 @@ abstract final class BilibiliDanmakuProtocol {
   }
 
   /// `user.base.name` (or `base.name` at the top), else
-  /// `base.origin_info.name`, trimmed.
+  /// `base.origin_info.name`, trimmed. A masked `base.name` (`**`) loses to an
+  /// unmasked original name: some guest connections receive the full name in
+  /// `origin_info` while the top-level one is masked.
   static String _richName(Object? root) {
     final map = jsonObject(root);
     if (map == null) return '';
@@ -474,7 +476,10 @@ abstract final class BilibiliDanmakuProtocol {
     final names = jsonObject(base);
     if (names == null) return '';
     final name = names['name']?.toString().trim() ?? '';
-    return name.isNotEmpty ? name : jsonObject(names['origin_info'])?['name']?.toString().trim() ?? '';
+    final original = jsonObject(names['origin_info'])?['name']?.toString().trim() ?? '';
+    if (name.isNotEmpty && !isMaskedName(name)) return name;
+    if (original.isNotEmpty && !isMaskedName(original)) return original;
+    return name.isNotEmpty ? name : original;
   }
 
   /// `WATCHED_CHANGE`: the room's cumulative viewers, `data.num` when it is a

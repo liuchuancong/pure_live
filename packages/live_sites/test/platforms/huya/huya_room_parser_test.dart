@@ -433,6 +433,30 @@ void main() {
       expect(profile({'baseSteamInfoList': []}).hasStream, isTrue);
     });
 
+    test('a rate with a blank name is named by its bitrate, a CJK name is kept', () {
+      HuyaProfile qualities(Map<String, Object?> live) => HuyaRoomParser.profile(
+        _profile(_liveData(live: live)),
+        requestedId: '1',
+      );
+
+      final named = qualities({
+        'bitRateInfo': [
+          {'sDisplayName': '蓝光8M', 'iBitRate': 0},
+          {'sDisplayName': '蓝光4M', 'iBitRate': 4000},
+        ],
+      });
+      expect(named.qualities.map((quality) => quality.label), ['蓝光8M', '蓝光4M'], reason: 'CJK names are kept');
+      expect(named.qualities.map((quality) => quality.qualityId), ['0', '4000']);
+
+      final blank = qualities({
+        'bitRateInfo': [
+          {'sDisplayName': '', 'iBitRate': 8000},
+        ],
+      });
+      expect(blank.qualities.single.label, '8 Mbps', reason: 'the bitrate names what the platform did not');
+      expect(blank.qualities.single.qualityId, '8000');
+    });
+
     test('a replay carries its recording, and without one it is unplayable', () {
       final withReplay = HuyaRoomParser.profile(
         _profile(_liveData(liveStatus: 'REPLAY', live: {'hls': _playlist})),

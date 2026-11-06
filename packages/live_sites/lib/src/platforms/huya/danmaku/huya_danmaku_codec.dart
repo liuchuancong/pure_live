@@ -185,19 +185,49 @@ abstract final class HuyaDanmakuProtocol {
   static String comboKey(int uid, int sequence) => sequence > 0 ? '$uid:$sequence' : '';
 
   /// uri 1400 (`MessageNotice`): tag 0 the sender (tag 0 uid, tag 2 nick), tag
-  /// 3 the text, tag 6 the bullet format (tag 0 colour). A chat with empty
-  /// text is dropped; missing fields read as defaults.
+  /// 3 the text, tag 6 the bullet format (tag 0 colour), the sender's fan
+  /// badge read from the decorations ([fanBadge]). A chat with empty text is
+  /// dropped; missing fields read as defaults.
   static LiveMessage? chat(Uint8List? body, int eventId) {
     final notice = TarsStruct.decode(body ?? const <int>[]);
     final text = notice.string(3) ?? '';
     if (text.isEmpty) return null;
     final sender = notice.struct(0);
+    final medal = fanBadge(notice);
     return LiveMessage.normalized(
       text: text,
-      sender: MessageSender.normalized(userId: '${sender?.integer(0) ?? 0}', userName: sender?.string(2) ?? ''),
+      sender: MessageSender.normalized(
+        userId: '${sender?.integer(0) ?? 0}',
+        userName: sender?.string(2) ?? '',
+        fanBadgeName: medal.name,
+        fanBadgeLevel: medal.level,
+      ),
       color: color(notice.struct(6)?.integer(0) ?? 0),
       messageId: messageId(eventId),
     );
+  }
+
+  /// The sender's fan badge from a chat's decorations: a BadgeInfo (tag 0 app
+  /// 10400, tag 2 the badge bytes: 3 name, 4 level) in any of the decoration
+  /// lists at tags 8, 9, 12 and 15. Other decorations (nobility, activities)
+  /// are not fan medals, and a malformed one never discards the chat.
+  static ({String name, String level}) fanBadge(TarsStruct notice) {
+    for (final tag in const [8, 9, 12, 15]) {
+      for (final item in notice.list(tag)) {
+        if (item is! TarsStruct || item.integer(0) != 10400) continue;
+        final bytes = item.bytes(2);
+        if (bytes == null) continue;
+        try {
+          final badge = TarsStruct.decode(bytes);
+          final name = (badge.string(3) ?? '').trim();
+          final level = badge.integer(4) ?? 0;
+          if (name.isNotEmpty && level > 0) return (name: name, level: '$level');
+        } on FormatException {
+          continue;
+        }
+      }
+    }
+    return (name: '', level: '');
   }
 
   /// uri 8006 (`AttendeeCountNotice`): tag 0 `iAttendeeCount`, an audience
@@ -345,4 +375,24 @@ abstract final class HuyaDanmakuProtocol {
     sentAt: data.startTime,
     payload: data,
   );
+
+  /// Whether [entry] and [reported] are the same board event. An id names its
+  /// event: two entries with an id are the same only when they are equal. Two
+  /// entries without one agree when their payloads do and their windows
+  /// overlap — the board rebuilds a fetched entry's start from the clock of
+  /// each poll, so drifting windows mean the same purchase, and a later one a
+  /// new purchase.
+  static bool sameEvent(LiveSuperChatMessage entry, LiveSuperChatMessage reported) {
+    final id = entry.messageId;
+    if (id.isNotEmpty || reported.messageId.isNotEmpty) return id.isNotEmpty && id == reported.messageId;
+    if (entry.userName != reported.userName || entry.text != reported.text || entry.faceUrl != reported.faceUrl) {
+      return false;
+    }
+    if (entry.price != reported.price) return false;
+    final started = entry.startTime;
+    final otherStarted = reported.startTime;
+    if (started == null || otherStarted == null) return started == otherStarted;
+    if (started == otherStarted) return true;
+    return started.isBefore(reported.endTime ?? started) && otherStarted.isBefore(entry.endTime ?? otherStarted);
+  }
 }

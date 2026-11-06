@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/huya/huya_tars.dart';
@@ -76,17 +77,59 @@ Uint8List _batch(List<(int, List<int>, int)> items) =>
         .toBytes();
 
 /// `MessageNotice`: sender 0 (uid 0, nick 2), text 3, bullet format 6 (colour 0).
-Uint8List _chatBody({int uid = 123, String nick = 'Ann', String text = 'hi', int? fontColor}) =>
-    (TarsWriter()
-          ..writeStruct(
-            0,
-            (sender) => sender
-              ..writeInt(0, uid)
-              ..writeString(2, nick),
-          )
-          ..writeString(3, text)
-          ..writeStruct(6, (format) => format.writeInt(0, fontColor ?? 0)))
-        .toBytes();
+Uint8List _chatBody({
+  int uid = 123,
+  String nick = 'Ann',
+  String text = 'hi',
+  int? fontColor,
+  List<Map<int, Object?>> badges = const [],
+}) {
+  final writer = TarsWriter()
+    ..writeStruct(
+      0,
+      (sender) => sender
+        ..writeInt(0, uid)
+        ..writeString(2, nick),
+    )
+    ..writeString(3, text)
+    ..writeStruct(6, (format) => format.writeInt(0, fontColor ?? 0));
+  if (badges.isNotEmpty) {
+    // The decorations ride the wire as a list of structs at tag 8.
+    writer.writeList<Map<int, Object?>>(8, badges, (entry, badge) {
+      entry.writeStruct(0, (fields) {
+        badge.forEach((tag, value) {
+          if (value is int) {
+            fields.writeInt(tag, value);
+          } else if (value is List<int>) {
+            fields.writeBytes(tag, value);
+          }
+        });
+      });
+    });
+  }
+  return writer.toBytes();
+}
+
+/// One corrupt decoration (its badge bytes are not Tars) and then the good
+/// badge, to show a bad one never discards the chat.
+List<Map<int, Object?>> _badDecorations() => [
+  {
+    0: 10400,
+    2: <int>[0x03, 0x99],
+  },
+  _badge('虎牙粉丝', 7),
+];
+
+/// A fan badge (`BadgeInfo`: app 10400 at tag 0, the badge bytes at tag 2,
+/// name 3, level 4 inside them), as a decoration entry's field map.
+Map<int, Object?> _badge(String name, int level) => {
+  0: 10400,
+  2:
+      (TarsWriter()
+            ..writeString(3, name)
+            ..writeInt(4, level))
+          .toBytes(),
+};
 
 /// `SendItemSubBroadcastPacket` (0 item, 2 count, 4 sender, 6 nick, 9 combo,
 /// 20 name, 39 combo sequence, 41 pay total).
@@ -292,6 +335,41 @@ void main() {
       expect(bare.color, LiveMessageColor.white);
     });
 
+    test("the sender's fan badge comes from an app-10400 decoration", () {
+      final medal = HuyaDanmakuProtocol.chat(_chatBody(badges: [_badge('虎牙粉丝', 7)]), 1)!;
+      expect(medal.sender?.fanBadgeName, '虎牙粉丝');
+      expect(medal.sender?.fanBadgeLevel, '7');
+
+      // Another app's decoration is not a fan medal.
+      final other = HuyaDanmakuProtocol.chat(
+        _chatBody(
+          badges: [
+            {..._badge('贵族', 3), 0: 10401},
+          ],
+        ),
+        1,
+      )!;
+      expect(other.sender?.fanBadgeName, isEmpty);
+    });
+
+    test('a malformed decoration loses only itself, and a badge without level says nothing', () {
+      // A broken badge payload next to a good one: the chat survives.
+      final mixed = HuyaDanmakuProtocol.chat(_chatBody(text: 'x', badges: _badDecorations()), 1)!;
+      expect(mixed.text, 'x');
+      expect(mixed.sender?.fanBadgeName, '虎牙粉丝');
+      expect(
+        HuyaDanmakuProtocol.chat(
+          _chatBody(
+            badges: [
+              {..._badge('无级', 0)},
+            ],
+          ),
+          1,
+        )!.sender?.fanBadgeName,
+        isEmpty,
+      );
+    });
+
     test('the colour and id spellings of a push', () {
       expect(HuyaDanmakuProtocol.color(0), LiveMessageColor.white);
       expect(HuyaDanmakuProtocol.color(-1), LiveMessageColor.white);
@@ -442,6 +520,78 @@ void main() {
       expect(message.sentAt, chat.startTime);
       expect(message.payload, same(chat));
       expect(HuyaDanmakuProtocol.superChatMessage(chat.rebuild((b) => b.faceUrl = '')).sender?.avatarUrl, isNull);
+    });
+
+    test('two entries of one id are the same event, and a changed window is not', () {
+      final base = LiveSuperChatMessage.of(
+        messageId: 'huya:9',
+        userName: 'Bob',
+        text: '上山',
+        price: SuperChatPrice.of(amount: 30),
+        startTime: DateTime.utc(2026, 11, 5, 12),
+        endTime: DateTime.utc(2026, 11, 5, 12, 1),
+      );
+      // The board rebuilds the same entry with a drifted start: same event.
+      final drifted = LiveSuperChatMessage.of(
+        messageId: 'huya:9',
+        userName: 'Bob',
+        text: '上山',
+        price: SuperChatPrice.of(amount: 30),
+        startTime: DateTime.utc(2026, 11, 5, 12, 0, 5),
+        endTime: DateTime.utc(2026, 11, 5, 12, 1, 5),
+      );
+      expect(HuyaDanmakuProtocol.sameEvent(base, base), isTrue);
+      expect(HuyaDanmakuProtocol.sameEvent(drifted, base), isTrue, reason: 'ids are authoritative and equal');
+      expect(
+        HuyaDanmakuProtocol.sameEvent(
+          LiveSuperChatMessage.of(messageId: 'huya:10', text: '上山'),
+          LiveSuperChatMessage.of(messageId: 'huya:9', text: '上山'),
+        ),
+        isFalse,
+        reason: 'different ids are different purchases',
+      );
+    });
+
+    test('an entry without an id matches by payload and overlapping window', () {
+      LiveSuperChatMessage entry(DateTime start, DateTime end) => LiveSuperChatMessage.of(
+        userName: 'Bob',
+        text: '上山',
+        price: SuperChatPrice.of(amount: 30),
+        startTime: start,
+        endTime: end,
+      );
+      final at = DateTime.utc(2026, 11, 5, 12);
+      final window = entry(at, at.add(const Duration(minutes: 1)));
+      expect(
+        HuyaDanmakuProtocol.sameEvent(
+          entry(at.add(const Duration(seconds: 5)), at.add(const Duration(minutes: 1, seconds: 5))),
+          window,
+        ),
+        isTrue,
+        reason: 'the board rebuilt the entry a few seconds later: the same purchase',
+      );
+      expect(
+        HuyaDanmakuProtocol.sameEvent(
+          entry(at.add(const Duration(minutes: 2)), at.add(const Duration(minutes: 3))),
+          window,
+        ),
+        isFalse,
+        reason: 'a later window is a new purchase',
+      );
+      expect(
+        HuyaDanmakuProtocol.sameEvent(
+          entry(at, at.add(const Duration(minutes: 1))),
+          LiveSuperChatMessage.of(
+            userName: 'Bob',
+            text: '下山',
+            price: SuperChatPrice.of(amount: 30),
+            startTime: at,
+            endTime: at.add(const Duration(minutes: 1)),
+          ),
+        ),
+        isFalse,
+        reason: 'another text is another event',
+      );
     });
 
     test('the board request names its servant, function and fields', () {

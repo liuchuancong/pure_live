@@ -233,6 +233,24 @@ void main() {
       expect(paid.display.backgroundColor, '#c1c1ff');
     });
 
+    test('a mute names who was muted and by whom, as a red line without a sender', () {
+      final line = _read(['type@=newblackres/rid@=7099/snic@=主播/dnic@=灌水机/']).single;
+      expect(line.type, LiveMessageType.chat);
+      expect(line.text, '灌水机 被 主播 禁言');
+      expect(line.sender?.userName, isEmpty, reason: 'the line is a room announcement, not a chat');
+      expect(<int>[line.color!.r, line.color!.g, line.color!.b], [255, 0, 0]);
+      expect(
+        _read(['type@=newblackres/rid@=7099/dnic@=灌水机/']).single.text,
+        '灌水机 被禁言',
+        reason: 'an unnamed moderator is left out',
+      );
+    });
+
+    test('another room mute and a mute without its viewer say nothing', () {
+      expect(_read(['type@=newblackres/rid@=1/snic@=主播/dnic@=灌水机/']), isEmpty);
+      expect(_read(['type@=newblackres/rid@=7099/snic@=主播/']), isEmpty);
+    });
+
     test('a notice that shares the type but paid nothing or lasts no time is not a paid message', () {
       final nested = DouyuStt.escape('nn@=x/txt@=y');
       for (final body in [

@@ -114,6 +114,22 @@ void main() {
       expect(_decode(['type@=comm_chatmsg/now@=1790733600000/cet@=60/chatmsg@=nn@A=A@Stxt@A=x@S/']), isEmpty);
     });
 
+    test('a voice super chat that paid nothing or has no window is not one', () {
+      const body =
+          'type@=voice_trlt/list@=acptime@AA=<start>@ASetime@AA=<end>@ASrealPrice@AA=<cents>@AScontent@AA='
+          '唱歌@ASun@AA=Bob@AS@S/';
+      for (final (start, end, cents) in const [
+        ('1790733700', '1790733600', '500'),
+        ('1790733600', '1790733700', '0'),
+      ]) {
+        expect(
+          _decode([body.replaceFirst('<start>', start).replaceFirst('<end>', end).replaceFirst('<cents>', cents)]),
+          isEmpty,
+          reason: 'start $start end $end cents $cents is not a paid voice message',
+        );
+      }
+    });
+
     test('a voice super chat reads its own map, times in seconds', () {
       final message = _decode([
         'type@=voice_trlt/list@=acptime@AA=1790733600@ASetime@AA=1790733700@ASrealPrice@AA=500@AScontent@AA=唱歌@ASun@AA=Bob@AS@S/',
@@ -125,6 +141,40 @@ void main() {
       expect(chat.price.amount, 5);
       expect(chat.startTime, DateTime.fromMillisecondsSinceEpoch(1790733600000, isUtc: true));
       expect(chat.endTime, DateTime.fromMillisecondsSinceEpoch(1790733700000, isUtc: true));
+    });
+  });
+
+  group('the signing descriptor', () {
+    test('a descriptor reads its fields and signs the documented digest', () {
+      final descriptor = DouyuDescriptor.fromJson({
+        'key': '7bc03f3e',
+        'rand_str': '1000000000000000000000000000151',
+        'enc_data': 'enc-data',
+        'enc_time': 16,
+        'expire_at': _issuedAt.millisecondsSinceEpoch ~/ 1000 + 300,
+        'is_special': 0,
+      });
+      expect(descriptor, isNotNull);
+      expect(descriptor!.encTime, 16);
+      final auth = descriptor.auth(_roomId, 1790733600);
+      expect(RegExp(r'^[0-9a-f]{32}$').hasMatch(auth), isTrue, reason: 'auth is an md5 hex digest');
+      // Deterministic: the same inputs give the same digest.
+      expect(descriptor.auth(_roomId, 1790733600), auth);
+    });
+
+    test('more than the legacy 16 rounds sign too, up to the CPU bound', () {
+      final data = {
+        'key': '7bc03f3e',
+        'rand_str': '1000000000000000000000000000151',
+        'enc_data': 'enc-data',
+        'expire_at': _issuedAt.millisecondsSinceEpoch ~/ 1000 + 300,
+        'is_special': 0,
+      };
+      expect(DouyuDescriptor.fromJson({...data, 'enc_time': 17}), isNotNull, reason: 'the platform raised its rounds');
+      expect(DouyuDescriptor.fromJson({...data, 'enc_time': DouyuDescriptor.maxHashRounds}), isNotNull);
+      expect(DouyuDescriptor.fromJson({...data, 'enc_time': DouyuDescriptor.maxHashRounds + 1}), isNull);
+      expect(DouyuDescriptor.fromJson({...data, 'enc_time': 0}), isNull);
+      expect(DouyuDescriptor.fromJson({...data, 'enc_time': '4096'}), isNotNull, reason: 'numbers may be strings');
     });
   });
 
