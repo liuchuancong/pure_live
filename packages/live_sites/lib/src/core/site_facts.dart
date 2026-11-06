@@ -16,9 +16,6 @@ abstract final class SiteIds {
   /// The bilibili platform id.
   static const String bilibili = 'bilibili';
 
-  /// The cc (NetEase CC) platform id.
-  static const String cc = 'cc';
-
   /// The chzzk platform id.
   static const String chzzk = 'chzzk';
 
@@ -45,9 +42,6 @@ abstract final class SiteIds {
 
   /// The kilakila platform id.
   static const String kilakila = 'kilakila';
-
-  /// The looklive platform id.
-  static const String looklive = 'looklive';
 
   /// The kuaishou platform id.
   static const String kuaishou = 'kuaishou';

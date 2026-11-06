@@ -8,8 +8,6 @@ import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
-import 'package:live_sites/src/platforms/cc/api/cc_http.dart';
-import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
@@ -35,8 +33,6 @@ import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
 import 'package:live_sites/src/platforms/liveme/liveme_site.dart';
-import 'package:live_sites/src/platforms/looklive/api/looklive_http.dart';
-import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
@@ -115,7 +111,6 @@ List<LiveSite> createBuiltInLiveSites({
     HuyaSite(http: HuyaHttp(transport), preferH264: huyaPreferH264),
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),
-    CcSite(http: CcHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
     YoutubeSite(http: YouTubeHttp(transport), allChat: youtubeAllChat),
     TwitchSite(
@@ -133,7 +128,6 @@ List<LiveSite> createBuiltInLiveSites({
     InkeSite(http: InkeHttp(transport)),
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
-    LookliveSite(http: LookliveHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
     MissevanSite(http: MissevanHttp(transport)),
     PandaliveSite(http: PandaliveHttp(transport)),
