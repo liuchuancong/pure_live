@@ -434,7 +434,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // own shelves.
   ('hongguo.quality', BackupPrefKind.string),
   // Whether 首页 draws its first pick at head size above the shelves.
-  ('hongguo.home.banner', BackupPrefKind.boolean),
   ('hongguo.danmaku', BackupPrefKind.string),
   ('hongguo.decoderFailures', BackupPrefKind.stringList),
   ('hongguo.library.favorites', BackupPrefKind.string),

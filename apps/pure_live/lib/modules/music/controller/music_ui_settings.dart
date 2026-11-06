@@ -14,9 +14,6 @@ enum MusicUiElement {
 
   /// The live FFT bars on the player page's stage.
   spectrum,
-
-  /// The 推荐 page's banner, above its first row.
-  recommendBanner,
 }
 
 /// What the player's stage draws: the sleeve as it is, the record on a

@@ -768,17 +768,9 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get accountPhoneToggle => 'Use a phone number';
 	@override String get accountQrToggle => 'Scan a code';
 	@override String get commentsFailed => 'Comments did not load';
-	@override String get showHomeBanner => 'Home head picture';
-	@override String get showHomeBannerDesc => 'The shelf\'s first pick drawn at head size above the three rows, and taken out of the row itself.';
-	@override String get shelfForYou => 'Picked for you';
-	@override String get shelfChangeBatch => 'Another batch';
-	@override String get shelfHot => 'Now playing';
-	@override String get shelfNew => 'New';
 	@override String get shelfCategory => 'Category';
 	@override String get newArrivals => 'new';
-	@override String get openFullBoard => 'Full board';
 	@override String get seeMore => 'More';
-	@override String get refreshShelf => 'Refresh';
 	@override String allEpisodesCount({required Object count}) => 'All ${count} ep.';
 	@override String get filterReset => 'Reset';
 	@override String get filterNone => 'All';
@@ -1201,8 +1193,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get settingsPlayback => 'Source and playback';
 	@override String get settingsList => 'Lists';
 	@override String get settingsInterface => 'Interface';
-	@override String get uiRecommendBanner => 'Home banner';
-	@override String get uiRecommendBannerDesc => 'Lays the plaza\'s hottest playlist as one large card above the rows on the module\'s home page';
 	@override String get uiBlurredBackdrop => 'Blurred backdrop';
 	@override String get uiBlurredBackdropDesc => 'Paint the player page over the playing song\'s cover, blown up and blurred';
 	@override String get playerMode => 'Default player mode';
@@ -5700,17 +5690,9 @@ extension on TranslationsEn {
 			'hongguo.accountPhoneToggle' => 'Use a phone number',
 			'hongguo.accountQrToggle' => 'Scan a code',
 			'hongguo.commentsFailed' => 'Comments did not load',
-			'hongguo.showHomeBanner' => 'Home head picture',
-			'hongguo.showHomeBannerDesc' => 'The shelf\'s first pick drawn at head size above the three rows, and taken out of the row itself.',
-			'hongguo.shelfForYou' => 'Picked for you',
-			'hongguo.shelfChangeBatch' => 'Another batch',
-			'hongguo.shelfHot' => 'Now playing',
-			'hongguo.shelfNew' => 'New',
 			'hongguo.shelfCategory' => 'Category',
 			'hongguo.newArrivals' => 'new',
-			'hongguo.openFullBoard' => 'Full board',
 			'hongguo.seeMore' => 'More',
-			'hongguo.refreshShelf' => 'Refresh',
 			'hongguo.allEpisodesCount' => ({required Object count}) => 'All ${count} ep.',
 			'hongguo.filterReset' => 'Reset',
 			'hongguo.filterNone' => 'All',
@@ -5931,8 +5913,6 @@ extension on TranslationsEn {
 			'iptv.filterAll' => 'All',
 			'iptv.filterPlaylists' => 'Playlists',
 			'iptv.filterGuides' => 'Guides',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.searchChannels' => 'Search channels…',
 			'iptv.searchSources' => 'Search names or addresses…',
 			'iptv.noChannelMatch' => 'No channels match',
@@ -5941,6 +5921,8 @@ extension on TranslationsEn {
 			'iptv.colChannel' => 'Channel',
 			'iptv.colGroup' => 'Group',
 			'iptv.colNow' => 'On now',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.colFavorite' => 'Favourite',
 			'iptv.colActions' => 'Actions',
 			'iptv.colName' => 'Name',
@@ -6108,8 +6090,6 @@ extension on TranslationsEn {
 			'music.settingsPlayback' => 'Source and playback',
 			'music.settingsList' => 'Lists',
 			'music.settingsInterface' => 'Interface',
-			'music.uiRecommendBanner' => 'Home banner',
-			'music.uiRecommendBannerDesc' => 'Lays the plaza\'s hottest playlist as one large card above the rows on the module\'s home page',
 			'music.uiBlurredBackdrop' => 'Blurred backdrop',
 			'music.uiBlurredBackdropDesc' => 'Paint the player page over the playing song\'s cover, blown up and blurred',
 			'music.playerMode' => 'Default player mode',
@@ -6445,8 +6425,6 @@ extension on TranslationsEn {
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
 			'music.downloadsEmptyTitle' => 'No downloads yet',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadsEmptyDescription' => 'Download from a song row’s menu and it appears here.',
 			'music.localAddFolder' => 'Add a folder',
 			'music.localHint' => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.',
@@ -6457,6 +6435,8 @@ extension on TranslationsEn {
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
 			'music.localEmptyDescription' => 'Downloaded songs land in this list by themselves. To play files you already have, add a folder of audio.',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
 			'music.playbackRate' => 'Playback speed',
 			'music.preservesPitch' => 'Pitch compensation',
@@ -6959,8 +6939,6 @@ extension on TranslationsEn {
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.delete' => 'Delete',
 			'recorder.deleteTitle' => ({required String name}) => 'Delete “${name}”?',
 			'recorder.deleteBody' => 'This removes the task only; files already saved stay on disk.',
@@ -6971,6 +6949,8 @@ extension on TranslationsEn {
 			'recorder.librarySearchHint' => 'Search recordings (room / platform / day / file)',
 			'recorder.libraryFailedTitle' => 'The recording folder cannot be read',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.emptyLibraryTitle' => 'No recordings yet',
 			'recorder.emptyLibraryDescription' => 'Finished takes appear here, filed by day, platform and room.',
 			'recorder.emptySearchTitle' => 'No recording matches',
@@ -7473,8 +7453,6 @@ extension on TranslationsEn {
 			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
 			'search.noteAcfunShort' => 'Finds creators live and offline',
 			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
-			_ => null,
-		} ?? switch (path) {
 			'search.noteTwitcastingShort' => 'Keywords find live channels only',
 			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
 			'search.noteKilakilaShort' => 'Find anchors by nickname, UID or link',
@@ -7485,6 +7463,8 @@ extension on TranslationsEn {
 			'search.scopeTagAnchors' => 'Anchors',
 			'search.scopeTagWeb' => 'Web',
 			'search.scopeTagsHint' => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.',
+			_ => null,
+		} ?? switch (path) {
 			'search.scopeSummary' => ({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.',
 			'search.anchorUnsupported' => ({required String site}) => '${site} cannot search streamers; switch to “Rooms”.',
@@ -7987,8 +7967,6 @@ extension on TranslationsEn {
 			'settings.cacheLastCleanup' => 'Last cleanup',
 			'settings.cacheNever' => 'Not yet',
 			'settings.cacheDiskUnavailable' => 'The cache folder is unavailable; using memory and network only.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheStatsFailed' => 'Could not read cache statistics',
 			'settings.cacheCategoryBreakdown' => 'By type',
 			'settings.cacheCategoryCover' => 'Covers',
@@ -7999,6 +7977,8 @@ extension on TranslationsEn {
 			'settings.cacheCategoryWallpaper' => 'Wallpapers',
 			'settings.cacheCategoryPreview' => 'Previews and search thumbnails',
 			'settings.cacheCategoryOther' => 'Other',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheImagesSection' => 'Image cache',
 			'settings.cacheDiskEnabled' => 'Cache images on disk',
 			'settings.cacheDiskEnabledDesc' => 'Off keeps memory and network only; existing files stay until the next clear.',
@@ -8501,8 +8481,6 @@ extension on TranslationsEn {
 			'settings.downloadFilterLabel' => 'Filter',
 			'settings.downloadFilterTitle' => 'Filter downloads',
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadFilterReset' => 'Clear filters',
 			'settings.downloadRecheck' => 'Re-check files',
 			'settings.downloadMerge' => 'Merge into this folder',
@@ -8513,6 +8491,8 @@ extension on TranslationsEn {
 			'settings.downloadMergeDone' => ({required Object count}) => 'Merged ${count} file(s)',
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => 'Merged ${moved}; ${failed} did not finish',
 			'settings.downloadColumnFile' => 'File',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadColumnSize' => 'Size',
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
@@ -9015,8 +8995,6 @@ extension on TranslationsEn {
 			'shield.similarityTitle' => 'Similar danmaku filter',
 			'shield.similarityEnabled' => 'Similar danmaku filter',
 			'shield.similarityEnabledDescription' => 'Hides near-duplicates posted moments apart.',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityThreshold' => 'Similarity threshold',
 			'shield.similarityThresholdDescription' => 'Higher is stricter.',
 			'shield.similarityCacheDuration' => 'Cache duration',
@@ -9027,6 +9005,8 @@ extension on TranslationsEn {
 			'shield.repeatTitle' => 'Repeated danmaku filter',
 			'shield.repeatEnabled' => 'Collapse repeats',
 			'shield.repeatEnabledDescription' => 'Keep only the first copy.',
+			_ => null,
+		} ?? switch (path) {
 			'shield.repeatWindow' => 'Merge window',
 			'shield.keywordsTitle' => 'Keywords',
 			'shield.usersTitle' => 'Users',

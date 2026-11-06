@@ -133,7 +133,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   hongguoLibraryProvider,
   hongguoSearchProvider,
   hongguoSettingsProvider,
-  hongguoHomeBannerProvider,
   hongguoDanmakuSettingsProvider,
   hongguoDecoderLessonsProvider,
   musicPlaybackSettingsProvider,

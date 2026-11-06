@@ -19,8 +19,6 @@
   "settingsPlayback": "音源与播放",
   "settingsList": "列表",
   "settingsInterface": "界面设置",
-  "uiRecommendBanner": "推荐页头图",
-  "uiRecommendBannerDesc": "推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上",
   "uiBlurredBackdrop": "播放页模糊背景",
   "uiBlurredBackdropDesc": "播放详情页以当前歌曲的封面放大模糊作为背景",
   "playerMode": "默认播放器模式",

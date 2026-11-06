@@ -619,7 +619,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.music, t.music.autoCleanPlayedList, 'played list clear automatically 已播 列表 自动 清空'),
     _hit(SettingsSection.music, t.music.audioOutput, 'audio output device speaker headphone 音频 输出 设备 扬声器 耳机'),
     _hit(SettingsSection.musicInterface, t.music.playerMode, 'player page mode default open 播放器 模式 页面 默认'),
-    _hit(SettingsSection.musicInterface, t.music.uiRecommendBanner, 'recommend home head picture banner 推荐 页 头图 横幅'),
     _hit(SettingsSection.musicInterface, t.music.uiBlurredBackdrop, 'backdrop blur frosted artwork 播放页 模糊 背景 磨砂'),
     _hit(SettingsSection.musicInterface, t.music.uiSpectrum, 'spectrum visualiser bars motion 频谱 可视化 动效'),
     _hit(SettingsSection.musicInterface, t.music.uiSpectrumStyle, 'spectrum shape waveform style 频谱 样式 波形'),
@@ -724,7 +723,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'hongguo danmaku captions font opacity speed density 红果 弹幕 字号 透明度 速度 密度',
     ),
     _hit(SettingsSection.hongguoDevice, t.settings.hongguoDevice, 'hongguo device identity reset 红果 设备 身份 重置'),
-    _hit(SettingsSection.hongguoInterface, t.hongguo.showHomeBanner, 'home head picture banner 首页 头图 横幅 显示'),
     _hit(
       SettingsSection.hongguoInterface,
       s.hongguoCardSettingsTitle,

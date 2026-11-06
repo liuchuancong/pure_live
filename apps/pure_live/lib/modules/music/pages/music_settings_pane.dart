@@ -251,16 +251,6 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
             header: Text(t.music.settingsInterface),
             children: [
               SettingsConfigRow(
-                leading: const DsIcon(DsIcons.sparkles),
-                title: t.music.uiRecommendBanner,
-                description: t.music.uiRecommendBannerDesc,
-                control: DsSwitch(
-                  value: ui.shows(MusicUiElement.recommendBanner),
-                  onChanged: (value) =>
-                      unawaited(uiController.setElement(MusicUiElement.recommendBanner, visible: value)),
-                ),
-              ),
-              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.image),
                 title: t.music.uiBlurredBackdrop,
                 description: t.music.uiBlurredBackdropDesc,

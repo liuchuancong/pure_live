@@ -2054,38 +2054,14 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '评论没有加载出来'
 	String get commentsFailed => '评论没有加载出来';
 
-	/// zh-CN: '首页头图'
-	String get showHomeBanner => '首页头图';
-
-	/// zh-CN: '把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。'
-	String get showHomeBannerDesc => '把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。';
-
-	/// zh-CN: '为你推荐'
-	String get shelfForYou => '为你推荐';
-
-	/// zh-CN: '换一批'
-	String get shelfChangeBatch => '换一批';
-
-	/// zh-CN: '正在热播'
-	String get shelfHot => '正在热播';
-
-	/// zh-CN: '新剧'
-	String get shelfNew => '新剧';
-
 	/// zh-CN: '分类'
 	String get shelfCategory => '分类';
 
 	/// zh-CN: '上新'
 	String get newArrivals => '上新';
 
-	/// zh-CN: '查看完整榜单'
-	String get openFullBoard => '查看完整榜单';
-
 	/// zh-CN: '更多'
 	String get seeMore => '更多';
-
-	/// zh-CN: '刷新片单'
-	String get refreshShelf => '刷新片单';
 
 	/// zh-CN: '全{count}集'
 	String allEpisodesCount({required Object count}) => '全${count}集';
@@ -3298,12 +3274,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '界面设置'
 	String get settingsInterface => '界面设置';
-
-	/// zh-CN: '推荐页头图'
-	String get uiRecommendBanner => '推荐页头图';
-
-	/// zh-CN: '推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上'
-	String get uiRecommendBannerDesc => '推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上';
 
 	/// zh-CN: '播放页模糊背景'
 	String get uiBlurredBackdrop => '播放页模糊背景';
@@ -14915,17 +14885,9 @@ extension on Translations {
 			'hongguo.accountPhoneToggle' => '用手机号登录',
 			'hongguo.accountQrToggle' => '扫码登录',
 			'hongguo.commentsFailed' => '评论没有加载出来',
-			'hongguo.showHomeBanner' => '首页头图',
-			'hongguo.showHomeBannerDesc' => '把「为你推荐」的第一条画成三条片单上方的头图，并把它从那一行里取走。',
-			'hongguo.shelfForYou' => '为你推荐',
-			'hongguo.shelfChangeBatch' => '换一批',
-			'hongguo.shelfHot' => '正在热播',
-			'hongguo.shelfNew' => '新剧',
 			'hongguo.shelfCategory' => '分类',
 			'hongguo.newArrivals' => '上新',
-			'hongguo.openFullBoard' => '查看完整榜单',
 			'hongguo.seeMore' => '更多',
-			'hongguo.refreshShelf' => '刷新片单',
 			'hongguo.allEpisodesCount' => ({required Object count}) => '全${count}集',
 			'hongguo.filterReset' => '重置',
 			'hongguo.filterNone' => '全部条件',
@@ -15146,8 +15108,6 @@ extension on Translations {
 			'iptv.filterAll' => '全部',
 			'iptv.filterPlaylists' => '播放列表',
 			'iptv.filterGuides' => '节目单',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.searchChannels' => '搜索频道…',
 			'iptv.searchSources' => '搜索名称或地址…',
 			'iptv.noChannelMatch' => '没有匹配的频道',
@@ -15156,6 +15116,8 @@ extension on Translations {
 			'iptv.colChannel' => '频道',
 			'iptv.colGroup' => '分组',
 			'iptv.colNow' => '正在播出',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.colFavorite' => '收藏',
 			'iptv.colActions' => '操作',
 			'iptv.colName' => '名称',
@@ -15323,8 +15285,6 @@ extension on Translations {
 			'music.settingsPlayback' => '音源与播放',
 			'music.settingsList' => '列表',
 			'music.settingsInterface' => '界面设置',
-			'music.uiRecommendBanner' => '推荐页头图',
-			'music.uiRecommendBannerDesc' => '推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上',
 			'music.uiBlurredBackdrop' => '播放页模糊背景',
 			'music.uiBlurredBackdropDesc' => '播放详情页以当前歌曲的封面放大模糊作为背景',
 			'music.playerMode' => '默认播放器模式',
@@ -15660,8 +15620,6 @@ extension on Translations {
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
 			'music.downloadsEmptyTitle' => '还没有下载任务',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadsEmptyDescription' => '在歌曲行的「更多」里下载，文件会出现在这里。',
 			'music.localAddFolder' => '添加文件夹',
 			'music.localHint' => '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。',
@@ -15672,6 +15630,8 @@ extension on Translations {
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
 			'music.localEmptyDescription' => '下载的歌会自己进到这个列表；要放本机已有的文件，添加一个存放音频的文件夹。',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
 			'music.playbackRate' => '播放速度',
 			'music.preservesPitch' => '音调补偿',
@@ -16174,8 +16134,6 @@ extension on Translations {
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.delete' => '删除',
 			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
 			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
@@ -16186,6 +16144,8 @@ extension on Translations {
 			'recorder.librarySearchHint' => '搜索录像（直播间 / 平台 / 日期 / 文件名）',
 			'recorder.libraryFailedTitle' => '读不到录像目录',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.emptyLibraryTitle' => '还没有录像文件',
 			'recorder.emptyLibraryDescription' => '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。',
 			'recorder.emptySearchTitle' => '没有符合条件的录像',
@@ -16688,8 +16648,6 @@ extension on Translations {
 			'search.noteAcfun' => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。',
 			'search.noteAcfunShort' => '能搜到直播中和未开播的作者',
 			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
-			_ => null,
-		} ?? switch (path) {
 			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
 			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
 			'search.noteKilakilaShort' => '可按昵称、UID 或链接查找主播',
@@ -16700,6 +16658,8 @@ extension on Translations {
 			'search.scopeTagAnchors' => '主播',
 			'search.scopeTagWeb' => '网页',
 			'search.scopeTagsHint' => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。',
+			_ => null,
+		} ?? switch (path) {
 			'search.scopeSummary' => ({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。',
 			'search.anchorUnsupported' => ({required String site}) => '${site} 不支持主播搜索，请切换到“直播间”。',
@@ -17202,8 +17162,6 @@ extension on Translations {
 			'settings.cacheLastCleanup' => '最后清理',
 			'settings.cacheNever' => '尚未清理',
 			'settings.cacheDiskUnavailable' => '缓存目录不可用，当前仅使用内存与网络。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheStatsFailed' => '读取缓存统计失败',
 			'settings.cacheCategoryBreakdown' => '按类型查看',
 			'settings.cacheCategoryCover' => '封面',
@@ -17214,6 +17172,8 @@ extension on Translations {
 			'settings.cacheCategoryWallpaper' => '壁纸与背景',
 			'settings.cacheCategoryPreview' => '预览与搜索缩略图',
 			'settings.cacheCategoryOther' => '其他',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheImagesSection' => '图片缓存',
 			'settings.cacheDiskEnabled' => '启用图片磁盘缓存',
 			'settings.cacheDiskEnabledDesc' => '关闭后图片只走内存与网络；已有文件保留到下次清理。',
@@ -17716,8 +17676,6 @@ extension on Translations {
 			'settings.downloadFilterLabel' => '筛选',
 			'settings.downloadFilterTitle' => '筛选下载任务',
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadFilterReset' => '清空筛选',
 			'settings.downloadRecheck' => '重新检查文件',
 			'settings.downloadMerge' => '并入当前目录',
@@ -17728,6 +17686,8 @@ extension on Translations {
 			'settings.downloadMergeDone' => ({required Object count}) => '已并入 ${count} 个文件',
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => '已并入 ${moved} 个，${failed} 个未完成',
 			'settings.downloadColumnFile' => '文件',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadColumnSize' => '大小',
 			'settings.downloadColumnTime' => '时间',
 			'settings.downloadColumnActions' => '操作',
@@ -18230,8 +18190,6 @@ extension on Translations {
 			'shield.similarityTitle' => '相似弹幕过滤',
 			'shield.similarityEnabled' => '相似弹幕过滤',
 			'shield.similarityEnabledDescription' => '过滤短时间内高度相似的弹幕。',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityThreshold' => '相似度阈值',
 			'shield.similarityThresholdDescription' => '越高越严格。',
 			'shield.similarityCacheDuration' => '缓存时间',
@@ -18242,6 +18200,8 @@ extension on Translations {
 			'shield.repeatTitle' => '重复弹幕过滤',
 			'shield.repeatEnabled' => '合并重复弹幕',
 			'shield.repeatEnabledDescription' => '相同内容只保留第一条。',
+			_ => null,
+		} ?? switch (path) {
 			'shield.repeatWindow' => '合并时间',
 			'shield.keywordsTitle' => '关键词',
 			'shield.usersTitle' => '用户',

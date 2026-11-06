@@ -19,8 +19,6 @@
   "settingsPlayback": "Source and playback",
   "settingsList": "Lists",
   "settingsInterface": "Interface",
-  "uiRecommendBanner": "Home banner",
-  "uiRecommendBannerDesc": "Lays the plaza's hottest playlist as one large card above the rows on the module's home page",
   "uiBlurredBackdrop": "Blurred backdrop",
   "uiBlurredBackdropDesc": "Paint the player page over the playing song's cover, blown up and blurred",
   "playerMode": "Default player mode",

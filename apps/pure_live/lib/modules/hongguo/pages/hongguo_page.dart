@@ -13,7 +13,6 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show hongguoHomeBannerProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show HongguoCardMenu, hongguoSeriesOpenable;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
@@ -121,7 +120,7 @@ final class _HongguoPageState extends ConsumerState<HongguoPage> {
             // module's top measure under it.
             padding: const EdgeInsets.only(top: DsSpace.s12),
             child: switch (_view) {
-              HongguoView.home => _HomeView(onGo: (view) => setState(() => _view = view)),
+              HongguoView.home => const _HomeView(),
               HongguoView.find => const _FindView(),
               HongguoView.rank => const _RankView(),
               HongguoView.favorites => const _FavoritesView(),
@@ -166,375 +165,116 @@ final class _ServiceHint extends StatelessWidget {
   }
 }
 
-/// The 首页: the station's own page shape — a row of recommendations you can
-/// trade for another, the hot board, and the shelf's newest arrivals.
+/// The 首页: the recommendation feed as one poster wall — the genre bar
+/// over a paged grid, the reading every other shelf of this module shares.
 final class _HomeView extends ConsumerStatefulWidget {
-  const _HomeView({required this.onGo});
-
-  /// Moves the module's page to another view — the shelf's way to the whole
-  /// board.
-  final void Function(HongguoView view) onGo;
+  const _HomeView();
 
   @override
   ConsumerState<_HomeView> createState() => _HomeViewState();
 }
 
 final class _HomeViewState extends ConsumerState<_HomeView> {
-  /// How many batches of the recommendation row the viewer has traded
-  /// through; the row shows the batch it landed on.
-  static const int _batchSize = 12;
-
   HongguoGenre? _genre;
-
-  /// The genre's topics as the page last held them. A pick re-reads the shelf
-  /// from its first page, and that read empties the feed's selector panel
-  /// until the answer lands (`HongguoBrowseController._load`), so the bar's
-  /// entry and the shelf's own name would otherwise go blind for the length
-  /// of the pick — the entry disabling, the title falling back to the
-  /// topic's numeric id.
-  HongguoFilterRow? _topics;
-
-  HongguoGenre _latest = HongguoGenre.shortPlay;
-  int _batch = 0;
-
-  /// The board the genre's own shelf answers; 全部 takes the cross-type one.
-  HongguoWebsiteBoard _boardFor(HongguoGenre? genre) => switch (genre) {
-    null => HongguoWebsiteBoard.all,
-    HongguoGenre.shortPlay => HongguoWebsiteBoard.real,
-    HongguoGenre.comicSeries => HongguoWebsiteBoard.comic,
-    HongguoGenre.aiSeries => HongguoWebsiteBoard.ai,
-  };
 
   @override
   void initState() {
     super.initState();
-    // The shelves are asked once per mount, and on an explicit genre change —
+    // The feed is asked once per mount and on an explicit genre change —
     // never from `build`, where every state write would ask again.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _openFeeds();
+      if (mounted) _openFeed();
     });
   }
 
-  /// Starts (or continues) every shelf the page shows under the current
-  /// genre; each controller keeps what it already holds.
-  void _openFeeds() {
-    final genre = _genre;
-    unawaited(ref.read(hongguoHomeProvider.notifier).open(genre));
-    // `open` itself decides: read a board never held, renew quietly one
-    // whose snapshot has gone stale, and leave a fresh one alone.
-    unawaited(ref.read(hongguoRankProvider.notifier).open(_boardFor(genre)));
-    unawaited(ref.read(hongguoLatestProvider.notifier).open(_latest));
-    if (genre != null) unawaited(ref.read(hongguoBrowseProvider.notifier).open(genre));
+  /// Reads the feed the genre bar names; the controller keeps what it holds.
+  void _openFeed() {
+    unawaited(ref.read(hongguoHomeProvider.notifier).open(_genre));
   }
 
-  /// Switches the shelf: the topic goes back to the shelf's own selection,
-  /// the batch walk starts over, and the new shelf's feeds go out.
   void _selectGenre(HongguoGenre? genre) {
     if (genre == _genre) return;
-    setState(() {
-      _genre = genre;
-      _topics = null;
-      _batch = 0;
-    });
-    _openFeeds();
-  }
-
-  /// The genre's topics, in a panel over the shelves: the pick goes straight
-  /// to the shelf behind, as 找剧's selector panels do.
-  void _openThemes(HongguoGenre genre, HongguoFilterRow row) {
-    setState(() => _topics = row);
-    unawaited(
-      showDsPanel<void>(
-        context: context,
-        builder: (context) => _HomeThemePanel(genre: genre, row: row),
-      ),
-    );
-  }
-
-  /// Puts the head's picture on screen: where this device stopped when it
-  /// stopped inside this title, its first episode otherwise. The shelf's card
-  /// opens the series' page; the head's verb is the one the reference puts on
-  /// its banner, so it has to reach the picture itself.
-  void _playHero(HongguoSeries series, HongguoWatchProgress? seen) {
-    final vid = seen?.episodeVid ?? '';
-    final resume = seen != null && !seen.completed && seen.positionMs > 0 && vid.isNotEmpty
-        ? seen.positionMs / 1000
-        : null;
-    unawaited(
-      context.push(RouteNames.hongguoPlayerFor(series.seriesId, vid: vid.isEmpty ? null : vid, resumeSeconds: resume)),
-    );
+    setState(() => _genre = genre);
+    _openFeed();
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final genre = _genre;
     final home = ref.watch(hongguoHomeProvider);
     final homeController = ref.read(hongguoHomeProvider.notifier);
-    final board = _boardFor(genre);
-    final rank = ref.watch(hongguoRankProvider.select((boards) => boards[board.name]));
-    final rankController = ref.read(hongguoRankProvider.notifier);
-    final heldRank = rank ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
-    final latest = ref.watch(hongguoLatestProvider.select((feeds) => feeds[_latest.name]));
-    final latestController = ref.read(hongguoLatestProvider.notifier);
-    final browse = ref.watch(hongguoBrowseProvider.select((feeds) => genre == null ? null : feeds[genre.name]));
-    final browseController = ref.read(hongguoBrowseProvider.notifier);
-    // Where this device stands on each title the shelves below recommend: a
-    // shelf's card has to say 已看完 / 看到第 N 集 rather than look untouched.
+    final browse = ref.watch(browseSettingsProvider);
     final watchedById = _hongguoWatchedById(ref.watch(hongguoLibraryProvider.select((library) => library.history)));
-    final themes = [
-      for (final row in browse?.groups ?? const <HongguoFilterRow>[])
-        if (row.type == 'category_dim_theme') row,
-    ];
-    // The topic on the shelf is the feed's own selection, not a copy the page
-    // keeps: the chip wall this replaces reset its half on a genre switch
-    // while the shelf behind stayed filtered by the pick it left behind.
-    final themeRow = themes.isEmpty ? _topics : themes.first;
-    final theme = browse?.selection['category_dim_theme'] ?? '';
-    final hot = theme.isEmpty ? null : browse;
-    // The page's first visual focus: the shelf's own first pick drawn at head
-    // size, taken out of the row rather than shown a second time under it. One
-    // title alone in the batch stays a card — a head over an empty row is not
-    // a shelf.
-    final batch = home.items.skip(_batch * _batchSize).toList();
-    final hero = ref.watch(hongguoHomeBannerProvider) && batch.length > 1 ? batch.first : null;
-    final forYou = (hero == null ? batch : batch.skip(1)).take(_batchSize).toList();
-    final heroProgress = hero == null ? null : watchedById[hero.seriesId];
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s20,
-        children: [
-          // The station's genre bar and the one condition this page carries.
-          // The topics sit behind an entry, as 找剧 and 榜单 do theirs: a
-          // genre's selector panel runs to twenty topics, and the wall of
-          // chips they used to be pushed every shelf below the fold. Which one
-          // is on gets said once — by the shelf it filters, whose name it
-          // already is.
-          SizedBox(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
+          child: SizedBox(
             height: 44,
-            child: Builder(
-              builder: (context) {
-                final narrow = PageLayoutScope.isNarrow(context);
-                final tabs = DsTabs<String>(
-                  value: genre?.name ?? '',
-                  onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
-                  style: _kShelfTabsStyle,
-                  tabs: [
-                    DsTab(value: '', label: Text(t.hongguo.homeTabAll)),
-                    for (final value in HongguoGenre.values) DsTab(value: value.name, label: Text(value.label(t))),
-                  ],
-                );
-                // A genre is the only shelf that carries topics; 推荐 has no
-                // condition to set, so it gets no entry that cannot answer.
-                final openTopics = genre == null || themeRow == null ? null : () => _openThemes(genre, themeRow);
-                final filter = genre == null
-                    ? null
-                    : DsButton(
-                        size: DsSize.sm,
-                        variant: DsButtonVariant.secondary,
-                        leading: const DsIcon(DsIcons.listFilter, size: 14),
-                        onPressed: openTopics,
-                        child: Text(t.hongguo.filter),
-                      );
-                // A narrow page keeps the genre bar alone and hands the one
-                // condition to the shell's head line, as the live feeds do.
-                if (narrow) publishPageHeadActions(context, ref, NavigationItem.hongguoHome, [?filter]);
-                return Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(child: tabs),
-                    if (!narrow) ?filter,
-                  ],
-                );
-              },
+            child: DsTabs<String>(
+              value: _genre?.name ?? '',
+              onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
+              style: _kShelfTabsStyle,
+              tabs: [
+                DsTab(value: '', label: Text(t.hongguo.homeTabAll)),
+                for (final value in HongguoGenre.values) DsTab(value: value.name, label: Text(value.label(t))),
+              ],
             ),
           ),
-          if (hero case final title?)
-            HongguoFeedHero(
-              series: title,
-              eyebrow: t.hongguo.shelfForYou,
-              watched: heroProgress,
-              saved: ref.watch(hongguoLibraryProvider.select((library) => library.isFavorite(title.seriesId))),
-              onOpen: () => _open(context, title),
-              onPlay: () => _playHero(title, heroProgress),
-              onSave: () {
-                final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(title);
-                showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
-              },
-            ),
-          HongguoShelf(
-            title: t.hongguo.shelfForYou,
-            items: forYou,
-            loading: home.loading && home.items.length <= _batch * _batchSize,
-            error: home.error,
-            onRetry: () => unawaited(homeController.retry()),
-            actions: [
-              DsButton(
-                size: DsSize.sm,
-                variant: DsButtonVariant.secondary,
-                leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                onPressed: () {
-                  setState(() => _batch++);
-                  unawaited(homeController.loadMore());
-                },
-                child: Text(t.hongguo.shelfChangeBatch),
-              ),
-            ],
-            cardBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesCard(
-                series: series,
-                favoritable: true,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
-          ),
-          HongguoShelf(
-            title: theme.isEmpty ? t.hongguo.shelfHot : _themeLabel(themeRow, theme),
-            items: (theme.isEmpty ? heldRank.items : hot?.items ?? const <HongguoSeries>[]).take(_batchSize).toList(),
-            loading: theme.isEmpty ? heldRank.loading : hot?.loading ?? true,
-            error: theme.isEmpty ? heldRank.error : hot?.error,
-            onRetry: theme.isEmpty
-                ? () => unawaited(rankController.refresh(board))
-                : () => unawaited(browseController.retry(genre!)),
-            actions: [
-              if (theme.isEmpty)
-                DsButton(
-                  size: DsSize.sm,
-                  variant: DsButtonVariant.secondary,
-                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
-                  onPressed: () => widget.onGo(HongguoView.rank),
-                  child: Text(t.hongguo.openFullBoard),
-                )
-              else
-                DsButton(
-                  size: DsSize.sm,
-                  variant: DsButtonVariant.secondary,
-                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
-                  onPressed: () => widget.onGo(HongguoView.find),
-                  child: Text(t.hongguo.seeMore),
+        ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final content = constraints.maxWidth - feedGutter(context).horizontal;
+              return PagedCardGrid<HongguoSeries>(
+                items: home.items,
+                layout: ref.watch(browseLayoutProvider),
+                cardExtent: hongguoPosterExtentForWidth(
+                  content,
+                  spacing: browse.crossSpacing,
+                  ceiling: browse.gridColumns,
                 ),
-              DsButton(
-                size: DsSize.sm,
-                variant: DsButtonVariant.secondary,
-                leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                onPressed: theme.isEmpty
-                    ? () => unawaited(rankController.refresh(board))
-                    : () => unawaited(browseController.retry(genre!)),
-                child: Text(t.hongguo.refreshShelf),
-              ),
-            ],
-            cardBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesCard(
-                series: series,
-                favoritable: true,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
-          ),
-          HongguoShelf(
-            title: t.hongguo.shelfNew,
-            items: latest?.items ?? const <HongguoSeries>[],
-            loading: latest?.loading ?? true,
-            error: latest?.error,
-            onRetry: () => unawaited(latestController.retry(_latest)),
-            // The shelf's own switches wrap under the title — three chips and
-            // a button cannot share one header row down to the window's
-            // 300 px floor. They name only the genre: this row's title is
-            // already 新剧, and a shared suffix on every chip is text the eye
-            // learns to skip.
-            toolbar: [
-              for (final value in HongguoGenre.values)
-                DsChip(
-                  label: Text(value.label(t)),
-                  selected: _latest == value,
-                  onChanged: (_) {
-                    setState(() => _latest = value);
-                    unawaited(latestController.open(value));
-                  },
+                crossSpacing: browse.crossSpacing,
+                mainSpacing: browse.mainSpacing,
+                aspectRatio: kHongguoSeriesTileAspect,
+                listMainAxisExtent: kHongguoSeriesRowExtent,
+                itemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesCard(
+                    series: series,
+                    favoritable: true,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
                 ),
-            ],
-            actions: [
-              DsButton(
-                size: DsSize.sm,
-                variant: DsButtonVariant.secondary,
-                leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                onPressed: () => unawaited(latestController.retry(_latest)),
-                child: Text(t.hongguo.refreshShelf),
-              ),
-            ],
-            cardBuilder: (context, series) => HongguoCardMenu(
-              series: series,
-              onOpen: () => _open(context, series),
-              child: HongguoSeriesCard(
-                series: series,
-                favoritable: true,
-                watched: watchedById[series.seriesId],
-                onOpen: () => _open(context, series),
-              ),
-            ),
+                listItemBuilder: (context, series) => HongguoCardMenu(
+                  series: series,
+                  onOpen: () => _open(context, series),
+                  child: HongguoSeriesRow(
+                    series: series,
+                    watched: watchedById[series.seriesId],
+                    onOpen: () => _open(context, series),
+                  ),
+                ),
+                isLoading: home.loading,
+                // The recommendation feed keeps answering: the pager's next
+                // page asks the feed for its next batch.
+                hasMore: true,
+                onLoadMore: homeController.loadMore,
+                error: home.error,
+                onRetry: () => unawaited(homeController.retry()),
+                onRefresh: homeController.retry,
+                refreshError: home.error,
+                emptyIcon: HongguoView.home.icon,
+                emptyTitle: t.common.empty,
+                emptyDescription: t.hongguo.noResultsDescription,
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
-
-  static String _themeLabel(HongguoFilterRow? row, String id) {
-    if (row == null) return id;
-    for (final option in row.items) {
-      if (option.id == id) return option.name;
-    }
-    return id;
-  }
-}
-
-/// The home shelf's topics in the panel its bar opens: the one dimension that
-/// names the shelf it filters, so its pick goes straight to the shelf behind
-/// the panel and the row's own name says what is on.
-final class _HomeThemePanel extends ConsumerWidget {
-  const _HomeThemePanel({required this.genre, required this.row});
-
-  /// The shelf these topics belong to.
-  final HongguoGenre genre;
-
-  /// The topic row the page is holding.
-  final HongguoFilterRow row;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final controller = ref.read(hongguoBrowseProvider.notifier);
-    final selection =
-        ref.watch(hongguoBrowseProvider.select((feeds) => feeds[genre.name]?.selection)) ?? const <String, String>{};
-    return DsPanel(
-      title: Text(t.hongguo.filterPanelTitle),
-      footer: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Expanded(
-            child: DsButton(
-              variant: DsButtonVariant.secondary,
-              onPressed: selection[row.type] == null ? null : () => unawaited(controller.select(genre, row.type, null)),
-              child: Text(t.hongguo.filterReset),
-            ),
-          ),
-          Expanded(
-            child: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.hongguo.filterDone)),
-          ),
-        ],
-      ),
-      child: HongguoFilterRowView(
-        row: row,
-        selection: selection,
-        onSelect: (id) => unawaited(controller.select(genre, row.type, id)),
-      ),
+        ),
+      ],
     );
   }
 }

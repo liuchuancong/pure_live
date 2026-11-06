@@ -112,22 +112,6 @@ final class HongguoInterfacePane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        DsListSection(
-          header: Text(t.settings.hongguoInterface),
-          children: [
-            // The page's own layer, above the pieces a card draws: one switch
-            // for one element of a fixed layout.
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.image),
-              title: t.hongguo.showHomeBanner,
-              description: t.hongguo.showHomeBannerDesc,
-              control: DsSwitch(
-                value: ref.watch(hongguoHomeBannerProvider),
-                onChanged: (value) => unawaited(ref.read(hongguoHomeBannerProvider.notifier).setShown(value: value)),
-              ),
-            ),
-          ],
-        ),
         // The card's own page opens from here, so the section carries the entry
         // the way this pane's other entries do — without a heading that repeats
         // what the page's own switch list is called.
