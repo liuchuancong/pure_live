@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
@@ -15,8 +16,9 @@ import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// Huya's API search: rooms (`v=4`) and anchors (`v=1`).
-final class HuyaSearchProvider implements LiveSearchProvider {
+/// Huya's API search: rooms (`v=4`) and anchors (`v=1`). The wait for the
+/// answer can be cut: the `cancel` token rides on the request.
+final class HuyaSearchProvider implements LiveCancellableSearch {
   /// Serves [site].
   HuyaSearchProvider({required this.site});
 
@@ -27,7 +29,7 @@ final class HuyaSearchProvider implements LiveSearchProvider {
   Set<LiveSearchTarget> get supportedTargets => const {LiveSearchTarget.rooms, LiveSearchTarget.anchors};
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
+  Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request, {CancelToken? cancel}) async {
     if (!supportedTargets.contains(request.target)) {
       // The contract promises `unsupported` for a target this site does not
       // search, whatever the keyword is — checked before the blank short
@@ -49,6 +51,7 @@ final class HuyaSearchProvider implements LiveSearchProvider {
       final response = await site.httpGet(
         HuyaEndpoints.search(text, version: rooms ? 4 : 1, rows: rows, start: start),
         headers: const {'user-agent': HuyaEndpoints.userAgent},
+        cancel: cancel,
       );
       final items = rooms
           ? HuyaRoomParser.searchRooms(response.text, start: start, rows: rows, status: response.status)
@@ -56,6 +59,8 @@ final class HuyaSearchProvider implements LiveSearchProvider {
       return right(LivePage.of(items: items));
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError(huyaSiteId));
+    } on CancelledFailure catch (failure) {
+      return left(LiveSiteError.cancelled(siteId: huyaSiteId, cause: failure));
     } on Object catch (error) {
       return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }

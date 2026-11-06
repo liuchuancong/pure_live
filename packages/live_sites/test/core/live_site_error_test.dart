@@ -15,6 +15,7 @@ void main() {
         const LiveSiteError.parse(siteId: 'x', message: 'shape changed'),
         const LiveSiteError.authentication(siteId: 'x', message: 'needs a login'),
         const LiveSiteError.contentUnavailable(siteId: 'x', message: 'no stream'),
+        const LiveSiteError.cancelled(siteId: 'x', message: 'given up'),
         const LiveSiteError.invalidArgument(siteId: 'x', message: 'not this site'),
         const LiveSiteError.unexpected(siteId: 'x', message: 'unclassified'),
       ]) {
@@ -56,6 +57,19 @@ void main() {
       );
     });
 
+    test('a cancelled call names the site and says nothing happened to it', () {
+      const given = LiveSiteError.cancelled(siteId: 'x');
+      expect(given.message, isNotEmpty, reason: 'the diagnostic text is never empty');
+      expect(given.isTransient, isFalse, reason: 'a given-up call is not worth re-issuing');
+      expect(given.cause, isNull);
+      expect(
+        const LiveSiteError.cancelled(siteId: 'x', message: 'the viewer left'),
+        isNot(given),
+        reason: 'the message is part of what makes two cancellations the same one',
+      );
+      expect(const LiveSiteError.cancelled(siteId: 'x'), given);
+    });
+
     test('the union still answers a switch by variant', () {
       String nameOf(LiveSiteError error) => switch (error) {
         LiveSiteNotFound() => 'notFound',
@@ -65,6 +79,7 @@ void main() {
         LiveSiteAuthenticationError() => 'authentication',
         LiveSiteRateLimitError() => 'rateLimit',
         LiveSiteContentUnavailable() => 'contentUnavailable',
+        LiveSiteCancelled() => 'cancelled',
         LiveSiteInvalidArgument() => 'invalidArgument',
         LiveSiteUnexpectedError() => 'unexpected',
       };

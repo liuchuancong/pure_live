@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
@@ -19,8 +20,9 @@ import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 /// There is no server search; the matches are what this session's three
 /// lists hold, and `hasMore` says whether the filtered list goes on past the
 /// page. Only rooms are searched — the site has no area or anchor index the
-/// adapter could ask.
-final class InkeSearchProvider implements LiveSearchProvider {
+/// adapter could ask. A first page's wait for the lists can be cut: the
+/// `cancel` token rides on the requests.
+final class InkeSearchProvider implements LiveCancellableSearch {
   /// Serves [site].
   InkeSearchProvider({required this.site});
 
@@ -31,19 +33,21 @@ final class InkeSearchProvider implements LiveSearchProvider {
   Set<LiveSearchTarget> get supportedTargets => const {LiveSearchTarget.rooms};
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
+  Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request, {CancelToken? cancel}) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
         LiveSiteError.unsupported(siteId: inkeSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
-      final page = await site.search(request.query, page: request.page, pageSize: request.pageSize);
+      final page = await site.search(request.query, page: request.page, pageSize: request.pageSize, cancel: cancel);
       return right(
         LivePage.of(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on InkeFailure catch (failure) {
       return left(failure.toLiveSiteError(inkeSiteId));
+    } on CancelledFailure catch (failure) {
+      return left(LiveSiteError.cancelled(siteId: inkeSiteId, cause: failure));
     } on Object catch (error) {
       return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }

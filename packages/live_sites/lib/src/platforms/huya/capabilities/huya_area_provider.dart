@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
@@ -16,8 +17,10 @@ import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
 // ignore_for_file: unnecessary_type_name_in_constructor
 
 /// Huya's areas: the four fixed top-level categories (网游/单机/娱乐/手游) with
-/// their areas, and one `getLiveListByPage` page per area.
-final class HuyaAreaProvider implements LiveAreaProvider {
+/// their areas, and one `getLiveListByPage` page per area. The wait for a
+/// listing's answer can be cut: the `cancel` token rides on the request (the
+/// area tree itself is a near-static lookup and stays uncancellable).
+final class HuyaAreaProvider implements LiveCancellableArea {
   /// Serves [site].
   HuyaAreaProvider({required this.site});
 
@@ -48,6 +51,7 @@ final class HuyaAreaProvider implements LiveAreaProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required LiveArea area,
     LivePageRequest? request,
+    CancelToken? cancel,
   }) async {
     request ??= LivePageRequest();
     try {
@@ -55,11 +59,14 @@ final class HuyaAreaProvider implements LiveAreaProvider {
       final response = await site.httpGet(
         HuyaEndpoints.liveList(page, gameId: area.areaId.trim()),
         headers: site.webHeaders(),
+        cancel: cancel,
       );
       final result = HuyaRoomParser.roomList(response.text, page: page, status: response.status);
       return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError(huyaSiteId));
+    } on CancelledFailure catch (failure) {
+      return left(LiveSiteError.cancelled(siteId: huyaSiteId, cause: failure));
     } on Object catch (error) {
       return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }

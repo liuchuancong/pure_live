@@ -10,7 +10,7 @@ import 'package:meta/meta.dart';
 /// 'message' is diagnostic text for logs and developers; it must never carry
 /// tokens, cookies or signed URLs, and user-facing wording is the
 /// application's business. 'cause' keeps the original error for diagnosis
-/// only. Hand-written sealed, not built_value: the nine-way union is what
+/// only. Hand-written sealed, not built_value: the ten-way union is what
 /// pattern matching wants, and it never persists.
 @immutable
 sealed class LiveSiteError {
@@ -49,6 +49,13 @@ sealed class LiveSiteError {
   /// failure.
   const factory LiveSiteError.contentUnavailable({required String siteId, required String message}) =
       LiveSiteContentUnavailable;
+
+  /// The caller gave up before the answer arrived (a token cancelled through
+  /// the fetch surface, a screen scope disposed mid-flight) — a caller
+  /// decision, not a platform or transport failure. Never thrown on its own:
+  /// only the cancellation surfaces produce it.
+  const factory LiveSiteError.cancelled({required String siteId, String? message, Object? cause}) =
+      LiveSiteCancelled;
 
   /// Creates a LiveSiteError with already-normalized fields.
   const factory LiveSiteError.invalidArgument({required String siteId, required String message}) =
@@ -221,6 +228,27 @@ final class LiveSiteContentUnavailable extends LiveSiteError {
   @override
   bool operator ==(Object other) =>
       other is LiveSiteContentUnavailable && other.siteId == siteId && other.message == message;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, siteId, message);
+}
+
+/// The caller gave up before the answer arrived.
+///
+/// Produced by the cancellation surfaces (the fetch scope and the
+/// cancellable entry points of `live_site_cancellation.dart`) once a call's
+/// token was set — before the call went out or after the answer had come
+/// back. It is a caller decision, not a failure: `isTransient` is false
+/// because re-issuing a given-up call serves nobody, and an automatic retry
+/// or an error banner would both be wrong.
+@immutable
+final class LiveSiteCancelled extends LiveSiteError {
+  /// A cancelled call; [message] names the default when left out.
+  const LiveSiteCancelled({required String siteId, String? message, Object? cause})
+    : super._(siteId, message ?? 'the caller cancelled the call', cause);
+
+  @override
+  bool operator ==(Object other) => other is LiveSiteCancelled && other.siteId == siteId && other.message == message;
 
   @override
   int get hashCode => Object.hash(runtimeType, siteId, message);

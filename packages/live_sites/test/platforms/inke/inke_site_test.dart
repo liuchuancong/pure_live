@@ -2,13 +2,17 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_status_check.dart';
+import 'package:live_sites/src/core/live_site_cancellation.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/platforms/inke/api/inke_endpoints.dart';
 import 'package:live_sites/src/platforms/inke/api/inke_http.dart';
 import 'package:live_sites/src/platforms/inke/inke_site.dart';
@@ -28,15 +32,39 @@ final class _Http implements LiveHttp {
 
   final String Function(Uri url) answer;
   final asked = <Uri>[];
+  final requests = <LiveRequest>[];
 
   @override
   Future<LiveResponse> send(LiveRequest request) async {
     asked.add(request.url);
+    requests.add(request);
     return LiveResponse(
       statusCode: 200,
       headers: const {'content-type': 'application/json; charset=utf-8'},
       bodyBytes: Uint8List.fromList(utf8.encode(answer(request.url))),
     );
+  }
+
+  @override
+  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
+
+  @override
+  void close() {}
+}
+
+/// A transport that never answers on its own: the wait ends only when the
+/// request's own token is cancelled (or was already), as an interrupted
+/// transport would.
+final class _HangingHttp implements LiveHttp {
+  final requests = <LiveRequest>[];
+
+  @override
+  Future<LiveResponse> send(LiveRequest request) async {
+    requests.add(request);
+    final token = request.cancelToken;
+    if (token.isCancelled) throw const CancelledFailure();
+    await token.whenCancel;
+    throw const CancelledFailure();
   }
 
   @override
@@ -252,6 +280,53 @@ void main() {
       )).getOrElse((error) => fail('$error'));
       expect(fresh.single.url, _pull('c'));
       expect(http.asked, hasLength(2));
+    });
+  });
+
+  group('cancellation', () {
+    test("the caller's token rides on the request and the answer passes", () async {
+      final http = _Http(_site());
+      final site = InkeSite(http: InkeHttp(http));
+      final token = CancelToken();
+
+      final answer = await site.fetchRecommended(cancel: token);
+      expect(answer!.isRight(), isTrue);
+      expect(http.requests, hasLength(1));
+      expect(identical(http.requests.single.cancelToken, token), isTrue, reason: 'the very token rides on the request');
+    });
+
+    test('a cancelled wait is interrupted and reported as cancelled', () async {
+      final http = _HangingHttp();
+      final site = InkeSite(http: InkeHttp(http));
+      final token = CancelToken();
+
+      final answer = site.fetchSearch(LiveSearchRequest.of(query: 'ann', target: LiveSearchTarget.rooms), cancel: token);
+      expect(http.requests, isNotEmpty, reason: 'the search asked its first list');
+      token.cancel();
+      expect((await answer)!.getLeft().toNullable(), isA<LiveSiteCancelled>());
+      expect(http.requests.every((request) => request.cancelToken.isCancelled), isTrue);
+    });
+
+    test('a token set before the call stops at the transport', () async {
+      final http = _HangingHttp();
+      final site = InkeSite(http: InkeHttp(http));
+      final provider = site.capability<LiveDiscoveryProvider>()! as LiveCancellableDiscovery;
+      final token = CancelToken()..cancel();
+
+      final answer = await provider.getRecommendedRooms(cancel: token);
+      expect(answer.getLeft().toNullable(), isA<LiveSiteCancelled>());
+      expect(http.requests.single.cancelToken.isCancelled, isTrue, reason: 'the request carried the token and was refused');
+    });
+
+    test("a scope ends the site's calls and waits for them to settle", () async {
+      final http = _HangingHttp();
+      final site = InkeSite(http: InkeHttp(http));
+      final scope = LiveFetchScope();
+
+      final answer = scope.recommended(site);
+      await scope.dispose();
+      expect((await answer)!.getLeft().toNullable(), isA<LiveSiteCancelled>());
+      expect(http.requests.single.cancelToken.isCancelled, isTrue);
     });
   });
 }

@@ -4,6 +4,7 @@ import 'dart:math';
 // is the contract here (ARCHITECTURE.md §4.1).
 // ignore_for_file: switch_on_type
 
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
@@ -161,9 +162,10 @@ final class HuyaSite implements LiveSite {
   @override
   Future<void> dispose() async => http.close();
 
-  /// GETs [url] with [headers] (the capabilities' transport).
-  Future<({String text, int status})> httpGet(Uri url, {Map<String, String> headers = const {}}) =>
-      http.get(url, headers: headers);
+  /// GETs [url] with [headers] (the capabilities' transport); [cancel] ends
+  /// the wait for the answer.
+  Future<({String text, int status})> httpGet(Uri url, {Map<String, String> headers = const {}, CancelToken? cancel}) =>
+      http.get(url, headers: headers, cancel: cancel);
 
   /// POSTs [json] as a JSON body.
   Future<({String text, int status})> httpPostJson(

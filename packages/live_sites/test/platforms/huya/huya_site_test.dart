@@ -5,7 +5,11 @@ import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_search_provider.dart';
+import 'package:live_sites/src/core/live_site_cancellation.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/enums/live_search_target.dart';
+import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_playback_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_room_provider.dart';
@@ -115,6 +119,28 @@ final class _Api implements LiveHttp {
   void close() {}
 }
 
+/// A transport that never answers on its own: the wait ends only when the
+/// request's own token is cancelled (or was already), as an interrupted
+/// transport would.
+final class _Hanging implements LiveHttp {
+  final requests = <LiveRequest>[];
+
+  @override
+  Future<LiveResponse> send(LiveRequest request) async {
+    requests.add(request);
+    final token = request.cancelToken;
+    if (token.isCancelled) throw const CancelledFailure();
+    await token.whenCancel;
+    throw const CancelledFailure();
+  }
+
+  @override
+  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
+
+  @override
+  void close() {}
+}
+
 HuyaSite _site(_Api api) => HuyaSite(http: HuyaHttp(api), loginCookie: () => 'yyuid=123456;', now: () => _now);
 
 void main() {
@@ -162,6 +188,45 @@ void main() {
       expect(api.profileReads, 2, reason: 'the fresh read is what says the room is off air');
       expect(api.tokenReads, 1, reason: 'no token is asked for a room that cannot play');
       expect(api.asked, hasLength(3));
+    });
+  });
+
+  group('cancellation', () {
+    test("the caller's token rides on the request and the answer passes", () async {
+      final http = _Hanging();
+      final site = HuyaSite(http: HuyaHttp(http), loginCookie: () => 'yyuid=123456;', now: () => _now);
+      final token = CancelToken();
+
+      final answer = site.fetchRecommended(cancel: token);
+      expect(http.requests, isNotEmpty, reason: 'the feed asked its page');
+      token.cancel();
+      expect((await answer)!.getLeft().toNullable(), isA<LiveSiteCancelled>());
+      expect(identical(http.requests.single.cancelToken, token), isTrue, reason: 'the very token rides on the request');
+    });
+
+    test('a token set before the call stops at the transport', () async {
+      final http = _Hanging();
+      final site = HuyaSite(http: HuyaHttp(http), loginCookie: () => 'yyuid=123456;', now: () => _now);
+      final provider = site.capability<LiveSearchProvider>()! as LiveCancellableSearch;
+      final token = CancelToken()..cancel();
+
+      final answer = await provider.search(
+        LiveSearchRequest.of(query: 'ann', target: LiveSearchTarget.rooms),
+        cancel: token,
+      );
+      expect(answer.getLeft().toNullable(), isA<LiveSiteCancelled>());
+      expect(http.requests.single.cancelToken.isCancelled, isTrue, reason: 'the request carried the token and was refused');
+    });
+
+    test("a scope ends the site's calls and waits for them to settle", () async {
+      final http = _Hanging();
+      final site = HuyaSite(http: HuyaHttp(http), loginCookie: () => 'yyuid=123456;', now: () => _now);
+      final scope = LiveFetchScope();
+
+      final answer = scope.search(site, LiveSearchRequest.of(query: 'ann', target: LiveSearchTarget.rooms));
+      await scope.dispose();
+      expect((await answer)!.getLeft().toNullable(), isA<LiveSiteCancelled>());
+      expect(http.requests.single.cancelToken.isCancelled, isTrue);
     });
   });
 }

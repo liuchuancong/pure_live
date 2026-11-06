@@ -2,6 +2,7 @@
 // is the contract here (ARCHITECTURE.md §4.1).
 // ignore_for_file: switch_on_type
 
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -133,16 +134,17 @@ final class InkeSite implements LiveSite {
   /// showcase — one page each. A page after the first is empty, without a
   /// request. A page below 1 is a caller error; an id that is neither the top
   /// list nor a channel key is a caller error too, and a listed channel the
-  /// showcase does not hold is not-found.
-  Future<({List<LiveRoom> rooms, bool hasMore})> areaRooms(String areaId, {int page = 1}) async {
+  /// showcase does not hold is not-found. [cancel] ends the wait for the
+  /// answer.
+  Future<({List<LiveRoom> rooms, bool hasMore})> areaRooms(String areaId, {int page = 1, CancelToken? cancel}) async {
     if (page < 1) throw InkeFailure(InkeFailureKind.invalidArgument, 'page $page is below 1');
     if (page > 1) return (rooms: const <LiveRoom>[], hasMore: false);
     if (areaId == InkeEndpoints.topAreaId) {
-      final response = await http.get(InkeEndpoints.topUrl);
+      final response = await http.get(InkeEndpoints.topUrl, cancel: cancel);
       return (rooms: InkeRoomParser.topPage(response.text, status: response.status), hasMore: false);
     }
     if (InkeEndpoints.isChannelKey(areaId)) {
-      final response = await http.get(InkeEndpoints.channelsUrl);
+      final response = await http.get(InkeEndpoints.channelsUrl, cancel: cancel);
       return (
         rooms: InkeRoomParser.channelPage(response.text, tabKey: areaId, status: response.status),
         hasMore: false,
@@ -153,11 +155,11 @@ final class InkeSite implements LiveSite {
 
   /// The app's hot list (the recommendations and the directory): one page. A
   /// page after the first is empty, without a request; a page below 1 is a
-  /// caller error.
-  Future<({List<LiveRoom> rooms, bool hasMore})> hot({int page = 1}) async {
+  /// caller error. [cancel] ends the wait for the answer.
+  Future<({List<LiveRoom> rooms, bool hasMore})> hot({int page = 1, CancelToken? cancel}) async {
     if (page < 1) throw InkeFailure(InkeFailureKind.invalidArgument, 'page $page is below 1');
     if (page > 1) return (rooms: const <LiveRoom>[], hasMore: false);
-    final response = await http.get(InkeEndpoints.hotUrl);
+    final response = await http.get(InkeEndpoints.hotUrl, cancel: cancel);
     return (rooms: InkeRoomParser.hotPage(response.text, status: response.status), hasMore: false);
   }
 
@@ -175,8 +177,13 @@ final class InkeSite implements LiveSite {
   ///   [snapshotLifetime]). The hot list failing leaves its rooms out. A
   ///   page over 10000, a page size over 60 or a keyword over 100
   ///   characters is refused without a request, as the reference refused
-  ///   them.
-  Future<({List<LiveRoom> rooms, bool? hasMore})> search(String keyword, {int page = 1, int pageSize = 30}) async {
+  ///   them. [cancel] ends the wait for the lists' answers.
+  Future<({List<LiveRoom> rooms, bool? hasMore})> search(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) async {
     if (page < 1) throw InkeFailure(InkeFailureKind.invalidArgument, 'page $page is below 1');
     if (pageSize < 1) throw InkeFailure(InkeFailureKind.invalidArgument, 'page size $pageSize is below 1');
     final input = keyword.trim();
@@ -202,13 +209,13 @@ final class InkeSite implements LiveSite {
     }
     if (input.isEmpty) return (rooms: const <LiveRoom>[], hasMore: null);
     final fresh = page == 1;
-    final top = await _list(InkeEndpoints.topUrl, fresh: fresh);
+    final top = await _list(InkeEndpoints.topUrl, fresh: fresh, cancel: cancel);
     final showcase = InkeRoomParser.topPage(top.text, status: top.status);
-    final channels = await _list(InkeEndpoints.channelsUrl, fresh: fresh);
+    final channels = await _list(InkeEndpoints.channelsUrl, fresh: fresh, cancel: cancel);
     final channelRooms = InkeRoomParser.channelRooms(channels.text, status: channels.status);
     List<LiveRoom> hot;
     try {
-      final response = await _list(InkeEndpoints.hotUrl, fresh: fresh);
+      final response = await _list(InkeEndpoints.hotUrl, fresh: fresh, cancel: cancel);
       hot = InkeRoomParser.hotPage(response.text, status: response.status);
     } on InkeFailure {
       hot = const <LiveRoom>[];
@@ -224,15 +231,16 @@ final class InkeSite implements LiveSite {
 
   /// A list endpoint's answer: [fresh] (a first page) asks anew and keeps a
   /// successful answer as the snapshot; otherwise a snapshot younger than
-  /// [snapshotLifetime] is reused.
-  Future<InkeResponse> _list(Uri url, {required bool fresh}) async {
+  /// [snapshotLifetime] is reused. [cancel] ends the wait for a fetched
+  /// answer.
+  Future<InkeResponse> _list(Uri url, {required bool fresh, CancelToken? cancel}) async {
     final key = '$url';
     if (!fresh) {
       final snapshot = _snapshots[key];
       final age = snapshot == null ? null : _now().difference(snapshot.at);
       if (snapshot != null && age != null && !age.isNegative && age < snapshotLifetime) return snapshot.response;
     }
-    final response = await http.get(url);
+    final response = await http.get(url, cancel: cancel);
     if (response.status == 200) _snapshots[key] = (at: _now(), response: response);
     return response;
   }

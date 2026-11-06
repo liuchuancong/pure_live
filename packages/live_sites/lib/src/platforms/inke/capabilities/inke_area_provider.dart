@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
@@ -19,8 +20,10 @@ import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 /// The catalog comes from `Live_channel_pc`; its areas carry the one
 /// category 映客 as their parent. Another area id is a caller error, never
 /// an empty page, and a listed channel the showcase does not hold is
-/// not-found.
-final class InkeAreaProvider implements LiveAreaProvider {
+/// not-found. The wait for a listing's answer can be cut: the `cancel`
+/// token rides on the request (the area tree itself is a near-static
+/// lookup and stays uncancellable).
+final class InkeAreaProvider implements LiveCancellableArea {
   /// Serves [site].
   InkeAreaProvider({required this.site});
 
@@ -42,13 +45,16 @@ final class InkeAreaProvider implements LiveAreaProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required LiveArea area,
     LivePageRequest? request,
+    CancelToken? cancel,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.areaRooms(area.areaId, page: request.page);
+      final page = await site.areaRooms(area.areaId, page: request.page, cancel: cancel);
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on InkeFailure catch (failure) {
       return left(failure.toLiveSiteError(inkeSiteId));
+    } on CancelledFailure catch (failure) {
+      return left(LiveSiteError.cancelled(siteId: inkeSiteId, cause: failure));
     } on Object catch (error) {
       return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }

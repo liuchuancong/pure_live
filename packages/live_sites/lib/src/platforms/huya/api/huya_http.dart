@@ -21,8 +21,9 @@ final class HuyaHttp {
   final LiveHttp http;
 
   /// GETs [url] with [headers]; bad statuses are ordinary answers — the
-  /// parsers decide what 403/422/429/5xx mean for their endpoint.
-  Future<({String text, int status})> get(Uri url, {Map<String, String> headers = const {}}) async {
+  /// parsers decide what 403/422/429/5xx mean for their endpoint. [cancel]
+  /// ends the wait for the answer.
+  Future<({String text, int status})> get(Uri url, {Map<String, String> headers = const {}, CancelToken? cancel}) async {
     try {
       final response = await http.send(
         LiveRequest.custom(
@@ -30,6 +31,7 @@ final class HuyaHttp {
           site: huyaSiteId,
           url: url,
           headers: headers,
+          cancelToken: cancel,
           timeout: HuyaEndpoints.requestTimeout,
         ),
       );
