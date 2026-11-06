@@ -90,18 +90,14 @@ final class RoomCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = DsTheme.of(context);
+    // Everything the card draws that is a fact about the app — the saved
+    // visibility, the figure's reading, the followed state, the platform's
+    // mark — resolves here, and the view below takes plain values. The view
+    // renders without a store (tests, samples, a surface without Riverpod),
+    // and these watches stay the only rebuild paths.
     final visibility = ref.watch(roomCardSettingsProvider).visibility;
     final site = ref.read(sitesProvider).getById(room.ref.platform);
-    final title = room.content.title;
-    final anchorName = (room.anchor?.name ?? '').trim();
-    final avatarUrl = (room.anchor?.avatarUrl ?? '').trim();
-    final area = (room.area?.areaName ?? '').trim();
     final figure = audienceFigureOf(room, ref.watch(audienceMetricProvider), policy: ref.watch(audiencePolicyProvider));
-    final radius = BorderRadius.circular(theme.radii.card);
-    final platformIcon = localizedSiteIcon(site, size: 18);
-    final platformName = site == null ? '' : localizedSiteShortName(site);
-    final image = cover ?? cachedImage(room.content.coverUrl, policy: ImageCachePolicies.liveRoomCover);
     // The preview's sample draws the followed heart without a store lookup:
     // that is the state worth showing, and the page must not follow anything.
     final followed =
@@ -114,6 +110,102 @@ final class RoomCard extends ConsumerWidget {
     final onFollow = followable
         ? () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey))
         : null;
+    return RoomCardView(
+      room: room,
+      onOpen: onOpen,
+      listRow: listRow,
+      cover: cover,
+      tags: tags,
+      cornerNote: cornerNote,
+      onRemove: onRemove,
+      removeLabel: removeLabel,
+      visibility: visibility,
+      figure: figure,
+      followed: followed,
+      onFollow: onFollow,
+      platformIcon: localizedSiteIcon(site, size: 18),
+      platformName: site == null ? '' : localizedSiteShortName(site),
+    );
+  }
+}
+
+/// The room card's rendering over plain values: no store, no provider — the
+/// resolver in [RoomCard] hands the saved visibility, the audience figure,
+/// the followed state and the platform's mark in, and this draws them. The
+/// two designs — the grid tile and the list row — are fixed here; the
+/// visibility decides which pieces of information they draw.
+final class RoomCardView extends StatelessWidget {
+  /// Draws [room] with the resolved values; the parameters mean what
+  /// [RoomCard]'s do.
+  const RoomCardView({
+    required this.room,
+    required this.visibility,
+    required this.figure,
+    required this.followed,
+    required this.platformIcon,
+    required this.platformName,
+    this.onFollow,
+    this.onOpen,
+    this.listRow = false,
+    this.cover,
+    this.tags = const [],
+    this.cornerNote,
+    this.onRemove,
+    this.removeLabel,
+    super.key,
+  });
+
+  /// The room shown.
+  final LiveRoom room;
+
+  /// The saved appearance: which pieces of information the card draws.
+  final RoomCardVisibility visibility;
+
+  /// The audience figure as the viewer's metric choice reads it.
+  final int? figure;
+
+  /// Whether the room is followed; the grid tile draws the heart for it.
+  final bool followed;
+
+  /// The follow toggle; null leaves the heart inert (or absent).
+  final VoidCallback? onFollow;
+
+  /// The platform's mark and name, as the site registry reads them.
+  final Widget? platformIcon;
+  final String platformName;
+
+  /// Fired when the card is opened.
+  final VoidCallback? onOpen;
+
+  /// Whether this is the feed's list layout, not its grid.
+  final bool listRow;
+
+  /// The picture over [room]'s own cover, when a caller brings one.
+  final ImageProvider<Object>? cover;
+
+  /// The follow tags the card draws under its meta line, joined by " · ".
+  final List<String> tags;
+
+  /// A short line in the cover's bottom-right corner in place of the
+  /// audience figure.
+  final String? cornerNote;
+
+  /// Drops the room from the page that shows it, drawn as a ✕.
+  final VoidCallback? onRemove;
+
+  /// The ✕'s accessible name; the common "delete" when the page has no
+  /// wording of its own.
+  final String? removeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final title = room.content.title;
+    final anchorName = (room.anchor?.name ?? '').trim();
+    final avatarUrl = (room.anchor?.avatarUrl ?? '').trim();
+    final area = (room.area?.areaName ?? '').trim();
+    final radius = BorderRadius.circular(theme.radii.card);
+    final image = cover ?? cachedImage(room.content.coverUrl, policy: ImageCachePolicies.liveRoomCover);
     // A feed already assumes a live room is on air, so the cover only names
     // the exception a viewer cannot see: a recording.
     final showsState = visibility.shows(RoomCardElement.status) && room.broadcast.isRecord;
