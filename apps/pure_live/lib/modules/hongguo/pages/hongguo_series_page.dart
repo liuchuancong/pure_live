@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show AppBar, Scaffold;
+import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -120,24 +120,26 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     final detail = _detail;
     return Scaffold(
       backgroundColor: colors.surface,
-      appBar: AppBar(
-        backgroundColor: colors.surface,
-        surfaceTintColor: const Color(0x00000000),
-        elevation: 0,
-        title: Text(detail?.meta.title ?? t.hongguo.opening, maxLines: 1, overflow: TextOverflow.ellipsis),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PageHeader(title: detail?.meta.title ?? t.hongguo.opening),
+          Expanded(
+            child: _loading && detail == null
+                ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+                : _error != null && detail == null
+                ? Center(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.cloudOff),
+                      title: Text(t.hongguo.loadFailed),
+                      description: Text(_error!),
+                      actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
+                    ),
+                  )
+                : _body(context, detail, t),
+          ),
+        ],
       ),
-      body: _loading && detail == null
-          ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
-          : _error != null && detail == null
-          ? Center(
-              child: DsEmptyState(
-                icon: const DsIcon(DsIcons.cloudOff),
-                title: Text(t.hongguo.loadFailed),
-                description: Text(_error!),
-                actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
-              ),
-            )
-          : _body(context, detail, t),
     );
   }
 
