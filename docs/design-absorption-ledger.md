@@ -25,11 +25,11 @@
 - ✅ 观众数分层排序键（575936a0a；B 站 1 值回退进 mergedWith 与进房）：档位 3 在线/2 可在线/1 热度/0 无，identityKey 稳定兜底；B 站详情=1 且前值≥1000 回退旧值。参考 `audience.dart:310-345`、`live_room.dart:506-575`。
 
 ## W4 播放健壮性（media_core）
-- ⬜ 恢复阶梯预算/记忆/节奏：刷新→换线→重建播放器→降软解→延时重试轮，预算每轮重置、稳定 30s 恢复；平台明确拒绝直接终止。参考 `session.dart:1448-1622`、`fallback.dart:4-54`。
-- ⬜ 位置推进=健康：缓冲标志卡住但位置在墙钟+2s 容差内推进→替引擎结束缓冲；静止 4s 提示"重连(第 N 次)"、12s 判失败；恢复计数 30s 稳定清零。参考 `session.dart:1129-1320`。
-- ⬜ 原生日志诊断门：非故障白名单、打开期扣留到新源起播、1.2s 撤销窗、2s 去重、分类前剥 URL。参考 `diagnostics.dart`。
-- ⬜ 有界释放：stop/dispose 限时 5s、在途释放≥2 拒绝新建、open 超时退役引擎、引擎闲置保留 45s。参考 `session.dart:583-792`。
-- ⬜ 断网态机：刷新无应答(连接/TLS/超时)=断网，不切线不扣预算，2s 探测、20s 宽限发布 network_lost，恢复即新预算重开原线路。参考 `session.dart:1632-1735`。
+- ✅ 恢复阶梯预算/记忆/节奏：刷新→换线→重建播放器→降软解→延时重试轮（750ms/2s），预算每轮重置、稳定 30s 恢复；平台明确拒绝直接终止。参考 `session.dart:1448-1622`、`fallback.dart:4-54`。落 media_core recovery_ladder+sweep e514db6。
+- ✅ 位置推进=健康：互证结束缓冲（位置墙钟+2s 或 1s 内 10 帧）+静止 4s 提示档 positionStallNotice、15s 判死、恢复计数经 onRecoveryChanged 公开、30s 稳定清零。参考 `session.dart:1129-1320`。落 media_core sweep+watchdog_arms e514db6。app 接线待做：room 订阅 onRecoveryChanged 渲染"重连(第 N 次)"。
+- ✅ 原生日志诊断门：非故障白名单、打开期扣留到新源起播、1.2s 撤销窗、2s 去重、分类前剥 URL。参考 `diagnostics.dart`。落 media_core media_kit 适配层 074981b。
+- ✅ 有界释放：stop/dispose 限时 5s、在途释放≥2 拒绝新建、open 超时退役引擎。参考 `session.dart:583-792`。落 player_kernel 074981b；闲置保留 45s v2 引擎池已有等价。
+- ✅ 断网态机：传输层无应答=断网不切线不扣预算，2s 探测、20s 宽限发布 networkUnavailable，恢复即新预算重开原线；断网期引擎错误/停滞忽略。参考 `session.dart:1632-1735`。落 media_core sweep e514db6。app 接线缺口：room lineResolver 现把网络类错误 fold 成空列表，应让网络类上抛、只留业务拒绝。
 
 ## W5 多画面与录制 UX
 - 🟡 多画面预算（c6827016a）：✅ 小格最低清晰度/晋升换质（tap 升格+原大格回落）/进页"恢复上次？"提议制（拒绝=清文档）；⬜ 隐藏格停解码（v2 各布局全可见无消费者）与单弹幕连接（v2 多画面尚无弹幕）。参考 `multiview_controller.dart:857-871`、`wall.dart:85-101`。
