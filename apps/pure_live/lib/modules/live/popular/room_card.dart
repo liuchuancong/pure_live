@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
@@ -100,7 +101,7 @@ final class RoomCard extends ConsumerWidget {
     final radius = BorderRadius.circular(theme.radii.card);
     final platformIcon = localizedSiteIcon(site, size: 18);
     final platformName = site == null ? '' : localizedSiteShortName(site);
-    final image = cover ?? cachedImage(room.content.coverUrl);
+    final image = cover ?? cachedImage(room.content.coverUrl, policy: ImageCachePolicies.liveRoomCover);
     // The preview's sample draws the followed heart without a store lookup:
     // that is the state worth showing, and the page must not follow anything.
     final followed =
@@ -272,7 +273,7 @@ final class _GridInfo extends StatelessWidget {
           if (visibility.shows(RoomCardElement.avatar))
             DsAvatar(
               initials: avatarInitials(anchorName.isEmpty ? title : anchorName),
-              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+              image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
               size: DsSize.md,
               semanticLabel: anchorName.isEmpty ? title : anchorName,
             ),
@@ -365,7 +366,7 @@ final class _ListRow extends StatelessWidget {
               if (showsAvatar)
                 DsAvatar(
                   initials: avatarInitials(anchorName.isEmpty ? title : anchorName),
-                  image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                  image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
                   size: DsSize.lg,
                   semanticLabel: anchorName.isEmpty ? title : anchorName,
                 ),
@@ -395,7 +396,14 @@ final class _ListRow extends StatelessWidget {
                         children: [
                           if (showsAudience) DsIcon(DsIcons.flame, size: 12, color: colors.textSubtle),
                           if (showsAudience)
-                            Text(AudienceFormat.format(figure), style: theme.typography.numeric(caption)),
+                            Flexible(
+                              child: Text(
+                                AudienceFormat.format(figure),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.numeric(caption),
+                              ),
+                            ),
                           if (showsAudience && showsNote) dot,
                           if (showsNote)
                             Flexible(

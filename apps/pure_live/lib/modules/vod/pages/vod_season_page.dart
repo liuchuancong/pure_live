@@ -8,6 +8,7 @@ import 'package:flutter/services.dart'
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
@@ -781,7 +782,7 @@ final class _SeasonHead extends StatelessWidget {
                     fallback
                   else
                     DsImage(
-                      image: cachedImage(cover),
+                      image: cachedImage(cover, policy: ImageCachePolicies.videoCover),
                       aspectRatio: 3 / 4,
                       semanticLabel: season.title,
                       fallback: fallback,
@@ -1250,6 +1251,6 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
     final fallback = CoverFallback(title: episode.title, padding: const EdgeInsets.all(DsSpace.s8));
     final url = episode.coverUrl;
     if (url == null || url.isEmpty) return fallback;
-    return DsImage(image: cachedImage(url), aspectRatio: 16 / 9, semanticLabel: episode.title, fallback: fallback);
+    return DsImage(image: cachedImage(url, policy: ImageCachePolicies.videoCover), aspectRatio: 16 / 9, semanticLabel: episode.title, fallback: fallback);
   }
 }

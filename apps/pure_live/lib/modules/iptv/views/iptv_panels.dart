@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvProgrammeSlot;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
@@ -110,7 +111,7 @@ final class IptvChannelLogo extends StatelessWidget {
     if (logo.isEmpty) return mark;
     return ClipOval(
       child: DsImage(
-        image: cachedImage(logo),
+        image: cachedImage(logo, policy: ImageCachePolicies.channelLogo),
         width: box,
         height: box,
         fit: BoxFit.contain,

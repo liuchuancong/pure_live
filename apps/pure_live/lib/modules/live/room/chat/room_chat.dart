@@ -7,6 +7,7 @@ import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account_pane.dart' show AccountQrExit, showAccountSignInAlternative;
@@ -744,7 +745,7 @@ final class _ChatLine extends ConsumerWidget {
               child: DsAvatar(
                 image: avatarUrl.isEmpty
                     ? null
-                    : cachedImage(avatarUrl, width: (avatarSize * 2).round(), height: (avatarSize * 2).round()),
+                    : cachedImage(avatarUrl, policy: ImageCachePolicies.userAvatar, width: (avatarSize * 2).round(), height: (avatarSize * 2).round()),
                 initials: avatarInitials(senderName),
                 toneIndex: DsAvatar.toneFor(senderName),
                 semanticLabel: senderName,
@@ -1181,7 +1182,7 @@ final class _BadgeImage extends StatelessWidget {
       height: height,
       width: height * 1.5,
       child: Image(
-        image: cachedImage(url, height: (height * 2).round()),
+        image: cachedImage(url, policy: ImageCachePolicies.chatEmote, height: (height * 2).round()),
         fit: BoxFit.contain,
         errorBuilder: (_, _, _) => const SizedBox.shrink(),
       ),
@@ -1260,7 +1261,7 @@ final class _PlatformEmote extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 1),
     child: Image(
-      image: cachedImage(url, height: size.round()),
+      image: cachedImage(url, policy: ImageCachePolicies.chatEmote, height: size.round()),
       height: size,
       errorBuilder: (context, error, stackTrace) => Text(code, style: style),
     ),
@@ -1315,7 +1316,7 @@ final class _GiftIcon extends StatelessWidget {
     final uri = Uri.tryParse(url);
     if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return fallback;
     return Image(
-      image: cachedImage(url, width: (size * 2).round(), height: (size * 2).round()),
+      image: cachedImage(url, policy: ImageCachePolicies.chatEmote, width: (size * 2).round(), height: (size * 2).round()),
       width: size,
       height: size,
       fit: BoxFit.contain,
@@ -1451,7 +1452,7 @@ final class _SuperChatCard extends StatelessWidget {
           if (!membership)
             DsAvatar(
               initials: avatarInitials(name),
-              image: face.isEmpty ? null : cachedImage(face),
+              image: face.isEmpty ? null : cachedImage(face, policy: ImageCachePolicies.userAvatar),
               size: DsSize.sm,
               semanticLabel: name,
             ),

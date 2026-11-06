@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter, Logical
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
@@ -2186,7 +2187,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               children: [
                 DsAvatar(
                   initials: avatarInitials(uploader),
-                  image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
+                  image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
                   size: DsSize.sm,
                   toneIndex: DsAvatar.toneFor(uploader),
                   semanticLabel: uploader,
@@ -2587,7 +2588,7 @@ final class _CommentRow extends StatelessWidget {
         children: [
           DsAvatar(
             initials: avatarInitials(comment.author),
-            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
+            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
             size: DsSize.sm,
             toneIndex: DsAvatar.toneFor(comment.author),
             semanticLabel: comment.author,

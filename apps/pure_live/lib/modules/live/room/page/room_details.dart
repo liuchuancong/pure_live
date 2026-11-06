@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -127,7 +128,7 @@ final class _Streamer extends ConsumerWidget {
       children: [
         DsAvatar(
           initials: avatarInitials(name),
-          image: avatar.isEmpty ? null : cachedImage(avatar),
+          image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
           size: DsSize.md,
           semanticLabel: name,
         ),

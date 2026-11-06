@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart'
@@ -461,7 +462,7 @@ final class _VodTaskRow extends ConsumerWidget {
           ? null
           : DsAvatar(
               initials: avatarInitials(task.title),
-              image: task.cover.isEmpty ? null : cachedImage(task.cover),
+              image: task.cover.isEmpty ? null : cachedImage(task.cover, policy: ImageCachePolicies.videoCover),
               size: DsSize.md,
               toneIndex: DsAvatar.toneFor(task.id),
               semanticLabel: preview,
@@ -1201,7 +1202,7 @@ final class _VodArchiveHead extends ConsumerWidget {
                 width: 28,
                 height: 28,
                 child: DsImage(
-                  image: cachedImage(group.cover),
+                  image: cachedImage(group.cover, policy: ImageCachePolicies.videoCover),
                   aspectRatio: 1,
                   semanticLabel: group.title,
                   fallback: ColoredBox(color: colors.control),

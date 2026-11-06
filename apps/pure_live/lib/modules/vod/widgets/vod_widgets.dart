@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_card_settings.dart';
@@ -194,7 +195,7 @@ final class VodVideoCard extends ConsumerWidget {
     final fallback = CoverFallback(title: video.title, padding: const EdgeInsets.all(DsSpace.s8));
     final url = video.coverUrl;
     if (url == null || url.isEmpty) return fallback;
-    return DsImage(image: cachedImage(url), aspectRatio: 16 / 9, semanticLabel: video.title, fallback: fallback);
+    return DsImage(image: cachedImage(url, policy: ImageCachePolicies.videoCover), aspectRatio: 16 / 9, semanticLabel: video.title, fallback: fallback);
   }
 }
 
@@ -496,7 +497,7 @@ final class VodSeasonCard extends ConsumerWidget {
                     fallback
                   else
                     DsImage(
-                      image: cachedImage(cover),
+                      image: cachedImage(cover, policy: ImageCachePolicies.videoCover),
                       aspectRatio: 3 / 4,
                       semanticLabel: season.title,
                       fallback: fallback,
@@ -687,7 +688,7 @@ final class VodSeasonHead extends StatelessWidget {
     final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
     final url = season.coverUrl;
     if (url == null || url.isEmpty) return fallback;
-    return DsImage(image: cachedImage(url), aspectRatio: 3 / 4, semanticLabel: season.title, fallback: fallback);
+    return DsImage(image: cachedImage(url, policy: ImageCachePolicies.videoCover), aspectRatio: 3 / 4, semanticLabel: season.title, fallback: fallback);
   }
 }
 
@@ -777,7 +778,7 @@ final class VodDynamicRow extends StatelessWidget {
         children: [
           DsAvatar(
             initials: avatarInitials(post.author),
-            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
+            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
             size: DsSize.sm,
             toneIndex: DsAvatar.toneFor(post.author),
             semanticLabel: post.author,
@@ -822,7 +823,7 @@ final class VodDynamicRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(theme.radii.control(72)),
                 child: AspectRatio(
                   aspectRatio: 16 / 9,
-                  child: DsImage(image: cachedImage(cover), aspectRatio: 16 / 9, semanticLabel: post.author),
+                  child: DsImage(image: cachedImage(cover, policy: ImageCachePolicies.videoCover), aspectRatio: 16 / 9, semanticLabel: post.author),
                 ),
               ),
             ),
@@ -868,7 +869,7 @@ final class VodUserRow extends StatelessWidget {
         children: [
           DsAvatar(
             initials: avatarInitials(user.name),
-            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
+            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
             size: DsSize.sm,
             toneIndex: DsAvatar.toneFor('${user.mid}'),
             semanticLabel: user.name,

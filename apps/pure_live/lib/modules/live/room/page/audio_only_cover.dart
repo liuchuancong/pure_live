@@ -1,5 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 
 import 'package:pure_live/l10n/translations.dart';
@@ -47,7 +48,7 @@ final class AudioOnlyCover extends StatelessWidget {
                                 child: Center(child: DsIcon(DsIcons.user, size: 32, color: Color(0x66FFFFFF))),
                               )
                             : Image(
-                                image: cachedImage(avatar, width: size.toInt(), height: size.toInt()),
+                                image: cachedImage(avatar, policy: ImageCachePolicies.avatar, width: size.toInt(), height: size.toInt()),
                                 fit: BoxFit.cover,
                               ),
                       ),

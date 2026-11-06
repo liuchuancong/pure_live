@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
     show PlatformBatteryService, PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveRoom, LiveStreamCodec, LiveStreamFormat;
@@ -1309,7 +1310,7 @@ final class _RoomCoverBackdrop extends StatelessWidget {
       child: ImageFiltered(
         imageFilter: ImageFilter.blur(sigmaX: kLiveGlassCoverFrostSigma, sigmaY: kLiveGlassCoverFrostSigma),
         child: Image(
-          image: cachedImage(cover),
+          image: cachedImage(cover, policy: ImageCachePolicies.liveRoomCover),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stack) => const SizedBox.shrink(),
         ),
@@ -1422,7 +1423,7 @@ final class _AmbientBackdrop extends StatelessWidget {
             Transform.scale(
               scale: 1.14,
               child: Image(
-                image: ResizeImage(cachedImage(art), width: _decodeWidth),
+                image: ResizeImage(cachedImage(art, policy: ImageCachePolicies.albumCover), width: _decodeWidth),
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
                 errorBuilder: (context, error, stack) => const SizedBox.shrink(),

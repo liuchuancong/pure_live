@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LivePlayQuality, LiveRoom, LiveRoomRefIdentity;
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:pure_live/app/app.dart';
@@ -969,7 +970,7 @@ final class _PaneTile extends StatelessWidget {
     );
     if (url.isEmpty) return fallback;
     return DsImage(
-      image: cachedImage(url),
+      image: cachedImage(url, policy: ImageCachePolicies.liveRoomCover),
       aspectRatio: 16 / 9,
       semanticLabel: slot.title,
       fallback: fallback,

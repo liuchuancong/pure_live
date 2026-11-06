@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
@@ -225,7 +226,7 @@ final class _SwitcherCard extends ConsumerWidget {
                   ? ColoredBox(color: colors.control)
                   : LayoutBuilder(
                       builder: (context, constraints) => DsImage(
-                        image: cachedImage(cover),
+                        image: cachedImage(cover, policy: ImageCachePolicies.liveRoomCover),
                         width: constraints.maxWidth,
                         height: constraints.maxHeight,
                       ),
@@ -280,7 +281,7 @@ final class _SwitcherRow extends ConsumerWidget {
           height: 63,
           child: cover.isEmpty
               ? ColoredBox(color: colors.control)
-              : DsImage(image: cachedImage(cover), width: 112, height: 63),
+              : DsImage(image: cachedImage(cover, policy: ImageCachePolicies.liveRoomCover), width: 112, height: 63),
         ),
       ),
       title: Text(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart' show AppBar, Scaffold, kToolbarHeight;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
@@ -2101,7 +2102,7 @@ final class _RoomHero extends ConsumerWidget {
                   decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
                   child: DsAvatar(
                     initials: avatarInitials(name),
-                    image: avatar.isEmpty ? null : cachedImage(avatar),
+                    image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
                     size: DsSize.lg,
                     semanticLabel: name,
                   ),
