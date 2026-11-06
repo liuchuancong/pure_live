@@ -48,7 +48,7 @@
 - ⬜ HLS 中继内换址：已下发子列表改指新址；不断连地址仅 refreshAt 预取。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。
 
 ## W8 live_sites 基座
-- ⬜ 弹幕连接基座：Run 令牌按代际失效（旧 run 回调/定时器自动静默）、sealed 状态事件、消息单出口清洗不可见字符；迁移 18 个手写 _generation session。参考 `live_danmaku/src/connection_base.dart:16-160`。
+- 🟡 弹幕连接基座：Run 令牌按代际失效、sealed 状态事件（连接中/握手完成/已加入/重连中/耗尽）、消息单出口清洗不可见字符——基座+14 测已落；showroom/yy/picarto/missevan/sixroom 五 session 迁移（2210 测全绿）。参考 `live_danmaku/src/connection_base.dart:16-160`。余 13 个待迁（fc2live/jdlive/twitcasting/kilakila/soop/pandalive/kugoulive 同构可套；chzzk/kick/seventeenlive=DanmakuSocket 家族；niconico/xiaohongshu/steambroadcast 特殊形态）。
 - 🟡 Socket 模板：多端点轮换（每轮等待+1 步封顶 6、耗尽才上报平台接管）已落公共 DanmakuSocket（3 测，单端点行为不变）。参考 `socket_connection.dart:122-396`。余项=入房超时+握手失败续签钩子：需会话向基座报入房确认，随弹幕连接基座（18 session 迁移）一并做。
 - ⬜ 可取消能力：CancelToken 进能力接口+DiscoveryScope 持临时会话清理；不支持的平台调用前后检查。参考 `live_site.dart:420-607`。
 - 🟡 Link 会话预算：app 侧已落 sharedHttpUrls 全套（中文标点截断/裸域名补 https/prose host 尾点豁免/签名不重编码，LinkText 6 测）+整次解析 12s 硬顶（toolbox 控制器逐站查预算）。参考 `links.dart:56-317`。余项=ShortLinkSession（8 URL 预算/共享取消/redirect 数据跨站递归）：v2 的 LiveLinkResolver 各持自己传输、20+ 个 capability 签名都要加 session 参，等解析器接口重设计一并做。
