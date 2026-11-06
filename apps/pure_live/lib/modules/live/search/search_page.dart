@@ -61,6 +61,11 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   _SearchSort _sort = _SearchSort.smart;
   bool _includeOffline = true;
 
+  /// The failed-platform set whose notice the viewer closed; the same
+  /// failure stays closed, a changed set (another search, a retry that
+  /// loses or gains a platform) speaks again.
+  String? _dismissedFailures;
+
   @override
   void initState() {
     super.initState();
@@ -192,6 +197,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final showLink = link != null && link == _checkedLink && linkState.resolved != null;
     final failed = ref.watch(searchFailuresProvider);
     final failureNames = [for (final id in failed) _platformName(id)].join('、');
+    final failureKey = ([...failed]..sort()).join('|');
     final excluded = ref.watch(searchExcludedProvider);
     final view = _viewOf(search);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
@@ -387,7 +393,10 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
             ),
           ),
-        if (search.query.isNotEmpty && failed.isNotEmpty && (search.rooms.isNotEmpty || search.anchors.isNotEmpty))
+        if (search.query.isNotEmpty &&
+            failed.isNotEmpty &&
+            _dismissedFailures != failureKey &&
+            (search.rooms.isNotEmpty || search.anchors.isNotEmpty))
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsAlert(
@@ -414,6 +423,13 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                       onPressed: () => unawaited(_openScope()),
                       child: Text(context.t.search.partialFailureScope),
                     ),
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: context.t.common.close,
+                    onPressed: () => setState(() => _dismissedFailures = failureKey),
+                    icon: const DsIcon(DsIcons.x, size: 16),
+                  ),
                 ],
               ),
             ),
@@ -1193,6 +1209,7 @@ final class _AreaResults extends ConsumerWidget {
       mainSpacing: browse.mainSpacing,
       aspectRatio: areaCardAspectRatio(tileLayout),
       cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
       isLoading: search.loading,
       hasMore: search.hasMore,
       onLoadMore: controller.loadMore,
@@ -1463,6 +1480,7 @@ final class _AreaSkeleton extends ConsumerWidget {
       mainSpacing: browse.mainSpacing,
       aspectRatio: areaCardAspectRatio(tileLayout),
       cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
       isLoading: true,
       itemBuilder: (_, _) => const SizedBox.shrink(),
     );
