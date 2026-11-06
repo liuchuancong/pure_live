@@ -17,6 +17,7 @@ import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dar
 import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart' show hongguoCoverImage;
 import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show HongguoQualityChoice;
 import 'package:pure_live/shared/shared.dart'
@@ -27,7 +28,6 @@ import 'package:pure_live/shared/shared.dart'
         DownloadQueueHeader,
         LiveWindow,
         NavigationItem,
-        cachedImage,
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
@@ -1203,7 +1203,7 @@ final class _HongguoSeriesHead extends ConsumerWidget {
                 width: 28,
                 height: 28,
                 child: DsImage(
-                  image: cachedImage(group.cover),
+                  image: hongguoCoverImage(group.cover, width: 56, height: 56),
                   aspectRatio: 1,
                   semanticLabel: group.title,
                   fallback: ColoredBox(color: colors.control),

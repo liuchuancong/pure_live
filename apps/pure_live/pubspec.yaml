@@ -46,8 +46,6 @@ dependencies:
   # UI、图片与布局
   animations: ^3.0.0 # 常用动画效果
   any_image_view: ^2.5.0 # 多来源图片展示
-  cached_network_image: ^4.0.4 # 网络图片缓存
-  flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
   heic_native: ^1.1.0 # 红果 HEIC 封面转 PNG（libheif）
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   desen_ui: ^0.3.3 # 设计令牌、主题与组件
@@ -69,7 +67,6 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  file: ^7.0.0 # flutter_cache_manager 的缓存文件系统接口
   flutter_riverpod: ^3.3.2 # 状态管理与依赖注入
   flutter_secure_storage: 11.2.0 # 安全存储密钥
   http: ^1.0.0 # 账号、主题与字体等网络请求
@@ -79,6 +76,7 @@ dependencies:
   wakelock_plus: 1.8.1 # 播放中保持屏幕常亮
 
   # PureLive 内部功能包
+  live_cache: # 图片分类缓存、磁盘上限与清理
   live_device: # 电量、亮度、音量、刷新率等设备能力
   live_iptv: # IPTV 业务
   live_lan_sync: # 局域网设备发现与数据同步引擎

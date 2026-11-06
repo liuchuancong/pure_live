@@ -37,7 +37,6 @@ import package_info_plus
 import refresh_rate
 import restart_app
 import share_plus
-import sqflite_darwin
 import system_theme
 import url_launcher_macos
 import volume_controller
@@ -77,7 +76,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   RefreshRatePlugin.register(with: registry.registrar(forPlugin: "RefreshRatePlugin"))
   RestartAppPlugin.register(with: registry.registrar(forPlugin: "RestartAppPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
-  SqflitePlugin.register(with: registry.registrar(forPlugin: "SqflitePlugin"))
   SystemThemePlugin.register(with: registry.registrar(forPlugin: "SystemThemePlugin"))
   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))
   VolumeControllerPlugin.register(with: registry.registrar(forPlugin: "VolumeControllerPlugin"))

@@ -8770,8 +8770,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '缓存'
 	String get navCache => '缓存';
 
-	/// zh-CN: '封面与头像的磁盘缓存、清理上限。'
-	String get cacheDescription => '封面与头像的磁盘缓存、清理上限。';
+	/// zh-CN: '图片按用途分别缓存，容量、策略与清理。'
+	String get cacheDescription => '图片按用途分别缓存，容量、策略与清理。';
 
 	/// zh-CN: '当前缓存大小'
 	String get cacheSize => '当前缓存大小';
@@ -8788,17 +8788,122 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '缓存已清除'
 	String get cacheCleared => '缓存已清除';
 
-	/// zh-CN: '自动清理上限'
-	String get cacheLimit => '自动清理上限';
+	/// zh-CN: '最大缓存容量'
+	String get cacheLimit => '最大缓存容量';
 
-	/// zh-CN: '超过上限按最旧删除；关闭只清理过期项。'
-	String get cacheLimitDesc => '超过上限按最旧删除；关闭只清理过期项。';
+	/// zh-CN: '达到上限时按优先级和最近使用时间清理。'
+	String get cacheLimitDesc => '达到上限时按优先级和最近使用时间清理。';
 
 	/// zh-CN: '不自动清理'
 	String get cacheLimitOff => '不自动清理';
 
-	/// zh-CN: '封面与头像会在本机缓存 30 天，过期或超限时自动清理。'
-	String get cacheHint => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。';
+	/// zh-CN: '封面按 6 小时、头像按 30 天缓存；过期后先显示旧图，再在后台刷新。'
+	String get cacheHint => '封面按 6 小时、头像按 30 天缓存；过期后先显示旧图，再在后台刷新。';
+
+	/// zh-CN: '缓存文件数'
+	String get cacheFileCount => '缓存文件数';
+
+	/// zh-CN: '缓存命中率'
+	String get cacheHitRate => '缓存命中率';
+
+	/// zh-CN: '接口内存缓存'
+	String get cacheApiMemory => '接口内存缓存';
+
+	/// zh-CN: '最后清理'
+	String get cacheLastCleanup => '最后清理';
+
+	/// zh-CN: '尚未清理'
+	String get cacheNever => '尚未清理';
+
+	/// zh-CN: '缓存目录不可用，当前仅使用内存与网络。'
+	String get cacheDiskUnavailable => '缓存目录不可用，当前仅使用内存与网络。';
+
+	/// zh-CN: '读取缓存统计失败'
+	String get cacheStatsFailed => '读取缓存统计失败';
+
+	/// zh-CN: '按类型查看'
+	String get cacheCategoryBreakdown => '按类型查看';
+
+	/// zh-CN: '封面'
+	String get cacheCategoryCover => '封面';
+
+	/// zh-CN: '头像'
+	String get cacheCategoryAvatar => '头像';
+
+	/// zh-CN: '图标'
+	String get cacheCategoryIcon => '图标';
+
+	/// zh-CN: '表情与徽章'
+	String get cacheCategoryEmote => '表情与徽章';
+
+	/// zh-CN: '专辑封面'
+	String get cacheCategoryAlbum => '专辑封面';
+
+	/// zh-CN: '壁纸与背景'
+	String get cacheCategoryWallpaper => '壁纸与背景';
+
+	/// zh-CN: '预览与搜索缩略图'
+	String get cacheCategoryPreview => '预览与搜索缩略图';
+
+	/// zh-CN: '其他'
+	String get cacheCategoryOther => '其他';
+
+	/// zh-CN: '图片缓存'
+	String get cacheImagesSection => '图片缓存';
+
+	/// zh-CN: '启用图片磁盘缓存'
+	String get cacheDiskEnabled => '启用图片磁盘缓存';
+
+	/// zh-CN: '关闭后图片只走内存与网络；已有文件保留到下次清理。'
+	String get cacheDiskEnabledDesc => '关闭后图片只走内存与网络；已有文件保留到下次清理。';
+
+	/// zh-CN: '缓存策略'
+	String get cacheFreshness => '缓存策略';
+
+	/// zh-CN: '更新优先更快换上新封面，省流量保留更久。'
+	String get cacheFreshnessDesc => '更新优先更快换上新封面，省流量保留更久。';
+
+	/// zh-CN: '更新优先'
+	String get cacheFreshnessFresh => '更新优先';
+
+	/// zh-CN: '均衡'
+	String get cacheFreshnessBalanced => '均衡';
+
+	/// zh-CN: '省流量'
+	String get cacheFreshnessThrifty => '省流量';
+
+	/// zh-CN: '过期缓存自动清理'
+	String get cacheAutoClean => '过期缓存自动清理';
+
+	/// zh-CN: '启动与空闲时删除已超过可回退期的缓存。'
+	String get cacheAutoCleanDesc => '启动与空闲时删除已超过可回退期的缓存。';
+
+	/// zh-CN: '清理过期缓存'
+	String get cacheClearExpired => '清理过期缓存';
+
+	/// zh-CN: '删除已过期的图片；未过期的封面和头像保留。'
+	String get cacheClearExpiredDesc => '删除已过期的图片；未过期的封面和头像保留。';
+
+	/// zh-CN: '清理图片缓存'
+	String get cacheClearImages => '清理图片缓存';
+
+	/// zh-CN: '删除所有临时图片；不影响下载、录制和收藏。'
+	String get cacheClearImagesDesc => '删除所有临时图片；不影响下载、录制和收藏。';
+
+	/// zh-CN: '清理全部缓存'
+	String get cacheClearAll => '清理全部缓存';
+
+	/// zh-CN: '删除全部临时图片、缓存文件与接口内存缓存；不会删除下载内容、录制文件和收藏数据。'
+	String get cacheClearAllDesc => '删除全部临时图片、缓存文件与接口内存缓存；不会删除下载内容、录制文件和收藏数据。';
+
+	/// zh-CN: '已释放 {size}'
+	String cacheClearDone({required Object size}) => '已释放 ${size}';
+
+	/// zh-CN: '{count} 个文件正在使用，下次清理再试'
+	String cacheClearPartial({required Object count}) => '${count} 个文件正在使用，下次清理再试';
+
+	/// zh-CN: '清理失败，请稍后再试'
+	String get cacheClearFailed => '清理失败，请稍后再试';
 
 	/// zh-CN: '首选平台'
 	String get preferPlatform => '首选平台';
@@ -16701,16 +16806,51 @@ extension on Translations {
 			'settings.textScaleDescription' => '按比例缩放全应用文字；100% 为原始大小。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
-			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
+			'settings.cacheDescription' => '图片按用途分别缓存，容量、策略与清理。',
 			'settings.cacheSize' => '当前缓存大小',
 			'settings.cacheRefresh' => '刷新',
 			'settings.cacheClear' => '清除缓存',
 			'settings.cacheClearDesc' => '删除所有已缓存的封面、头像与站点图标。',
 			'settings.cacheCleared' => '缓存已清除',
-			'settings.cacheLimit' => '自动清理上限',
-			'settings.cacheLimitDesc' => '超过上限按最旧删除；关闭只清理过期项。',
+			'settings.cacheLimit' => '最大缓存容量',
+			'settings.cacheLimitDesc' => '达到上限时按优先级和最近使用时间清理。',
 			'settings.cacheLimitOff' => '不自动清理',
-			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
+			'settings.cacheHint' => '封面按 6 小时、头像按 30 天缓存；过期后先显示旧图，再在后台刷新。',
+			'settings.cacheFileCount' => '缓存文件数',
+			'settings.cacheHitRate' => '缓存命中率',
+			'settings.cacheApiMemory' => '接口内存缓存',
+			'settings.cacheLastCleanup' => '最后清理',
+			'settings.cacheNever' => '尚未清理',
+			'settings.cacheDiskUnavailable' => '缓存目录不可用，当前仅使用内存与网络。',
+			'settings.cacheStatsFailed' => '读取缓存统计失败',
+			'settings.cacheCategoryBreakdown' => '按类型查看',
+			'settings.cacheCategoryCover' => '封面',
+			'settings.cacheCategoryAvatar' => '头像',
+			'settings.cacheCategoryIcon' => '图标',
+			'settings.cacheCategoryEmote' => '表情与徽章',
+			'settings.cacheCategoryAlbum' => '专辑封面',
+			'settings.cacheCategoryWallpaper' => '壁纸与背景',
+			'settings.cacheCategoryPreview' => '预览与搜索缩略图',
+			'settings.cacheCategoryOther' => '其他',
+			'settings.cacheImagesSection' => '图片缓存',
+			'settings.cacheDiskEnabled' => '启用图片磁盘缓存',
+			'settings.cacheDiskEnabledDesc' => '关闭后图片只走内存与网络；已有文件保留到下次清理。',
+			'settings.cacheFreshness' => '缓存策略',
+			'settings.cacheFreshnessDesc' => '更新优先更快换上新封面，省流量保留更久。',
+			'settings.cacheFreshnessFresh' => '更新优先',
+			'settings.cacheFreshnessBalanced' => '均衡',
+			'settings.cacheFreshnessThrifty' => '省流量',
+			'settings.cacheAutoClean' => '过期缓存自动清理',
+			'settings.cacheAutoCleanDesc' => '启动与空闲时删除已超过可回退期的缓存。',
+			'settings.cacheClearExpired' => '清理过期缓存',
+			'settings.cacheClearExpiredDesc' => '删除已过期的图片；未过期的封面和头像保留。',
+			'settings.cacheClearImages' => '清理图片缓存',
+			'settings.cacheClearImagesDesc' => '删除所有临时图片；不影响下载、录制和收藏。',
+			'settings.cacheClearAll' => '清理全部缓存',
+			'settings.cacheClearAllDesc' => '删除全部临时图片、缓存文件与接口内存缓存；不会删除下载内容、录制文件和收藏数据。',
+			'settings.cacheClearDone' => ({required Object size}) => '已释放 ${size}',
+			'settings.cacheClearPartial' => ({required Object count}) => '${count} 个文件正在使用，下次清理再试',
+			'settings.cacheClearFailed' => '清理失败，请稍后再试',
 			'settings.preferPlatform' => '首选平台',
 			'settings.preferPlatformDesc' => '热门与分区的优先平台，也是分区列表与搜索的起始平台。',
 			'settings.preferPlatformFilterHint' => '搜索平台',
@@ -16752,6 +16892,8 @@ extension on Translations {
 			'settings.groupMusic' => '音乐',
 			'settings.navMusic' => '音乐',
 			'settings.musicSettingsDescription' => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navMusicPlay' => '播放',
 			'settings.musicPlaybackDescription' => '音源、音质与播放行为。',
 			'settings.navMusicSources' => '自定义源',
@@ -16787,8 +16929,6 @@ extension on Translations {
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
@@ -17266,6 +17406,8 @@ extension on Translations {
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
 			'settings.portraitSwipeSwitch' => '竖屏全屏滑动换直播间',
+			_ => null,
+		} ?? switch (path) {
 			'settings.portraitSwipeSwitchDesc' => '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
@@ -17301,8 +17443,6 @@ extension on Translations {
 			'settings.audiencePlatformNeedsOnline' => '先开启「真实在线人数优先」',
 			'settings.audienceHeatOnlyGroup' => '仅热度或累计观看的平台',
 			'settings.audienceHeatOnlyDesc' => '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundSolid' => '纯色',
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
@@ -17780,6 +17920,8 @@ extension on Translations {
 			'toolbox.linkCopyDone' => '已复制房间链接',
 			'toolbox.linkCopyFailed' => '复制失败',
 			'toolbox.linkSupportTitle' => '支持解析的平台',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkSupportHint' => '以下平台的直播间链接可以直接解析并打开。',
 			'toolbox.networkSiteLabel' => '选择平台',
 			'toolbox.networkRun' => '开始检测',
@@ -17815,8 +17957,6 @@ extension on Translations {
 			'toolbox.nodeTest' => '测速',
 			'toolbox.nodeTesting' => '测速中',
 			'toolbox.nodeUntested' => '未测速',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeReachable' => '正常',
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',

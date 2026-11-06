@@ -3066,16 +3066,51 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get textScaleDescription => 'Scales all text in the app; 100% is the original size.';
 	@override String get backHome => 'Back to app';
 	@override String get navCache => 'Cache';
-	@override String get cacheDescription => 'The disk cache for covers and avatars, and its cleanup cap.';
+	@override String get cacheDescription => 'Images cached by purpose, with capacity, freshness and cleanup.';
 	@override String get cacheSize => 'Current cache size';
 	@override String get cacheRefresh => 'Refresh';
 	@override String get cacheClear => 'Clear cache';
 	@override String get cacheClearDesc => 'Deletes every cached cover, avatar and site icon.';
 	@override String get cacheCleared => 'Cache cleared';
-	@override String get cacheLimit => 'Automatic cleanup cap';
-	@override String get cacheLimitDesc => 'Deletes oldest first past the cap; off only clears expired items.';
+	@override String get cacheLimit => 'Maximum cache size';
+	@override String get cacheLimitDesc => 'Past the cap, lower-priority and least-recently-used images go first.';
 	@override String get cacheLimitOff => 'No automatic cleanup';
-	@override String get cacheHint => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.';
+	@override String get cacheHint => 'Covers last 6 hours and avatars 30 days; an expired picture shows first and refreshes in the background.';
+	@override String get cacheFileCount => 'Cached files';
+	@override String get cacheHitRate => 'Cache hit rate';
+	@override String get cacheApiMemory => 'API memory cache';
+	@override String get cacheLastCleanup => 'Last cleanup';
+	@override String get cacheNever => 'Not yet';
+	@override String get cacheDiskUnavailable => 'The cache folder is unavailable; using memory and network only.';
+	@override String get cacheStatsFailed => 'Could not read cache statistics';
+	@override String get cacheCategoryBreakdown => 'By type';
+	@override String get cacheCategoryCover => 'Covers';
+	@override String get cacheCategoryAvatar => 'Avatars';
+	@override String get cacheCategoryIcon => 'Icons';
+	@override String get cacheCategoryEmote => 'Emotes and badges';
+	@override String get cacheCategoryAlbum => 'Album art';
+	@override String get cacheCategoryWallpaper => 'Wallpapers';
+	@override String get cacheCategoryPreview => 'Previews and search thumbnails';
+	@override String get cacheCategoryOther => 'Other';
+	@override String get cacheImagesSection => 'Image cache';
+	@override String get cacheDiskEnabled => 'Cache images on disk';
+	@override String get cacheDiskEnabledDesc => 'Off keeps memory and network only; existing files stay until the next clear.';
+	@override String get cacheFreshness => 'Freshness';
+	@override String get cacheFreshnessDesc => 'Update first swaps covers sooner; save data keeps them longer.';
+	@override String get cacheFreshnessFresh => 'Update first';
+	@override String get cacheFreshnessBalanced => 'Balanced';
+	@override String get cacheFreshnessThrifty => 'Save data';
+	@override String get cacheAutoClean => 'Automatic expired cleanup';
+	@override String get cacheAutoCleanDesc => 'Removes copies past their fallback window at startup and while idle.';
+	@override String get cacheClearExpired => 'Clear expired';
+	@override String get cacheClearExpiredDesc => 'Deletes expired images; fresh covers and avatars stay.';
+	@override String get cacheClearImages => 'Clear image cache';
+	@override String get cacheClearImagesDesc => 'Deletes every temporary image; downloads, recordings and favourites stay.';
+	@override String get cacheClearAll => 'Clear all cache';
+	@override String get cacheClearAllDesc => 'Deletes temporary images, cache files and the API memory cache; downloads, recordings and favourites stay.';
+	@override String cacheClearDone({required Object size}) => 'Freed ${size}';
+	@override String cacheClearPartial({required Object count}) => '${count} files are in use; the next cleanup retries';
+	@override String get cacheClearFailed => 'Cleanup failed; try again later';
 	@override String get preferPlatform => 'Preferred platform';
 	@override String get preferPlatformDesc => 'The platform the popular and areas pages open on, and the one a zone\'s room list and a search start from.';
 	@override String get preferPlatformFilterHint => 'Search platforms';
@@ -7756,16 +7791,51 @@ extension on TranslationsEn {
 			'settings.textScaleDescription' => 'Scales all text in the app; 100% is the original size.',
 			'settings.backHome' => 'Back to app',
 			'settings.navCache' => 'Cache',
-			'settings.cacheDescription' => 'The disk cache for covers and avatars, and its cleanup cap.',
+			'settings.cacheDescription' => 'Images cached by purpose, with capacity, freshness and cleanup.',
 			'settings.cacheSize' => 'Current cache size',
 			'settings.cacheRefresh' => 'Refresh',
 			'settings.cacheClear' => 'Clear cache',
 			'settings.cacheClearDesc' => 'Deletes every cached cover, avatar and site icon.',
 			'settings.cacheCleared' => 'Cache cleared',
-			'settings.cacheLimit' => 'Automatic cleanup cap',
-			'settings.cacheLimitDesc' => 'Deletes oldest first past the cap; off only clears expired items.',
+			'settings.cacheLimit' => 'Maximum cache size',
+			'settings.cacheLimitDesc' => 'Past the cap, lower-priority and least-recently-used images go first.',
 			'settings.cacheLimitOff' => 'No automatic cleanup',
-			'settings.cacheHint' => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.',
+			'settings.cacheHint' => 'Covers last 6 hours and avatars 30 days; an expired picture shows first and refreshes in the background.',
+			'settings.cacheFileCount' => 'Cached files',
+			'settings.cacheHitRate' => 'Cache hit rate',
+			'settings.cacheApiMemory' => 'API memory cache',
+			'settings.cacheLastCleanup' => 'Last cleanup',
+			'settings.cacheNever' => 'Not yet',
+			'settings.cacheDiskUnavailable' => 'The cache folder is unavailable; using memory and network only.',
+			'settings.cacheStatsFailed' => 'Could not read cache statistics',
+			'settings.cacheCategoryBreakdown' => 'By type',
+			'settings.cacheCategoryCover' => 'Covers',
+			'settings.cacheCategoryAvatar' => 'Avatars',
+			'settings.cacheCategoryIcon' => 'Icons',
+			'settings.cacheCategoryEmote' => 'Emotes and badges',
+			'settings.cacheCategoryAlbum' => 'Album art',
+			'settings.cacheCategoryWallpaper' => 'Wallpapers',
+			'settings.cacheCategoryPreview' => 'Previews and search thumbnails',
+			'settings.cacheCategoryOther' => 'Other',
+			'settings.cacheImagesSection' => 'Image cache',
+			'settings.cacheDiskEnabled' => 'Cache images on disk',
+			'settings.cacheDiskEnabledDesc' => 'Off keeps memory and network only; existing files stay until the next clear.',
+			'settings.cacheFreshness' => 'Freshness',
+			'settings.cacheFreshnessDesc' => 'Update first swaps covers sooner; save data keeps them longer.',
+			'settings.cacheFreshnessFresh' => 'Update first',
+			'settings.cacheFreshnessBalanced' => 'Balanced',
+			'settings.cacheFreshnessThrifty' => 'Save data',
+			'settings.cacheAutoClean' => 'Automatic expired cleanup',
+			'settings.cacheAutoCleanDesc' => 'Removes copies past their fallback window at startup and while idle.',
+			'settings.cacheClearExpired' => 'Clear expired',
+			'settings.cacheClearExpiredDesc' => 'Deletes expired images; fresh covers and avatars stay.',
+			'settings.cacheClearImages' => 'Clear image cache',
+			'settings.cacheClearImagesDesc' => 'Deletes every temporary image; downloads, recordings and favourites stay.',
+			'settings.cacheClearAll' => 'Clear all cache',
+			'settings.cacheClearAllDesc' => 'Deletes temporary images, cache files and the API memory cache; downloads, recordings and favourites stay.',
+			'settings.cacheClearDone' => ({required Object size}) => 'Freed ${size}',
+			'settings.cacheClearPartial' => ({required Object count}) => '${count} files are in use; the next cleanup retries',
+			'settings.cacheClearFailed' => 'Cleanup failed; try again later',
 			'settings.preferPlatform' => 'Preferred platform',
 			'settings.preferPlatformDesc' => 'The platform the popular and areas pages open on, and the one a zone\'s room list and a search start from.',
 			'settings.preferPlatformFilterHint' => 'Search platforms',
@@ -7807,6 +7877,8 @@ extension on TranslationsEn {
 			'settings.groupMusic' => 'Music',
 			'settings.navMusic' => 'Music',
 			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navMusicPlay' => 'Playback',
 			'settings.musicPlaybackDescription' => 'Sources, quality and how playback behaves.',
 			'settings.navMusicSources' => 'Custom sources',
@@ -7842,8 +7914,6 @@ extension on TranslationsEn {
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.iptvSyncDesc' => 'Re-downloads network playlists and guides; local sources stay untouched.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
@@ -8321,6 +8391,8 @@ extension on TranslationsEn {
 			'settings.fullscreenDefault' => 'Auto Full Screen',
 			'settings.fullscreenDefaultDesc' => 'When enter live play, auto into full screen',
 			'settings.portraitSwipeSwitch' => 'Swipe between rooms in portrait',
+			_ => null,
+		} ?? switch (path) {
 			'settings.portraitSwipeSwitchDesc' => 'In the portrait full screen, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.',
 			'settings.keepScreenOn' => 'Keep the screen awake while playing',
 			'settings.keepScreenOnDesc' => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.',
@@ -8356,8 +8428,6 @@ extension on TranslationsEn {
 			'settings.audiencePlatformNeedsOnline' => 'Turn on "Prefer concurrent viewers" first',
 			'settings.audienceHeatOnlyGroup' => 'Platforms with heat or total views only',
 			'settings.audienceHeatOnlyDesc' => 'Their public APIs give no concurrent count; cards still show heat or total views.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundSolid' => 'Solid',
 			'settings.backgroundGradient' => 'Gradient',
 			'settings.backgroundPresets' => 'Presets',
@@ -8835,6 +8905,8 @@ extension on TranslationsEn {
 			'toolbox.linkCopyDone' => 'Room link copied',
 			'toolbox.linkCopyFailed' => 'Copy failed',
 			'toolbox.linkSupportTitle' => 'Supported platforms',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkSupportHint' => 'Room links of these platforms resolve and open directly.',
 			'toolbox.networkSiteLabel' => 'Choose a platform',
 			'toolbox.networkRun' => 'Run the check',
@@ -8870,8 +8942,6 @@ extension on TranslationsEn {
 			'toolbox.nodeTest' => 'Test',
 			'toolbox.nodeTesting' => 'Testing',
 			'toolbox.nodeUntested' => 'Not tested',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.nodeReachable' => 'Reachable',
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
