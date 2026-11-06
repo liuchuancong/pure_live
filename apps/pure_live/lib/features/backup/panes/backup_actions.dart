@@ -147,11 +147,19 @@ Future<List<LocalBackupFile>> listBackupFiles(Directory folder) async {
 
 /// Writes [document] into [folder] under its stamped file name, adding
 /// `_2`, `_3` … when that name is taken. Answers the file written.
+///
+/// The bytes land in a `.part` file first and are renamed into place only
+/// once complete: a rename inside a folder is atomic, so a half-written
+/// backup never appears in the list for a restore to choke on. A `.part`
+/// fails the list's `.json` filter, and the next write over the same stamp
+/// replaces it.
 Future<File> writeBackupDocument(Directory folder, BackupDocument document) async {
   await folder.create(recursive: true);
   final name = BackupDocument.exportFileName(DateTime.now(), followsOnly: document.followsOnly);
   final file = freeBackupFile(folder, name);
-  await file.writeAsString(document.encode(), flush: true);
+  final part = File('${file.path}.part');
+  await part.writeAsString(document.encode(), flush: true);
+  await part.rename(file.path);
   return file;
 }
 
