@@ -13,8 +13,8 @@
 - ✅ 历史按所见删除（8d2a07099）：clear(shown) 事务内比对 lastWatchedAt，变了的保留。参考 `live_store/src/rooms.dart:189-199`。修 `history_repository.dart:65` 裸 deleteAll。
 
 ## W2 数据面
-- ⬜ 还原前差异预览：对每部分按身份键集合差（新增/删除/设置项变化数），全入口共用对话框；跨入口互斥锁。参考 `shared/backup/backup_data.dart:253-367`、`backup_service.dart:158`。
-- ⬜ WebDAV 定时自动备份：目标 JSON 指纹、失败 15min→6h 退避、前缀保留 N 份、只前台调度。参考 `features/web_dav/web_dav_auto_backup.dart`。
+- ✅ 还原前差异预览+三入口互斥锁（b198bbfde；WebDAV 入口由 6232512f8 补齐）：对每部分按身份键集合差（新增/删除/设置项变化数），全入口共用对话框；跨入口互斥锁。参考 `shared/backup/backup_data.dart:253-367`、`backup_service.dart:158`。
+- ✅ WebDAV 定时自动备份（6232512f8；还原进行中跳过 tick）：目标 JSON 指纹、失败 15min→6h 退避、前缀保留 N 份、只前台调度。参考 `features/web_dav/web_dav_auto_backup.dart`。
 - ✅ 关注/历史回写（85bce4a96 关注整批/冷却/unknown/重绑/详情回填；1acc536b4 历史整批+工作池）：房间详情合并回关注卡、整批一次写回、失败置 unknown+5min 冷却、bindToFollow 校 id。参考 `room_controller.dart:840-844`、`follow_refresher.dart:32-117`。
 
 ## W3 房间体验
