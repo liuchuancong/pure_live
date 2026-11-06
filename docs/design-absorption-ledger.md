@@ -15,14 +15,14 @@
 ## W2 数据面
 - ⬜ 还原前差异预览：对每部分按身份键集合差（新增/删除/设置项变化数），全入口共用对话框；跨入口互斥锁。参考 `shared/backup/backup_data.dart:253-367`、`backup_service.dart:158`。
 - ⬜ WebDAV 定时自动备份：目标 JSON 指纹、失败 15min→6h 退避、前缀保留 N 份、只前台调度。参考 `features/web_dav/web_dav_auto_backup.dart`。
-- ⬜ 关注/历史回写：房间详情合并回关注卡、整批一次写回、失败置 unknown+5min 冷却、bindToFollow 校 id。参考 `room_controller.dart:840-844`、`follow_refresher.dart:32-117`。
+- ✅ 关注/历史回写（85bce4a96 关注整批/冷却/unknown/重绑/详情回填；1acc536b4 历史整批+工作池）：房间详情合并回关注卡、整批一次写回、失败置 unknown+5min 冷却、bindToFollow 校 id。参考 `room_controller.dart:840-844`、`follow_refresher.dart:32-117`。
 
 ## W3 房间体验
 - ⬜ ChatFeed：每帧至多一次通知、礼物独立配额（150/500 行、10 行/秒、贵礼豁免）、上滑暂停列表 removalsSince 补删、布局重建保滚动位。参考 `chat_feed.dart:132-338`。
 - ⬜ 双向屏蔽：blockUser/blockKeyword 立即 removeWhere 已显示行（含飞行层），本地消息豁免。参考 `room_controller.dart:1791-1814`。
 - ⬜ RoomPanelKind 面板总线：16 面板单枚举+Scope 回退 sheet+天然互斥。参考 `shared/panels/room_panel.dart`。
-- ⬜ SuperChat 同事件判定：有 id 按 id；无 id 轮询榜单带 hasEstimatedStartTime 按展示窗口重叠匹配（专用方法不进 ==）。参考 `live_message.dart:491-544`。修 `room_super_chats.dart:63` 全字段 Set。
-- ⬜ 观众数分层排序键：档位 3 在线/2 可在线/1 热度/0 无，identityKey 稳定兜底；B 站详情=1 且前值≥1000 回退旧值。参考 `audience.dart:310-345`、`live_room.dart:506-575`。
+- ✅ SuperChat 同事件判定（575936a0a）：有 id 按 id；无 id 轮询榜单带 hasEstimatedStartTime 按展示窗口重叠匹配（专用方法不进 ==）。参考 `live_message.dart:491-544`。修 `room_super_chats.dart:63` 全字段 Set。
+- ✅ 观众数分层排序键（575936a0a；B 站 1 值回退进 mergedWith 与进房）：档位 3 在线/2 可在线/1 热度/0 无，identityKey 稳定兜底；B 站详情=1 且前值≥1000 回退旧值。参考 `audience.dart:310-345`、`live_room.dart:506-575`。
 
 ## W4 播放健壮性（media_core）
 - ⬜ 恢复阶梯预算/记忆/节奏：刷新→换线→重建播放器→降软解→延时重试轮，预算每轮重置、稳定 30s 恢复；平台明确拒绝直接终止。参考 `session.dart:1448-1622`、`fallback.dart:4-54`。
