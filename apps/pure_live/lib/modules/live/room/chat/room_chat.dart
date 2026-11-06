@@ -24,6 +24,7 @@ import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The room's chat column: five tabs — the danmaku list with its composer, the
@@ -99,7 +100,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // the platform keeps no board.
     final tab = _tab;
     ref.listen(roomChatProvider, _chatArrived);
-    final fill = widget.translucent ? const Color(0x00000000) : colors.surface;
+    final fill = widget.translucent ? OnVideoColors.clear : colors.surface;
     if (widget.feedOnly) {
       // The danmaku tab's own list, not a second one: the narrow column reads
       // and behaves exactly as the tab does, its boundary and count included.
@@ -1089,7 +1090,7 @@ final class _ChatHoverState extends State<_ChatHover> {
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
-          color: _hovered ? colors.hover.withValues(alpha: 0.5) : const Color(0x00000000),
+          color: _hovered ? colors.hover.withValues(alpha: 0.5) : OnVideoColors.clear,
           borderRadius: theme.radii.controlCorners(null, 24),
         ),
         child: widget.child,
@@ -1147,8 +1148,7 @@ Color _readableNameInk(Color color, Color background) {
   }
 
   if (contrast(color, background) >= 4.5) return color;
-  final luminance = background.computeLuminance();
-  final darker = (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05);
+  final darker = InkOnColor.darkInkOn(background);
   final hsl = HSLColor.fromColor(color);
   var lightness = hsl.lightness;
   while (true) {

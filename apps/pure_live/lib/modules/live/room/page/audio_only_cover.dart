@@ -25,7 +25,7 @@ final class AudioOnlyCover extends StatelessWidget {
     final avatar = room.anchor?.avatarUrl?.trim() ?? '';
     return ColoredBox(
       key: const ValueKey('audio-only-presentation'),
-      color: const Color(0xFF000000),
+      color: OnVideoColors.ground,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxHeight < 500;
@@ -44,8 +44,8 @@ final class AudioOnlyCover extends StatelessWidget {
                         dimension: size,
                         child: avatar.isEmpty
                             ? const ColoredBox(
-                                color: Color(0x1FFFFFFF),
-                                child: Center(child: DsIcon(DsIcons.user, size: 32, color: Color(0x66FFFFFF))),
+                                color: OnVideoColors.chipFill,
+                                child: Center(child: DsIcon(DsIcons.user, size: 32, color: OnVideoColors.iconDim)),
                               )
                             : Image(
                                 image: cachedImage(
@@ -65,7 +65,7 @@ final class AudioOnlyCover extends StatelessWidget {
                       maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: (compact ? theme.typography.bodyStrong : theme.typography.title).copyWith(
-                        color: playerInk,
+                        color: OnVideoColors.foreground,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -95,18 +95,18 @@ final class _Badge extends StatelessWidget {
     final theme = DsTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s4),
-      decoration: DsBoxDecoration(color: const Color(0x1FFFFFFF), borderRadius: BorderRadius.circular(30)),
+      decoration: DsBoxDecoration(color: OnVideoColors.chipFill, borderRadius: BorderRadius.circular(30)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s4,
         children: [
-          if (icon case final icon?) DsIcon(icon, size: theme.sizes.iconXs, color: const Color(0xD9FFFFFF)),
+          if (icon case final icon?) DsIcon(icon, size: theme.sizes.iconXs, color: OnVideoColors.iconOnChip),
           Flexible(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: const Color(0xE6FFFFFF), fontWeight: FontWeight.w600),
+              style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted, fontWeight: FontWeight.w600),
             ),
           ),
         ],

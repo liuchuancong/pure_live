@@ -9,6 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One recommended room as a card. The two designs — the grid tile and the
@@ -319,7 +320,7 @@ final class RoomCardView extends StatelessWidget {
                                 maxWidth: width * 0.3,
                                 style: DsTheme.of(context).typography.numeric(
                                   DsTheme.of(context).typography.caption
-                                      .copyWith(color: playerInk, fontWeight: FontWeight.w600),
+                                      .copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
                                 ),
                               ),
                           ],
@@ -552,7 +553,7 @@ final class _RemoveButton extends StatelessWidget {
     icon: DsIcons.x,
     semanticLabel: semanticLabel,
     onPressed: onPressed,
-    color: onCover ? playerInk : DsTheme.colorsOf(context).textMuted,
+    color: onCover ? OnVideoColors.foreground : DsTheme.colorsOf(context).textMuted,
   );
 }
 
@@ -563,7 +564,7 @@ final class _CornerButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.onPressed,
-    this.color = playerInk,
+    this.color = OnVideoColors.foreground,
   });
 
   /// The circle's diameter.
@@ -617,7 +618,7 @@ final class _PlatformMark extends StatelessWidget {
         height: 28,
         padding: EdgeInsets.symmetric(horizontal: name.isEmpty ? DsSpace.s6 : DsSpace.s8),
         background: const Color(0xB3000000),
-        foreground: playerInk,
+        foreground: OnVideoColors.foreground,
         borderRadius: BorderRadius.circular(8),
         // The platform is the first thing the card names: a step above the
         // chips under it.
@@ -650,7 +651,7 @@ final class _StatePill extends StatelessWidget {
         height: compact ? 18 : 20,
         padding: const EdgeInsets.symmetric(horizontal: 6),
         background: const Color(0x8C000000),
-        foreground: playerInk,
+        foreground: OnVideoColors.foreground,
         borderRadius: BorderRadius.circular(6),
         textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, fontSize: compact ? 10 : null),
       ),

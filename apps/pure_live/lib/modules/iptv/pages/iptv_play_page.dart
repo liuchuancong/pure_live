@@ -26,6 +26,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show catchupUrlOf, iptvClockLabel, showIptvGuide;
 import 'package:pure_live/modules/iptv/views/iptv_zapper.dart' show IptvZapper;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One IPTV channel on media_core's own player: the playlist entry's URL
@@ -1186,13 +1187,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                     mainAxisSize: MainAxisSize.min,
                                     spacing: DsSpace.s8,
                                     children: [
-                                      const DsIcon(DsIcons.headphones, size: 32, color: playerInkSubtle),
+                                      const DsIcon(DsIcons.headphones, size: 32, color: OnVideoColors.inkSubtle),
                                       Text(
                                         channel?.entry.name ?? '',
                                         textAlign: TextAlign.center,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
-                                        style: theme.typography.title.copyWith(color: playerInk),
+                                        style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
                                       ),
                                     ],
                                   ),

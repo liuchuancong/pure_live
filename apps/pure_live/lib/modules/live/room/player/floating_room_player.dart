@@ -222,7 +222,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
           child: ClipRRect(
             borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
             child: ColoredBox(
-              color: const Color(0xFF000000),
+              color: OnVideoColors.ground,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -269,7 +269,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                         setState(() => _origin = base + details.delta);
                       },
                       child: Container(
-                        color: const Color(0xB3000000),
+                        color: OnVideoColors.scrim,
                         padding: const EdgeInsetsDirectional.only(start: DsSpace.s8, end: DsSpace.s4),
                         child: Row(
                           spacing: DsSpace.s4,
@@ -280,7 +280,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: DsTheme.of(context).typography.caption
-                                    .copyWith(color: const Color(0xE6FFFFFF), fontWeight: FontWeight.w600),
+                                    .copyWith(color: OnVideoColors.inkMuted, fontWeight: FontWeight.w600),
                               ),
                             ),
                             MediaBarButton(
@@ -334,7 +334,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                         },
                         child: const Padding(
                           padding: EdgeInsets.all(DsSpace.s4),
-                          child: DsIcon(DsIcons.expand, size: 12, color: Color(0x80FFFFFF)),
+                          child: DsIcon(DsIcons.expand, size: 12, color: OnVideoColors.inkFaint),
                         ),
                       ),
                     ),

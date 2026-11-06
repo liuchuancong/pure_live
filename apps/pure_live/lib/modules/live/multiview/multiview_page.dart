@@ -19,6 +19,7 @@ import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
 import 'package:pure_live/modules/live/multiview/multiview_playback.dart';
 import 'package:pure_live/modules/live/multiview/multiview_search_handoff.dart';
 import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2,
@@ -957,20 +958,20 @@ final class _PaneTile extends StatelessWidget {
     return Positioned.fill(
       child: IgnorePointer(
         child: ColoredBox(
-          color: const Color(0x66000000),
+          color: OnVideoColors.dimLight,
           child: Center(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Container(
                 height: 26,
                 padding: const EdgeInsetsDirectional.only(start: DsSpace.s8, end: DsSpace.s12),
-                decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(13)),
+                decoration: BoxDecoration(color: OnVideoColors.scrim, borderRadius: BorderRadius.circular(13)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s6,
                   children: [
-                    const DsIcon(DsIcons.pause, size: 14, color: playerInk),
-                    Text(t.multiview.panePaused, style: theme.typography.caption.copyWith(color: playerInk)),
+                    const DsIcon(DsIcons.pause, size: 14, color: OnVideoColors.foreground),
+                    Text(t.multiview.panePaused, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
                   ],
                 ),
               ),
@@ -1009,7 +1010,7 @@ final class _PaneTile extends StatelessWidget {
       child: DsTooltip(
         message: playback?.error ?? t.multiview.paneFailed,
         child: ColoredBox(
-          color: const Color(0xB3000000),
+          color: OnVideoColors.scrim,
           // A small pane may be shorter than the words and the button;
           // scaling down keeps them whole.
           child: Center(
@@ -1068,7 +1069,7 @@ final class _PaneTile extends StatelessWidget {
                 platform,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(fontWeight: FontWeight.w700, color: playerInk),
+                style: theme.typography.caption.copyWith(fontWeight: FontWeight.w700, color: OnVideoColors.foreground),
               ),
             ),
             const SizedBox(width: DsSpace.s6),
@@ -1078,7 +1079,7 @@ final class _PaneTile extends StatelessWidget {
               slot.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: playerInkMuted),
+              style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted),
             ),
           ),
         ],
@@ -1091,8 +1092,8 @@ final class _PaneTile extends StatelessWidget {
 /// read over any stream, light enough to see through; the hairline edge is
 /// the pane-scale stand-in for the blur the room's big glass cards use —
 /// a wall of live decoders pays for every filter it carries.
-const Color _paneGlass = Color(0x99000000);
-const Color _paneGlassEdge = Color(0x24FFFFFF);
+const Color _paneGlass = OnVideoColors.paneGlass;
+const Color _paneGlassEdge = OnVideoColors.inkHover;
 
 /// A pane's floating island, top-right: a strip of pane glass holding the
 /// pane's small controls, so they ride over the picture instead of taking
@@ -1159,7 +1160,7 @@ final class _PaneIslandButton extends StatelessWidget {
         return Container(
           width: 26,
           height: 26,
-          decoration: DsBoxDecoration(color: lit ? playerInkHover : null, borderRadius: BorderRadius.circular(7)),
+          decoration: DsBoxDecoration(color: lit ? OnVideoColors.inkHover : null, borderRadius: BorderRadius.circular(7)),
           child: Center(
             child: switch (iconAsset) {
               final String asset => SvgPicture.asset(
@@ -1170,8 +1171,8 @@ final class _PaneIslandButton extends StatelessWidget {
                   lit && dangerHover
                       ? colors.danger.fill
                       : lit || active
-                      ? playerInk
-                      : playerInkMuted,
+                      ? OnVideoColors.foreground
+                      : OnVideoColors.inkMuted,
                   BlendMode.srcIn,
                 ),
               ),
@@ -1181,8 +1182,8 @@ final class _PaneIslandButton extends StatelessWidget {
                 color: lit && dangerHover
                     ? colors.danger.fill
                     : lit || active
-                    ? playerInk
-                    : playerInkMuted,
+                    ? OnVideoColors.foreground
+                    : OnVideoColors.inkMuted,
               ),
             },
           ),
@@ -1218,7 +1219,7 @@ final class _PaneStreamBadge extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.typography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w600, color: playerInkMuted),
+        style: theme.typography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w600, color: OnVideoColors.inkMuted),
       ),
     );
   }

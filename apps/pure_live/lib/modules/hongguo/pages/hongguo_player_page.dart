@@ -50,6 +50,7 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' sh
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
     show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
@@ -1691,7 +1692,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                         mainAxisSize: MainAxisSize.min,
                         spacing: DsSpace.s8,
                         children: [
-                          const DsIcon(DsIcons.headphones, size: 32, color: playerInkSubtle),
+                          const DsIcon(DsIcons.headphones, size: 32, color: OnVideoColors.inkSubtle),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 420),
                             child: Text(
@@ -1699,7 +1700,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.typography.title.copyWith(color: playerInk),
+                              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
                             ),
                           ),
                         ],
@@ -1776,11 +1777,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             DsIcon(
                               _speedLocked ? DsIcons.lock : DsIcons.fastForward,
                               size: theme.sizes.iconXs,
-                              color: playerInk,
+                              color: OnVideoColors.foreground,
                             ),
                             Text(
                               _speedLocked ? t.hongguo.speedLocked : t.hongguo.speedHolding,
-                              style: theme.typography.caption.copyWith(color: playerInk),
+                              style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                             ),
                           ],
                         ),
@@ -1963,7 +1964,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   : '${detail.meta.title} · ${t.hongguo.episodeLabel(index: episode.index)}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.title.copyWith(color: playerInk),
+              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
             ),
           ),
           // The stage's corner cluster rides the strip in fullscreen: the
@@ -2130,7 +2131,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final position = _dragSeconds != null
         ? Duration(milliseconds: (_dragSeconds! * 1000).round())
         : transport?.position ?? Duration.zero;
-    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
+    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
     final speedLabel = _speed == _speed.roundToDouble() ? '${_speed.toInt()}x' : '${_speed}x';
     return Container(
       key: _barAnchor,
@@ -2275,14 +2276,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 height: theme.sizes.md,
                 padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
                 decoration: DsBoxDecoration(
-                  color: lit ? playerInkHover : null,
+                  color: lit ? OnVideoColors.inkHover : null,
                   borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s4,
                   children: [
-                    DsIcon(icon, size: theme.sizes.iconLg, color: playerInkMuted),
+                    DsIcon(icon, size: theme.sizes.iconLg, color: OnVideoColors.inkMuted),
                     if (!compact)
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
@@ -2290,10 +2291,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: playerInk),
+                          style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                         ),
                       ),
-                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
+                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: OnVideoColors.inkMuted),
                   ],
                 ),
               );
@@ -2556,17 +2557,17 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         final ink = playing
             ? const Color(0xFF131519)
             : watched
-            ? playerInkSubtle
-            : playerInkMuted;
+            ? OnVideoColors.inkSubtle
+            : OnVideoColors.inkMuted;
         return Container(
           height: height,
           width: height + 20,
           alignment: Alignment.center,
           decoration: DsBoxDecoration(
             color: playing
-                ? playerInk
+                ? OnVideoColors.foreground
                 : lit
-                ? playerInkHover
+                ? OnVideoColors.inkHover
                 : const Color(0x1FFFFFFF),
             borderRadius: theme.radii.controlCorners(null, height),
           ),
@@ -2607,7 +2608,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           alignment: Alignment.center,
           decoration: DsBoxDecoration(
             color: selected
-                ? playerInkHover
+                ? OnVideoColors.inkHover
                 : hovered
                 ? const Color(0x14FFFFFF)
                 : null,
@@ -2617,7 +2618,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             label,
             style: theme.typography.numeric(
               theme.typography.caption.copyWith(
-                color: selected ? playerInk : playerInkSubtle,
+                color: selected ? OnVideoColors.foreground : OnVideoColors.inkSubtle,
                 fontWeight: selected ? FontWeight.w600 : null,
               ),
             ),
@@ -2757,16 +2758,16 @@ final class _RailAction extends StatelessWidget {
                   color: selected
                       ? colors.accent
                       : lit
-                      ? playerInkHover
+                      ? OnVideoColors.inkHover
                       : const Color(0x66000000),
                   borderRadius: BorderRadius.circular(theme.radii.control(38)),
                 ),
-                child: DsIcon(icon, size: theme.sizes.iconLg, color: selected ? colors.onAccent : playerInk),
+                child: DsIcon(icon, size: theme.sizes.iconLg, color: selected ? colors.onAccent : OnVideoColors.foreground),
               ),
               if (count case final figure?)
                 Text(
                   figure,
-                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk, fontSize: 11)),
+                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontSize: 11)),
                 ),
             ],
           );

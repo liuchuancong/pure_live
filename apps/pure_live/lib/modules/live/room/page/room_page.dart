@@ -60,6 +60,7 @@ import 'package:pure_live/modules/live/room/player/room_switcher.dart' show room
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart';
 import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart' show showRoomDirectLinks;
 import 'package:pure_live/shared/navigation/room_seed.dart' show takeRoomSeed;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The live room: media_core's picture with the app's control layer over
@@ -789,7 +790,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// the ⋮ beside it.
   Widget _buildPortraitFullscreen(BuildContext context, Widget player, {required bool canSwipeRooms}) {
     return ColoredBox(
-      color: const Color(0xFF000000),
+      color: OnVideoColors.ground,
       child: Stack(
         children: [
           Positioned.fill(child: player),
@@ -1628,7 +1629,7 @@ final class _PortraitSwipeHintState extends State<_PortraitSwipeHint> {
             child: Text(
               context.t.room.portraitSwipeHint,
               textAlign: TextAlign.center,
-              style: DsTheme.of(context).typography.caption.copyWith(color: playerInk),
+              style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.foreground),
             ),
           ),
         ),
@@ -2143,7 +2144,7 @@ final class _RoomHero extends ConsumerWidget {
       semanticLabel: t.room.detailsHint,
       onPressed: () => unawaited(showRoomDetails(context)),
       builder: (context, states, child) => ColoredBox(
-        color: states.contains(WidgetState.hovered) ? colors.hover : const Color(0x00000000),
+        color: states.contains(WidgetState.hovered) ? colors.hover : OnVideoColors.clear,
         child: child,
       ),
       child: Padding(
@@ -2284,7 +2285,7 @@ final class _LiveBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 1),
       decoration: BoxDecoration(
-        color: playerSignal.withValues(alpha: 0.9),
+        color: OnVideoColors.signal.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(DsRadii.pill),
       ),
       child: Row(
@@ -2294,11 +2295,11 @@ final class _LiveBadge extends StatelessWidget {
           Container(
             width: 4,
             height: 4,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: playerInk),
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: OnVideoColors.foreground),
           ),
           Text(
             t.favorites.statusLiveNow,
-            style: theme.typography.caption.copyWith(color: playerInk, fontWeight: FontWeight.w600),
+            style: theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
           ),
         ],
       ),

@@ -50,6 +50,7 @@ import 'package:pure_live/features/settings/settings.dart'
         fitLabels,
         playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart'
     show
         DanmakuFormat,
@@ -63,9 +64,6 @@ import 'package:pure_live/shared/shared.dart'
         capturePlayerFrame,
         danmakuFileFor,
         playerBarrageConfig,
-        playerInk,
-        playerInkMuted,
-        playerInkSubtle,
         playerStatsVisibleProvider,
         showCastUriDialog;
 
@@ -1031,7 +1029,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s12,
       children: [
-        const DsIcon(DsIcons.headphones, size: 40, color: playerInkSubtle),
+        const DsIcon(DsIcons.headphones, size: 40, color: OnVideoColors.inkSubtle),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Text(
@@ -1039,7 +1037,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: DsTheme.of(context).typography.title.copyWith(color: playerInk),
+            style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground),
           ),
         ),
         if (item.subtitle.isNotEmpty)
@@ -1050,7 +1048,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+              style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkMuted),
             ),
           ),
       ],
@@ -1069,14 +1067,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
             children: [
-              const DsIcon(DsIcons.playCircle, size: 32, color: playerInkSubtle),
-              Text(t.common.previewEmpty, style: DsTheme.of(context).typography.title.copyWith(color: playerInk)),
+              const DsIcon(DsIcons.playCircle, size: 32, color: OnVideoColors.inkSubtle),
+              Text(t.common.previewEmpty, style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground)),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Text(
                   t.common.previewEmptyDescription,
                   textAlign: TextAlign.center,
-                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                  style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkMuted),
                 ),
               ),
             ],
@@ -1091,14 +1089,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s8,
             children: [
-              const DsIcon(DsIcons.fileX, size: 32, color: playerInkSubtle),
-              Text(t.common.previewFileMissing, style: DsTheme.of(context).typography.title.copyWith(color: playerInk)),
+              const DsIcon(DsIcons.fileX, size: 32, color: OnVideoColors.inkSubtle),
+              Text(t.common.previewFileMissing, style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground)),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Text(
                   t.common.previewFileMissingDescription,
                   textAlign: TextAlign.center,
-                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                  style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkMuted),
                 ),
               ),
               DsButton(
@@ -1392,7 +1390,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                           _rateLabel(_rate),
                           style: DsTheme.of(context).typography.numeric(
                             DsTheme.of(context).typography.caption
-                                .copyWith(color: _rate == 1 ? const Color(0xCCFFFFFF) : playerInk),
+                                .copyWith(color: _rate == 1 ? const Color(0xCCFFFFFF) : OnVideoColors.foreground),
                           ),
                         ),
                       ),
@@ -1774,13 +1772,13 @@ final class _DrawerTab extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const DsIcon(DsIcons.chevronLeft, size: 14, color: playerInkMuted),
+            const DsIcon(DsIcons.chevronLeft, size: 14, color: OnVideoColors.inkMuted),
             for (final rune in label.runes)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 1),
                 child: Text(
                   String.fromCharCode(rune),
-                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInk),
+                  style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.foreground),
                 ),
               ),
           ],
@@ -1828,7 +1826,7 @@ final class _DanmakuToggle extends StatelessWidget {
             child: Text(
               context.t.room.danmakuMark,
               style: theme.typography.caption.copyWith(
-                color: on ? theme.colors.onAccent : playerInkMuted,
+                color: on ? theme.colors.onAccent : OnVideoColors.inkMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),

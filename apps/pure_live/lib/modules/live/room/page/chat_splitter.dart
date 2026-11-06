@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyRepeatEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// The seam's hit strip; the visible line sits centered in it. Wider than
 /// the line on purpose: the hand should not have to find a hairline.
@@ -172,7 +173,7 @@ final class _ChatSplitterState extends State<ChatSplitter> {
                   color: active || _focused
                       ? colors.accent
                       : widget.onDark
-                      ? const Color(0x66FFFFFF)
+                      ? OnVideoColors.iconDim
                       : colors.border,
                 ),
               ),

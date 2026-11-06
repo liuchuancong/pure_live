@@ -3,7 +3,7 @@ import 'dart:async' show Timer;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:pure_live/shared/player/player_overlay.dart' show playerInk, playerSignal;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// The recording state over a player: a red dot that breathes while a capture
 /// runs and, where the surface has room for it, the elapsed time beside it.
@@ -149,7 +149,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: playerSignal.withValues(alpha: alpha),
+                  color: OnVideoColors.signal.withValues(alpha: alpha),
                 ),
               ),
             ),
@@ -158,7 +158,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
               RecordingIndicator.formatElapsed(DateTime.now().difference(startedAt)),
               style: theme.typography.numeric(
                 (widget.tv ? theme.typography.label : theme.typography.caption).copyWith(
-                  color: playerInk,
+                  color: OnVideoColors.foreground,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -171,7 +171,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
               written,
               style: theme.typography.numeric(
                 (widget.tv ? theme.typography.label : theme.typography.caption).copyWith(
-                  color: playerInk.withValues(alpha: 0.72),
+                  color: OnVideoColors.foreground.withValues(alpha: 0.72),
                 ),
               ),
             ),
@@ -179,7 +179,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
             Text(
               state,
               style: (widget.tv ? theme.typography.label : theme.typography.caption).copyWith(
-                color: playerInk,
+                color: OnVideoColors.foreground,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -198,7 +198,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
         builder: (context, states, _) => ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
           child: ColoredBox(
-            color: states.contains(WidgetState.hovered) ? const Color(0x24FFFFFF) : const Color(0x00000000),
+            color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : OnVideoColors.clear,
             child: Align(child: content),
           ),
         ),

@@ -29,20 +29,21 @@ import 'package:pure_live/modules/live/room/page/room_status.dart'
 // The replay bar's clock words: the one duration formatter the app keeps
 // ("12:34" or "1:02:03"), the same the vod player's own bar reads.
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
 /// the bars, the state overlay and the position line never borrow the
 /// surface's ink (which turns dark-on-dark in a light theme).
-const Color _onVideo = playerInk;
-const Color _onVideoMuted = playerInkMuted;
-const Color _onVideoSubtle = playerInkSubtle;
-const Color _onVideoHover = playerInkHover;
+const Color _onVideo = OnVideoColors.foreground;
+const Color _onVideoMuted = OnVideoColors.inkMuted;
+const Color _onVideoSubtle = OnVideoColors.inkSubtle;
+const Color _onVideoHover = OnVideoColors.inkHover;
 
 /// The stage around and behind the video: always black, in every theme —
 /// a missing frame reads as a dark screen, never as a flash of the theme's
 /// surface while the window changes size.
-const Color kPlayerStageColor = Color(0xFF000000);
+const Color kPlayerStageColor = OnVideoColors.ground;
 
 /// One action the overlay offers, pressed through the room controller.
 final class PictureActionButton extends ConsumerWidget {
@@ -1288,10 +1289,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 /// be there only to be hidden. Every other level is the same dark the state has
 /// always used.
 Color _veilOf(RoomPictureDim dim, {required bool withCover}) => switch (dim) {
-  RoomPictureDim.none => const Color(0x00000000),
-  RoomPictureDim.light => const Color(0x66000000),
-  RoomPictureDim.heavy => const Color(0xB3000000),
-  RoomPictureDim.cover => withCover ? const Color(0x99000000) : const Color(0xE6000000),
+  RoomPictureDim.none => OnVideoColors.clear,
+  RoomPictureDim.light => OnVideoColors.dimLight,
+  RoomPictureDim.heavy => OnVideoColors.scrim,
+  RoomPictureDim.cover => withCover ? OnVideoColors.paneGlass : OnVideoColors.coverDimHeavy,
 };
 
 /// The room's own cover, blurred, behind a picture that is not there.
@@ -1431,7 +1432,7 @@ final class _AmbientBackdrop extends StatelessWidget {
                 errorBuilder: (context, error, stack) => const SizedBox.shrink(),
               ),
             ),
-            const ColoredBox(color: Color(0x26000000)),
+            const ColoredBox(color: OnVideoColors.veil),
           ],
         ),
       ),
@@ -1542,7 +1543,7 @@ final class _StreamPickerRow extends ConsumerWidget {
                 decoration: DsBoxDecoration(color: lit ? _onVideoHover : null, borderRadius: corners),
                 foregroundDecoration: tv && focused
                     ? BoxDecoration(
-                        border: Border.all(color: playerInk, width: 2),
+                        border: Border.all(color: OnVideoColors.foreground, width: 2),
                         borderRadius: corners,
                       )
                     : null,
@@ -1763,13 +1764,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
         }
         return Container(
           padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s12),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: AlignmentDirectional.topCenter,
-              end: AlignmentDirectional.bottomCenter,
-              colors: [Color(0xB3000000), Color(0x00000000)],
-            ),
-          ),
+          decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
           child: Row(
             spacing: tv ? DsSpace.s12 : DsSpace.s8,
             children: [
@@ -1946,7 +1941,7 @@ final class _DanmakuBarCluster extends ConsumerWidget {
               // second button beside the settings gear.
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: on ? theme.colors.accent : const Color(0x00000000),
+                color: on ? theme.colors.accent : OnVideoColors.clear,
               ),
               child: SvgPicture.asset(
                 'assets/icons/danmaku.svg',
@@ -2378,7 +2373,7 @@ final class _VideoLiveBadge extends StatelessWidget {
           Container(
             width: 5,
             height: 5,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: playerSignal),
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: OnVideoColors.signal),
           ),
           Text(
             t.favorites.statusLiveNow,
@@ -2432,13 +2427,7 @@ final class _PipBar extends ConsumerWidget {
 
     return Container(
       height: 28,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topCenter,
-          end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
       child: Row(
         spacing: DsSpace.s3,
         children: [
@@ -2642,13 +2631,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
         tv ? DsSpace.s16 : DsSpace.s12,
         tv ? DsSpace.s12 : DsSpace.s8,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.bottomCenter,
-          end: AlignmentDirectional.topCenter,
-          colors: [Color(0xCC000000), Color(0x00000000)],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep)),
       // A live stream has no timeline to draw: what used to sit above these
       // buttons was a seek bar that could not seek. The buffer and latency
       // facts live in the stats overlay and in the picture's own buffering
@@ -2929,10 +2912,10 @@ final class _RecordingTopChipState extends State<_RecordingTopChip> {
             onStop: widget.onStop,
           ),
           if (hoursLeft != null) ...[
-            const DsIcon(DsIcons.battery, size: 14, color: playerInkMuted),
+            const DsIcon(DsIcons.battery, size: 14, color: OnVideoColors.inkMuted),
             Text(
               '${hoursLeft.toStringAsFixed(1)}h',
-              style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk)),
+              style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
             ),
           ],
         ],
@@ -2960,7 +2943,7 @@ final class _BarDivider extends StatelessWidget {
       width: 1,
       height: tv ? 20 : 16,
       margin: EdgeInsets.symmetric(horizontal: tv ? DsSpace.s8 : DsSpace.s4),
-      color: const Color(0x40FFFFFF),
+      color: OnVideoColors.track,
     );
   }
 }

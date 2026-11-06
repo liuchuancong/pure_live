@@ -1,7 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:pure_live/shared/player/player_overlay.dart' show playerInk;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// The number a picture gesture is setting, shown over the frame.
 ///
@@ -33,17 +33,17 @@ final class PlayerVolumeHud extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
           decoration: DsBoxDecoration(
-            color: const Color(0xCC000000),
+            color: OnVideoColors.scrimDeep,
             borderRadius: BorderRadius.circular(theme.radii.card),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s4,
             children: [
-              DsIcon(icon ?? (value <= 0.001 ? DsIcons.volumeX : DsIcons.volume2), size: 24, color: playerInk),
+              DsIcon(icon ?? (value <= 0.001 ? DsIcons.volumeX : DsIcons.volume2), size: 24, color: OnVideoColors.foreground),
               Text(
                 '${(value * 100).round()}%',
-                style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk)),
+                style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
               ),
             ],
           ),

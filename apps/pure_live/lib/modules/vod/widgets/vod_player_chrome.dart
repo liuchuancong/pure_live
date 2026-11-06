@@ -4,6 +4,7 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart' show VodChapter, VodSeekPreview;
 import 'package:media_core/media_core.dart' show BufferRange;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// What a gesture on the picture is doing, named by the chip it answers with.
@@ -74,15 +75,15 @@ final class VodGestureTip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s3,
               children: [
-                DsIcon(kind.icon, size: 22, color: playerInk),
+                DsIcon(kind.icon, size: 22, color: OnVideoColors.foreground),
                 Text(
                   value,
                   style: theme.typography.numeric(
-                    theme.typography.title.copyWith(color: playerInk, fontWeight: FontWeight.w600),
+                    theme.typography.title.copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
                   ),
                 ),
                 if (note != null && note!.isNotEmpty)
-                  Text(note!, style: theme.typography.caption.copyWith(color: playerInkSubtle)),
+                  Text(note!, style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle)),
               ],
             ),
           ),
@@ -320,7 +321,7 @@ final class _VodSeekBarState extends State<VodSeekBar> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk)),
+            style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
           ),
         ),
       ],
@@ -456,7 +457,7 @@ final class VodSubtitleLayer extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.typography.body.copyWith(
-              color: playerInk,
+              color: OnVideoColors.foreground,
               fontWeight: FontWeight.w600,
               shadows: const [Shadow(color: Color(0xB3000000), blurRadius: 6, offset: Offset(0, 1))],
             ),
@@ -497,14 +498,14 @@ final class VodPictureNotice extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           spacing: DsSpace.s8,
           children: [
-            if (icon != null) DsIcon(icon!, size: theme.sizes.iconSm, color: playerInk),
-            Text(text, style: theme.typography.caption.copyWith(color: playerInk)),
+            if (icon != null) DsIcon(icon!, size: theme.sizes.iconSm, color: OnVideoColors.foreground),
+            Text(text, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
             if (actionLabel != null && onAction != null)
               DsButton(
                 variant: DsButtonVariant.ghost,
                 size: DsSize.xs,
                 onPressed: onAction,
-                style: const DsButtonStyle(foreground: playerInk, background: Color(0x00000000)),
+                style: const DsButtonStyle(foreground: OnVideoColors.foreground, background: Color(0x00000000)),
                 child: Text(actionLabel!),
               ),
           ],

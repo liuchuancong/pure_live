@@ -10,6 +10,7 @@ export 'compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
 export 'emoji_atlas_loader.dart' show loadEmojiAtlas;
 export 'fullscreen_orientation.dart';
 export 'media_bar_button.dart';
+export 'on_video_colors.dart';
 export 'player_bar_tier.dart';
 export 'player_overlay.dart';
 export 'player_screenshot.dart';

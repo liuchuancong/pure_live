@@ -4,19 +4,7 @@ import 'dart:ui' show ImageFilter, TileMode;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/background/glass/live_glass.dart' show LiveGlassLevel;
-
-/// The ink an overlay draws on a picture: white whatever the app's theme,
-/// because the frame behind it is dark and the theme's own text would turn
-/// dark-on-dark in a light app.
-const Color playerInk = Color(0xFFFFFFFF);
-
-/// The one red every player uses to say "this is live / this is being
-/// captured": the live dot on the room's strip and the breathing dot of a
-/// running recording are the same signal, so they carry the same colour.
-const Color playerSignal = Color(0xFFFF3B5C);
-const Color playerInkMuted = Color(0xE6FFFFFF);
-const Color playerInkSubtle = Color(0x99FFFFFF);
-const Color playerInkHover = Color(0x24FFFFFF);
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// One frosted chip over the picture: a dark glass the frame's own motion
 /// bleeds through, rounded to a pill, quiet enough to sit under words.
@@ -41,7 +29,7 @@ final class PlayerGlassPill extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: frost, sigmaY: frost, tileMode: TileMode.decal),
         child: Container(
-          decoration: BoxDecoration(color: const Color(0x59000000), borderRadius: BorderRadius.circular(DsRadii.pill)),
+          decoration: BoxDecoration(color: OnVideoColors.panel, borderRadius: BorderRadius.circular(DsRadii.pill)),
           child: child,
         ),
       ),
@@ -72,8 +60,8 @@ final class PlayerIdleProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = duration?.inMilliseconds ?? 0;
     final played = total <= 0 ? null : ((position?.inMilliseconds ?? 0) / total).clamp(0.0, 1.0);
-    final track = Container(height: 3, color: const Color(0x33FFFFFF));
-    final fill = Container(height: 3, color: playerInk);
+    final track = Container(height: 3, color: OnVideoColors.track);
+    final fill = Container(height: 3, color: OnVideoColors.foreground);
     return MouseRegion(
       onHover: (_) => onWake(),
       child: GestureDetector(
@@ -139,9 +127,9 @@ final class PlayerOverlayPanel extends StatelessWidget {
           width: effective,
           padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
           decoration: BoxDecoration(
-            color: const Color(0xF2131519),
+            color: OnVideoColors.menuPlate,
             borderRadius: BorderRadius.circular(theme.radii.card),
-            border: Border.all(color: const Color(0x24FFFFFF)),
+            border: Border.all(color: OnVideoColors.inkHover),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -151,7 +139,7 @@ final class PlayerOverlayPanel extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s6),
                 child: Text(
                   title,
-                  style: theme.typography.caption.copyWith(color: playerInkSubtle, fontWeight: FontWeight.w600),
+                  style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle, fontWeight: FontWeight.w600),
                 ),
               ),
               // A long catalogue — a multi-part upload's parts — scrolls
@@ -202,7 +190,7 @@ final class PlayerPanelOption extends StatelessWidget {
       builder: (context, states, _) {
         final active = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
         return Container(
-          color: active ? playerInkHover : null,
+          color: active ? OnVideoColors.inkHover : null,
           padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s6),
           child: Row(
             spacing: DsSpace.s8,
@@ -218,7 +206,7 @@ final class PlayerPanelOption extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(
-                        color: selected ? playerInk : playerInkMuted,
+                        color: selected ? OnVideoColors.foreground : OnVideoColors.inkMuted,
                         fontWeight: selected ? FontWeight.w600 : null,
                       ),
                     ),
@@ -227,12 +215,12 @@ final class PlayerPanelOption extends StatelessWidget {
                         detail,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(fontSize: 11, color: playerInkSubtle),
+                        style: theme.typography.caption.copyWith(fontSize: 11, color: OnVideoColors.inkSubtle),
                       ),
                   ],
                 ),
               ),
-              if (selected) const DsIcon(DsIcons.check, size: 14, color: playerInk),
+              if (selected) const DsIcon(DsIcons.check, size: 14, color: OnVideoColors.foreground),
             ],
           ),
         );

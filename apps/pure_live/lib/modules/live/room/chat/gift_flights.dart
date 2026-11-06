@@ -6,6 +6,7 @@ import 'package:flutter/painting.dart' show Color;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/l10n/translations.dart' as l10n;
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// Which of a room's gifts fly over the picture (the reference's
 /// `danmakuShowGifts`, A08.12), so a busy room's gifts never flood it:
@@ -39,7 +40,7 @@ final class GiftFlights {
   static const Duration preciousHold = Duration(seconds: 4);
 
   /// The reference's gift gold.
-  static const Color ink = Color(0xFFFFD166);
+  static const Color ink = OnVideoColors.giftGold;
 
   /// Combos remembered; the least recent goes first.
   static const int _maxCombos = 256;

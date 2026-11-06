@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/player/player_overlay.dart' show playerInk, playerInkMuted;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// Whether a player surface shows its playback statistics.
 ///
@@ -122,9 +122,9 @@ final class _PlayerStatsOverlayState extends State<PlayerStatsOverlay> {
         decoration: BoxDecoration(
           // The player's own glass, the same ink the bars use: over a picture the
           // app's theme has nothing to say.
-          color: const Color(0xCC0B0D12),
+          color: OnVideoColors.scrimDeep,
           borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.all(color: const Color(0x26FFFFFF)),
+          border: Border.all(color: OnVideoColors.inkHover),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -135,9 +135,9 @@ final class _PlayerStatsOverlayState extends State<PlayerStatsOverlay> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(label, style: theme.typography.caption.copyWith(color: playerInkMuted)),
+                    child: Text(label, style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted)),
                   ),
-                  Text(value, style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk))),
+                  Text(value, style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground))),
                 ],
               ),
           ],

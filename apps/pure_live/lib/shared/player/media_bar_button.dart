@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
-import 'package:pure_live/shared/player/player_overlay.dart' show playerInk;
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// A compact icon control that floats over the picture: a square hit target,
 /// a light fill under the pointer, the glyph muted until [selected], and the
@@ -94,8 +94,8 @@ final class MediaBarButton extends StatelessWidget {
         final glyphSide = iconSize ?? theme.sizes.iconLg;
         final glyphColor = onDark
             ? !enabled
-                  ? const Color(0x66FFFFFF)
-                  : playerInk
+                  ? OnVideoColors.iconDim
+                  : OnVideoColors.foreground
             : !enabled
             ? colors.textSubtle
             : selected
@@ -106,15 +106,15 @@ final class MediaBarButton extends StatelessWidget {
           height: side,
           decoration: DsBoxDecoration(
             color: lit && enabled
-                ? (onDark ? const Color(0x24FFFFFF) : colors.hover)
+                ? (onDark ? OnVideoColors.inkHover : colors.hover)
                 : selected && onDark
-                ? const Color(0x2EFFFFFF)
+                ? OnVideoColors.inkPressed
                 : null,
             borderRadius: corners,
           ),
           foregroundDecoration: focusRing && focused && enabled
               ? BoxDecoration(
-                  border: Border.all(color: playerInk, width: 2),
+                  border: Border.all(color: OnVideoColors.foreground, width: 2),
                   borderRadius: corners,
                 )
               : null,

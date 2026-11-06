@@ -1715,7 +1715,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                         mainAxisSize: MainAxisSize.min,
                         spacing: DsSpace.s8,
                         children: [
-                          const DsIcon(DsIcons.headphones, size: 32, color: playerInkSubtle),
+                          const DsIcon(DsIcons.headphones, size: 32, color: OnVideoColors.inkSubtle),
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 420),
                             child: Text(
@@ -1723,7 +1723,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.typography.title.copyWith(color: playerInk),
+                              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
                             ),
                           ),
                         ],
@@ -1806,7 +1806,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                         Text(switch (download.progress) {
                                           final progress? => t.vod.downloading(percent: (progress * 100).round()),
                                           null => t.vod.downloadingUnknown,
-                                        }, style: theme.typography.caption.copyWith(color: playerInk)),
+                                        }, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
                                         PlayerBarButton(
                                           icon: DsIcons.pause,
                                           label: t.vod.downloadPause,
@@ -2023,7 +2023,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               detail?.title ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.title.copyWith(color: playerInk),
+              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
             ),
           ),
           // The page's own bookmark, reachable from the fullscreen picture: the
@@ -2212,7 +2212,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final immersive = presentationController.modeOwnsWindow(presentation);
     final playback = ref.watch(playbackSettingsProvider);
     final danmakuVisible = playback.danmakuVisible;
-    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
+    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
     return Container(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
@@ -2444,7 +2444,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             height: theme.sizes.md,
             padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
             decoration: DsBoxDecoration(
-              color: lit ? playerInkHover : null,
+              color: lit ? OnVideoColors.inkHover : null,
               borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
             ),
             child: Row(
@@ -2454,7 +2454,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 DsIcon(
                   forward ? DsIcons.skipForward : DsIcons.skipBack,
                   size: theme.sizes.iconLg,
-                  color: playerInkMuted,
+                  color: OnVideoColors.inkMuted,
                 ),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 110),
@@ -2462,7 +2462,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: playerInk),
+                    style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                   ),
                 ),
               ],
@@ -2506,14 +2506,14 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 height: theme.sizes.md,
                 padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
                 decoration: DsBoxDecoration(
-                  color: lit ? playerInkHover : null,
+                  color: lit ? OnVideoColors.inkHover : null,
                   borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s4,
                   children: [
-                    DsIcon(icon, size: theme.sizes.iconLg, color: playerInkMuted),
+                    DsIcon(icon, size: theme.sizes.iconLg, color: OnVideoColors.inkMuted),
                     if (!compact)
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 110),
@@ -2521,10 +2521,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: playerInk),
+                          style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                         ),
                       ),
-                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
+                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: OnVideoColors.inkMuted),
                   ],
                 ),
               );
@@ -2636,7 +2636,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s6),
                 child: Text(
                   _extra.needsLoginForSubtitles ? t.vod.subtitleNeedsLogin : t.vod.subtitleNone,
-                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInkSubtle),
+                  style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkSubtle),
                 ),
               ),
           ],

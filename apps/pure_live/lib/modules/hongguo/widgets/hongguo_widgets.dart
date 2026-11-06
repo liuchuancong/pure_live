@@ -12,6 +12,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// "1:02:03" for an episode's length, mirroring the station pages' clock.
@@ -370,7 +371,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
                                   // the wider of the foot's two shares.
                                   maxWidth: width * 0.55,
                                   style: theme.typography.numeric(
-                                    theme.typography.caption.copyWith(color: playerInk, fontWeight: FontWeight.w600),
+                                    theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
                                   ),
                                 ),
                             ],
@@ -592,7 +593,7 @@ final class _CoverMark extends StatelessWidget {
         height: 28,
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
         background: leading ? colors.accent : const Color(0xB3000000),
-        foreground: leading ? colors.onAccent : playerInk,
+        foreground: leading ? colors.onAccent : OnVideoColors.foreground,
         borderRadius: BorderRadius.circular(8),
         textStyle: theme.typography.labelStrong,
         iconSize: 14,
