@@ -34,7 +34,7 @@
 ## W5 多画面与录制 UX
 - ⬜ 多画面预算：隐藏格 setPresentationVisible(false)+audioOnly、小格最低清晰度、晋升换清晰度、单弹幕连接按房间身份、进页"恢复上次"提议制、格子稳定 id+GlobalKey 防重建。参考 `multiview_controller.dart:857-871`、`wall.dart:85-101`。
 - ⬜ AutoRoomSwitch：只认真实状态、先刷新当前房两次、候选新鲜详情确认+仍需关注中、30s 健康复位、组内同步预约防撞。参考 `shared/rooms/auto_room_switch.dart`。
-- ⬜ 录制九态显示模型：RecordCardState 纯函数+统一映射表+槽位满深链改上限。参考 `shared/record/record_state.dart`。
+- ✅ 录制显示态单表（938f619c2）：RecordingDisplayState 六态纯函数（word/tone/sortRank/showsOnBar），bar 与录制中心共用；v2 无任务槽位模型故 queued/preparing/深链不适用。参考 `shared/record/record_state.dart`。
 
 ## W6 录制吸收（media_core）
 - ⬜ 录制输入全走本地中继，停止=关输入让 FFmpeg EOF 自然收尾（5s 超时才强杀），坏尾包记"尾部截断"。参考 `live_record/src/capture.dart:120-127`。
