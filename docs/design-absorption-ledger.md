@@ -44,7 +44,7 @@
 - 🟡 完整性判定：合并读自身日志——trailer 写失败/ muxer 拒包=输出不可信，不改名不提交；失败合并一遍重试留尾段（干净前缀提交，被切段留旁边）。参考 `ffmpeg.dart:332-369`、`merge.dart:93-110`。落 media_core recording_remuxer 974ac38，150 测全绿。未做 -xerror（v2 无它的两遍回退语义配套，加了会让良性输入包损坏丢整个输出）。
 
 ## W7 传输吸收（media_core）
-- ⬜ FLV 关键帧拼接续期：新址预连、共有关键帧处切换、时间戳平移 60s 窗。参考 `flv_splicer.dart:144-496`。
+- 🟡 FLV 关键帧拼接续期：字节级决策层全量移植（FlvTagProbe/Policy 关键帧对齐+平移计算/Plan 切换窗口/Timeline 输出台账，320 行零 I/O）。参考 `flv_splicer.dart:144-496`。落 media_core_ingest 11a49b3。评估结论：播放路径无缝（mpv 内部拉流，Dart 无字节接点）；缺的桥=media_core_ingest 的 FLV loopback 中继 I/O 层约 500 行，决策层已备好，待立项。
 - ⬜ HLS 中继内换址：已下发子列表改指新址；不断连地址仅 refreshAt 预取。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。
 
 ## W8 live_sites 基座
