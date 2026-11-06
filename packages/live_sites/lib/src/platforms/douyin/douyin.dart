@@ -22,6 +22,7 @@ export 'danmaku/douyin_danmaku_session.dart';
 export 'danmaku/douyin_protobuf.dart';
 export 'douyin_manifest.dart';
 export 'douyin_site.dart';
+export 'parsers/douyin_area_tiles.dart';
 export 'parsers/douyin_failure.dart';
 export 'parsers/douyin_json.dart'
     hide

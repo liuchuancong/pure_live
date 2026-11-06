@@ -17,6 +17,7 @@ export 'capabilities/xiaohongshu_search_provider.dart';
 export 'capabilities/xiaohongshu_status_check.dart';
 export 'danmaku/xiaohongshu_danmaku_codec.dart';
 export 'danmaku/xiaohongshu_danmaku_session.dart';
+export 'parsers/xiaohongshu_area_tiles.dart';
 export 'parsers/xiaohongshu_directory_parser.dart';
 export 'parsers/xiaohongshu_failure.dart';
 export 'parsers/xiaohongshu_html.dart';
