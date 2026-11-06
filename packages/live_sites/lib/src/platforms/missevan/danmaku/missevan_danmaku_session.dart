@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -56,10 +57,7 @@ final class MissevanDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef MissevanTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef MissevanTimers = DanmakuTimers;
 
 /// One chat connection: the guest session's cookie, then the room's socket —
 /// one socket at a time.
@@ -84,18 +82,21 @@ typedef MissevanTimers = ({
 ///   socket that errors or closes is replaced too;
 ///   [MissevanDanmakuCodec.maxReconnects] runs without a joined one end the
 ///   session the same way.
-final class MissevanDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class MissevanDanmakuSession extends DanmakuSessionBase {
   /// The chat of [args]' room over [site]. [now], [timers], [random] (the
   /// join's `uuid`) and [sessionRetryDelay] are injectable for tests.
   MissevanDanmakuSession({
     required this.args,
     required this.site,
-    MissevanTimers? timers,
+    super.timers,
     DateTime Function()? now,
     Random? random,
     this.sessionRetryDelay = MissevanDanmakuCodec.sessionRetryDelay,
   }) : _now = now ?? DateTime.now,
-       _timers = timers ?? (after: Timer.new, every: Timer.periodic),
        _random = random ?? Random.secure();
 
   /// The room this session joins.
@@ -108,10 +109,7 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
   final Duration sessionRetryDelay;
 
   final DateTime Function() _now;
-  final MissevanTimers _timers;
   final Random _random;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
@@ -121,16 +119,10 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
   Timer? _retry;
   String? _session;
   String _uuid = '';
-  int _generation = 0;
   int _failures = 0;
   int _refusals = 0;
-  bool _joined = false;
   bool _joinedBefore = false;
   String _lastFailure = '';
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the first socket; null once it is on its way, else why the room
   /// has no chat to join.
@@ -139,7 +131,7 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
   /// instead of ending the session, so this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: _site, message: 'session is disposed');
     if (!MissevanEndpoints.isId(args.roomId.trim())) {
       return const LiveSiteError.notFound(siteId: _site, message: 'not a Missevan room');
     }
@@ -148,17 +140,16 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
-    _joined = false;
+    if (!run.isActive) return;
     var session = _session ?? '';
     if (session.isEmpty) {
-      session = await _guestSession(generation);
-      if (_disposed || generation != _generation) return;
+      session = await _guestSession(run);
+      if (!run.isActive) return;
       if (session.isEmpty) {
-        _failed(_lastFailure.isEmpty ? 'no guest session' : _lastFailure, generation);
+        _failed(_lastFailure.isEmpty ? 'no guest session' : _lastFailure, run);
         return;
       }
       _session = session;
@@ -172,12 +163,12 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
         connectTimeout: MissevanDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed('$error', generation);
+      _failed('$error', run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       // Closed or replaced while the handshake was in flight: close what we
-      // just opened instead of parking it on a dead generation.
+      // just opened instead of parking it on a dead run.
       try {
         await socket.close();
       } on Object {
@@ -186,24 +177,25 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
       return;
     }
     _socket = socket;
+    run.handshakeDone();
     _startHeartbeat();
-    _startWatchdog();
+    _startWatchdog(run);
     _uuid = MissevanDanmakuCodec.uuid(_random);
-    _join = _timers.after(MissevanDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) {
-        _scheduleRetry('no join within ${MissevanDanmakuCodec.joinTimeout.inSeconds} s');
+    _join = timers.after(MissevanDanmakuCodec.joinTimeout, () {
+      if (run.isActive && !run.isJoined) {
+        _scheduleRetry('no join within ${MissevanDanmakuCodec.joinTimeout.inSeconds} s', run);
       }
     });
     _send(MissevanDanmakuCodec.join(args.roomId.trim(), uuid: _uuid, reconnect: _joinedBefore));
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
@@ -211,12 +203,12 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
   /// The guest session's `FM_SESS` value: up to
   /// [MissevanDanmakuCodec.sessionAttempts] requests, '' when none set one
   /// or the session moved on meanwhile.
-  Future<String> _guestSession(int generation) async {
+  Future<String> _guestSession(DanmakuRun run) async {
     for (var attempt = 1; attempt <= MissevanDanmakuCodec.sessionAttempts; attempt++) {
       if (attempt > 1 && sessionRetryDelay > Duration.zero) {
         await Future<void>.delayed(sessionRetryDelay * (attempt - 1));
       }
-      if (_disposed || generation != _generation) return '';
+      if (!run.isActive) return '';
       try {
         final response = await site.http.get(
           MissevanEndpoints.guestSession,
@@ -226,7 +218,7 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
         if (session != null) return session;
         _lastFailure = 'no guest session';
       } on Object catch (error) {
-        if (_disposed || generation != _generation) return '';
+        if (!run.isActive) return '';
         _lastFailure = '$error';
       }
     }
@@ -235,58 +227,58 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
 
   /// A handshake that did not come to live: counted, and retried after the
   /// backoff's step; the budget's end is told once and closes the stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final frame = MissevanDanmakuCodec.decode(data, roomId: args.roomId.trim(), uuid: _uuid, receivedAt: _now());
     switch (frame.joined) {
-      case true when !_joined:
-        _joined = true;
+      case true when !run.isJoined:
+        run.joined();
         _joinedBefore = true;
         _join?.cancel();
         _join = null;
         _refusals = 0;
         _failures = 0;
       case false:
-        _refused(frame.refusal);
+        _refused(frame.refusal, run);
         return;
       default:
         break;
     }
     for (final message in frame.messages) {
-      if (_disposed) return;
-      _report(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
   }
 
   /// A refused join: the cookie was not accepted, so a fresh one and a new
   /// socket follow without a notice; the refusal after the last rejoin ends
   /// the session.
-  void _refused(String refusal) {
+  void _refused(String refusal, DanmakuRun run) {
     _refusals += 1;
     if (_refusals > MissevanDanmakuCodec.maxRejoins) {
-      _terminate('join refused: $refusal');
+      _terminate('join refused: $refusal', run);
       return;
     }
     _session = null;
-    _scheduleRetry('join refused: $refusal');
+    _scheduleRetry('join refused: $refusal', run);
   }
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(MissevanDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(MissevanDanmakuCodec.heartbeat);
+    _heartbeat = timers.every(MissevanDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(MissevanDanmakuCodec.heartbeat);
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(MissevanDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(MissevanDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -300,18 +292,15 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -341,38 +330,27 @@ final class MissevanDanmakuSession implements LiveDanmakuSession {
   /// The socket is to be replaced after the backoff's step;
   /// [MissevanDanmakuCodec.maxReconnects] runs without a joined one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > MissevanDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(MissevanDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(MissevanDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -62,10 +63,7 @@ final class PicartoDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef PicartoTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef PicartoTimers = DanmakuTimers;
 
 /// One comment connection: a chat token from the GraphQL API, then the chat
 /// socket.
@@ -90,12 +88,15 @@ typedef PicartoTimers = ({
 /// - A socket that errors, closes or goes silent is reconnected;
 ///   [PicartoDanmakuCodec.maxReconnects] runs without an opened one end the
 ///   session with a terminal system message.
-final class PicartoDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class PicartoDanmakuSession extends DanmakuSessionBase {
   /// The comments of [args]' channel over [site]. [timers] and [now] (the
   /// clock that dates a chip tip without a time) are injectable for tests.
-  PicartoDanmakuSession({required this.args, required this.site, PicartoTimers? timers, DateTime Function()? now})
-    : _now = now ?? DateTime.now,
-      _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+  PicartoDanmakuSession({required this.args, required this.site, super.timers, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The channel this session joins.
   final PicartoDanmakuArgs args;
@@ -104,9 +105,6 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
   final PicartoSite site;
 
   final DateTime Function() _now;
-  final PicartoTimers _timers;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
@@ -114,15 +112,9 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
   Timer? _watchdog;
   Timer? _join;
   Timer? _retry;
-  int _generation = 0;
   int _failures = 0;
   int _refreshes = 0;
-  bool _joined = false;
-  bool _disposed = false;
   String _lastFailure = '';
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the first socket; null once it is on its way, else why the
   /// channel has no chat to join.
@@ -132,7 +124,7 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
   /// instead of ending the session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: picartoSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: picartoSiteId, message: 'session is disposed');
     if (!PicartoEndpoints.isChannelName(args.channelName.trim())) {
       return const LiveSiteError.notFound(siteId: picartoSiteId, message: 'not a Picarto channel');
     }
@@ -140,28 +132,24 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
     return null;
   }
 
-  /// Whether this handshake is still the session's business.
-  bool _active(int generation) => generation == _generation && !_disposed;
-
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (!_active(generation)) return;
-    _joined = false;
-    final token = await _token(generation);
-    if (!_active(generation)) return;
+    if (!run.isActive) return;
+    final token = await _token(run);
+    if (!run.isActive) return;
     if (token == null) {
       // The reference's runtime retried a run that got no token like any
       // other failed run.
-      _scheduleRetry('chat token unavailable: $_lastFailure');
+      _scheduleRetry('chat token unavailable: $_lastFailure', run);
       return;
     }
     // The join budget bounds the handshake: an open socket counts as
     // joined, so a socket that never opens is replaced within it.
-    _join = _timers.after(PicartoDanmakuCodec.joinTimeout, () {
-      if (!_active(generation) || _joined) return;
-      _scheduleRetry('no chat within ${PicartoDanmakuCodec.joinTimeout.inSeconds} s');
+    _join = timers.after(PicartoDanmakuCodec.joinTimeout, () {
+      if (!run.isActive || run.isJoined) return;
+      _scheduleRetry('no chat within ${PicartoDanmakuCodec.joinTimeout.inSeconds} s', run);
     });
     final SocketChannel socket;
     try {
@@ -172,10 +160,10 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
         connectTimeout: PicartoDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed('$error', generation);
+      _failed('$error', run);
       return;
     }
-    if (!_active(generation)) {
+    if (!run.isActive) {
       try {
         await socket.close();
       } on Object {
@@ -184,32 +172,32 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
       return;
     }
     _socket = socket;
-    _joined = true;
+    run.joined();
     _join?.cancel();
     _join = null;
     _failures = 0;
     _startHeartbeat();
-    _startWatchdog();
+    _startWatchdog(run);
     _subscription = socket.stream.listen(
       (data) {
-        if (_active(generation)) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (_active(generation)) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (_active(generation)) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
 
   /// A token for the channel: up to [PicartoDanmakuCodec.tokenAttempts]
   /// requests, or null when none gave one or the session moved on.
-  Future<String?> _token(int generation) async {
+  Future<String?> _token(DanmakuRun run) async {
     for (var attempt = 0; attempt < PicartoDanmakuCodec.tokenAttempts; attempt++) {
       if (attempt > 0) {
         await _delay(PicartoDanmakuCodec.tokenRetryDelay * attempt);
-        if (!_active(generation)) return null;
+        if (!run.isActive) return null;
       }
       try {
         final answer = await site.http.postJson(
@@ -221,7 +209,7 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
         if (token != null) return token;
         _lastFailure = 'no chat token (HTTP ${answer.status})';
       } on Object catch (error) {
-        if (!_active(generation)) return null;
+        if (!run.isActive) return null;
         _lastFailure = '$error';
       }
     }
@@ -232,12 +220,12 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
   /// is fired, and a disposed session's timer never fires.
   Future<void> _delay(Duration delay) async {
     final done = Completer<void>();
-    _timers.after(delay, done.complete);
+    timers.after(delay, done.complete);
     await done.future;
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     final text = switch (data) {
       final String text => text,
       final List<int> bytes => utf8.decode(bytes, allowMalformed: true),
@@ -251,23 +239,23 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
       now: _now(),
     );
     if (frame.tokenRefused) {
-      _refused();
+      _refused(run);
       return;
     }
     // The server answered a frame it only answers for a good token: the
     // refresh budget starts over.
     _refreshes = 0;
     for (final message in frame.messages) {
-      if (_disposed) return;
-      _report(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
   }
 
   /// A refused token: the socket is replaced with a fresh token's, without a
   /// notice; the refusal after the last refresh ends the session.
-  void _refused() {
+  void _refused(DanmakuRun run) {
     if (_refreshes >= PicartoDanmakuCodec.maxTokenRefreshes) {
-      _terminate('chat token refused');
+      _terminate('chat token refused', run);
       return;
     }
     _refreshes += 1;
@@ -276,15 +264,15 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(PicartoDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(PicartoDanmakuCodec.heartbeat);
+    _heartbeat = timers.every(PicartoDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(PicartoDanmakuCodec.heartbeat);
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(PicartoDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(PicartoDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -298,44 +286,41 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  void _report(LiveMessage message) {
-    if (!_disposed) _events.add(message);
-  }
-
   /// A handshake that did not come to a socket: counted, and retried after
   /// the backoff's step; the budget's end is told once and closes the
   /// stream.
-  void _failed(String reason, int generation) {
-    if (!_active(generation)) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
   /// The socket is to be replaced after the backoff's step;
   /// [PicartoDanmakuCodec.maxReconnects] runs without an opened one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > PicartoDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(PicartoDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (!_active(generation)) return;
+    run.reconnecting(reason);
+    _retry = timers.after(PicartoDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -362,22 +347,11 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
     }
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }

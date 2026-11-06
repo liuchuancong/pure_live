@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_session_base.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -62,10 +63,7 @@ final class ShowroomDanmakuProvider implements LiveDanmakuProvider {
 
 /// How a session sets its watches: the clock a real [Timer] keeps, or a
 /// test's own.
-typedef ShowroomTimers = ({
-  Timer Function(Duration delay, void Function() callback) after,
-  Timer Function(Duration period, void Function(Timer timer) callback) every,
-});
+typedef ShowroomTimers = DanmakuTimers;
 
 /// One comment connection: one WebSocket per broadcast, subscribed once.
 ///
@@ -82,12 +80,15 @@ typedef ShowroomTimers = ({
 /// - A socket that errors, closes or goes silent is reconnected;
 ///   [ShowroomDanmakuCodec.maxReconnects] runs without a joined one end the
 ///   session with a terminal system message.
-final class ShowroomDanmakuSession implements LiveDanmakuSession {
+///
+/// The run lifecycle — the generation the handshakes and their callbacks
+/// guard with — is the shared base's ([DanmakuSessionBase]): every handshake
+/// is one [DanmakuRun], and the base drops whatever a dead one reports.
+final class ShowroomDanmakuSession extends DanmakuSessionBase {
   /// The comments of [args]' broadcast over [site]. [now] and [timers] are
   /// injectable for tests.
-  ShowroomDanmakuSession({required this.args, required this.site, ShowroomTimers? timers, DateTime Function()? now})
-    : _now = now ?? DateTime.now,
-      _timers = timers ?? (after: Timer.new, every: Timer.periodic);
+  ShowroomDanmakuSession({required this.args, required this.site, super.timers, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The broadcast this session subscribes to.
   final ShowroomDanmakuArgs args;
@@ -96,9 +97,6 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
   final ShowroomSite site;
 
   final DateTime Function() _now;
-  final ShowroomTimers _timers;
-
-  final _events = StreamController<LiveMessage>.broadcast();
 
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
@@ -107,12 +105,7 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
   Timer? _retry;
   ShowroomGiftCatalog _gifts = ShowroomGiftCatalog.empty;
   var _giftsAsked = false;
-  int _generation = 0;
   int _failures = 0;
-  bool _disposed = false;
-
-  @override
-  Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the first socket; null once it is on its way, else why the
   /// broadcast has no chat to join.
@@ -122,7 +115,7 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
   /// and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: showroomSiteId, message: 'session is disposed');
+    if (isDisposed) return const LiveSiteError.unsupported(siteId: showroomSiteId, message: 'session is disposed');
     final checked = ShowroomDanmakuCodec.checked(args);
     if (checked == null) {
       return const LiveSiteError.notFound(siteId: showroomSiteId, message: 'not a SHOWROOM broadcast server or key');
@@ -135,21 +128,21 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
   /// The room's gift table, asked for once per session in the background;
   /// gifts before it comes, or without it, have their ids and pictures.
   Future<void> _loadGifts() async {
-    if (_giftsAsked || _disposed) return;
+    if (_giftsAsked || isDisposed) return;
     _giftsAsked = true;
     try {
       final catalog = await site.giftCatalog(args.roomId);
-      if (!_disposed) _gifts = catalog;
+      if (!isDisposed) _gifts = catalog;
     } on Object {
       // No table: gifts keep their ids and pictures.
     }
   }
 
   Future<void> _handshake() async {
-    if (_disposed) return;
-    final generation = ++_generation;
+    if (isDisposed) return;
+    final run = beginRun();
     await _teardownSocket();
-    if (_disposed || generation != _generation) return;
+    if (!run.isActive) return;
     final SocketChannel socket;
     try {
       socket = await site.connect(
@@ -159,10 +152,10 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
         connectTimeout: ShowroomDanmakuCodec.silenceTimeout,
       );
     } on Object catch (error) {
-      _failed('$error', generation);
+      _failed('$error', run);
       return;
     }
-    if (_disposed || generation != _generation) {
+    if (!run.isActive) {
       try {
         await socket.close();
       } on Object {
@@ -174,50 +167,51 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
     // An open socket counts as joined, so this run came to live: the
     // reconnect budget is about runs that never did.
     _failures = 0;
+    run.joined();
     _startHeartbeat();
-    _startWatchdog();
+    _startWatchdog(run);
     // The subscription goes out as soon as the socket opens; the server
     // confirms nothing, so the room counts as joined now.
     _send(ShowroomDanmakuCodec.subscribe(args.key));
     _subscription = socket.stream.listen(
       (data) {
-        if (generation == _generation && !_disposed) _onData(data);
+        if (run.isActive) _onData(data, run);
       },
       onDone: () {
-        if (generation == _generation && !_disposed) _scheduleRetry('socket closed');
+        if (run.isActive) _scheduleRetry('socket closed', run);
       },
       onError: (Object error) {
-        if (generation == _generation && !_disposed) _scheduleRetry('$error');
+        if (run.isActive) _scheduleRetry('$error', run);
       },
     );
   }
 
   /// A handshake that did not come to live: counted, and retried after the
   /// backoff's step; the budget's end is told once and closes the stream.
-  void _failed(String reason, int generation) {
-    if (generation != _generation || _disposed) return;
-    _scheduleRetry(reason);
+  void _failed(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    _scheduleRetry(reason, run);
   }
 
-  void _onData(Object? data) {
-    _startWatchdog();
+  void _onData(Object? data, DanmakuRun run) {
+    _startWatchdog(run);
     for (final message in ShowroomDanmakuCodec.decode(data, key: args.key, gifts: _gifts)) {
-      if (_disposed) return;
-      _events.add(message);
+      if (!run.isActive) return;
+      run.message(message);
     }
   }
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    _heartbeat = _timers.every(ShowroomDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(ShowroomDanmakuCodec.ping);
+    _heartbeat = timers.every(ShowroomDanmakuCodec.heartbeatInterval, (_) {
+      if (!isDisposed) _send(ShowroomDanmakuCodec.ping);
     });
   }
 
-  void _startWatchdog() {
+  void _startWatchdog(DanmakuRun run) {
     _watchdog?.cancel();
-    _watchdog = _timers.after(ShowroomDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleRetry('socket silent');
+    _watchdog = timers.after(ShowroomDanmakuCodec.silenceTimeout, () {
+      if (run.isActive) _scheduleRetry('socket silent', run);
     });
   }
 
@@ -233,12 +227,13 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
 
   /// The session is over: the reason is told once, as a system message, and
   /// the stream closes; nothing reconnects afterwards.
-  void _terminate(String reason) {
-    _cancelTimers();
-    if (_disposed) return;
-    _events.add(
-      LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
-    );
+  void _terminate(String reason, DanmakuRun run) {
+    if (!run.isActive) return;
+    run
+      ..exhausted(reason)
+      ..message(
+        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+      );
     unawaited(dispose());
   }
 
@@ -266,37 +261,26 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
   /// The socket is to be replaced after the backoff's step;
   /// [ShowroomDanmakuCodec.maxReconnects] runs without a joined one end the
   /// session.
-  void _scheduleRetry(String reason) {
+  void _scheduleRetry(String reason, DanmakuRun run) {
     _cancelTimers();
-    if (_disposed) return;
+    if (!run.isActive) return;
     _failures += 1;
     if (_failures > ShowroomDanmakuCodec.maxReconnects) {
-      _terminate(reason);
+      _terminate(reason, run);
       return;
     }
-    final generation = _generation;
-    _retry = _timers.after(ShowroomDanmakuCodec.reconnectBaseDelay * _failures, () {
-      if (generation != _generation || _disposed) return;
+    run.reconnecting(reason);
+    _retry = timers.after(ShowroomDanmakuCodec.reconnectBaseDelay * _failures, () {
+      if (!run.isActive) return;
       unawaited(_handshake());
     });
   }
 
-  /// Stops delivery, leaving the session able to [connect] again.
+  /// Releases the transport and the protocol timers; safe when nothing is
+  /// open.
   @override
-  Future<void> disconnect() async {
-    _generation += 1;
+  Future<void> stop() async {
     _cancelTimers();
     await _teardownSocket();
-  }
-
-  /// Releases everything the session owns; not reusable afterwards.
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    _generation += 1;
-    _cancelTimers();
-    await _teardownSocket();
-    await _events.close();
   }
 }

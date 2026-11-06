@@ -8,4 +8,5 @@ export 'danmaku/danmaku.dart';
 export 'hls/hls_master.dart';
 export 'normalization/normalization.dart';
 export 'quality_label.dart';
+export 'websocket/danmaku_session_base.dart';
 export 'websocket/danmaku_socket.dart';
