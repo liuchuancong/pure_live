@@ -162,6 +162,11 @@ void main() {
       expect(plain.end, 0);
       expect(plain.descendants, isEmpty);
       expect(plain.hasClass('a'), isTrue);
+      // The span is only filled by the parser, so a hand-made element asks for
+      // `source.substring(3, 0)`: text throws until the page sets the end.
+      expect(() => plain.text, throwsRangeError);
+      plain.end = 4;
+      expect(plain.text, 'x');
     });
   });
 }
