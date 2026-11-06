@@ -34,5 +34,9 @@
   "wallFull": "The wall is full — clear a pane first",
   "audibleFocus": "Audible pane",
   "setAudible": "Make audible",
-  "danmakuHint": "Chat shows on the audible pane"
+  "danmakuHint": "Chat shows on the audible pane",
+  "restoreAskTitle": "Restore the last wall?",
+  "restoreAskBody": "{count} panes were saved and reconnect now.",
+  "restoreAccept": "Restore",
+  "restoreDecline": "Blank wall"
 }

@@ -45,21 +45,13 @@ const String _documentKey = 'current';
 /// room it holds — `platform:roomId`, like a follow — or null while the
 /// slot is empty. `error` carries what went wrong when the store never
 /// opened, so the page can say so instead of spinning.
-typedef MultiviewState = ({
-  bool ready,
-  MultiviewLayout layout,
-  List<String?> slots,
-  String? error,
-});
+typedef MultiviewState = ({bool ready, MultiviewLayout layout, List<String?> slots, String? error});
 
 /// The wall before it can be read: the default arrangement, every slot empty,
 /// and whatever the open answered when it did not open.
-MultiviewState pendingMultiview({String? error}) => (
-  ready: false,
-  layout: _defaultLayout,
-  slots: List<String?>.filled(_defaultLayout.panes, null),
-  error: error,
-);
+MultiviewState pendingMultiview({String? error}) =>
+    (ready: false, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout.panes, null), error: error);
+
 /// The multiview store (the reference's last-arrangement meta entry): one
 /// store holding one JSON map — the layout and the slots — so a revisit
 /// opens the same wall. The video tiles themselves arrive later with the

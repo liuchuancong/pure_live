@@ -1168,6 +1168,10 @@ class _Translations$multiview$en extends Translations$multiview$zh_CN {
 	@override String get audibleFocus => 'Audible pane';
 	@override String get setAudible => 'Make audible';
 	@override String get danmakuHint => 'Chat shows on the audible pane';
+	@override String get restoreAskTitle => 'Restore the last wall?';
+	@override String restoreAskBody({required Object count}) => '${count} panes were saved and reconnect now.';
+	@override String get restoreAccept => 'Restore';
+	@override String get restoreDecline => 'Blank wall';
 }
 
 // Path: music
@@ -6069,6 +6073,10 @@ extension on TranslationsEn {
 			'multiview.audibleFocus' => 'Audible pane',
 			'multiview.setAudible' => 'Make audible',
 			'multiview.danmakuHint' => 'Chat shows on the audible pane',
+			'multiview.restoreAskTitle' => 'Restore the last wall?',
+			'multiview.restoreAskBody' => ({required Object count}) => '${count} panes were saved and reconnect now.',
+			'multiview.restoreAccept' => 'Restore',
+			'multiview.restoreDecline' => 'Blank wall',
 			'music.title' => 'Music',
 			'music.tagline' => 'Search songs and listen online',
 			'music.viewsLabel' => 'Music views',
@@ -6426,12 +6434,12 @@ extension on TranslationsEn {
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
 			'music.downloadsEmptyTitle' => 'No downloads yet',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadsEmptyDescription' => 'Download from a song row’s menu and it appears here.',
 			'music.localAddFolder' => 'Add a folder',
 			'music.localHint' => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
-			_ => null,
-		} ?? switch (path) {
 			'music.localRescan' => 'Scan again',
 			'music.localFolders' => 'Music folders',
 			'music.localRemoveFolder' => 'Remove the folder',
@@ -6940,12 +6948,12 @@ extension on TranslationsEn {
 			'recorder.libraryTitle' => 'Recording library',
 			'recorder.libraryRoot' => 'All recordings',
 			'recorder.librarySummary' => ({required int count, required String size}) => '${count} · ${size}',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.librarySearchHint' => 'Search recordings (room / platform / day / file)',
 			'recorder.libraryFailedTitle' => 'The recording folder cannot be read',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
 			'recorder.emptyLibraryTitle' => 'No recordings yet',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.emptyLibraryDescription' => 'Finished takes appear here, filed by day, platform and room.',
 			'recorder.emptySearchTitle' => 'No recording matches',
 			'recorder.emptySearchDescription' => 'Try another word, or clear the filters.',
@@ -7454,12 +7462,12 @@ extension on TranslationsEn {
 			'search.noteYoutubeShort' => 'Keywords find live channels only',
 			'search.scopeTagAnchors' => 'Anchors',
 			'search.scopeTagWeb' => 'Web',
+			_ => null,
+		} ?? switch (path) {
 			'search.scopeTagsHint' => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.',
 			'search.scopeSummary' => ({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.',
 			'search.anchorUnsupported' => ({required String site}) => '${site} cannot search streamers; switch to “Rooms”.',
-			_ => null,
-		} ?? switch (path) {
 			'search.anchorPlatforms' => ({required String sites}) => 'Anchor search covers: ${sites}.',
 			'settings.title' => 'Settings',
 			'settings.navGeneral' => 'Browsing & window',
@@ -7968,12 +7976,12 @@ extension on TranslationsEn {
 			'settings.cacheCategoryPreview' => 'Previews and search thumbnails',
 			'settings.cacheCategoryOther' => 'Other',
 			'settings.cacheImagesSection' => 'Image cache',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheDiskEnabled' => 'Cache images on disk',
 			'settings.cacheDiskEnabledDesc' => 'Off keeps memory and network only; existing files stay until the next clear.',
 			'settings.cacheFreshness' => 'Freshness',
 			'settings.cacheFreshnessDesc' => 'Update first swaps covers sooner; save data keeps them longer.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheFreshnessFresh' => 'Update first',
 			'settings.cacheFreshnessBalanced' => 'Balanced',
 			'settings.cacheFreshnessThrifty' => 'Save data',
@@ -8482,12 +8490,12 @@ extension on TranslationsEn {
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => 'Merged ${moved}; ${failed} did not finish',
 			'settings.downloadColumnFile' => 'File',
 			'settings.downloadColumnSize' => 'Size',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
 			'settings.downloadSearchPlaceholder' => 'Search downloads',
 			'settings.downloadPercent' => ({required Object percent}) => 'Downloading ${percent}%',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStatusPaused' => 'Paused',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
 			'settings.downloadLoadingMore' => 'Loading more…',
@@ -8996,12 +9004,12 @@ extension on TranslationsEn {
 			'shield.repeatEnabled' => 'Collapse repeats',
 			'shield.repeatEnabledDescription' => 'Keep only the first copy.',
 			'shield.repeatWindow' => 'Merge window',
+			_ => null,
+		} ?? switch (path) {
 			'shield.keywordsTitle' => 'Keywords',
 			'shield.usersTitle' => 'Users',
 			'shield.keywordFieldHint' => 'Type a keyword to block — /…/ is a regular expression',
 			'shield.userFieldHint' => 'Type a user name to block',
-			_ => null,
-		} ?? switch (path) {
 			'shield.add' => 'Add',
 			'shield.keywordsEmpty' => 'No blocked keywords yet',
 			'shield.usersEmpty' => 'No blocked users yet',

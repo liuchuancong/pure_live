@@ -3217,6 +3217,18 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '弹幕显示在有声的格子上'
 	String get danmakuHint => '弹幕显示在有声的格子上';
+
+	/// zh-CN: '恢复上次的画面墙？'
+	String get restoreAskTitle => '恢复上次的画面墙？';
+
+	/// zh-CN: '保存了 {count} 个画面，现在重新连接。'
+	String restoreAskBody({required Object count}) => '保存了 ${count} 个画面，现在重新连接。';
+
+	/// zh-CN: '恢复'
+	String get restoreAccept => '恢复';
+
+	/// zh-CN: '空白墙'
+	String get restoreDecline => '空白墙';
 }
 
 // Path: music
@@ -15254,6 +15266,10 @@ extension on Translations {
 			'multiview.audibleFocus' => '有声格子',
 			'multiview.setAudible' => '设为有声',
 			'multiview.danmakuHint' => '弹幕显示在有声的格子上',
+			'multiview.restoreAskTitle' => '恢复上次的画面墙？',
+			'multiview.restoreAskBody' => ({required Object count}) => '保存了 ${count} 个画面，现在重新连接。',
+			'multiview.restoreAccept' => '恢复',
+			'multiview.restoreDecline' => '空白墙',
 			'music.title' => '音乐',
 			'music.tagline' => '搜索歌曲，在线收听',
 			'music.viewsLabel' => '音乐视图',
@@ -15611,12 +15627,12 @@ extension on Translations {
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
 			'music.downloadsEmptyTitle' => '还没有下载任务',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadsEmptyDescription' => '在歌曲行的「更多」里下载，文件会出现在这里。',
 			'music.localAddFolder' => '添加文件夹',
 			'music.localHint' => '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
-			_ => null,
-		} ?? switch (path) {
 			'music.localRescan' => '重新扫描',
 			'music.localFolders' => '音乐文件夹',
 			'music.localRemoveFolder' => '移除文件夹',
@@ -16125,12 +16141,12 @@ extension on Translations {
 			'recorder.libraryTitle' => '录像库',
 			'recorder.libraryRoot' => '全部录像',
 			'recorder.librarySummary' => ({required int count, required String size}) => '${count} 条 · ${size}',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.librarySearchHint' => '搜索录像（直播间 / 平台 / 日期 / 文件名）',
 			'recorder.libraryFailedTitle' => '读不到录像目录',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
 			'recorder.emptyLibraryTitle' => '还没有录像文件',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.emptyLibraryDescription' => '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。',
 			'recorder.emptySearchTitle' => '没有符合条件的录像',
 			'recorder.emptySearchDescription' => '换个关键词，或把筛选清掉。',
@@ -16639,12 +16655,12 @@ extension on Translations {
 			'search.noteYoutubeShort' => '关键词只能搜到正在直播的频道',
 			'search.scopeTagAnchors' => '主播',
 			'search.scopeTagWeb' => '网页',
+			_ => null,
+		} ?? switch (path) {
 			'search.scopeTagsHint' => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。',
 			'search.scopeSummary' => ({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。',
 			'search.anchorUnsupported' => ({required String site}) => '${site} 不支持主播搜索，请切换到“直播间”。',
-			_ => null,
-		} ?? switch (path) {
 			'search.anchorPlatforms' => ({required String sites}) => '主播搜索支持：${sites}。',
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
@@ -17153,12 +17169,12 @@ extension on Translations {
 			'settings.cacheCategoryPreview' => '预览与搜索缩略图',
 			'settings.cacheCategoryOther' => '其他',
 			'settings.cacheImagesSection' => '图片缓存',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheDiskEnabled' => '启用图片磁盘缓存',
 			'settings.cacheDiskEnabledDesc' => '关闭后图片只走内存与网络；已有文件保留到下次清理。',
 			'settings.cacheFreshness' => '缓存策略',
 			'settings.cacheFreshnessDesc' => '更新优先更快换上新封面，省流量保留更久。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheFreshnessFresh' => '更新优先',
 			'settings.cacheFreshnessBalanced' => '均衡',
 			'settings.cacheFreshnessThrifty' => '省流量',
@@ -17667,12 +17683,12 @@ extension on Translations {
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => '已并入 ${moved} 个，${failed} 个未完成',
 			'settings.downloadColumnFile' => '文件',
 			'settings.downloadColumnSize' => '大小',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadColumnTime' => '时间',
 			'settings.downloadColumnActions' => '操作',
 			'settings.downloadSearchPlaceholder' => '搜索下载记录',
 			'settings.downloadPercent' => ({required Object percent}) => '下载中 ${percent}%',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStatusPaused' => '已暂停',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
 			'settings.downloadLoadingMore' => '正在加载更多…',
@@ -18181,12 +18197,12 @@ extension on Translations {
 			'shield.repeatEnabled' => '合并重复弹幕',
 			'shield.repeatEnabledDescription' => '相同内容只保留第一条。',
 			'shield.repeatWindow' => '合并时间',
+			_ => null,
+		} ?? switch (path) {
 			'shield.keywordsTitle' => '关键词',
 			'shield.usersTitle' => '用户',
 			'shield.keywordFieldHint' => '输入要屏蔽的关键词，/…/ 是正则',
 			'shield.userFieldHint' => '输入要屏蔽的用户名',
-			_ => null,
-		} ?? switch (path) {
 			'shield.add' => '添加',
 			'shield.keywordsEmpty' => '还没有屏蔽关键词',
 			'shield.usersEmpty' => '还没有屏蔽的用户',

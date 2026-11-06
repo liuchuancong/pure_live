@@ -34,5 +34,9 @@
   "wallFull": "格子已满，先关闭一格再添加",
   "audibleFocus": "有声格子",
   "setAudible": "设为有声",
-  "danmakuHint": "弹幕显示在有声的格子上"
+  "danmakuHint": "弹幕显示在有声的格子上",
+  "restoreAskTitle": "恢复上次的画面墙？",
+  "restoreAskBody": "保存了 {count} 个画面，现在重新连接。",
+  "restoreAccept": "恢复",
+  "restoreDecline": "空白墙"
 }

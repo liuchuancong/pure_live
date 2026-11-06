@@ -7,7 +7,7 @@ import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
-import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show multiviewProvider;
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show MultiviewLayout, multiviewProvider;
 
 /// Where one pane's session stands.
 enum MultiviewPaneStage {
@@ -44,7 +44,13 @@ typedef MultiviewPanePlayback = ({
 
 /// The wall's sessions: one playback per assigned pane, the pane that owns
 /// the sound, whether every pane is muted, and whether the wall is on screen.
-typedef MultiviewPlaybackState = ({bool active, bool allMuted, int? selected, Map<int, MultiviewPanePlayback> panes});
+typedef MultiviewPlaybackState = ({
+  bool active,
+  bool allMuted,
+  int? selected,
+  Map<int, MultiviewPanePlayback> panes,
+  bool pendingRestore,
+});
 
 /// The walls' playback owner.
 ///
@@ -59,6 +65,10 @@ typedef MultiviewPlaybackState = ({bool active, bool allMuted, int? selected, Ma
 final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState> {
   final List<_PaneSession> _sessions = [];
   bool _active = false;
+
+  /// Whether this visit already answered the restore ask: a wall that was
+  /// saved asks once on arrival, and the answer governs the whole visit.
+  bool _restoreDecided = false;
   bool _allMuted = false;
   bool _globalMuted = false;
   int? _selected;
@@ -91,7 +101,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       if (_active) _sync();
     });
     ref.onDispose(_releaseAll);
-    return (active: false, allMuted: false, selected: null, panes: const {});
+    return (active: false, allMuted: false, selected: null, panes: const {}, pendingRestore: false);
   }
 
   /// Tells the wall whether it is on screen; leaving releases every engine,
@@ -106,16 +116,60 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     }
     _releaseAll();
     _allMuted = false;
+    _restoreDecided = false;
     _publish();
   }
 
-  /// Picks the pane whose sound plays; every other pane is muted.
-  void select(int slot) {
+  /// Opens the wall the document saved: the ask's yes.
+  void acceptRestoreWall() {
+    if (_restoreDecided) return;
+    _restoreDecided = true;
+    _publish();
+    _sync();
+  }
+
+  /// Blanks the wall for this visit and clears the saved document: the
+  /// ask's no. A wall the viewer builds now saves as usual.
+  Future<void> declineRestoreWall() async {
+    if (_restoreDecided) return;
+    _restoreDecided = true;
+    final wall = ref.read(multiviewProvider);
+    final controller = ref.read(multiviewProvider.notifier);
+    for (var index = 0; index < wall.slots.length; index++) {
+      if (wall.slots[index] != null) await controller.clearSlot(index);
+    }
+    _publish();
+    _sync();
+  }
+
+  /// Picks the pane whose sound plays; every other pane is muted. A tap on
+  /// a small pane of the 1+3 wall promotes it: it takes the large place's
+  /// quality, and the pane it displaced falls back to its lowest tier —
+  /// the reference's promote, so a raise never means two refetches of the
+  /// same tier.
+  void select(int slot, {bool promote = false}) {
     if (_selected == slot) return;
     if (!_sessions.any((session) => session.slot == slot)) return;
+    final previous = _selected;
     _selected = slot;
     _applyFocus();
     _publish();
+    if (promote && previous != null && ref.read(multiviewProvider).layout == MultiviewLayout.focus) {
+      unawaited(_promoteSwap(previous, slot));
+    }
+  }
+
+  Future<void> _promoteSwap(int from, int to) async {
+    final leaving = _sessionOf(from);
+    final entering = _sessionOf(to);
+    if (leaving == null || entering == null) return;
+    final raised = leaving.quality;
+    if (raised != null) await selectQuality(to, raised);
+    final qualities = leaving.qualities;
+    if (qualities.isEmpty) return;
+    final lowest =
+        qualities[preferredQualityIndex(qualities.map((quality) => quality.label), kPreferredResolutionChoices.last)];
+    await selectQuality(from, lowest);
   }
 
   /// Opens [slot] again after a failure, at the volume the pane held.
@@ -254,16 +308,30 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
         _release(session);
       }
     }
-    for (var slot = 0; slot < wall.slots.length; slot++) {
+    // A wall the document saved asks before it opens: opening four streams
+    // at once is the reference's own courtesy, and the ask costs nothing —
+    // a wall built by hand this visit is already decided.
+    final saved = [
+      for (var slot = 0; slot < wall.slots.length; slot++)
+        if (wall.slots[slot] != null && !_sessions.any((session) => session.slot == slot)) slot,
+    ];
+    if (saved.isNotEmpty && !_restoreDecided && _sessions.isEmpty) {
+      _publish();
+      return;
+    }
+    final fresh = <_PaneSession>[];
+    for (final slot in saved) {
       final identity = wall.slots[slot];
       if (identity == null) continue;
-      if (_sessions.any((session) => session.slot == slot)) continue;
       final volume = ref.read(playbackSettingsProvider.notifier).volume;
       final session = _PaneSession(slot: slot, identity: identity, volume: volume.clamp(0.0, 1.0));
       _sessions.add(session);
-      unawaited(_open(session, followed[identity]));
+      fresh.add(session);
     }
     _ensureSelection();
+    for (final session in fresh) {
+      unawaited(_open(session, followed[session.identity]));
+    }
     _publish();
   }
 
@@ -286,7 +354,9 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
           .then((answer) => answer.fold((error) => throw _PaneOpenFailure(error.message), (qualities) => qualities));
       if (stale()) return;
       session.qualities = qualities;
-      final quality = _pickQuality(qualities);
+      final layout = ref.read(multiviewProvider).layout;
+      final small = layout == MultiviewLayout.focus && _selected != null && session.slot != _selected;
+      final quality = _pickQuality(qualities, small: small);
       final lines = await _linesOf(session, quality);
       if (stale()) return;
       if (lines.isEmpty) {
@@ -394,14 +464,16 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
 
   /// The viewer's preferred tier at an exact label, or the nearest tier by
   /// position when the room spells them differently.
-  LivePlayQuality? _pickQuality(List<LivePlayQuality> qualities) {
+  LivePlayQuality? _pickQuality(List<LivePlayQuality> qualities, {bool small = false}) {
     if (qualities.isEmpty) return null;
     final settings = ref.read(playbackSettingsProvider);
     final cellular = ref.read(networkTypeProvider.notifier).usesCellular;
-    final index = preferredQualityIndex(
-      qualities.map((quality) => quality.label),
-      cellular ? settings.preferredQualityCellular : settings.preferredQuality,
-    );
+    final tier = small
+        ? kPreferredResolutionChoices.last
+        : cellular
+        ? settings.preferredQualityCellular
+        : settings.preferredQuality;
+    final index = preferredQualityIndex(qualities.map((quality) => quality.label), tier);
     return qualities[index];
   }
 
@@ -548,6 +620,11 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       active: _active,
       allMuted: _allMuted,
       selected: _selected,
+      pendingRestore:
+          _active &&
+          !_restoreDecided &&
+          _sessions.isEmpty &&
+          ref.read(multiviewProvider).slots.any((slot) => slot != null),
       panes: {
         for (final session in _sessions)
           session.slot: (

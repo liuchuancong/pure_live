@@ -64,12 +64,35 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   void initState() {
     super.initState();
     _playbackNotifier = ref.read(multiviewPlaybackProvider.notifier);
+    ref.listenManual(multiviewPlaybackProvider.select((state) => state.pendingRestore), (previous, next) {
+      if (next && previous != true) unawaited(_askRestore());
+    });
     // The toolbar's word opens the room search picker over the wall: the
     // room found there lands in the current cell. The listener catches a
     // word handed while the page is showing; the post-frame take catches
     // one handed as the page arrives.
     ref.listenManual(multiviewSearchHandoffProvider, (_, _) => _takeHandoff());
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  /// The saved wall's ask on arrival: open what it kept, or start blank.
+  Future<void> _askRestore() async {
+    final t = context.t;
+    final wall = ref.read(multiviewProvider);
+    final count = wall.slots.where((slot) => slot != null).length;
+    final accepted = await showDsConfirm(
+      context: context,
+      title: t.multiview.restoreAskTitle,
+      description: t.multiview.restoreAskBody(count: count),
+      confirmLabel: t.multiview.restoreAccept,
+      cancelLabel: t.multiview.restoreDecline,
+    );
+    if (!mounted) return;
+    if (accepted) {
+      ref.read(multiviewPlaybackProvider.notifier).acceptRestoreWall();
+    } else {
+      await ref.read(multiviewPlaybackProvider.notifier).declineRestoreWall();
+    }
   }
 
   void _takeHandoff() {
@@ -562,7 +585,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       swapSource: _swapSource,
       picking: _pickingSlot == slot.index,
       onPick: () => _pickForSlot(slot.index),
-      onSelect: () => ref.read(multiviewPlaybackProvider.notifier).select(slot.index),
+      onSelect: () => ref.read(multiviewPlaybackProvider.notifier).select(slot.index, promote: true),
       onPause: () => unawaited(ref.read(multiviewPlaybackProvider.notifier).togglePause(slot.index)),
       onOpen: () => unawaited(_openSlot(slot.key, slot.room)),
       onRetry: () => unawaited(ref.read(multiviewPlaybackProvider.notifier).retry(slot.index)),
