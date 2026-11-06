@@ -33,7 +33,11 @@ final class AppProxyHttpOverrides extends HttpOverrides {
           // string Dart parses it from, plus the registration that puts it on a
           // CONNECT tunnel — the one case a `PROXY host:port` string cannot
           // reach. Third-party clients (WebDAV's) get no less than Dio does.
-          client.findProxy = (_) => route.ioRoute;
+          // Loopback and LAN targets answer DIRECT: the LAN sync pairing and
+          // the DLNA control speak in local addresses a proxy cannot reach,
+          // and pushing them at the proxy breaks pairing for anyone whose
+          // proxy is not on the same subnet.
+          client.findProxy = route.ioRouteFor;
           if (route.isAuthenticationRequired) {
             client.addProxyCredentials(
               route.host,

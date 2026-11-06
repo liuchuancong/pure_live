@@ -1,4 +1,5 @@
 import 'dart:convert' show base64Encode, utf8;
+import 'dart:io' show InternetAddress, InternetAddressType;
 
 /// Proxy routing decisions for outgoing requests.
 ///
@@ -75,6 +76,17 @@ final class HttpProxyRoute extends ProxyRoute {
   /// `http://user`. A bare `host:port` (what [key] is) is not a directive
   /// dart:io parses at all: it answers every request with
   /// `Invalid proxy configuration`.
+  ///
+  /// Targets a proxy cannot serve anyway — loopback, the local subnet,
+  /// mDNS names — come back as `DIRECT` regardless of this endpoint (see
+  /// [bypassesProxy]); a LAN route pushed through an outside proxy is at
+  /// best a connection failure and at worst someone else's traffic.
+  String ioRouteFor(Uri url) => bypassesProxy(url) ? 'DIRECT' : ioRoute;
+
+  /// The string dart:io's `findProxy` must be handed to authenticate a route.
+  ///
+  /// Prefer [ioRouteFor] so local targets stay local; this getter is the
+  /// unfiltered form for callers that have no URL in hand yet.
   String get ioRoute => isAuthenticationRequired ? 'PROXY $username:$password@$host:$port' : 'PROXY $host:$port';
 
   /// The `http://host:port` form FFmpeg's `-http_proxy` and mpv's `http-proxy`
@@ -134,4 +146,30 @@ final class FixedProxyPolicy implements ProxyPolicy {
     }
     return global;
   }
+}
+
+/// Whether [url] names a target reachable without leaving the machine or the
+/// local network, and therefore must not be handed to a proxy.
+///
+/// The check is deliberately synchronous and DNS-free: hosts are matched as
+/// written — `localhost` and the `.local` / `.localhost` suffixes by name,
+/// everything else by parsing it as a literal address. Loopback, link-local,
+/// the RFC 1918 private ranges and IPv6 unique-local all bypass. A name that
+/// is not a literal cannot be classified without a lookup, so it stays on the
+/// proxy — the LAN clients that matter (sync pairing, DLNA devices) speak in
+/// addresses or mDNS names anyway.
+bool bypassesProxy(Uri url) {
+  final host = url.host.toLowerCase();
+  if (host.isEmpty) return false;
+  if (host == 'localhost' || host.endsWith('.localhost') || host.endsWith('.local')) return true;
+  final address = InternetAddress.tryParse(host);
+  if (address == null) return false;
+  if (address.isLoopback || address.isLinkLocal) return true;
+  final octets = address.rawAddress;
+  if (address.type == InternetAddressType.IPv4) {
+    return octets[0] == 10 ||
+        (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) ||
+        (octets[0] == 192 && octets[1] == 168);
+  }
+  return (octets[0] & 0xFE) == 0xFC;
 }
