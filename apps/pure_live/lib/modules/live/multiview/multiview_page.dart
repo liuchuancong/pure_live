@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:live_sites/live_sites.dart' show LivePlayQuality, LiveRoom, LiveRoomRefIdentity;
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:pure_live/app/app.dart';
@@ -264,7 +265,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final switches = [
       if (playback.panes.isNotEmpty)
         _ToolbarButton(
-          icon: wallMuted ? DsIcons.volumeOff : DsIcons.volume,
+          iconAsset: wallMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
           semanticLabel: wallMuted ? t.multiview.unmuteAll : t.multiview.muteAll,
           active: wallMuted,
           onPressed: () {
@@ -279,7 +280,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         ),
       if (activePanes.isNotEmpty)
         _ToolbarButton(
-          icon: anyPlaying ? DsIcons.pause : DsIcons.play,
+          iconAsset: anyPlaying ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
           semanticLabel: anyPlaying ? t.multiview.pauseAll : t.multiview.resumeAll,
           active: !anyPlaying,
           onPressed: () => unawaited(controls.togglePauseAll()),
@@ -800,7 +801,9 @@ final class _PaneTile extends StatelessWidget {
                                 // pane large enough to carry them.
                                 if (!compact) ...[
                                   _PaneIslandButton(
-                                    icon: pane?.paused ?? false ? DsIcons.play : DsIcons.pause,
+                                    iconAsset: pane?.paused ?? false
+                                        ? 'assets/icons/play.svg'
+                                        : 'assets/icons/pause.svg',
                                     semanticLabel: pane?.paused ?? false ? t.multiview.playPane : t.multiview.pausePane,
                                     onPressed: onPause,
                                   ),
@@ -1095,15 +1098,19 @@ final class _PaneIsland extends StatelessWidget {
 /// around it when the pointer arrives.
 final class _PaneIslandButton extends StatelessWidget {
   const _PaneIslandButton({
-    required this.icon,
     required this.semanticLabel,
     required this.onPressed,
+    this.icon,
+    this.iconAsset,
     this.active = false,
     this.dangerHover = false,
-  });
+  }) : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
 
   /// The icon shown.
-  final DsIconData icon;
+  final DsIconData? icon;
+
+  /// A bundled svg glyph drawn instead of [icon].
+  final String? iconAsset;
 
   /// The name screen readers hear.
   final String semanticLabel;
@@ -1130,15 +1137,30 @@ final class _PaneIslandButton extends StatelessWidget {
           height: 26,
           decoration: DsBoxDecoration(color: lit ? playerInkHover : null, borderRadius: BorderRadius.circular(7)),
           child: Center(
-            child: DsIcon(
-              icon,
-              size: 14,
-              color: lit && dangerHover
-                  ? colors.danger.fill
-                  : lit || active
-                  ? playerInk
-                  : playerInkMuted,
-            ),
+            child: switch (iconAsset) {
+              final String asset => SvgPicture.asset(
+                asset,
+                width: 14,
+                height: 14,
+                colorFilter: ColorFilter.mode(
+                  lit && dangerHover
+                      ? colors.danger.fill
+                      : lit || active
+                      ? playerInk
+                      : playerInkMuted,
+                  BlendMode.srcIn,
+                ),
+              ),
+              _ => DsIcon(
+                icon!,
+                size: 14,
+                color: lit && dangerHover
+                    ? colors.danger.fill
+                    : lit || active
+                    ? playerInk
+                    : playerInkMuted,
+              ),
+            },
           ),
         );
       },
@@ -1274,10 +1296,19 @@ final class _AudibleFocusButton extends StatelessWidget {
 /// A toolbar switch: an icon alone in the header, filled while its state is
 /// on (mute-all, pause-all), with the words in a tooltip.
 final class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({required this.icon, required this.semanticLabel, required this.onPressed, this.active = false});
+  const _ToolbarButton({
+    required this.semanticLabel,
+    required this.onPressed,
+    this.icon,
+    this.iconAsset,
+    this.active = false,
+  }) : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
 
   /// The icon shown.
-  final DsIconData icon;
+  final DsIconData? icon;
+
+  /// A bundled svg glyph drawn instead of [icon].
+  final String? iconAsset;
 
   /// The name screen readers hear and the pointer reads on hover.
   final String semanticLabel;
@@ -1312,7 +1343,15 @@ final class _ToolbarButton extends StatelessWidget {
               borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
             ),
             child: Center(
-              child: DsIcon(icon, size: theme.sizes.iconSm, color: active ? colors.accentText : colors.textMuted),
+              child: switch (iconAsset) {
+                final String asset => SvgPicture.asset(
+                  asset,
+                  width: theme.sizes.iconSm,
+                  height: theme.sizes.iconSm,
+                  colorFilter: ColorFilter.mode(active ? colors.accentText : colors.textMuted, BlendMode.srcIn),
+                ),
+                _ => DsIcon(icon!, size: theme.sizes.iconSm, color: active ? colors.accentText : colors.textMuted),
+              },
             ),
           );
         },

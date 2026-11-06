@@ -1,5 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/player/player_overlay.dart' show playerInk;
@@ -12,11 +13,12 @@ import 'package:pure_live/shared/player/player_overlay.dart' show playerInk;
 /// this one control, so the transport and the verbs read alike wherever they
 /// appear.
 final class MediaBarButton extends StatelessWidget {
-  /// The control showing [icon].
+  /// The control showing [icon], or the bundled svg glyph at [iconAsset].
   const MediaBarButton({
-    required this.icon,
     required this.label,
     required this.onPressed,
+    this.icon,
+    this.iconAsset,
     this.selected = false,
     this.onDark = true,
     this.autofocus = false,
@@ -27,10 +29,14 @@ final class MediaBarButton extends StatelessWidget {
     this.iconSize,
     this.focusNode,
     super.key,
-  });
+  }) : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
 
   /// The glyph.
-  final DsIconData icon;
+  final DsIconData? icon;
+
+  /// A bundled svg glyph drawn instead of [icon], tinted with the state
+  /// color like a stroke glyph.
+  final String? iconAsset;
 
   /// The name screen readers announce, and the tooltip's words.
   final String label;
@@ -85,6 +91,18 @@ final class MediaBarButton extends StatelessWidget {
         final focused = states.contains(WidgetState.focused);
         final lit = states.contains(WidgetState.hovered) || focused;
         final corners = theme.radii.controlCorners(null, side);
+        final glyphSide = iconSize ?? theme.sizes.iconSm;
+        final glyphColor = onDark
+            ? !enabled
+                  ? const Color(0x66FFFFFF)
+                  : selected
+                  ? playerInk
+                  : const Color(0xCCFFFFFF)
+            : !enabled
+            ? colors.textSubtle
+            : selected
+            ? colors.text
+            : colors.textMuted;
         return Container(
           width: side,
           height: side,
@@ -99,21 +117,15 @@ final class MediaBarButton extends StatelessWidget {
                 )
               : null,
           child: Center(
-            child: DsIcon(
-              icon,
-              size: iconSize ?? theme.sizes.iconSm,
-              color: onDark
-                  ? !enabled
-                        ? const Color(0x66FFFFFF)
-                        : selected
-                        ? playerInk
-                        : const Color(0xCCFFFFFF)
-                  : !enabled
-                  ? colors.textSubtle
-                  : selected
-                  ? colors.text
-                  : colors.textMuted,
-            ),
+            child: switch (iconAsset) {
+              final String asset => SvgPicture.asset(
+                asset,
+                width: glyphSide,
+                height: glyphSide,
+                colorFilter: ColorFilter.mode(glyphColor, BlendMode.srcIn),
+              ),
+              _ => DsIcon(icon!, size: glyphSide, color: glyphColor),
+            },
           ),
         );
       },

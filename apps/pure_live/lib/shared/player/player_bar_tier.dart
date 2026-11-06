@@ -43,20 +43,24 @@ final class PlayerBarTier extends InheritedWidget {
 /// focus ring a remote needs. A call site that pins its own [size] or
 /// [iconSize] keeps that choice; the tier only fills in what is absent.
 final class PlayerBarButton extends StatelessWidget {
-  /// The control showing [icon].
+  /// The control showing [icon], or the bundled svg glyph at [iconAsset].
   const PlayerBarButton({
-    required this.icon,
     required this.label,
     required this.onPressed,
+    this.icon,
+    this.iconAsset,
     this.selected = false,
     this.autofocus = false,
     this.size,
     this.iconSize,
     this.focusNode,
     super.key,
-  });
+  }) : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
 
-  final DsIconData icon;
+  final DsIconData? icon;
+
+  /// A bundled svg glyph drawn instead of [icon].
+  final String? iconAsset;
   final String label;
   final VoidCallback? onPressed;
 
@@ -81,6 +85,7 @@ final class PlayerBarButton extends StatelessWidget {
     final sizes = DsTheme.of(context).sizes;
     return MediaBarButton(
       icon: icon,
+      iconAsset: iconAsset,
       label: label,
       onPressed: onPressed,
       selected: selected,

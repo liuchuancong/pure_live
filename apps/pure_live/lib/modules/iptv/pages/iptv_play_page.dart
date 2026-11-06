@@ -1306,12 +1306,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                     children: [
                       _IconButton(
                         semanticLabel: playing ? t.room.pause : t.room.play,
-                        icon: playing ? DsIcons.pause : DsIcons.play,
+                        iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                         onPressed: () => unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
                       ),
                       _IconButton(
                         semanticLabel: muted ? t.room.unmute : t.room.mute,
-                        icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+                        iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                         onPressed: handle == null ? null : () => unawaited(_toggleMute()),
                       ),
                       Expanded(
@@ -1386,9 +1386,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                       if (handle != null && presentationController.pipAvailable)
                         _IconButton(
                           semanticLabel: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
-                          icon: presentation == PresentationMode.pip
-                              ? DsIcons.pictureInPictureExit
-                              : DsIcons.pictureInPicture,
+                          iconAsset: presentation == PresentationMode.pip
+                              ? 'assets/icons/pip-exit.svg'
+                              : 'assets/icons/pip.svg',
                           onPressed: () => unawaited(_togglePip(handle)),
                         ),
                       _IconButton(
@@ -1419,14 +1419,18 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
 final class _IconButton extends StatelessWidget {
   const _IconButton({
     required this.semanticLabel,
-    required this.icon,
     required this.onPressed,
+    this.icon,
+    this.iconAsset,
     this.selected = false,
     this.onDark = false,
-  });
+  }) : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
 
   final String semanticLabel;
-  final DsIconData icon;
+  final DsIconData? icon;
+
+  /// A bundled svg glyph drawn instead of [icon].
+  final String? iconAsset;
   final VoidCallback? onPressed;
 
   /// Draws the glyph at full strength: a switch that is on.
@@ -1440,6 +1444,7 @@ final class _IconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return MediaBarButton(
       icon: icon,
+      iconAsset: iconAsset,
       label: semanticLabel,
       onPressed: onPressed,
       selected: selected,
@@ -1667,13 +1672,13 @@ final class _PipStrip extends StatelessWidget {
           ),
           _IconButton(
             semanticLabel: playing ? t.room.pause : t.room.play,
-            icon: playing ? DsIcons.pause : DsIcons.play,
+            iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
             onPressed: onPlayPause,
             onDark: true,
           ),
           _IconButton(
             semanticLabel: muted ? t.room.unmute : t.room.mute,
-            icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+            iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
             onPressed: onMute,
             onDark: true,
           ),

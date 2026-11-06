@@ -284,7 +284,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                               ),
                             ),
                             MediaBarButton(
-                              icon: room.playback.playing ? DsIcons.pause : DsIcons.play,
+                              iconAsset: room.playback.playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                               label: room.playback.playing ? t.room.pause : t.room.play,
                               onPressed: () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
                               tooltip: false,

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart'
     show PlatformBatteryService, PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
@@ -1921,18 +1922,17 @@ final class _DanmakuBarCluster extends ConsumerWidget {
                 color: on ? theme.colors.accent : const Color(0x00000000),
                 border: on ? null : Border.all(color: const Color(0x59FFFFFF)),
               ),
-              child: Text(
-                t.room.danmakuMark,
-                style: theme.typography.caption.copyWith(
-                  color: on ? theme.colors.onAccent : _onVideoMuted,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: SvgPicture.asset(
+                'assets/icons/danmaku.svg',
+                width: side * .5,
+                height: side * .5,
+                colorFilter: ColorFilter.mode(on ? theme.colors.onAccent : _onVideoMuted, BlendMode.srcIn),
               ),
             );
           },
         ),
         PlayerBarButton(
-          icon: DsIcons.slidersHorizontal,
+          iconAsset: 'assets/icons/danmaku-settings.svg',
           label: t.settings.navDanmaku,
           onPressed: () {
             onWake();
@@ -2124,7 +2124,7 @@ final class _PresentationCluster extends ConsumerWidget {
           if (showPip)
             PlayerGlassPill(
               child: PlayerBarButton(
-                icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+                iconAsset: presentation == PresentationMode.pip ? 'assets/icons/pip-exit.svg' : 'assets/icons/pip.svg',
                 label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
                 selected: presentation == PresentationMode.pip,
                 onPressed: () {
@@ -2174,7 +2174,7 @@ final class _PresentationCluster extends ConsumerWidget {
             ),
           if (showPip)
             PlayerBarButton(
-              icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+              iconAsset: presentation == PresentationMode.pip ? 'assets/icons/pip-exit.svg' : 'assets/icons/pip.svg',
               label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
               selected: presentation == PresentationMode.pip,
               onPressed: () {
@@ -2436,12 +2436,12 @@ final class _PipBar extends ConsumerWidget {
             onStop: () => unawaited(toggleRoomRecording(context, ref)),
           ),
           _PipButton(
-            icon: playing ? DsIcons.pause : DsIcons.play,
+            iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
             label: playing ? t.room.pause : t.room.play,
             onPressed: () => unawaited(controller.togglePlayPause()),
           ),
           _PipButton(
-            icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+            iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
             label: muted ? t.room.unmute : t.room.mute,
             onPressed: () => unawaited(controller.setMuted(value: !muted)),
           ),
@@ -2456,9 +2456,13 @@ final class _PipBar extends ConsumerWidget {
 /// One control on the compact window's strip: 28 px square, no tooltip (there
 /// is no room for one in a small window), the label kept for screen readers.
 final class _PipButton extends StatelessWidget {
-  const _PipButton({required this.icon, required this.label, required this.onPressed});
+  const _PipButton({required this.label, required this.onPressed, this.icon, this.iconAsset})
+    : assert((icon == null) != (iconAsset == null), 'give exactly one glyph source: icon or iconAsset');
 
-  final DsIconData icon;
+  final DsIconData? icon;
+
+  /// A bundled svg glyph drawn instead of [icon].
+  final String? iconAsset;
   final String label;
   final VoidCallback onPressed;
 
@@ -2472,7 +2476,17 @@ final class _PipButton extends StatelessWidget {
       builder: (context, states, child) => SizedBox(
         width: 28,
         height: 28,
-        child: Center(child: DsIcon(icon, size: 14, color: _onVideoMuted)),
+        child: Center(
+          child: switch (iconAsset) {
+            final String asset => SvgPicture.asset(
+              asset,
+              width: 14,
+              height: 14,
+              colorFilter: const ColorFilter.mode(_onVideoMuted, BlendMode.srcIn),
+            ),
+            _ => DsIcon(icon!, size: 14, color: _onVideoMuted),
+          },
+        ),
       ),
     );
   }
@@ -2660,7 +2674,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
             spacing: tv ? DsSpace.s8 : DsSpace.s4,
             children: [
               PlayerBarButton(
-                icon: playing ? DsIcons.pause : DsIcons.play,
+                iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                 label: playing ? t.room.pause : t.room.play,
                 autofocus: widget.autofocusPlay,
                 onPressed: () {
@@ -2671,7 +2685,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               // Mute is core at every width: a room that opens loud has to
               // be silencable with one thumb.
               PlayerBarButton(
-                icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+                iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                 label: muted ? t.room.unmute : t.room.mute,
                 onPressed: () {
                   widget.onWake();
@@ -2729,7 +2743,9 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               // capture has a state worth seeing at a glance.
               if (wide && !pip && _desktop && player != null)
                 PlayerBarButton(
-                  icon: presentation == PresentationMode.windowFullscreen ? DsIcons.shrink : DsIcons.expand,
+                  iconAsset: presentation == PresentationMode.windowFullscreen
+                      ? 'assets/icons/fullscreen-exit.svg'
+                      : 'assets/icons/fullscreen-enter.svg',
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.room.windowFullscreenOff
                       : t.room.windowFullscreenOn,

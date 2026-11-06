@@ -168,6 +168,7 @@ flutter:
     - assets/fonts/google_font_categories.json # Google 字体分类（font_picker 的 constants）
     - assets/certs/
     - assets/webdav/ # WebDAV 帮助页的坚果云设置截图
+    - assets/icons/ # 播放器底栏的实心控件图标（svg，按状态染色）
 
 # 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
 # 换图标只改母图，然后跑：dart run icons_launcher:launch
