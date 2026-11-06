@@ -25,6 +25,15 @@ final class LiveCacheMemory {
   /// The live images Flutter keeps for in-flight requests.
   int get liveCount => PaintingBinding.instance.imageCache.liveImageCount;
 
+  /// The decoded-image budget Flutter's cache is holding itself to.
+  int get memoryBudget => PaintingBinding.instance.imageCache.maximumSizeBytes;
+
+  /// Hands Flutter's decoded-image cache the budget the host configured.
+  set memoryBudget(int maxBytes) => PaintingBinding.instance.imageCache.maximumSizeBytes = maxBytes;
+
+  /// Drops [key] from the decoded-image cache, keeping whatever is on screen.
+  void evict(Object key) => PaintingBinding.instance.imageCache.evict(key);
+
   /// Remembers that [key] decodes an image of [category].
   void register(String category, Object key) {
     final keys = _keysByCategory.putIfAbsent(category, () => <Object>{});

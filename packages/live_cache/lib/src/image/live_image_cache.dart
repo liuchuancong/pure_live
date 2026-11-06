@@ -96,6 +96,7 @@ final class LiveImageCache {
     );
     _index = index;
     _storage = storage;
+    memory.memoryBudget = _config.image.maxMemoryBytes;
     _storageReady = await storage.initialize();
     if (_storageReady && _config.image.autoClean) {
       final now = DateTime.now().toUtc();
@@ -113,6 +114,7 @@ final class LiveImageCache {
   /// is applied at once when automatic cleanup is on.
   Future<void> updateConfig(LiveCacheConfig config) async {
     _config = config;
+    memory.memoryBudget = config.image.maxMemoryBytes;
     if (!_initialized) {
       return;
     }
