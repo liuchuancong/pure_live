@@ -5,6 +5,7 @@ import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
+import 'package:live_sites/src/models/audience/audience_capability/audience_capability.dart';
 import 'package:live_sites/src/models/guide/room_guide/room_guide.dart';
 import 'package:live_sites/src/models/room/live_room_ref/live_room_ref.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
@@ -155,7 +156,7 @@ abstract class LiveRoom implements Built<LiveRoom, LiveRoomBuilder> {
   DateTime? get updatedAt;
 }
 
-/// Identity accessors and the sparse refresh merge for [LiveRoom].
+/// Identity accessors and the sparse refresh merges for [LiveRoom].
 extension LiveRoomIdentity on LiveRoom {
   /// The platform id (lower case).
   String get platform => ref.platform;
@@ -167,13 +168,14 @@ extension LiveRoomIdentity on LiveRoom {
   String get identityKey => ref.identityKey;
 
   /// A sparse refresh merge: fields [incoming] left out never erase stored
-  /// values; local tags and runtime handles stay this room's own.
+  /// values; local tags and runtime handles stay this room's own. The
+  /// audience merges as [withAudienceFallbackFrom] does.
   LiveRoom mergedWith(LiveRoom incoming) {
     if (ref != incoming.ref) return this;
     return rebuild(
       (b) => b
         ..content.replace(content.mergedWith(incoming.content))
-        ..audience.replace(audience.mergedWith(incoming.audience))
+        ..audience.replace(audience.mergedWith(incoming.audience, hasTransientPopularityDrop: _popularityMayDrop))
         ..broadcast.replace(broadcast.mergedWith(incoming.broadcast))
         ..anchor = (incoming.anchor ?? anchor)?.toBuilder()
         ..area = (incoming.area ?? area)?.toBuilder()
@@ -182,4 +184,18 @@ extension LiveRoomIdentity on LiveRoom {
         ..updatedAt = updatedAt ?? incoming.updatedAt,
     );
   }
+
+  /// This room, a fresh answer that replaces [previous] whole, with
+  /// [previous]'s audience figures wherever it carries none, and with
+  /// [previous]'s popularity where the platform's detail transiently
+  /// collapsed a busy room's to 1 (`RoomAudience.mergedWith`): the header
+  /// never jumps from hundreds of thousands to one. A room of another
+  /// identity is ignored.
+  LiveRoom withAudienceFallbackFrom(LiveRoom previous) {
+    if (ref != previous.ref) return this;
+    final merged = previous.audience.mergedWith(audience, hasTransientPopularityDrop: _popularityMayDrop);
+    return merged == audience ? this : rebuild((b) => b..audience.replace(merged));
+  }
+
+  bool get _popularityMayDrop => LiveAudienceCapability.of(platform).hasTransientPopularityDrop;
 }

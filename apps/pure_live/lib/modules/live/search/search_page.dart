@@ -676,6 +676,11 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final metric = ref.read(audienceMetricProvider);
     final policy = ref.read(audiencePolicyProvider);
     int audience(LiveRoom room) => audienceFigureOf(room, metric, policy: policy) ?? -1;
+    // Platforms count audiences on different scales: the audience steps rank
+    // in tiers (real viewers before a platform's heat) rather than by the
+    // bare figure, so a multi-million heat never outranks a real audience.
+    int byAudience(LiveRoom a, LiveRoom b) =>
+        audienceRankOf(b, metric, policy: policy).compareTo(audienceRankOf(a, metric, policy: policy));
     int followers(LiveRoom room) {
       final explicit = room.anchor?.followerCount ?? 0;
       if (explicit > 0) return explicit;
@@ -693,23 +698,23 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
         if (byState != 0) return byState;
         final comparisons = switch (_sort) {
           _SearchSort.smart => <int Function()>[
-            () => audience(b).compareTo(audience(a)),
+            () => byAudience(a, b),
             () => followers(b).compareTo(followers(a)),
             () => platform(a).compareTo(platform(b)),
           ],
           _SearchSort.platform => <int Function()>[
             () => platform(a).compareTo(platform(b)),
-            () => audience(b).compareTo(audience(a)),
+            () => byAudience(a, b),
             () => followers(b).compareTo(followers(a)),
           ],
           _SearchSort.audience => <int Function()>[
-            () => audience(b).compareTo(audience(a)),
+            () => byAudience(a, b),
             () => platform(a).compareTo(platform(b)),
             () => followers(b).compareTo(followers(a)),
           ],
           _SearchSort.followers => <int Function()>[
             () => followers(b).compareTo(followers(a)),
-            () => audience(b).compareTo(audience(a)),
+            () => byAudience(a, b),
             () => platform(a).compareTo(platform(b)),
           ],
         };

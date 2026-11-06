@@ -437,6 +437,7 @@ void main() {
       expect(chat.price.amount, 20);
       expect(chat.endTime, now.add(const Duration(seconds: 40)), reason: 'the countdown is what is left');
       expect(chat.startTime, now.subtract(const Duration(seconds: 80)), reason: 'the total is how long it has run');
+      expect(chat.hasEstimatedStartTime, isTrue, reason: 'the start is rebuilt from the countdown on every read');
       expect(chat.display.backgroundColor, HuyaDanmakuProtocol.superChatTop);
       expect(chat.display.backgroundBottomColor, HuyaDanmakuProtocol.superChatBottom);
     });

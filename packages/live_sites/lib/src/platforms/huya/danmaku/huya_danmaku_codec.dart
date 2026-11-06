@@ -331,8 +331,9 @@ abstract final class HuyaDanmakuProtocol {
   /// The board panel's entries (tag 1): 0 user (1 nick, 2 avatar), 1 content,
   /// 2 iCost, 4 iTotalSec, 5 iCountDown, 9 lMessageId, 12 iCostPay. An entry
   /// without text or time left is dropped; the window ends the countdown (or the
-  /// total) seconds after [now] and starts the total before. The price is iCost,
-  /// else iCostPay / 100 (at least 1). The id is `huya:{lMessageId}`, so an event
+  /// total) seconds after [now] and starts the total before, a start each read
+  /// estimates anew (`hasEstimatedStartTime`). The price is iCost, else
+  /// iCostPay / 100 (at least 1). The id is `huya:{lMessageId}`, so an event
   /// rebuilt on every poll stays one message.
   static List<LiveSuperChatMessage> _panel(TarsStruct? panel, DateTime now) {
     final entries = <LiveSuperChatMessage>[];
@@ -357,6 +358,7 @@ abstract final class HuyaDanmakuProtocol {
           price: SuperChatPrice.of(amount: cost > 0 ? cost : (paid > 0 ? max(1, (paid / 100).round()) : cost)),
           startTime: end.subtract(Duration(seconds: total > 0 ? total : remaining)),
           endTime: end,
+          hasEstimatedStartTime: true,
           display: SuperChatDisplay.of(backgroundColor: superChatTop, backgroundBottomColor: superChatBottom),
         ),
       );

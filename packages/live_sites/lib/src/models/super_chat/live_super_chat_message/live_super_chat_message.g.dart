@@ -31,6 +31,8 @@ class _$LiveSuperChatMessageSerializer implements StructuredSerializer<LiveSuper
       serializers.serialize(object.text, specifiedType: const FullType(String)),
       'price',
       serializers.serialize(object.price, specifiedType: const FullType(SuperChatPrice)),
+      'hasEstimatedStartTime',
+      serializers.serialize(object.hasEstimatedStartTime, specifiedType: const FullType(bool)),
       'display',
       serializers.serialize(object.display, specifiedType: const FullType(SuperChatDisplay)),
     ];
@@ -87,6 +89,9 @@ class _$LiveSuperChatMessageSerializer implements StructuredSerializer<LiveSuper
         case 'endTime':
           result.endTime = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
           break;
+        case 'hasEstimatedStartTime':
+          result.hasEstimatedStartTime = serializers.deserialize(value, specifiedType: const FullType(bool))! as bool;
+          break;
         case 'display':
           result.display.replace(
             serializers.deserialize(value, specifiedType: const FullType(SuperChatDisplay))! as SuperChatDisplay,
@@ -115,6 +120,8 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
   @override
   final DateTime? endTime;
   @override
+  final bool hasEstimatedStartTime;
+  @override
   final SuperChatDisplay display;
 
   factory _$LiveSuperChatMessage([void Function(LiveSuperChatMessageBuilder)? updates]) =>
@@ -128,6 +135,7 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
     required this.price,
     this.startTime,
     this.endTime,
+    required this.hasEstimatedStartTime,
     required this.display,
   }) : super._();
   @override
@@ -148,6 +156,7 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
         price == other.price &&
         startTime == other.startTime &&
         endTime == other.endTime &&
+        hasEstimatedStartTime == other.hasEstimatedStartTime &&
         display == other.display;
   }
 
@@ -161,6 +170,7 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
     _$hash = $jc(_$hash, price.hashCode);
     _$hash = $jc(_$hash, startTime.hashCode);
     _$hash = $jc(_$hash, endTime.hashCode);
+    _$hash = $jc(_$hash, hasEstimatedStartTime.hashCode);
     _$hash = $jc(_$hash, display.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
@@ -176,6 +186,7 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
           ..add('price', price)
           ..add('startTime', startTime)
           ..add('endTime', endTime)
+          ..add('hasEstimatedStartTime', hasEstimatedStartTime)
           ..add('display', display))
         .toString();
   }
@@ -212,6 +223,10 @@ class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveS
   DateTime? get endTime => _$this._endTime;
   set endTime(DateTime? endTime) => _$this._endTime = endTime;
 
+  bool? _hasEstimatedStartTime;
+  bool? get hasEstimatedStartTime => _$this._hasEstimatedStartTime;
+  set hasEstimatedStartTime(bool? hasEstimatedStartTime) => _$this._hasEstimatedStartTime = hasEstimatedStartTime;
+
   SuperChatDisplayBuilder? _display;
   SuperChatDisplayBuilder get display => _$this._display ??= SuperChatDisplayBuilder();
   set display(SuperChatDisplayBuilder? display) => _$this._display = display;
@@ -230,6 +245,7 @@ class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveS
       _price = $v.price.toBuilder();
       _startTime = $v.startTime;
       _endTime = $v.endTime;
+      _hasEstimatedStartTime = $v.hasEstimatedStartTime;
       _display = $v.display.toBuilder();
       _$v = null;
     }
@@ -262,6 +278,11 @@ class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveS
             price: price.build(),
             startTime: startTime,
             endTime: endTime,
+            hasEstimatedStartTime: BuiltValueNullFieldError.checkNotNull(
+              hasEstimatedStartTime,
+              r'LiveSuperChatMessage',
+              'hasEstimatedStartTime',
+            ),
             display: display.build(),
           );
     } catch (_) {

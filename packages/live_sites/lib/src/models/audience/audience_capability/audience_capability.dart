@@ -4,7 +4,12 @@ import 'package:live_sites/src/models/enums/live_audience_online_availability.da
 /// table; the comments keep the reason each value is what it is).
 final class LiveAudienceCapability {
   /// Creates a capability.
-  const new({required this.hasPopularity, required this.hasTotalViewers, required this.onlineAvailability});
+  const new({
+    required this.hasPopularity,
+    required this.hasTotalViewers,
+    required this.onlineAvailability,
+    this.hasTransientPopularityDrop = false,
+  });
 
   /// A platform without known metrics.
   static const LiveAudienceCapability unknown = LiveAudienceCapability(
@@ -22,6 +27,11 @@ final class LiveAudienceCapability {
   /// Where the concurrent-viewer count is available.
   final LiveAudienceOnlineAvailability onlineAvailability;
 
+  /// Whether a fresh room detail may now and then report a busy room's
+  /// popularity as 1; a refresh merge then keeps the figure it had
+  /// (`RoomAudience.mergedWith`).
+  final bool hasTransientPopularityDrop;
+
   /// Whether the platform has a concurrent-viewer count at all.
   bool get supportsConcurrentOnline => onlineAvailability != LiveAudienceOnlineAvailability.unsupported;
 
@@ -36,11 +46,14 @@ final class LiveAudienceCapability {
 /// Audience metrics per platform id.
 const Map<String, LiveAudienceCapability> kAudienceCapabilities = {
   // Bilibili's room `online` field and heartbeat are popularity; WATCHED_CHANGE
-  // is cumulative. Neither is a concurrent head count.
+  // is cumulative. Neither is a concurrent head count. The room detail now and
+  // then answers `online: 1` for a room in the hundreds of thousands; the
+  // header would jump to one, so a refresh keeps the figure it had.
   'bilibili': LiveAudienceCapability(
     hasPopularity: true,
     hasTotalViewers: true,
     onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
+    hasTransientPopularityDrop: true,
   ),
   'douyu': LiveAudienceCapability(
     hasPopularity: true,

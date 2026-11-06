@@ -1,6 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart'
-    show LiveAudienceCapability, LiveAudienceMetricType, LiveRoom, LiveRoomIdentity, SiteIds;
+    show
+        LiveAudienceCapability,
+        LiveAudienceMetricType,
+        LiveAudienceRankKey,
+        LiveRoom,
+        LiveRoomAudienceRank,
+        LiveRoomIdentity,
+        SiteIds;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 /// Which figure a room card leads with, independent of what the platform
@@ -16,7 +23,17 @@ enum AudienceMetricChoice {
   popularity,
 
   /// Cumulative viewers.
-  totalViewers,
+  totalViewers;
+
+  /// The figure this choice asks cards to lead with, in live_sites' words
+  /// (`RoomAudience.leadingFigure`); null for [automatic], where each
+  /// room's own primary metric leads.
+  LiveAudienceMetricType? get lead => switch (this) {
+    AudienceMetricChoice.automatic => null,
+    AudienceMetricChoice.onlineViewers => LiveAudienceMetricType.onlineViewers,
+    AudienceMetricChoice.popularity => LiveAudienceMetricType.popularity,
+    AudienceMetricChoice.totalViewers => LiveAudienceMetricType.totalViewers,
+  };
 }
 
 /// The pref key the choice lives under.
@@ -77,41 +94,30 @@ final class AudiencePolicy {
 /// [policy] leads with its concurrent viewers (the reference's
 /// `preferRealOnlineCounts`) rather than the platform's own primary metric.
 int? audienceFigureOf(LiveRoom room, AudienceMetricChoice choice, {AudiencePolicy policy = const AudiencePolicy()}) {
-  final audience = room.audience;
-  int? firstOf(Iterable<int?> values) {
-    for (final value in values) {
-      if (value != null) return value;
-    }
-    return null;
-  }
-
   if (choice == AudienceMetricChoice.automatic &&
       policy.preferRealOnline &&
       policy.enabledFor(room.platform) &&
       LiveAudienceCapability.of(room.platform).supportsConcurrentOnline) {
-    final online = audience.onlineViewers;
+    final online = room.audience.onlineViewers;
     if (online != null) return online;
   }
-
-  return switch (choice) {
-    AudienceMetricChoice.automatic => switch (audience.primaryMetric) {
-      LiveAudienceMetricType.onlineViewers => firstOf([
-        audience.onlineViewers,
-        audience.popularity,
-        audience.totalViewers,
-      ]),
-      LiveAudienceMetricType.totalViewers => firstOf([
-        audience.totalViewers,
-        audience.popularity,
-        audience.onlineViewers,
-      ]),
-      _ => firstOf([audience.popularity, audience.onlineViewers, audience.totalViewers]),
-    },
-    AudienceMetricChoice.onlineViewers => firstOf([audience.onlineViewers, audience.popularity, audience.totalViewers]),
-    AudienceMetricChoice.popularity => firstOf([audience.popularity, audience.onlineViewers, audience.totalViewers]),
-    AudienceMetricChoice.totalViewers => firstOf([audience.totalViewers, audience.popularity, audience.onlineViewers]),
-  };
+  return room.audience.leadingFigure(choice.lead);
 }
+
+/// Where [room] ranks by audience under [choice] and [policy]: the tiers of
+/// [LiveAudienceRankKey] over the figure [audienceFigureOf] shows, so a
+/// sorted list reads the way its cards do while heat never outranks real
+/// viewers. The real-online preference reaches the ranking only under
+/// [AudienceMetricChoice.automatic], as it only reaches the cards there.
+LiveAudienceRankKey audienceRankOf(
+  LiveRoom room,
+  AudienceMetricChoice choice, {
+  AudiencePolicy policy = const AudiencePolicy(),
+}) => room.audienceRankKey(
+  lead: choice.lead,
+  preferRealOnline: choice == AudienceMetricChoice.automatic && policy.preferRealOnline,
+  platformEnabled: policy.enabledFor(room.platform),
+);
 
 /// The viewer's card-metric choice, persisted under
 /// `browse.audienceMetric`; the cards read it live.

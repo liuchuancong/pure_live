@@ -587,8 +587,11 @@ final class LiveSuperChatMessage {
   final SuperChatPrice price;    // 价格（见下）
   final DateTime startTime;      // 展示开始，UTC
   final DateTime endTime;        // 展示结束，UTC（倒计时依据）
+  final bool hasEstimatedStartTime; // startTime 由倒计时反推（虎牙榜单每读一次重算）；同一事件判定见 isSameEventAs
   final SuperChatDisplay display;// 展示配色（见下）
 }
+// isSameEventAs：有 id 只比 id；无 id 比买家+文本+价格+开始时间，带估算标记时展示窗口重叠即同一事件。
+// 重叠不可传递，故不进 ==（== 仍为全字段值相等）；看板合并按它折叠列表，不用 Set。
 
 final class SuperChatPrice {
   final int? amount;         // 数额（平台原生数值；null=平台未给）

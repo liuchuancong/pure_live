@@ -62,10 +62,16 @@ final class RoomSuperChatController extends Notifier<RoomSuperChatState> {
 
   void _merge(Iterable<LiveSuperChatMessage> incoming, {required bool loading, required bool clearError}) {
     final now = DateTime.now();
-    final next = <LiveSuperChatMessage>{
-      ...state.messages,
-      ...incoming,
-    }.where((message) => message.endTime == null || message.endTime!.isAfter(now)).toList()..sort(_oldestFirst);
+    // One card per paid event: a board read again, or the stream and the
+    // board telling the same purchase, folds into the card already shown.
+    // A set cannot do it — a re-read board drifts its estimated windows, and
+    // overlap is no equality (`isSameEventAs`).
+    final folded = [...state.messages];
+    for (final message in incoming) {
+      if (!folded.any(message.isSameEventAs)) folded.add(message);
+    }
+    final next = folded.where((message) => message.endTime == null || message.endTime!.isAfter(now)).toList()
+      ..sort(_oldestFirst);
     state = (messages: List.unmodifiable(next), loading: loading, error: clearError ? null : state.error);
     _scheduleExpiry();
   }

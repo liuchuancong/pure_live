@@ -958,7 +958,13 @@ final class RoomController extends Notifier<RoomState> {
         (detail) async {
           if (epoch != _openEpoch) return;
           _openTiming?.markDetail();
-          final room = _fillTitleFromKnown(detail);
+          // A detail that opens the room also passes the anomaly guard: a
+          // platform that answers with an audience of 1 for a room whose
+          // card knew thousands keeps the card's figure until the next
+          // honest read.
+          final room = _fillTitleFromKnown(
+            known == null ? detail : detail.withAudienceFallbackFrom(known),
+          );
           state = _with(room: room);
           _armDetailRefresh();
           unawaited(_recordHistory(room));
