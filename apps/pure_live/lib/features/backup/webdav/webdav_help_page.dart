@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The WebDAV help page: how to get a server address, a username and a
@@ -44,13 +45,24 @@ final class WebDavHelpPage extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= _wide;
+        // The reference folds into chapters a reader opens one at a time:
+        // the overview and the three parameters stay open — the parameters
+        // are the part a reader acts on — and the walkthrough, the failures
+        // and the limits wait behind their rows.
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
           children: [
-            _Section(title: t.introSection, children: [_Prose(t.introBody)]),
-            _Section(
+            GuideChapter(
+              icon: DsIcons.bookOpenText,
+              title: t.introSection,
+              initiallyOpen: true,
+              children: [_Prose(t.introBody)],
+            ),
+            GuideChapter(
+              icon: DsIcons.keyRound,
               title: t.paramsSection,
+              initiallyOpen: true,
               children: [
                 DsListRow(
                   leading: const DsIcon(DsIcons.link),
@@ -79,18 +91,21 @@ final class WebDavHelpPage extends StatelessWidget {
                 ),
               ],
             ),
-            _Section(
+            GuideChapter(
+              icon: DsIcons.userRoundPlus,
               title: t.registerSection,
               children: [
                 _Step(text: t.registerSteps, asset: _shots[0], index: 1, wide: wide),
                 _Step(text: t.registerForm, asset: _shots[1], index: 2, wide: wide),
               ],
             ),
-            _Section(
+            GuideChapter(
+              icon: DsIcons.logIn,
               title: t.loginSection,
               children: [_Step(text: t.loginSteps, asset: _shots[2], index: 3, wide: wide)],
             ),
-            _Section(
+            GuideChapter(
+              icon: DsIcons.keyRound,
               title: t.passwordSection,
               children: [
                 _Step(text: t.accountSteps, asset: _shots[3], index: 4, wide: wide),
@@ -99,8 +114,9 @@ final class WebDavHelpPage extends StatelessWidget {
                 _Step(text: t.passwordOnce, asset: _shots[6], index: 7, wide: wide),
               ],
             ),
-            _Section(title: t.genericSection, children: [_Prose(t.genericBody)]),
-            _Section(
+            GuideChapter(icon: DsIcons.textQuote, title: t.genericSection, children: [_Prose(t.genericBody)]),
+            GuideChapter(
+              icon: DsIcons.circleQuestionMark,
               title: t.issuesSection,
               children: [
                 for (final (question, answer) in [
@@ -117,8 +133,9 @@ final class WebDavHelpPage extends StatelessWidget {
                   ),
               ],
             ),
-            _Section(title: t.limitsSection, children: [_Prose(t.limitsBody)]),
-            _Section(
+            GuideChapter(icon: DsIcons.shieldCheck, title: t.limitsSection, children: [_Prose(t.limitsBody)]),
+            GuideChapter(
+              icon: DsIcons.externalLink,
               title: t.summarySection,
               children: [
                 _Prose(t.summaryBody),
@@ -138,18 +155,8 @@ final class WebDavHelpPage extends StatelessWidget {
   }
 }
 
-/// One titled block of rows, the list section the settings pages share.
-final class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => DsListSection(header: Text(title), children: children);
-}
-
-/// A paragraph (or several, newline-separated) in the body type.
+/// A paragraph (or several, newline-separated) in the body type; the chapter
+/// column owns the inset, so the prose carries none of its own.
 final class _Prose extends StatelessWidget {
   const _Prose(this.text);
 
@@ -158,10 +165,7 @@ final class _Prose extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
-      child: Text(text, style: theme.typography.body.copyWith(height: 1.6)),
-    );
+    return Text(text, style: theme.typography.body.copyWith(height: 1.6));
   }
 }
 
@@ -209,19 +213,16 @@ final class _Step extends StatelessWidget {
         ),
       ),
     );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
-      child: wide
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s16,
-              children: [
-                Expanded(child: prose),
-                SizedBox(width: _thumbWidth, child: image),
-              ],
-            )
-          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s12, children: [prose, image]),
-    );
+    return wide
+        ? Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s16,
+            children: [
+              Expanded(child: prose),
+              SizedBox(width: _thumbWidth, child: image),
+            ],
+          )
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s12, children: [prose, image]);
   }
 
   Future<void> _openFull(BuildContext context) => showDsDialog<void>(

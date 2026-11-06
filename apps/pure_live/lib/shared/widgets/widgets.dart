@@ -9,6 +9,7 @@ export 'cover_fallback.dart';
 export 'download_details.dart';
 export 'download_format.dart';
 export 'download_workspace.dart';
+export 'guide_chapter.dart';
 export 'page_header.dart';
 export 'page_surface.dart';
 export 'pull_to_refresh.dart';

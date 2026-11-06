@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The complete playback guide: six chapters of concepts, presets, tuning,
@@ -31,7 +32,13 @@ final class PlayerGuidePage extends StatelessWidget {
             ),
           ],
         ),
-        for (var i = 0; i < chapters.length; i++) _GuideChapterTile(chapter: chapters[i], initiallyOpen: i == 0),
+        for (final (index, chapter) in chapters.indexed)
+          GuideChapter(
+            icon: chapter.icon,
+            title: chapter.title,
+            initiallyOpen: index == 0,
+            children: [for (final entry in chapter.entries) _GuideEntryView(entry: entry)],
+          ),
       ],
     );
   }
@@ -170,44 +177,6 @@ final class _GuideChapter {
   final DsIconData icon;
   final String title;
   final List<_GuideEntry> entries;
-}
-
-final class _GuideChapterTile extends StatefulWidget {
-  const _GuideChapterTile({required this.chapter, required this.initiallyOpen});
-
-  final _GuideChapter chapter;
-  final bool initiallyOpen;
-
-  @override
-  State<_GuideChapterTile> createState() => _GuideChapterTileState();
-}
-
-final class _GuideChapterTileState extends State<_GuideChapterTile> {
-  late bool _open = widget.initiallyOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return DsListSection(
-      children: [
-        DsListRow(
-          leading: DsIcon(widget.chapter.icon),
-          title: Text(widget.chapter.title, style: theme.typography.bodyStrong),
-          trailing: DsIcon(_open ? DsIcons.chevronUp : DsIcons.chevronDown, size: 16),
-          onPressed: () => setState(() => _open = !_open),
-        ),
-        if (_open)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s12,
-              children: [for (final entry in widget.chapter.entries) _GuideEntryView(entry: entry)],
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 final class _GuideEntryView extends StatelessWidget {
