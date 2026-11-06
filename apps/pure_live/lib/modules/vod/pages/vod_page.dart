@@ -8,10 +8,8 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart' show showBilibiliWebLoginPage;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/layouts/page_layout_scope.dart' show PageLayoutScope;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
-import 'package:pure_live/modules/vod/widgets/vod_hero_card.dart' show VodHeroCard;
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
     show VodDynamicRow, VodVideoCard, VodVideoRow, kVodCardInfoExtent;
@@ -164,7 +162,6 @@ final class _VodPageState extends ConsumerState<VodPage> {
               feedKey: _recommendKey,
               scrollController: _scrollOf(_recommendKey),
               onOpen: _openVideo,
-              featured: true,
             ),
             VodTab.popular => _VodFeedView(
               key: ValueKey(_popularKey),
@@ -185,23 +182,12 @@ final class _VodPageState extends ConsumerState<VodPage> {
 /// each tab's view on its feed, so a switch starts the wide pager on the new
 /// feed's own first page instead of carrying the tab before it.
 final class _VodFeedView extends ConsumerWidget {
-  const _VodFeedView({
-    required this.feedKey,
-    required this.scrollController,
-    required this.onOpen,
-    this.featured = false,
-    super.key,
-  });
+  const _VodFeedView({required this.feedKey, required this.scrollController, required this.onOpen, super.key});
 
   final String feedKey;
 
   final ScrollController scrollController;
   final ValueChanged<VodVideo> onOpen;
-
-  /// Whether the feed opens with its first archive as the featured head —
-  /// the recommend tab's banner, the one tab the platform draws for this
-  /// viewer. The other feeds keep the plain grid.
-  final bool featured;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -210,47 +196,28 @@ final class _VodFeedView extends ConsumerWidget {
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
-    // The banner rides above the grid at the page's own inset, on a window
-    // wide enough for the two-column minimum the mockup keeps it off of.
-    final hero = featured && !PageLayoutScope.isNarrow(context) && state.videos.isNotEmpty;
-    return Column(
-      children: [
-        if (hero)
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
-              DsSpace.s4,
-              LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
-              DsSpace.s12,
-            ),
-            child: VodHeroCard(video: state.videos.first, onOpen: () => onOpen(state.videos.first)),
-          ),
-        Expanded(
-          child: PagedCardGrid<VodVideo>(
-            scrollController: scrollController,
-            items: state.videos,
-            layout: ref.watch(browseLayoutProvider),
-            // The archive row is a cover beside two text lines: a hair taller
-            // than the room row so a two-line title never presses on its edge.
-            listMainAxisExtent: 104,
-            listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
-            infoExtent: kVodCardInfoExtent,
-            crossSpacing: browse.crossSpacing,
-            mainSpacing: browse.mainSpacing,
-            isLoading: state.loading,
-            hasMore: state.hasMore,
-            onLoadMore: () => controller.loadMore(feedKey),
-            error: state.error?.message,
-            onRetry: () => controller.refresh(feedKey),
-            onRefresh: () => controller.refresh(feedKey),
-            refreshError: state.error?.message,
-            emptyIcon: DsIcons.film,
-            emptyTitle: t.common.empty,
-            emptyDescription: t.vod.noResultsDescription,
-            itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video)),
-          ),
-        ),
-      ],
+    return PagedCardGrid<VodVideo>(
+      scrollController: scrollController,
+      items: state.videos,
+      layout: ref.watch(browseLayoutProvider),
+      // The archive row is a cover beside two text lines: a hair taller
+      // than the room row so a two-line title never presses on its edge.
+      listMainAxisExtent: 104,
+      listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
+      infoExtent: kVodCardInfoExtent,
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
+      isLoading: state.loading,
+      hasMore: state.hasMore,
+      onLoadMore: () => controller.loadMore(feedKey),
+      error: state.error?.message,
+      onRetry: () => controller.refresh(feedKey),
+      onRefresh: () => controller.refresh(feedKey),
+      refreshError: state.error?.message,
+      emptyIcon: DsIcons.film,
+      emptyTitle: t.common.empty,
+      emptyDescription: t.vod.noResultsDescription,
+      itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video)),
     );
   }
 }

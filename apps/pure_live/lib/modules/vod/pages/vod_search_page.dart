@@ -156,6 +156,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final vod = ref.watch(vodProvider);
     final settings = ref.watch(browseSettingsProvider);
+    final layout = ref.watch(browseLayoutProvider);
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     // Only the archive tab takes the station's two conditions; the other
@@ -247,6 +248,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
             state: vod,
             controller: ref.read(vodProvider.notifier),
             settings: settings,
+            layout: layout,
             onRefresh: _rerun,
             onVideo: _openVideo,
             onSeason: _openSeason,
@@ -350,15 +352,15 @@ final class _SearchFilterPanelState extends State<_SearchFilterPanel> {
   }
 }
 
-/// Every kind's results over the one shared feed: the archive hits in the
-/// reference's full-width rows, the season hits as the poster wall, the user
-/// hits and the live rooms each in their own shape — the paging, the pull
+/// Every kind's results over the one shared feed: the browse grid's cards, or
+/// its row cards under the viewer's list layout, with the paging, the pull
 /// and the empty and failure states the grid owns.
 final class _SearchResults extends StatelessWidget {
   const _SearchResults({
     required this.state,
     required this.controller,
     required this.settings,
+    required this.layout,
     required this.onRefresh,
     required this.onVideo,
     required this.onSeason,
@@ -368,6 +370,10 @@ final class _SearchResults extends StatelessWidget {
   final VodState state;
   final VodController controller;
   final BrowseSettings settings;
+
+  /// The viewer's card/row layout; the video hits take it, the kinds without
+  /// a second form keep their own.
+  final CardLayout layout;
 
   /// Loads the first page again (the pull gesture).
   final Future<void> Function() onRefresh;
@@ -391,13 +397,9 @@ final class _SearchResults extends StatelessWidget {
     void retry() => unawaited(controller.retry());
     switch (state.kind) {
       case VodSearchKind.video:
-        // The reference's own search shape: the hits read one per line, a
-        // 148 cover beside the title and its figures — the archive hits
-        // keep that row however the browse feeds are laid out.
         return PagedCardGrid<VodVideo>(
           items: state.videos,
-          layout: CardLayout.list,
-          listFullWidth: true,
+          layout: layout,
           // The row card is a cover beside two text lines, the same fixed
           // height the browse feeds' list layout holds it at.
           listMainAxisExtent: 104,
