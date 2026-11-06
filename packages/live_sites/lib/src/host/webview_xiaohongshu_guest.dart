@@ -58,12 +58,10 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
   /// The proxy route in force right now (`proxySettingsProvider`'s answer,
   /// read per request like the other seams).
   ///
-  /// The visitor page runs on webview_all, which has no proxy override: its
-  /// traffic follows the operating system's own proxy settings, which the
-  /// direct and system routes already describe. An explicit in-app HTTP
-  /// proxy would be bypassed by the page, so a configured one refuses the
-  /// visitor instead of leaking traffic past it (the reference passed the
-  /// rule to an Android-only WebView proxy scope; none exists here).
+  /// The visitor page runs on webview_all, which follows the operating
+  /// system's own proxy settings; an in-app manual proxy has no WebView
+  /// equivalent and is therefore not applied to this page. The public
+  /// directory pages are reached directly when the OS has no proxy either.
   final ProxyRoute Function() route;
 
   /// The page implementation: one visit per request, or one kept page per

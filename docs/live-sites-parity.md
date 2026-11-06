@@ -457,5 +457,6 @@
 - 18 个能取到线路的站全部产出**绝对 http(s) URL**，扩展名只有 `.flv` / `.m3u8`；没有 `//`、缺 scheme、带引号或 HTML 实体残留。
 - **唯一的地址级真 bug**：六间房 inroom 的流名从 `v<uid>-<liveId>` 变成 `s<uid>-<liveId>`，`SixroomEndpoints.mediaUri` 只认 `v` ⇒ 解析层直接判为不可播。已改为接受 `[vs]` 前缀并补测试（`sixroom_test.dart` 新增 2 条）。
 - **播放器侧识别**：`roomSourcesOf` 原来只按 URL 扩展名推断 `SourceFormat`；FC2 这类无扩展名的 HLS 线路会得到 `unknown`。现在扩展名没说时回退到 `LivePlayLine.format`（HLS→`m3u8`、FLV→`flv`、MPEG-TS→`mpegTs`、DASH→`mpd`、MP4→`mp4`）；连 host 都解析不出的线路不再交给播放器。
-- **不是地址问题、未在解析层改**：Bigo 分片加扰（地址正常，播放器读到的是被 XOR 的 TS）；Showroom CDN 403（同一 `.m3u8` 带 UA/Referer/Origin 均 403）；YouTube/Twitch/CC/FC2/Niconico/KiLaKiLa/YY/Inke/Steam/TwitCasting 直连超时；Picarto 403；17LIVE 502；TikTok/小红书/TwitCasting 无匿名直播房；LOOK 退役。
-- 结论：删除前 34 站的播放地址形态本身已全部是播放器可解析的绝对 http(s) URL；地址层只剩六间房 `s` 前缀这一个真 bug，已修。其余无法播放的原因分别是网络不可达、CDN 拒绝或内容保护，不是地址形态。
+- **Bigo 分片加扰（已修）**：站点在自己的 `LiveSiteRuntimeInfo.ingest` 里给出 `LiveSiteIngestRecipe`（`seedOf` + `transform`，都来自 `BigoHlsProtection`），app 用 `media_core_ingest` 的 `LoopbackIngestRelay` 重写播放列表并通用执行这两个钩子。实测 seed `1543318545`，分片首字节由加扰后的 `176` 还原为 TS 同步字节 `0x47`。这是目前唯一声明 ingest 的站。
+- **不是地址问题、未在解析层改**：Showroom CDN 403（同一 `.m3u8` 带 UA/Referer/Origin 均 403）；YouTube/Twitch/CC/FC2/Niconico/KiLaKiLa/YY/Inke/Steam/TwitCasting 直连超时；Picarto 403；17LIVE 502；TikTok/小红书/TwitCasting 无匿名直播房；LOOK 退役。
+- 结论：删除前 34 站的播放地址形态本身已全部是播放器可解析的绝对 http(s) URL；地址层只剩六间房 `s` 前缀这一个真 bug，已修。Bigo 的逐段加扰不属于地址形态，已由 ingest 管线处理；其余无法播放的原因分别是网络不可达、CDN 拒绝或内容保护，不是地址形态。
