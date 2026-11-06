@@ -962,6 +962,7 @@ final class RoomController extends Notifier<RoomState> {
           state = _with(room: room);
           _armDetailRefresh();
           unawaited(_recordHistory(room));
+          unawaited(_mergeFollowDetail(room));
           unawaited(_loadSuperChats(room));
           // Chat runs beside the stream, never ahead of it: one danmaku
           // handshake gets its whole budget (10 s on a Douyin edge this network
@@ -2203,6 +2204,20 @@ final class RoomController extends Notifier<RoomState> {
 
   Future<void> _recordHistory(LiveRoom room) async {
     await ref.read(historyProvider.notifier).record(room);
+  }
+
+  /// A fresh detail also lands in the follow store: watching a room is the
+  /// cheapest moment its card learns a new title, figure or broadcast
+  /// state — the ask was already paid (the reference merges every detail
+  /// into follows). A room not followed stays untouched.
+  Future<void> _mergeFollowDetail(LiveRoom room) async {
+    try {
+      final repository = ref.read(followRepositoryProvider).value;
+      if (repository == null || !repository.contains(room.ref.identityKey)) return;
+      await repository.merge(room);
+    } on Object {
+      // The card merges on the next pass instead; the viewing is unaffected.
+    }
   }
 
   LivePlaybackProvider? _playbackCapabilityOf(LiveRoom? room) {

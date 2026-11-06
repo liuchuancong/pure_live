@@ -44,6 +44,37 @@ final class FollowRepository {
     return store.put(key, merged.toJson());
   }
 
+  /// Merges every room of [incoming] into the stored copies in one write:
+  /// a whole refresh pass is one broadcast and one re-sort, not one per
+  /// card arriving.
+  Future<void> mergeAll(Iterable<LiveRoom> incoming) async {
+    final updates = <String, Map<String, Object?>>{};
+    for (final room in incoming) {
+      final key = room.ref.identityKey;
+      final stored = store.get(key);
+      final merged = stored == null ? room : LiveRoom.fromJson(_jsonOf(stored)).mergedWith(room);
+      updates[key] = merged.toJson();
+    }
+    if (updates.isNotEmpty) await store.putAll(updates);
+  }
+
+  /// Marks the stored entries behind [identityKeys] with an explicit
+  /// unknown broadcast state: an ask that could not see the room must not
+  /// leave a stale "live" badge standing for hours.
+  Future<void> markUnknown(Iterable<String> identityKeys) async {
+    final updates = <String, Map<String, Object?>>{};
+    for (final key in identityKeys) {
+      final stored = store.get(key);
+      if (stored == null) continue;
+      final room = LiveRoom.fromJson(_jsonOf(stored));
+      if (room.broadcast.liveStatus == LiveStatus.unknown) continue;
+      updates[key] = room
+          .rebuild((b) => b..broadcast.replace(room.broadcast.rebuild((bb) => bb..liveStatus = LiveStatus.unknown)))
+          .toJson();
+    }
+    if (updates.isNotEmpty) await store.putAll(updates);
+  }
+
   /// Unfollows the room behind [identityKey]; a room never followed is a
   /// no-op.
   Future<void> remove(String identityKey) => store.delete(identityKey);
@@ -74,6 +105,15 @@ typedef FollowsState = ({bool ready, List<LiveRoom> rooms, String? error});
 /// change another window committed.
 class FollowsController extends Notifier<FollowsState> {
   StreamSubscription<void>? _subscription;
+
+  /// When a room's last refresh ask failed, per identity: the room sits
+  /// the cooldown out of later passes (the reference's 5-minute skip), so
+  /// a platform that is down is not hammered by every check.
+  final Map<String, DateTime> _refreshFailedAt = {};
+
+  /// How long a room whose ask just failed is skipped by passes that
+  /// honour the cooldown.
+  static const Duration _refreshCooldown = Duration(minutes: 5);
 
   @override
   FollowsState build() {
@@ -184,82 +224,124 @@ class FollowsController extends Notifier<FollowsState> {
   /// the bar. A platform without the room capability keeps its stored copy
   /// and is not counted as a failure; a failed ask is. [quiet] marks a pass
   /// the user started and is watching, so live alerts only update what they
-  /// saw instead of posting.
+  /// saw instead of posting; [bypassCooldown] lets the viewer's own pass
+  /// ignore the failure cooldown the background passes honour.
+  ///
+  /// A room whose last ask failed sits the cooldown out — a platform that
+  /// is down must not be hammered by every pass. A failed ask marks the
+  /// stored copy unknown, so a stale "live" badge never survives an hour
+  /// of failures. The whole pass lands as one write, and one slow ask
+  /// holds up its slot, not everyone behind it.
   Future<int> refreshRooms(
     Iterable<LiveRoom> rooms, {
     void Function(int done, int total)? onProgress,
     bool quiet = false,
+    bool bypassCooldown = false,
   }) async {
     final repository = ref.read(followRepositoryProvider).value;
     if (repository == null) return 0;
-    final targets = rooms.toList(growable: false);
+    final now = DateTime.now();
+    final queue = [
+      for (final room in rooms)
+        if (bypassCooldown ||
+            !(now.difference(_refreshFailedAt[room.ref.identityKey] ?? DateTime(0)) < _refreshCooldown))
+          room,
+    ];
+    if (queue.isEmpty) return 0;
     final sites = ref.read(sitesProvider);
     final fresh = <LiveRoom>[];
+    final failedKeys = <String>[];
     var failed = 0;
     var done = 0;
-    onProgress?.call(done, targets.length);
-    // The refresh pane's bound keeps a full list from stampeding one
-    // platform's endpoints; the reference recommends four.
-    final batchSize = ref.read(maxConcurrentRefreshProvider);
-    for (var start = 0; start < targets.length; start += batchSize) {
-      final batch = targets.sublist(start, (start + batchSize).clamp(0, targets.length));
-      Future<void> refreshOne(LiveRoom room) async {
+    var next = 0;
+    onProgress?.call(done, queue.length);
+    // A worker pool, not batched waits: one slow platform occupies its
+    // slot while the others keep asking (the reference's own shape).
+    Future<void> worker() async {
+      while (next < queue.length) {
+        final room = queue[next++];
         try {
           final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
-          if (provider == null) return;
-          final answer = await provider.getRoom(room.ref.roomId);
-          await answer.match<Future<void>>(
-            (_) async {
-              failed++;
-            },
-            (room) async {
-              await repository.merge(room);
-              fresh.add(room);
-            },
-          );
+          if (provider != null) {
+            final answer = await provider.getRoom(room.ref.roomId);
+            await answer.match<Future<void>>(
+              (_) async {
+                failed++;
+                failedKeys.add(room.ref.identityKey);
+                _refreshFailedAt[room.ref.identityKey] = DateTime.now();
+              },
+              (detail) async {
+                _refreshFailedAt.remove(room.ref.identityKey);
+                // A platform may answer under another id for the same
+                // room; the merge must land on the follow's identity, or
+                // it would grow a second entry and leave the card stale.
+                fresh.add(
+                  detail.ref == room.ref ? detail : detail.rebuild((b) => b..ref.replace(room.ref)),
+                );
+              },
+            );
+          }
         } on Object {
           failed++;
+          failedKeys.add(room.ref.identityKey);
+          _refreshFailedAt[room.ref.identityKey] = DateTime.now();
         } finally {
-          onProgress?.call(++done, targets.length);
+          onProgress?.call(++done, queue.length);
         }
       }
-
-      await Future.wait(<Future<void>>[for (final room in batch) refreshOne(room)]);
     }
-    if (fresh.isNotEmpty) liveAlertObserver?.call(fresh, quiet: quiet);
+
+    final concurrency = ref.read(maxConcurrentRefreshProvider).clamp(1, 20);
+    await Future.wait(<Future<void>>[for (var i = 0; i < concurrency; i++) worker()]);
+    if (fresh.isNotEmpty) {
+      await repository.mergeAll(fresh);
+      liveAlertObserver?.call(fresh, quiet: quiet);
+    }
+    if (failedKeys.isNotEmpty) await repository.markUnknown(failedKeys);
     return failed;
   }
 
-  /// Fetches [rooms] as they are now, merges each answer into the stored
-  /// copy and answers the fresh states (a failed ask and a platform without
-  /// the capability are left out). The live-alert check and the recorder's
+  /// Fetches [rooms] as they are now, merges the answers in one write and
+  /// answers the fresh states (a failed ask and a platform without the
+  /// capability are left out). The live-alert check and the recorder's
   /// waiting checks share this path; a caller that wants a failure count
-  /// uses [refreshRooms].
+  /// uses [refreshRooms]. Failures sit out the cooldown like the page's
+  /// pass, but a failure here marks nothing — an alert check must not
+  /// read a transient miss as a broadcast ending.
   Future<List<LiveRoom>> fetchLiveStates(Iterable<LiveRoom> rooms) async {
     final repository = ref.read(followRepositoryProvider).value;
     if (repository == null) return const [];
-    final targets = rooms.toList(growable: false);
+    final now = DateTime.now();
+    final queue = [
+      for (final room in rooms)
+        if (!(now.difference(_refreshFailedAt[room.ref.identityKey] ?? DateTime(0)) < _refreshCooldown)) room,
+    ];
+    if (queue.isEmpty) return const [];
     final sites = ref.read(sitesProvider);
     final fresh = <LiveRoom>[];
-    final batchSize = ref.read(maxConcurrentRefreshProvider);
-    for (var start = 0; start < targets.length; start += batchSize) {
-      final batch = targets.sublist(start, (start + batchSize).clamp(0, targets.length));
-      Future<void> fetchOne(LiveRoom room) async {
+    var next = 0;
+    Future<void> worker() async {
+      while (next < queue.length) {
+        final room = queue[next++];
         try {
           final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
-          if (provider == null) return;
+          if (provider == null) continue;
           final answer = await provider.getRoom(room.ref.roomId);
-          await answer.match<Future<void>>((_) async {}, (room) async {
-            await repository.merge(room);
-            fresh.add(room);
+          await answer.match<Future<void>>((_) async {
+            _refreshFailedAt[room.ref.identityKey] = DateTime.now();
+          }, (detail) async {
+            _refreshFailedAt.remove(room.ref.identityKey);
+            fresh.add(detail.ref == room.ref ? detail : detail.rebuild((b) => b..ref.replace(room.ref)));
           });
         } on Object {
-          // The stored copy stays; the next pass tries again.
+          _refreshFailedAt[room.ref.identityKey] = DateTime.now();
         }
       }
-
-      await Future.wait(<Future<void>>[for (final room in batch) fetchOne(room)]);
     }
+
+    final concurrency = ref.read(maxConcurrentRefreshProvider).clamp(1, 20);
+    await Future.wait(<Future<void>>[for (var i = 0; i < concurrency; i++) worker()]);
+    if (fresh.isNotEmpty) await repository.mergeAll(fresh);
     return fresh;
   }
 }

@@ -180,8 +180,11 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
           .refreshRooms(
             targets,
             onProgress: showProgress ? _onRefreshProgress : null,
-            // A manual pass is one the viewer is watching: no alerts.
+            // A manual pass is one the viewer is watching: no alerts, and
+            // the failure cooldown does not keep a room they asked about
+            // from being asked again.
             quiet: showProgress,
+            bypassCooldown: showProgress,
           );
       if (showProgress && failed > 0 && mounted) {
         showDsToast(
