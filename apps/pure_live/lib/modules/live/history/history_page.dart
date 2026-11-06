@@ -500,11 +500,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
-    await _runChange(
-      () =>
-          ref.read(historyProvider.notifier).clear(identityKeys: [for (final (room, _) in shown) room.ref.identityKey]),
-      done: t.history.clearDone(count: count),
-    );
+    await _runChange(() => ref.read(historyProvider.notifier).clear(shown), done: t.history.clearDone(count: count));
   }
 
   /// The settings button opens the cap's dialog — how many records the

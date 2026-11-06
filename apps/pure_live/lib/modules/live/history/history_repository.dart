@@ -62,12 +62,21 @@ final class HistoryRepository {
   /// no-op.
   Future<void> remove(String identityKey) => store.delete(identityKey);
 
-  /// Drops every record, or only [identityKeys] when given (the page's
-  /// clear under an active filter drops the matches).
-  Future<void> clear({Iterable<String>? identityKeys}) async {
-    final keys = identityKeys?.toList() ?? store.keys;
-    if (keys.isEmpty) return;
-    await store.deleteAll(keys);
+  /// Drops the records of [shown] — what the page displayed when the user
+  /// chose clear, moments included: an entry watched again since then has
+  /// moved on, and the version the viewer was looking at is not theirs to
+  /// delete (another window's RPC write lands between the render and the
+  /// confirm).
+  Future<void> clear(Iterable<(LiveRoom, DateTime)> shown) async {
+    final stale = <String>[];
+    for (final (room, watchedAt) in shown) {
+      final key = room.ref.identityKey;
+      final stored = store.get(key);
+      if (stored == null) continue;
+      if (_watchedAt(stored) != watchedAt) continue;
+      stale.add(key);
+    }
+    if (stale.isNotEmpty) await store.deleteAll(stale);
   }
 
   /// Keeps the newest [limit] records; a cap of zero or less is the 不设上限
@@ -189,11 +198,12 @@ class HistoryController extends Notifier<HistoryState> {
     await repository.remove(identityKey);
   }
 
-  /// Drops every record, or only [identityKeys] when given.
-  Future<void> clear({Iterable<String>? identityKeys}) async {
+  /// Drops the records the page showed, moments included: a record watched
+  /// again since the page rendered stays.
+  Future<void> clear(Iterable<(LiveRoom, DateTime)> shown) async {
     final repository = ref.read(historyRepositoryProvider).value;
     if (repository == null) return;
-    await repository.clear(identityKeys: identityKeys);
+    await repository.clear(shown);
   }
 }
 
