@@ -107,7 +107,6 @@ final class _StartupErrorPageState extends State<StartupErrorPage> {
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
               spacing: DsSpace.s12,
               children: [
                 DsIcon(DsIcons.error, color: DsTheme.colorsOf(context).danger.text),
