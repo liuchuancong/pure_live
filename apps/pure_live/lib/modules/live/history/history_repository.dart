@@ -58,6 +58,22 @@ final class HistoryRepository {
     await store.put(key, {...merged.toJson(), 'lastWatchedAt': watchedAt.toIso8601String()});
   }
 
+  /// Replaces every stored record [rooms] carries with its fresher read,
+  /// in one write: a refresh pass is one broadcast, not one per record.
+  /// Watch moments stay, and records no longer stored are skipped.
+  Future<void> updateAll(Iterable<LiveRoom> rooms) async {
+    final updates = <String, Map<String, Object?>>{};
+    for (final room in rooms) {
+      final key = room.ref.identityKey;
+      final stored = store.get(key);
+      if (stored == null) continue;
+      final watchedAt = _watchedAt(stored);
+      final merged = LiveRoom.fromJson(_jsonOf(stored)).mergedWith(room);
+      updates[key] = {...merged.toJson(), 'lastWatchedAt': watchedAt.toIso8601String()};
+    }
+    if (updates.isNotEmpty) await store.putAll(updates);
+  }
+
   /// Drops the record behind [identityKey]; a room never watched is a
   /// no-op.
   Future<void> remove(String identityKey) => store.delete(identityKey);
@@ -148,46 +164,49 @@ class HistoryController extends Notifier<HistoryState> {
   }
 
   /// Re-reads [rooms] through each platform's refresh capability, keeping
-  /// the watch moments; answers how many could not be refreshed.
+  /// the watch moments; answers how many could not be refreshed. The pass
+  /// runs a worker pool — one slow platform occupies its slot, not the
+  /// whole list — and lands as one write.
   Future<int> refreshRooms(List<LiveRoom> rooms, {void Function(int done, int total)? onProgress}) async {
     final repository = ref.read(historyRepositoryProvider).value;
     if (repository == null) return rooms.length;
     final sites = ref.read(sitesProvider);
-    final concurrency = ref.read(maxConcurrentRefreshProvider);
+    final concurrency = ref.read(maxConcurrentRefreshProvider).clamp(1, 20);
     var failed = 0;
     var done = 0;
+    var next = 0;
+    final fresh = <LiveRoom>[];
     onProgress?.call(done, rooms.length);
 
-    Future<void> refreshOne(LiveRoom room) async {
-      try {
-        final refresh = sites.getById(room.ref.platform)?.capability<LiveRoomRefresh>();
-        if (refresh == null) {
-          failed++;
-          return;
-        }
-        final answer = await refresh.getRoomForRefresh(roomId: room.ref.roomId);
-        await answer.match(
-          (_) async {
+    Future<void> worker() async {
+      while (next < rooms.length) {
+        final room = rooms[next++];
+        try {
+          final refresh = sites.getById(room.ref.platform)?.capability<LiveRoomRefresh>();
+          if (refresh == null) {
             failed++;
-          },
-          (fresh) async {
-            await repository.updateRoom(fresh);
-          },
-        );
-      } on Object {
-        // One unreachable room must not abort the rest of the pass.
-        failed++;
-      } finally {
-        onProgress?.call(++done, rooms.length);
+            continue;
+          }
+          final answer = await refresh.getRoomForRefresh(roomId: room.ref.roomId);
+          await answer.match(
+            (_) async {
+              failed++;
+            },
+            (updated) async {
+              fresh.add(updated);
+            },
+          );
+        } on Object {
+          // One unreachable room must not abort the rest of the pass.
+          failed++;
+        } finally {
+          onProgress?.call(++done, rooms.length);
+        }
       }
     }
 
-    // The same bound the follows page uses (the reference's
-    // `maxConcurrentRefresh`): a full history is asked a few rooms at a time.
-    for (var start = 0; start < rooms.length; start += concurrency) {
-      final batch = rooms.sublist(start, (start + concurrency).clamp(0, rooms.length));
-      await Future.wait(<Future<void>>[for (final room in batch) refreshOne(room)]);
-    }
+    await Future.wait(<Future<void>>[for (var i = 0; i < concurrency; i++) worker()]);
+    if (fresh.isNotEmpty) await repository.updateAll(fresh);
     return failed;
   }
 
