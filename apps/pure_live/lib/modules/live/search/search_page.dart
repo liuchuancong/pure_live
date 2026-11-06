@@ -11,6 +11,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/modules/live/areas/areas.dart' show areaLayoutProvider;
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/search/search_capability.dart';
 import 'package:pure_live/modules/live/search/search_controller.dart';
@@ -1065,7 +1066,8 @@ final class _SearchResults extends ConsumerWidget {
     if (empty && search.loading) {
       return switch (search.target) {
         LiveSearchTarget.rooms => const _RoomSkeletonGrid(),
-        LiveSearchTarget.anchors || LiveSearchTarget.areas => const _ListSkeleton(),
+        LiveSearchTarget.anchors => const _ListSkeleton(),
+        LiveSearchTarget.areas => _AreaSkeleton(search: search),
       };
     }
     if (empty && search.error != null) {
@@ -1124,26 +1126,7 @@ final class _SearchResults extends ConsumerWidget {
         // room row's own height; the card layout has no say here.
         listMainAxisExtent: kRoomCardListDesignHeight,
       ),
-      LiveSearchTarget.areas => _ListResults(
-        items: search.areas,
-        itemBuilder: (context, item) {
-          final area = item as LiveArea;
-          final openable = area.platform.trim().isNotEmpty && area.areaId.trim().isNotEmpty;
-          return AreaCard(
-            area: area,
-            onPressed: openable
-                ? () => unawaited(
-                    context.push(
-                      AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
-                      extra: area,
-                    ),
-                  )
-                : null,
-          );
-        },
-        hasMore: search.hasMore,
-        loading: search.loading,
-      ),
+      LiveSearchTarget.areas => _AreaResults(search: search),
     };
   }
 }
@@ -1183,6 +1166,49 @@ final class _RoomResults extends ConsumerWidget {
       onLoadMore: controller.loadMore,
       onRefresh: controller.retry,
       itemBuilder: cardFor,
+    );
+  }
+}
+
+/// The areas target's grid: the areas page's own cards in the page's tile
+/// or row preference, paging in like the rooms grid — the catalogue's own
+/// measure, so a hit reads exactly as it does on the areas page.
+final class _AreaResults extends ConsumerWidget {
+  const _AreaResults({required this.search});
+
+  /// The search whose areas are shown.
+  final SearchState search;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(searchProvider.notifier);
+    final browse = ref.watch(browseSettingsProvider);
+    final tileLayout = ref.watch(areaLayoutProvider);
+    return PagedCardGrid<LiveArea>(
+      items: search.areas,
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
+      aspectRatio: areaCardAspectRatio(tileLayout),
+      cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      isLoading: search.loading,
+      hasMore: search.hasMore,
+      onLoadMore: controller.loadMore,
+      onRefresh: controller.retry,
+      itemBuilder: (context, area) {
+        final openable = area.platform.trim().isNotEmpty && area.areaId.trim().isNotEmpty;
+        return AreaCard(
+          area: area,
+          layout: tileLayout,
+          onPressed: openable
+              ? () => unawaited(
+                  context.push(
+                    AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
+                    extra: area,
+                  ),
+                )
+              : null,
+        );
+      },
     );
   }
 }
@@ -1351,6 +1377,30 @@ final class _RoomSkeletonGrid extends ConsumerWidget {
       listMainAxisExtent: kRoomCardListDesignHeight,
       isLoading: true,
       itemBuilder: (context, room) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// The areas target's first-page placeholder: the catalogue's own grid in
+/// the page's tile or row preference, no content.
+final class _AreaSkeleton extends ConsumerWidget {
+  const _AreaSkeleton({required this.search});
+
+  /// The search whose areas are loading.
+  final SearchState search;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final browse = ref.watch(browseSettingsProvider);
+    final tileLayout = ref.watch(areaLayoutProvider);
+    return CardGrid<LiveArea>(
+      items: const [],
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
+      aspectRatio: areaCardAspectRatio(tileLayout),
+      cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      isLoading: true,
+      itemBuilder: (_, _) => const SizedBox.shrink(),
     );
   }
 }

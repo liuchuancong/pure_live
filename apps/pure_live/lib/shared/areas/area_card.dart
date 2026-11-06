@@ -13,6 +13,15 @@ enum AreaCardLayout {
   tile,
 }
 
+/// The tile's design width: the measure a poster-tile grid gives each
+/// card, so every page that lays areas out lays them out the same.
+const double kAreaTileDesignWidth = 170;
+
+/// The grid aspect of [AreaCardLayout.tile] and [AreaCardLayout.row]: the
+/// tile's own measure, and the row's wide band. Every page that lays areas
+/// out asks this one.
+double areaCardAspectRatio(AreaCardLayout layout) => layout == AreaCardLayout.tile ? kAreaTileDesignWidth / 216 : 3.4;
+
 /// One area as a card: its picture, its name, the parent group it sits in
 /// when the platform nests areas, and an optional control at the end.
 ///

@@ -274,11 +274,9 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
 /// full-width square picture plus the name and group under it (at the tile's
 /// 170 width: 12 + 146 + 8 + 20 + 2 + 16 + 12 = 216), the row keeps its wide
 /// band.
-double _areaAspect(AreaCardLayout layout) => layout == AreaCardLayout.tile ? _areaTileWidth / 216 : 3.4;
 
 /// The widest a poster tile gets; the window fits as many as it can side by
 /// side.
-const double _areaTileWidth = 170;
 
 /// How many areas one display page (a wide window's page, a narrow one's
 /// block) holds: the tiles are small, so a page is two of the room feeds'.
@@ -449,10 +447,10 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
               onLoadMore: () async {},
               crossSpacing: settings.crossSpacing,
               mainSpacing: settings.mainSpacing,
-              aspectRatio: _areaAspect(tileLayout),
+              aspectRatio: areaCardAspectRatio(tileLayout),
               // Poster tiles are small: their own measure fits several
               // across a window, while the row keeps the feed's card width.
-              cardExtent: tileLayout == AreaCardLayout.tile ? _areaTileWidth : null,
+              cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
               error: state.error?.message,
               onRetry: () => controller.refresh(widget.platform),
               // A pull reloads the catalogue; a failure keeps the areas and
@@ -486,8 +484,8 @@ final class _FollowedAreas extends ConsumerWidget {
         items: const [],
         crossSpacing: settings.crossSpacing,
         mainSpacing: settings.mainSpacing,
-        aspectRatio: _areaAspect(tileLayout),
-        cardExtent: tileLayout == AreaCardLayout.tile ? _areaTileWidth : null,
+        aspectRatio: areaCardAspectRatio(tileLayout),
+        cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
         isLoading: true,
         itemBuilder: (_, _) => const SizedBox.shrink(),
       );
@@ -522,8 +520,8 @@ final class _FollowedAreas extends ConsumerWidget {
       onLoadMore: () async {},
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
-      aspectRatio: _areaAspect(tileLayout),
-      cardExtent: tileLayout == AreaCardLayout.tile ? _areaTileWidth : null,
+      aspectRatio: areaCardAspectRatio(tileLayout),
+      cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
       itemBuilder: cardBuilder,
     );
   }
