@@ -3,6 +3,7 @@ import 'dart:async' show TimeoutException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/modules/live/toolbox/link_text.dart';
 
 /// The room a resolved link points at.
 typedef ResolvedRoom = ({String platform, String roomId, Uri url});
@@ -40,8 +41,13 @@ enum LinkToolFailure {
 /// A newer resolve replaces an older one: answers from a superseded run are
 /// dropped, not written over the newer one's state.
 final class LinkToolController extends Notifier<LinkToolState> {
-  /// How long one platform's resolve may take (the reference's 12 s).
+  /// How long one platform's resolve may take.
   static const Duration _perSiteTimeout = Duration(seconds: 12);
+
+  /// How long the whole walk may take (the reference's hard cap on one
+  /// parse): a registry whose later platforms all dither must not stretch a
+  /// paste-to-room beyond it.
+  static const Duration _parseBudget = Duration(seconds: 12);
 
   /// One more than the newest resolve this controller started; a run whose
   /// generation fell behind has been replaced and must not write state.
@@ -68,8 +74,13 @@ final class LinkToolController extends Notifier<LinkToolState> {
     var sawTrouble = false;
     var sawTimeout = false;
     ResolvedRoom? found;
+    final budget = Stopwatch()..start();
     for (final site in ref.read(sitesProvider).all) {
       if (generation != _generation) return;
+      if (budget.elapsed >= _parseBudget) {
+        sawTimeout = true;
+        break;
+      }
       final resolver = site.capability<LiveLinkResolver>();
       if (resolver == null) continue;
       try {
@@ -128,18 +139,12 @@ final class LinkToolController extends Notifier<LinkToolState> {
     return (platform: platform, roomId: roomId, url: url);
   }
 
-  /// The first http(s) address in [text] — share texts lead with words —
-  /// or the text itself as a bare host when it names one. Public so the
-  /// link pane can decide whether a clipboard's text is worth offering.
+  /// The first http(s) address in [text]. Public so the link pane can
+  /// decide whether a clipboard's text is worth offering.
   static Uri? linkUriOf(String text) {
-    final embedded = RegExp(r'https?://[^\s，。；“”‘’<>]+').firstMatch(text)?.group(0);
-    for (final candidate in <String?>[embedded, text.trim()]) {
-      if (candidate == null || candidate.isEmpty) continue;
-      var uri = Uri.tryParse(candidate);
-      if (uri == null || uri.host.isEmpty) uri = Uri.tryParse('https://$candidate');
-      if (uri != null && uri.host.isNotEmpty) return uri;
-    }
-    return null;
+    final url = LinkText.firstHttpUrl(text);
+    if (url == null) return null;
+    return Uri.tryParse(url);
   }
 }
 
