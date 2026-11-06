@@ -2,7 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show AppBar, Scaffold;
+import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/services.dart'
     show Clipboard, ClipboardData, FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
@@ -34,6 +34,7 @@ import 'package:pure_live/shared/shared.dart'
         AudienceFormat,
         CoverFallback,
         LiveWindow,
+        PageHeader,
         PlayerIdleProgress,
         RoomCoverChip,
         cachedImage,
@@ -821,15 +822,18 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         autofocus: true,
         child: Scaffold(
           backgroundColor: immersive ? colors.canvas : colors.surface,
-          appBar: immersive
-              ? null
-              : AppBar(
-                  backgroundColor: colors.surface,
-                  surfaceTintColor: const Color(0x00000000),
-                  elevation: 0,
-                  title: Text(season?.title ?? t.vod.opening, maxLines: 1, overflow: TextOverflow.ellipsis),
+          // The immersive body keeps the whole surface; the page body wears
+          // the pane header as its own head — the immersive mode answers to
+          // the player's chrome alone, as the room's own page does.
+          body: immersive
+              ? body
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    PageHeader(title: season?.title ?? t.vod.opening),
+                    Expanded(child: body),
+                  ],
                 ),
-          body: body,
         ),
       ),
     );
