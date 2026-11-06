@@ -55,7 +55,7 @@
 - ⬜ 屏蔽三维：等级下限（null=未知永不屏蔽）、只显示彩色（r==g==b=灰）、协议标注疑似机器人。参考 `message_filter.dart:174-210`、`live_message.dart:376-385`。
 
 ## W9 测试面
-- ⬜ ReplayHttp 抓包回放传输：样本目录 meta.json+body、结构匹配+ignoredQuery、未命中即失败。参考 `live_net/src/testing/replay_http.dart:10-163`。迁移 40 个 _FakeHttp 分批做。
+- 🟡 ReplayHttp 抓包回放传输：✅ 传输+单测 b7fdb3aa3；✅ 样板迁移 3/40（kugoulive/pandalive/liveme，2ca375867，样本在 packages/live_sites/test/fixtures/）；剩 37 个 _FakeHttp 后续批——注意：签名字段要经 http.requests 单独断言、未命中可能被站点包成 Left 误通过、header 不参与匹配（twitch 类保留手写 fake 或加 _Sequenced 工具）、baidulive 1912 行 fake 等于重写留最后。
 
 ## W10 大特性
 - ⬜ 回放抽象：ArchivePlaybackController 五平台统一面+decoder 退休握手（await entering/retirement）+路由表解耦。参考 `shared/rooms/archive_playback.dart`、`archive_navigation.dart`。
