@@ -45,11 +45,11 @@
 
 ## W7 传输吸收（media_core）
 - 🟡 FLV 关键帧拼接续期：字节级决策层全量移植（FlvTagProbe/Policy 关键帧对齐+平移计算/Plan 切换窗口/Timeline 输出台账，320 行零 I/O）。参考 `flv_splicer.dart:144-496`。落 media_core_ingest 11a49b3。评估结论：播放路径无缝（mpv 内部拉流，Dart 无字节接点）；缺的桥=media_core_ingest 的 FLV loopback 中继 I/O 层约 500 行，决策层已备好，待立项。
-- 🟡 HLS 中继内换址：LoopbackIngestRelay.renewAddress（根 manifest 改指新址、玩家回环地址不变、已改写子列表照常解析）已落 media_core_ingest 33ac392。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。余：FfmpegIngestRelay 的进程内换址（同目录第二轮 FFmpeg）+app 侧 refreshAt 接线（待首个声明 expiringUrl 的站点）。
+- 🟡 HLS 中继内换址：LoopbackIngestRelay.renewAddress（根 manifest 改指新址、玩家回环地址不变、已改写子列表照常解析）落 media_core_ingest 33ac392；FfmpegIngestRelay 进程内换址落 0b392f8（同目录第二轮 FFmpeg：先证明新址发布 join 清单、再停旧轮并把 join 服务在玩家已知的 index.m3u8 名下，失败不动旧轮可重试，自灭轮可复活；DASH 合并双输入不续期；join 是新编码轮时间戳重启=已记档的接缝）。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。余：app 侧 refreshAt 接线（待首个声明 expiringUrl 的站点）。
 
 ## W8 live_sites 基座
-- 🟡 弹幕连接基座：Run 令牌按代际失效、sealed 状态事件（连接中/握手完成/已加入/重连中/耗尽）、消息单出口清洗不可见字符——基座+14 测已落；showroom/yy/picarto/missevan/sixroom 五 session 迁移（2210 测全绿）。参考 `live_danmaku/src/connection_base.dart:16-160`。余 3 个待迁（niconico 轮询循环/xiaohongshu 双记账/seventeenlive reauthorize，特殊形态）。
-- 🟡 Socket 模板：多端点轮换（每轮等待+1 步封顶 6、耗尽才上报平台接管）已落公共 DanmakuSocket（3 测，单端点行为不变）。参考 `socket_connection.dart:122-396`。余项=入房超时+握手失败续签钩子：需会话向基座报入房确认，随弹幕连接基座（18 session 迁移）一并做。
+- ✅ 弹幕连接基座：Run 令牌按代际失效、sealed 状态事件（连接中/握手完成/已加入/重连中/耗尽）、消息单出口清洗不可见字符——基座+14 测；18 个 session 全量迁移完（15 常规两批 ed078137d+6a225fa65，最后 3 个特殊形态 dc9e4b8e3：niconico 轮询循环的代际参数树换成 run、xiaohongshu 保留 socket-epoch 双记账于 run 之内、seventeenlive 每-socket 代际与 chzzk/kick 同构直换；全程 2210 测零断言改动）。参考 `live_danmaku/src/connection_base.dart:16-160`。
+- 🟡 Socket 模板：多端点轮换（每轮等待+1 步封顶 6、耗尽才上报平台接管）已落公共 DanmakuSocket（3 测，单端点行为不变）。参考 `socket_connection.dart:122-396`。余项=入房超时+握手失败续签钩子：迁移已让会话经 run 上报 joined/handshakeDone（states 流为新增面），钩子本身待加。
 - ⬜ 可取消能力：CancelToken 进能力接口+DiscoveryScope 持临时会话清理；不支持的平台调用前后检查。参考 `live_site.dart:420-607`。
 - 🟡 Link 会话预算：app 侧已落 sharedHttpUrls 全套（中文标点截断/裸域名补 https/prose host 尾点豁免/签名不重编码，LinkText 6 测）+整次解析 12s 硬顶（toolbox 控制器逐站查预算）。参考 `links.dart:56-317`。余项=ShortLinkSession（8 URL 预算/共享取消/redirect 数据跨站递归）：v2 的 LiveLinkResolver 各持自己传输、20+ 个 capability 签名都要加 session 参，等解析器接口重设计一并做。
 - ⬜ 屏蔽三维：等级下限（null=未知永不屏蔽）、只显示彩色（r==g==b=灰）、协议标注疑似机器人。参考 `message_filter.dart:174-210`、`live_message.dart:376-385`。
