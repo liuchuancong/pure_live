@@ -73,13 +73,10 @@ final class AreasCatalogController extends Notifier<Map<String, PlatformAreasSta
     final answer = await capability.getAreas();
     final open = state[platform];
     if (open == null) return;
-    answer.match(
-      (error) => state = {...state, platform: (areas: open.areas, loading: false, error: error)},
-      (areas) {
-        api.set('areas:$platform', areas.toList(), ttl: _areasTtl);
-        state = {...state, platform: (areas: areas.toList(), loading: false, error: null)};
-      },
-    );
+    answer.match((error) => state = {...state, platform: (areas: open.areas, loading: false, error: error)}, (areas) {
+      api.set('areas:$platform', areas.toList(), ttl: _areasTtl);
+      state = {...state, platform: (areas: areas.toList(), loading: false, error: null)};
+    });
   }
 }
 
