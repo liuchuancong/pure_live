@@ -5356,6 +5356,27 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '约 {count: int} 分钟'
 	String albumTotalDuration({required int count}) => '约 ${count} 分钟';
+
+	/// zh-CN: '音乐音频缓存'
+	String get audioCacheTitle => '音乐音频缓存';
+
+	/// zh-CN: '听过的歌留在本地，源链接过期也能继续播'
+	String get audioCacheDesc => '听过的歌留在本地，源链接过期也能继续播';
+
+	/// zh-CN: '关闭'
+	String get audioCacheOff => '关闭';
+
+	/// zh-CN: '清空音频缓存'
+	String get audioCacheClear => '清空音频缓存';
+
+	/// zh-CN: '音频缓存已清空'
+	String get audioCacheCleared => '音频缓存已清空';
+
+	/// zh-CN: '{count} MB'
+	String audioCacheMb({required Object count}) => '${count} MB';
+
+	/// zh-CN: '清空'
+	String get audioCacheClearAction => '清空';
 }
 
 // Path: navigation
@@ -15978,6 +15999,13 @@ extension on Translations {
 			'music.hotSongs' => '热门歌曲',
 			'music.songsSection' => ({required int count}) => '歌曲 · ${count}',
 			'music.albumTotalDuration' => ({required int count}) => '约 ${count} 分钟',
+			'music.audioCacheTitle' => '音乐音频缓存',
+			'music.audioCacheDesc' => '听过的歌留在本地，源链接过期也能继续播',
+			'music.audioCacheOff' => '关闭',
+			'music.audioCacheClear' => '清空音频缓存',
+			'music.audioCacheCleared' => '音频缓存已清空',
+			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
+			'music.audioCacheClearAction' => '清空',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -16134,6 +16162,8 @@ extension on Translations {
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.delete' => '删除',
 			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
 			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
@@ -16141,8 +16171,6 @@ extension on Translations {
 			'recorder.libraryTitle' => '录像库',
 			'recorder.libraryRoot' => '全部录像',
 			'recorder.librarySummary' => ({required int count, required String size}) => '${count} 条 · ${size}',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.librarySearchHint' => '搜索录像（直播间 / 平台 / 日期 / 文件名）',
 			'recorder.libraryFailedTitle' => '读不到录像目录',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
@@ -16648,6 +16676,8 @@ extension on Translations {
 			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
 			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
 			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
+			_ => null,
+		} ?? switch (path) {
 			'search.noteKilakilaShort' => '可按昵称、UID 或链接查找主播',
 			'search.noteWeibo' => '微博：输入场次号或粘贴直播链接可精确查找；其他关键词只在当前推荐的直播里按昵称筛选，开播状态进入后确认。',
 			'search.noteWeiboShort' => '只能用场次号或直播链接精确查找',
@@ -16655,8 +16685,6 @@ extension on Translations {
 			'search.noteYoutubeShort' => '关键词只能搜到正在直播的频道',
 			'search.scopeTagAnchors' => '主播',
 			'search.scopeTagWeb' => '网页',
-			_ => null,
-		} ?? switch (path) {
 			'search.scopeTagsHint' => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。',
 			'search.scopeSummary' => ({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。',
@@ -17162,6 +17190,8 @@ extension on Translations {
 			'settings.cacheCategoryBreakdown' => '按类型查看',
 			'settings.cacheCategoryCover' => '封面',
 			'settings.cacheCategoryAvatar' => '头像',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheCategoryIcon' => '图标',
 			'settings.cacheCategoryEmote' => '表情与徽章',
 			'settings.cacheCategoryAlbum' => '专辑封面',
@@ -17169,8 +17199,6 @@ extension on Translations {
 			'settings.cacheCategoryPreview' => '预览与搜索缩略图',
 			'settings.cacheCategoryOther' => '其他',
 			'settings.cacheImagesSection' => '图片缓存',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheDiskEnabled' => '启用图片磁盘缓存',
 			'settings.cacheDiskEnabledDesc' => '关闭后图片只走内存与网络；已有文件保留到下次清理。',
 			'settings.cacheFreshness' => '缓存策略',
@@ -17676,6 +17704,8 @@ extension on Translations {
 			'settings.downloadRecheck' => '重新检查文件',
 			'settings.downloadMerge' => '并入当前目录',
 			'settings.downloadMergeDesc' => ({required Object count}) => '另有 ${count} 个已完成的文件在其他目录，可并入当前目录',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadMergeTitle' => '把其他目录的已完成文件并入当前目录？',
 			'settings.downloadMergeBody' => ({required Object count}) => '${count} 个已完成的文件在其他目录。同一个磁盘内只做改名；跨磁盘先复制、核对字节数，核对通过才删源。任一文件失败都原样留在原目录，记录仍指向它，不会留下断链。没下完的与下载中的不在其列。',
 			'settings.downloadMergeRunning' => ({required Object done, required Object total, required Object name}) => '正在并入 ${done}/${total}：${name}',
@@ -17683,8 +17713,6 @@ extension on Translations {
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => '已并入 ${moved} 个，${failed} 个未完成',
 			'settings.downloadColumnFile' => '文件',
 			'settings.downloadColumnSize' => '大小',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadColumnTime' => '时间',
 			'settings.downloadColumnActions' => '操作',
 			'settings.downloadSearchPlaceholder' => '搜索下载记录',
@@ -18190,6 +18218,8 @@ extension on Translations {
 			'shield.similarityThresholdDescription' => '越高越严格。',
 			'shield.similarityCacheDuration' => '缓存时间',
 			'shield.similarityCacheDurationDescription' => '这段时间内不重复显示。',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityMaxCacheSize' => '最大缓存数量',
 			'shield.similarityMaxCacheSizeDescription' => '缓存占用的内存上限。',
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} 秒',
@@ -18197,8 +18227,6 @@ extension on Translations {
 			'shield.repeatEnabled' => '合并重复弹幕',
 			'shield.repeatEnabledDescription' => '相同内容只保留第一条。',
 			'shield.repeatWindow' => '合并时间',
-			_ => null,
-		} ?? switch (path) {
 			'shield.keywordsTitle' => '关键词',
 			'shield.usersTitle' => '用户',
 			'shield.keywordFieldHint' => '输入要屏蔽的关键词，/…/ 是正则',

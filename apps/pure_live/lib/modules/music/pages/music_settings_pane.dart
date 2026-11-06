@@ -55,6 +55,7 @@ import 'package:pure_live/modules/music/controller/music_sync_server.dart'
         musicSyncServerStatusProvider;
 import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
     show MusicPlayerMode, MusicSpectrumStyle, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
+import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart' show MusicAudioCacheBox;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
     show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
@@ -108,298 +109,328 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
         if (_section != SettingsSection.musicInterface && _section != SettingsSection.musicStorage)
           DsListSection(
             header: Text(t.music.settingsPlayback),
-          children: [
-            SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.disc3),
-              title: t.music.defaultSource,
-              description: t.music.defaultSourceDesc,
-              value: settings.defaultSourceId.isEmpty ? kLxMusicSourceId : settings.defaultSourceId,
-              options: [
-                for (final source in ref.watch(musicSourceListProvider))
-                  DsSelectOption(
-                    value: source.id,
-                    label: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
-                  ),
-              ],
-              onChanged: (id) => unawaited(controller.setDefaultSource(id)),
-            ),
-            SettingsChoiceRow<MusicQuality>(
-              leading: const DsIcon(DsIcons.slidersHorizontal),
-              title: t.music.quality,
-              description: t.music.qualityDesc,
-              value: settings.quality,
-              options: [
-                for (final quality in MusicQuality.values) DsSelectOption(value: quality, label: quality.label(t)),
-              ],
-              onChanged: (quality) => unawaited(controller.setQuality(quality)),
-            ),
-            // The two the engine is driven by but this page never showed: the
-            // player's own menu sets the rate and persists it, and the pitch
-            // compensation is what that rate does to the song's key. Both are
-            // restored before a queue loads, so the choice outlives the run.
-            SettingsChoiceRow<double>(
-              leading: const DsIcon(DsIcons.gauge),
-              title: t.music.playbackRate,
-              value: settings.playbackRate,
-              options: [
-                for (final rate in _kPlaybackRates) DsSelectOption(value: rate, label: _playbackRateLabel(rate)),
-                if (!_kPlaybackRates.contains(settings.playbackRate))
-                  DsSelectOption(value: settings.playbackRate, label: _playbackRateLabel(settings.playbackRate)),
-              ],
-              onChanged: (rate) => unawaited(controller.setPlaybackRate(rate)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.music),
-              title: t.music.preservesPitch,
-              control: DsSwitch(
-                value: settings.preservesPitch,
-                onChanged: (value) => unawaited(controller.setPreservesPitch(value: value)),
+            children: [
+              SettingsChoiceRow<String>(
+                leading: const DsIcon(DsIcons.disc3),
+                title: t.music.defaultSource,
+                description: t.music.defaultSourceDesc,
+                value: settings.defaultSourceId.isEmpty ? kLxMusicSourceId : settings.defaultSourceId,
+                options: [
+                  for (final source in ref.watch(musicSourceListProvider))
+                    DsSelectOption(
+                      value: source.id,
+                      label: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
+                    ),
+                ],
+                onChanged: (id) => unawaited(controller.setDefaultSource(id)),
               ),
-            ),
-            Builder(
-              builder: (context) {
-                final devices = ref.watch(musicAudioDevicesProvider).value ?? const [];
-                if (devices.length < 2) return const SizedBox.shrink();
-                final current = devices.firstWhere((device) => device.selected, orElse: () => devices.first);
-                return SettingsChoiceRow<String>(
-                  leading: const DsIcon(DsIcons.volume2),
-                  title: t.music.audioOutput,
-                  description: t.music.audioOutputDesc,
-                  value: current.name,
-                  options: [
-                    for (final device in devices)
-                      DsSelectOption(
-                        value: device.name,
-                        label: device.description.isEmpty ? device.name : device.description,
-                      ),
-                  ],
-                  onChanged: (name) => unawaited(_selectAudioDevice(context, ref, name)),
-                );
-              },
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.play),
-              title: t.music.autoplay,
-              description: t.music.autoplayDesc,
-              control: DsSwitch(
-                value: settings.autoplay,
-                onChanged: (value) => unawaited(controller.setAutoplay(value: value)),
+              SettingsChoiceRow<MusicQuality>(
+                leading: const DsIcon(DsIcons.slidersHorizontal),
+                title: t.music.quality,
+                description: t.music.qualityDesc,
+                value: settings.quality,
+                options: [
+                  for (final quality in MusicQuality.values) DsSelectOption(value: quality, label: quality.label(t)),
+                ],
+                onChanged: (quality) => unawaited(controller.setQuality(quality)),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.skipForward),
-              title: t.music.skipOnError,
-              description: t.music.skipOnErrorDesc,
-              control: DsSwitch(
-                value: settings.skipOnError,
-                onChanged: (value) => unawaited(controller.setSkipOnError(value: value)),
+              SettingsChoiceRow<int>(
+                leading: const DsIcon(DsIcons.hardDrive),
+                title: t.music.audioCacheTitle,
+                description: t.music.audioCacheDesc,
+                value: settings.audioCacheLimitMb,
+                options: [
+                  DsSelectOption(value: 0, label: t.music.audioCacheOff),
+                  for (final megabytes in const [256, 512, 1024, 2048])
+                    DsSelectOption(
+                      value: megabytes,
+                      label: t.music.audioCacheMb(count: megabytes),
+                    ),
+                ],
+                onChanged: (megabytes) => unawaited(controller.setAudioCacheLimit(megabytes)),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.history),
-              title: t.music.rememberProgress,
-              description: t.music.rememberProgressDesc,
-              control: DsSwitch(
-                value: settings.rememberProgress,
-                onChanged: (value) => unawaited(controller.setRememberProgress(value: value)),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.trash2),
+                title: t.music.audioCacheClear,
+                control: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () async {
+                    await MusicAudioCacheBox.instance.clear();
+                    if (context.mounted) {
+                      showDsToast(context: context, title: t.music.audioCacheCleared);
+                    }
+                  },
+                  child: Text(t.music.audioCacheClearAction),
+                ),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.shuffle),
-              title: t.music.autoCleanPlayedList,
-              description: t.music.autoCleanPlayedListDesc,
-              control: DsSwitch(
-                value: settings.autoCleanPlayedList,
-                onChanged: (value) => unawaited(controller.setAutoCleanPlayedList(value: value)),
+              // The two the engine is driven by but this page never showed: the
+              // player's own menu sets the rate and persists it, and the pitch
+              // compensation is what that rate does to the song's key. Both are
+              // restored before a queue loads, so the choice outlives the run.
+              SettingsChoiceRow<double>(
+                leading: const DsIcon(DsIcons.gauge),
+                title: t.music.playbackRate,
+                value: settings.playbackRate,
+                options: [
+                  for (final rate in _kPlaybackRates) DsSelectOption(value: rate, label: _playbackRateLabel(rate)),
+                  if (!_kPlaybackRates.contains(settings.playbackRate))
+                    DsSelectOption(value: settings.playbackRate, label: _playbackRateLabel(settings.playbackRate)),
+                ],
+                onChanged: (rate) => unawaited(controller.setPlaybackRate(rate)),
               ),
-            ),
-          ],
-        ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.music),
+                title: t.music.preservesPitch,
+                control: DsSwitch(
+                  value: settings.preservesPitch,
+                  onChanged: (value) => unawaited(controller.setPreservesPitch(value: value)),
+                ),
+              ),
+              Builder(
+                builder: (context) {
+                  final devices = ref.watch(musicAudioDevicesProvider).value ?? const [];
+                  if (devices.length < 2) return const SizedBox.shrink();
+                  final current = devices.firstWhere((device) => device.selected, orElse: () => devices.first);
+                  return SettingsChoiceRow<String>(
+                    leading: const DsIcon(DsIcons.volume2),
+                    title: t.music.audioOutput,
+                    description: t.music.audioOutputDesc,
+                    value: current.name,
+                    options: [
+                      for (final device in devices)
+                        DsSelectOption(
+                          value: device.name,
+                          label: device.description.isEmpty ? device.name : device.description,
+                        ),
+                    ],
+                    onChanged: (name) => unawaited(_selectAudioDevice(context, ref, name)),
+                  );
+                },
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.play),
+                title: t.music.autoplay,
+                description: t.music.autoplayDesc,
+                control: DsSwitch(
+                  value: settings.autoplay,
+                  onChanged: (value) => unawaited(controller.setAutoplay(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.skipForward),
+                title: t.music.skipOnError,
+                description: t.music.skipOnErrorDesc,
+                control: DsSwitch(
+                  value: settings.skipOnError,
+                  onChanged: (value) => unawaited(controller.setSkipOnError(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.history),
+                title: t.music.rememberProgress,
+                description: t.music.rememberProgressDesc,
+                control: DsSwitch(
+                  value: settings.rememberProgress,
+                  onChanged: (value) => unawaited(controller.setRememberProgress(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.shuffle),
+                title: t.music.autoCleanPlayedList,
+                description: t.music.autoCleanPlayedListDesc,
+                control: DsSwitch(
+                  value: settings.autoCleanPlayedList,
+                  onChanged: (value) => unawaited(controller.setAutoCleanPlayedList(value: value)),
+                ),
+              ),
+            ],
+          ),
         if (_section == SettingsSection.musicInterface)
           DsListSection(
             header: Text(t.music.settingsInterface),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.sparkles),
-              title: t.music.uiRecommendBanner,
-              description: t.music.uiRecommendBannerDesc,
-              control: DsSwitch(
-                value: ui.shows(MusicUiElement.recommendBanner),
-                onChanged: (value) =>
-                    unawaited(uiController.setElement(MusicUiElement.recommendBanner, visible: value)),
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.sparkles),
+                title: t.music.uiRecommendBanner,
+                description: t.music.uiRecommendBannerDesc,
+                control: DsSwitch(
+                  value: ui.shows(MusicUiElement.recommendBanner),
+                  onChanged: (value) =>
+                      unawaited(uiController.setElement(MusicUiElement.recommendBanner, visible: value)),
+                ),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.image),
-              title: t.music.uiBlurredBackdrop,
-              description: t.music.uiBlurredBackdropDesc,
-              control: DsSwitch(
-                value: ui.shows(MusicUiElement.blurredBackdrop),
-                onChanged: (value) =>
-                    unawaited(uiController.setElement(MusicUiElement.blurredBackdrop, visible: value)),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.image),
+                title: t.music.uiBlurredBackdrop,
+                description: t.music.uiBlurredBackdropDesc,
+                control: DsSwitch(
+                  value: ui.shows(MusicUiElement.blurredBackdrop),
+                  onChanged: (value) =>
+                      unawaited(uiController.setElement(MusicUiElement.blurredBackdrop, visible: value)),
+                ),
               ),
-            ),
-            // The stage's shape starts here, the reference's player modes;
-            // the player page's own pill switches it for that run without
-            // touching this row.
-            SettingsChoiceRow<MusicPlayerMode>(
-              leading: const DsIcon(DsIcons.disc3),
-              title: t.music.playerMode,
-              description: t.music.playerModeDesc,
-              value: ref.watch(musicPlayerModeProvider),
-              options: [for (final mode in MusicPlayerMode.values) DsSelectOption(value: mode, label: mode.label(t))],
-              onChanged: (value) => unawaited(ref.read(musicPlayerModeProvider.notifier).set(value)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.audioLines),
-              title: t.music.uiSpectrum,
-              description: t.music.uiSpectrumDesc,
-              control: DsSwitch(
-                value: ui.shows(MusicUiElement.spectrum),
-                onChanged: (value) => unawaited(uiController.setElement(MusicUiElement.spectrum, visible: value)),
+              // The stage's shape starts here, the reference's player modes;
+              // the player page's own pill switches it for that run without
+              // touching this row.
+              SettingsChoiceRow<MusicPlayerMode>(
+                leading: const DsIcon(DsIcons.disc3),
+                title: t.music.playerMode,
+                description: t.music.playerModeDesc,
+                value: ref.watch(musicPlayerModeProvider),
+                options: [for (final mode in MusicPlayerMode.values) DsSelectOption(value: mode, label: mode.label(t))],
+                onChanged: (value) => unawaited(ref.read(musicPlayerModeProvider.notifier).set(value)),
               ),
-            ),
-            // The style follows the switch: the row stays where it is so the
-            // setting never seems to vanish, and only its control goes inert.
-            SettingsChoiceRow<MusicSpectrumStyle>(
-              leading: const DsIcon(DsIcons.chartColumn),
-              title: t.music.uiSpectrumStyle,
-              description: t.music.uiSpectrumStyleDesc,
-              value: ui.spectrumStyle,
-              options: [
-                for (final style in MusicSpectrumStyle.values) DsSelectOption(value: style, label: style.label(t)),
-              ],
-              onChanged: ui.shows(MusicUiElement.spectrum)
-                  ? (style) => unawaited(uiController.setSpectrumStyle(style))
-                  : null,
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.music.uiReset),
-              description: Text(t.music.uiResetDesc),
-              onPressed: () => unawaited(uiController.reset()),
-            ),
-          ],
-        ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.audioLines),
+                title: t.music.uiSpectrum,
+                description: t.music.uiSpectrumDesc,
+                control: DsSwitch(
+                  value: ui.shows(MusicUiElement.spectrum),
+                  onChanged: (value) => unawaited(uiController.setElement(MusicUiElement.spectrum, visible: value)),
+                ),
+              ),
+              // The style follows the switch: the row stays where it is so the
+              // setting never seems to vanish, and only its control goes inert.
+              SettingsChoiceRow<MusicSpectrumStyle>(
+                leading: const DsIcon(DsIcons.chartColumn),
+                title: t.music.uiSpectrumStyle,
+                description: t.music.uiSpectrumStyleDesc,
+                value: ui.spectrumStyle,
+                options: [
+                  for (final style in MusicSpectrumStyle.values) DsSelectOption(value: style, label: style.label(t)),
+                ],
+                onChanged: ui.shows(MusicUiElement.spectrum)
+                    ? (style) => unawaited(uiController.setSpectrumStyle(style))
+                    : null,
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.rotateCcw),
+                title: Text(t.music.uiReset),
+                description: Text(t.music.uiResetDesc),
+                onPressed: () => unawaited(uiController.reset()),
+              ),
+            ],
+          ),
         if (_section == SettingsSection.musicInterface)
           DsListSection(
             header: Text(t.music.settingsList),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.arrowUpToLine),
-              title: t.music.addToTop,
-              description: t.music.addToTopDesc,
-              control: DsSwitch(
-                value: settings.addToTop,
-                onChanged: (value) => unawaited(controller.setAddToTop(value: value)),
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.arrowUpToLine),
+                title: t.music.addToTop,
+                description: t.music.addToTopDesc,
+                control: DsSwitch(
+                  value: settings.addToTop,
+                  onChanged: (value) => unawaited(controller.setAddToTop(value: value)),
+                ),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.tag),
-              title: t.music.showSource,
-              description: t.music.showSourceDesc,
-              control: DsSwitch(
-                value: settings.showSource,
-                onChanged: (value) => unawaited(controller.setShowSource(value: value)),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.tag),
+                title: t.music.showSource,
+                description: t.music.showSourceDesc,
+                control: DsSwitch(
+                  value: settings.showSource,
+                  onChanged: (value) => unawaited(controller.setShowSource(value: value)),
+                ),
               ),
-            ),
-            SettingsChoiceRow<MusicSourceNameType>(
-              leading: const DsIcon(DsIcons.fileCode),
-              title: t.music.sourceNameType,
-              description: t.music.sourceNameTypeDesc,
-              value: settings.sourceNameType,
-              options: [
-                for (final type in MusicSourceNameType.values) DsSelectOption(value: type, label: type.label(t)),
-              ],
-              onChanged: (type) => unawaited(controller.setSourceNameType(type)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.search),
-              title: t.music.searchHot,
-              description: t.music.searchHotDesc,
-              control: DsSwitch(
-                value: settings.showHotSearches,
-                onChanged: (value) => unawaited(controller.setShowHotSearches(value: value)),
+              SettingsChoiceRow<MusicSourceNameType>(
+                leading: const DsIcon(DsIcons.fileCode),
+                title: t.music.sourceNameType,
+                description: t.music.sourceNameTypeDesc,
+                value: settings.sourceNameType,
+                options: [
+                  for (final type in MusicSourceNameType.values) DsSelectOption(value: type, label: type.label(t)),
+                ],
+                onChanged: (type) => unawaited(controller.setSourceNameType(type)),
               ),
-            ),
-          ],
-        ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.search),
+                title: t.music.searchHot,
+                description: t.music.searchHotDesc,
+                control: DsSwitch(
+                  value: settings.showHotSearches,
+                  onChanged: (value) => unawaited(controller.setShowHotSearches(value: value)),
+                ),
+              ),
+            ],
+          ),
         if (_section == SettingsSection.musicInterface)
           DsListSection(
             header: Text(t.music.dislikeSection),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.ban),
-              title: Text(t.music.dislikeRules(count: dislikes.length)),
-              description: Text(t.music.dislikeRulesDesc),
-              trailing: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: dislikes.isEmpty ? null : () => unawaited(_clearDislikes(context, ref)),
-                child: Text(t.music.dislikeRulesClear),
+            children: [
+              DsListRow(
+                leading: const DsIcon(DsIcons.ban),
+                title: Text(t.music.dislikeRules(count: dislikes.length)),
+                description: Text(t.music.dislikeRulesDesc),
+                trailing: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: dislikes.isEmpty ? null : () => unawaited(_clearDislikes(context, ref)),
+                  child: Text(t.music.dislikeRulesClear),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         if (_section == SettingsSection.musicStorage)
           DsListSection(
             header: Text(t.music.cacheClean),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.refreshCw),
-              title: Text(t.music.cacheSwapsClear),
-              description: Text('${t.music.cacheSwapsLabel} ${ref.watch(musicSourceSwapsProvider).length}'),
-              trailing: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: ref.watch(musicSourceSwapsProvider).isEmpty
-                    ? null
-                    : () => unawaited(_clearSwaps(context, ref)),
-                child: Text(t.music.cacheCleanButton),
+            children: [
+              DsListRow(
+                leading: const DsIcon(DsIcons.refreshCw),
+                title: Text(t.music.cacheSwapsClear),
+                description: Text('${t.music.cacheSwapsLabel} ${ref.watch(musicSourceSwapsProvider).length}'),
+                trailing: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: ref.watch(musicSourceSwapsProvider).isEmpty
+                      ? null
+                      : () => unawaited(_clearSwaps(context, ref)),
+                  child: Text(t.music.cacheCleanButton),
+                ),
               ),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.captions),
-              title: Text(t.music.cacheLyricClear),
-              description: Text('${t.music.cacheLyricLabel} ${ref.watch(musicLyricCacheCountProvider).value ?? 0}'),
-              trailing: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: (ref.watch(musicLyricCacheCountProvider).value ?? 0) == 0
-                    ? null
-                    : () => unawaited(_clearLyricCache(context, ref)),
-                child: Text(t.music.cacheCleanButton),
+              DsListRow(
+                leading: const DsIcon(DsIcons.captions),
+                title: Text(t.music.cacheLyricClear),
+                description: Text('${t.music.cacheLyricLabel} ${ref.watch(musicLyricCacheCountProvider).value ?? 0}'),
+                trailing: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: (ref.watch(musicLyricCacheCountProvider).value ?? 0) == 0
+                      ? null
+                      : () => unawaited(_clearLyricCache(context, ref)),
+                  child: Text(t.music.cacheCleanButton),
+                ),
               ),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.fileMusic),
-              title: Text(t.music.cacheOverrideClear),
-              description: Text('${t.music.cacheOverrideLabel} ${ref.watch(musicLyricOverridesProvider).length}'),
-              trailing: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: ref.watch(musicLyricOverridesProvider).isEmpty
-                    ? null
-                    : () => unawaited(_clearOverrides(context, ref)),
-                child: Text(t.music.cacheCleanButton),
+              DsListRow(
+                leading: const DsIcon(DsIcons.fileMusic),
+                title: Text(t.music.cacheOverrideClear),
+                description: Text('${t.music.cacheOverrideLabel} ${ref.watch(musicLyricOverridesProvider).length}'),
+                trailing: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: ref.watch(musicLyricOverridesProvider).isEmpty
+                      ? null
+                      : () => unawaited(_clearOverrides(context, ref)),
+                  child: Text(t.music.cacheCleanButton),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         // The reset verb closes the page: everything above it is tunable in
         // place, this one throws the tuning away.
         if (_section == SettingsSection.musicStorage)
           DsListSection(
             header: Text(t.music.settingsReset),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.music.playbackReset),
-              description: Text(t.music.playbackResetDesc),
-              onPressed: () => unawaited(controller.reset()),
-            ),
-          ],
-        ),
+            children: [
+              DsListRow(
+                leading: const DsIcon(DsIcons.rotateCcw),
+                title: Text(t.music.playbackReset),
+                description: Text(t.music.playbackResetDesc),
+                onPressed: () => unawaited(controller.reset()),
+              ),
+            ],
+          ),
       ],
     );
   }

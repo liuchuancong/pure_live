@@ -704,5 +704,12 @@
   "sourcesImported": "已导入的源",
   "hotSongs": "热门歌曲",
   "songsSection": "歌曲 · {count: int}",
-  "albumTotalDuration": "约 {count: int} 分钟"
+  "albumTotalDuration": "约 {count: int} 分钟",
+  "audioCacheTitle": "音乐音频缓存",
+  "audioCacheDesc": "听过的歌留在本地，源链接过期也能继续播",
+  "audioCacheOff": "关闭",
+  "audioCacheClear": "清空音频缓存",
+  "audioCacheCleared": "音频缓存已清空",
+  "audioCacheMb": "{count} MB",
+  "audioCacheClearAction": "清空"
 }

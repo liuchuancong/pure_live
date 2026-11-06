@@ -704,5 +704,12 @@
   "sourcesImported": "Imported sources",
   "hotSongs": "Top songs",
   "songsSection": "Songs · {count: int}",
-  "albumTotalDuration": "About {count} min"
+  "albumTotalDuration": "About {count} min",
+  "audioCacheTitle": "Audio cache",
+  "audioCacheDesc": "Songs you have played stay on disk and keep playing when their CDN link expires",
+  "audioCacheOff": "Off",
+  "audioCacheClear": "Clear the audio cache",
+  "audioCacheCleared": "Audio cache cleared",
+  "audioCacheMb": "{count} MB",
+  "audioCacheClearAction": "Clear"
 }

@@ -3,6 +3,7 @@ import 'dart:convert' show Utf8Decoder, jsonDecode, jsonEncode, latin1;
 import 'dart:io' show File;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart' show PlayerAudioDevice, PlayerConfig;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
@@ -19,6 +20,8 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         PcmFrame,
         kMpvAudioBackendId;
 import 'package:pure_live/app/app.dart' show playerKernelProvider, selectedModuleProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
+import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_engine_effects.dart'
@@ -33,6 +36,8 @@ import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' sh
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
     show MusicQuality, musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart'
+    show CachedTrackSource, MusicAudioCacheBox;
 import 'package:pure_live/shared/shared.dart' show AppModule;
 
 /// The preference the last queue is kept under, so 打开时继续播放 has
@@ -218,12 +223,31 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     final lyricSettings = ref.read(musicLyricsSettingsProvider);
     _progressStore = ref.read(musicProgressStoreProvider);
     _positions = _progressStore.read();
+    final wearing = <CachedTrackSource>[];
     _audio = audio.AudioPlaybackController(
       ref.read(playerKernelProvider),
       // The local source is registered for its sidecar lyric reader: a local
       // track resolves through its file path, but its `.lrc` is asked here.
       registry: audio.MusicSourceRegistry([
-        ...ref.read(musicSourceListProvider),
+        // The online sources wear the audio cache: a song heard once plays
+        // from disk, and the copy rides the app's own transport.
+        for (final source in ref.read(musicSourceListProvider))
+          () {
+            final cached = CachedTrackSource(
+              source,
+              environment: () {
+                final limit = ref.read(musicPlaybackSettingsProvider).audioCacheLimitMb;
+                if (limit <= 0) return null;
+                return (
+                  directory: ref.read(appPathsProvider).cacheRoot,
+                  limitMb: limit,
+                  http: ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
+                );
+              },
+            );
+            wearing.add(cached);
+            return cached;
+          }(),
         audio.LocalMusicSource(roots: const []),
       ]),
       config: audio.AudioPlaybackConfig(
@@ -238,6 +262,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       playerConfig: const PlayerConfig(pauseWhenBackgrounded: false),
     );
     _audio.setLyricOffset(Duration(milliseconds: lyricSettings.lyricOffsetMs));
+    // The settings' cache rows read the same cache the resolves use.
+    wearing.forEach(MusicAudioCacheBox.instance.arm);
     // The app arms the OS surfaces once at boot; a live driver lets the music
     // player publish its queue to the notification, lock screen or MPRIS. A
     // boot that lost that race (or failed once) is retried here, because a

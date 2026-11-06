@@ -102,6 +102,7 @@ final class MusicPlaybackSettings {
     required this.addToTop,
     required this.showSource,
     required this.showHotSearches,
+    required this.audioCacheLimitMb,
   });
 
   /// The reference's defaults: no source until one is imported, 128k, skip a
@@ -121,6 +122,7 @@ final class MusicPlaybackSettings {
     addToTop: true,
     showSource: true,
     showHotSearches: true,
+    audioCacheLimitMb: 512,
   );
 
   /// The custom source songs are asked from; empty until one is imported.
@@ -170,6 +172,11 @@ final class MusicPlaybackSettings {
   /// Whether the empty search page offers the source's top searches.
   final bool showHotSearches;
 
+  /// How many megabytes of songs the audio cache may keep — a song heard
+  /// once plays from disk instead of its expiring CDN link. Zero turns the
+  /// cache off.
+  final int audioCacheLimitMb;
+
   /// A copy with selected fields replaced.
   MusicPlaybackSettings copyWith({
     String? defaultSourceId,
@@ -185,6 +192,7 @@ final class MusicPlaybackSettings {
     bool? addToTop,
     bool? showSource,
     bool? showHotSearches,
+    int? audioCacheLimitMb,
   }) => MusicPlaybackSettings(
     defaultSourceId: defaultSourceId ?? this.defaultSourceId,
     sourceNameType: sourceNameType ?? this.sourceNameType,
@@ -199,6 +207,7 @@ final class MusicPlaybackSettings {
     addToTop: addToTop ?? this.addToTop,
     showSource: showSource ?? this.showSource,
     showHotSearches: showHotSearches ?? this.showHotSearches,
+    audioCacheLimitMb: audioCacheLimitMb ?? this.audioCacheLimitMb,
   );
 }
 
@@ -215,6 +224,7 @@ const String _autoCleanPlayedListKey = 'music.play.autoCleanPlayedList';
 const String _addToTopKey = 'music.list.addToTop';
 const String _showSourceKey = 'music.list.showSource';
 const String _showHotSearchesKey = 'music.search.hot';
+const String _audioCacheLimitKey = 'music.play.audioCacheLimitMb';
 
 /// Owns the music module's playback preferences.
 final class MusicPlaybackSettingsController extends Notifier<MusicPlaybackSettings> {
@@ -233,6 +243,7 @@ final class MusicPlaybackSettingsController extends Notifier<MusicPlaybackSettin
     addToTop: readMusicPrefBool(_addToTopKey) ?? true,
     showSource: readMusicPrefBool(_showSourceKey) ?? true,
     showHotSearches: readMusicPrefBool(_showHotSearchesKey) ?? true,
+    audioCacheLimitMb: readMusicPrefInt(_audioCacheLimitKey) ?? 512,
   );
 
   static MusicSourceNameType _readSourceNameType() {
@@ -291,6 +302,12 @@ final class MusicPlaybackSettingsController extends Notifier<MusicPlaybackSettin
   Future<void> setAddToTop({required bool value}) async {
     state = state.copyWith(addToTop: value);
     await writeMusicPrefBool(_addToTopKey, value: value);
+  }
+
+  /// Chooses the audio cache's size; zero turns it off.
+  Future<void> setAudioCacheLimit(int megabytes) async {
+    state = state.copyWith(audioCacheLimitMb: megabytes);
+    await writeMusicPrefInt(_audioCacheLimitKey, megabytes);
   }
 
   /// Shows the source beside a song in a list.

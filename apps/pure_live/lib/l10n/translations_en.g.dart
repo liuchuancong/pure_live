@@ -1887,6 +1887,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get hotSongs => 'Top songs';
 	@override String songsSection({required int count}) => 'Songs · ${count}';
 	@override String albumTotalDuration({required Object count}) => 'About ${count} min';
+	@override String get audioCacheTitle => 'Audio cache';
+	@override String get audioCacheDesc => 'Songs you have played stay on disk and keep playing when their CDN link expires';
+	@override String get audioCacheOff => 'Off';
+	@override String get audioCacheClear => 'Clear the audio cache';
+	@override String get audioCacheCleared => 'Audio cache cleared';
+	@override String audioCacheMb({required Object count}) => '${count} MB';
+	@override String get audioCacheClearAction => 'Clear';
 }
 
 // Path: navigation
@@ -6785,6 +6792,13 @@ extension on TranslationsEn {
 			'music.hotSongs' => 'Top songs',
 			'music.songsSection' => ({required int count}) => 'Songs · ${count}',
 			'music.albumTotalDuration' => ({required Object count}) => 'About ${count} min',
+			'music.audioCacheTitle' => 'Audio cache',
+			'music.audioCacheDesc' => 'Songs you have played stay on disk and keep playing when their CDN link expires',
+			'music.audioCacheOff' => 'Off',
+			'music.audioCacheClear' => 'Clear the audio cache',
+			'music.audioCacheCleared' => 'Audio cache cleared',
+			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
+			'music.audioCacheClearAction' => 'Clear',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -6941,6 +6955,8 @@ extension on TranslationsEn {
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.delete' => 'Delete',
 			'recorder.deleteTitle' => ({required String name}) => 'Delete “${name}”?',
 			'recorder.deleteBody' => 'This removes the task only; files already saved stay on disk.',
@@ -6948,8 +6964,6 @@ extension on TranslationsEn {
 			'recorder.libraryTitle' => 'Recording library',
 			'recorder.libraryRoot' => 'All recordings',
 			'recorder.librarySummary' => ({required int count, required String size}) => '${count} · ${size}',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.librarySearchHint' => 'Search recordings (room / platform / day / file)',
 			'recorder.libraryFailedTitle' => 'The recording folder cannot be read',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
@@ -7455,6 +7469,8 @@ extension on TranslationsEn {
 			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
 			'search.noteTwitcastingShort' => 'Keywords find live channels only',
 			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
+			_ => null,
+		} ?? switch (path) {
 			'search.noteKilakilaShort' => 'Find anchors by nickname, UID or link',
 			'search.noteWeibo' => 'Weibo: a session id or live link finds the room exactly; other words filter the current showcase by nickname, and the live state is confirmed on entering.',
 			'search.noteWeiboShort' => 'Session id or live link only',
@@ -7462,8 +7478,6 @@ extension on TranslationsEn {
 			'search.noteYoutubeShort' => 'Keywords find live channels only',
 			'search.scopeTagAnchors' => 'Anchors',
 			'search.scopeTagWeb' => 'Web',
-			_ => null,
-		} ?? switch (path) {
 			'search.scopeTagsHint' => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.',
 			'search.scopeSummary' => ({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.',
@@ -7969,6 +7983,8 @@ extension on TranslationsEn {
 			'settings.cacheCategoryBreakdown' => 'By type',
 			'settings.cacheCategoryCover' => 'Covers',
 			'settings.cacheCategoryAvatar' => 'Avatars',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheCategoryIcon' => 'Icons',
 			'settings.cacheCategoryEmote' => 'Emotes and badges',
 			'settings.cacheCategoryAlbum' => 'Album art',
@@ -7976,8 +7992,6 @@ extension on TranslationsEn {
 			'settings.cacheCategoryPreview' => 'Previews and search thumbnails',
 			'settings.cacheCategoryOther' => 'Other',
 			'settings.cacheImagesSection' => 'Image cache',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheDiskEnabled' => 'Cache images on disk',
 			'settings.cacheDiskEnabledDesc' => 'Off keeps memory and network only; existing files stay until the next clear.',
 			'settings.cacheFreshness' => 'Freshness',
@@ -8483,6 +8497,8 @@ extension on TranslationsEn {
 			'settings.downloadRecheck' => 'Re-check files',
 			'settings.downloadMerge' => 'Merge into this folder',
 			'settings.downloadMergeDesc' => ({required Object count}) => '${count} finished file(s) live in another folder and can be merged here',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadMergeTitle' => 'Merge the other folder\'s finished files into this one?',
 			'settings.downloadMergeBody' => ({required Object count}) => '${count} finished files live in another folder. On one volume each is only renamed; across volumes a file is copied and its byte count checked against the source, and the source is deleted only when the copy matches. Anything that fails stays exactly where it was with its row still naming it, so no row is left pointing at nothing. Rows still downloading or unfinished are not touched.',
 			'settings.downloadMergeRunning' => ({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}',
@@ -8490,8 +8506,6 @@ extension on TranslationsEn {
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => 'Merged ${moved}; ${failed} did not finish',
 			'settings.downloadColumnFile' => 'File',
 			'settings.downloadColumnSize' => 'Size',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
 			'settings.downloadSearchPlaceholder' => 'Search downloads',
@@ -8997,6 +9011,8 @@ extension on TranslationsEn {
 			'shield.similarityThresholdDescription' => 'Higher is stricter.',
 			'shield.similarityCacheDuration' => 'Cache duration',
 			'shield.similarityCacheDurationDescription' => 'No repeats within this window.',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityMaxCacheSize' => 'Maximum cache size',
 			'shield.similarityMaxCacheSizeDescription' => 'Caps the cache memory.',
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} seconds',
@@ -9004,8 +9020,6 @@ extension on TranslationsEn {
 			'shield.repeatEnabled' => 'Collapse repeats',
 			'shield.repeatEnabledDescription' => 'Keep only the first copy.',
 			'shield.repeatWindow' => 'Merge window',
-			_ => null,
-		} ?? switch (path) {
 			'shield.keywordsTitle' => 'Keywords',
 			'shield.usersTitle' => 'Users',
 			'shield.keywordFieldHint' => 'Type a keyword to block — /…/ is a regular expression',
