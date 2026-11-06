@@ -18,12 +18,15 @@ dependencies:
   built_collection: ^5.1.2 # 不可变集合
   built_value: ^8.13.0 # 不可变模型
   crypto: ^3.0.6
+  flutter:
+    sdk: flutter
   fpdart: ^1.2.0
   hls: 1.0.0
   live_net:
   live_websocket:
   meta: ^1.19.0
   web_socket_channel: ^3.0.3
+  webview_all: ^1.4.7 # 访客凭据的离屏 WebView（桌面/移动统一）
 
 dev_dependencies:
   build_runner: ^2.16.2 # 运行代码生成器
