@@ -20,9 +20,7 @@ import 'package:pure_live/shared/shared.dart'
         DownloadDetailsPane,
         DownloadQueueAction,
         DownloadQueueHeader,
-        GlyphIcon,
         LiveWindow,
-        MusicGlyph,
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
@@ -648,7 +646,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   /// the verb below that undoes it.
   Widget _empty(Translations t, List<audio.MusicDownloadTask> tasks, String directory, bool filterActive) => Center(
     child: DsEmptyState(
-      icon: const GlyphIcon(MusicGlyph.download),
+      icon: const DsIcon(DsIcons.download),
       title: Text(tasks.isEmpty ? t.music.downloadsEmptyTitle : t.music.downloadFilterEmpty),
       description: Text(tasks.isEmpty ? t.music.downloadsEmptyDescription : t.music.downloadFilterEmptyDesc),
       actions: [

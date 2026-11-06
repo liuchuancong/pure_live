@@ -32,7 +32,7 @@ import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_spectrum.dart';
 import 'package:pure_live/modules/music/widgets/music_stage_panels.dart' show MusicCommentsDialog, MusicStagePanels;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show GlyphIcon, LiveWindow, MusicGlyph, cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
 /// The module's player page: the song at listening size, its transport, and
 /// the queue behind it — the reference's PlayDetail, with the module's own
@@ -154,7 +154,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                                 size: DsSize.sm,
                                 semanticLabel: t.music.stagePanels,
                                 onPressed: () => _openStagePanels(context),
-                                icon: const GlyphIcon(MusicGlyph.queue),
+                                icon: const DsIcon(DsIcons.listMusic),
                               ),
                             // The song's own verbs ride in the header, as the
                             // reference's PlayDetail does: the tier it plays
@@ -167,7 +167,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                               size: DsSize.sm,
                               semanticLabel: t.music.download,
                               onPressed: () => unawaited(downloadTrackWithToast(context, ref, track)),
-                              icon: const GlyphIcon(MusicGlyph.download),
+                              icon: const DsIcon(DsIcons.download),
                             ),
                             const _PlayerMenu(),
                           ],
@@ -766,12 +766,12 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
       items: [
         if (track != null) ...[
           DsMenuItem(
-            leading: const GlyphIcon(MusicGlyph.download),
+            leading: const DsIcon(DsIcons.download),
             label: Text(t.music.download),
             onPressed: () => unawaited(downloadTrackWithToast(context, ref, track)),
           ),
           DsMenuItem(
-            leading: const GlyphIcon(MusicGlyph.queue),
+            leading: const DsIcon(DsIcons.listMusic),
             label: Text(t.music.addToPlaylist),
             onPressed: () => unawaited(showAddToPlaylistDialog(context, ref, track)),
           ),
@@ -990,7 +990,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
         size: DsSize.sm,
         semanticLabel: t.music.moreActions,
         onPressed: controller.toggle,
-        icon: const GlyphIcon(MusicGlyph.more),
+        icon: const DsIcon(DsIcons.ellipsisVertical),
       ),
     );
   }
@@ -1237,28 +1237,28 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
           size: DsSize.lg,
           semanticLabel: musicPlayModeLabel(t, state.mode),
           onPressed: controller.cycleMode,
-          icon: musicPlayModeGlyph(state.mode) ?? DsIcon(musicPlayModeIcon(state.mode)),
+          icon: DsIcon(musicPlayModeIcon(state.mode)),
         ),
         DsButton.icon(
           variant: DsButtonVariant.ghost,
           size: DsSize.lg,
           semanticLabel: t.music.previous,
           onPressed: () => unawaited(controller.previous()),
-          icon: const GlyphIcon(MusicGlyph.previous),
+          icon: const DsIcon(DsIcons.skipBack),
         ),
         DsButton.icon(
           variant: DsButtonVariant.primary,
           size: DsSize.lg,
           semanticLabel: state.playing ? t.music.pause : t.music.play,
           onPressed: () => unawaited(controller.toggle()),
-          icon: GlyphIcon(state.playing ? MusicGlyph.pause : MusicGlyph.play),
+          icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
         ),
         DsButton.icon(
           variant: DsButtonVariant.ghost,
           size: DsSize.lg,
           semanticLabel: t.music.next,
           onPressed: () => unawaited(controller.next()),
-          icon: const GlyphIcon(MusicGlyph.next),
+          icon: const DsIcon(DsIcons.skipForward),
         ),
       ],
     );
@@ -1270,7 +1270,7 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
       size: DsSize.lg,
       semanticLabel: loved ? t.music.unfavourite : t.music.favourite,
       onPressed: () => unawaited(favouriteController.toggle(track)),
-      icon: GlyphIcon(MusicGlyph.like, color: loved ? colors.accent : null),
+      icon: DsIcon(DsIcons.heart, color: loved ? colors.accent : null, fill: loved),
     );
     return DecoratedBox(
       decoration: BoxDecoration(

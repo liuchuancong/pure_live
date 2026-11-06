@@ -1761,9 +1761,7 @@ List<Widget> roomMenuItems(
       // the cast target.
       if (line != null || recording)
         DsMenuItem(
-          leading: recording
-              ? const DsIcon(DsIcons.squareStop)
-              : const GlyphIcon(PlayerGlyph.recordCamera),
+          leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc),
           label: Text(recording ? t.room.stopRecording : t.room.record),
           onPressed: () => unawaited(toggleRoomRecording(context, ref)),
         ),

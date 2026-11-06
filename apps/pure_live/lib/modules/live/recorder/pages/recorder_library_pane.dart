@@ -21,16 +21,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' 
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
 import 'package:pure_live/shared/shared.dart'
-    show
-        GlyphIcon,
-        LiveWindow,
-        PlayerGlyph,
-        avatarInitials,
-        cachedImage,
-        kAllPlatforms,
-        localizedSiteIcon,
-        showActionsPanel,
-        showPlatformPickerPanel;
+    show LiveWindow, avatarInitials, cachedImage, kAllPlatforms, localizedSiteIcon, showActionsPanel, showPlatformPickerPanel;
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -53,7 +44,6 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
     this.openRoomLabel,
     this.showHeading = true,
     this.showToolbar = true,
-    this.useCentrePlatformFilter = false,
     super.key,
   });
 
@@ -95,13 +85,6 @@ final class RecorderLibraryPane extends ConsumerStatefulWidget {
   /// under it.
   final bool showToolbar;
 
-  /// Whether the centre's own platform filter cuts this pane's list. The
-  /// centre's two pages share that one choice, so its files page turns it on;
-  /// a module's own recordings page (IPTV) turns it off — its list answers to
-  /// its module alone, and the centre's picked site must not empty it (as the
-  /// centre's own list must not be emptied by a choice made on IPTV's page).
-  final bool useCentrePlatformFilter;
-
   @override
   ConsumerState<RecorderLibraryPane> createState() => _RecorderLibraryPaneState();
 }
@@ -121,15 +104,13 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
   }
 
   /// The tree this pane owns: every take, cut down to the module's platforms
-  /// and — when the pane answers to the centre ([RecorderLibraryPane.useCentrePlatformFilter])
-  /// — to the centre's platform filter.
+  /// and to the centre's platform filter.
   List<RecordingTake> get _all {
     final scoped = scopeLibraryTakes(
       ref.read(recordingLibraryProvider).value ?? const [],
       platforms: widget.platforms,
       excluded: widget.excludedPlatforms,
     );
-    if (!widget.useCentrePlatformFilter) return scoped;
     final filter = ref.read(recorderPlatformFilterProvider);
     return filter == kAllPlatforms
         ? scoped
@@ -150,9 +131,8 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       platforms: widget.platforms,
       excluded: widget.excludedPlatforms,
     );
-    // The centre's platform filter cuts both lists the same way; a pane that
-    // answers to its own module (IPTV's recordings page) reads nothing here.
-    final platformFilter = widget.useCentrePlatformFilter ? ref.watch(recorderPlatformFilterProvider) : kAllPlatforms;
+    // The centre's platform filter cuts both lists the same way.
+    final platformFilter = ref.watch(recorderPlatformFilterProvider);
     final takes = platformFilter == kAllPlatforms
         ? scoped
         : [
@@ -185,9 +165,6 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
               child: RecorderLibraryToolbar(
                 platforms: recorderPlatformsOf(scoped.map((take) => take.platformId), widget.platformName),
                 nameOf: widget.platformName,
-                // A pane outside the centre does not answer to the centre's
-                // choice, so its toolbar does not offer it either.
-                showPlatformFilter: widget.useCentrePlatformFilter,
               ),
             ),
           ),
@@ -210,7 +187,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
             ),
             (false, false) when filtered.isEmpty => Center(
               child: DsEmptyState(
-                icon: const GlyphIcon(PlayerGlyph.recordCamera),
+                icon: const DsIcon(DsIcons.disc3),
                 title: Text(takes.isEmpty ? t.recorder.emptyLibraryTitle : t.recorder.emptySearchTitle),
                 description: Text(
                   takes.isEmpty ? t.recorder.emptyLibraryDescription : t.recorder.emptySearchDescription,
@@ -468,24 +445,14 @@ Future<void> playRecordingTake(
 /// the same fold every other page makes when its header line runs out of room.
 final class RecorderLibraryToolbar extends ConsumerWidget {
   /// The toolbar over the module's takes; [platforms] feed the platform
-  /// filter, named by [nameOf]. [showPlatformFilter] leaves the filter out —
-  /// a pane that does not answer to the centre's choice (a module's own
-  /// recordings page) has no filter row to offer.
-  const RecorderLibraryToolbar({
-    required this.platforms,
-    required this.nameOf,
-    this.showPlatformFilter = true,
-    super.key,
-  });
+  /// filter, named by [nameOf].
+  const RecorderLibraryToolbar({required this.platforms, required this.nameOf, super.key});
 
   /// The site ids the list holds.
   final List<String> platforms;
 
   /// A site id's display name.
   final String Function(String id) nameOf;
-
-  /// Whether the platform filter leads the row.
-  final bool showPlatformFilter;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -497,7 +464,7 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
       children: [
-        if (showPlatformFilter) RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
+        RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
         // The order reads straight from this menu: it was the filter's only
         // condition, so a panel in between only added a step.
         DsMenuAnchor(
@@ -585,10 +552,12 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
                 DsListRow(
                   leading: const DsIcon(DsIcons.antenna, size: 16),
                   title: Text(t.recorder.filterPlatformGroup),
-                  detail: Text(switch (ref.watch(recorderPlatformFilterProvider)) {
-                    final id when id != kAllPlatforms => nameOf(id),
-                    _ => t.recorder.filterAll,
-                  }),
+                  detail: Text(
+                    switch (ref.watch(recorderPlatformFilterProvider)) {
+                      final id when id != kAllPlatforms => nameOf(id),
+                      _ => t.recorder.filterAll,
+                    },
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop();
                     unawaited(
@@ -597,9 +566,8 @@ final class RecorderLibraryToolbarMore extends ConsumerWidget {
                         platforms: [kAllPlatforms, ...platforms],
                         current: ref.read(recorderPlatformFilterProvider),
                         nameOf: (id) => id == kAllPlatforms ? t.recorder.filterAll : nameOf(id),
-                        iconOf: (id) => id == kAllPlatforms
-                            ? null
-                            : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
+                        iconOf: (id) =>
+                            id == kAllPlatforms ? null : localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 32),
                         onChanged: (id) => ref.read(recorderPlatformFilterProvider.notifier).selected = id,
                       ),
                     );
@@ -811,7 +779,7 @@ final class _TakeRow extends StatelessWidget {
                     DsButton(
                       variant: DsButtonVariant.primary,
                       size: DsSize.sm,
-                      leading: const GlyphIcon(PlayerGlyph.play, size: 14),
+                      leading: const DsIcon(DsIcons.play, size: 14),
                       onPressed: ok ? onPlay : null,
                       child: Text(t.recorder.playRecording),
                     ),
@@ -998,7 +966,7 @@ final class _TakeCoverState extends ConsumerState<_TakeCover> {
               semanticLabel: widget.take.roomTitle,
               fallback: DecoratedBox(
                 decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
-                child: Center(child: GlyphIcon(PlayerGlyph.recordCamera, size: 20, color: colors.accentText)),
+                child: Center(child: DsIcon(DsIcons.video, size: 20, color: colors.accentText)),
               ),
             ),
           ),

@@ -16,7 +16,7 @@ import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
     show musicTrackArtistId, openMusicAlbum, openMusicArtist;
-import 'package:pure_live/shared/shared.dart' show GlyphIcon, MusicGlyph, avatarInitials, cachedImage;
+import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
 
 /// The content tabs the module's pages wear: 44 tall, starting flush with
 /// the strip that holds them, and no hairline under the row — the same
@@ -599,15 +599,6 @@ DsIconData musicPlayModeIcon(audio.PlayMode mode) => switch (mode) {
   audio.PlayMode.listLoop => DsIcons.repeat,
   audio.PlayMode.singleLoop => DsIcons.repeat1,
   audio.PlayMode.random => DsIcons.shuffle,
-};
-
-/// The play mode's glyph from the music art set, null where the set has no
-/// word for the mode (the caller keeps the stroke icon then).
-GlyphIcon? musicPlayModeGlyph(audio.PlayMode mode) => switch (mode) {
-  audio.PlayMode.listLoop => const GlyphIcon(MusicGlyph.repeat),
-  audio.PlayMode.singleLoop => const GlyphIcon(MusicGlyph.repeatOne),
-  audio.PlayMode.random => const GlyphIcon(MusicGlyph.random),
-  audio.PlayMode.list => null,
 };
 
 /// A path's last segment, for a device file or a download's output.

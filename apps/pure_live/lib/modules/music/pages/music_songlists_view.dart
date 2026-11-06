@@ -28,7 +28,7 @@ import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, GlyphIcon, LiveWindow, MusicGlyph, NavigationItem, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, NavigationItem, cachedImage;
 
 final class MusicPlaylistsView extends ConsumerStatefulWidget {
   const MusicPlaylistsView({this.initialOnlineOpen, super.key});
@@ -713,7 +713,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
               semanticLabel: t.music.moreActions,
               items: [
                 DsMenuItem(
-                  leading: const GlyphIcon(MusicGlyph.download),
+                  leading: const DsIcon(DsIcons.download),
                   label: Text(t.music.downloadAll),
                   onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_downloadAll(playlist)),
                 ),
@@ -848,7 +848,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                           DsButton(
                             variant: DsButtonVariant.secondary,
                             size: DsSize.sm,
-                            leading: const GlyphIcon(MusicGlyph.download, size: 16),
+                            leading: const DsIcon(DsIcons.download, size: 16),
                             onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_downloadAll(playlist)),
                             child: Text(t.music.downloadAll),
                           ),
@@ -914,7 +914,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                 DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
-                  leading: const GlyphIcon(MusicGlyph.download, size: 16),
+                  leading: const DsIcon(DsIcons.download, size: 16),
                   onPressed: _selected.isEmpty ? null : () => unawaited(_downloadSelected(playlist)),
                   child: Text(t.music.selectionDownload),
                 ),

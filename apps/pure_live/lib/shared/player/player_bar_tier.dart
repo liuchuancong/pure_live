@@ -53,15 +53,10 @@ final class PlayerBarButton extends StatelessWidget {
     this.size,
     this.iconSize,
     this.focusNode,
-    this.glyphBuilder,
     super.key,
   });
 
   final DsIconData icon;
-
-  /// Draws a picture glyph instead of [icon], tinted with the bar's state
-  /// color (see [MediaBarButton.glyphBuilder]).
-  final Widget Function(BuildContext context, Color color, double size)? glyphBuilder;
   final String label;
   final VoidCallback? onPressed;
 
@@ -94,7 +89,6 @@ final class PlayerBarButton extends StatelessWidget {
       size: size ?? (tv ? sizes.lg : null),
       iconSize: iconSize ?? (tv ? sizes.iconLg : null),
       focusRing: tv,
-      glyphBuilder: glyphBuilder,
     );
   }
 }

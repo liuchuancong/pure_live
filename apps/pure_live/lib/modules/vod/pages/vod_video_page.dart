@@ -1287,7 +1287,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                         }, style: theme.typography.caption.copyWith(color: playerInk)),
                                         PlayerBarButton(
                                           icon: DsIcons.pause,
-                                          glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.pause, size: size, color: color),
                                           label: t.vod.downloadPause,
                                           size: 28,
                                           iconSize: 16,
@@ -1408,7 +1407,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         items: _vodMenuItems(t),
         builder: (context, controller, _) => PlayerBarButton(
           icon: DsIcons.ellipsisVertical,
-          glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.more, size: size, color: color),
           label: t.common.more,
           onPressed: () {
             _wake();
@@ -1441,7 +1439,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           PlayerGlassPill(
             child: PlayerBarButton(
               icon: DsIcons.minimize2,
-              glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.fullscreenExit, size: size, color: color),
               label: t.vod.exitFullscreen,
               autofocus: true,
               onPressed: () => unawaited(_toggleFullscreen()),
@@ -1650,8 +1647,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 children: [
                   PlayerBarButton(
                     icon: playing ? DsIcons.pause : DsIcons.play,
-                    glyphBuilder: (_, color, size) =>
-                        GlyphIcon(playing ? PlayerGlyph.pause : PlayerGlyph.play, size: size, color: color),
                     label: playing ? t.vod.pause : t.vod.play,
                     focusNode: _playFocus,
                     onPressed: handle == null
@@ -1668,8 +1663,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   if (_hasNextPart) _vodNextPartChip(t, compact: compact),
                   PlayerBarButton(
                     icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
-                    glyphBuilder: (_, color, size) =>
-                        GlyphIcon(_effectivelyMuted ? PlayerGlyph.volumeOff : PlayerGlyph.volumeOn, size: size, color: color),
                     label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
                     onPressed: handle == null
                         ? null
@@ -1728,8 +1721,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // what is on the picture: the pair the room's bar draws.
                   PlayerBarButton(
                     icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-                    glyphBuilder: (_, color, size) =>
-                        GlyphIcon(danmakuVisible ? PlayerGlyph.barrageOn : PlayerGlyph.barrageOff, size: size, color: color),
                     label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
                     selected: danmakuVisible,
                     onPressed: handle == null
@@ -1743,7 +1734,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   ),
                   PlayerBarButton(
                     icon: DsIcons.slidersHorizontal,
-                    glyphBuilder: (_, color, size) => GlyphIcon(PlayerGlyph.barrageSettings, size: size, color: color),
                     label: t.settings.navDanmaku,
                     onPressed: () {
                       _wake();
@@ -1770,8 +1760,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   if (presentation != PresentationMode.pip)
                     PlayerBarButton(
                       icon: immersive ? DsIcons.minimize2 : DsIcons.maximize,
-                    glyphBuilder: (_, color, size) =>
-                        GlyphIcon(immersive ? PlayerGlyph.fullscreenExit : PlayerGlyph.fullscreenEnter, size: size, color: color),
                       label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
                       onPressed: handle == null
                           ? null
@@ -2473,7 +2461,7 @@ final class _PartsSectionState extends State<_PartsSection> {
                     variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
                     onPressed: () => widget.onOpen(candidate),
-                    leading: candidate.cid == widget.current?.cid ? const GlyphIcon(PlayerGlyph.play, size: 12) : null,
+                    leading: candidate.cid == widget.current?.cid ? const DsIcon(DsIcons.play, size: 12) : null,
                     child: Text('P${candidate.page} ${candidate.title}', maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                 ),
