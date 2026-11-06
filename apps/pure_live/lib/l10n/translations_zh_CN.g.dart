@@ -12622,6 +12622,81 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '下一P'
 	String get nextPart => '下一P';
 
+	/// zh-CN: '上一P'
+	String get previousPart => '上一P';
+
+	/// zh-CN: '已为你续播到 {time}'
+	String resumedAt({required Object time}) => '已为你续播到 ${time}';
+
+	/// zh-CN: '从头播放'
+	String get playFromStart => '从头播放';
+
+	/// zh-CN: '{seconds: int} 秒后播放下一 P'
+	String nextPartIn({required int seconds}) => '${seconds} 秒后播放下一 P';
+
+	/// zh-CN: '片头还剩 {time}'
+	String headRemaining({required Object time}) => '片头还剩 ${time}';
+
+	/// zh-CN: '跳过片头'
+	String get skipHead => '跳过片头';
+
+	/// zh-CN: '已进入片尾'
+	String get inTail => '已进入片尾';
+
+	/// zh-CN: '跳过片尾'
+	String get skipTail => '跳过片尾';
+
+	/// zh-CN: '片头片尾'
+	String get skipHeadTail => '片头片尾';
+
+	/// zh-CN: '自动跳过'
+	String get autoSkipHeadTail => '自动跳过';
+
+	/// zh-CN: '把这里设为片头点'
+	String get setHeadHere => '把这里设为片头点';
+
+	/// zh-CN: '把这里设为片尾点'
+	String get setTailHere => '把这里设为片尾点';
+
+	/// zh-CN: '清除标记'
+	String get clearSkipPoints => '清除标记';
+
+	/// zh-CN: '字幕'
+	String get subtitles => '字幕';
+
+	/// zh-CN: '关闭字幕'
+	String get subtitleOff => '关闭字幕';
+
+	/// zh-CN: '自动生成'
+	String get subtitleAuto => '自动生成';
+
+	/// zh-CN: '这个视频没有字幕轨。'
+	String get subtitleNone => '这个视频没有字幕轨。';
+
+	/// zh-CN: '登录 B 站后才会有字幕轨。'
+	String get subtitleNeedsLogin => '登录 B 站后才会有字幕轨。';
+
+	/// zh-CN: '松手恢复'
+	String get gestureSpeedHold => '松手恢复';
+
+	/// zh-CN: '自动跳过片头片尾'
+	String get skipHeadTailSwitch => '自动跳过片头片尾';
+
+	/// zh-CN: '片头一到就跳到正片，片尾一到就算播完。'
+	String get skipHeadTailSwitchDesc => '片头一到就跳到正片，片尾一到就算播完。';
+
+	/// zh-CN: '长按倍速'
+	String get longPressSpeed => '长按倍速';
+
+	/// zh-CN: '按住画面时用的倍速，松手回到原来的速度。'
+	String get longPressSpeedDesc => '按住画面时用的倍速，松手回到原来的速度。';
+
+	/// zh-CN: '进度条预览'
+	String get seekPreview => '进度条预览';
+
+	/// zh-CN: '指针停在进度条上时，显示那一帧的画面和它的时间。'
+	String get seekPreviewDesc => '指针停在进度条上时，显示那一帧的画面和它的时间。';
+
 	/// zh-CN: '静音'
 	String get mute => '静音';
 
@@ -18081,6 +18156,31 @@ extension on Translations {
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',
 			'vod.nextPart' => '下一P',
+			'vod.previousPart' => '上一P',
+			'vod.resumedAt' => ({required Object time}) => '已为你续播到 ${time}',
+			'vod.playFromStart' => '从头播放',
+			'vod.nextPartIn' => ({required int seconds}) => '${seconds} 秒后播放下一 P',
+			'vod.headRemaining' => ({required Object time}) => '片头还剩 ${time}',
+			'vod.skipHead' => '跳过片头',
+			'vod.inTail' => '已进入片尾',
+			'vod.skipTail' => '跳过片尾',
+			'vod.skipHeadTail' => '片头片尾',
+			'vod.autoSkipHeadTail' => '自动跳过',
+			'vod.setHeadHere' => '把这里设为片头点',
+			'vod.setTailHere' => '把这里设为片尾点',
+			'vod.clearSkipPoints' => '清除标记',
+			'vod.subtitles' => '字幕',
+			'vod.subtitleOff' => '关闭字幕',
+			'vod.subtitleAuto' => '自动生成',
+			'vod.subtitleNone' => '这个视频没有字幕轨。',
+			'vod.subtitleNeedsLogin' => '登录 B 站后才会有字幕轨。',
+			'vod.gestureSpeedHold' => '松手恢复',
+			'vod.skipHeadTailSwitch' => '自动跳过片头片尾',
+			'vod.skipHeadTailSwitchDesc' => '片头一到就跳到正片，片尾一到就算播完。',
+			'vod.longPressSpeed' => '长按倍速',
+			'vod.longPressSpeedDesc' => '按住画面时用的倍速，松手回到原来的速度。',
+			'vod.seekPreview' => '进度条预览',
+			'vod.seekPreviewDesc' => '指针停在进度条上时，显示那一帧的画面和它的时间。',
 			'vod.mute' => '静音',
 			'vod.unmute' => '取消静音',
 			'vod.volume' => '音量',

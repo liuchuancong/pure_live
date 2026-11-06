@@ -526,6 +526,17 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.vodPlayback, t.vod.openingSpeed, 'speed rate opening 倍速 播放 速度'),
     _hit(SettingsSection.vodPlayback, t.vod.finishAction, 'finish end next part exit related 播完 结束 下一集 退出 推荐'),
     _hit(
+      SettingsSection.vodPlayback,
+      t.vod.skipHeadTailSwitch,
+      'opening ending head tail skip auto 片头 片尾 跳过 自动 正片',
+    ),
+    _hit(SettingsSection.vodPlayback, t.vod.longPressSpeed, 'hold press rate speed 长按 倍速 按住 速度 松手'),
+    _hit(
+      SettingsSection.vodPlayback,
+      t.vod.seekPreview,
+      'seek bar preview frame pointer hover bubble 进度条 预览 悬浮 帧 气泡 指针',
+    ),
+    _hit(
       SettingsSection.vodDownload,
       t.vod.downloadMaxConcurrent,
       'download queue lanes quality danmaku save folder 下载 队列 同时 画质 弹幕 保存 目录 下载管理',

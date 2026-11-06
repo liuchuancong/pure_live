@@ -22,7 +22,14 @@ enum VodSpeedChoice {
   oneAndHalf(1.5),
 
   /// Double speed.
-  doubleSpeed(2);
+  doubleSpeed(2),
+
+  /// Two and a half.
+  twoAndHalf(2.5),
+
+  /// Triple speed, the rate a held picture asks for; past it the words stop
+  /// being worth reading.
+  triple(3);
 
   VodSpeedChoice(this.value);
 
@@ -91,7 +98,9 @@ enum VodApiType {
 
 /// The station's playback choices: the rate a video opens with, what
 /// happens when it ends, whether the archive's details sit under the
-/// picture, and which interface its playback asks.
+/// picture, which interface its playback asks, and the three things a video
+/// surface does that a stream cannot: step over its opening, answer a held
+/// picture with a faster rate, and show a frame under the pointer.
 @immutable
 final class VodPlaybackSettings {
   /// Creates the playback choices.
@@ -100,10 +109,14 @@ final class VodPlaybackSettings {
     required this.finish,
     required this.showDetails,
     required this.apiType,
+    this.skipHeadTail = true,
+    this.longPressSpeed = VodSpeedChoice.triple,
+    this.seekPreview = true,
   });
 
   /// The reference's defaults: normal speed, the next part, details shown,
-  /// the web interface.
+  /// the web interface, the openings stepped over, a held picture at 3× and
+  /// the pointer's frame shown.
   static const VodPlaybackSettings standard = VodPlaybackSettings(
     speed: VodSpeedChoice.normal,
     finish: VodFinishAction.nextPart,
@@ -123,25 +136,45 @@ final class VodPlaybackSettings {
   /// The interface playback asks.
   final VodApiType apiType;
 
+  /// Whether the picture steps over its own opening and ending on its own.
+  /// The points themselves belong to the archive and are set from the player;
+  /// this only says whether the player uses them without being asked.
+  final bool skipHeadTail;
+
+  /// The rate a held picture runs at.
+  final VodSpeedChoice longPressSpeed;
+
+  /// Whether the seek line's bubble shows a picture as well as the time.
+  final bool seekPreview;
+
   /// A copy with selected fields replaced.
   VodPlaybackSettings copyWith({
     VodSpeedChoice? speed,
     VodFinishAction? finish,
     bool? showDetails,
     VodApiType? apiType,
+    bool? skipHeadTail,
+    VodSpeedChoice? longPressSpeed,
+    bool? seekPreview,
   }) => VodPlaybackSettings(
     speed: speed ?? this.speed,
     finish: finish ?? this.finish,
     showDetails: showDetails ?? this.showDetails,
     apiType: apiType ?? this.apiType,
+    skipHeadTail: skipHeadTail ?? this.skipHeadTail,
+    longPressSpeed: longPressSpeed ?? this.longPressSpeed,
+    seekPreview: seekPreview ?? this.seekPreview,
   );
 }
 
-/// The keys the three choices are kept under.
+/// The keys the choices are kept under.
 const String kVodSpeedPrefsKey = 'vod.playback.speed';
 const String kVodFinishPrefsKey = 'vod.playback.finish';
 const String kVodShowDetailsPrefsKey = 'vod.playback.showDetails';
 const String kVodApiTypePrefsKey = 'vod.playback.apiType';
+const String kVodSkipHeadTailPrefsKey = 'vod.playback.skipHeadTail';
+const String kVodLongPressSpeedPrefsKey = 'vod.playback.longPressSpeed';
+const String kVodSeekPreviewPrefsKey = 'vod.playback.seekPreview';
 
 /// Owns the station's playback choices.
 final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> {
@@ -151,16 +184,39 @@ final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> 
     finish: _readFinish(),
     showDetails: _readDetails(),
     apiType: _readApiType(),
+    skipHeadTail: _readSkip(),
+    longPressSpeed: _readLongPressSpeed(),
+    seekPreview: _readSeekPreview(),
   );
 
-  static VodSpeedChoice _readSpeed() {
+  static double? _readRate(String key) {
     try {
-      final value = StoragePrefs.getDouble(kVodSpeedPrefsKey);
-      if (value != null && value.isFinite && value > 0) return VodSpeedChoice.nearest(value);
+      final value = StoragePrefs.getDouble(key);
+      if (value != null && value.isFinite && value > 0) return value;
     } on Object {
       // A closed store keeps the default.
     }
-    return VodSpeedChoice.normal;
+    return null;
+  }
+
+  static VodSpeedChoice _readSpeed() => VodSpeedChoice.nearest(_readRate(kVodSpeedPrefsKey) ?? 1);
+
+  static VodSpeedChoice _readLongPressSpeed() => VodSpeedChoice.nearest(_readRate(kVodLongPressSpeedPrefsKey) ?? 3);
+
+  static bool _readSkip() {
+    try {
+      return StoragePrefs.getBool(kVodSkipHeadTailPrefsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  static bool _readSeekPreview() {
+    try {
+      return StoragePrefs.getBool(kVodSeekPreviewPrefsKey) ?? true;
+    } on Object {
+      return true;
+    }
   }
 
   static VodFinishAction _readFinish() {
@@ -235,6 +291,36 @@ final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> 
     }
   }
 
+  /// Sets whether the picture steps over its own opening and ending.
+  Future<void> setSkipHeadTail({required bool value}) async {
+    state = state.copyWith(skipHeadTail: value);
+    try {
+      await StoragePrefs.setBool(kVodSkipHeadTailPrefsKey, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Sets the rate a held picture runs at.
+  Future<void> setLongPressSpeed(VodSpeedChoice speed) async {
+    state = state.copyWith(longPressSpeed: speed);
+    try {
+      await StoragePrefs.setDouble(kVodLongPressSpeedPrefsKey, speed.value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Sets whether the seek line's bubble shows a frame.
+  Future<void> setSeekPreview({required bool value}) async {
+    state = state.copyWith(seekPreview: value);
+    try {
+      await StoragePrefs.setBool(kVodSeekPreviewPrefsKey, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
   /// Back to the reference's defaults.
   Future<void> reset() async {
     state = VodPlaybackSettings.standard;
@@ -242,6 +328,9 @@ final class VodPlaybackSettingsController extends Notifier<VodPlaybackSettings> 
     await setFinish(VodFinishAction.nextPart);
     await setShowDetails(value: true);
     await setApiType(VodApiType.web);
+    await setSkipHeadTail(value: true);
+    await setLongPressSpeed(VodSpeedChoice.triple);
+    await setSeekPreview(value: true);
   }
 }
 

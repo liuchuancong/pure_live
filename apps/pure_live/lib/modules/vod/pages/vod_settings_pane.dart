@@ -114,6 +114,38 @@ final class VodPlaybackPane extends ConsumerWidget {
               ],
               onChanged: (action) => unawaited(controller.setFinish(action)),
             ),
+            // The three things a video surface does that a stream cannot:
+            // step over its own opening, answer a held picture with a faster
+            // rate, and show the frame the pointer stands on.
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.pin),
+              title: t.vod.skipHeadTailSwitch,
+              description: t.vod.skipHeadTailSwitchDesc,
+              control: DsSwitch(
+                value: settings.skipHeadTail,
+                onChanged: (value) => unawaited(controller.setSkipHeadTail(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<VodSpeedChoice>(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.vod.longPressSpeed,
+              description: t.vod.longPressSpeedDesc,
+              value: settings.longPressSpeed,
+              options: [
+                for (final choice in VodSpeedChoice.values.where((choice) => choice.value >= 2))
+                  DsSelectOption(value: choice, label: choice.label),
+              ],
+              onChanged: (choice) => unawaited(controller.setLongPressSpeed(choice)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.film),
+              title: t.vod.seekPreview,
+              description: t.vod.seekPreviewDesc,
+              control: DsSwitch(
+                value: settings.seekPreview,
+                onChanged: (value) => unawaited(controller.setSeekPreview(value: value)),
+              ),
+            ),
             SettingsChoiceRow<VodApiType>(
               leading: const DsIcon(DsIcons.globe),
               title: t.vod.apiType,

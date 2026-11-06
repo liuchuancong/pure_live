@@ -12,7 +12,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
-    show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
+    show
+        PlatformScreenAwakeService,
+        PlatformScreenBrightnessService,
+        PlatformScreenOrientationService,
+        ScreenAwakeService,
+        ScreenBrightnessScope,
+        ScreenBrightnessService,
+        ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
@@ -29,6 +36,8 @@ import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/controller/vod_social.dart' show VodCommentsController, vodCommentsProvider;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart' show vodDashSourceOf;
+import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
+    show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar, VodSubtitleLayer;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -92,11 +101,86 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   double _volume = 1;
   double _speed = 1;
 
-  /// The volume a drag on the picture or a wheel is setting right now; null
-  /// while no gesture shows it, and the chip fades on its own like the room's.
-  double? _volumeHud;
-  Timer? _volumeHudTimer;
+  /// The volume a drag on the picture started from, so the gesture moves from
+  /// where the sound stands rather than from the frame before it.
   double _dragVolume = 1;
+
+  /// The line the subtitle track is on right now; null leaves the picture
+  /// alone. It is read with the transport rather than in the build, so the
+  /// words never arrive a frame late.
+  String? _subtitleText;
+
+  /// The figure the picture's gesture is answering with, and where it stands;
+  /// a seek says a time, a drag says a percentage, a hold says a rate.
+  VodGestureKind? _gestureKind;
+  String? _gestureValue;
+  String? _gestureNote;
+  Timer? _gestureTimer;
+
+  /// The screen's brightness, which the left half of the picture adjusts where
+  /// the display will take the write and the right half alone is the volume
+  /// where it will not — the room's rule, so one gesture reads the same on
+  /// both players.
+  final ScreenBrightnessService _screenBrightness = const PlatformScreenBrightnessService();
+  bool? _brightnessWritable;
+  ScreenBrightnessScope _brightnessScope = ScreenBrightnessScope.application;
+  double _brightness = 100;
+  double _dragBrightness = 100;
+  bool _dragIsBrightness = false;
+
+  /// Whether a hold has the picture running faster right now, and the rate it
+  /// goes back to when the finger lifts.
+  bool _speedHeld = false;
+  double _speedBeforeHold = 1;
+
+  /// The keyboard's seek step, which grows while the key keeps being held:
+  /// five seconds once, then ten, then twenty, so a long skip is one key.
+  double _seekStep = 5;
+  DateTime? _lastSeekKey;
+
+  /// Where the picture's last double tap landed, so the second tap can say
+  /// which third of it was tapped without asking the pointer again.
+  double? _doubleTapX;
+
+  /// The horizontal drag on the picture: where it started from, how far it
+  /// has walked, and where that stands, so the release seeks once rather than
+  /// on every frame of the drag.
+  Duration? _scrubFrom;
+  double _scrubWalked = 0;
+  double? _scrubSeconds;
+
+  /// How far the subtitle line stands off the picture's bottom edge while the
+  /// bar is up: the bar's own height, so the two never sit on each other.
+  static const double _subtitleInset = 72;
+
+  /// What a double tap on either side of the picture steps over.
+  static const double _doubleTapStep = 10;
+
+  /// The archive's own opening and ending, in seconds: where the opening stops
+  /// and where the ending starts. They belong to the archive and to this
+  /// device, and the station does not supply them for a posted video.
+  double? _headSeconds;
+  double? _tailSeconds;
+
+  /// The player's extras for the part: its marked moments, its subtitle tracks
+  /// and, where the station sends one, its scrub filmstrip.
+  VodPlayerExtra _extra = const VodPlayerExtra();
+
+  /// The subtitle track the viewer chose and the lines it came with; the index
+  /// walks forward while the picture plays rather than searching every frame.
+  VodSubtitleTrack? _subtitleTrack;
+  List<VodSubtitleLine> _subtitleLines = const [];
+  int _subtitleCursor = 0;
+
+  /// The countdown a finished part runs before the next one opens, so the step
+  /// forward can be stopped; zero means nothing is counting.
+  int _countdown = 0;
+  Timer? _countdownTimer;
+
+  /// The position the page jumped back to on opening, offered a way to undo it
+  /// for as long as the notice stands.
+  double? _resumedAt;
+  Timer? _resumedTimer;
 
   /// Sound only: the part keeps playing and the picture is put away — the way
   /// to keep listening to a 广播剧-style episode at a desk.
@@ -199,6 +283,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // The station's playback choices: the rate a video opens with and what
     // a finished part leads to.
     _speed = ref.read(vodPlaybackSettingsProvider).speed.value;
+    _readSkipPoints();
+    unawaited(_syncBrightness());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_load());
     });
@@ -258,7 +344,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _hideTimer?.cancel();
     _hoverTimer?.cancel();
     _leaveTimer?.cancel();
-    _volumeHudTimer?.cancel();
+    _gestureTimer?.cancel();
+    _countdownTimer?.cancel();
+    _resumedTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -379,6 +467,14 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // The part being left loses its timeline; the next one loads its own.
     _barrage.clear();
     _danmakuCid = 0;
+    // The next part has its own subtitle list, its own marked moments and its
+    // own held position, so none of this part's carries over.
+    _subtitleTrack = null;
+    _subtitleLines = const [];
+    _subtitleText = null;
+    _subtitleCursor = 0;
+    _resetScrub();
+    _cancelCountdown();
     setState(() {
       _opening = true;
       _error = null;
@@ -456,12 +552,18 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       await handle.setMute(muted: _effectivelyMuted);
       await handle.setRate(_speed);
       if (_audioOnly) await _applyAudioOnly(handle);
-      final seekTo = resume ?? _resumeSeconds;
+      final saved = resume ?? _resumeSeconds;
       _resumeSeconds = null;
+      // A saved position outranks the opening; a part watched for the first
+      // time starts after it, when the viewer asked the player to step over.
+      final opening = ref.read(vodPlaybackSettingsProvider).skipHeadTail ? _headSeconds : null;
+      final seekTo = saved != null && saved > 5 ? saved : opening;
       if (seekTo != null && seekTo > 5) {
         await handle.seek(Duration(milliseconds: (seekTo * 1000).round()));
+        if (saved != null && saved > 5) _noteResumed(saved);
       }
       unawaited(_loadDanmaku(part.cid));
+      unawaited(_loadExtra(part.cid));
       if (!mounted || _disposed) return;
       setState(() {
         _play = info;
@@ -531,6 +633,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         // failure that stopped it, not to a session that healed.
         if (state.isPlaying) _error = null;
       });
+      _syncSubtitle(state.position);
+      _watchTail();
       if (state.isPlaying) _scheduleHide();
       _saveProgress();
     });
@@ -589,9 +693,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         final parts = _detail?.parts ?? const <VodPart>[];
         final current = _part;
         final index = parts.indexWhere((part) => part.cid == current?.cid);
-        if (index >= 0 && index + 1 < parts.length) {
-          await _openPart(parts[index + 1], resume: _resumeFor(parts[index + 1]));
-        }
+        // The step forward is announced and counted, so a viewer who wants
+        // this part again — or is not done with the last frame — can stop it.
+        if (index >= 0 && index + 1 < parts.length) _startCountdown(parts[index + 1]);
       case VodFinishAction.exit:
         if (mounted) context.pop();
       case VodFinishAction.playRelated:
@@ -603,22 +707,29 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
-  /// Whether a part follows the one playing: the 下一P chip shows only when
-  /// the step it names exists.
-  bool get _hasNextPart {
+  /// The part [direction] steps from the one playing, or null at either end of
+  /// the list. A serial is watched in both directions — back to the part whose
+  /// point was quoted, forward to the next — so the bar's two chips are one
+  /// question asked twice.
+  VodPart? _partStepped(int direction) {
     final parts = _detail?.parts ?? const <VodPart>[];
-    final index = parts.indexWhere((part) => part.cid == _part?.cid);
-    return index >= 0 && index + 1 < parts.length;
+    final index = parts.indexWhere((part) => part.cid == _part?.cid) + direction;
+    if (index < 0 || index >= parts.length) return null;
+    return parts[index];
   }
 
-  /// Opens the part after the one playing — the chip's step, the sequential
-  /// twin of the shelf's jump and of the finish action's own next part.
-  void _openNextPart() {
-    final parts = _detail?.parts ?? const <VodPart>[];
-    final index = parts.indexWhere((part) => part.cid == _part?.cid);
-    if (index < 0 || index + 1 >= parts.length) return;
-    final next = parts[index + 1];
-    unawaited(_openPart(next, resume: _resumeFor(next)));
+  /// Whether the step exists, which is all a chip needs to know before it
+  /// names it.
+  bool get _hasNextPart => _partStepped(1) != null;
+
+  bool get _hasPreviousPart => _partStepped(-1) != null;
+
+  /// Opens the part one step away — the chip's step, the sequential twin of
+  /// the shelf's jump and of the finish action's own next part.
+  void _openSteppedPart(int direction) {
+    final target = _partStepped(direction);
+    if (target == null) return;
+    unawaited(_openPart(target, resume: _resumeFor(target)));
   }
 
   Future<void> _togglePlay() async {
@@ -716,38 +827,385 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
-  /// Shows [value] on the picture's own volume chip and lets it settle away a
-  /// moment after the last move — the room's gesture, so a viewer learns it
-  /// once and finds it on every player here.
-  void _showVolumeHud(double value) {
-    _volumeHudTimer?.cancel();
-    setState(() => _volumeHud = value.clamp(0.0, 1.0));
-    _volumeHudTimer = Timer(const Duration(milliseconds: 900), () {
-      if (mounted) setState(() => _volumeHud = null);
+  /// Answers a gesture on the picture with the figure it moved, and lets the
+  /// answer settle away a moment after the last move — the room's rule, so a
+  /// viewer learns one gesture and finds the same feedback on both players.
+  void _showGesture(VodGestureKind kind, String value, {String? note}) {
+    _gestureTimer?.cancel();
+    setState(() {
+      _gestureKind = kind;
+      _gestureValue = value;
+      _gestureNote = note;
+    });
+    _gestureTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _gestureKind = null);
     });
   }
 
-  void _beginVolumeDrag() {
-    _dragVolume = _volume;
-    _showVolumeHud(_dragVolume);
+  /// Asks the display what it will take. A display that will not write has no
+  /// brightness half, so that half stays the volume rather than a gesture that
+  /// answers nothing.
+  Future<void> _syncBrightness() async {
+    try {
+      final capabilities = await _screenBrightness.getCapabilities();
+      final scope = capabilities.supportsScope(ScreenBrightnessScope.application)
+          ? ScreenBrightnessScope.application
+          : ScreenBrightnessScope.system;
+      final value = capabilities.canRead ? await _screenBrightness.getBrightness(scope: scope) : null;
+      if (!mounted) return;
+      setState(() {
+        _brightnessWritable = capabilities.canOfferBrightnessControl;
+        _brightnessScope = scope;
+        if (value != null) _brightness = value.toDouble().clamp(0.0, 100.0);
+      });
+    } on Object {
+      // A display that will not answer simply has no brightness half.
+      if (mounted) setState(() => _brightnessWritable = false);
+    }
   }
 
-  void _dragVolumeBy(double delta) {
+  /// A vertical drag on the picture: the right half is the volume, the left
+  /// half the screen's brightness — where the display takes the write.
+  void _beginPictureDrag(double dx, double width) {
+    if (_brightnessWritable == true && dx < width / 2) {
+      _dragIsBrightness = true;
+      _dragBrightness = _brightness;
+      _showGesture(VodGestureKind.brightness, '${_brightness.round()}%');
+      return;
+    }
+    _dragIsBrightness = false;
+    _dragVolume = _volume;
+    _showGesture(VodGestureKind.volume, '${(_volume * 100).round()}%');
+  }
+
+  void _dragPictureBy(double delta) {
+    if (_dragIsBrightness) {
+      // The same travel as the volume: a full-height drag crosses the range.
+      final next = (_dragBrightness - delta / 2.2).clamp(0.0, 100.0);
+      _dragBrightness = next;
+      _showGesture(VodGestureKind.brightness, '${next.round()}%');
+      // A native write only when the whole percent moved: a drag reports a
+      // delta per frame, and the display takes one value per percent.
+      if (next.round() != _brightness.round()) {
+        _brightness = next.round().toDouble();
+        unawaited(
+          _screenBrightness
+              .setBrightness(_brightness.round(), scope: _brightnessScope)
+              .catchError((Object _) => _brightness.round()),
+        );
+      }
+      return;
+    }
     final next = (_dragVolume - delta / 220).clamp(0.0, 1.0);
     _dragVolume = next;
-    _showVolumeHud(next);
+    _showGesture(VodGestureKind.volume, '${(next * 100).round()}%');
     unawaited(_setVolume(next));
   }
 
   /// A wheel step takes the viewer's own share of the range (the 画质与音频
-  /// setting). The seek slider answers the wheel too, so the step only moves
-  /// when the pointer is over the picture rather than over the bar.
+  /// setting) and answers with the same chip a drag uses. The seek line
+  /// answers the wheel too, so the step only moves over the picture.
   void _wheelVolume(double delta) {
     if (_handle == null) return;
     final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
     final next = (_volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
-    _showVolumeHud(next);
+    _showGesture(VodGestureKind.volume, '${(next * 100).round()}%');
     unawaited(_setVolume(next));
+  }
+
+  /// Steps the picture by [seconds] and says where it landed.
+  Future<void> _stepSeek(double seconds) async {
+    final transport = _transport;
+    if (transport == null || _handle == null) return;
+    final total = transport.duration.inMilliseconds / 1000;
+    var target = transport.position.inMilliseconds / 1000 + seconds;
+    if (target < 0) target = 0;
+    if (total > 0 && target > total) target = total;
+    _showGesture(
+      seconds < 0 ? VodGestureKind.seekBack : VodGestureKind.seekForward,
+      vodDurationText(Duration(seconds: target.round())),
+      note: '${seconds < 0 ? '-' : '+'}${seconds.abs().round()}',
+    );
+    await _seekTo(target);
+  }
+
+  /// The keyboard's step, which grows while the key keeps coming: five
+  /// seconds once, then ten, then twenty, so a long skip is one key press.
+  void _keySeek(double sign) {
+    final now = DateTime.now();
+    final chained = _lastSeekKey != null && now.difference(_lastSeekKey!) < const Duration(milliseconds: 900);
+    final step = chained ? (_seekStep * 2).clamp(5.0, 30.0) : 5.0;
+    _seekStep = step;
+    _lastSeekKey = now;
+    unawaited(_stepSeek(step * sign));
+  }
+
+  /// A double tap on the picture: either third steps ten seconds, the middle
+  /// plays or pauses. The sides answer rather than the whole picture because a
+  /// viewer who wants the part back taps where the line already went.
+  Future<void> _doubleTap(double width) async {
+    final x = _doubleTapX;
+    _doubleTapX = null;
+    if (x == null || width <= 0) {
+      await _togglePlay();
+      return;
+    }
+    final third = width / 3;
+    if (x < third) {
+      await _stepSeek(-_doubleTapStep);
+      return;
+    }
+    if (x > width - third) {
+      await _stepSeek(_doubleTapStep);
+      return;
+    }
+    await _togglePlay();
+  }
+
+  /// A horizontal drag on the picture walks the part: a full sweep of its
+  /// width is the whole length, so the drag says the same thing on a phone's
+  /// picture and on a desktop's. The seek itself waits for the finger, and the
+  /// chip carries the time it would land on.
+  void _scrubBy(double delta, double width) {
+    final transport = _transport;
+    if (transport == null || width <= 0) return;
+    final total = transport.duration.inMilliseconds / 1000;
+    if (total <= 0) return;
+    _scrubFrom ??= transport.position;
+    _scrubWalked += delta / width * total;
+    var target = _scrubFrom!.inMilliseconds / 1000 + _scrubWalked;
+    if (target < 0) target = 0;
+    if (target > total) target = total;
+    _scrubSeconds = target;
+    _showGesture(
+      VodGestureKind.seek,
+      vodDurationText(Duration(seconds: target.round())),
+      note: '${_scrubWalked < 0 ? '-' : '+'}${_scrubWalked.abs().round()}',
+    );
+  }
+
+  /// Seeks once, where the drag left the picture.
+  Future<void> _commitScrub() async {
+    final target = _scrubSeconds;
+    _resetScrub();
+    if (target == null) return;
+    await _seekTo(target);
+  }
+
+  /// Lets go of the drag's bookkeeping, so a cancelled gesture cannot leave a
+  /// start point for the next one to read.
+  void _resetScrub() {
+    _scrubFrom = null;
+    _scrubWalked = 0;
+    _scrubSeconds = null;
+  }
+
+  /// A held picture runs faster until the finger lifts, at the rate the
+  /// station's setting names; the part's own rate comes back with the hold.
+  Future<void> _beginSpeedHold() async {
+    final handle = _handle;
+    if (handle == null || _speedHeld) return;
+    _speedHeld = true;
+    _speedBeforeHold = _speed;
+    final boosted = ref.read(vodPlaybackSettingsProvider).longPressSpeed;
+    // The words are read before the engine is asked: the chip answers on the
+    // frame the hold started on, not on whatever is under the pointer after.
+    final note = context.t.vod.gestureSpeedHold;
+    setState(() => _speed = boosted.value);
+    try {
+      await handle.setRate(boosted.value);
+    } on Object {
+      // A rate the engine refused is not a reason to fail the hold.
+    }
+    _showGesture(VodGestureKind.speed, boosted.label, note: note);
+  }
+
+  Future<void> _endSpeedHold() async {
+    if (!_speedHeld) return;
+    _speedHeld = false;
+    _gestureTimer?.cancel();
+    setState(() {
+      _speed = _speedBeforeHold;
+      _gestureKind = null;
+    });
+    final handle = _handle;
+    if (handle == null) return;
+    try {
+      await handle.setRate(_speedBeforeHold);
+    } on Object {
+      // Same as the hold itself.
+    }
+  }
+
+  /// Reads the part's own extras: its marked moments, its subtitle tracks and
+  /// its scrub filmstrip. The station keeps the last two for a signed-in
+  /// viewer, so an empty answer is the ordinary one and the surface simply
+  /// shows less rather than failing.
+  Future<void> _loadExtra(int cid) async {
+    if (cid <= 0) return;
+    final extra = await ref.read(vodClientProvider).playerExtra(bvid: widget.bvid, cid: cid);
+    if (!mounted || _part?.cid != cid) return;
+    setState(() => _extra = extra);
+  }
+
+  /// The archive's opening and ending, kept on this device: Bilibili marks
+  /// them for its own cinema titles and nothing at all for a posted archive,
+  /// so the points a viewer sets here are the only ones there are.
+  String get _skipKey => 'vod.skip.${widget.bvid}';
+
+  void _readSkipPoints() {
+    try {
+      final raw = StoragePrefs.getString(_skipKey);
+      if (raw == null || raw.isEmpty) return;
+      final json = jsonDecode(raw);
+      if (json is! Map) return;
+      _headSeconds = (json['head'] as num?)?.toDouble();
+      _tailSeconds = (json['tail'] as num?)?.toDouble();
+    } on Object {
+      // No points is the ordinary answer.
+    }
+  }
+
+  Future<void> _writeSkipPoints() async {
+    try {
+      await StoragePrefs.setString(
+        _skipKey,
+        jsonEncode({'head': _headSeconds?.round(), 'tail': _tailSeconds?.round()}),
+      );
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Marks the moment the picture stands on as the end of its opening, or the
+  /// start of its ending.
+  Future<void> _setHeadHere() async {
+    final position = _transport?.position;
+    if (position == null) return;
+    setState(() => _headSeconds = position.inMilliseconds / 1000);
+    await _writeSkipPoints();
+  }
+
+  Future<void> _setTailHere() async {
+    final transport = _transport;
+    if (transport == null || transport.duration.inMilliseconds <= 0) return;
+    setState(() => _tailSeconds = transport.position.inMilliseconds / 1000);
+    await _writeSkipPoints();
+  }
+
+  Future<void> _clearSkipPoints() async {
+    setState(() {
+      _headSeconds = null;
+      _tailSeconds = null;
+    });
+    await _writeSkipPoints();
+  }
+
+  /// The ending is where the part stops for the viewer: the finish action runs
+  /// there rather than at the last frame, so a long outro is not watched twice.
+  void _watchTail() {
+    if (!ref.read(vodPlaybackSettingsProvider).skipHeadTail || _finished || _opening) return;
+    final tail = _tailSeconds;
+    final transport = _transport;
+    if (tail == null || tail <= 0 || transport == null) return;
+    if (transport.position.inMilliseconds / 1000 >= tail) unawaited(_handleFinished());
+  }
+
+  /// Says where a saved position put the picture, and offers the way back to
+  /// its start while the words stand.
+  void _noteResumed(double seconds) {
+    if (!mounted) return;
+    _resumedTimer?.cancel();
+    setState(() => _resumedAt = seconds);
+    _resumedTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) setState(() => _resumedAt = null);
+    });
+  }
+
+  /// Puts the part back at its first frame, and stops stepping over the
+  /// opening for the rest of this one.
+  Future<void> _playFromStart() async {
+    _resumedTimer?.cancel();
+    setState(() => _resumedAt = null);
+    await _seekTo(0);
+  }
+
+  /// Runs the station's own countdown before the next part opens, so the step
+  /// forward can be stopped while it is still a plan.
+  void _startCountdown(VodPart next) {
+    _countdownTimer?.cancel();
+    setState(() => _countdown = 5);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      final left = _countdown - 1;
+      if (left <= 0) {
+        timer.cancel();
+        setState(() => _countdown = 0);
+        unawaited(_openPart(next, resume: _resumeFor(next)));
+        return;
+      }
+      setState(() => _countdown = left);
+    });
+  }
+
+  void _cancelCountdown() {
+    _countdownTimer?.cancel();
+    if (!mounted) return;
+    setState(() => _countdown = 0);
+  }
+
+  /// Chooses the subtitle track, or none. A track's words are asked when it is
+  /// picked rather than with the list, because a part may offer several.
+  Future<void> _selectSubtitle(VodSubtitleTrack? track) async {
+    if (track == null) {
+      setState(() {
+        _subtitleTrack = null;
+        _subtitleLines = const [];
+        _subtitleText = null;
+      });
+      return;
+    }
+    setState(() {
+      _subtitleTrack = track;
+      _subtitleLines = const [];
+      _subtitleText = null;
+    });
+    try {
+      final lines = await ref.read(vodClientProvider).subtitleLines(track.url);
+      if (!mounted || _subtitleTrack?.id != track.id) return;
+      setState(() => _subtitleLines = lines);
+    } on Object {
+      // A track that will not answer leaves the picture without words rather
+      // than failing the part.
+      if (mounted) {
+        setState(() {
+          _subtitleTrack = null;
+          _subtitleLines = const [];
+        });
+      }
+    }
+  }
+
+  /// The line the picture is on. The cursor walks forward with the position, so
+  /// only a seek backwards reads the list from its top.
+  void _syncSubtitle(Duration position) {
+    final lines = _subtitleLines;
+    if (lines.isEmpty) {
+      if (_subtitleText != null) setState(() => _subtitleText = null);
+      return;
+    }
+    var index = _subtitleCursor.clamp(0, lines.length - 1);
+    if (lines[index].start > position) index = 0;
+    while (index < lines.length && lines[index].end < position) {
+      index++;
+    }
+    _subtitleCursor = index;
+    final line = index < lines.length ? lines[index] : null;
+    final shown = line != null && line.start <= position ? line.text : null;
+    if (shown != _subtitleText && mounted) setState(() => _subtitleText = shown);
   }
 
   /// 音频模式: keep the sound, put the picture away.
@@ -801,6 +1259,19 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     } on Object catch (_) {
       // Same as mute.
     }
+  }
+
+  /// One step along the station's own rate ladder, the keyboard's way through
+  /// it: the choices the panel lists, walked in [direction] from where the
+  /// picture stands now.
+  Future<void> _stepSpeed(int direction) async {
+    const choices = VodSpeedChoice.values;
+    final current = choices.indexOf(VodSpeedChoice.nearest(_speed));
+    final next = (current + (direction > 0 ? 1 : -1)).clamp(0, choices.length - 1);
+    if (choices[next] == choices[current]) return;
+    final rate = choices[next].value;
+    _showGesture(VodGestureKind.speed, choices[next].label);
+    await _setSpeed(rate);
   }
 
   Future<void> _toggleFullscreen() async {
@@ -977,12 +1448,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // A TV keeps its arrows for focus; the remote drives the volume itself.
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
-    void nudgeVolume(double delta) => unawaited(_setVolume((_volume + delta).clamp(0.0, 1.0)));
-    void nudgeSeek(double delta) {
-      final position = _transport?.position;
-      if (position == null) return;
-      final target = position.inMilliseconds / 1000 + delta;
-      unawaited(_seekTo(target < 0 ? 0 : target));
+    void nudgeVolume(double delta) {
+      _wake();
+      _showGesture(VodGestureKind.volume, '${((_volume + delta).clamp(0.0, 1.0) * 100).round()}%');
+      unawaited(_setVolume((_volume + delta).clamp(0.0, 1.0)));
     }
 
     return PlayerBarTier(
@@ -1011,8 +1480,34 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           },
           if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
           if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
-          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
-          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
+          // A held arrow keeps stepping, and each step in a row is bigger:
+          // five seconds, then ten, then twenty, so reaching the middle of an
+          // hour is one key rather than a hundred taps.
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+              _wake();
+              _keySeek(-1);
+            },
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.arrowRight): () {
+              _wake();
+              _keySeek(1);
+            },
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.comma): () {
+              _wake();
+              unawaited(_stepSpeed(-1));
+            },
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.period): () {
+              _wake();
+              unawaited(_stepSpeed(1));
+            },
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.keyM): () {
+              _wake();
+              unawaited(_setMuted(muted: !_effectivelyMuted));
+            },
         },
         child: Scaffold(
           backgroundColor: colors.surface,
@@ -1130,15 +1625,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  /// The picture and its controls.
+  /// The picture and its controls — read as a video, not as a stream.
   ///
-  /// The bars follow the pointer — moving it over the picture brings them
-  /// back, and a tap on a touch screen toggles them — while a playing stream
-  /// lets them settle away again. A double tap plays or pauses, and the
-  /// rendition, the part list and the speed hang their catalogues from the
-  /// bar as glass panels, the way the live room's strip does. [immersive]
-  /// adds the way out and the title over the picture, since the page's own
-  /// headline is gone there.
+  /// The bars follow the pointer: moving it over the picture brings them back,
+  /// and a tap on a touch screen toggles them, while a playing part lets them
+  /// settle away again. The gestures are the ones a video is watched with, the
+  /// room's arrangement carried over where it already agrees with them: a
+  /// horizontal drag anywhere on the picture scrubs, a vertical drag takes the
+  /// volume on the right half and the screen's brightness on the left (where
+  /// the display will take it), a double tap on either side steps ten seconds
+  /// and on the middle plays or pauses, and a hold runs the part faster until
+  /// the finger lifts. Each one answers with a chip naming the figure it moved.
+  /// Under the picture the seek line says what has been watched, what the
+  /// engine already holds and where the station marked a moment, and the
+  /// pointer's bubble says where the picture would go. The rendition, the part
+  /// list, the speed and the subtitles hang their catalogues from the bar as
+  /// glass panels, the way the live room's strip does. [immersive] adds the way
+  /// out and the title over the picture, since the page's own headline is gone
+  /// there.
   Widget _playerSurface(BuildContext context, {required bool immersive}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -1216,32 +1720,55 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   Positioned.fill(
                     child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
                   ),
-                if (_volumeHud case final value?)
-                  PositionedDirectional(
-                    end: DsSpace.s20,
-                    top: 0,
-                    bottom: 0,
-                    child: PlayerVolumeHud(value: value),
+                // What the last gesture on the picture did, in the corner it
+                // happened in.
+                if (_gestureKind case final kind?)
+                  Positioned.fill(
+                    child: VodGestureTip(kind: kind, value: _gestureValue ?? '', note: _gestureNote),
                   ),
-                // The picture itself is the bar's switch: a press toggles it,
-                // a double press plays or pauses. A vertical drag and the wheel
-                // set the volume, the room's rule.
-                Listener(
-                  onPointerSignal: (signal) {
-                    if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
+                // The subtitle the part is on, above the bar and under the
+                // flying danmaku: the words the station sent, not the ones the
+                // viewers typed. It is content rather than chrome, so it keeps
+                // standing while the bar settles away and on a TV too.
+                if (_subtitleText case final words?)
+                  Positioned.fill(
+                    child: VodSubtitleLayer(text: words, bottomInset: showBar ? _subtitleInset : 0),
+                  ),
+                // The picture itself is the bar's switch and the gesture
+                // surface: a tap toggles the chrome, a drag along it scrubs, a
+                // drag down it takes the volume or the brightness, a double tap
+                // on either side steps ten seconds and on the middle plays or
+                // pauses, and a hold runs the part faster until it lets go.
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
+                    return Listener(
+                      onPointerSignal: (signal) {
+                        if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
+                      },
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _toggleControls,
+                        onDoubleTapDown: (tap) => _doubleTapX = tap.localPosition.dx,
+                        onDoubleTap: handle == null
+                            ? null
+                            : () {
+                                _wake();
+                                unawaited(_doubleTap(width));
+                              },
+                        onHorizontalDragUpdate: handle == null || width <= 0
+                            ? null
+                            : (move) => _scrubBy(move.delta.dx, width),
+                        onHorizontalDragEnd: (_) => unawaited(_commitScrub()),
+                        onHorizontalDragCancel: _resetScrub,
+                        onVerticalDragStart: (start) => _beginPictureDrag(start.localPosition.dx, width),
+                        onVerticalDragUpdate: (move) => _dragPictureBy(move.delta.dy),
+                        onLongPressStart: handle == null ? null : (_) => unawaited(_beginSpeedHold()),
+                        onLongPressEnd: handle == null ? null : (_) => unawaited(_endSpeedHold()),
+                        onLongPressCancel: handle == null ? null : () => unawaited(_endSpeedHold()),
+                      ),
+                    );
                   },
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _toggleControls,
-                    onVerticalDragStart: (_) => _beginVolumeDrag(),
-                    onVerticalDragUpdate: (move) => _dragVolumeBy(move.delta.dy),
-                    onDoubleTap: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_togglePlay());
-                          },
-                  ),
                 ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
@@ -1300,6 +1827,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                 ),
                               ),
                             ),
+                          // The part's own one-time offers, over its foot:
+                          // the position the player jumped back to, the
+                          // countdown before the next part, the opening and
+                          // the ending the viewer can step over. They are not
+                          // watching verbs, so they stand outside the bar.
+                          for (final notice in _vodNotices(t))
+                            Padding(
+                              padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
+                              child: Align(alignment: AlignmentDirectional.centerEnd, child: notice),
+                            ),
                           _vodControlBar(context),
                         ],
                       ),
@@ -1347,6 +1884,48 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// player and the immersive strip's button both read it here, so the two can
   /// never disagree about what is bookmarked.
   bool savedOf(String bvid) => ref.watch(vodFavouritesProvider).any((video) => video.bvid == bvid);
+
+  /// The part's own one-time offers, in the order the viewer meets them: the
+  /// position the page jumped back to, the opening it is still inside, the
+  /// ending it has reached, and the countdown to the next part. Each names the
+  /// verb it takes; none of them stays once taken.
+  List<Widget> _vodNotices(Translations t) {
+    final transport = _transport;
+    final position = transport == null ? 0.0 : transport.position.inMilliseconds / 1000;
+    final total = transport == null ? 0.0 : transport.duration.inMilliseconds / 1000;
+    final head = _headSeconds;
+    final tail = _tailSeconds;
+    return [
+      if (_resumedAt case final seconds?)
+        VodPictureNotice(
+          icon: DsIcons.history,
+          text: t.vod.resumedAt(time: vodDurationText(Duration(seconds: seconds.round()))),
+          actionLabel: t.vod.playFromStart,
+          onAction: () => unawaited(_playFromStart()),
+        ),
+      if (head != null && head > 0 && position < head)
+        VodPictureNotice(
+          icon: DsIcons.skipForward,
+          text: t.vod.headRemaining(time: vodDurationText(Duration(seconds: (head - position).round()))),
+          actionLabel: t.vod.skipHead,
+          onAction: () => unawaited(_seekTo(head)),
+        ),
+      if (tail != null && tail > 0 && total > 0 && position >= tail)
+        VodPictureNotice(
+          icon: DsIcons.skipForward,
+          text: t.vod.inTail,
+          actionLabel: t.vod.skipTail,
+          onAction: () => unawaited(_handleFinished()),
+        ),
+      if (_countdown > 0)
+        VodPictureNotice(
+          icon: DsIcons.listVideo,
+          text: t.vod.nextPartIn(seconds: _countdown),
+          actionLabel: t.common.cancel,
+          onAction: _cancelCountdown,
+        ),
+    ];
+  }
 
   /// The strip over the picture's top edge: what acts on the picture — keep a
   /// frame of it, send it to a TV, fold it into a window — in one glass pill,
@@ -1520,6 +2099,57 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 unawaited(_toggleAudioOnly());
               },
       ),
+      DsMenuItem.submenu(
+        leading: const DsIcon(DsIcons.pin),
+        label: Text(t.vod.skipHeadTail),
+        submenu: [
+          // Bilibili marks an opening and an ending for its own cinema
+          // titles and says nothing at all for a posted archive, so the
+          // points here are the viewer's: set them where the part stands
+          // now, and the player steps over them from then on.
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.skipForward),
+            label: Text(t.vod.autoSkipHeadTail),
+            checked: ref.watch(vodPlaybackSettingsProvider).skipHeadTail,
+            checkRole: DsMenuCheckRole.checkbox,
+            onPressed: () => unawaited(
+              ref
+                  .read(vodPlaybackSettingsProvider.notifier)
+                  .setSkipHeadTail(value: !ref.read(vodPlaybackSettingsProvider).skipHeadTail),
+            ),
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.history),
+            label: Text(t.vod.setHeadHere),
+            onPressed: handle == null
+                ? null
+                : () {
+                    _closePanel();
+                    unawaited(_setHeadHere());
+                  },
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.history),
+            label: Text(t.vod.setTailHere),
+            onPressed: handle == null
+                ? null
+                : () {
+                    _closePanel();
+                    unawaited(_setTailHere());
+                  },
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.x),
+            label: Text(t.vod.clearSkipPoints),
+            onPressed: _headSeconds == null && _tailSeconds == null
+                ? null
+                : () {
+                    _closePanel();
+                    unawaited(_clearSkipPoints());
+                  },
+          ),
+        ],
+      ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.download),
         label: Text(t.vod.download),
@@ -1611,22 +2241,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 child: Text(vodDurationText(position), textAlign: TextAlign.center, style: timeStyle),
               ),
               Expanded(
-                child: DsSlider(
-                  value: duration.inMilliseconds <= 0
-                      ? 0
-                      : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
-                  max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
-                  onChanged: duration.inMilliseconds <= 0
-                      ? null
-                      : (value) => setState(() => _dragSeconds = value / 1000),
-                  onChangeEnd: duration.inMilliseconds <= 0
-                      ? null
-                      : (value) {
-                          final seconds = value / 1000;
-                          setState(() => _dragSeconds = null);
-                          unawaited(_seekTo(seconds));
-                        },
+                // The line says three things a slider cannot: what has been
+                // watched, what the engine already holds, and where the
+                // station marked a moment. Under the pointer it says where the
+                // picture would go.
+                child: VodSeekBar(
+                  position: position,
+                  duration: duration,
                   semanticLabel: t.vod.progress,
+                  buffered: _transport?.buffer.ranges ?? const [],
+                  chapters: _extra.chapters,
+                  preview: _extra.preview,
+                  coverUrl: _detail?.coverUrl,
+                  showPreview: ref.watch(vodPlaybackSettingsProvider).seekPreview,
+                  onScrub: (seconds) => setState(() => _dragSeconds = seconds),
+                  onSeek: (seconds) {
+                    setState(() => _dragSeconds = null);
+                    unawaited(_seekTo(seconds));
+                  },
                 ),
               ),
               SizedBox(
@@ -1657,11 +2289,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             unawaited(_togglePlay());
                           },
                   ),
-                  // The step to the part after this one, right beside play: a
-                  // course or a serial is watched forwards, and the chip keeps
-                  // that step on the bar while the shelf under the picture (or
-                  // the rail beside it) keeps the jump to any part.
-                  if (_hasNextPart) _vodNextPartChip(t, compact: compact),
+                  // The steps between parts, right beside play: a course or a
+                  // serial is walked both ways, and the chips keep those steps
+                  // on the bar while the shelf under the picture (or the rail
+                  // beside it) keeps the jump to any part.
+                  if (_hasPreviousPart) _vodPartStepChip(t, compact: compact, forward: false),
+                  if (_hasNextPart) _vodPartStepChip(t, compact: compact, forward: true),
                   PlayerBarButton(
                     iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                     label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
@@ -1719,6 +2352,20 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     semanticLabel: t.vod.speed,
                     compact: compact,
                   ),
+                  // The words the station wrote for this part. The door opens
+                  // only where there is something behind it: a guest gets no
+                  // list, and a CC button that has nothing to list is a button
+                  // that answers nothing.
+                  if (_extra.subtitles.isNotEmpty)
+                    _vodPickerButton(
+                      panel: _VodPanel.subtitle,
+                      icon: DsIcons.captions,
+                      label: _subtitleTrack?.languageName.isEmpty ?? true
+                          ? t.vod.subtitles
+                          : _subtitleTrack!.languageName,
+                      semanticLabel: t.vod.subtitles,
+                      compact: compact,
+                    ),
                   // The danmaku's switch and its settings, the reading end of
                   // what is on the picture: the pair the room's bar draws.
                   PlayerBarButton(
@@ -1782,18 +2429,20 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  /// The 下一P chip: the step's glyph and word in the pickers' shape, one
-  /// press to the part after this one. It stays a word, not a bare glyph,
-  /// because a step forward is a decision about the episode, not a twitch of
-  /// the sound.
-  Widget _vodNextPartChip(Translations t, {required bool compact}) {
+  /// The step chip: the step's glyph and word in the pickers' shape, one press
+  /// to the part before or after this one. It stays a word, not a bare glyph,
+  /// because a step between parts is a decision about the episode, not a
+  /// twitch of the sound. [forward] says which way the step goes; the two
+  /// chips are the same shape read in the other direction.
+  Widget _vodPartStepChip(Translations t, {required bool compact, required bool forward}) {
     final theme = DsTheme.of(context);
+    final label = forward ? t.vod.nextPart : t.vod.previousPart;
     return TvFocusScale(
       child: DsPressable(
-        semanticLabel: t.vod.nextPart,
+        semanticLabel: label,
         onPressed: () {
           _wake();
-          _openNextPart();
+          _openSteppedPart(forward ? 1 : -1);
         },
         builder: (context, states, _) {
           final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
@@ -1808,11 +2457,15 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s4,
               children: [
-                DsIcon(DsIcons.skipForward, size: theme.sizes.iconLg, color: playerInkMuted),
+                DsIcon(
+                  forward ? DsIcons.skipForward : DsIcons.skipBack,
+                  size: theme.sizes.iconLg,
+                  color: playerInkMuted,
+                ),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 110),
                   child: Text(
-                    t.vod.nextPart,
+                    label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.caption.copyWith(color: playerInk),
@@ -1894,6 +2547,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _VodPanel.quality => 200,
     _VodPanel.parts => 260,
     _VodPanel.speed => 180,
+    _VodPanel.subtitle => 240,
   };
 
   /// The open picker's catalogue.
@@ -1952,6 +2606,44 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   _closePanel();
                   unawaited(_setSpeed(choice.value));
                 },
+              ),
+          ],
+        );
+      // The words the station wrote for this part, as opposed to the ones the
+      // viewers fly over it. It sends the list only to a signed-in viewer, so
+      // an empty one says which door is shut rather than pretending the
+      // archive has nothing to say.
+      case _VodPanel.subtitle:
+        final tracks = _extra.subtitles;
+        return PlayerOverlayPanel(
+          title: t.vod.subtitles,
+          width: _panelWidth(panel),
+          children: [
+            PlayerPanelOption(
+              label: t.vod.subtitleOff,
+              selected: _subtitleTrack == null,
+              onPressed: () {
+                _closePanel();
+                unawaited(_selectSubtitle(null));
+              },
+            ),
+            for (final track in tracks)
+              PlayerPanelOption(
+                label: track.languageName.isEmpty ? track.language : track.languageName,
+                detail: track.auto ? t.vod.subtitleAuto : null,
+                selected: _subtitleTrack?.id == track.id,
+                onPressed: () {
+                  _closePanel();
+                  unawaited(_selectSubtitle(track));
+                },
+              ),
+            if (tracks.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s6),
+                child: Text(
+                  _extra.needsLoginForSubtitles ? t.vod.subtitleNeedsLogin : t.vod.subtitleNone,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: playerInkSubtle),
+                ),
               ),
           ],
         );
@@ -2250,7 +2942,7 @@ bool get _desktop =>
 /// The catalogues the video bar hangs over the picture. The picture's fit is
 /// not one of them any more: it reads from the strip's ⋮ menu, where a choice
 /// made once belongs.
-enum _VodPanel { quality, parts, speed }
+enum _VodPanel { quality, parts, speed, subtitle }
 
 /// The picture's box: a fixed 16:9 card inline, the container's own shape in
 /// the immersive modes.
