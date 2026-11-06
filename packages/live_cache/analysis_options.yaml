@@ -1,0 +1,15 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+formatter:
+  page_width: 120
+
+linter:
+  rules:
+    lines_longer_than_80_chars: false
+    public_member_api_docs: true
+    # Cache reads and writes belong off the UI thread; the async variants are
+    # the point, not an oversight.
+    avoid_slow_async_io: false
+analyzer:
+  exclude:
+    - build/**

@@ -1,0 +1,29 @@
+name: live_cache
+description: >-
+  Temporary-resource cache for Pure Live: category policies with TTL and
+  priority, a Flutter ImageProvider over a disk cache with atomic writes,
+  stale-while-revalidate refreshes, request de-duplication and the
+  statistics/cleanup surface a settings page needs. Temporary resources
+  only; downloads, recordings and favourites never enter this cache.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  crypto: ^3.0.6
+  flutter:
+    sdk: flutter
+  live_log:
+  live_net:
+  meta: ^1.19.0
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0

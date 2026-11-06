@@ -9,6 +9,7 @@ environment:
 
 workspace:
   - apps/pure_live
+  - packages/live_cache
   - packages/live_device
   - packages/live_iptv
   - packages/live_lan_sync
