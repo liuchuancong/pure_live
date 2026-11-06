@@ -23,6 +23,10 @@ those decisions are made once and are describable in types instead of comments.
   the body and match the container signature to decide whether a URL carries a
   playable stream, and roughly what kind.
 - Interceptors and storage under `lib/src/` — the mechanics behind the above.
+- `ReplayHttp` (test support, `package:live_net/testing.dart`) — a `LiveHttp` that
+  answers from recorded samples (`meta.json` + body, fixture schema 1) instead of the
+  network, so platform tests run offline; the sample layout is described at the top
+  of `lib/src/testing/replay_http.dart`.
 
 **Status codes are not failures here.** A 4xx/5xx arrives as an ordinary
 `LiveResponse`; only the convenience helpers in `LiveHttpCalls` promote a bad status
@@ -37,7 +41,8 @@ what to do *after* a failure. Nothing in here knows what Pure Live is for.
 
 ## Public entry point
 
-`package:live_net/live_net.dart`.
+`package:live_net/live_net.dart`. Tests also import `package:live_net/testing.dart`
+(the replay transport); production code never does.
 
 ## Dependencies
 
@@ -62,8 +67,8 @@ pinning and the failure vocabulary stop meaning anything.
 dart test
 ```
 
-Four suites cover the four surfaces that could silently differ: `dio_http_test`,
-`media_probe_test`, `proxy_test`, `request_test`.
+Five suites cover the surfaces that could silently differ: `dio_http_test`,
+`media_probe_test`, `proxy_test`, `request_test`, `replay_http_test`.
 
 ## Known limitations
 

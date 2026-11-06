@@ -12,6 +12,10 @@
 - `TransportFailure`: typed transport failures, so callers match on a cause rather
   than parsing an exception's message.
 - Proxy configuration surface for sources and platforms that need one.
+- `ReplayHttp` / `ReplaySample` (`package:live_net/testing.dart`): a test transport
+  that answers from recorded samples in the capture tooling's layout (fixture schema
+  1), matching method, host, path, query, form and JSON fields except the per-run
+  ones (signatures, clocks) a test names.
 
 ### Changed
 
