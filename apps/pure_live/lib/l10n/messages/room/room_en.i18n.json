@@ -209,6 +209,8 @@
   "bilibiliLoginExpired": "Your Bilibili login looks expired — every nickname is masked; please sign in again",
   "danmakuConnectFailed": "Danmaku did not connect ({reason}) — the stream is unaffected",
   "chatCookieExpired": "The stored cookie seems expired, so chat did not connect — renew it on the account page",
+  "autoRoomSwitched": "This room cannot be watched — switched to {name}",
+  "autoRoomSwitchStopped": "No live room left to switch to in the follows",
   "onAirFor": "On air {time: String}",
   "tabSuperChats": "Chats",
   "tabSettings": "Settings",

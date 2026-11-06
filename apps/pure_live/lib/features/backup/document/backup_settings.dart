@@ -111,6 +111,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('sides.tv.focusZoom', BackupPrefKind.boolean),
   // Follows refresh and the history cap.
   ('refresh.follows.auto', BackupPrefKind.boolean),
+  // The room auto-switch scheduler's switch.
+  ('playback.autoSwitchLiveFollows', BackupPrefKind.boolean),
   ('refresh.follows.minutes', BackupPrefKind.integer),
   ('refresh.follows.onResume', BackupPrefKind.boolean),
   ('refresh.liveAlerts.enabled', BackupPrefKind.boolean),

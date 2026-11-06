@@ -2518,6 +2518,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get bilibiliLoginExpired => 'Your Bilibili login looks expired — every nickname is masked; please sign in again';
 	@override String danmakuConnectFailed({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected';
 	@override String get chatCookieExpired => 'The stored cookie seems expired, so chat did not connect — renew it on the account page';
+	@override String autoRoomSwitched({required Object name}) => 'This room cannot be watched — switched to ${name}';
+	@override String get autoRoomSwitchStopped => 'No live room left to switch to in the follows';
 	@override String onAirFor({required String time}) => 'On air ${time}';
 	@override String get tabSuperChats => 'Chats';
 	@override String get tabSettings => 'Settings';
@@ -2825,6 +2827,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshGroup => 'Refresh';
 	@override String get followsAutoRefresh => 'Refresh follows automatically';
 	@override String get followsAutoRefreshDesc => 'Refreshes the follow list on an interval while the page is open.';
+	@override String get autoRoomSwitch => 'Move to the next follow when a room turns unwatchable';
+	@override String get autoRoomSwitchDesc => 'When the platform itself says the broadcast ended or refuses to serve the room, open the next live follow; off by default.';
 	@override String get liveAlert => 'Live alerts';
 	@override String get liveAlertDesc => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.';
 	@override String get liveAlertTags => 'Alert tags';
@@ -7380,6 +7384,8 @@ extension on TranslationsEn {
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
 			'room.danmakuConnectFailed' => ({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected',
 			'room.chatCookieExpired' => 'The stored cookie seems expired, so chat did not connect — renew it on the account page',
+			'room.autoRoomSwitched' => ({required Object name}) => 'This room cannot be watched — switched to ${name}',
+			'room.autoRoomSwitchStopped' => 'No live room left to switch to in the follows',
 			'room.onAirFor' => ({required String time}) => 'On air ${time}',
 			'room.tabSuperChats' => 'Chats',
 			'room.tabSettings' => 'Settings',
@@ -7467,10 +7473,10 @@ extension on TranslationsEn {
 			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
 			'search.noteAcfunShort' => 'Finds creators live and offline',
 			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
-			'search.noteTwitcastingShort' => 'Keywords find live channels only',
-			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
 			_ => null,
 		} ?? switch (path) {
+			'search.noteTwitcastingShort' => 'Keywords find live channels only',
+			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
 			'search.noteKilakilaShort' => 'Find anchors by nickname, UID or link',
 			'search.noteWeibo' => 'Weibo: a session id or live link finds the room exactly; other words filter the current showcase by nickname, and the live state is confirmed on entering.',
 			'search.noteWeiboShort' => 'Session id or live link only',
@@ -7671,6 +7677,8 @@ extension on TranslationsEn {
 			'settings.refreshGroup' => 'Refresh',
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
+			'settings.autoRoomSwitch' => 'Move to the next follow when a room turns unwatchable',
+			'settings.autoRoomSwitchDesc' => 'When the platform itself says the broadcast ended or refuses to serve the room, open the next live follow; off by default.',
 			'settings.liveAlert' => 'Live alerts',
 			'settings.liveAlertDesc' => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.',
 			'settings.liveAlertTags' => 'Alert tags',
@@ -7979,12 +7987,12 @@ extension on TranslationsEn {
 			'settings.cacheLastCleanup' => 'Last cleanup',
 			'settings.cacheNever' => 'Not yet',
 			'settings.cacheDiskUnavailable' => 'The cache folder is unavailable; using memory and network only.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheStatsFailed' => 'Could not read cache statistics',
 			'settings.cacheCategoryBreakdown' => 'By type',
 			'settings.cacheCategoryCover' => 'Covers',
 			'settings.cacheCategoryAvatar' => 'Avatars',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheCategoryIcon' => 'Icons',
 			'settings.cacheCategoryEmote' => 'Emotes and badges',
 			'settings.cacheCategoryAlbum' => 'Album art',
@@ -8493,12 +8501,12 @@ extension on TranslationsEn {
 			'settings.downloadFilterLabel' => 'Filter',
 			'settings.downloadFilterTitle' => 'Filter downloads',
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFilterReset' => 'Clear filters',
 			'settings.downloadRecheck' => 'Re-check files',
 			'settings.downloadMerge' => 'Merge into this folder',
 			'settings.downloadMergeDesc' => ({required Object count}) => '${count} finished file(s) live in another folder and can be merged here',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadMergeTitle' => 'Merge the other folder\'s finished files into this one?',
 			'settings.downloadMergeBody' => ({required Object count}) => '${count} finished files live in another folder. On one volume each is only renamed; across volumes a file is copied and its byte count checked against the source, and the source is deleted only when the copy matches. Anything that fails stays exactly where it was with its row still naming it, so no row is left pointing at nothing. Rows still downloading or unfinished are not touched.',
 			'settings.downloadMergeRunning' => ({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}',
@@ -9007,12 +9015,12 @@ extension on TranslationsEn {
 			'shield.similarityTitle' => 'Similar danmaku filter',
 			'shield.similarityEnabled' => 'Similar danmaku filter',
 			'shield.similarityEnabledDescription' => 'Hides near-duplicates posted moments apart.',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityThreshold' => 'Similarity threshold',
 			'shield.similarityThresholdDescription' => 'Higher is stricter.',
 			'shield.similarityCacheDuration' => 'Cache duration',
 			'shield.similarityCacheDurationDescription' => 'No repeats within this window.',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityMaxCacheSize' => 'Maximum cache size',
 			'shield.similarityMaxCacheSizeDescription' => 'Caps the cache memory.',
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} seconds',

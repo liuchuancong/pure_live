@@ -7160,6 +7160,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写'
 	String get chatCookieExpired => '登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写';
 
+	/// zh-CN: '当前房间不可看，已自动换到 {name} 的直播间'
+	String autoRoomSwitched({required Object name}) => '当前房间不可看，已自动换到 ${name} 的直播间';
+
+	/// zh-CN: '关注列表里没有能自动换的直播间了'
+	String get autoRoomSwitchStopped => '关注列表里没有能自动换的直播间了';
+
 	/// zh-CN: '已直播 {time: String}'
 	String onAirFor({required String time}) => '已直播 ${time}';
 
@@ -8044,6 +8050,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '停留在关注页时按间隔刷新关注列表。'
 	String get followsAutoRefreshDesc => '停留在关注页时按间隔刷新关注列表。';
+
+	/// zh-CN: '当前房间不可看时自动换到下一个关注'
+	String get autoRoomSwitch => '当前房间不可看时自动换到下一个关注';
+
+	/// zh-CN: '平台明确说下播或播不了时，自动换到关注列表里下一个在播的房间；默认关闭。'
+	String get autoRoomSwitchDesc => '平台明确说下播或播不了时，自动换到关注列表里下一个在播的房间；默认关闭。';
 
 	/// zh-CN: '开播提醒'
 	String get liveAlert => '开播提醒';
@@ -16587,6 +16599,8 @@ extension on Translations {
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
 			'room.danmakuConnectFailed' => ({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响',
 			'room.chatCookieExpired' => '登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写',
+			'room.autoRoomSwitched' => ({required Object name}) => '当前房间不可看，已自动换到 ${name} 的直播间',
+			'room.autoRoomSwitchStopped' => '关注列表里没有能自动换的直播间了',
 			'room.onAirFor' => ({required String time}) => '已直播 ${time}',
 			'room.tabSuperChats' => '超聊',
 			'room.tabSettings' => '设置',
@@ -16674,10 +16688,10 @@ extension on Translations {
 			'search.noteAcfun' => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。',
 			'search.noteAcfunShort' => '能搜到直播中和未开播的作者',
 			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
-			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
-			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
 			_ => null,
 		} ?? switch (path) {
+			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
+			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
 			'search.noteKilakilaShort' => '可按昵称、UID 或链接查找主播',
 			'search.noteWeibo' => '微博：输入场次号或粘贴直播链接可精确查找；其他关键词只在当前推荐的直播里按昵称筛选，开播状态进入后确认。',
 			'search.noteWeiboShort' => '只能用场次号或直播链接精确查找',
@@ -16878,6 +16892,8 @@ extension on Translations {
 			'settings.refreshGroup' => '刷新',
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
+			'settings.autoRoomSwitch' => '当前房间不可看时自动换到下一个关注',
+			'settings.autoRoomSwitchDesc' => '平台明确说下播或播不了时，自动换到关注列表里下一个在播的房间；默认关闭。',
 			'settings.liveAlert' => '开播提醒',
 			'settings.liveAlertDesc' => '关注的主播开播时发系统通知；运行时每 15 分钟检查。',
 			'settings.liveAlertTags' => '提醒标签',
@@ -17186,12 +17202,12 @@ extension on Translations {
 			'settings.cacheLastCleanup' => '最后清理',
 			'settings.cacheNever' => '尚未清理',
 			'settings.cacheDiskUnavailable' => '缓存目录不可用，当前仅使用内存与网络。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheStatsFailed' => '读取缓存统计失败',
 			'settings.cacheCategoryBreakdown' => '按类型查看',
 			'settings.cacheCategoryCover' => '封面',
 			'settings.cacheCategoryAvatar' => '头像',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheCategoryIcon' => '图标',
 			'settings.cacheCategoryEmote' => '表情与徽章',
 			'settings.cacheCategoryAlbum' => '专辑封面',
@@ -17700,12 +17716,12 @@ extension on Translations {
 			'settings.downloadFilterLabel' => '筛选',
 			'settings.downloadFilterTitle' => '筛选下载任务',
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFilterReset' => '清空筛选',
 			'settings.downloadRecheck' => '重新检查文件',
 			'settings.downloadMerge' => '并入当前目录',
 			'settings.downloadMergeDesc' => ({required Object count}) => '另有 ${count} 个已完成的文件在其他目录，可并入当前目录',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadMergeTitle' => '把其他目录的已完成文件并入当前目录？',
 			'settings.downloadMergeBody' => ({required Object count}) => '${count} 个已完成的文件在其他目录。同一个磁盘内只做改名；跨磁盘先复制、核对字节数，核对通过才删源。任一文件失败都原样留在原目录，记录仍指向它，不会留下断链。没下完的与下载中的不在其列。',
 			'settings.downloadMergeRunning' => ({required Object done, required Object total, required Object name}) => '正在并入 ${done}/${total}：${name}',
@@ -18214,12 +18230,12 @@ extension on Translations {
 			'shield.similarityTitle' => '相似弹幕过滤',
 			'shield.similarityEnabled' => '相似弹幕过滤',
 			'shield.similarityEnabledDescription' => '过滤短时间内高度相似的弹幕。',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityThreshold' => '相似度阈值',
 			'shield.similarityThresholdDescription' => '越高越严格。',
 			'shield.similarityCacheDuration' => '缓存时间',
 			'shield.similarityCacheDurationDescription' => '这段时间内不重复显示。',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityMaxCacheSize' => '最大缓存数量',
 			'shield.similarityMaxCacheSizeDescription' => '缓存占用的内存上限。',
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} 秒',

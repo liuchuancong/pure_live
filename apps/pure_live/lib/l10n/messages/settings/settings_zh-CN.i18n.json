@@ -187,6 +187,8 @@
   "refreshGroup": "刷新",
   "followsAutoRefresh": "关注自动刷新",
   "followsAutoRefreshDesc": "停留在关注页时按间隔刷新关注列表。",
+  "autoRoomSwitch": "当前房间不可看时自动换到下一个关注",
+  "autoRoomSwitchDesc": "平台明确说下播或播不了时，自动换到关注列表里下一个在播的房间；默认关闭。",
   "liveAlert": "开播提醒",
   "liveAlertDesc": "关注的主播开播时发系统通知；运行时每 15 分钟检查。",
   "liveAlertTags": "提醒标签",

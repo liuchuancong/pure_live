@@ -42,6 +42,7 @@ export 'playback/pip_danmaku_scale_provider.dart';
 export 'playback/playback_settings_providers.dart';
 export 'playback/player_tuning.dart';
 export 'playback/portrait_settings_providers.dart';
+export 'room/auto_room_switch_settings.dart';
 export 'room/clipboard_rooms.dart';
 export 'room/room_card_settings.dart';
 export 'room/room_switcher_settings.dart';

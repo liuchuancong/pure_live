@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, Timer, unawaited;
+import 'dart:async' show StreamSubscription, Timer, scheduleMicrotask, unawaited;
 import 'dart:collection' show ListQueue;
 
 import 'package:flame_barrage/flame_barrage.dart';
@@ -27,6 +27,7 @@ import 'package:pure_live/modules/live/room/controller/room_open_timing.dart'
     show RoomOpenProxy, RoomOpenStage, RoomOpenTiming, kSlowEntryBudget;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/shared/rooms/auto_room_switch.dart';
 
 /// How many chat lines the page keeps; older leave first.
 const int kRoomChatLimit = 200;
@@ -1042,6 +1043,29 @@ final class RoomController extends Notifier<RoomState> {
   /// plan read (see [_resolveLines]). Reset when a room opens.
   bool _linesFallbackSpent = false;
 
+  /// The opt-in scheduler (「当前房间不可看时自动换到下一个关注」) that walks
+  /// the follows when the platform's own verdict says this room cannot be
+  /// watched. Created on the first state write, fed once per event turn by
+  /// [_syncAutoRoomSwitch], and disposed with the provider.
+  AutoRoomSwitch? _autoRoomSwitch;
+
+  /// Whether the open in flight (or the last one) failed with a verdict the
+  /// scheduler acts on — a broadcast the platform says is over, content it
+  /// refuses to serve, a login it will take. A transport blink or a body
+  /// this app could not read is not a verdict. Cleared when a room opens
+  /// and when playback is playing again, so a recovery spent it.
+  bool _autoSwitchUnavailable = false;
+
+  /// The engine's classification of the failure it gave up on, when the
+  /// error state came from the player: a network-kind one keeps its own
+  /// probing and never reaches the scheduler.
+  PlayerFailure? _autoSwitchPlayerFailure;
+
+  /// Whether a scheduler feed is already booked for this event turn: a room
+  /// open writes the state a dozen times, and the scheduler wants the
+  /// settled room, not the middle of the burst.
+  bool _autoSwitchSyncQueued = false;
+
   /// The request the current page asked for, so a detail failure can be
   /// retried even before a room object exists.
   String? _requestedPlatform;
@@ -1153,6 +1177,13 @@ final class RoomController extends Notifier<RoomState> {
       if (_sameCredential(previous?.credentials[siteId], next.credentials[siteId])) return;
       unawaited(_onLoginChanged(siteId));
     });
+    // The follow-walking switch is the room's last resort: a flip in the
+    // settings page restarts the round, so nothing the state before tried is
+    // skipped or retried because of it.
+    ref.listen(autoRoomSwitchProvider, (previous, next) {
+      if (previous != next) _autoRoomSwitch?.restart();
+    });
+    ref.onDispose(() => _autoRoomSwitch?.dispose());
     return _initial();
   }
 
@@ -1160,7 +1191,10 @@ final class RoomController extends Notifier<RoomState> {
   /// qualities it offers; the first playable line begins playback. The
   /// danmaku session opens beside that, never before it. A room that cannot
   /// open says why in the state error field — the page shows it, never a blank.
-  Future<void> open({required String platform, required String roomId, LiveRoom? known}) async {
+  ///
+  /// [automatic] marks a room the follow-walking switch opened: the round's
+  /// spent attempts survive it, so the room it came from is not tried again.
+  Future<void> open({required String platform, required String roomId, LiveRoom? known, bool automatic = false}) async {
     // A room that is already playing for this very page is adopted, not
     // reopened: the floating player hands the live handle back when its
     // window returns, and tearing it down would restart the stream, drop the
@@ -1176,6 +1210,13 @@ final class RoomController extends Notifier<RoomState> {
     }
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
+    // The last room's verdict says nothing about this one.
+    _autoSwitchUnavailable = false;
+    _autoSwitchPlayerFailure = null;
+    _autoSwitch.setRoom(
+      known ?? LiveRoom.normalized(platform: platform, roomId: roomId),
+      automatic: automatic,
+    );
     _teardown();
     _linesFallbackSpent = false;
     _openTiming = RoomOpenTiming(site: platform, roomId: roomId, proxy: _proxyForEntry);
@@ -1218,6 +1259,7 @@ final class RoomController extends Notifier<RoomState> {
       roomAnswer.match(
         (error) async {
           if (epoch != _openEpoch) return;
+          _recordAutoSwitchVerdict(error);
           state = _with(error: error.message);
           _reportOpenTiming(failed: true);
         },
@@ -1228,9 +1270,7 @@ final class RoomController extends Notifier<RoomState> {
           // platform that answers with an audience of 1 for a room whose
           // card knew thousands keeps the card's figure until the next
           // honest read.
-          final room = _fillTitleFromKnown(
-            known == null ? detail : detail.withAudienceFallbackFrom(known),
-          );
+          final room = _fillTitleFromKnown(known == null ? detail : detail.withAudienceFallbackFrom(known));
           state = _with(room: room);
           _armDetailRefresh();
           unawaited(_recordHistory(room));
@@ -1253,6 +1293,7 @@ final class RoomController extends Notifier<RoomState> {
             qualitiesAnswer.match(
               (error) async {
                 if (epoch != _openEpoch) return;
+                _recordAutoSwitchVerdict(error);
                 state = _with(error: error.message);
                 _reportOpenTiming(failed: true);
               },
@@ -1464,6 +1505,7 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> close() async {
     _teardown();
     state = _initial();
+    _queueAutoSwitchSync();
     ref.read(roomChatProvider.notifier).clear();
     ref.read(roomShieldCountProvider.notifier).reset();
     ref.read(roomSuperChatsProvider.notifier).clear();
@@ -1488,6 +1530,7 @@ final class RoomController extends Notifier<RoomState> {
         if (!ref.mounted) return;
         if (state.room?.identityKey != leavingKey) return;
         state = _initial();
+        _queueAutoSwitchSync();
         ref.read(roomChatProvider.notifier).clear();
         ref.read(roomShieldCountProvider.notifier).reset();
         ref.read(roomSuperChatsProvider.notifier).clear();
@@ -1852,6 +1895,11 @@ final class RoomController extends Notifier<RoomState> {
     final resolved = await _resolveLines(capability, room);
     if (resolved.error case final error?) {
       if (epoch == _openEpoch) {
+        // A plan read that failed while a stream is already committed (a
+        // quality switch, a lease rebuild) is not the room's verdict — the
+        // stream it was serving keeps playing, and the engine's own recovery
+        // owns what happens next.
+        if (state.handle == null) _recordAutoSwitchVerdict(error);
         state = _with(error: error.message);
         _reportOpenTiming(failed: true);
       }
@@ -1860,6 +1908,11 @@ final class RoomController extends Notifier<RoomState> {
     if (epoch != _openEpoch) return;
     final resolvedLines = resolved.lines;
     if (resolvedLines.isEmpty) {
+      // The ask succeeded and the platform still offers nothing to play: its
+      // own verdict that the room has no stream to serve right now.
+      if (state.handle == null) {
+        _autoSwitchUnavailable = true;
+      }
       state = _with(lines: const [], error: 'the room has nothing to play');
       _reportOpenTiming(failed: true);
       return;
@@ -1896,6 +1949,12 @@ final class RoomController extends Notifier<RoomState> {
     final playback = _playback ??= _openSession(capability, room);
     _states ??= playback.onStateChanged.listen((playback_) {
       state = _with(playback: playback_);
+      // A recovery that landed spends the open's failure verdict: the room
+      // plays, so the follow-walking switch has nothing to act on.
+      if (playback_.playing) {
+        _autoSwitchUnavailable = false;
+        _autoSwitchPlayerFailure = null;
+      }
       // The engine holding an opened input - the split between the CDN's time
       // and the decoder's. `ready` alone is not it: the adapter is ready once
       // it is initialised, before any media; `hasSource` is set when the open
@@ -1906,6 +1965,9 @@ final class RoomController extends Notifier<RoomState> {
       if (playback_.playing && (_openTiming?.markPlaying() ?? false)) _reportOpenTiming();
     });
     _failures ??= playback.onError.listen((failure) {
+      // The engine's own reading of what died: a network-kind failure keeps
+      // probing in the playback session and never reaches the scheduler.
+      _autoSwitchPlayerFailure = failure;
       state = _with(error: failure.message ?? failure.code.name);
       _reportOpenTiming(failed: true);
     });
@@ -2497,7 +2559,89 @@ final class RoomController extends Notifier<RoomState> {
     return ref.read(sitesProvider).getById(room.ref.platform)?.capability<LivePlaybackProvider>();
   }
 
-  /// The state with any field replaced; the record's honest copy.
+  /// The room's follow-walking scheduler, created on the first feed. The
+  /// refresh seam is the room's own non-manual re-read: it merges what the
+  /// platform now says about this room without touching a playing stream.
+  AutoRoomSwitch get _autoSwitch => _autoRoomSwitch ??= AutoRoomSwitch(
+    enabled: () => ref.read(autoRoomSwitchProvider),
+    followsOf: () => ref.read(followsProvider).rooms,
+    isFollowed: (candidate) =>
+        ref.read(followsProvider).rooms.any((room) => room.ref.identityKey == candidate.ref.identityKey),
+    lookupRoom: _lookupAutoSwitchCandidate,
+    onSwitch: _onAutoRoomSwitched,
+    maySwitch: () => ref.mounted && !_audioOnly,
+    onRefresh: () => refreshRoom(manual: false),
+    onExhausted: () {
+      if (!ref.mounted) return;
+      ref.read(roomHintProvider.notifier).show(l10n.t.room.autoRoomSwitchStopped);
+    },
+  );
+
+  /// Reads the platform's current detail for a candidate; a failed or
+  /// missing answer is null — an unconfirmed candidate is not a room to open.
+  Future<LiveRoom?> _lookupAutoSwitchCandidate(LiveRoom candidate) async {
+    final capability = ref.read(sitesProvider).getById(candidate.ref.platform)?.capability<LiveRoomProvider>();
+    if (capability == null) return null;
+    final answer = await capability.getRoom(candidate.ref.roomId);
+    return answer.fold<LiveRoom?>((_) => null, (room) => room);
+  }
+
+  /// The scheduler found a live follow to take this room's place: the same
+  /// in-place reopen the page's own room switch uses, with the confirmed
+  /// detail as the card the page draws while the fresh open runs.
+  void _onAutoRoomSwitched(LiveRoom next) {
+    if (!ref.mounted) return;
+    final name = next.anchor?.name.trim() ?? '';
+    ref
+        .read(roomHintProvider.notifier)
+        .show(l10n.t.room.autoRoomSwitched(name: name.isNotEmpty ? name : next.content.title));
+    unawaited(open(platform: next.ref.platform, roomId: next.ref.roomId, known: next, automatic: true));
+  }
+
+  /// Feeds the scheduler once per event turn: the state writes come in
+  /// bursts, and the scheduler wants the room that settles out of them.
+  void _queueAutoSwitchSync() {
+    if (_autoSwitchSyncQueued) return;
+    _autoSwitchSyncQueued = true;
+    scheduleMicrotask(() {
+      _autoSwitchSyncQueued = false;
+      _syncAutoRoomSwitch();
+    });
+  }
+
+  /// Hands the settled state to the scheduler: the room as it stands, the
+  /// engine's own playback state, whether an open is still in flight, and
+  /// the typed verdicts behind the error the page shows.
+  void _syncAutoRoomSwitch() {
+    final switcher = _autoRoomSwitch;
+    if (switcher == null || !ref.mounted) return;
+    final room = state.room;
+    if (room == null) {
+      switcher.clear();
+      return;
+    }
+    final playback = state.playback;
+    switcher.update(
+      room: room,
+      playback: playback,
+      resolving: _openTiming != null,
+      unavailable: _autoSwitchUnavailable,
+      failure: playback.hasError ? _autoSwitchPlayerFailure : null,
+    );
+  }
+
+  /// Records the typed failure behind an open that failed: only the sealed
+  /// failures that speak about the room itself (its broadcast ended, its
+  /// content is refused, its login is missing) arm the scheduler — a
+  /// transport blink or a body this app could not read stays the playback's
+  /// own problem, and a refused stored cookie belongs to the account page
+  /// whose notice the room already wears.
+  void _recordAutoSwitchVerdict(LiveSiteError error) {
+    if (liveSiteErrorWarrantsSwitch(error)) _autoSwitchUnavailable = true;
+  }
+
+  /// The state with any field replaced; the record's honest copy. Every
+  /// write books the follow-walking switch a look at the settled state.
   RoomState _with({
     LiveRoom? room,
     List<LivePlayQuality>? qualities,
@@ -2510,19 +2654,22 @@ final class RoomController extends Notifier<RoomState> {
     bool? audioOnly,
     String? error,
     RoomChat? chat,
-  }) => (
-    room: room ?? state.room,
-    qualities: qualities ?? state.qualities,
-    lines: lines ?? state.lines,
-    lineIndex: lineIndex ?? state.lineIndex,
-    quality: quality ?? state.quality,
-    playback: playback ?? state.playback,
-    handle: handle ?? state.handle,
-    player: player ?? state.player,
-    audioOnly: audioOnly ?? state.audioOnly,
-    error: error,
-    chat: chat ?? state.chat,
-  );
+  }) {
+    _queueAutoSwitchSync();
+    return (
+      room: room ?? state.room,
+      qualities: qualities ?? state.qualities,
+      lines: lines ?? state.lines,
+      lineIndex: lineIndex ?? state.lineIndex,
+      quality: quality ?? state.quality,
+      playback: playback ?? state.playback,
+      handle: handle ?? state.handle,
+      player: player ?? state.player,
+      audioOnly: audioOnly ?? state.audioOnly,
+      error: error,
+      chat: chat ?? state.chat,
+    );
+  }
 
   void _teardown() {
     // The stream goes quiet before anything else: the release below is queued

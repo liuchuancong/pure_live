@@ -209,6 +209,8 @@
   "bilibiliLoginExpired": "B 站登录似乎已失效：昵称全部被打码，请重新登录",
   "danmakuConnectFailed": "弹幕连接失败（{reason}），直播画面不受影响",
   "chatCookieExpired": "登录用的 Cookie 似乎已失效，弹幕没连上；请到账号页重新填写",
+  "autoRoomSwitched": "当前房间不可看，已自动换到 {name} 的直播间",
+  "autoRoomSwitchStopped": "关注列表里没有能自动换的直播间了",
   "onAirFor": "已直播 {time: String}",
   "tabSuperChats": "超聊",
   "tabSettings": "设置",

@@ -97,6 +97,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   browseSettingsProvider,
   roomCardSettingsProvider,
   roomSwitcherLayoutProvider,
+  autoRoomSwitchProvider,
   portraitSwipeSwitchProvider,
   showUnplayableProvider,
   audienceMetricProvider,

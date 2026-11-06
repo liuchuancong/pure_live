@@ -139,6 +139,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.navToolOrder, s.toolsOrder, 'tool order sidebar 工具 排序 侧栏 编辑顺序'),
     // Refresh.
     _hit(SettingsSection.refresh, s.followsAutoRefresh, 'auto refresh follows 自动刷新 关注'),
+    _hit(SettingsSection.refresh, s.autoRoomSwitch, 'auto switch room unwatchable follow next live 自动换房 不可看 下一个 关注 换到'),
     _hit(SettingsSection.refresh, s.liveAlert, 'live alert notification followed room go live 开播 提醒 通知 关注'),
     _hit(SettingsSection.refresh, s.liveAlertTags, 'live alert tags filter follow 开播 提醒 标签 过滤'),
     _hit(SettingsSection.refresh, s.refreshInterval, 'interval 刷新 间隔'),

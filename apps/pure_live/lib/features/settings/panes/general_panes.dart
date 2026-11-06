@@ -13,6 +13,7 @@ import 'package:pure_live/features/settings/dialogs/config_preview_dialog.dart' 
 import 'package:pure_live/features/settings/dialogs/live_alert_tags_dialog.dart' show showLiveAlertTagsDialog;
 import 'package:pure_live/features/settings/general/auto_shutdown_section.dart' show AutoShutdownSection;
 import 'package:pure_live/features/settings/general/settings_order_list.dart' show SettingsOrderList;
+import 'package:pure_live/features/settings/room/auto_room_switch_settings.dart' show autoRoomSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
@@ -166,6 +167,17 @@ final class RefreshPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setMinutes(value)),
               ),
             ],
+            // The follows' other automation: when a room the viewer opened
+            // turns out unwatchable, the next live follow takes its place.
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.shuffle),
+              title: t.settings.autoRoomSwitch,
+              description: t.settings.autoRoomSwitchDesc,
+              control: DsSwitch(
+                value: ref.watch(autoRoomSwitchProvider),
+                onChanged: (value) => unawaited(ref.read(autoRoomSwitchProvider.notifier).set(value: value)),
+              ),
+            ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.waypoints),
               title: t.settings.maxConcurrentRefresh,

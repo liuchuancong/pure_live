@@ -8,6 +8,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show MultiviewLayout, multiviewProvider;
+import 'package:pure_live/shared/rooms/auto_room_switch.dart';
 
 /// Where one pane's session stands.
 enum MultiviewPaneStage {
@@ -66,6 +67,10 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   final List<_PaneSession> _sessions = [];
   bool _active = false;
 
+  /// The panes' room reservations: one wall, so a pane's automatic switch
+  /// never lands on a room another pane already holds.
+  final AutoRoomSwitchGroup _autoSwitchGroup = AutoRoomSwitchGroup();
+
   /// Whether this visit already answered the restore ask: a wall that was
   /// saved asks once on arrival, and the answer governs the whole visit.
   bool _restoreDecided = false;
@@ -99,6 +104,14 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     });
     ref.listen(followsProvider.select((state) => state.rooms), (previous, next) {
       if (_active) _sync();
+    });
+    // A flip of the follow-walking switch restarts every pane's round, so
+    // nothing the panes tried under the old choice is skipped or retried.
+    ref.listen(autoRoomSwitchProvider, (previous, next) {
+      if (previous == next) return;
+      for (final session in [..._sessions]) {
+        session.autoSwitch?.restart();
+      }
     });
     ref.onDispose(_releaseAll);
     return (active: false, allMuted: false, selected: null, panes: const {}, pendingRestore: false);
@@ -182,6 +195,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     _release(session);
     if (!_active) return;
     final fresh = _PaneSession(slot: slot, identity: identity, volume: volume)..room = room;
+    _attachAutoSwitch(fresh);
     _sessions.add(fresh);
     _ensureSelection();
     _publish();
@@ -325,6 +339,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       if (identity == null) continue;
       final volume = ref.read(playbackSettingsProvider.notifier).volume;
       final session = _PaneSession(slot: slot, identity: identity, volume: volume.clamp(0.0, 1.0));
+      _attachAutoSwitch(session);
       _sessions.add(session);
       fresh.add(session);
     }
@@ -351,7 +366,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       session.capability = capability;
       final qualities = await capability
           .getQualities(room: room)
-          .then((answer) => answer.fold((error) => throw _PaneOpenFailure(error.message), (qualities) => qualities));
+          .then((answer) => answer.fold((error) => throw _PaneOpenFailure(error.message, error), (qualities) => qualities));
       if (stale()) return;
       session.qualities = qualities;
       final layout = ref.read(multiviewProvider).layout;
@@ -389,7 +404,11 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       );
     } on Object catch (error) {
       if (stale()) return;
-      _fail(session, error is _PaneOpenFailure ? error.message : error.toString());
+      _fail(
+        session,
+        error is _PaneOpenFailure ? error.message : error.toString(),
+        siteError: error is _PaneOpenFailure ? error.siteError : null,
+      );
     }
   }
 
@@ -399,7 +418,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     final capability = session.capability;
     if (room == null || capability == null) throw const _PaneOpenFailure('the pane holds no room');
     final answer = await capability.getLines(room: room, quality: quality);
-    final lines = answer.fold((error) => throw _PaneOpenFailure(error.message), (lines) => lines);
+    final lines = answer.fold((error) => throw _PaneOpenFailure(error.message, error), (lines) => lines);
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
     final ingest = await startLiveIngest(ref: ref, site: site, line: lines.first);
@@ -430,7 +449,11 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       session
         ..handle = handle
         ..stage = MultiviewPaneStage.playing
-        ..error = null;
+        ..error = null
+        // A pane that plays again has spent whatever verdict its failure
+        // carried; the engine's recovery owns the next word.
+        ..failure = null
+        ..siteError = null;
       unawaited(_applyAudio(session));
       unawaited(_applyEngineOptions(session));
       _publish();
@@ -438,12 +461,14 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     session.states = playback.onStateChanged.listen((state) {
       if (session.disposed) return;
       session
+        ..coreState = state
         ..paused = state.playback == PlayerPlaybackState.paused
         ..lineIndex = playback.sourceIndex;
       _publish();
     });
     session.failures = playback.onError.listen((failure) {
       if (session.disposed) return;
+      session.failure = failure;
       _fail(session, failure.message ?? failure.code.name);
     });
   }
@@ -458,8 +483,92 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     final provider = ref.read(sitesProvider).getById(platform)?.capability<LiveRoomProvider>();
     if (provider == null) throw _PaneOpenFailure('no site for "$platform"');
     final answer = await provider.getRoom(roomId);
-    final room = answer.fold((error) => throw _PaneOpenFailure(error.message), (room) => room);
+    final room = answer.fold((error) => throw _PaneOpenFailure(error.message, error), (room) => room);
     return room;
+  }
+
+  /// The pane's follow-walking scheduler (「当前房间不可看时自动换到下一个
+  /// 关注」), one per pane over the wall's shared reservations. A switch
+  /// writes the wall's slot: the arrangement controller is the pane's own
+  /// room verb, and the saved document re-opens the pane through [_sync]
+  /// the way a viewer-made change does.
+  void _attachAutoSwitch(_PaneSession session) {
+    session.autoSwitch = AutoRoomSwitch(
+      enabled: () => ref.read(autoRoomSwitchProvider),
+      followsOf: () => ref.read(followsProvider).rooms,
+      isFollowed: (candidate) =>
+          ref.read(followsProvider).rooms.any((room) => room.ref.identityKey == candidate.ref.identityKey),
+      lookupRoom: _lookupAutoSwitchCandidate,
+      onSwitch: (next) {
+        if (_sessionOf(session.slot) != session) return;
+        unawaited(ref.read(multiviewProvider.notifier).assign(session.slot, next));
+      },
+      onRefresh: () => _refreshPaneRoom(session),
+      maySwitch: () => _active && _sessions.contains(session),
+      group: _autoSwitchGroup,
+    );
+  }
+
+  /// Reads the platform's current detail for a candidate; a failed or
+  /// missing answer is null — an unconfirmed candidate is not a room to open.
+  Future<LiveRoom?> _lookupAutoSwitchCandidate(LiveRoom candidate) async {
+    final capability = ref.read(sitesProvider).getById(candidate.ref.platform)?.capability<LiveRoomProvider>();
+    if (capability == null) return null;
+    final answer = await capability.getRoom(candidate.ref.roomId);
+    return answer.fold<LiveRoom?>((_) => null, (room) => room);
+  }
+
+  /// The pane's own re-read before the round walks away: what the platform
+  /// now says about this room merges into the pane's room when it says the
+  /// broadcast is over, so the verdict rests on a fresh status instead of
+  /// the stale card the pane opened from.
+  Future<void> _refreshPaneRoom(_PaneSession session) async {
+    final room = session.room;
+    final provider = room == null
+        ? null
+        : ref.read(sitesProvider).getById(room.ref.platform)?.capability<LiveRoomProvider>();
+    if (room == null || provider == null) return;
+    try {
+      final answer = await provider.getRoom(room.ref.roomId).timeout(const Duration(seconds: 10));
+      final detail = answer.fold<LiveRoom?>((_) => null, (fresh) => fresh);
+      if (session.disposed || session.room?.ref != room.ref) return;
+      if (detail == null || !detail.broadcast.isExplicitlyOfflineNow) return;
+      session.room = room.mergedWith(detail);
+      _publish();
+    } on Object {
+      // Failed confirmation is not evidence that a broadcast ended.
+    }
+  }
+
+  /// Feeds the pane's scheduler: the room the pane holds, the engine's own
+  /// playback state, whether the pane is still opening or switching, and the
+  /// typed verdicts the failure stage carries.
+  void _syncPaneAutoSwitch(_PaneSession session) {
+    final switcher = session.autoSwitch;
+    final room = session.room;
+    if (switcher == null || room == null) return;
+    final playback = session.coreState ?? PlayerCoreState.idle;
+    switcher.update(
+      room: room,
+      playback: playback,
+      resolving: session.stage == MultiviewPaneStage.opening || session.switching,
+      unavailable: _paneUnavailable(session),
+      failure: playback.hasError ? session.failure : null,
+    );
+  }
+
+  /// Whether a failed pane's failure is the room's own verdict: the pane
+  /// knows the room's broadcast state (a pending one could still be the
+  /// network's), no transport kind is to blame, and — when the failure came
+  /// from a site ask — the answer is one the platform actually stated.
+  bool _paneUnavailable(_PaneSession session) {
+    if (session.stage != MultiviewPaneStage.failed) return false;
+    final room = session.room;
+    if (room == null || room.broadcast.isPending) return false;
+    if (session.failure?.isNetworkRelated ?? false) return false;
+    final error = session.siteError;
+    if (error != null) return liveSiteErrorWarrantsSwitch(error);
+    return true;
   }
 
   /// The viewer's preferred tier at an exact label, or the nearest tier by
@@ -566,10 +675,11 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     }
   }
 
-  void _fail(_PaneSession session, String message) {
+  void _fail(_PaneSession session, String message, {LiveSiteError? siteError}) {
     session
       ..stage = MultiviewPaneStage.failed
-      ..error = message;
+      ..error = message
+      ..siteError = siteError;
     _publish();
   }
 
@@ -577,6 +687,8 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     if (session.disposed) return;
     session.disposed = true;
     session.epoch++;
+    session.autoSwitch?.dispose();
+    session.autoSwitch = null;
     unawaited(session.handles?.cancel() ?? Future<void>.value());
     unawaited(session.states?.cancel() ?? Future<void>.value());
     unawaited(session.failures?.cancel() ?? Future<void>.value());
@@ -616,6 +728,11 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   }
 
   void _publish() {
+    // The panes' schedulers read the wall through this one seam, so every
+    // change the page can see is a change they can act on.
+    for (final session in [..._sessions]) {
+      _syncPaneAutoSwitch(session);
+    }
     state = (
       active: _active,
       allMuted: _allMuted,
@@ -660,6 +777,18 @@ final class _PaneSession {
   MultiviewPaneStage stage = MultiviewPaneStage.opening;
   PlayerHandle? handle;
   String? error;
+
+  /// The follow-walking scheduler this pane feeds (see
+  /// [_attachAutoSwitch]); null never after creation, disposed in release.
+  AutoRoomSwitch? autoSwitch;
+
+  /// The engine's latest playback state, the scheduler's playback input.
+  PlayerCoreState? coreState;
+
+  /// The engine's classification of the failure it gave up on, and the
+  /// typed site failure the open died on: the scheduler's verdict inputs.
+  PlayerFailure? failure;
+  LiveSiteError? siteError;
   List<LivePlayQuality> qualities = const [];
   LivePlayQuality? quality;
   bool switching = false;
@@ -686,9 +815,14 @@ final class _PaneSession {
 
 /// Why a pane could not open, with the site's own words when it has them.
 final class _PaneOpenFailure implements Exception {
-  const _PaneOpenFailure(this.message);
+  const _PaneOpenFailure(this.message, [this.siteError]);
 
   final String message;
+
+  /// The typed site failure behind [message], when the ask produced one:
+  /// what the follow-walking scheduler reads to tell a verdict about the
+  /// room from a transport blink.
+  final LiveSiteError? siteError;
 }
 
 /// The wall's playback sessions.

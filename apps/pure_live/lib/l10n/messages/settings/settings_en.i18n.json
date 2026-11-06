@@ -187,6 +187,8 @@
   "refreshGroup": "Refresh",
   "followsAutoRefresh": "Refresh follows automatically",
   "followsAutoRefreshDesc": "Refreshes the follow list on an interval while the page is open.",
+  "autoRoomSwitch": "Move to the next follow when a room turns unwatchable",
+  "autoRoomSwitchDesc": "When the platform itself says the broadcast ended or refuses to serve the room, open the next live follow; off by default.",
   "liveAlert": "Live alerts",
   "liveAlertDesc": "Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.",
   "liveAlertTags": "Alert tags",
