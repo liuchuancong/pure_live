@@ -1,7 +1,9 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
+import 'dart:collection' show ListQueue;
 
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/foundation.dart' show BindingBase, TargetPlatform, defaultTargetPlatform, kDebugMode, kIsWeb;
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
@@ -28,6 +30,16 @@ import 'package:pure_live/modules/live/shield/shield.dart';
 
 /// How many chat lines the page keeps; older leave first.
 const int kRoomChatLimit = 200;
+
+/// How many of the kept chat lines may be gift lines at most: beyond it the
+/// oldest gift line goes, not a chat line, so a busy room's gifts never push
+/// the talk out (the reference's D07.1 `giftCapacity` — 150 of 500, the same
+/// share of this list).
+const int kRoomChatGiftLimit = 60;
+
+/// How many new gift lines the list starts a second at most; a valuable gift
+/// gets its line all the same (the reference's V03.5 §6.8).
+const int kRoomGiftLinesPerSecond = 10;
 
 /// How many masked Bilibili nicknames, with no full one among them, make a
 /// connection say the room is not reading chat as the account it thinks it
@@ -360,6 +372,23 @@ final class RoomDanmakuPipeline {
     barrage.retractWhere((item) => target.matches(userId: item.userId, userName: item.userName, messageId: item.id));
   }
 
+  /// Takes a blocked viewer's flying danmaku off the layer, queued or
+  /// mid-flight — the same lines the chat list drops in
+  /// [RoomChatController.removeUser].
+  void removeUser(String name) {
+    final target = name.trim().toLowerCase();
+    if (target.isEmpty) return;
+    barrage.retractWhere((item) => (item.userName ?? '').trim().toLowerCase() == target);
+  }
+
+  /// Takes the flying danmaku a blocked word cuts out of the layer (the gift
+  /// flights' sentences included, as the chat list's gift lines are).
+  void removeKeyword(String word) {
+    final matcher = DanmakuBlockList.of(keywords: [word]);
+    if (matcher.isEmpty) return;
+    barrage.retractWhere((item) => matcher.matchesText(item.content));
+  }
+
   /// Carries playback pause/seek into the barrage engine.
   void bind(PlayerHandle handle) {
     unawaited(binding?.dispose() ?? Future<void>.value());
@@ -496,48 +525,133 @@ final class _BridgeTransport implements DanmakuTransport {
 /// The chat list, on its own controller: a busy room's messages land many
 /// times a second, and a chat line should never rebuild the player surface
 /// beside it. The room controller feeds it; the page reads only this.
+///
+/// The lines change at once, and the listeners hear of it at most once a
+/// frame (the reference's ChatFeed: a busy room speaks two hundred lines a
+/// second, and the whole room page used to hear of each one). Of the
+/// [kRoomChatLimit] lines it keeps, at most [kRoomChatGiftLimit] may be gift
+/// lines — a busy room's gifts do not push the talk out (the reference's
+/// D07.1) — and at most [kRoomGiftLinesPerSecond] new gift lines start a
+/// second, a valuable one getting its line all the same.
 final class RoomChatController extends Notifier<List<LiveMessage>> {
+  /// The combos' replacements and the removals' tests remembered for the
+  /// lists that hold older lines; the least recent goes first.
+  static const int _keptTraces = 64;
+
+  static const Duration _second = Duration(seconds: 1);
+
+  /// The lines, oldest first. Replaced wholesale by every operation and
+  /// never mutated in place, so the published [state] keeps its identity
+  /// between changes.
+  List<LiveMessage> _lines = const [];
+
+  /// How many of [_lines] are gift lines.
+  int _gifts = 0;
+
+  /// Lines added so far (a list's "new messages" count); a replaced line is
+  /// not a new one.
+  int _added = 0;
+
+  /// How many removals there were (recalls, blocks, the gift switches),
+  /// whether or not they found a line here.
+  int _removals = 0;
+
+  /// The tests of the last removals, oldest first, handed to the lists that
+  /// hold older lines ([removalsSince]).
+  final List<bool Function(LiveMessage message)> _removalTests = [];
+
+  /// The lines a combo's grown count took the place of, by the line id the
+  /// combo keeps, so a list holding older lines still reads the newest.
+  final Map<String, LiveMessage> _replacements = {};
+
+  /// When the newest gift lines were accepted, oldest first.
+  final ListQueue<DateTime> _newGiftLines = ListQueue();
+
+  /// Whether a change waits for the frame.
+  bool _pending = false;
+
+  /// What "now" is (tests fix it).
+  DateTime Function() clock = DateTime.now;
+
   @override
-  List<LiveMessage> build() => const [];
+  List<LiveMessage> build() => _lines;
+
+  /// Lines added so far (a list's "new messages" count); a replaced line is
+  /// not a new one.
+  int get added => _added;
+
+  /// How many removals there were.
+  int get removals => _removals;
+
+  /// How many gift lines there are.
+  int get giftLines => _gifts;
+
+  /// The tests of the removals after the first [count] of them, oldest
+  /// first, for a list that holds older lines than the feed (the reference's
+  /// `removalsSince`: a held list loses the blocked and recalled lines too);
+  /// null when they are no longer all kept.
+  List<bool Function(LiveMessage message)>? removalsSince(int count) {
+    final missing = _removals - count;
+    if (missing < 0 || missing > _removalTests.length) return null;
+    return _removalTests.sublist(_removalTests.length - missing);
+  }
+
+  /// The newest line that took [message]'s place (a combo's grown count), or
+  /// null when it is still the current one.
+  LiveMessage? replacementOf(LiveMessage message) => _replacements[message.messageId];
 
   /// Appends [message], keeping the newest [kRoomChatLimit]; with
   /// [replaceId] it replaces that line instead, moving it to the bottom as
   /// a growing combo does.
   void add(LiveMessage message, {String? replaceId}) {
-    if (replaceId != null) {
-      final index = state.indexWhere((line) => line.messageId == replaceId);
-      if (index >= 0) {
-        final next = [...state]
-          ..removeAt(index)
-          ..add(message);
-        state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
-        return;
-      }
-    }
-    final next = [...state, message];
-    state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
+    if (replaceId != null && _replace(message, replaceId)) return;
+    _append(message);
   }
 
-  /// Clears the list (a new room opens).
-  void clear() => state = const [];
+  /// Tells the listeners now instead of at the next frame (a list about to
+  /// be read rather than drawn wants no half-second-old lines).
+  void flush() => _deliver();
+
+  /// Clears the list (a new room opens): the counters start again, so a list
+  /// that saved its place for the room before does not mistake this one for
+  /// it.
+  void clear() {
+    _lines = const [];
+    _gifts = 0;
+    _added = 0;
+    _removals = 0;
+    _removalTests.clear();
+    _replacements.clear();
+    _newGiftLines.clear();
+    _publish();
+  }
 
   /// Puts local danmaku sent in this room before this visit at the top,
-  /// oldest first; they are already filtered and do not fly again.
+  /// oldest first; they are already filtered and do not fly again. They are
+  /// not counted in [added] (no 「N 条新弹幕」 for lines sent hours ago).
   void replayOldest(Iterable<LiveMessage> messages) {
     final replay = [
       for (final message in messages)
         if (message.text.trim().isNotEmpty) message,
     ];
     if (replay.isEmpty) return;
-    final next = [...replay, ...state];
-    state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
+    var next = [...replay, ..._lines];
+    if (next.length > kRoomChatLimit) {
+      final over = next.length - kRoomChatLimit;
+      for (var i = 0; i < over; i++) {
+        if (next[i].type == LiveMessageType.gift) _gifts--;
+      }
+      next = next.sublist(next.length - kRoomChatLimit);
+    }
+    for (final message in replay) {
+      if (message.type == LiveMessageType.gift) _gifts++;
+    }
+    _lines = next;
+    _publish();
   }
 
   /// Drops every gift line (the chat gift switch was turned off).
-  void removeGifts() {
-    if (!state.any((message) => message.type == LiveMessageType.gift)) return;
-    state = state.where((message) => message.type != LiveMessageType.gift).toList(growable: false);
-  }
+  void removeGifts() => _removeWhere((message) => message.type == LiveMessageType.gift);
 
   /// Drops the gift lines below "值钱" (the tier switch was turned on).
   void removeNormalTierGifts() {
@@ -547,8 +661,7 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
       return gift is LiveGift && giftLineTier(gift) == LiveGiftTier.normal;
     }
 
-    if (!state.any(belowTier)) return;
-    state = state.where((message) => !belowTier(message)).toList(growable: false);
+    _removeWhere(belowTier);
   }
 
   /// Takes back what the platform recalled: one line by its id, one viewer's
@@ -565,8 +678,143 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
       return target.matches(userId: sender?.userId, userName: sender?.userName, messageId: line.messageId);
     }
 
-    if (!state.any(recalled)) return;
-    state = state.where((line) => !recalled(line)).toList(growable: false);
+    _removeWhere(recalled);
+  }
+
+  /// Takes a blocked viewer's lines off the list (the reference's
+  /// `blockUser`): what they said is gone the moment they are blocked, not
+  /// from their next line on. The viewer's own lines are theirs — a block
+  /// never cuts those.
+  void removeUser(String name) {
+    final target = name.trim().toLowerCase();
+    if (target.isEmpty) return;
+    _removeWhere((line) => !line.isLocal && line.sender?.userName.trim().toLowerCase() == target);
+  }
+
+  /// Takes the lines [word] cuts out of the list (the reference's
+  /// `blockKeyword`): a `/…/` word matches as a pattern, and a blocked word
+  /// takes the platform's gift lines too — but not the viewer's own.
+  void removeKeyword(String word) {
+    if (word.trim().isEmpty) return;
+    final matcher = DanmakuBlockList.of(keywords: [word]);
+    if (matcher.isEmpty) return;
+    bool blocked(LiveMessage line) =>
+        !line.isLocal &&
+        (line.type == LiveMessageType.chat || line.type == LiveMessageType.gift) &&
+        matcher.matchesText(line.text);
+    _removeWhere(blocked);
+  }
+
+  /// Puts [replacement] in the place of the line [replaceId] names, moving it
+  /// to the bottom (a combo's count grew): not counted in [added], and the
+  /// line id stays the combo's, so a held list finds the newest from
+  /// [replacementOf]. False, changing nothing, when the line is not here (it
+  /// fell off the old end) — the caller then appends.
+  bool _replace(LiveMessage replacement, String replaceId) {
+    final index = _lines.indexWhere((line) => line.messageId == replaceId);
+    if (index < 0) return false;
+    final next = [..._lines]
+      ..removeAt(index)
+      ..add(replacement);
+    _lines = next;
+    if (_replacements.length >= _keptTraces) _replacements.remove(_replacements.keys.first);
+    _replacements[replaceId] = replacement;
+    _publish();
+    return true;
+  }
+
+  /// Appends [message] to the end, under the list's cap and the gift lines'
+  /// own quota and rate.
+  void _append(LiveMessage message) {
+    final gift = message.type == LiveMessageType.gift;
+    if (gift && !_giftMayLine(message)) return;
+    var next = [..._lines, message];
+    if (gift) {
+      _gifts++;
+      // Beyond the gift quota the oldest gift line goes, not a chat line
+      // (the reference's ChatFeed.giftCapacity).
+      if (_gifts > kRoomChatGiftLimit) {
+        next.removeAt(next.indexWhere((line) => line.type == LiveMessageType.gift));
+        _gifts--;
+      }
+    }
+    if (next.length > kRoomChatLimit) {
+      final over = next.length - kRoomChatLimit;
+      for (var i = 0; i < over; i++) {
+        if (next[i].type == LiveMessageType.gift) _gifts--;
+      }
+      next = next.sublist(next.length - kRoomChatLimit);
+    }
+    _lines = next;
+    _added++;
+    _publish();
+  }
+
+  /// Whether a platform gift may start a new line: at most
+  /// [kRoomGiftLinesPerSecond] a second, and a valuable one ([giftLineTier]
+  /// above normal, this app's own 「值钱」 judgment) gets its line all the
+  /// same. A combo's later gifts update their line and never come through
+  /// here.
+  bool _giftMayLine(LiveMessage message) {
+    if (message.isLocal) return true;
+    final gift = message.payload;
+    if (gift is! LiveGift) return true;
+    final now = clock();
+    while (_newGiftLines.isNotEmpty && now.difference(_newGiftLines.first) >= _second) {
+      _newGiftLines.removeFirst();
+    }
+    if (giftLineTier(gift) == LiveGiftTier.normal && _newGiftLines.length >= kRoomGiftLinesPerSecond) {
+      return false;
+    }
+    _newGiftLines.addLast(now);
+    return true;
+  }
+
+  /// Removes the lines [test] accepts, and remembers the test for the lists
+  /// that hold older lines ([removalsSince]).
+  void _removeWhere(bool Function(LiveMessage message) test) {
+    final kept = <LiveMessage>[];
+    var gifts = 0;
+    var changed = false;
+    for (final line in _lines) {
+      if (test(line)) {
+        changed = true;
+        continue;
+      }
+      if (line.type == LiveMessageType.gift) gifts++;
+      kept.add(line);
+    }
+    // A removal that matched nothing still counts as one: the held lists
+    // follow the count, not the lines.
+    _removals++;
+    if (_removalTests.length >= _keptTraces) _removalTests.removeAt(0);
+    _removalTests.add(test);
+    if (!changed) return;
+    _lines = kept;
+    _gifts = gifts;
+    _publish();
+  }
+
+  /// Books a change for the listeners: at most once a frame (the reference's
+  /// frame scheduler), or at once where there is no frame (a test's plain
+  /// Dart run, the room shield count's own seam).
+  void _publish() {
+    if (_pending) return;
+    _pending = true;
+    if (kDebugMode && BindingBase.debugBindingType() == null) {
+      _deliver();
+      return;
+    }
+    SchedulerBinding.instance
+      ..scheduleFrameCallback((_) => _deliver())
+      ..scheduleFrame();
+  }
+
+  void _deliver() {
+    _pending = false;
+    // The frame the flush was booked for can be the one the room closed in.
+    if (!ref.mounted) return;
+    state = _lines;
   }
 }
 
@@ -850,6 +1098,24 @@ final class RoomController extends Notifier<RoomState> {
     });
     ref.listen(shieldRulesProvider, (previous, next) {
       if (previous != next) _pipeline?.setShieldPolicy(next);
+      // A rule added mid-room takes the lines it matches off the surfaces
+      // that already showed them (the reference's blockUser/blockKeyword):
+      // the policy alone only stops the next message. A rule taken back
+      // cannot put lines back, and the 「本场已屏蔽」 count keeps its own
+      // semantics — these are lines the viewer asked never to see, counted
+      // where the pipeline hid them, not here.
+      if (previous == null || identical(previous, next) || !next.enabled) return;
+      final chat = ref.read(roomChatProvider.notifier);
+      for (final name in next.users) {
+        if (previous.users.contains(name)) continue;
+        chat.removeUser(name);
+        _pipeline?.removeUser(name);
+      }
+      for (final word in next.keywords) {
+        if (previous.keywords.contains(word)) continue;
+        chat.removeKeyword(word);
+        _pipeline?.removeKeyword(word);
+      }
     });
     ref.listen(chatShowGiftsProvider, (previous, next) {
       if (previous == next) return;

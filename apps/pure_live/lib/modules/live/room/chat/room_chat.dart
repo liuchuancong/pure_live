@@ -16,6 +16,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/modules/live/room/chat/paid_banner.dart';
+import 'package:pure_live/modules/live/room/chat/room_chat_memory.dart' show RoomChatListMemory, roomChatListMemoryProvider;
 import 'package:pure_live/modules/live/room/chat/room_emotes.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
@@ -256,9 +257,36 @@ final class _ChatFeed extends ConsumerStatefulWidget {
 }
 
 final class _ChatFeedState extends ConsumerState<_ChatFeed> {
+  /// The chat list's controller, read once: [ref] is gone by the time the
+  /// state is (Riverpod throws on a ref read after dispose, and the list's
+  /// last words are said in [deactivate] and [dispose] without one).
+  late final RoomChatController _chat;
+
+  /// The memory the list leaves its place in for the list the next layout
+  /// builds; read once for the same reason.
+  late final RoomChatListMemory _memory;
+
   /// The scroll, so the feed knows when the viewer is reading away from the
   /// bottom.
-  final ScrollController _scroll = ScrollController();
+  late final ScrollController _scroll;
+
+  /// This room's key, as [build] last saw it: the memory is taken only for
+  /// the room it was saved in.
+  String _roomKey = '';
+
+  /// Whether the list follows the newest line. False while the viewer reads
+  /// away from the bottom: the list then holds the lines it showed, so the
+  /// feed's cap cannot pull the row under their eye away.
+  bool _following = true;
+
+  /// The lines shown while paused, oldest first.
+  List<LiveMessage> _shown = const [];
+
+  /// The feed's count of added lines when [_shown] was last seen.
+  int _seen = 0;
+
+  /// The feed's count of removals already applied to [_shown].
+  int _removals = 0;
 
   /// The first message that arrived while the viewer was scrolled away: the
   /// 「以下为新消息」 line is drawn above it, and it clears when they come
@@ -273,36 +301,128 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
   @override
   void initState() {
     super.initState();
-    _scroll.addListener(_atBottom);
+    _chat = ref.read(roomChatProvider.notifier);
+    _memory = ref.read(roomChatListMemoryProvider);
+    // Back where it was left (a turn, the fullscreen switch): the lines it
+    // held, the place and the marks — for the room they were saved in. What
+    // the feed added or dropped since is applied at once below (the
+    // reference's B09 c4: the offset is not left to the page storage, which
+    // keys by place in the tree).
+    final restore = _memory.paused &&
+        _memory.roomKey.isNotEmpty &&
+        _memory.roomKey == ref.read(roomProvider).room?.identityKey;
+    if (restore) {
+      _following = false;
+      _shown = _memory.shown;
+      _seen = _memory.seen;
+      _removals = _memory.removals;
+      _unseen = _memory.unseen;
+      _boundaryId = _memory.boundaryId;
+    }
+    _scroll = ScrollController(initialScrollOffset: restore ? _memory.offset : 0)..addListener(_onScroll);
     // Arrivals while the viewer is away set the boundary once — the oldest
     // unseen message — and are counted on every burst until they come back
     // down; a list that stays put adds nothing to read.
-    ref.listenManual(roomChatProvider, (previous, next) {
-      if (!mounted || previous == null || next.length <= previous.length) return;
-      final away = _scroll.hasClients && _scroll.offset > 40;
-      if (!away) return;
-      // The feed is capped, so a burst can push the oldest talk out; the count
-      // is of what arrived, not of what still has a row to read.
-      setState(() {
-        _unseen += next.length - previous.length;
-        _boundaryId ??= next.last.messageId;
-      });
-    });
+    ref.listenManual(roomChatProvider, _onChat);
+    if (restore) _onChat(null, ref.read(roomChatProvider));
+  }
+
+  @override
+  void deactivate() {
+    // Leaving the tree (a turn, the fullscreen switch, the room closing):
+    // what it held and where it was, for the list built in its place. No
+    // [ref] here — the fields were read once in initState.
+    _memory
+      ..roomKey = _roomKey
+      ..paused = !_following && _scroll.hasClients
+      ..offset = _scroll.hasClients ? _scroll.offset : 0
+      ..boundaryId = _boundaryId
+      ..unseen = _unseen
+      ..shown = _shown
+      ..seen = _seen
+      ..removals = _removals;
+    super.deactivate();
   }
 
   @override
   void dispose() {
-    _scroll.removeListener(_atBottom);
+    _scroll.removeListener(_onScroll);
     _scroll.dispose();
     super.dispose();
   }
 
-  void _atBottom() {
-    if (_boundaryId == null && _unseen == 0) return;
-    if (_scroll.offset > 2) return;
+  /// The list moved: at the bottom it follows the feed again, past the
+  /// reading mark it holds what it showed and lets the arrivals pile up.
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    if (_scroll.offset <= 2) {
+      if (_following && _boundaryId == null && _unseen == 0) return;
+      setState(() {
+        _following = true;
+        _shown = const [];
+        _boundaryId = null;
+        _unseen = 0;
+      });
+      return;
+    }
+    if (_following && _scroll.offset > 40) {
+      // Reading away from the newest line: hold the lines as they are, so
+      // the feed's cap cannot pull the row under the viewer's eye away; what
+      // the feed drops or adds from here on is applied to the held lines.
+      // The counters are read after a flush, so they describe the lines on
+      // screen and not ones still waiting for the frame.
+      _chat.flush();
+      final shown = ref.read(roomChatProvider);
+      setState(() {
+        _following = false;
+        _shown = List.of(shown);
+        _seen = _chat.added;
+        _removals = _chat.removals;
+      });
+    }
+  }
+
+  /// The feed changed (at most once a frame): a following list shows it as
+  /// it is; a paused one applies the removals and the combos' replacements
+  /// to the lines it holds, and counts what arrived.
+  void _onChat(List<LiveMessage>? previous, List<LiveMessage> next) {
+    if (!mounted || _following) return;
+    // The feed was emptied under the held lines (a new room opened): the
+    // held lines are of a room that is gone, and the marks with them.
+    if (_chat.added < _seen) {
+      setState(() {
+        _following = true;
+        _shown = const [];
+        _seen = _chat.added;
+        _removals = _chat.removals;
+        _boundaryId = null;
+        _unseen = 0;
+      });
+      return;
+    }
+    var shown = _shown;
+    if (_chat.removals != _removals) {
+      // Blocked and recalled lines go from the held list too — also those
+      // whose tests the feed no longer keeps (the reference's
+      // removalsSince).
+      final tests = _chat.removalsSince(_removals) ?? const [];
+      _removals = _chat.removals;
+      shown = [for (final line in shown) if (!tests.any((test) => test(line))) line];
+    }
+    // A merged gift shows its new count where it stood (the reference's
+    // D07.1); a combo's replace is not an arrival.
+    shown = [for (final line in shown) _chat.replacementOf(line) ?? line];
+    final arrivals = _chat.added - _seen;
+    _seen = _chat.added;
+    if (identical(shown, _shown) && arrivals == 0) return;
     setState(() {
-      _boundaryId = null;
-      _unseen = 0;
+      _shown = shown;
+      if (arrivals > 0) {
+        _unseen += arrivals;
+        // The feed is capped, so a burst can push the oldest talk out; the
+        // count is of what arrived, not of what still has a row to read.
+        _boundaryId ??= next.last.messageId;
+      }
     });
   }
 
@@ -322,8 +442,14 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
     final t = context.t;
     final chat = ref.watch(roomChatProvider);
     final standing = ref.watch(roomProvider.select((state) => state.chat));
+    final roomKey = ref.watch(roomProvider.select((state) => state.room?.identityKey ?? ''));
+    _roomKey = roomKey;
     final anchorName = ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? ''));
-    if (chat.isEmpty) {
+    // While the viewer reads away from the bottom, what they read is the held
+    // list, not the feed's — the feed keeps capping, and the row under their
+    // eye must not be pulled away by it.
+    final lines = _following || _shown.isEmpty ? chat : _shown;
+    if (lines.isEmpty) {
       // An empty list is four different facts, and only one of them is the
       // room being quiet: the standing the controller publishes says which, so
       // a refused handshake never reads as "nobody is talking".
@@ -370,12 +496,12 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
       controller: _scroll,
       reverse: true,
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
-      itemCount: chat.length,
+      itemCount: lines.length,
       itemBuilder: (context, index) {
-        final message = chat[chat.length - 1 - index];
+        final message = lines[lines.length - 1 - index];
         // The line above is the older one: the list is reversed, so index + 1
         // is the message the eye reads first, and the pair a run is judged on.
-        final above = index + 1 < chat.length ? chat[chat.length - 2 - index] : null;
+        final above = index + 1 < lines.length ? lines[lines.length - 2 - index] : null;
         final line = _ChatLine(
           message: message,
           anchorName: anchorName,
