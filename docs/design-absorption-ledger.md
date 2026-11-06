@@ -41,7 +41,7 @@
 - ✅ 分类退避：进程遗言分类器（401/403/404=需新签名、EOF/重置=地址到期、拒连/超时/解析失败=纯网络）；需新签名走 2s→15s 快车道且预算翻倍，纯网络失败不计次。参考 `policy.dart:19-46`、`recorder.dart:494-516`。落 media_core recording_failure_shape+backend 尾日志 2114ade，5 测，录制包 150 测全绿。
 - ✅ refreshAt 前 5s 预取新签名地址，快速恢复直接用。参考 `recorder.dart:1022-1061`。落 app 录制引擎：会话挂 leaseTimer/leasedFromUrl/prefetched，refreshTake 先消费预取（同源+租约未过期才收），预取自身带下一轮时钟。
 - ⬜ HLS 保留窗口+并发预下载（48 段/4 路/96MiB 上限）+跳段标记 CaptureCoverageGap。参考 `live_media/src/relay/hls_window.dart`。
-- ⬜ 完整性判定：日志分"停止半包/HLS 段边界半包/真损坏"；-xerror 合并+日志无损伤才提交，被杀后两遍合并。参考 `ffmpeg.dart:332-369`、`merge.dart:93-110`。
+- 🟡 完整性判定：合并读自身日志——trailer 写失败/ muxer 拒包=输出不可信，不改名不提交；失败合并一遍重试留尾段（干净前缀提交，被切段留旁边）。参考 `ffmpeg.dart:332-369`、`merge.dart:93-110`。落 media_core recording_remuxer 974ac38，150 测全绿。未做 -xerror（v2 无它的两遍回退语义配套，加了会让良性输入包损坏丢整个输出）。
 
 ## W7 传输吸收（media_core）
 - ⬜ FLV 关键帧拼接续期：新址预连、共有关键帧处切换、时间戳平移 60s 窗。参考 `flv_splicer.dart:144-496`。
