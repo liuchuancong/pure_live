@@ -1120,6 +1120,9 @@ final class _SearchResults extends ConsumerWidget {
         },
         hasMore: search.hasMore,
         loading: search.loading,
+        // The streamer row is the room card's small row, so it keeps the
+        // room row's own height; the card layout has no say here.
+        listMainAxisExtent: kRoomCardListDesignHeight,
       ),
       LiveSearchTarget.areas => _ListResults(
         items: search.areas,
@@ -1187,7 +1190,13 @@ final class _RoomResults extends ConsumerWidget {
 /// The anchors and areas targets' list: one full-width column of cards that
 /// pages in exactly like the rooms grid, so every target pages the same way.
 final class _ListResults extends ConsumerWidget {
-  const _ListResults({required this.items, required this.itemBuilder, required this.hasMore, required this.loading});
+  const _ListResults({
+    required this.items,
+    required this.itemBuilder,
+    required this.hasMore,
+    required this.loading,
+    this.listMainAxisExtent,
+  });
 
   /// The hits shown, in order.
   final List<Object> items;
@@ -1201,6 +1210,9 @@ final class _ListResults extends ConsumerWidget {
   /// Whether a page is loading now.
   final bool loading;
 
+  /// The rows' fixed height; null lets a row measure itself.
+  final double? listMainAxisExtent;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
@@ -1213,6 +1225,7 @@ final class _ListResults extends ConsumerWidget {
       crossSpacing: browse.crossSpacing,
       mainSpacing: browse.mainSpacing,
       listMatchesGridWidth: true,
+      listMainAxisExtent: listMainAxisExtent,
       listItemBuilder: itemBuilder,
       hasMore: hasMore,
       isLoading: loading,
@@ -1223,86 +1236,102 @@ final class _ListResults extends ConsumerWidget {
   }
 }
 
-/// One streamer hit as a list card: the avatar (a dot when live), the name
-/// with its verified mark, the self description, and the follower figure. A
-/// live hit says so instead of counting followers — that is the actionable
-/// fact. The card opens the streamer's platform profile when the result
-/// carries one; without it the card stays inert rather than pretending a
-/// page exists.
+/// One streamer hit in the room card's small list-row shape: the avatar
+/// leads, the name carries its verified mark, the self description fills
+/// the second line and the meta line says the one actionable fact — a live
+/// hit says so, the rest count followers. The row opens the streamer's room
+/// when the result carries one, else the platform profile; without either
+/// it stays inert rather than pretending a page exists.
 final class _AnchorCard extends StatelessWidget {
   const _AnchorCard({required this.anchor, this.onOpen});
 
   /// The streamer shown.
   final LiveAnchor anchor;
 
-  /// Opens the streamer's profile; null leaves the card inert.
+  /// Opens the streamer's room or profile; null leaves the row inert.
   final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final colors = theme.colors;
     final live = anchor.liveStatus == LiveStatus.live;
     final followers = AudienceFormat.format(anchor.followerCount);
+    final introduction = (anchor.introduction ?? '').trim();
+    final caption = theme.typography.caption.copyWith(color: colors.textSubtle);
     return DsCard(
       onPressed: onOpen,
       semanticLabel: anchor.name,
-      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          DsAvatar(
-            initials: avatarInitials(anchor.name),
-            image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
-            size: DsSize.md,
-            toneIndex: DsAvatar.toneFor(anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId),
-            status: live ? DsStatus.success : null,
-            statusLabel: live ? context.t.search.liveBadge : null,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s3,
-              children: [
-                Row(
-                  spacing: DsSpace.s6,
+      style: const DsCardStyle(padding: EdgeInsets.zero),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              DsAvatar(
+                initials: avatarInitials(anchor.name),
+                image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
+                size: DsSize.lg,
+                semanticLabel: anchor.name,
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 4,
                   children: [
-                    Flexible(
-                      child: Text(
-                        anchor.name,
+                    Row(
+                      spacing: DsSpace.s3,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            anchor.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                          ),
+                        ),
+                        if (anchor.isVerified ?? false)
+                          DsIcon(DsIcons.badgeCheck, size: theme.sizes.iconXs, color: colors.accentText),
+                      ],
+                    ),
+                    if (introduction.isNotEmpty)
+                      Text(
+                        introduction,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
+                    Row(
+                      spacing: DsSpace.s6,
+                      children: [
+                        if (live)
+                          DsBadge(
+                            label: Text(context.t.search.liveBadge),
+                            dot: false,
+                            style: DsBadgeStyle(
+                              height: 18,
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              background: const Color(0x8C000000),
+                              foreground: colors.danger.fill,
+                              borderRadius: BorderRadius.circular(6),
+                              textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, fontSize: 10),
+                            ),
+                          )
+                        else if (followers.isNotEmpty) ...[
+                          DsIcon(DsIcons.users, size: 12, color: colors.textSubtle),
+                          Text(followers, style: theme.typography.numeric(caption)),
+                        ],
+                      ],
                     ),
-                    if (anchor.isVerified ?? false)
-                      DsIcon(DsIcons.badgeCheck, size: theme.sizes.iconXs, color: colors.accentText),
                   ],
                 ),
-                if ((anchor.introduction ?? '').trim().isNotEmpty)
-                  Text(
-                    anchor.introduction!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-          if (live)
-            DsBadge(label: Text(context.t.search.liveBadge), status: DsStatus.danger)
-          else if (followers.isNotEmpty)
-            Row(
-              spacing: DsSpace.s4,
-              children: [
-                DsIcon(DsIcons.users, size: theme.sizes.iconXs, color: colors.textSubtle),
-                Text(
-                  followers,
-                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                ),
-              ],
-            ),
-        ],
+        ),
       ),
     );
   }
