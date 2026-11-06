@@ -49,6 +49,10 @@ const Duration _searchRequestTimeout = Duration(seconds: 12);
 /// before asking, so a long share text still searches instead of failing.
 const int _twitcastingKeywordLimit = 100;
 
+/// The record key of the search target the viewer last used, so a fresh
+/// page — and a fresh launch — opens on it instead of the first target.
+const String searchTargetKey = 'search.target';
+
 String _queryFor(String siteId, String query) => siteId == 'twitcasting' && query.length > _twitcastingKeywordLimit
     ? query.substring(0, _twitcastingKeywordLimit)
     : query;
@@ -99,7 +103,7 @@ final class SearchController extends Notifier<SearchState> {
     final scope = ref.watch(searchSiteIdProvider);
     _ensureToken++;
     _resetWalks();
-    return _initial(_firstTargetOf(scope));
+    return _initial(_targetOf(scope));
   }
 
   void _resetWalks() {
@@ -141,10 +145,17 @@ final class SearchController extends Notifier<SearchState> {
     ];
   }
 
-  /// The target a fresh search starts on: the first one the scope supports,
-  /// rooms when it supports none (the page says so instead of asking).
-  LiveSearchTarget _firstTargetOf(String scope) {
+  /// The target a fresh state starts on: the viewer's last choice when this
+  /// scope can still search it, else the scope's first supported one — rooms
+  /// when it supports none (the page says so instead of asking). The choice
+  /// is kept under [searchTargetKey], so a restart opens on it too.
+  LiveSearchTarget _targetOf(String scope) {
     final supported = supportedTargetsOf(scope);
+    final saved = [
+      for (final target in LiveSearchTarget.values)
+        if (target.name == StoragePrefs.getString(searchTargetKey)) target,
+    ].firstOrNull;
+    if (saved != null && supported.contains(saved)) return saved;
     return supported.isEmpty ? LiveSearchTarget.rooms : supported.first;
   }
 
@@ -217,18 +228,28 @@ final class SearchController extends Notifier<SearchState> {
   /// Moves the search to [target]; a committed query is searched there
   /// again, so a switch never shows one target's results under another
   /// one's tab. A target the site does not search is ignored — the page
-  /// never offers one.
+  /// never offers one. The choice is remembered for the next visit.
   Future<void> switchTarget(LiveSearchTarget target) {
     if (target == state.target || !supportedTargetsOf(ref.read(searchSiteIdProvider)).contains(target)) {
       return Future.value();
     }
     _ensureToken++;
+    unawaited(_rememberTarget(target));
     if (state.query.isEmpty) {
       _resetWalks();
       state = _initial(target);
       return Future.value();
     }
     return _load(query: state.query, target: target, page: 1);
+  }
+
+  /// Remembers [target] for the next visit; a closed store loses it.
+  Future<void> _rememberTarget(LiveSearchTarget target) async {
+    try {
+      await StoragePrefs.setString(searchTargetKey, target.name);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
   }
 
   /// Stores the site's completions for the field's [draft].
