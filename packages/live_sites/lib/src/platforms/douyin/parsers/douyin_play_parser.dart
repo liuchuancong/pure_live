@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:live_sites/src/common/quality_label.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -236,7 +237,11 @@ abstract final class DouyinPlayParser {
       final tier = _tier(key);
       ranked.add((
         quality: LivePlayQuality.of(
-          label: jsonText(descriptor['name']) ?? jsonText(_lookup(names, key)) ?? spellings[key] ?? key,
+          label: LiveQualityLabel.normalize(
+            platform: 'douyin',
+            rawLabel: jsonText(descriptor['name']) ?? jsonText(_lookup(names, key)) ?? spellings[key] ?? '',
+            id: key,
+          ),
           qualityId: key,
           codec: codec,
         ),
