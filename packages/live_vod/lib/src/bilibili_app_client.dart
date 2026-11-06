@@ -7,6 +7,7 @@ import 'dart:convert' show base64Encode;
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
 
+import 'package:live_vod/src/bilibili_vod_client.dart' show BilibiliVodClient;
 import 'package:live_vod/src/grpc/gen/bilibili/app/playerunite/v1/playerunite.pbgrpc.dart' as unite;
 import 'package:live_vod/src/grpc/gen/bilibili/app/view/v1/view.pbgrpc.dart' as view;
 import 'package:live_vod/src/grpc/gen/bilibili/metadata/device/device.pb.dart' as device;
@@ -122,41 +123,147 @@ final class BilibiliAppClient {
   );
 
   /// One archive part's play data over the app's unified player service.
-  Future<VodPlayInfo> playUgc({required int aid, required int cid, int qn = 127}) async {
-    final client = unite.PlayerClient(_channel, options: _options);
-    final reply = await client.playViewUnite(
-      unite.PlayViewUniteReq(
-        vod: shared.VideoVod(
-          aid: Int64(aid),
-          cid: Int64(cid),
-          qn: Int64(qn),
+  ///
+  /// One ask answers one codec's ladder, and the definitions a paid account is
+  /// entitled to — 1080P60, 4K, HDR, 杜比视界 — are carried almost always by
+  /// HEVC or AV1 only. Asking once for AVC therefore plays an entitled viewer
+  /// at 1080P and shows them nothing better to pick, which is exactly how
+  /// "高清看不了" arrives; the ask goes out for all three codecs in parallel and
+  /// the ladders are read as a union. Each codec stands or falls on its own,
+  /// so a service that refuses AV1 still leaves the other two.
+  Future<VodPlayInfo> playUgc({required int aid, required int cid}) async {
+    final asked = await Future.wait([
+      for (final codec in _codecs) _askUgc(aid: aid, cid: cid, codec: codec),
+    ]);
+    final answers = [for (final answer in asked) ?answer];
+    if (answers.isEmpty) throw const VodFailure('the app interface answered no codec');
+    return _infoOf(
+      answers.first.$1,
+      videos: _mergedRows([for (final answer in answers) answer.$2]),
+    );
+  }
+
+  /// One codec's ask; null when that codec is not on offer.
+  Future<(shared.VodInfo, List<_VideoRow>)?> _askUgc({
+    required int aid,
+    required int cid,
+    required shared.CodeType codec,
+  }) async {
+    try {
+      final reply = await unite.PlayerClient(_channel, options: _options).playViewUnite(
+        unite.PlayViewUniteReq(
+          vod: shared.VideoVod(
+            aid: Int64(aid),
+            cid: Int64(cid),
+            qn: Int64(BilibiliVodClient.ladderQuality),
+            fnver: 0,
+            fnval: 4048,
+            fourk: true,
+            forceHost: 2,
+            preferCodecType: codec,
+          ),
+        ),
+      );
+      final info = reply.vodInfo;
+      return (info, _ugcRowsOf(info));
+    } on Object {
+      return null;
+    }
+  }
+
+  /// One cinema episode's play data over the app's PGC player service, read
+  /// the same three codecs at once as an archive's.
+  Future<VodPlayInfo> playPgc({required int epid, int? cid}) async {
+    final asked = await Future.wait([
+      for (final codec in _pgcCodecs) _askPgc(epid: epid, codec: codec, cid: cid),
+    ]);
+    final answers = [for (final answer in asked) ?answer];
+    if (answers.isEmpty) throw const VodFailure('the app cinema answered no codec');
+    return _pgcInfoOf(
+      answers.first.$1,
+      videos: _mergedRows([for (final answer in answers) answer.$2]),
+    );
+  }
+
+  Future<(pgc.VideoInfo, List<_VideoRow>)?> _askPgc({
+    required int epid,
+    required pgc.CodeType codec,
+    int? cid,
+  }) async {
+    try {
+      final reply = await pgc.PlayURLClient(_channel, options: _options).playView(
+        pgc.PlayViewReq(
+          epid: Int64(epid),
+          cid: cid == null ? null : Int64(cid),
+          qn: Int64(BilibiliVodClient.ladderQuality),
           fnver: 0,
           fnval: 4048,
           fourk: true,
-          forceHost: 2,
-          preferCodecType: shared.CodeType.CODE264,
+          preferCodecType: codec,
         ),
-      ),
-    );
-    return _infoOf(reply.vodInfo);
+      );
+      final info = reply.videoInfo;
+      return (info, _pgcRowsOf(info));
+    } on Object {
+      return null;
+    }
   }
 
-  /// One cinema episode's play data over the app's PGC player service.
-  Future<VodPlayInfo> playPgc({required int epid, int? cid, int qn = 127}) async {
-    final client = pgc.PlayURLClient(_channel, options: _options);
-    final reply = await client.playView(
-      pgc.PlayViewReq(
-        epid: Int64(epid),
-        cid: cid == null ? null : Int64(cid),
-        qn: Int64(qn),
-        fnver: 0,
-        fnval: 4048,
-        fourk: true,
-        preferCodecType: pgc.CodeType.CODE264,
-      ),
-    );
-    return _pgcInfoOf(reply.videoInfo);
+  /// The codecs an archive's ladder is asked in, AVC first because it is what
+  /// every engine can decode and therefore what the caller reaches for first.
+  static const List<shared.CodeType> _codecs = [
+    shared.CodeType.CODE264,
+    shared.CodeType.CODE265,
+    shared.CodeType.CODEAV1,
+  ];
+
+  /// The codecs the cinema service will take: its own model names AVC and
+  /// HEVC, and no AV1 slot exists to ask for.
+  static const List<pgc.CodeType> _pgcCodecs = [pgc.CodeType.CODE264, pgc.CodeType.CODE265];
+
+  /// The three ladders as one, without a second copy of a definition that
+  /// arrived in more than one answer: one row per codec and quality, the first
+  /// address kept.
+  static List<_VideoRow> _mergedRows(List<List<_VideoRow>> rows) {
+    final seen = <String>{};
+    final merged = <_VideoRow>[];
+    for (final row in [for (final ladder in rows) ...ladder]) {
+      final key = '${row.codecId}:${row.quality}';
+      if (!seen.add(key)) continue;
+      merged.add(row);
+    }
+    return merged;
   }
+
+  List<_VideoRow> _ugcRowsOf(shared.VodInfo info) => [
+    for (final stream in info.streamList)
+      if (stream.hasDashVideo())
+        (
+          quality: stream.streamInfo.quality,
+          url: stream.dashVideo.baseUrl,
+          backup: stream.dashVideo.backupUrl.toList(),
+          codecId: stream.dashVideo.codecid,
+          bandwidth: stream.dashVideo.bandwidth,
+          width: stream.dashVideo.width,
+          height: stream.dashVideo.height,
+          frameRate: stream.dashVideo.frameRate,
+        ),
+  ];
+
+  List<_VideoRow> _pgcRowsOf(pgc.VideoInfo info) => [
+    for (final stream in info.streamList)
+      if (stream.hasDashVideo())
+        (
+          quality: stream.info.quality,
+          url: stream.dashVideo.baseUrl,
+          backup: stream.dashVideo.backupUrl.toList(),
+          codecId: stream.dashVideo.codecid,
+          bandwidth: stream.dashVideo.bandwidth,
+          width: stream.dashVideo.width,
+          height: stream.dashVideo.height,
+          frameRate: stream.dashVideo.frameRate,
+        ),
+  ];
 
   /// One archive's detail over the app's view service — the same record the
   /// web's `view` endpoint answers, from the app's own model.
@@ -207,22 +314,9 @@ final class BilibiliAppClient {
   /// Closes the channel. The instance is unusable afterwards.
   Future<void> close() => _channel.shutdown();
 
-  VodPlayInfo _infoOf(shared.VodInfo info) => _assemble(
+  VodPlayInfo _infoOf(shared.VodInfo info, {required List<_VideoRow> videos}) => _assemble(
     quality: info.quality,
-    videos: [
-      for (final stream in info.streamList)
-        if (stream.hasDashVideo())
-          (
-            quality: stream.streamInfo.quality,
-            url: stream.dashVideo.baseUrl,
-            backup: stream.dashVideo.backupUrl.toList(),
-            codecId: stream.dashVideo.codecid,
-            bandwidth: stream.dashVideo.bandwidth,
-            width: stream.dashVideo.width,
-            height: stream.dashVideo.height,
-            frameRate: stream.dashVideo.frameRate,
-          ),
-    ],
+    videos: videos,
     audios: [
       for (final audio in info.dashAudio)
         (id: audio.id, url: audio.baseUrl, bandwidth: audio.bandwidth, backup: audio.backupUrl.toList()),
@@ -245,22 +339,9 @@ final class BilibiliAppClient {
         : null,
   );
 
-  VodPlayInfo _pgcInfoOf(pgc.VideoInfo info) => _assemble(
+  VodPlayInfo _pgcInfoOf(pgc.VideoInfo info, {required List<_VideoRow> videos}) => _assemble(
     quality: info.quality,
-    videos: [
-      for (final stream in info.streamList)
-        if (stream.hasDashVideo())
-          (
-            quality: stream.info.quality,
-            url: stream.dashVideo.baseUrl,
-            backup: stream.dashVideo.backupUrl.toList(),
-            codecId: stream.dashVideo.codecid,
-            bandwidth: stream.dashVideo.bandwidth,
-            width: stream.dashVideo.width,
-            height: stream.dashVideo.height,
-            frameRate: stream.dashVideo.frameRate,
-          ),
-    ],
+    videos: videos,
     audios: [
       for (final audio in info.dashAudio)
         (id: audio.id, url: audio.baseUrl, bandwidth: audio.bandwidth, backup: audio.backupUrl.toList()),

@@ -55,6 +55,39 @@ final class BilibiliVodClient {
   /// CDN checks the referer and the sign-in.
   Map<String, String> get playHeaders => _headers;
 
+  /// The headers a play request goes out with: the sign-in, and nothing else.
+  ///
+  /// The device fingerprints the search asks for (`buvid3`, `b_nut`) are the
+  /// ones the play endpoint risk-controls hardest, and the reference client
+  /// that learned this the hard way sends only the credential to it. Without
+  /// `SESSDATA` there is nothing to send but the site's own headers, so a
+  /// guest is left with the anonymous ladder rather than a request the
+  /// endpoint answers short.
+  Map<String, String> get _playHeaders {
+    final credential = _credentialCookie;
+    return {
+      'user-agent': userAgent,
+      'referer': 'https://www.bilibili.com',
+      if (credential.isNotEmpty) 'cookie': credential,
+    };
+  }
+
+  /// The stored cookie with the device fingerprints taken out.
+  ///
+  /// A deny-list rather than an allow-list, because dropping a name the
+  /// sign-in happens to carry would quietly turn a viewer into a guest and
+  /// take their definitions away with it: only the fingerprints the endpoint
+  /// is known to risk-control against are left behind.
+  String get _credentialCookie {
+    if (cookie.isEmpty) return '';
+    const fingerprints = {'buvid3', 'buvid4', 'b_nut', '_uuid', 'sid', 'dt', 'fts', 'b_mc', 'current_generation'};
+    final kept = [
+      for (final part in cookie.split(RegExp('[;&]')))
+        if (part.trim().isNotEmpty && !fingerprints.contains(part.split('=').first.trim().toLowerCase())) part.trim(),
+    ];
+    return kept.join('; ');
+  }
+
   /// The general popular feed (`x/web-interface/popular`), paged.
   ///
   /// The endpoint refuses a window above 50; a viewer's display page size
@@ -240,12 +273,22 @@ final class BilibiliVodClient {
   }
 
   /// Resolves [video]'s first part to a progressive address.
-  Future<VodPlayInfo> play(VodVideo video, {int? cid, int qn = 64}) async {
+  Future<VodPlayInfo> play(VodVideo video, {int? cid}) async {
     final bvid = video.bvid ?? video.id;
     final partCid = cid ?? int.tryParse(await _firstCid(video)) ?? 0;
     if (partCid <= 0) throw const VodFailure('the first part names no cid');
-    return await playPart(bvid: bvid, cid: partCid, qn: qn);
+    return await playPart(bvid: bvid, cid: partCid);
   }
+
+  /// The definition the play endpoint is asked for: the whole ladder rather
+  /// than what is about to be watched.
+  ///
+  /// Bilibili answers with the renditions at or below the `qn` it was given,
+  /// so asking for the viewer's own tier would hide every higher definition
+  /// from the answer — and from the menu that reads it. The caller picks the
+  /// picture from the ladder it is handed, which is why a preference here
+  /// chooses what plays and never what can be chosen.
+  static const int ladderQuality = 127;
 
   /// Resolves one part's play data.
   ///
@@ -255,14 +298,19 @@ final class BilibiliVodClient {
   /// engine that cannot join two essences, or a download that must be one
   /// file. A DASH answer with no audio track is marked [VodPlayInfo.silent]
   /// rather than pretending it has sound.
-  Future<VodPlayInfo> playPart({required String bvid, required int cid, int qn = 64, bool dash = true}) async {
+  ///
+  /// The endpoint is the unsigned one on purpose: the reference client that
+  /// tried `x/player/wbi/playurl` found it risk-controls harder for the same
+  /// ladder, and the answer here carries the whole `accept_quality` list the
+  /// viewer's session is entitled to.
+  Future<VodPlayInfo> playPart({required String bvid, required int cid, bool dash = true}) async {
     final play = await http.send(
       LiveRequest.custom(
         method: 'GET',
         url: Uri.https('api.bilibili.com', '/x/player/playurl', {
           'bvid': bvid,
           'cid': '$cid',
-          'qn': '$qn',
+          'qn': '$ladderQuality',
           'fnval': dash ? '4048' : '1',
           'fnver': '0',
           'fourk': '1',
@@ -270,14 +318,14 @@ final class BilibiliVodClient {
           'otype': 'json',
           if (cookie.isEmpty) ..._guestParams,
         }),
-        headers: _headers,
+        headers: _playHeaders,
       ),
     );
     final data = _body(play)['data'];
     if (data is! Map) {
       throw const VodFailure('the source returned no play data');
     }
-    return _playInfoOf(data, qn: qn);
+    return _playInfoOf(data, qn: ladderQuality);
   }
 
   /// Resolves one part's download address: the muxed MP4 (`fnval=0`) served
@@ -301,7 +349,7 @@ final class BilibiliVodClient {
           'otype': 'json',
           if (cookie.isEmpty) ..._guestParams,
         }),
-        headers: _headers,
+        headers: _playHeaders,
       ),
     );
     final data = _body(play)['data'];
@@ -962,13 +1010,16 @@ final class BilibiliVodClient {
   ///
   /// The v2 endpoint is asked first: it carries the DASH ladder the cinema's
   /// own player uses. A refusal falls back to v1 with the same DASH flags, so
-  /// an episode that only answers the old shape still plays.
-  Future<VodPlayInfo> pgcPlay({required int episodeId, int? cid, int? aid, int qn = 80, bool dash = true}) async {
+  /// an episode that only answers the old shape still plays. The ask names
+  /// [ladderQuality] rather than what is about to be watched, for the same
+  /// reason the archive's does: the answer only lists what sits at or below
+  /// the number it was given.
+  Future<VodPlayInfo> pgcPlay({required int episodeId, int? cid, int? aid, bool dash = true}) async {
     final fields = {
       'ep_id': '$episodeId',
       if (cid != null) 'cid': '$cid',
       if (aid != null) 'avid': '$aid',
-      'qn': '$qn',
+      'qn': '$ladderQuality',
       'fnval': dash ? '4048' : '1',
       'fnver': '0',
       'fourk': '1',
@@ -989,7 +1040,7 @@ final class BilibiliVodClient {
         final data = body['result'] ?? body['data'];
         if (data is! Map) throw const VodFailure('the episode returned no play data');
         final info = data['video_info'];
-        return _playInfoOf(info is Map ? info : data, qn: qn);
+        return _playInfoOf(info is Map ? info : data, qn: ladderQuality);
       } on VodFailure {
         // The v2 route refused the episode; the v1 route below still answers.
       }
@@ -1005,7 +1056,7 @@ final class BilibiliVodClient {
     final body = _body(v1Response);
     final data = body['result'] ?? body['data'];
     if (data is! Map) throw const VodFailure('the episode returned no play data');
-    return _playInfoOf(data, qn: qn);
+    return _playInfoOf(data, qn: ladderQuality);
   }
 
   /// Resolves a PGC episode's download address: the muxed MP4 (`fnval=0`)
@@ -1316,6 +1367,13 @@ final class BilibiliVodClient {
     final code = _intOf(decoded['code']) ?? 0;
     if (code != 0) {
       throw VodFailure('${decoded['message'] ?? 'code $code'}');
+    }
+    // A code that says OK and carries a voucher is the endpoint asking for a
+    // risk-control round it did not get; the failure that follows a silent
+    // short ladder reads as the account's own limit, which is the wrong story.
+    final data = decoded['data'];
+    if (data is Map && data['v_voucher'] != null) {
+      throw const VodFailure('the endpoint asked this request to prove itself first');
     }
     return decoded;
   }

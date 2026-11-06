@@ -168,6 +168,72 @@ void main() {
     expect(info.url, 'https://cdn/muxed.mp4');
   });
 
+  test('the play ask names the whole ladder, not what will be watched', () async {
+    final http = _FakeHttp({
+      '/x/player/playurl': {
+        'code': 0,
+        'data': {
+          'quality': 112,
+          'dash': {
+            'video': [
+              {'id': 112, 'baseUrl': 'https://cdn/112.m4s', 'codecs': 'avc1.640032'},
+              {'id': 80, 'baseUrl': 'https://cdn/80.m4s', 'codecs': 'avc1.640032'},
+            ],
+            'audio': [
+              {'id': 30280, 'baseUrl': 'https://cdn/audio.m4s'},
+            ],
+          },
+        },
+      },
+    });
+
+    // Asking for the viewer's own tier would hide every higher definition
+    // from the answer, and from the menu that reads the answer.
+    final info = await BilibiliVodClient(http).playPart(bvid: 'BV1', cid: 7);
+
+    expect(http.asked.last.queryParameters['qn'], '127');
+    expect(http.asked.last.queryParameters['fourk'], '1');
+    expect(info.servedQuality, 112);
+    expect(info.videos.map((video) => video.quality), [112, 80]);
+  });
+
+  test("the play ask keeps the sign-in and leaves the device's fingerprints", () async {
+    final http = _FakeHttp({
+      '/x/player/playurl': {
+        'code': 0,
+        'data': {
+          'quality': 80,
+          'durl': [
+            {'url': 'https://cdn/muxed.mp4'},
+          ],
+        },
+      },
+    });
+
+    await BilibiliVodClient(http, cookie: 'buvid3=finger; SESSDATA=abc; DedeUserID=42; b_nut=1')
+        .playPart(bvid: 'BV1', cid: 7);
+
+    final sent = http.askedHeaders.last['cookie'] ?? '';
+    expect(sent, contains('SESSDATA=abc'));
+    expect(sent, contains('DedeUserID=42'));
+    expect(sent, isNot(contains('buvid3')));
+    expect(sent, isNot(contains('b_nut')));
+  });
+
+  test('a play answer that asks to prove itself is a risk-control failure', () async {
+    final http = _FakeHttp({
+      '/x/player/playurl': {
+        'code': 0,
+        'data': {'v_voucher': 'voucher_123'},
+      },
+    });
+
+    await expectLater(
+      BilibiliVodClient(http).playPart(bvid: 'BV1', cid: 7),
+      throwsA(isA<VodFailure>().having((failure) => failure.message, 'message', contains('prove itself'))),
+    );
+  });
+
   test('a source failure is a VodFailure with its message', () async {
     final http = _FakeHttp({
       '/x/web-interface/search/type': {'code': -412, 'message': 'request blocked'},
@@ -658,10 +724,12 @@ final class _FakeHttp implements LiveHttp {
 
   final Map<String, Object?> answers;
   final List<Uri> asked = [];
+  final List<Map<String, String>> askedHeaders = [];
 
   @override
   Future<LiveResponse> send(LiveRequest request) async {
     asked.add(request.url);
+    askedHeaders.add(request.headers);
     final answer = answers[request.url.path];
     if (answer == null) {
       return LiveResponse(statusCode: 404, headers: const {}, bodyBytes: Uint8List(0));
