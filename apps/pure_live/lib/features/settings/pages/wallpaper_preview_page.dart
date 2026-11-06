@@ -8,6 +8,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart';
@@ -763,7 +764,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   /// from disk, anything else through the shared image cache.
   static ImageProvider imageProviderOf(String address) {
     final local = _localPathOf(address);
-    return local == null ? cachedImage(address) : FileImage(File(local));
+    return local == null ? cachedImage(address, policy: ImageCachePolicies.preview) : FileImage(File(local));
   }
 
   /// The disk path behind a `file:` address, or null for a network one.

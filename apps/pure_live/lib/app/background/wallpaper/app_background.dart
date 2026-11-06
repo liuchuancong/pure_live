@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_uikit_background/live_uikit_background.dart'
     show
         AppVisibleScope,
@@ -106,7 +107,7 @@ final class AppBackground extends ConsumerWidget {
         final url = settings.imageUrl;
         final provider = path.isNotEmpty && File(path).existsSync()
             ? FileImage(File(path))
-            : (url.isNotEmpty ? cachedImage(url) : null);
+            : (url.isNotEmpty ? cachedImage(url, policy: ImageCachePolicies.customBackground) : null);
         if (provider == null) return null;
         return ImageBackground(
           source: ProviderImageSource(provider),

@@ -6,6 +6,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_preview_page.dart' show showWallpaperPreview;
@@ -1217,7 +1218,7 @@ ImageProvider _imageOf(String address, {int? width, int? height}) {
     final image = FileImage(File(local));
     return width == null && height == null ? image : ResizeImage(image, width: width, height: height);
   }
-  return cachedImage(address, width: width, height: height);
+  return cachedImage(address, policy: ImageCachePolicies.wallpaper, width: width, height: height);
 }
 
 /// The download as an entry of the background preview: the saved file once it

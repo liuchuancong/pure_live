@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart';
@@ -960,7 +961,7 @@ final class _WallpaperTile extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 DsImage(
-                  image: cachedImage(item.thumb),
+                  image: cachedImage(item.thumb, policy: ImageCachePolicies.wallpaper),
                   aspectRatio: _kWallpaperAspectRatio,
                   semanticLabel: semanticLabel,
                   fallback: ColoredBox(color: colors.control),

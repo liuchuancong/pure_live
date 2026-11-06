@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart'
     show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveSite, LiveSiteRegistry, SiteIds;
 import 'package:pretty_qr_code/pretty_qr_code.dart';
@@ -119,7 +120,7 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
       leading: snapshot.credential?.avatar == null
           ? (localizedSiteIcon(site, size: 32) ?? const DsIcon(DsIcons.user))
           : DsAvatar(
-              image: cachedImage(snapshot.credential!.avatar!),
+              image: cachedImage(snapshot.credential!.avatar!, policy: ImageCachePolicies.userAvatar),
               initials: avatarInitials(name),
               semanticLabel: name,
             ),

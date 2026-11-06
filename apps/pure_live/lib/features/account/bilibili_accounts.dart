@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LiveCredential;
 import 'package:pure_live/features/account/account_providers.dart';
 import 'package:pure_live/features/account/account_repository.dart' show AccountRepository, BilibiliAccount;
@@ -115,7 +116,7 @@ final class BilibiliAccountsGroup extends StatelessWidget {
       key: ValueKey(key),
       leading: avatar == null || avatar.isEmpty
           ? const DsIcon(DsIcons.userRound)
-          : DsAvatar(image: cachedImage(avatar), initials: avatarInitials(name), semanticLabel: name),
+          : DsAvatar(image: cachedImage(avatar, policy: ImageCachePolicies.userAvatar), initials: avatarInitials(name), semanticLabel: name),
       title: Text(name),
       description: Text(current ? '$uid · ${t.account.accountCurrent}' : uid),
       trailing: current

@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show DouyuAccount, DouyuSite, LiveAuthCapability, LiveSite, SiteIds;
 
 import 'package:pure_live/app/app.dart';
@@ -323,7 +324,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
         child: Row(
           children: [
             if (avatar != null && avatar.isNotEmpty)
-              DsAvatar(image: cachedImage(avatar), initials: avatarInitials(name), semanticLabel: name)
+              DsAvatar(image: cachedImage(avatar, policy: ImageCachePolicies.userAvatar), initials: avatarInitials(name), semanticLabel: name)
             else
               localizedSiteIcon(_site, size: 36) ?? const DsIcon(DsIcons.userRound, size: 36),
             const SizedBox(width: DsSpace.s12),

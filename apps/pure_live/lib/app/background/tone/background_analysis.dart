@@ -4,6 +4,7 @@ import 'dart:ui' show Color;
 
 import 'package:flutter/painting.dart' show FileImage, ImageProvider, MemoryImage;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:pure_live/app/background/settings/background_settings.dart';
 import 'package:pure_live/app/background/tone/analysis/analysis.dart';
 import 'package:pure_live/app/background/tone/background_frames.dart' show backgroundVideoFrameProvider;
@@ -159,7 +160,7 @@ Future<BackgroundAnalysisResult?> _cached(
 /// The picture the wallpaper paints: an uploaded file first, then a URL.
 ImageProvider? _imageProvider(String path, String url) {
   if (path.isNotEmpty && File(path).existsSync()) return FileImage(File(path));
-  return url.isNotEmpty ? cachedImage(url) : null;
+  return url.isNotEmpty ? cachedImage(url, policy: ImageCachePolicies.customBackground) : null;
 }
 
 /// The file's modification time, or 0 for a path that is not a local file.

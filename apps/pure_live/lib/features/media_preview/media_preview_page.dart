@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouter;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
 import 'package:media_core/media_core.dart'
     show
@@ -1921,7 +1922,7 @@ final class _PreviewHeader extends StatelessWidget {
                 width: 28,
                 height: 28,
                 child: DsImage(
-                  image: cachedImage(cover),
+                  image: cachedImage(cover, policy: ImageCachePolicies.videoCover),
                   aspectRatio: 1,
                   semanticLabel: label,
                   fallback: ColoredBox(color: colors.control),
