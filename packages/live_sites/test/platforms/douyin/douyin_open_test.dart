@@ -151,9 +151,7 @@ void main() {
       final site = _site(http, () => now);
       final room = await DouyinRoomProvider(site: site).detail(_webRid);
 
-      final plan = _right<LivePlaybackPlan>(
-        await DouyinPlaybackProvider(site: site).resolvePlan(room: room),
-      );
+      final plan = _right<LivePlaybackPlan>(await DouyinPlaybackProvider(site: site).resolvePlan(room: room));
       expect(plan.lines, isNotEmpty);
       expect(http.enterCalls, 1);
     });

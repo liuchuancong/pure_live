@@ -24,7 +24,8 @@ final DateTime _at = DateTime.utc(2026, 11, 5, 12);
 String _json(Object? value) => jsonEncode(value);
 
 /// A message list (`m3u8`) whose segments are [names].
-String _playlist(List<String> names, {int sequence = 1}) => '#EXTM3U\n'
+String _playlist(List<String> names, {int sequence = 1}) =>
+    '#EXTM3U\n'
     '#EXT-X-MEDIA-SEQUENCE:$sequence\n'
     '${names.join('\n')}\n';
 
@@ -38,14 +39,8 @@ Map<String, Object?> _outer(Object? inner, {String id = 'm1'}) => {
 };
 
 /// A public chat line of room [room].
-Map<String, Object?> _message(String text, {String id = 'm1', String room = _room}) => _outer({
-  'type': 0,
-  'room_id': room,
-  'content': text,
-  'name': 'Ann',
-  'uid': 77,
-  'message_type': 0,
-}, id: id);
+Map<String, Object?> _message(String text, {String id = 'm1', String room = _room}) =>
+    _outer({'type': 0, 'room_id': room, 'content': text, 'name': 'Ann', 'uid': 77, 'message_type': 0}, id: id);
 
 /// The notice that the broadcast stopped.
 Map<String, Object?> _stopped({String room = _room}) => _outer({'type': 102, 'room_id': room});
@@ -60,8 +55,7 @@ String _segmentBody(List<Map<String, Object?>> messages) => _json({
 /// What one URL answers; the last answer of a list repeats.
 typedef _Reply = ({int status, List<int> bytes});
 
-_Reply _ok(Object body) =>
-    (status: 200, bytes: body is String ? utf8.encode(body) : List<int>.from(body as List<int>));
+_Reply _ok(Object body) => (status: 200, bytes: body is String ? utf8.encode(body) : List<int>.from(body as List<int>));
 
 final _Reply _missing = (status: 404, bytes: <int>[]);
 final _Reply _refused = (status: 401, bytes: <int>[]);
@@ -91,7 +85,11 @@ final class _Http implements LiveHttp {
     if (replies == null) throw StateError('the session asked $path, which the test did not offer');
     final at = _cursors.update(path, (value) => value + 1, ifAbsent: () => 0);
     final reply = replies[at.clamp(0, replies.length - 1)];
-    return LiveResponse(statusCode: reply.status, headers: const <String, String>{}, bodyBytes: Uint8List.fromList(reply.bytes));
+    return LiveResponse(
+      statusCode: reply.status,
+      headers: const <String, String>{},
+      bodyBytes: Uint8List.fromList(reply.bytes),
+    );
   }
 
   @override
@@ -161,20 +159,13 @@ final class _Wall {
 }
 
 /// A session over the given lists, with its clock and transport.
-(_Room, _Clock, _Http) _session({
-  BaiduliveDanmakuArgs? args,
-  DateTime Function()? wall,
-}) {
+(_Room, _Clock, _Http) _session({BaiduliveDanmakuArgs? args, DateTime Function()? wall}) {
   final clock = _Clock();
   final http = _Http();
   final session = BaiduliveDanmakuSession(
-    args: args ??
-        BaiduliveDanmakuArgs(
-          roomId: _room,
-          chatList: _chatList,
-          reliableList: _reliableList,
-          hostList: _hostList,
-        ),
+    args:
+        args ??
+        BaiduliveDanmakuArgs(roomId: _room, chatList: _chatList, reliableList: _reliableList, hostList: _hostList),
     http: BaiduliveHttp(http),
     now: wall ?? _Wall().read,
     schedule: clock.schedule,
@@ -196,7 +187,8 @@ final class _Room {
   Future<LiveSiteError?> connect() => session.connect();
 
   /// The chat lines reported so far.
-  List<String> get chat => seen.where((message) => message.type == LiveMessageType.chat).map((message) => message.text).toList();
+  List<String> get chat =>
+      seen.where((message) => message.type == LiveMessageType.chat).map((message) => message.text).toList();
 
   /// The messages of the reported kind.
   List<LiveMessage> ofType(LiveMessageType type) => seen.where((message) => message.type == type).toList();
@@ -216,14 +208,18 @@ Future<void> _settle() async {
 void main() {
   group('joining the chat list', () {
     test('the first answer is history: its segments are remembered, not fetched', () async {
-      final (room, clock, http) = _session(args: BaiduliveDanmakuArgs(roomId: _room, chatList: _chatList));
+      final (room, clock, http) = _session(
+        args: BaiduliveDanmakuArgs(roomId: _room, chatList: _chatList),
+      );
       addTearDown(room.dispose);
       http
         ..route('/live/chat_$_room-a.m3u8', [
           _ok(_playlist(['seg_old.flv'])),
           _ok(_playlist(['seg_old.flv', 'seg_new.flv'])),
         ])
-        ..route('/live/seg_new.flv', [_ok(_segmentBody([_message('你好')]))]);
+        ..route('/live/seg_new.flv', [
+          _ok(_segmentBody([_message('你好')])),
+        ]);
 
       expect(await room.connect(), isNull);
       await _settle();
@@ -246,7 +242,10 @@ void main() {
       );
       final failure = await room.connect();
       expect(failure, isA<LiveSiteError>());
-      expect(failure!.message, contains('signature expired at ${_at.subtract(const Duration(seconds: 1)).toUtc().toIso8601String()}'));
+      expect(
+        failure!.message,
+        contains('signature expired at ${_at.subtract(const Duration(seconds: 1)).toUtc().toIso8601String()}'),
+      );
       expect(failure, isA<LiveSiteAuthenticationError>());
       expect(http.asked, isEmpty);
       await room.dispose();
@@ -294,10 +293,18 @@ void main() {
       addTearDown(room.dispose);
       http
         ..route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const []))])
-        ..route('/live/reliable_$_room-a.m3u8', [_ok(_playlist(['r1.flv']))])
-        ..route('/live/host_$_room-a.m3u8', [_ok(_playlist(['h1.flv']))])
-        ..route('/live/r1.flv', [_ok(_segmentBody([_message('可靠的')]))])
-        ..route('/live/h1.flv', [_ok(_segmentBody([_message('房主的')]))]);
+        ..route('/live/reliable_$_room-a.m3u8', [
+          _ok(_playlist(['r1.flv'])),
+        ])
+        ..route('/live/host_$_room-a.m3u8', [
+          _ok(_playlist(['h1.flv'])),
+        ])
+        ..route('/live/r1.flv', [
+          _ok(_segmentBody([_message('可靠的')])),
+        ])
+        ..route('/live/h1.flv', [
+          _ok(_segmentBody([_message('房主的')])),
+        ]);
 
       await room.connect();
       await _settle();
@@ -305,19 +312,19 @@ void main() {
 
       clock.fireLast();
       await _settle();
-      expect(
-        http.asked.skip(1),
-        [_chatList.path, _reliableList.path, _hostList.path],
-        reason: 'one poll, three lists, in this order',
-      );
+      expect(http.asked.skip(1), [
+        _chatList.path,
+        _reliableList.path,
+        _hostList.path,
+      ], reason: 'one poll, three lists, in this order');
 
       clock.fireLast();
       await _settle();
-      expect(
-        http.asked.skip(4),
-        [_chatList.path, _reliableList.path, _hostList.path],
-        reason: 'the other lists are asked again once primed',
-      );
+      expect(http.asked.skip(4), [
+        _chatList.path,
+        _reliableList.path,
+        _hostList.path,
+      ], reason: 'the other lists are asked again once primed');
       expect(room.chat, isEmpty, reason: 'their first answers were history');
     });
 
@@ -379,8 +386,12 @@ void main() {
           _ok(_playlist(['a.flv'])),
           _ok(_playlist(['a.flv', 'b.flv', 'c.flv'])),
         ])
-        ..route('/live/b.flv', [_ok(_segmentBody([_message('二')]))])
-        ..route('/live/c.flv', [_ok(_segmentBody([_message('三')]))]);
+        ..route('/live/b.flv', [
+          _ok(_segmentBody([_message('二')])),
+        ])
+        ..route('/live/c.flv', [
+          _ok(_segmentBody([_message('三')])),
+        ]);
 
       await room.connect();
       await _settle();
@@ -431,7 +442,9 @@ void main() {
           _ok(_playlist(const [])),
           _ok(_playlist(['x.flv'])),
         ])
-        ..route('/live/x.flv', [_ok(_segmentBody([_message('别处的', room: '999')]))]);
+        ..route('/live/x.flv', [
+          _ok(_segmentBody([_message('别处的', room: '999')])),
+        ]);
 
       await room.connect();
       await _settle();
@@ -451,14 +464,18 @@ void main() {
           _ok(_playlist(const [])),
           _ok(_playlist(['end.flv'])),
         ])
-        ..route('/live/end.flv', [_ok(_segmentBody([_message('下播了'), _stopped()]))]);
+        ..route('/live/end.flv', [
+          _ok(_segmentBody([_message('下播了'), _stopped()])),
+        ]);
 
       await room.connect();
       await _settle();
       clock.fireLast();
       await _settle();
       await room.closed.future;
-      expect(room.ofType(LiveMessageType.system).map((message) => message.text), [BaiduliveDanmakuProtocol.endedDetail]);
+      expect(room.ofType(LiveMessageType.system).map((message) => message.text), [
+        BaiduliveDanmakuProtocol.endedDetail,
+      ]);
       expect(clock.armedCount, isZero, reason: 'no poll is armed afterwards');
       final before = http.asked.length;
       clock.fireLast();

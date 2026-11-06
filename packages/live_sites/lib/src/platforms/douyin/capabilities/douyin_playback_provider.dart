@@ -128,12 +128,7 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider, LivePlayback
         'room ${parse.room.roomId}: no video stream (${broadcast.effectiveLiveStatus.name})',
       );
     }
-    return (
-      streamUrl: parse.streamUrl,
-      webRid: parse.room.roomId,
-      issuedAt: fetched.issuedAt,
-      cookie: fetched.cookie,
-    );
+    return (streamUrl: parse.streamUrl, webRid: parse.room.roomId, issuedAt: fetched.issuedAt, cookie: fetched.cookie);
   }
 
   /// Whether [handle] is still the answer for [room] (see [_streamed]).

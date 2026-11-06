@@ -1,3 +1,4 @@
+import 'package:live_sites/src/core/live_site_ingest.dart';
 import 'package:live_sites/src/core/site_facts.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 
@@ -45,11 +46,12 @@ class LiveSiteRuntimeInfo {
     this.isVoiceLive = false,
     this.hasSuperChats = false,
     this.superChatUnit,
+    this.ingest,
   });
 
   /// Builds a status snapshot for [siteId], its facts taken from
   /// [SiteFacts].
-  LiveSiteRuntimeInfo.of(String siteId, {required this.status, this.message, this.lastCheckedAt})
+  LiveSiteRuntimeInfo.of(String siteId, {required this.status, this.message, this.lastCheckedAt, this.ingest})
     : isVoiceLive = SiteFacts.isVoiceLive(siteId),
       hasSuperChats = SiteFacts.hasSuperChats(siteId),
       superChatUnit = SiteFacts.superChatUnitOf(siteId);
@@ -76,4 +78,8 @@ class LiveSiteRuntimeInfo {
   /// The unit the platform's super chat prices are counted in, when it has
   /// super chats at all.
   final LiveGiftUnit? superChatUnit;
+
+  /// The platform's ingest recipe, when its stream cannot go to the player
+  /// as it is; null means the source is directly playable.
+  final LiveSiteIngestRecipe? ingest;
 }

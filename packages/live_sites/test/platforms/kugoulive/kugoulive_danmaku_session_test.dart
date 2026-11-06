@@ -172,8 +172,7 @@ final class _Socket implements SocketChannel {
   void end() => _incoming.close();
 
   /// The command of the frame sent at [index], read where the header puts it.
-  int commandAt(int index) =>
-      ByteData.sublistView(Uint8List.fromList(sent[index] as List<int>)).getInt32(6);
+  int commandAt(int index) => ByteData.sublistView(Uint8List.fromList(sent[index] as List<int>)).getInt32(6);
 
   /// The bytes of every frame sent, joined for a search.
   String get text {

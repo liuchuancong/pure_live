@@ -13,6 +13,7 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
+import 'package:live_sites/src/platforms/douyin/parsers/douyin_area_tiles.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_json.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_play_parser.dart';
@@ -21,8 +22,8 @@ const _site = 'douyin';
 
 /// Douyin's category payload names each partition but ships no picture, so
 /// the catalogue draws these bundled tiles instead (`assets/areas/douyin/`),
-/// keyed by the partition's `id_str`. The art comes from Bilibili's and
-/// Douyu's public category icons. An id the map does not know keeps the
+/// keyed by the partition's `id_str`. The art comes from public category
+/// icons of other live platforms. An id the map does not know keeps the
 /// shared tag fallback.
 const Map<String, String> _areaIcons = {
   '101': 'assets/areas/douyin/101.png',
@@ -41,6 +42,27 @@ const Map<String, String> _areaIcons = {
   '1010146': 'assets/areas/douyin/1010146.png',
   '1010037': 'assets/areas/douyin/1010037.png',
   '1010026': 'assets/areas/douyin/1010026.png',
+};
+
+/// The same tiles by display name, for a partition whose `id_str` is not in
+/// [_areaIcons] (a search hit from a newer or regional catalogue).
+const Map<String, String> _areaIconNames = {
+  '聊天': 'assets/areas/douyin/101.png',
+  '音乐': 'assets/areas/douyin/102.png',
+  '游戏': 'assets/areas/douyin/103.png',
+  '二次元': 'assets/areas/douyin/104.png',
+  '舞蹈': 'assets/areas/douyin/105.png',
+  '文化': 'assets/areas/douyin/106.png',
+  '生活': 'assets/areas/douyin/107.png',
+  '运动': 'assets/areas/douyin/108.png',
+  '三角洲行动': 'assets/areas/douyin/1011032.png',
+  '王者荣耀': 'assets/areas/douyin/1010045.png',
+  '无畏契约': 'assets/areas/douyin/1010017.png',
+  '英雄联盟': 'assets/areas/douyin/1010014.png',
+  '和平精英': 'assets/areas/douyin/1010032.png',
+  'QQ飞车端游': 'assets/areas/douyin/1010146.png',
+  '穿越火线': 'assets/areas/douyin/1010037.png',
+  '绝地求生': 'assets/areas/douyin/1010026.png',
 };
 
 /// One room answer (enter, reflow or room page): the room as the adapter
@@ -162,7 +184,7 @@ abstract final class DouyinRoomParser {
             areaName: partition.name,
             parentAreaId: parent.id,
             parentAreaName: parent.name,
-            iconUrl: _bundledAreaIcon(partition.id),
+            iconUrl: _bundledAreaIcon(partition.id, areaName: partition.name),
           )
         : null;
     return [
@@ -176,13 +198,22 @@ abstract final class DouyinRoomParser {
     ];
   }
 
-  /// The bundled tile of area id [areaId] (`id_str,type`), when
-  /// [_areaIcons] knows its raw `id_str`; null keeps the tag fallback.
-  static String? _bundledAreaIcon(String areaId) {
+  /// The bundled tile of area id [areaId] (`id_str,type`): an exact id,
+  /// then the name (a newer or regional partition), then the game tile for a
+  /// game partition the art set does not know; null keeps the tag fallback.
+  static String? _bundledAreaIcon(String areaId, {String? areaName}) {
     final comma = areaId.lastIndexOf(',');
-    final path = _areaIcons[comma > 0 ? areaId.substring(0, comma) : areaId];
-    return path == null ? null : '${LiveArea.bundledIconPrefix}$path';
+    final rawId = comma > 0 ? areaId.substring(0, comma) : areaId;
+    final path = _areaIcons[rawId] ?? douyinAreaTiles[rawId] ?? _areaIconNames[areaName?.trim()];
+    if (path != null) return '${LiveArea.bundledIconPrefix}$path';
+    final type = comma > 0 ? int.tryParse(areaId.substring(comma + 1)) : null;
+    if (type == _gamePartitionType) {
+      return '${LiveArea.bundledIconPrefix}assets/areas/douyin/103.png';
+    }
+    return null;
   }
+
+  static const int _gamePartitionType = 1;
 
   /// The `partition` and `partition_type` of an area id `id_str,type`;
   /// anything else is not-found.
@@ -371,7 +402,12 @@ abstract final class DouyinRoomParser {
     return [
       for (final item in _list(_jsonObject(root['data'])?['SearchResult']))
         if (_partition(_jsonObject(item)?['partition']) case final area?)
-          LiveArea.normalized(platform: _site, areaId: area.id, areaName: area.name),
+          LiveArea.normalized(
+            platform: _site,
+            areaId: area.id,
+            areaName: area.name,
+            iconUrl: _bundledAreaIcon(area.id, areaName: area.name),
+          ),
     ];
   }
 

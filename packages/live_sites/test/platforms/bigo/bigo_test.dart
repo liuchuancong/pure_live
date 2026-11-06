@@ -1,12 +1,10 @@
 import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
-import 'package:live_sites/src/capabilities/live_playback_provider.dart';
-import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/core/live_site_ingest.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
-import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/danmaku/bigo_danmaku_codec.dart';
@@ -104,18 +102,10 @@ void main() {
   });
 
   group('playback (the web stream is scrambled)', () {
-    test('the room answers the reason and spends no single-use address', () async {
+    test('the site declares the per-segment transform ingest need', () {
       final site = BigoSite(http: BigoHttp(_NeverHttp()));
-      final answer = await site.capability<LivePlaybackProvider>()!.getLines(
-        room: LiveRoom.normalized(platform: 'bigo', roomId: _room),
-      );
 
-      final error = answer.match((failure) => failure, (lines) => throw StateError('bigo handed out $lines'));
-      expect(error, isA<LiveSiteUnsupported>());
-
-      // What the viewer is told, not a stack trace: the stream is protected and
-      // this build does not descramble it.
-      expect(error.message, contains('加密'));
+      expect(site.runtimeInfo.ingest?.needs, contains(LiveSiteIngestNeed.segmentTransform));
     });
 
     test('the protection is recognised, and its transform is its own inverse', () {
@@ -135,8 +125,7 @@ void main() {
   });
 }
 
-/// A transport that must not be used: the refusal answers before any request, so
-/// a call here is the failure.
+/// A transport the runtime-info test never uses; a call is a test failure.
 final class _NeverHttp implements LiveHttp {
   @override
   Future<LiveResponse> send(LiveRequest request) async => throw StateError('bigo playback asked for ${request.url}');

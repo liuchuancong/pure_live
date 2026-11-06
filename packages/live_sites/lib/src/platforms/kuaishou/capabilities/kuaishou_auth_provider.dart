@@ -60,11 +60,7 @@ final class KuaishouAuthProvider implements LiveAuthCapability {
   @override
   Future<void> applyCredential(LiveCredential credential) async {
     if (credential.siteId != _siteId) {
-      throw ArgumentError.value(
-        credential.siteId,
-        'credential.siteId',
-        'the credential is not a kuaishou credential',
-      );
+      throw ArgumentError.value(credential.siteId, 'credential.siteId', 'the credential is not a kuaishou credential');
     }
     if (credential.cookies.isEmpty) {
       throw ArgumentError.value(credential, 'credential', 'the credential has no cookies');

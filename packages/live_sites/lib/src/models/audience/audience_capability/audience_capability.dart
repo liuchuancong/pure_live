@@ -4,11 +4,7 @@ import 'package:live_sites/src/models/enums/live_audience_online_availability.da
 /// table; the comments keep the reason each value is what it is).
 final class LiveAudienceCapability {
   /// Creates a capability.
-  const new({
-    required this.hasPopularity,
-    required this.hasTotalViewers,
-    required this.onlineAvailability,
-  });
+  const new({required this.hasPopularity, required this.hasTotalViewers, required this.onlineAvailability});
 
   /// A platform without known metrics.
   static const LiveAudienceCapability unknown = LiveAudienceCapability(

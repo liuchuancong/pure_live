@@ -6,6 +6,7 @@ library;
 export 'live_site.dart';
 export 'live_site_context.dart';
 export 'live_site_error.dart';
+export 'live_site_ingest.dart';
 export 'live_site_manifest.dart';
 export 'live_site_registry.dart';
 export 'live_site_runtime_info.dart';

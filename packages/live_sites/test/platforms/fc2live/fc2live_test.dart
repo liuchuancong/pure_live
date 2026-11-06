@@ -63,9 +63,7 @@ void main() {
 
   group('comments', () {
     test('a row is chat with its cleaned text, colour and sender', () {
-      final message = Fc2LiveDanmakuCodec.comment(
-        _row(comment: '<b>hi</b> &amp; bye', color: 'red'),
-      )!;
+      final message = Fc2LiveDanmakuCodec.comment(_row(comment: '<b>hi</b> &amp; bye', color: 'red'))!;
       expect(message.type, LiveMessageType.chat);
       expect(message.text, 'hi & bye');
       expect(message.color, Fc2LiveDanmakuCodec.colors['red']);

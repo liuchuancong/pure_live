@@ -19,8 +19,6 @@ final class TwitcastingPlayRecovery implements LivePlayRecovery {
   final TwitcastingPlaybackProvider playback;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
-    required LiveRoom room,
-    LivePlayQuality? quality,
-  }) => playback.refetchLines(room: room, quality: quality);
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      playback.refetchLines(room: room, quality: quality);
 }

@@ -18,6 +18,7 @@ import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
+import 'package:live_sites/src/core/live_site_ingest.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
@@ -36,6 +37,7 @@ import 'package:live_sites/src/platforms/bigo/capabilities/bigo_search_provider.
 import 'package:live_sites/src/platforms/bigo/capabilities/bigo_status_check.dart';
 import 'package:live_sites/src/platforms/bigo/danmaku/bigo_danmaku_session.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
+import 'package:live_sites/src/platforms/bigo/parsers/bigo_hls_protection.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_room_parser.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_studio.dart';
 
@@ -140,7 +142,24 @@ final class BigoSite implements LiveSite {
 
   /// The current runtime status (stateless adapter: ready once built).
   @override
-  LiveSiteRuntimeInfo get runtimeInfo => const LiveSiteRuntimeInfo(status: LiveSiteStatus.ready);
+  LiveSiteRuntimeInfo get runtimeInfo => LiveSiteRuntimeInfo.of(
+    bigoSiteId,
+    status: LiveSiteStatus.ready,
+    ingest: const LiveSiteIngestRecipe(
+      needs: {LiveSiteIngestNeed.segmentTransform},
+      seedOf: _seedOf,
+      transform: BigoHlsProtection.transform,
+    ),
+  );
+
+  /// [BigoHlsProtection.seed] for a manifest body, null for a malformed tag.
+  static int? _seedOf(String manifest) {
+    try {
+      return BigoHlsProtection.seed(manifest);
+    } on FormatException {
+      return null;
+    }
+  }
 
   /// Initializes (nothing to do: construction performs no I/O).
   @override
@@ -324,6 +343,18 @@ final class BigoSite implements LiveSite {
   /// the state, names and pictures but neither the playlist nor the password
   /// flag, so it answers a quality list, not a playlist.
   Future<BigoStudio> refresh(String roomId) => studio(roomId, BigoStudioUse.refresh);
+
+  /// The media playlist of [roomId], from a token's first use: the address is
+  /// good for the one playback it was made for, and the ingest relay restores
+  /// its scrambled segments before the player reads them.
+  Future<Uri> playPlaylist(String roomId) async {
+    final answer = await studio(roomId, BigoStudioUse.entry);
+    final error = answer.streamError;
+    if (error != null) throw error;
+    final hls = answer.hls;
+    if (hls == null) throw BigoFailure(BigoFailureKind.streamUnavailable, '${answer.siteId}: no hls_src');
+    return hls;
+  }
 
   // Catalog and search --------------------------------------------------------
 

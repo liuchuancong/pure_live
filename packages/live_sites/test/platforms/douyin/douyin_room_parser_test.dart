@@ -739,6 +739,62 @@ void main() {
       expect(areas.single.parentAreaId, isNull);
       expect(DouyinRoomParser.partitionSearch('{}'), isEmpty);
     });
+
+    test('a known partition carries its bundled tile in search too', () {
+      final body = jsonEncode({
+        'data': {
+          'SearchResult': [
+            {
+              'partition': {'id_str': '101', 'type': '4', 'title': '聊天'},
+            },
+          ],
+        },
+      });
+      final areas = DouyinRoomParser.partitionSearch(body);
+      expect(areas.single.iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/douyin/101.png');
+    });
+
+    test('an unlisted game partition falls back to the game tile', () {
+      final body = jsonEncode({
+        'data': {
+          'SearchResult': [
+            {
+              'partition': {'id_str': '999999', 'type': '1', 'title': '未收录游戏'},
+            },
+          ],
+        },
+      });
+      final areas = DouyinRoomParser.partitionSearch(body);
+      expect(areas.single.iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/douyin/103.png');
+    });
+
+    test('a discovered game partition uses its own bundled tile', () {
+      final body = jsonEncode({
+        'data': {
+          'SearchResult': [
+            {
+              'partition': {'id_str': '1010002', 'type': '1', 'title': 'Apex英雄'},
+            },
+          ],
+        },
+      });
+      final areas = DouyinRoomParser.partitionSearch(body);
+      expect(areas.single.iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/douyin/1010002.png');
+    });
+
+    test('a known name with a new id still gets its tile', () {
+      final body = jsonEncode({
+        'data': {
+          'SearchResult': [
+            {
+              'partition': {'id_str': '999', 'type': '4', 'title': '音乐'},
+            },
+          ],
+        },
+      });
+      final areas = DouyinRoomParser.partitionSearch(body);
+      expect(areas.single.iconUrl, '${LiveArea.bundledIconPrefix}assets/areas/douyin/102.png');
+    });
   });
 
   group('the detail answers', () {

@@ -63,10 +63,8 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
   /// Lines after a failure: the channel and its master are read again even
   /// when the cached copy's lease has not run out (a token revoked early has
   /// no way back otherwise).
-  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
-    required LiveRoom room,
-    LivePlayQuality? quality,
-  }) => _lines(room, quality, force: true);
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room, quality, force: true);
 
   Future<Either<LiveSiteError, List<LivePlayLine>>> _lines(
     LiveRoom room,

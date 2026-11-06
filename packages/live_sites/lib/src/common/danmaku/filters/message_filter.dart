@@ -208,6 +208,5 @@ bool danmakuShapeBlocked(
 }) {
   if (message.isLocal || !(blockEmoteOnly || blockLong)) return false;
   final shape = shapeOf(message);
-  return (blockEmoteOnly && shape.emoteOnly) ||
-      (blockLong && shape.length > blockLongLength.clamp(10, 100));
+  return (blockEmoteOnly && shape.emoteOnly) || (blockLong && shape.length > blockLongLength.clamp(10, 100));
 }
