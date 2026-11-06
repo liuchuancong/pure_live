@@ -9,6 +9,7 @@ export 'capabilities/inke_area_provider.dart';
 export 'capabilities/inke_discovery_provider.dart';
 export 'capabilities/inke_link_resolver.dart';
 export 'capabilities/inke_play_lease_lookup.dart';
+export 'capabilities/inke_play_recovery.dart';
 export 'capabilities/inke_playback_provider.dart';
 export 'capabilities/inke_room_provider.dart';
 export 'capabilities/inke_room_refresh.dart';

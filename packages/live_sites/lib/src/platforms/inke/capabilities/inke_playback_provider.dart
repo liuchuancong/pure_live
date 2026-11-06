@@ -50,4 +50,19 @@ final class InkePlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }
   }
+
+  /// As [getLines], but with a newly signed `now_publish` answer whatever
+  /// the room's last known state: the recovery path of `InkePlayRecovery`.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, fresh: true));
+    } on InkeFailure catch (failure) {
+      return left(failure.toLiveSiteError(inkeSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
+    }
+  }
 }

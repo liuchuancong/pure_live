@@ -442,6 +442,19 @@ void main() {
       expect(room.content.notice, '公共\n${KugouliveEndpoints.chatNotice}');
     });
 
+    test('two announcements that say the same are one line', () {
+      final same = KugouliveRoomParser.roomInfo(
+        _enter(info: _info({'publicMesg': '欢迎', 'privateMesg': ' 欢迎 '})),
+        roomId: _room,
+      ).room;
+      expect(same.content.notice, '欢迎\n${KugouliveEndpoints.chatNotice}');
+      final both = KugouliveRoomParser.roomInfo(
+        _enter(info: _info({'publicMesg': '公共', 'privateMesg': '私聊'})),
+        roomId: _room,
+      ).room;
+      expect(both.content.notice, '公共\n私聊\n${KugouliveEndpoints.chatNotice}', reason: 'public first, then private');
+    });
+
     test('no nick and no kugou id is no such room', () {
       expect(
         _failure(
@@ -620,18 +633,27 @@ void main() {
       expect(variants.first.lines.first.lease?.refreshAt, _start().subtract(KugouliveEndpoints.leaseLead));
     });
 
-    test('a line without a text sid has no label', () {
+    test('a line is labelled by its sid, which the answer writes as a number', () {
       final variants = KugouliveRoomParser.variants(
         _stream(
           lines: [
-            _line(7, [
+            _line(5, [
               _profile(flv: [_media('a.flv')]),
+            ]),
+            _line(40, [
+              _profile(flv: [_media('b.flv')]),
+            ]),
+            _line(null, [
+              _profile(flv: [_media('c.flv')]),
+            ]),
+            _line('', [
+              _profile(flv: [_media('d.flv')]),
             ]),
           ],
         ),
         roomId: _room,
       );
-      expect(variants.single.lines.single.lineLabel, isNull);
+      expect(variants.single.lines.map((line) => line.lineLabel), ['sid5', 'sid40', null, null]);
     });
 
     test('a group whose URLs are all refused is gone', () {

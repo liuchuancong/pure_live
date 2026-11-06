@@ -6,6 +6,7 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -26,6 +27,7 @@ import 'package:live_sites/src/platforms/inke/capabilities/inke_area_provider.da
 import 'package:live_sites/src/platforms/inke/capabilities/inke_discovery_provider.dart';
 import 'package:live_sites/src/platforms/inke/capabilities/inke_link_resolver.dart';
 import 'package:live_sites/src/platforms/inke/capabilities/inke_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/inke/capabilities/inke_play_recovery.dart';
 import 'package:live_sites/src/platforms/inke/capabilities/inke_playback_provider.dart';
 import 'package:live_sites/src/platforms/inke/capabilities/inke_room_provider.dart';
 import 'package:live_sites/src/platforms/inke/capabilities/inke_room_refresh.dart';
@@ -77,6 +79,12 @@ final class InkeSite implements LiveSite {
   /// with a fresh answer.
   static const Duration answerReuse = Duration(seconds: 30);
 
+  /// How long search pages after the first reuse the list answers page 1
+  /// fetched: a page 1 always asks anew (a new search), later pages of the
+  /// same browse cut the same answers, so the app's hot list — different at
+  /// each request — pages without repeats or gaps.
+  static const Duration snapshotLifetime = Duration(seconds: 30);
+
   /// How many rooms' stream data is kept; the oldest entry is dropped.
   static const int _streamLimit = 64;
 
@@ -89,6 +97,10 @@ final class InkeSite implements LiveSite {
   /// The stream data of the room whose entry was read last, by uid: the
   /// qualities and lines the capabilities hand out until the next entry.
   final Map<String, InkeRoomData> _streams = {};
+
+  /// The last successful answer of each list the search reads, by URL, and
+  /// when it arrived.
+  final Map<String, ({DateTime at, InkeResponse response})> _snapshots = {};
 
   static bool _on() => true;
 
@@ -158,10 +170,12 @@ final class InkeSite implements LiveSite {
   /// - another link (a URL with a scheme and host) or a blank keyword finds
   ///   nothing, without a request;
   /// - anything else filters the nicknames of the top list, the channels and
-  ///   the app's hot list (see [InkeRoomParser.searchShowcases]). The hot
-  ///   list failing leaves its rooms out. A page over 10000, a page size
-  ///   over 60 or a keyword over 100 characters is refused without a
-  ///   request, as the reference refused them.
+  ///   the app's hot list (see [InkeRoomParser.searchShowcases]); page 1 asks
+  ///   the three anew, later pages reuse them while they are young (see
+  ///   [snapshotLifetime]). The hot list failing leaves its rooms out. A
+  ///   page over 10000, a page size over 60 or a keyword over 100
+  ///   characters is refused without a request, as the reference refused
+  ///   them.
   Future<({List<LiveRoom> rooms, bool? hasMore})> search(String keyword, {int page = 1, int pageSize = 30}) async {
     if (page < 1) throw InkeFailure(InkeFailureKind.invalidArgument, 'page $page is below 1');
     if (pageSize < 1) throw InkeFailure(InkeFailureKind.invalidArgument, 'page size $pageSize is below 1');
@@ -187,13 +201,14 @@ final class InkeSite implements LiveSite {
       throw const InkeFailure(InkeFailureKind.invalidArgument, 'keyword is past 100 characters');
     }
     if (input.isEmpty) return (rooms: const <LiveRoom>[], hasMore: null);
-    final top = await http.get(InkeEndpoints.topUrl);
+    final fresh = page == 1;
+    final top = await _list(InkeEndpoints.topUrl, fresh: fresh);
     final showcase = InkeRoomParser.topPage(top.text, status: top.status);
-    final channels = await http.get(InkeEndpoints.channelsUrl);
+    final channels = await _list(InkeEndpoints.channelsUrl, fresh: fresh);
     final channelRooms = InkeRoomParser.channelRooms(channels.text, status: channels.status);
     List<LiveRoom> hot;
     try {
-      final response = await http.get(InkeEndpoints.hotUrl);
+      final response = await _list(InkeEndpoints.hotUrl, fresh: fresh);
       hot = InkeRoomParser.hotPage(response.text, status: response.status);
     } on InkeFailure {
       hot = const <LiveRoom>[];
@@ -205,6 +220,21 @@ final class InkeSite implements LiveSite {
       page: page,
       pageSize: pageSize,
     );
+  }
+
+  /// A list endpoint's answer: [fresh] (a first page) asks anew and keeps a
+  /// successful answer as the snapshot; otherwise a snapshot younger than
+  /// [snapshotLifetime] is reused.
+  Future<InkeResponse> _list(Uri url, {required bool fresh}) async {
+    final key = '$url';
+    if (!fresh) {
+      final snapshot = _snapshots[key];
+      final age = snapshot == null ? null : _now().difference(snapshot.at);
+      if (snapshot != null && age != null && !age.isNegative && age < snapshotLifetime) return snapshot.response;
+    }
+    final response = await http.get(url);
+    if (response.status == 200) _snapshots[key] = (at: _now(), response: response);
+    return response;
   }
 
   /// The room [input] names exactly: a uid, or a room link.
@@ -253,12 +283,18 @@ final class InkeSite implements LiveSite {
     }
   }
 
-  /// A refresh: the share page's room, without the broadcast a first visit
-  /// resolves for playback and danmaku.
-  Future<LiveRoom> refreshRoom(String roomId) async {
+  /// A refresh: the room as its entry reads it — the share page and, for a
+  /// live room, the app's broadcast, one request more — so a follow card
+  /// carries the app's title, cover, start and its "N人在看" rather than the
+  /// nickname alone (the share page has no audience).
+  Future<LiveRoom> refreshRoom(String roomId) => detail(roomId);
+
+  /// Whether the website says live: the share page alone, one request. Its
+  /// only other answer is the "no live" code, so there is no unknown here.
+  Future<bool> liveStatus(String roomId) async {
     final uid = _uid(roomId);
     final response = await http.get(InkeEndpoints.shareUrl(uid));
-    return InkeRoomParser.detail(response.text, uid: uid, status: response.status);
+    return InkeRoomParser.detail(response.text, uid: uid, status: response.status).broadcast.isLiveNow;
   }
 
   /// `now_publish` for [uid] and when it was received.
@@ -309,10 +345,14 @@ final class InkeSite implements LiveSite {
   /// The lines of [quality] for [roomId], with the media headers and their
   /// leases. A null [quality] takes the display's first: the original when
   /// "prefer H.264" is off and the room has its Zego line, else the FLV. A
-  /// room the platform called offline says so, without a request.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
-    final data = await _stream(roomId);
-    if (data.liveId == null && data.broadcast == null) {
+  /// room the platform called offline says so, without a request. With
+  /// [fresh] (a recovery) the app is asked for a newly signed answer whatever
+  /// the room's last known state: the anchor may be live again, and the held
+  /// `wsABStime` URLs are the ones that failed.
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
+    final uid = _uid(roomId);
+    final data = fresh ? (_streams[uid] ?? const InkeRoomData(liveId: null)) : await _stream(uid);
+    if (!fresh && data.liveId == null && data.broadcast == null) {
       throw const InkeFailure(InkeFailureKind.streamUnavailable, 'the room is not live');
     }
     final requested = quality?.qualityId?.trim();
@@ -321,7 +361,7 @@ final class InkeSite implements LiveSite {
       null => _preferH264() || !hasOrigin ? InkeEndpoints.flvQualityId : InkeEndpoints.originQualityId,
       final String given => given,
     };
-    return await _resolve(_uid(roomId), id, data, reuse: true);
+    return await _resolve(uid, id, data, reuse: !fresh);
   }
 
   /// The lines of [qualityId] for [uid]'s anchor:
@@ -413,6 +453,7 @@ final class InkeSite implements LiveSite {
   InkeRoomRefresh? _refresh;
   InkeStatusCheck? _status;
   InkePlayLeaseLookup? _lease;
+  InkePlayRecovery? _recovery;
 
   /// The capability of type [T], or null when Inke does not support it
   /// (ARCHITECTURE.md §4.1) — the platform has no chat, so no
@@ -426,8 +467,9 @@ final class InkeSite implements LiveSite {
     final playback = _playback ??= InkePlaybackProvider(site: this);
     final link = _link ??= InkeLinkResolver(site: this);
     final refresh = _refresh ??= InkeRoomRefresh(site: this);
-    final status = _status ??= InkeStatusCheck(refresh: refresh);
+    final status = _status ??= InkeStatusCheck(site: this);
     final lease = _lease ??= InkePlayLeaseLookup(now: _now);
+    final recovery = _recovery ??= InkePlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -438,6 +480,7 @@ final class InkeSite implements LiveSite {
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
       const (LivePlayLeaseLookup) => lease as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

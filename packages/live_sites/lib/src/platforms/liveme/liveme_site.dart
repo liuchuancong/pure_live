@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -25,6 +26,7 @@ import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_signer.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_discovery_provider.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_link_resolver.dart';
+import 'package:live_sites/src/platforms/liveme/capabilities/liveme_play_recovery.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_playback_provider.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_room_provider.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_room_refresh.dart';
@@ -56,7 +58,7 @@ const _streamLimit = 64;
 /// - a room (entry) is the short id's `uid_vid_by_short_id`, then the
 ///   anchor's `getinfo` and, while broadcasting, the signed
 ///   `queryinfosimple`, in parallel;
-/// - fresh media (a playback asked without a room entry) is
+/// - fresh media (a recovery, or a playback asked without a room entry) is
 ///   `uid_vid_by_short_id` and `queryinfosimple` only.
 ///
 /// A private or paid broadcast is live and marked with its restriction; its
@@ -254,15 +256,27 @@ final class LivemeSite implements LiveSite {
   // Streams -------------------------------------------------------------------
 
   /// The stream data of [roomId]: the one its room entry brought, or a fresh
-  /// broadcast lookup — the capabilities are asked by room id alone. A room
-  /// id that is not a short id is not-found without a request.
-  Future<LivemeRoomData> _stream(String roomId) async {
+  /// broadcast lookup — the capabilities are asked by room id alone. With
+  /// [fresh] (a recovery) the lookup is made even when data is kept: the
+  /// anchor may be on a new broadcast, and the kept URLs are the ones that
+  /// failed. A lookup's data is kept in turn; a fresh lookup that finds no
+  /// broadcast forgets the kept data, so a later play asks again instead of
+  /// handing back dead lines. A room id that is not a short id is not-found
+  /// without a request.
+  Future<LivemeRoomData> _stream(String roomId, {bool fresh = false}) async {
     final shortId = LivemeEndpoints.normalizeShortId(roomId);
     if (shortId == null) throw LivemeFailure(LivemeFailureKind.notFound, 'not a short id: $roomId');
-    final kept = _streams[shortId];
+    final kept = fresh ? null : _streams[shortId];
     if (kept != null) return kept;
-    final data = await _media(shortId);
-    return _streams[shortId] = data;
+    final LivemeRoomData data;
+    try {
+      data = await _media(shortId);
+    } on LivemeFailure catch (failure) {
+      if (fresh && failure.kind == LivemeFailureKind.streamUnavailable) _streams.remove(shortId);
+      rethrow;
+    }
+    _remember(data);
+    return data;
   }
 
   /// The stream data of room [shortId]'s current broadcast: the short id's
@@ -285,10 +299,12 @@ final class LivemeSite implements LiveSite {
 
   /// The lines of [roomId] at [quality] (the source quality when it is null;
   /// the reference's stored ids are read as the new ones): FLV then HLS, each
-  /// with the media headers.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
+  /// with the media headers. With [fresh] (a recovery) the current broadcast
+  /// is asked for again (see [_stream]); a quality it lacks, or no
+  /// broadcast, is stream-unavailable, and the old URLs are never reused.
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
     final id = quality?.qualityId ?? LivemeEndpoints.sourceQualityId;
-    return LivemeRoomParser.lines(await _stream(roomId), id);
+    return LivemeRoomParser.lines(await _stream(roomId, fresh: fresh), id);
   }
 
   /// Keeps [data] as the latest of its room, dropping the oldest past
@@ -309,6 +325,7 @@ final class LivemeSite implements LiveSite {
   LivemeLinkResolver? _link;
   LivemeRoomRefresh? _refresh;
   LivemeStatusCheck? _status;
+  LivemePlayRecovery? _recovery;
 
   /// The capability of type [T], or null when LiveMe does not support it
   /// (ARCHITECTURE.md §4.1). There is no category catalog (the featured list
@@ -323,6 +340,7 @@ final class LivemeSite implements LiveSite {
     final link = _link ??= LivemeLinkResolver(site: this);
     final refresh = _refresh ??= LivemeRoomRefresh(site: this);
     final status = _status ??= LivemeStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= LivemePlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveDiscoveryProvider) => discovery as T,
@@ -331,6 +349,7 @@ final class LivemeSite implements LiveSite {
       const (LiveLinkResolver) => link as T,
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

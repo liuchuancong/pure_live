@@ -75,7 +75,24 @@ void main() {
       final gift = message.giftOrNull! as LiveGift;
       expect(gift.count, 2);
       expect(gift.value.unitPrice, 200);
+      expect(gift.value.totalValue, 400, reason: 'the line prices one gift; the total is all of the count');
       expect(gift.combo.comboTotal, 2);
+    });
+
+    test('a line and the hit it closes value the same combo alike', () {
+      // 飞天小猪: the third hit sends 204 for all three, its line 68 each.
+      final hit = KilakilaDanmakuCodec.textMessage(
+        _frame(KilakilaDanmakuCodec.giftType, {'doubleCount': 3, 'price': 204, 'isDoubleHit': true}),
+        roomId: _room,
+      )!;
+      final line = KilakilaDanmakuCodec.textMessage(
+        _frame(KilakilaDanmakuCodec.giftLineType, {'doubleCount': 3, 'price': 68}),
+        roomId: _room,
+      )!;
+      expect((hit.giftOrNull! as LiveGift).value.totalValue, 204);
+      expect((line.giftOrNull! as LiveGift).value.totalValue, 204);
+      expect((hit.giftOrNull! as LiveGift).value.unitPrice, 68);
+      expect((line.giftOrNull! as LiveGift).value.unitPrice, 68);
     });
 
     test('a free gift has no value, and another room or no name is nothing', () {

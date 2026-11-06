@@ -10,7 +10,8 @@ import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// Inke rooms, refreshed: the share page alone, without the broadcast a first visit resolves.
+/// Inke rooms, refreshed as a first visit reads them: the share page and, for
+/// a live room, the app's broadcast (its title, cover, start and audience).
 final class InkeRoomRefresh implements LiveRoomRefresh {
   /// Serves [site].
   InkeRoomRefresh({required this.site});

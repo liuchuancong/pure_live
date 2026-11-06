@@ -9,6 +9,7 @@ import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -29,6 +30,7 @@ import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_area_pro
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_link_resolver.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_play_recovery.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_playback_provider.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_room_provider.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_room_refresh.dart';
@@ -193,7 +195,9 @@ final class KilakilaSite implements LiveSite {
       if (pageSize > 100) {
         throw KilakilaFailure(KilakilaFailureKind.invalidArgument, 'page size $pageSize is out of 1–100');
       }
-      final response = await http.get(KilakilaEndpoints.searchUrl(input, page));
+      // The keyword goes out cut to the platform's limit, never refused:
+      // a long paste still finds what its head names.
+      final response = await http.get(KilakilaEndpoints.searchUrl(KilakilaRoomParser.searchKeyword(input), page));
       return (rooms: KilakilaRoomParser.searchPage(response.text, status: response.status), hasMore: null);
     }
     if (page > 1) return (rooms: const <LiveRoom>[], hasMore: null);
@@ -305,13 +309,17 @@ final class KilakilaSite implements LiveSite {
   // Streams -------------------------------------------------------------------
 
   /// The stream data of [roomId]: the one its room entry brought, or a fresh
-  /// entry — the capabilities are asked by room id alone. An anchor the
-  /// platform called offline has no stream, without a request.
-  Future<KilakilaRoomData> _stream(String roomId) async {
-    final data = _streams[roomId];
-    if (data != null) return data;
-    await detail(roomId);
-    return _streams[roomId]!;
+  /// entry — the capabilities are asked by room id alone. With [fresh] the
+  /// held data is passed over: the anchor may be on a new broadcast, and the
+  /// pull URLs are signed, so a recovery never replays the old ones.
+  Future<KilakilaRoomData> _stream(String roomId, {bool fresh = false}) async {
+    final id = roomId.trim();
+    final held = fresh ? null : _streams[id];
+    if (held != null) return held;
+    final room = await detail(id);
+    final data = room.runtime.streamHandle;
+    if (data is KilakilaRoomData) return data;
+    throw KilakilaFailure(KilakilaFailureKind.streamUnavailable, 'anchor $id: room entry brought no stream data');
   }
 
   /// The one quality 原画, from the stream data room entry brought: no
@@ -320,10 +328,11 @@ final class KilakilaSite implements LiveSite {
   Future<List<LivePlayQuality>> qualitiesOf(String roomId) async => KilakilaRoomParser.qualities(await _stream(roomId));
 
   /// The lines of [quality] (FLV, then HLS) with the media headers and their
-  /// leases; the stored ids `flv` and `hls` name the same quality.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
+  /// leases; the stored ids `flv` and `hls` name the same quality. With
+  /// [fresh] the anchor is entered again first (see [_stream]).
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
     final id = quality?.qualityId ?? KilakilaEndpoints.qualityId;
-    return KilakilaRoomParser.lines(await _stream(roomId), id);
+    return KilakilaRoomParser.lines(await _stream(roomId, fresh: fresh), id);
   }
 
   // Capability wiring ---------------------------------------------------------
@@ -338,6 +347,7 @@ final class KilakilaSite implements LiveSite {
   KilakilaLinkResolver? _link;
   KilakilaRoomRefresh? _refresh;
   KilakilaStatusCheck? _status;
+  KilakilaPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when KilaKila does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -353,6 +363,7 @@ final class KilakilaSite implements LiveSite {
     final link = _link ??= KilakilaLinkResolver(site: this);
     final refresh = _refresh ??= KilakilaRoomRefresh(site: this);
     final status = _status ??= KilakilaStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= KilakilaPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -364,6 +375,7 @@ final class KilakilaSite implements LiveSite {
       const (LiveLinkResolver) => link as T,
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

@@ -8,6 +8,7 @@ export 'api/liveme_http.dart';
 export 'api/liveme_signer.dart';
 export 'capabilities/liveme_discovery_provider.dart';
 export 'capabilities/liveme_link_resolver.dart';
+export 'capabilities/liveme_play_recovery.dart';
 export 'capabilities/liveme_playback_provider.dart';
 export 'capabilities/liveme_room_provider.dart';
 export 'capabilities/liveme_room_refresh.dart';

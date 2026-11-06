@@ -9,6 +9,7 @@ export 'capabilities/kilakila_area_provider.dart';
 export 'capabilities/kilakila_discovery_provider.dart';
 export 'capabilities/kilakila_link_resolver.dart';
 export 'capabilities/kilakila_play_lease_lookup.dart';
+export 'capabilities/kilakila_play_recovery.dart';
 export 'capabilities/kilakila_playback_provider.dart';
 export 'capabilities/kilakila_room_provider.dart';
 export 'capabilities/kilakila_room_refresh.dart';

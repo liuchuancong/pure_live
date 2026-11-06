@@ -8,6 +8,7 @@ export 'api/jdlive_http.dart';
 export 'capabilities/jdlive_area_provider.dart';
 export 'capabilities/jdlive_discovery_provider.dart';
 export 'capabilities/jdlive_link_resolver.dart';
+export 'capabilities/jdlive_play_recovery.dart';
 export 'capabilities/jdlive_playback_provider.dart';
 export 'capabilities/jdlive_room_provider.dart';
 export 'capabilities/jdlive_room_refresh.dart';

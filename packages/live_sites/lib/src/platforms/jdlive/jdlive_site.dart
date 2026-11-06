@@ -9,6 +9,7 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -27,6 +28,7 @@ import 'package:live_sites/src/platforms/jdlive/api/jdlive_http.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_area_provider.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_discovery_provider.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_link_resolver.dart';
+import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_play_recovery.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_playback_provider.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_room_provider.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_room_refresh.dart';
@@ -306,23 +308,43 @@ final class JdliveSite implements LiveSite {
     return JdliveRoomParser.room(room, withData: withMedia);
   }
 
+  /// Whether the play answer says live (one request): an app-only broadcast
+  /// is live too (its restriction says why it does not play), announced,
+  /// ended and replayed ones are not. A state that is neither is an error,
+  /// never "offline": paused is stream-unavailable, an unknown status
+  /// api-changed.
+  Future<bool> liveStatus(String roomId) async {
+    final liveId = _liveId(roomId);
+    final room = await _play(liveId, withMedia: false);
+    final known = _known[liveId];
+    _remember(known == null ? room : room.enrich(known));
+    return switch (room.state) {
+      JdliveState.live => true,
+      JdliveState.preview || JdliveState.offline || JdliveState.replay => false,
+      JdliveState.paused => throw JdliveFailure(JdliveFailureKind.streamUnavailable, '$liveId is paused'),
+      JdliveState.unknown => throw JdliveFailure(JdliveFailureKind.apiChanged, '$liveId: unknown status'),
+    };
+  }
+
   // Streams -------------------------------------------------------------------
 
   /// The play answer a room's streams come from: the one of its room read
   /// when the session has seen it (no request), else a fresh one with the
   /// playlist check — the capabilities are asked by room id alone, so the
   /// adapter takes the room's answer itself when no entry is kept. A kept
-  /// answer that cannot be played says why, without a request.
-  Future<JdliveBroadcast> _playable(String roomId) async {
+  /// answer that cannot be played says why, without a request. With [fresh]
+  /// the kept answer is passed over: a recovery asks the play answer and the
+  /// playlist again, since the broadcast may have paused, ended or moved.
+  Future<JdliveBroadcast> _playable(String roomId, {bool fresh = false}) async {
     final liveId = _liveId(roomId);
     final known = _known[liveId];
-    if (known != null && known.hasPlayAnswer) {
+    if (!fresh && known != null && known.hasPlayAnswer) {
       final error = known.streamError;
       if (error == null) return known;
       throw error;
     }
-    final fresh = await _play(liveId, withMedia: true);
-    final enriched = known == null ? fresh : fresh.enrich(known);
+    final answer = await _play(liveId, withMedia: true);
+    final enriched = known == null ? answer : answer.enrich(known);
     _remember(enriched);
     final error = enriched.streamError;
     if (error != null) throw error;
@@ -333,9 +355,10 @@ final class JdliveSite implements LiveSite {
   Future<List<LivePlayQuality>> qualitiesOf(String roomId) async => JdliveRoomParser.qualities(await _playable(roomId));
 
   /// The one line of [roomId] at [quality] (the HLS playlist for a live
-  /// broadcast, the recording for a replay, when it is null).
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
-    final room = await _playable(roomId);
+  /// broadcast, the recording for a replay, when it is null). With [fresh]
+  /// the play answer is asked again first (see [_playable]).
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
+    final room = await _playable(roomId, fresh: fresh);
     final id =
         quality?.qualityId ?? (room.state == JdliveState.replay ? JdliveEndpoints.replayId : JdliveEndpoints.hlsId);
     return [JdliveRoomParser.line(room, id)];
@@ -352,6 +375,7 @@ final class JdliveSite implements LiveSite {
   JdliveLinkResolver? _link;
   JdliveRoomRefresh? _refresh;
   JdliveStatusCheck? _status;
+  JdlivePlayRecovery? _recovery;
 
   /// The capability of type [T], or null when JD Live does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -365,7 +389,8 @@ final class JdliveSite implements LiveSite {
     final danmaku = _danmaku ??= JdliveDanmakuProvider(site: this);
     final link = _link ??= JdliveLinkResolver(site: this);
     final refresh = _refresh ??= JdliveRoomRefresh(site: this);
-    final status = _status ??= JdliveStatusCheck(refresh: refresh);
+    final status = _status ??= JdliveStatusCheck(site: this);
+    final recovery = _recovery ??= JdlivePlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -376,6 +401,7 @@ final class JdliveSite implements LiveSite {
       const (LiveLinkResolver) => link as T,
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

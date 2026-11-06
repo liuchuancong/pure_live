@@ -9,6 +9,7 @@ import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_refresh.dart';
@@ -31,6 +32,7 @@ import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_area_p
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_link_resolver.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_play_recovery.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_playback_provider.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_room_provider.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_room_refresh.dart';
@@ -292,11 +294,12 @@ final class KugouliveSite implements LiveSite {
   // Streams -------------------------------------------------------------------
 
   /// The variants of [roomId]: the ones room entry kept, or a fresh entry —
-  /// the capabilities are asked by room id alone. A room the platform called
-  /// offline has no stream, without a request.
-  Future<List<KugouliveVariant>> _variants(String roomId) async {
+  /// the capabilities are asked by room id alone. With [fresh] the kept ones
+  /// are passed over: the `txSecret` URLs are signed per answer, so a
+  /// recovery enters the room again and never hands the old lines back.
+  Future<List<KugouliveVariant>> _variants(String roomId, {bool fresh = false}) async {
     final id = _checkedId(roomId);
-    final kept = _streams[id];
+    final kept = fresh ? null : _streams[id];
     if (kept != null) {
       if (kept.unavailable case final error?) throw error;
       return kept.variants;
@@ -314,8 +317,10 @@ final class KugouliveSite implements LiveSite {
 
   /// The lines of [quality] (by its id) with the media headers and the lease
   /// of each URL; a quality the room does not offer is stream-unavailable.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
-    final variants = await _variants(roomId);
+  /// With [fresh] the room is entered again first (see [_variants]); a
+  /// quality the new answer no longer offers is an error there too.
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
+    final variants = await _variants(roomId, fresh: fresh);
     final id = quality?.qualityId;
     final variant = id == null ? variants.firstOrNull : variants.where((entry) => entry.id == id).firstOrNull;
     if (variant == null) {
@@ -336,6 +341,7 @@ final class KugouliveSite implements LiveSite {
   KugouliveLinkResolver? _link;
   KugouliveRoomRefresh? _refresh;
   KugouliveStatusCheck? _status;
+  KugoulivePlayRecovery? _recovery;
 
   /// The capability of type [T], or null when Kugou Live does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -351,6 +357,7 @@ final class KugouliveSite implements LiveSite {
     final link = _link ??= KugouliveLinkResolver(site: this);
     final refresh = _refresh ??= KugouliveRoomRefresh(site: this);
     final status = _status ??= KugouliveStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= KugoulivePlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -362,6 +369,7 @@ final class KugouliveSite implements LiveSite {
       const (LiveLinkResolver) => link as T,
       const (LiveRoomRefresh) => refresh as T,
       const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

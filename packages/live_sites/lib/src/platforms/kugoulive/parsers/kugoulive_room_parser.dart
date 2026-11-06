@@ -283,10 +283,11 @@ abstract final class KugouliveRoomParser {
         : session.isNotEmpty
         ? KugouliveState.live
         : KugouliveState.unknown;
-    final announcements = [
+    // A room whose two announcements say the same shows the text once.
+    final announcements = <String>{
       for (final value in [info['publicMesg'], info['privateMesg']])
         if (KugouliveJson.text(value) case final text when text.isNotEmpty) text,
-    ];
+    };
     final liveStatus = switch (state) {
       KugouliveState.live => LiveStatus.live,
       KugouliveState.offline => LiveStatus.offline,
@@ -377,7 +378,8 @@ abstract final class KugouliveRoomParser {
     final groups = <String, ({String protocol, int rate, int codec, int layout, List<LivePlayLine> lines})>{};
     for (final lineValue in KugouliveJson.list(data['lines'])) {
       final line = KugouliveJson.map(lineValue) ?? const {};
-      final sid = line['sid'] is String ? line['sid']! as String : null;
+      // The answer writes `sid` as a number (5, 40); text is read the same.
+      final sid = KugouliveJson.text(line['sid']);
       for (final profileValue in KugouliveJson.list(line['streamProfiles'])) {
         final profile = KugouliveJson.map(profileValue) ?? const {};
         final rate = KugouliveJson.integer(profile['rate']) ?? 0;
@@ -401,7 +403,7 @@ abstract final class KugouliveRoomParser {
                 format: format,
                 formatSource: LivePlayFormatSource.declared,
                 codec: codecName(codec),
-                lineLabel: sid == null ? null : 'sid$sid',
+                lineLabel: sid.isEmpty ? null : 'sid$sid',
                 lease: lease(url),
               ),
             );

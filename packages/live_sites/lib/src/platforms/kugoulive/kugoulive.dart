@@ -9,6 +9,7 @@ export 'capabilities/kugoulive_area_provider.dart';
 export 'capabilities/kugoulive_discovery_provider.dart';
 export 'capabilities/kugoulive_link_resolver.dart';
 export 'capabilities/kugoulive_play_lease_lookup.dart';
+export 'capabilities/kugoulive_play_recovery.dart';
 export 'capabilities/kugoulive_playback_provider.dart';
 export 'capabilities/kugoulive_room_provider.dart';
 export 'capabilities/kugoulive_room_refresh.dart';

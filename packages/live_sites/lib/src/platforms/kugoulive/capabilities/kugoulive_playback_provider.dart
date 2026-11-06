@@ -34,6 +34,12 @@ final class KugoulivePlaybackProvider implements LivePlaybackProvider {
   Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) =>
       _run(() => site.linesOf(room.roomId, quality: quality));
 
+  /// Lines after a failure: the room is entered again (its info, then a new
+  /// stream answer) even when variants are kept, since the held `txSecret`
+  /// URLs are the ones that failed; a room no longer live says why.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _run(() => site.linesOf(room.roomId, quality: quality, fresh: true));
+
   Future<Either<LiveSiteError, T>> _run<T>(Future<T> Function() work) async {
     try {
       return right(await work());

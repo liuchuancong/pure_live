@@ -284,7 +284,9 @@ abstract final class KilakilaDanmakuCodec {
   /// the session's combo filter.
   ///
   /// The price of one is known for a line (`c.price`), for an animation of
-  /// one gift, and for a hit whose price divides by its count. The text is
+  /// one gift, and for a hit whose price divides by its count; the total is
+  /// for all of the count (a line's `c.price` times its count, the others'
+  /// as sent: 飞天小猪 hit 3 is 204, its line 68 each, 204 in all). The text is
   /// the shared `念念相守 ×3` form; the receiver stays in the gift's
   /// recipient. The sender is `n` and `u`, the level `l`, the id and time
   /// the response's `mid` and `created_at`. Null without a `c` object or a
@@ -307,7 +309,8 @@ abstract final class KilakilaDanmakuCodec {
     final receiver = item['giftReceiverName'];
     final receiverName = receiver is String ? receiver.trim() : '';
     final icon = _url(item['pic']);
-    // The platform's red bean is its paid currency, written as gold here.
+    // A line prices one gift; an animation or a hit prices all of it so far.
+    final total = line ? price * count : price;
     final gift = LiveGift.of(
       giftId: _id(item['id']),
       name: name.trim(),
@@ -320,7 +323,7 @@ abstract final class KilakilaDanmakuCodec {
             : price % count == 0
             ? (price ~/ count).toDouble()
             : null,
-        totalValue: price == 0 ? null : price.toDouble(),
+        totalValue: total == 0 ? null : total.toDouble(),
       ),
       combo: LiveGiftCombo.of(comboKey: _id(item['no']), comboTotal: line || hit ? count : null),
       recipientName: receiverName,

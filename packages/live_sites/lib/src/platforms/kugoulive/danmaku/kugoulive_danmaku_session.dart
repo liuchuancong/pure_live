@@ -75,6 +75,8 @@ typedef KugouliveTimers = ({
 /// - Every socket logs in (201; 2201 with the last session once the room has
 ///   been joined) and is joined when the status frame accepts it; a socket
 ///   that is not joined in [KugouliveDanmakuCodec.joinTimeout] is replaced.
+///   Each replacement goes to the next of the scheduler's hosts, round and
+///   round, as the page's socket wrapper moves on.
 /// - The token is kept for the next sockets, as the page keeps it, until it
 ///   is older than the scheduler's `age`, was refused (622) or went on a
 ///   socket that was replaced before the server answered its login: then the
@@ -128,6 +130,11 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   String _sessionId = '';
   String _sid = '';
   String _deviceNo = '';
+
+  /// Which of the scheduler's hosts the next socket goes to: every
+  /// reconnect moves on to the next one, so a host that is down costs one
+  /// attempt rather than the whole budget.
+  int _endpoint = 0;
   int _generation = 0;
   int _failures = 0;
   int _refusals = 0;
@@ -220,10 +227,13 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   Future<void> _openSocket(int generation) async {
     final grant = _grant;
     if (grant == null || _disposed || generation != _generation) return;
+    // The scheduler hands out several hosts (three in practice); a renewed
+    // grant listing fewer keeps the turn within its own list.
+    final endpoint = grant.endpoints[_endpoint % grant.endpoints.length];
     final SocketChannel socket;
     try {
       socket = await site.connect(
-        grant.endpoints.first,
+        endpoint,
         headers: KugouliveDanmakuCodec.socketHeaders,
         protocols: null,
         connectTimeout: KugouliveDanmakuCodec.silenceTimeout,
@@ -393,9 +403,9 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
     _scheduleRetry(reason);
   }
 
-  /// The socket is to be replaced after the backoff's step;
-  /// [KugouliveDanmakuCodec.maxReconnects] runs without a joined one end the
-  /// session.
+  /// The socket is to be replaced after the backoff's step, on the next of
+  /// the scheduler's hosts; [KugouliveDanmakuCodec.maxReconnects] runs
+  /// without a joined one end the session.
   void _scheduleRetry(String reason) {
     _cancelTimers();
     if (_disposed) return;
@@ -404,6 +414,7 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
       _terminate(reason);
       return;
     }
+    _endpoint += 1;
     final generation = _generation;
     _retry = _timers.after(KugouliveDanmakuCodec.reconnectBaseDelay * _failures, () {
       if (generation != _generation || _disposed) return;

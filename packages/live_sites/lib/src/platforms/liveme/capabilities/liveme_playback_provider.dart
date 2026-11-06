@@ -49,4 +49,20 @@ final class LivemePlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: livemeSiteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: the current broadcast is asked for again even
+  /// when stream data is kept, since the anchor may have started a new one;
+  /// the kept URLs are never handed back.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, fresh: true));
+    } on LivemeFailure catch (failure) {
+      return left(failure.toLiveSiteError(livemeSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: livemeSiteId, message: '$error', cause: error));
+    }
+  }
 }
