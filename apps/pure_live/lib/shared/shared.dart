@@ -16,6 +16,7 @@ export 'navigation/navigation.dart';
 export 'paging/paging.dart';
 export 'platforms/platforms.dart';
 export 'player/player.dart';
+export 'record/record_display.dart';
 export 'rooms/rooms.dart';
 export 'utils/utils.dart';
 export 'widgets/widgets.dart';

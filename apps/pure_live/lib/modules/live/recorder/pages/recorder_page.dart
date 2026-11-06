@@ -1007,14 +1007,7 @@ Duration recordingElapsed(RecordingTask task) {
 /// then the ones waiting for their next live stream, then a failed last take,
 /// and the paused rooms last. Ties keep the newest session on top.
 int _subscriptionOrder(RecordingTask a, RecordingTask b) {
-  int rank(RecordingTask task) {
-    if (task.postProcessing || task.state == RecordingTaskState.recording) return 0;
-    if (!task.enabled) return 3;
-    if (task.state == RecordingTaskState.failed) return 2;
-    return 1;
-  }
-
-  final byRank = rank(a).compareTo(rank(b));
+  final byRank = RecordingDisplayState.of(a).sortRank.compareTo(RecordingDisplayState.of(b).sortRank);
   return byRank != 0 ? byRank : b.startedAt.compareTo(a.startedAt);
 }
 
@@ -1129,7 +1122,6 @@ final class _TaskCard extends ConsumerWidget {
     final fileDeleted = _fileDeleted;
     final recording = task.isRunning && !processing;
     final failed = task.enabled && task.state == RecordingTaskState.failed && !processing;
-    final paused = !task.enabled && !processing;
     final area = (room?.area?.areaName ?? '').trim();
     // A title that opens with a bracket starts half an em in; the caption
     // under it starts at the box's edge, so it takes the same blank to read
@@ -1142,24 +1134,14 @@ final class _TaskCard extends ConsumerWidget {
     final segment = liveElapsed <= Duration.zero || segmentMinutes <= 0
         ? ''
         : t.recorder.segmentProgress(count: liveElapsed.inSeconds ~/ segmentSeconds + 1, minutes: segmentMinutes);
-    final statusText = processing
-        ? t.recorder.stateProcessing
-        : recording
-        ? t.recorder.stateRecording
-        : failed
-        ? t.recorder.stateFailed
-        : paused
-        ? t.recorder.statePaused
-        : fileDeleted
-        ? t.recorder.stateFileDeleted
-        : t.recorder.stateWaiting;
-    final statusTone = processing
-        ? DsStatus.info
-        : recording || failed
-        ? DsStatus.danger
-        : paused || fileDeleted
-        ? DsStatus.neutral
-        : DsStatus.warning;
+    final display = RecordingDisplayState.of(task);
+    final statusText = display.word(
+      context,
+      joinPercent: processing && task.postProcessingProgress >= 0
+          ? (task.postProcessingProgress.clamp(0.0, 1.0) * 100).round()
+          : null,
+    );
+    final statusTone = display.tone;
     final statusNote = recording
         ? segment
         : (lastRun.isNotEmpty ? lastRun : (fileDeleted ? t.recorder.warningFileDeleted : ''));

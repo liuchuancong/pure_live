@@ -2094,21 +2094,21 @@ final class _PresentationCluster extends ConsumerWidget {
     // reads as "nothing is happening here" while a take is queued or unfinished.
     final pending = recording ? null : task;
     final joining = pending?.postProcessing ?? false;
-    // A joining take says how far the join got, the way the reference's badge
-    // does (合成中 45%): a join runs minutes, the strip has no progress bar,
-    // and a word alone cannot answer "is it moving or stuck".
-    String joinWord(RecordingTask take) {
-      if (take.postProcessingProgress < 0) return t.recorder.stateProcessing;
-      return '${t.recorder.stateProcessing} ${(take.postProcessingProgress.clamp(0.0, 1.0) * 100).round()}%';
-    }
-
-    final pendingWord = switch (pending) {
-      null => null,
-      final RecordingTask take when take.postProcessing => joinWord(take),
-      final RecordingTask take when take.state == RecordingTaskState.waiting => t.recorder.stateWaiting,
-      final RecordingTask take when take.state == RecordingTaskState.failed => t.recorder.stateFailed,
-      _ => null,
-    };
+    // The word the strip carries for a take that is not writing — the same
+    // mapping the recorder centre shows, so the two surfaces cannot call
+    // one task different things. A joining take says how far the join got,
+    // the way the reference's badge does (合成中 45%): a join runs minutes,
+    // the strip has no progress bar, and a word alone cannot answer "is it
+    // moving or stuck".
+    final pendingDisplay = pending == null ? null : RecordingDisplayState.of(pending);
+    final pendingWord = pendingDisplay == null || !pendingDisplay.showsOnBar
+        ? null
+        : pendingDisplay.word(
+            context,
+            joinPercent: pendingDisplay == RecordingDisplayState.joining && pending!.postProcessingProgress >= 0
+                ? (pending.postProcessingProgress.clamp(0.0, 1.0) * 100).round()
+                : null,
+          );
     // What the strip has room for. A narrow tier with nothing running shows no
     // cluster at all — an empty glass pill would be a hole in the strip — and a
     // word is wider than the icon it replaces, so it waits for room.
@@ -2736,7 +2736,11 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               // fullscreen, so it no longer waits for the wide tier.
               if (!crowded && !pip) ...[
                 SizedBox(
-                  width: tv ? 140 : wide ? 90 : 72,
+                  width: tv
+                      ? 140
+                      : wide
+                      ? 90
+                      : 72,
                   child: DsSlider(
                     value: volume,
                     onChanged: (value) {
