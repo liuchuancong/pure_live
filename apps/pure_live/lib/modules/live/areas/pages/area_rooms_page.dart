@@ -41,6 +41,12 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   /// The grid's scroll position across page changes and layout switches.
   final ScrollController _scroll = ScrollController();
 
+  /// The page the viewer asked the pager for. The stored page still names
+  /// what the grid holds until the rooms arrive, so the pager would
+  /// otherwise sit on the old number for the whole load (the popular feed's
+  /// own pill).
+  int? _askedPage;
+
   @override
   void dispose() {
     _scroll.dispose();
@@ -72,7 +78,8 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     final controller = ref.read(areaRoomsProvider.notifier);
     // The display page size is the platform's own area window (the
     // controller seeds and slices it); nothing re-measures a page here.
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final showUnplayable = ref.watch(showUnplayableProvider);
 
     // The reference's hidden-count line under the rooms: what the discovery
@@ -86,7 +93,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         Expanded(child: content),
         if (open.hidden > 0 && !showUnplayable)
           Padding(
-            padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, wide ? DsSpace.s4 : DsSpace.s20),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, wide ? DsSpace.s4 : DsSpace.s20),
             child: Row(
               spacing: DsSpace.s8,
               children: [
@@ -177,10 +184,14 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
             child: Center(
               child: DsPagination(
-                page: state.page,
+                // The pill moves to the page just asked for while it loads;
+                // the stored page still names what the grid holds, so the
+                // pager would otherwise sit on the old number for the whole
+                // request.
+                page: _askedPage ?? state.page,
                 pageCount: roomPageCount(
                   page: state.page,
                   roomCount: state.rooms.length,
@@ -191,9 +202,14 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
                   // A page already in flight drops the press; the pager keeps
                   // its normal ink instead of greying out under the viewer.
                   if (state.loading) return;
+                  setState(() => _askedPage = next);
                   // A new page starts at its head, as desktop pagers do.
                   if (_scroll.hasClients) _scroll.jumpTo(0);
-                  unawaited(controller.loadPage(next));
+                  unawaited(
+                    controller.loadPage(next).whenComplete(() {
+                      if (mounted) setState(() => _askedPage = null);
+                    }),
+                  );
                 },
               ),
             ),
@@ -211,10 +227,21 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         // The area follow sits beside the title, like the reference's
         // FollowAreaButton: the followed-areas view and this page share it.
+        // The pull refresh has a button here too — this page has no head
+        // line to carry one, and a mouse is not a pulling thumb.
         actions: [
           if (state != null) _AreaFollowButton(area: state.area),
           const SizedBox(width: DsSpace.s8),
           const Center(child: LayoutToggle()),
+          const SizedBox(width: DsSpace.s8),
+          DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: context.t.common.refresh,
+            loading: state?.loading ?? false,
+            onPressed: state == null || state.loading ? null : () => unawaited(controller.reload()),
+            icon: const DsIcon(DsIcons.refreshCw, size: 16),
+          ),
           const SizedBox(width: DsSpace.s8),
         ],
       ),

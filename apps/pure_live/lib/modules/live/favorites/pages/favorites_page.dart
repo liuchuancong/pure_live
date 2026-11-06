@@ -222,6 +222,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final follows = ref.watch(followsProvider);
     final layout = ref.watch(browseLayoutProvider);
+    final browse = ref.watch(browseSettingsProvider);
     // The page size follows the platform tab, which resets the page itself;
     // nothing re-slices from the settings surface any more.
     // A platform switched off, or the order dragged, in the settings
@@ -241,8 +242,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             description: Text(follows.error!),
             actions: [
               DsButton(
-                variant: DsButtonVariant.primary,
-                size: DsSize.sm,
                 onPressed: () {
                   ref
                     ..invalidate(followRepositoryProvider)
@@ -482,6 +481,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                   // asked again, the progress bar over the tabs.
                   onRefresh: _runRefresh,
                   layout: layout,
+                  crossSpacing: browse.crossSpacing,
+                  mainSpacing: browse.mainSpacing,
                   listMatchesGridWidth: true,
                   listMainAxisExtent: kRoomCardListTagsHeight,
                   listItemBuilder: (context, room) => cardFor(room, listRow: true),
@@ -569,7 +570,7 @@ final class _RefreshButton extends StatelessWidget {
       semanticLabel: context.t.favorites.refresh,
       loading: refreshing,
       onPressed: refreshing ? null : () => unawaited(onRefresh()),
-      icon: DsIcon(DsIcons.refreshCw, size: DsTheme.of(context).sizes.iconSm),
+      icon: const DsIcon(DsIcons.refreshCw, size: 16),
     );
   }
 }

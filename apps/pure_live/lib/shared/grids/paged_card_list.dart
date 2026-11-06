@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 
 /// The paged grid's single-column sibling over [CardList]: the same rule
 /// for rows whose height is their own (a task card grows a progress line, an
@@ -122,7 +123,7 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
     if (!wide) {
       final end = math.min(widget.items.length, _revealed * widget.pageSize);
       final shown = end == widget.items.length ? widget.items : widget.items.sublist(0, end);

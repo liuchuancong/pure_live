@@ -85,6 +85,17 @@ final class BrowsingPane extends ConsumerWidget {
               ],
               onChanged: (value) => ref.read(browseSettingsProvider.notifier).gridColumns = value,
             ),
+            // A phone cannot hold two minimum-width cards, so without its own
+            // count the grid would always show one wide card there.
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.smartphone),
+              title: t.settings.phoneColumns,
+              value: settings.phoneColumns,
+              options: [
+                for (final columns in kBrowsePhoneColumnChoices) DsSelectOption(value: columns, label: '$columns'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).phoneColumns = value,
+            ),
           ],
         ),
         DsListSection(

@@ -5,18 +5,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/shared/shared.dart';
 
-/// The browsing surfaces' tunables: the grid gaps and the columns a feed
-/// draws.
+/// The browsing surfaces' tunables: the grid gaps, the columns a feed draws
+/// and the columns a phone keeps.
 ///
 /// The columns default to 0 — the grid derives them from the window it is
-/// drawn in ([browseCardExtentForWidth]) — and a viewer's number caps them:
+/// drawn in (see browseCardExtentForWidth) — and a viewer's number caps them:
 /// the window lowers the count when it cannot hold that many cards at one
 /// card's minimum width, so a choice never squeezes cards into a sliver.
 /// The cap shapes both layouts: a list row is as wide as a grid card.
-typedef BrowseSettings = ({double crossSpacing, double mainSpacing, int gridColumns});
+///
+/// A phone is too narrow for two cards at that minimum width, so without a
+/// rule of its own the grid would always collapse to one wide card there.
+/// The settings' phoneColumns is that rule: the count a phone keeps
+/// directly, cards a little narrower for it.
+typedef BrowseSettings = ({double crossSpacing, double mainSpacing, int gridColumns, int phoneColumns});
 
 /// The column counts a viewer may cap a feed at; 0 is "the window decides".
 const List<int> kBrowseGridColumnChoices = [3, 4, 5, 6];
+
+/// The column counts a phone may keep; 2 is the reference's phone feed.
+const List<int> kBrowsePhoneColumnChoices = [1, 2, 3];
+
+/// The columns a phone starts with when the store never answered.
+const int kBrowsePhoneColumnsDefault = 2;
 
 /// The grid gaps a viewer may pick: desen_ui's spacing tokens up to
 /// `DsSpace.s12` and nothing else — the scale, not a free pixel range, is
@@ -56,7 +67,20 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
       crossSpacing: _readStoredSpacing('browse.crossSpacing'),
       mainSpacing: _readStoredSpacing('browse.mainSpacing'),
       gridColumns: _readStoredInt('browse.gridColumns', kBrowseGridColumnChoices),
+      phoneColumns: _readStoredPhoneColumns(),
     );
+  }
+
+  /// The stored phone column count; [kBrowsePhoneColumnsDefault] when the
+  /// store never opened (or holds nonsense).
+  static int _readStoredPhoneColumns() {
+    try {
+      final parsed = int.tryParse(StoragePrefs.getString('browse.phoneColumns') ?? '');
+      if (parsed == null) return kBrowsePhoneColumnsDefault;
+      return kBrowsePhoneColumnChoices.contains(parsed) ? parsed : kBrowsePhoneColumnsDefault;
+    } on Object {
+      return kBrowsePhoneColumnsDefault;
+    }
   }
 
   /// One stored grid gap, on the token scale; the default when the store
@@ -93,6 +117,10 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
   /// list layout draws rows at the same width.
   int get gridColumns => state.gridColumns;
 
+  /// How many columns a phone keeps when the window is too narrow for two
+  /// cards at the minimum width.
+  int get phoneColumns => state.phoneColumns;
+
   /// Moves the gap between cards across a row to the nearest token.
   set crossSpacing(double spacing) {
     final clamped = nearestBrowseSpacing(spacing);
@@ -114,10 +142,18 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     unawaited(StoragePrefs.setString('browse.gridColumns', '$value'));
   }
 
-  BrowseSettings _copy({double? crossSpacing, double? mainSpacing, int? gridColumns}) => (
+  /// Sets the columns a phone keeps.
+  set phoneColumns(int columns) {
+    final value = kBrowsePhoneColumnChoices.contains(columns) ? columns : state.phoneColumns;
+    state = _copy(phoneColumns: value);
+    unawaited(StoragePrefs.setString('browse.phoneColumns', '$value'));
+  }
+
+  BrowseSettings _copy({double? crossSpacing, double? mainSpacing, int? gridColumns, int? phoneColumns}) => (
     crossSpacing: crossSpacing ?? state.crossSpacing,
     mainSpacing: mainSpacing ?? state.mainSpacing,
     gridColumns: gridColumns ?? state.gridColumns,
+    phoneColumns: phoneColumns ?? state.phoneColumns,
   );
 }
 

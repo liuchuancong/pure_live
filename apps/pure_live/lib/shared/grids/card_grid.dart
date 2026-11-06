@@ -89,6 +89,29 @@ double browseCardExtentForWidth(double content, {double crossSpacing = DsSpace.s
   return width(columns) + 0.01;
 }
 
+/// The card width a feed of [content] pixels gives itself under the viewer's
+/// [browse] settings — the one measure every feed that follows the settings
+/// takes.
+///
+/// A phone cannot hold two cards at [kBrowseCardMinWidth], so there the
+/// viewer's mobile column count speaks directly instead of the grid
+/// collapsing to one wide card; where a ceiling is set it caps the count;
+/// otherwise the window's own count stands.
+double browseSettingsExtentForWidth(double content, BrowseSettings browse, {double crossSpacing = DsSpace.s16}) {
+  if (content <= 0) return kBrowseCardMaxWidth;
+  if (content < kBrowseCardMinWidth * 2 + crossSpacing) {
+    return columnExtentForWidth(content, browse.phoneColumns, crossSpacing);
+  }
+  final capped = cappedColumnsForWidth(
+    content,
+    spacing: crossSpacing,
+    ceiling: browse.gridColumns,
+    minWidth: kBrowseCardMinWidth,
+  );
+  if (capped > 0) return columnExtentForWidth(content, capped, crossSpacing);
+  return browseCardExtentForWidth(content, crossSpacing: crossSpacing);
+}
+
 /// How a collection of items is laid out: the responsive card grid, or the
 /// row card in as many columns as the window can hold.
 enum CardLayout {
@@ -292,22 +315,14 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   ScrollController get _scroll => widget.scrollController ?? _ownScroll;
 
   /// The card width the collection uses in a box [width] wide: the caller's
-  /// measure when it brought one, the columns the window implies otherwise.
-  /// A viewer's column cap lowers the count when the window is too narrow
-  /// to hold that many cards at [kBrowseCardMinWidth].
+  /// measure when it brought one, else the settings' — the viewer's phone
+  /// columns on a phone, their cap where they set one, the window's count
+  /// elsewhere (see [browseSettingsExtentForWidth]).
   double _extentFor(double width, BrowseSettings browse) {
+    if (widget.cardExtent != null) return widget.cardExtent!;
     final padding = _gutter;
     final content = math.max(0, width - padding.horizontal).toDouble();
-    final capped = cappedColumnsForWidth(
-      content,
-      spacing: widget.crossSpacing,
-      ceiling: browse.gridColumns,
-      minWidth: kBrowseCardMinWidth,
-    );
-    if (widget.cardExtent == null && capped > 0 && content > 0) {
-      return columnExtentForWidth(content, capped, widget.crossSpacing);
-    }
-    return widget.cardExtent ?? browseCardExtentForWidth(content, crossSpacing: widget.crossSpacing);
+    return browseSettingsExtentForWidth(content, browse, crossSpacing: widget.crossSpacing);
   }
 
   /// The columns a width gets from [SliverGridDelegateWithMaxCrossAxisExtent].
@@ -541,7 +556,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         roomCard: widget.aspectRatio == null,
         mainAxisExtent: listRow ? widget.listMainAxisExtent : null,
         listMatchesGridWidth: widget.listMatchesGridWidth,
-        columns: browse.gridColumns,
+        browse: browse,
         count: widget.skeletonCount,
         padding: _gutter,
       );
@@ -830,7 +845,7 @@ final class _SkeletonGrid extends StatelessWidget {
     required this.aspectRatio,
     required this.count,
     required this.padding,
-    required this.columns,
+    required this.browse,
     this.cardExtent,
     this.roomCard = false,
     this.infoExtent,
@@ -858,7 +873,9 @@ final class _SkeletonGrid extends StatelessWidget {
   /// Whether the rows keep the grid's card width; when false a row is held
   /// to [kListCardMinWidth], as the live list delegate does.
   final bool listMatchesGridWidth;
-  final int columns;
+
+  /// The viewer's browsing settings, the placeholder's measure's source.
+  final BrowseSettings browse;
   final int count;
   final EdgeInsetsGeometry padding;
 
@@ -874,16 +891,16 @@ final class _SkeletonGrid extends StatelessWidget {
         final capped = cappedColumnsForWidth(
           content,
           spacing: crossSpacing,
-          ceiling: columns,
-          minWidth: wideRows ? kListCardMinWidth : kBrowseCardMinWidth,
+          ceiling: browse.gridColumns,
+          minWidth: kListCardMinWidth,
         );
         final extent =
             cardExtent ??
-            (capped > 0 && content > 0
-                ? columnExtentForWidth(content, capped, crossSpacing)
-                : wideRows
-                ? listCardExtentForWidth(content, spacing: crossSpacing)
-                : browseCardExtentForWidth(content, crossSpacing: crossSpacing));
+            (wideRows
+                ? capped > 0 && content > 0
+                      ? columnExtentForWidth(content, capped, crossSpacing)
+                      : listCardExtentForWidth(content, spacing: crossSpacing)
+                : browseSettingsExtentForWidth(content, browse, crossSpacing: crossSpacing));
         final columnCount = math.max(1, (content / (extent + crossSpacing)).ceil());
         final tileWidth = (content - crossSpacing * (columnCount - 1)) / columnCount;
         final roomExtent = mainAxisExtent == null && roomCard && content > 0

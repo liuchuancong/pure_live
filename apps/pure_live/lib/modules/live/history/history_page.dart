@@ -214,7 +214,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     // block as the viewer reaches the end and pulls to refresh them all.
     // The day sections are cut from the shown slice, so a day that spans
     // two pages is headed on both.
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
     final lastPage = (shown.length + _pageSize - 1) ~/ _pageSize;
     final page = _asked.clamp(1, lastPage);
     final start = wide ? (page - 1) * _pageSize : 0;
@@ -234,16 +234,14 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         // grid's padding, and counting it twice used to ask for one column
         // more than the delegate drew, which squeezed the rows.
         final content = math.max(0, constraints.maxWidth - 2 * inset).toDouble();
-        final capped = cappedColumnsForWidth(
-          content,
-          spacing: crossSpacing,
-          ceiling: settings.gridColumns,
-          minWidth: kBrowseCardMinWidth,
-        );
         final listRow = layout == CardLayout.list;
-        final extent = capped > 0 && content > 0
-            ? columnExtentForWidth(content, capped, crossSpacing)
-            : browseCardExtentForWidth(content, crossSpacing: crossSpacing);
+        // The feed's own measure — the viewer's settings: phone columns on a
+        // phone, their column cap, else the window's own count — so a history
+        // tile is the feed's tile and a list row is a card's width. The width
+        // is the one the grid really gets: the page's inset is the grid's
+        // padding, and counting it twice used to ask for one column more than
+        // the delegate drew, which squeezed the rows.
+        final extent = browseSettingsExtentForWidth(content, settings, crossSpacing: crossSpacing);
         final columns = math.max(1, (content / (extent + crossSpacing)).ceil());
         final tileWidth = content > 0 ? (content - crossSpacing * (columns - 1)) / columns : 0.0;
         final tileExtent = listRow ? kRoomCardListDesignHeight : roomCardTileHeight(tileWidth);

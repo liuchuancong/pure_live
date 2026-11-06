@@ -25,8 +25,6 @@ final class AreasPage extends ConsumerStatefulWidget {
   ConsumerState<AreasPage> createState() => _AreasPageState();
 }
 
-/// The two views the segmented control switches between.
-
 final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBindingObserver {
   /// When the viewer last left the app, so a long absence refreshes on return.
   DateTime? _backgroundedAt;

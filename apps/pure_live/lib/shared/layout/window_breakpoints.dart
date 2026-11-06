@@ -31,6 +31,12 @@ abstract final class LiveWindow {
   /// below it the actions stack under the tabs.
   static const double toolbar = 720;
 
+  /// At or above this width a feed pages by number — the desktop rule: the
+  /// catalogue is sliced locally and moved with the pager — and below it a
+  /// feed appends under pull refresh. Popular, the area's rooms, history,
+  /// the music library and the shared paged grids all read this one number.
+  static const double paging = 768;
+
   /// The kit's own panel breakpoint: at or above it `showDsPanel` is a side
   /// panel, below it a bottom sheet. Re-exported for pages that lay out
   /// their own overlay.

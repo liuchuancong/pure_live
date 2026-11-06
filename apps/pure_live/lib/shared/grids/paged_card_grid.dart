@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 
 /// The feed's scroll logic in one place, the popular page's rule: a wide
 /// window pages by number — one display page of [pageSize] items under the
@@ -184,7 +185,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
     if (!wide) return _endlessGrid();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

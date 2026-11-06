@@ -192,7 +192,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                 height: 44,
                 child: Row(
                   spacing: DsSpace.s8,
-                  children: [Expanded(child: tabs), refresh],
+                  children: [
+                    Expanded(child: tabs),
+                    refresh,
+                  ],
                 ),
               );
             },
@@ -250,7 +253,7 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
           loading: false,
           error: null,
         );
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     // A platform whose native feed ended empty or failed still has its own
     // web directory: the native channel is not the only way in.
@@ -528,7 +531,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   /// server page boundary.
   Widget _pagedResults(BuildContext context, SearchState search, BrowseSettings settings) {
     final t = context.t;
-    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final page = wide ? _page : 1;
     final pageSize = _pageSize;

@@ -296,22 +296,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                     ),
                     builder: (context, controller, _) {
                       final active = (_sort == _SearchSort.smart ? 0 : 1) + (_includeOffline ? 0 : 1);
-                      // A compact window keeps the secondary action an icon;
-                      // the count rides the kit's anchored badge.
-                      if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) {
-                        return DsAnchoredBadge(
-                          badge: active == 0 ? const SizedBox.shrink() : DsCount(active, semanticLabel: '$active'),
-                          child: DsButton.icon(
-                            variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
-                            size: DsSize.sm,
-                            semanticLabel: active == 0
-                                ? context.t.search.filterTitle
-                                : '${context.t.search.filterTitle}, $active',
-                            onPressed: controller.toggle,
-                            icon: const DsIcon(DsIcons.slidersHorizontal, size: 16),
-                          ),
-                        );
-                      }
+                      // The popover only opens where the toolbar is one line
+                      // — the window then clears the compact class by a wide
+                      // margin — so the button always carries its label.
                       return DsButton(
                         variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
                         size: DsSize.sm,
@@ -1082,9 +1069,12 @@ final class _RoomResults extends ConsumerWidget {
       );
     }
 
+    final browse = ref.watch(browseSettingsProvider);
     return PagedCardGrid<LiveRoom>(
       items: search.rooms,
       layout: ref.watch(browseLayoutProvider),
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
       listMatchesGridWidth: true,
       listMainAxisExtent: kRoomCardListDesignHeight,
       listItemBuilder: (context, room) => cardFor(context, room, listRow: true),
@@ -1117,11 +1107,14 @@ final class _ListResults extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
+    final browse = ref.watch(browseSettingsProvider);
     // The rows page like the rooms grid: a wide window slices them into
     // columns under the pager, a narrow one appends.
     return PagedCardGrid<Object>(
       items: items,
       layout: CardLayout.list,
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
       listMatchesGridWidth: true,
       listItemBuilder: itemBuilder,
       hasMore: hasMore,

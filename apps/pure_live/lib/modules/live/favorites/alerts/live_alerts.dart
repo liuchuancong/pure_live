@@ -134,7 +134,13 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
   late final LiveAlertTapHandler _tapHandler = _openAlertedRoom;
   late final LiveAlertObserver _refreshObserver = _observeRefresh;
 
-  bool get _primary => ref.read(isPrimaryWindowProvider);
+  /// The scope's container, read through the element once while it is active.
+  /// Lifecycle callbacks can run after the element is deactivated, where an
+  /// ancestor lookup through [ref] is refused.
+  ProviderContainer? _container;
+  late Translations _translations;
+
+  bool get _primary => _container?.read(isPrimaryWindowProvider) ?? false;
 
   @override
   void initState() {
@@ -143,6 +149,13 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
     liveAlertTapHandler = _tapHandler;
     liveAlertObserver = _refreshObserver;
     WidgetsBinding.instance.addPostFrameCallback((_) => _arm());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _container = ProviderScope.containerOf(context, listen: false);
+    _translations = context.t;
   }
 
   @override
@@ -160,8 +173,9 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
   }
 
   void _arm({bool checkNow = false}) {
-    if (!mounted || !_primary) return;
-    final settings = ref.read(liveAlertSettingsProvider);
+    final container = _container;
+    if (!mounted || container == null || !_primary) return;
+    final settings = container.read(liveAlertSettingsProvider);
     if (!settings.enabled) {
       _timer?.cancel();
       _timer = null;
@@ -175,20 +189,21 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
   }
 
   Future<void> _check({required bool quiet}) async {
-    if (!mounted || _checking || !_primary) return;
-    final settings = ref.read(liveAlertSettingsProvider);
+    final container = _container;
+    if (!mounted || container == null || _checking || !_primary) return;
+    final settings = container.read(liveAlertSettingsProvider);
     if (!settings.enabled) return;
-    final follows = ref.read(followsProvider);
+    final follows = container.read(followsProvider);
     if (!follows.ready || follows.rooms.isEmpty) return;
-    final covered = liveAlertRooms(follows.rooms, chosen: settings.tagIds, tags: ref.read(followTagsProvider));
+    final covered = liveAlertRooms(follows.rooms, chosen: settings.tagIds, tags: container.read(followTagsProvider));
     if (covered.isEmpty) {
       _seeded = true;
       return;
     }
     _checking = true;
     try {
-      final fresh = await ref.read(followsProvider.notifier).fetchLiveStates(covered);
-      if (!mounted || !ref.read(liveAlertSettingsProvider).enabled) return;
+      final fresh = await container.read(followsProvider.notifier).fetchLiveStates(covered);
+      if (!mounted || !container.read(liveAlertSettingsProvider).enabled) return;
       final started = _tracker.observe(fresh, quiet: quiet || !_seeded);
       _seeded = true;
       if (quiet) return;
@@ -206,8 +221,9 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
   /// manual or automatic refresh: the same tracker as the timer, so a
   /// broadcast the pass caught is not announced again by the next check.
   void _observeRefresh(List<LiveRoom> rooms, {required bool quiet}) {
-    if (!mounted || !_primary) return;
-    final settings = ref.read(liveAlertSettingsProvider);
+    final container = _container;
+    if (!mounted || container == null || !_primary) return;
+    final settings = container.read(liveAlertSettingsProvider);
     if (!settings.enabled) {
       _tracker.forget();
       return;
@@ -215,7 +231,7 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
     final started = _tracker.observe(rooms, quiet: quiet || !_seeded);
     _seeded = true;
     if (quiet || started.isEmpty) return;
-    final covered = liveAlertRooms(rooms, chosen: settings.tagIds, tags: ref.read(followTagsProvider));
+    final covered = liveAlertRooms(rooms, chosen: settings.tagIds, tags: container.read(followTagsProvider));
     final keys = {for (final room in covered) room.ref.identityKey};
     for (final room in started) {
       if (keys.contains(room.ref.identityKey)) unawaited(_post(room));
@@ -224,22 +240,25 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
 
   Future<void> _post(LiveRoom room) async {
     if (!mounted) return;
-    final t = context.t;
-    final site = ref.read(sitesProvider).getById(room.ref.platform);
+    final site = _container?.read(sitesProvider).getById(room.ref.platform);
     final platform = site == null ? room.ref.platform : localizedSiteName(site);
     final title = room.content.title.trim();
     await postLiveAlert(
       identityKey: room.ref.identityKey,
-      title: title.isEmpty ? t.settings.liveAlertFallbackTitle(platform: platform, roomId: room.ref.roomId) : title,
-      body: t.settings.liveAlertNotificationBody(platform: platform),
+      title: title.isEmpty
+          ? _translations.settings.liveAlertFallbackTitle(platform: platform, roomId: room.ref.roomId)
+          : title,
+      body: _translations.settings.liveAlertNotificationBody(platform: platform),
     );
   }
 
   void _openAlertedRoom(String identityKey) {
     final split = identityKey.indexOf(':');
     if (split <= 0 || split == identityKey.length - 1) return;
+    final container = _container;
+    if (container == null) return;
     unawaited(
-      ref
+      container
           .read(appRouterProvider)
           .push(
             RoomRoute(platform: identityKey.substring(0, split), roomId: identityKey.substring(split + 1)).location,
