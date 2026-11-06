@@ -1212,6 +1212,7 @@ final class BilibiliVodClient {
       title: title,
       coverUrl: cover.isEmpty ? null : _https(cover),
       uploader: '${hit['author'] ?? ''}'.isEmpty ? null : '${hit['author']}',
+      uploaderAvatar: _coverOf(hit['upic']),
       duration: duration,
       playCount: _intOf(hit['play']),
     );
@@ -1237,6 +1238,11 @@ final class BilibiliVodClient {
     };
     final plays = stat is Map ? _intOf(stat['view']) : _intOf(item['play']);
     final danmaku = stat is Map ? _intOf(stat['danmaku']) : _intOf(item['danmaku']);
+    final face = switch ((owner, author)) {
+      (final Map<Object?, Object?> owner, _) => _coverOf(owner['face']),
+      (_, final Map<Object?, Object?> author) => _coverOf(author['face']),
+      _ => null,
+    };
     return VodVideo(
       id: bvid,
       bvid: bvid,
@@ -1244,6 +1250,7 @@ final class BilibiliVodClient {
       title: title,
       coverUrl: _coverOf(item['pic'] ?? item['cover']),
       uploader: uploader.isEmpty ? null : uploader,
+      uploaderAvatar: face,
       duration: duration is num ? Duration(seconds: duration.toInt()) : _durationOf('${duration ?? ''}'),
       playCount: plays,
       danmakuCount: danmaku,

@@ -10,6 +10,7 @@ final class VodVideo {
     required this.title,
     this.coverUrl,
     this.uploader,
+    this.uploaderAvatar,
     this.duration,
     this.playCount,
     this.danmakuCount,
@@ -28,6 +29,10 @@ final class VodVideo {
 
   /// The uploader's name.
   final String? uploader;
+
+  /// The uploader's picture; null when the source gave none, as the search
+  /// answer does.
+  final String? uploaderAvatar;
 
   /// The length.
   final Duration? duration;

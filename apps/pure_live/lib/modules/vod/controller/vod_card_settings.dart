@@ -4,10 +4,11 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 
-/// One piece a Bilibili card draws. The cards' layout is fixed — the station's
-/// own cover ink, the counts at the cover foot's start, the length in a
-/// capsule at its end, the uploader under the title, the poster's score in
-/// its one corner or the state there with the state line under the name — and
+/// One piece a Bilibili card draws. The cards' layout is fixed — the live
+/// module's cover ink, the counts in capsules at the cover foot's start, the
+/// length in a capsule at its end, the uploader's picture at the head of the
+/// information area with the name under the title, the poster's score in its
+/// one corner or the state there with the state line under the name — and
 /// a choice here only says whether a piece appears at all.
 enum VodCardElement {
   /// The play figure at the cover's foot, its start.
@@ -21,6 +22,9 @@ enum VodCardElement {
 
   /// The uploader's name under the title.
   uploader,
+
+  /// The uploader's picture at the start of the card's information area.
+  avatar,
 
   /// The poster card's state: where the season stands
   /// (更新至第 12 话 / 全 26 集 / 上映日) — in the poster's corner while no

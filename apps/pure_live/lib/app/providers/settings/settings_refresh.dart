@@ -126,7 +126,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   iptvEpgProvider,
   vodQualityProvider,
   vodPlaybackSettingsProvider,
-  vodFeedBannerProvider,
   vodFavouritesProvider,
   vodHistoryProvider,
   hongguoAccountProvider,

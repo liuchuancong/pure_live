@@ -177,15 +177,6 @@ final class VodInterfacePane extends ConsumerWidget {
           header: Text(t.settings.navVodInterface),
           children: [
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.image),
-              title: t.vod.showFeedBanner,
-              description: t.vod.showFeedBannerDesc,
-              control: DsSwitch(
-                value: ref.watch(vodFeedBannerProvider),
-                onChanged: (value) => unawaited(ref.read(vodFeedBannerProvider.notifier).setShown(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
               leading: const DsIcon(DsIcons.info),
               title: t.vod.showDetails,
               description: t.vod.showDetailsDesc,

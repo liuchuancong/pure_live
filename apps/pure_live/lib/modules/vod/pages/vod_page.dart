@@ -9,12 +9,10 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart' show showBilibiliWebLoginPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/controller/vod_library.dart' show VodSavedVideo, vodFavouritesProvider;
-import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodFeedBannerProvider;
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
-    show VodDynamicRow, VodFeedHero, VodVideoCard, VodVideoRow, kVodCardInfoExtent;
+    show VodDynamicRow, VodVideoCard, VodVideoRow, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
 
 /// The station's home: the reference's 主页 rail entry, on its three tabs in
@@ -162,14 +160,12 @@ final class _VodPageState extends ConsumerState<VodPage> {
             VodTab.recommend => _VodFeedView(
               key: ValueKey(_recommendKey),
               feedKey: _recommendKey,
-              eyebrow: VodTab.recommend.label(t),
               scrollController: _scrollOf(_recommendKey),
               onOpen: _openVideo,
             ),
             VodTab.popular => _VodFeedView(
               key: ValueKey(_popularKey),
               feedKey: _popularKey,
-              eyebrow: VodTab.popular.label(t),
               scrollController: _scrollOf(_popularKey),
               onOpen: _openVideo,
             ),
@@ -181,24 +177,14 @@ final class _VodPageState extends ConsumerState<VodPage> {
   }
 }
 
-/// One cached browse feed as the shared card grid, opening on its first pick
-/// drawn at head size when the window has the height for it. The page keys
+/// One cached browse feed as the shared card grid: every pick is one card of
+/// the grid, in the same shape the live module's feeds lay out. The page keys
 /// each tab's view on its feed, so a switch starts the wide pager on the new
 /// feed's own first page instead of carrying the tab before it.
 final class _VodFeedView extends ConsumerWidget {
-  const _VodFeedView({
-    required this.feedKey,
-    required this.eyebrow,
-    required this.scrollController,
-    required this.onOpen,
-    super.key,
-  });
+  const _VodFeedView({required this.feedKey, required this.scrollController, required this.onOpen, super.key});
 
   final String feedKey;
-
-  /// The tab the feed is read under; the head names its own feed rather than
-  /// inventing a banner caption.
-  final String eyebrow;
 
   final ScrollController scrollController;
   final ValueChanged<VodVideo> onOpen;
@@ -210,13 +196,9 @@ final class _VodFeedView extends ConsumerWidget {
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
-    final hero = _hero(context, ref, state.videos);
-    // The head takes its archive out of the grid, so one pick never appears
-    // twice on the page.
-    final items = hero == null ? state.videos : state.videos.sublist(1);
-    final grid = PagedCardGrid<VodVideo>(
+    return PagedCardGrid<VodVideo>(
       scrollController: scrollController,
-      items: items,
+      items: state.videos,
       layout: ref.watch(browseLayoutProvider),
       // The archive row is a cover beside two text lines: a hair taller
       // than the room row so a two-line title never presses on its edge.
@@ -236,36 +218,6 @@ final class _VodFeedView extends ConsumerWidget {
       emptyTitle: t.common.empty,
       emptyDescription: t.vod.noResultsDescription,
       itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video)),
-    );
-    if (hero == null) return grid;
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s12), child: hero),
-        Expanded(child: grid),
-      ],
-    );
-  }
-
-  /// The head: the feed's first pick at the size the page opens with. It is
-  /// fixed chrome above a feed that scrolls on its own, so a compact window
-  /// gets none of it — the shelf would start under the fold, which is the
-  /// reason the standing condition rows left these pages. One item alone in
-  /// the feed stays a card, since the head takes its item out of the grid.
-  Widget? _hero(BuildContext context, WidgetRef ref, List<VodVideo> videos) {
-    if (videos.length < 2) return null;
-    if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) return null;
-    if (!ref.watch(vodFeedBannerProvider)) return null;
-    final video = videos.first;
-    final bvid = video.bvid ?? video.id;
-    final saved = ref.watch(vodFavouritesProvider.select((list) => list.any((entry) => entry.bvid == bvid)));
-    return VodFeedHero(
-      video: video,
-      eyebrow: eyebrow,
-      onOpen: () => onOpen(video),
-      saved: saved,
-      onSave: () => unawaited(ref.read(vodFavouritesProvider.notifier).toggle(VodSavedVideo.ofVideo(video))),
     );
   }
 }

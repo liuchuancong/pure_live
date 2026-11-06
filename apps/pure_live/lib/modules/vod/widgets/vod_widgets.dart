@@ -32,9 +32,10 @@ String vodDateText(DateTime time, {DateTime? now}) {
   return time.year == today.year ? date : '${time.year}-$date';
 }
 
-/// The information area under a vod card's cover: room for a two-line title
-/// and the uploader line, taller than the room card's one-line block.
-const double kVodCardInfoExtent = 72;
+/// The information area under a vod card's cover: the uploader's picture at
+/// its start with the name and the uploader beside it, the same block the
+/// live module's room card keeps — one measure for both stations' tiles.
+const double kVodCardInfoExtent = 56;
 
 /// The information area under a season card's poster: room for a two-line
 /// title and the state line under it, held at a fixed height so the posters
@@ -48,13 +49,13 @@ const double kVodSeasonCardInfoExtent = 76;
 /// the poster itself near the station's 3:4 once the name block is paid for.
 const double kVodSeasonTileAspect = 0.56;
 
-/// One Bilibili archive as a card in a browse or search grid, drawn the way
-/// the station's own home lays them out: the play and danmaku counts sit on
-/// the cover as white ink with a soft shadow at its foot's start, the length
-/// closes the foot as a dark capsule at its end, and beneath the cover the
-/// title runs two lines with the uploader right under it. The whole card is
-/// one press target. Which of those pieces appears is the card visibility
-/// setting's to say; the title is not one of them.
+/// One Bilibili archive as a card in a browse or search grid, drawn in the
+/// live module's card language so the two stations read as one design: the
+/// counts sit on the cover's foot as dark capsules, the length closes the
+/// foot in the same shape, and beneath the cover the uploader's picture leads
+/// a one-line title with the uploader under it. The whole card is one press
+/// target. Which of those pieces appears is the card visibility setting's to
+/// say; the title is not one of them.
 final class VodVideoCard extends ConsumerWidget {
   /// The card for [video]; [onOpen] opens its page.
   const VodVideoCard({required this.video, this.onOpen, this.rank, super.key});
@@ -77,7 +78,9 @@ final class VodVideoCard extends ConsumerWidget {
     final plays = !visibility.shows(VodCardElement.plays) || count == null || count <= 0
         ? ''
         : AudienceFormat.format(count);
-    final uploader = visibility.shows(VodCardElement.uploader) ? (video.uploader ?? '').trim() : '';
+    final uploaderName = (video.uploader ?? '').trim();
+    final uploader = visibility.shows(VodCardElement.uploader) ? uploaderName : '';
+    final avatarUrl = (video.uploaderAvatar ?? '').trim();
     final danmaku = switch (video.danmakuCount) {
       final value? when value > 0 && visibility.shows(VodCardElement.danmaku) => AudienceFormat.format(value),
       _ => '',
@@ -129,27 +132,27 @@ final class VodVideoCard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  // The station's own cover ink: the play and danmaku figures
-                  // at the foot's start as plain white with a soft shadow,
-                  // the length closing the foot in a dark capsule. Hidden
-                  // pieces leave their slot, and with all three hidden the row
-                  // is not drawn at all.
+                  // The cover's corner ink, worn the way the live module's
+                  // card wears it: the counts in dark capsules at the foot's
+                  // start, the length closing the foot in its own capsule.
+                  // Hidden pieces leave their slot, and with all three hidden
+                  // the row is not drawn at all.
                   if (plays.isNotEmpty || danmaku.isNotEmpty || showsDuration)
                     PositionedDirectional(
                       start: DsSpace.s8,
                       end: DsSpace.s8,
-                      bottom: DsSpace.s6,
+                      bottom: DsSpace.s8,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
                             child: Wrap(
-                              spacing: DsSpace.s8,
+                              spacing: DsSpace.s6,
                               runSpacing: DsSpace.s3,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                if (plays.isNotEmpty) _CoverInk(icon: DsIcons.play, label: plays),
-                                if (danmaku.isNotEmpty) _CoverInk(icon: DsIcons.captions, label: danmaku),
+                                if (plays.isNotEmpty) _CoverChip(icon: DsIcons.play, label: plays),
+                                if (danmaku.isNotEmpty) _CoverChip(icon: DsIcons.captions, label: danmaku),
                               ],
                             ),
                           ),
@@ -160,26 +163,44 @@ final class VodVideoCard extends ConsumerWidget {
                 ],
               ),
             ),
+            // The information area, in the live card's shape: the uploader's
+            // picture at its start, then the name and the uploader aligned
+            // beside it, both beginning at the same edge.
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s3,
+                child: Row(
+                  spacing: DsSpace.s8,
                   children: [
-                    Text(
-                      video.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                    ),
-                    if (uploader.isNotEmpty)
-                      Text(
-                        uploader,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    if (visibility.shows(VodCardElement.avatar))
+                      DsAvatar(
+                        initials: avatarInitials(uploaderName.isEmpty ? video.title : uploaderName),
+                        image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
+                        size: DsSize.md,
+                        semanticLabel: uploaderName.isEmpty ? video.title : uploaderName,
                       ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s3,
+                        children: [
+                          Text(
+                            video.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                          ),
+                          if (uploader.isNotEmpty)
+                            Text(
+                              uploader,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -195,14 +216,19 @@ final class VodVideoCard extends ConsumerWidget {
     final fallback = CoverFallback(title: video.title, padding: const EdgeInsets.all(DsSpace.s8));
     final url = video.coverUrl;
     if (url == null || url.isEmpty) return fallback;
-    return DsImage(image: cachedImage(url, policy: ImageCachePolicies.videoCover), aspectRatio: 16 / 9, semanticLabel: video.title, fallback: fallback);
+    return DsImage(
+      image: cachedImage(url, policy: ImageCachePolicies.videoCover),
+      aspectRatio: 16 / 9,
+      semanticLabel: video.title,
+      fallback: fallback,
+    );
   }
 }
 
-/// One figure printed on a cover: a small glyph and its count in white with
-/// the station's soft drop shadow — no capsule behind it.
-final class _CoverInk extends StatelessWidget {
-  const _CoverInk({required this.icon, required this.label});
+/// One figure printed on a cover: a small glyph and its count in a dark
+/// capsule, the shape the live module's cards use for the same corner.
+final class _CoverChip extends StatelessWidget {
+  const _CoverChip({required this.icon, required this.label});
 
   final DsIconData icon;
   final String label;
@@ -210,19 +236,14 @@ final class _CoverInk extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
-    const shadow = [Shadow(color: Color(0x66000000), offset: Offset(0, 1), blurRadius: 2)];
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s3,
-      children: [
-        DsIcon(icon, size: theme.sizes.iconXs, color: const Color(0xFFFFFFFF)),
-        Text(
-          label,
-          style: theme.typography.numeric(
-            theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), shadows: shadow),
-          ),
-        ),
-      ],
+    return RoomCoverChip(
+      compact: true,
+      icon: icon,
+      text: label,
+      maxWidth: 120,
+      style: theme.typography.numeric(
+        theme.typography.caption.copyWith(fontSize: 10, color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -298,140 +319,6 @@ final class _VodRowMeta extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: style,
-    );
-  }
-}
-
-/// The station's home opens with one archive drawn at head size — the feed's
-/// first pick, its cover at the head's start and its name, figures and verbs
-/// at its end — instead of starting mid-grid like every other row.
-///
-/// The figures are read once, here in words: a big cover carries the counts
-/// as ink only where the card below it has nowhere else to put them.
-final class VodFeedHero extends StatelessWidget {
-  /// The head for [video]; [onOpen] opens the archive, [onSave] collects it or
-  /// drops it, and [eyebrow] is the feed's own name rather than an invented one.
-  const VodFeedHero({
-    required this.video,
-    required this.eyebrow,
-    required this.onOpen,
-    required this.saved,
-    required this.onSave,
-    super.key,
-  });
-
-  /// The archive the feed puts first.
-  final VodVideo video;
-
-  /// The feed this head belongs to, in the station's own words.
-  final String eyebrow;
-
-  /// Opens the archive.
-  final VoidCallback onOpen;
-
-  /// Whether the archive already sits in the station's collection.
-  final bool saved;
-
-  /// Collects the archive, or drops it when it is collected.
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final uploader = (video.uploader ?? '').trim();
-    final plays = video.playCount;
-    final danmaku = video.danmakuCount;
-    final facts = [
-      if (uploader.isNotEmpty) uploader,
-      if (plays != null && plays > 0) '${AudienceFormat.format(plays)} ${t.vod.views}',
-      if (danmaku != null && danmaku > 0) '${AudienceFormat.format(danmaku)} ${t.vod.danmaku}',
-      if (video.duration != null) vodDurationText(video.duration!),
-    ].join(' · ');
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // The cover keeps its own 16:9 at every width: a head that filled the
-        // whole page would crop a picture the station drew for four thirds of
-        // its height again. Its width, then, is what sets the head's height.
-        final coverWidth = (constraints.maxWidth * 0.4).clamp(280.0, 440.0);
-        return DsCard(
-          onPressed: onOpen,
-          semanticLabel: video.title,
-          style: DsCardStyle(
-            padding: EdgeInsets.zero,
-            hovered: DsCardStyle(
-              background: colors.hover,
-              shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: coverWidth,
-                  child: AspectRatio(aspectRatio: 16 / 9, child: VodVideoCard.vodCover(video, context)),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: DsSpace.s4,
-                      children: [
-                        Text(eyebrow, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
-                        Text(
-                          video.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.heading.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                        ),
-                        if (facts.isNotEmpty)
-                          Text(
-                            facts,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: DsSpace.s4),
-                          child: Wrap(
-                            spacing: DsSpace.s8,
-                            runSpacing: DsSpace.s8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              DsButton(
-                                variant: DsButtonVariant.primary,
-                                size: DsSize.sm,
-                                leading: const DsIcon(DsIcons.play, size: 14),
-                                onPressed: onOpen,
-                                child: Text(t.vod.play),
-                              ),
-                              DsButton(
-                                variant: DsButtonVariant.secondary,
-                                size: DsSize.sm,
-                                onPressed: onSave,
-                                leading: DsIcon(
-                                  DsIcons.heart,
-                                  size: 14,
-                                  color: saved ? colors.accent : colors.textMuted,
-                                ),
-                                child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -688,7 +575,12 @@ final class VodSeasonHead extends StatelessWidget {
     final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
     final url = season.coverUrl;
     if (url == null || url.isEmpty) return fallback;
-    return DsImage(image: cachedImage(url, policy: ImageCachePolicies.videoCover), aspectRatio: 3 / 4, semanticLabel: season.title, fallback: fallback);
+    return DsImage(
+      image: cachedImage(url, policy: ImageCachePolicies.videoCover),
+      aspectRatio: 3 / 4,
+      semanticLabel: season.title,
+      fallback: fallback,
+    );
   }
 }
 
@@ -823,7 +715,11 @@ final class VodDynamicRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(theme.radii.control(72)),
                 child: AspectRatio(
                   aspectRatio: 16 / 9,
-                  child: DsImage(image: cachedImage(cover, policy: ImageCachePolicies.videoCover), aspectRatio: 16 / 9, semanticLabel: post.author),
+                  child: DsImage(
+                    image: cachedImage(cover, policy: ImageCachePolicies.videoCover),
+                    aspectRatio: 16 / 9,
+                    semanticLabel: post.author,
+                  ),
                 ),
               ),
             ),

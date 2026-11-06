@@ -539,7 +539,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'download queue lanes quality danmaku save folder 下载 队列 同时 画质 弹幕 保存 目录 下载管理',
     ),
     _hit(SettingsSection.vodInterface, t.vod.showDetails, 'details description uploader hide 详情 简介 隐藏'),
-    _hit(SettingsSection.vodInterface, t.vod.showFeedBanner, 'home head picture banner 首页 头图 横幅 显示'),
     // The card's switches live on the sample page the module's row opens; the
     // hit names that row's page, the way the room card's switches do.
     _hit(SettingsSection.vod, t.vod.cardElements, 'card elements pieces tile information 卡片 显示项 元素 封面'),
@@ -547,6 +546,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.vod, t.vod.cardDanmaku, 'danmaku comments count 弹幕数 弹幕 数量'),
     _hit(SettingsSection.vod, t.vod.cardDuration, 'length duration time 时长 长度 时间'),
     _hit(SettingsSection.vod, t.vod.cardUploader, 'uploader author name up 主 UP 作者'),
+    _hit(SettingsSection.vod, t.vod.cardAvatar, 'uploader face picture avatar 头像 UP 主 照片'),
     _hit(SettingsSection.vod, t.vod.cardSeasonState, 'season update state episode 更新状态 连载 完结 话数'),
     _hit(SettingsSection.vod, t.vod.score, 'season rating score stars 评分 分数 评价'),
     _hit(SettingsSection.vodPlayback, t.vod.playbackReset, 'playback reset defaults speed quality finish 播放 恢复 默认 重置'),

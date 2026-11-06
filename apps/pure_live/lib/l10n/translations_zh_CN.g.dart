@@ -12697,12 +12697,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '关闭后隐藏 UP 主、数据和简介。'
 	String get showDetailsDesc => '关闭后隐藏 UP 主、数据和简介。';
 
-	/// zh-CN: '首页头图'
-	String get showFeedBanner => '首页头图';
-
-	/// zh-CN: '把推荐与热门的第一条铺成片单上方的头图。'
-	String get showFeedBannerDesc => '把推荐与热门的第一条铺成片单上方的头图。';
-
 	/// zh-CN: '卡片显示项'
 	String get cardElements => '卡片显示项';
 
@@ -12717,6 +12711,9 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: 'UP 主'
 	String get cardUploader => 'UP 主';
+
+	/// zh-CN: 'UP 主头像'
+	String get cardAvatar => 'UP 主头像';
 
 	/// zh-CN: '更新状态'
 	String get cardSeasonState => '更新状态';
@@ -18109,13 +18106,12 @@ extension on Translations {
 			'vod.finishRelated' => '播放相关推荐',
 			'vod.showDetails' => '显示视频详情',
 			'vod.showDetailsDesc' => '关闭后隐藏 UP 主、数据和简介。',
-			'vod.showFeedBanner' => '首页头图',
-			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
 			'vod.cardElements' => '卡片显示项',
 			'vod.cardPlays' => '播放量',
 			'vod.cardDanmaku' => '弹幕数',
 			'vod.cardDuration' => '时长',
 			'vod.cardUploader' => 'UP 主',
+			'vod.cardAvatar' => 'UP 主头像',
 			'vod.cardSeasonState' => '更新状态',
 			'vod.cardPreviewTitle' => '【4K 修复】完整版：这一首循环了整个夏天',
 			'vod.cardPreviewUploader' => '凌晨四点还在剪片的人',

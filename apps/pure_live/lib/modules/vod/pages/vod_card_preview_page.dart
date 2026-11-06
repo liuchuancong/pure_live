@@ -16,6 +16,7 @@ List<(VodCardElement, DsIconData, String)> vodCardElements(Translations t) => [
   (VodCardElement.danmaku, DsIcons.captions, t.vod.cardDanmaku),
   (VodCardElement.duration, DsIcons.clock, t.vod.cardDuration),
   (VodCardElement.uploader, DsIcons.user, t.vod.cardUploader),
+  (VodCardElement.avatar, DsIcons.userRound, t.vod.cardAvatar),
   (VodCardElement.seasonState, DsIcons.info, t.vod.cardSeasonState),
   (VodCardElement.seasonScore, DsIcons.star, t.vod.score),
 ];
@@ -135,6 +136,7 @@ VodVideo _sampleVideo(Translations t) => VodVideo(
   title: t.vod.cardPreviewTitle,
   coverUrl: 'https://picsum.photos/seed/pure-live-vod/640/360',
   uploader: t.vod.cardPreviewUploader,
+  uploaderAvatar: 'https://picsum.photos/seed/pure-live-vod-uploader/144/144',
   duration: const Duration(minutes: 12, seconds: 34),
   playCount: 1234567,
   danmakuCount: 4321,
