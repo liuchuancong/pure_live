@@ -208,6 +208,11 @@ final class _PairingDialogState extends ConsumerState<_PairingDialog> {
     Navigator.of(context).pop();
   }
 
+  /// The SAS code in groups of three, so two users compare three digits at
+  /// a time instead of six; a code that is not six figures goes through as
+  /// it came.
+  static String _groupedCode(String code) => code.length == 6 ? '${code.substring(0, 3)} ${code.substring(3)}' : code;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -223,10 +228,15 @@ final class _PairingDialogState extends ConsumerState<_PairingDialog> {
           }),
           Text(t.settings.lanSyncPairIntro),
           if (_phase == _Phase.comparing || _phase == _Phase.waiting) ...[
+            // The code is the ceremony's one thing to read: the mono face
+            // keeps every digit the same width, and a six-figure code reads
+            // as two groups of three — the reference's own pairing shows it
+            // the same way.
             Text(
-              widget.code,
+              _groupedCode(widget.code),
               textAlign: TextAlign.center,
-              style: DsTheme.of(context).typography.title
+              style: DsTheme.of(context).typography
+                  .mono(DsTheme.of(context).typography.title)
                   .copyWith(fontSize: 40, letterSpacing: 8, fontWeight: FontWeight.w700),
             ),
             Text(
@@ -245,7 +255,13 @@ final class _PairingDialogState extends ConsumerState<_PairingDialog> {
           DsButton(variant: DsButtonVariant.ghost, onPressed: _reject, child: Text(t.settings.lanSyncPairReject)),
           DsButton(variant: DsButtonVariant.primary, onPressed: _confirm, child: Text(t.settings.lanSyncPairConfirm)),
         ],
-        _Phase.waiting => [const Center(child: DsProgressRing())],
+        // The waiting side is not trapped: the ceremony's own cancel is the
+        // reject, worded as the verb this phase actually offers.
+        _Phase.waiting => [
+          const Center(child: DsProgressRing()),
+          const SizedBox(width: DsSpace.s12),
+          DsButton(variant: DsButtonVariant.ghost, onPressed: _reject, child: Text(t.common.cancel)),
+        ],
         _ => [
           DsButton(
             variant: DsButtonVariant.primary,
