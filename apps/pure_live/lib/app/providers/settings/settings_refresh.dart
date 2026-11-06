@@ -9,6 +9,7 @@ import 'package:pure_live/app/providers/browse/browse_settings_providers.dart'
 import 'package:pure_live/app/providers/browse/refresh_settings_providers.dart'
     show followsAutoRefreshProvider, historyLimitProvider, maxConcurrentRefreshProvider;
 import 'package:pure_live/app/providers/browse/thumbnail_refresh_provider.dart' show thumbnailRefreshProvider;
+import 'package:pure_live/app/providers/cache/cache.dart' show liveCacheSettingsProvider;
 import 'package:pure_live/app/providers/device/auto_shutdown_provider.dart' show autoShutdownProvider;
 import 'package:pure_live/app/providers/device/display_refresh_rate_provider.dart'
     show displayRefreshRateProvider, matchVideoFrameRateProvider;
@@ -108,6 +109,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   liveAlertSettingsProvider,
   maxConcurrentRefreshProvider,
   thumbnailRefreshProvider,
+  liveCacheSettingsProvider,
   storageFolderOverridesProvider,
   logSettingsProvider,
   historyLimitProvider,

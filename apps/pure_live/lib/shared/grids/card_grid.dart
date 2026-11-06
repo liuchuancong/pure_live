@@ -13,6 +13,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 import 'package:pure_live/shared/widgets/pull_to_refresh.dart' show buildDsRefreshIndicator;
+import 'package:pure_live/shared/widgets/refresh_progress_bar.dart' show RefreshProgressBar;
 
 /// The gutter a feed keeps at the window's edge.
 ///
@@ -147,6 +148,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.infoExtent,
     this.listMainAxisExtent,
     this.isLoading = false,
+    this.showRefreshProgress = true,
     this.hasMore = false,
     this.onLoadMore,
     this.pagesOnScrollToEnd = false,
@@ -163,6 +165,8 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.layout = CardLayout.grid,
     this.listMatchesGridWidth = false,
     this.listFullWidth = false,
+    this.oneColumnWhenCompact = false,
+    this.compactMainAxisExtent,
     this.listItemBuilder,
     super.key,
   });
@@ -181,7 +185,9 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   final CardLayout layout;
 
   /// Whether a list row takes a grid card's width and columns. The room
-  /// feeds set it so switching the layout never resizes their cards; a row
+  /// feeds set it so switching the layout keeps their cards' measure; on a
+  /// compact page the row still takes the content's full width, because a
+  /// phone-sized sliver leaves no room for the avatar, text and heart. A row
   /// whose design is wider than a card (a video row's fixed thumbnail)
   /// leaves it false and keeps [kListCardMinWidth].
   final bool listMatchesGridWidth;
@@ -190,6 +196,18 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// whole width and never slice into columns, so a compact row's lines
   /// stay one line each.
   final bool listFullWidth;
+
+  /// Whether a grid card keeps one full-width column on a compact page. Row
+  /// designs (an area's icon and two text lines) need the width; splitting
+  /// them into two phone columns makes the information block overflow the
+  /// card's own ratio.
+  final bool oneColumnWhenCompact;
+
+  /// The fixed height a grid card takes while [oneColumnWhenCompact] is in
+  /// force. A row design should not keep a width-driven ratio once it owns
+  /// the whole line, or it grows taller as the window widens. Null keeps the
+  /// caller's aspect ratio.
+  final double? compactMainAxisExtent;
 
   /// The widest a card gets; the columns follow the width. Null — what every
   /// feed passes now that the card width is no longer a setting — lets the
@@ -222,6 +240,11 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// Whether a page is in flight: the grid's footer shows a skeleton card,
   /// and the first page shows skeletons instead of the empty state.
   final bool isLoading;
+
+  /// Whether a refresh with kept content draws the thin progress bar over the
+  /// grid's top edge. A page that already places [RefreshProgressBar] above
+  /// its own secondary tabs turns this off so the bar is not drawn twice.
+  final bool showRefreshProgress;
 
   /// Whether another page may exist; [onLoadMore] fires near the end.
   final bool hasMore;
@@ -258,7 +281,8 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// The grid's outer padding; null keeps the window's gutter — see [feedGutter].
   final EdgeInsetsGeometry? padding;
 
-  /// How many skeletons the first load shows.
+  /// The minimum number of skeletons the first load shows; the placeholder
+  /// adds rows until the available viewport is covered.
   final int skeletonCount;
 
   /// The grid's scroll controller; a caller that keeps one per tab (so
@@ -328,6 +352,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if (widget.cardExtent != null) return widget.cardExtent!;
     final padding = _gutter;
     final content = math.max(0, width - padding.horizontal).toDouble();
+    if (widget.oneColumnWhenCompact && content > 0 && content < LiveWindow.compact) {
+      return columnExtentForWidth(content, 1, widget.crossSpacing);
+    }
     return browseSettingsExtentForWidth(content, browse, crossSpacing: widget.crossSpacing);
   }
 
@@ -339,10 +366,11 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   }
 
   /// The list layout's delegate. A row that takes the card's width
-  /// ([CardGrid.listMatchesGridWidth]) uses exactly the grid's measure, so
-  /// switching layouts never resizes the cards; a row with its own wider
-  /// design keeps [kListCardMinWidth]. Either way the row keeps its fixed
-  /// height, so its design does not stretch with the column.
+  /// ([CardGrid.listMatchesGridWidth]) uses the grid's measure except on a
+  /// compact page, where the row keeps one full-width column instead of
+  /// splitting into phone-sized slivers; a row with its own wider design
+  /// keeps [kListCardMinWidth]. Either way the row keeps its fixed height,
+  /// so its design does not stretch with the column.
   SliverGridDelegateWithMaxCrossAxisExtent _listDelegate(double width, BrowseSettings browse, double tileAspect) {
     final padding = _gutter;
     final content = math.max(0, width - padding.horizontal).toDouble();
@@ -355,7 +383,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     final extent = widget.listFullWidth
         ? content
         : widget.listMatchesGridWidth
-        ? _extentFor(width, browse)
+        ? content > 0 && content < LiveWindow.compact
+              ? columnExtentForWidth(content, 1, widget.crossSpacing)
+              : _extentFor(width, browse)
         : capped > 0 && content > 0
         ? columnExtentForWidth(content, capped, widget.crossSpacing)
         : listCardExtentForWidth(content, spacing: widget.crossSpacing);
@@ -564,6 +594,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         roomCard: widget.aspectRatio == null,
         mainAxisExtent: listRow ? widget.listMainAxisExtent : null,
         listMatchesGridWidth: widget.listMatchesGridWidth,
+        listFullWidth: widget.listFullWidth,
+        oneColumnWhenCompact: widget.oneColumnWhenCompact,
+        compactMainAxisExtent: widget.compactMainAxisExtent,
         browse: browse,
         count: widget.skeletonCount,
         padding: _gutter,
@@ -645,7 +678,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             final roomExtent = widget.aspectRatio == null && content > 0
                 ? roomCardTileHeight(tileWidth) - kRoomCardInfoExtent + (widget.infoExtent ?? kRoomCardInfoExtent)
                 : null;
-            _gridItemExtent = roomExtent;
+            final compactRow = widget.oneColumnWhenCompact && content > 0 && content < LiveWindow.compact;
+            final itemExtent = compactRow ? widget.compactMainAxisExtent ?? roomExtent : roomExtent;
+            _gridItemExtent = itemExtent;
             return GridView.builder(
               controller: _scroll,
               padding: _gutter,
@@ -656,8 +691,8 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
                 maxCrossAxisExtent: _extentFor(constraints.maxWidth, browse),
                 mainAxisSpacing: widget.mainSpacing,
                 crossAxisSpacing: widget.crossSpacing,
-                mainAxisExtent: roomExtent,
-                childAspectRatio: roomExtent == null ? tileAspect : 1,
+                mainAxisExtent: itemExtent,
+                childAspectRatio: itemExtent == null ? tileAspect : 1,
               ),
               // The footer row rides the grid: one more tile while a page
               // loads.
@@ -685,6 +720,11 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     return Stack(
       children: [
         Positioned.fill(key: const ValueKey('cardGridContent'), child: content),
+        // A refresh that keeps the old cards also keeps a thin indeterminate
+        // bar at the top of the pane: the page's head button and the pull
+        // gesture both read as "working" without blanking the grid.
+        if (widget.showRefreshProgress && widget.isLoading && widget.items.isNotEmpty)
+          const Positioned(top: 0, left: 0, right: 0, child: RefreshProgressBar()),
         // The bar rides over the kept cards: a failed refresh never empties
         // the grid, it explains itself on top of it.
         if (error != null && error != _dismissedRefreshError)
@@ -845,6 +885,26 @@ final class _LoadingTile extends StatelessWidget {
   );
 }
 
+/// How many placeholder cells fill [height] once its padding and the gaps
+/// between cells are taken out. A minimum keeps a small window from asking
+/// for fewer than the design's usual count; one extra row makes sure a
+/// rounding difference never leaves the bottom strip empty on a full-screen
+/// desktop window.
+int _skeletonFillCount({
+  required double height,
+  required double paddingVertical,
+  required int columns,
+  required double tileExtent,
+  required double spacing,
+  required int minimum,
+}) {
+  if (!height.isFinite || height <= 0 || columns <= 0 || tileExtent <= 0) return minimum;
+  final available = height - paddingVertical;
+  if (available <= 0) return minimum;
+  final rows = math.max(1, ((available + spacing) / (tileExtent + spacing)).ceil());
+  return math.max(minimum, rows * columns + columns);
+}
+
 /// The first page's placeholder: the same grid shape — or the same row
 /// shape, when the list layout fixed a row height — with no content.
 final class _SkeletonGrid extends StatelessWidget {
@@ -860,6 +920,9 @@ final class _SkeletonGrid extends StatelessWidget {
     this.infoExtent,
     this.mainAxisExtent,
     this.listMatchesGridWidth = false,
+    this.listFullWidth = false,
+    this.oneColumnWhenCompact = false,
+    this.compactMainAxisExtent,
   });
 
   final double? cardExtent;
@@ -883,6 +946,17 @@ final class _SkeletonGrid extends StatelessWidget {
   /// to [kListCardMinWidth], as the live list delegate does.
   final bool listMatchesGridWidth;
 
+  /// Whether the rows keep the content's whole width, as the live list
+  /// delegate does for [CardGrid.listFullWidth].
+  final bool listFullWidth;
+
+  /// Whether a grid card keeps one full-width column on a compact page; see
+  /// [CardGrid.oneColumnWhenCompact].
+  final bool oneColumnWhenCompact;
+
+  /// The fixed compact row height; see [CardGrid.compactMainAxisExtent].
+  final double? compactMainAxisExtent;
+
   /// The viewer's browsing settings, the placeholder's measure's source.
   final BrowseSettings browse;
   final int count;
@@ -896,6 +970,7 @@ final class _SkeletonGrid extends StatelessWidget {
         // reflow the page when the first rooms arrive.
         final resolved = padding.resolve(Directionality.of(context));
         final content = math.max(0, constraints.maxWidth - resolved.horizontal).toDouble();
+        final compactRow = oneColumnWhenCompact && content > 0 && content < LiveWindow.compact;
         final wideRows = mainAxisExtent != null && !listMatchesGridWidth;
         final capped = cappedColumnsForWidth(
           content,
@@ -905,17 +980,34 @@ final class _SkeletonGrid extends StatelessWidget {
         );
         final extent =
             cardExtent ??
-            (wideRows
+            (compactRow
+                ? columnExtentForWidth(content, 1, crossSpacing)
+                : listFullWidth
+                ? content
+                : wideRows
                 ? capped > 0 && content > 0
                       ? columnExtentForWidth(content, capped, crossSpacing)
                       : listCardExtentForWidth(content, spacing: crossSpacing)
+                : listMatchesGridWidth && content > 0 && content < LiveWindow.compact
+                ? columnExtentForWidth(content, 1, crossSpacing)
                 : browseSettingsExtentForWidth(content, browse, crossSpacing: crossSpacing));
         final columnCount = math.max(1, (content / (extent + crossSpacing)).ceil());
         final tileWidth = (content - crossSpacing * (columnCount - 1)) / columnCount;
         final roomExtent = mainAxisExtent == null && roomCard && content > 0
             ? roomCardTileHeight(tileWidth) - kRoomCardInfoExtent + (infoExtent ?? kRoomCardInfoExtent)
             : null;
-        final fixedExtent = mainAxisExtent ?? roomExtent;
+        final fixedExtent = compactRow && compactMainAxisExtent != null
+            ? compactMainAxisExtent
+            : mainAxisExtent ?? roomExtent;
+        final tileExtent = fixedExtent ?? (aspectRatio > 0 ? tileWidth / aspectRatio : 0.0);
+        final itemCount = _skeletonFillCount(
+          height: constraints.maxHeight,
+          paddingVertical: resolved.vertical,
+          columns: columnCount,
+          tileExtent: tileExtent,
+          spacing: mainSpacing,
+          minimum: count,
+        );
         return GridView.builder(
           padding: padding,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -925,7 +1017,7 @@ final class _SkeletonGrid extends StatelessWidget {
             mainAxisExtent: fixedExtent,
             childAspectRatio: fixedExtent == null ? aspectRatio : 1,
           ),
-          itemCount: count,
+          itemCount: itemCount,
           // The shimmer's sweep over the plain block: one shared animation
           // across the whole placeholder grid, the loading idiom the kit
           // draws by.
@@ -1005,7 +1097,8 @@ final class CardList<T> extends StatelessWidget {
   /// The list's outer padding; null keeps the window's gutter — see [feedGutter].
   final EdgeInsetsGeometry? padding;
 
-  /// How many skeletons the first load shows.
+  /// The minimum number of skeleton rows the first load shows; the
+  /// placeholder adds rows until the available viewport is covered.
   final int skeletonCount;
 
   /// Builds a skeleton row; the plain block when null.
@@ -1019,13 +1112,26 @@ final class CardList<T> extends StatelessWidget {
     final gutter = feedGutter(context, custom: padding);
     if (items.isEmpty && isLoading) {
       final skeleton = skeletonBuilder ?? (context) => const DsSkeleton(width: double.infinity, height: 64);
-      return ListView.builder(
-        padding: gutter,
-        itemCount: skeletonCount,
-        itemBuilder: (context, index) => Padding(
-          padding: EdgeInsets.only(bottom: gap),
-          child: skeleton(context),
-        ),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final resolved = gutter.resolve(Directionality.of(context));
+          final itemCount = _skeletonFillCount(
+            height: constraints.maxHeight,
+            paddingVertical: resolved.vertical,
+            columns: 1,
+            tileExtent: 64,
+            spacing: gap,
+            minimum: skeletonCount,
+          );
+          return ListView.builder(
+            padding: gutter,
+            itemCount: itemCount,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(bottom: gap),
+              child: skeleton(context),
+            ),
+          );
+        },
       );
     }
     final loadingRow = isLoading && hasMore;
@@ -1052,8 +1158,16 @@ final class CardList<T> extends StatelessWidget {
         },
       ),
     );
-    if (refresh == null) return list;
-    return CustomRefreshIndicator(onRefresh: refresh, builder: buildDsRefreshIndicator, child: list);
+    final content = refresh == null
+        ? list
+        : CustomRefreshIndicator(onRefresh: refresh, builder: buildDsRefreshIndicator, child: list);
+    if (!isLoading || items.isEmpty) return content;
+    return Stack(
+      children: [
+        Positioned.fill(child: content),
+        const Positioned(top: 0, left: 0, right: 0, child: RefreshProgressBar()),
+      ],
+    );
   }
 
   /// Asks for the next page once the viewer nears the end.

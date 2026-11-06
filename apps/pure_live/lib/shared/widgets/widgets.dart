@@ -11,4 +11,5 @@ export 'download_format.dart';
 export 'download_workspace.dart';
 export 'page_surface.dart';
 export 'pull_to_refresh.dart';
+export 'refresh_progress_bar.dart';
 export 'scroll_edge_controls.dart';

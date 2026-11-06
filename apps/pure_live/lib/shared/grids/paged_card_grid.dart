@@ -5,20 +5,16 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/shared/grids/card_grid.dart';
-import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 
-/// The feed's scroll logic in one place, the popular page's rule: a wide
-/// window pages by number — one display page of [pageSize] items under the
-/// kit's pagination, the wheel's end moving the pager forward and a fresh
-/// page starting at its head — while a narrow one appends one block of
-/// [pageSize] as the viewer reaches the end and pulls to refresh. The feeds
-/// hand the accumulated [items] in; this widget slices them locally and asks
-/// [onLoadMore] for the source's next block only when the block the viewer
-/// is moving to is not in hand yet.
+/// The feed's scroll logic in one place, the popular page's rule: one display
+/// page of [pageSize] items under the kit's pagination at every width, the
+/// wheel's end moving the pager forward and a fresh page starting at its head.
+/// The feeds hand the accumulated [items] in; this widget slices them locally
+/// and asks [onLoadMore] for the source's next block only when the block the
+/// viewer is moving to is not in hand yet.
 ///
 /// A list that is whole in hand (the follows, the areas, the records) pages
-/// and appends the same way with [hasMore] false: the narrow end reveals the
-/// next local block, the wide pager counts the local pages.
+/// the same way with [hasMore] false: the pager counts the local pages.
 ///
 /// The pager's count is the local pages in hand plus one while [hasMore]
 /// says the source may continue, so a press never skips ahead of what the
@@ -33,6 +29,7 @@ final class PagedCardGrid<T> extends StatefulWidget {
     required this.hasMore,
     required this.isLoading,
     required this.onLoadMore,
+    this.showRefreshProgress = true,
     this.pageSize = 30,
     this.scrollController,
     this.layout = CardLayout.grid,
@@ -40,6 +37,8 @@ final class PagedCardGrid<T> extends StatefulWidget {
     this.listMainAxisExtent,
     this.listFullWidth = false,
     this.listMatchesGridWidth = false,
+    this.oneColumnWhenCompact = false,
+    this.compactMainAxisExtent,
     this.aspectRatio,
     this.infoExtent,
     this.cardExtent,
@@ -68,6 +67,10 @@ final class PagedCardGrid<T> extends StatefulWidget {
   /// Whether a source page is in flight.
   final bool isLoading;
 
+  /// Whether a refresh with kept content draws the feed's top progress bar;
+  /// see [CardGrid.showRefreshProgress].
+  final bool showRefreshProgress;
+
   /// Fetches the source's next block.
   final Future<void> Function() onLoadMore;
 
@@ -92,6 +95,13 @@ final class PagedCardGrid<T> extends StatefulWidget {
   /// Whether a list row takes a grid card's width; see
   /// [CardGrid.listMatchesGridWidth].
   final bool listMatchesGridWidth;
+
+  /// Whether a grid card keeps one full-width column on a compact page; see
+  /// [CardGrid.oneColumnWhenCompact].
+  final bool oneColumnWhenCompact;
+
+  /// The fixed compact row height; see [CardGrid.compactMainAxisExtent].
+  final double? compactMainAxisExtent;
 
   /// The tile's width over height; see [CardGrid.aspectRatio].
   final double? aspectRatio;
@@ -137,23 +147,11 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
   /// The page the wide pager was asked for.
   int _asked = 1;
 
-  /// How many blocks the narrow list has revealed.
-  int _revealed = 1;
-
   /// The last display page the accumulated list fills, whole or in part.
   int get _lastInHand => widget.items.isEmpty ? 1 : (widget.items.length + widget.pageSize - 1) ~/ widget.pageSize;
 
   /// The page actually shown: [_asked] pulled back into the list's range.
   int get _page => _asked.clamp(1, _lastInHand);
-
-  @override
-  void didUpdateWidget(PagedCardGrid<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // A list that shrank is a new one (a query, a tab, a refresh): the
-    // narrow end starts from its first block again instead of showing
-    // every block it had revealed before.
-    if (widget.items.length < oldWidget.items.length) _revealed = 1;
-  }
 
   void _jumpToTop() {
     final controller = widget.scrollController;
@@ -176,21 +174,8 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
     _jumpToTop();
   }
 
-  /// Appends the next narrow block: the one in hand, else the source's.
-  Future<void> _revealMore() async {
-    if (widget.items.length > _revealed * widget.pageSize) {
-      setState(() => _revealed++);
-      return;
-    }
-    if (!widget.hasMore) return;
-    await widget.onLoadMore();
-    if (mounted) setState(() => _revealed++);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
-    if (!wide) return _endlessGrid();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -225,6 +210,8 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       listMainAxisExtent: widget.listMainAxisExtent,
       listFullWidth: widget.listFullWidth,
       listMatchesGridWidth: widget.listMatchesGridWidth,
+      oneColumnWhenCompact: widget.oneColumnWhenCompact,
+      compactMainAxisExtent: widget.compactMainAxisExtent,
       aspectRatio: widget.aspectRatio,
       infoExtent: widget.infoExtent,
       cardExtent: widget.cardExtent,
@@ -232,6 +219,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       mainSpacing: widget.mainSpacing,
       padding: widget.padding,
       isLoading: widget.isLoading,
+      showRefreshProgress: widget.showRefreshProgress,
       hasMore: hasMore,
       pagesOnScrollToEnd: pages,
       onLoadMore: onLoadMore,
@@ -246,17 +234,8 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
     );
   }
 
-  /// The narrow layout: the blocks revealed so far, the next appending as
-  /// the viewer reaches the end, and the pull refreshing from the first.
-  Widget _endlessGrid() {
-    final end = math.min(widget.items.length, _revealed * widget.pageSize);
-    final shown = end == widget.items.length ? widget.items : widget.items.sublist(0, end);
-    final moreInHand = widget.items.length > end;
-    return _grid(items: shown, hasMore: moreInHand || widget.hasMore, onLoadMore: _revealMore, pages: false);
-  }
-
-  /// The wide layout: the one page the pager names, the wheel's end moving
-  /// the pager forward one page at a time.
+  /// The one page the pager names, the wheel's end moving the pager forward
+  /// one page at a time.
   Widget _pagedGrid() {
     final start = (_page - 1) * widget.pageSize;
     final end = math.min(widget.items.length, start + widget.pageSize);

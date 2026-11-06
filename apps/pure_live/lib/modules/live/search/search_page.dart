@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
@@ -1209,6 +1210,7 @@ final class _AreaResults extends ConsumerWidget {
       mainSpacing: browse.mainSpacing,
       aspectRatio: areaCardAspectRatio(tileLayout),
       cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
       compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
       isLoading: search.loading,
       hasMore: search.hasMore,
@@ -1320,7 +1322,7 @@ final class _AnchorCard extends StatelessWidget {
             children: [
               DsAvatar(
                 initials: avatarInitials(anchor.name),
-                image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
+                image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!, policy: ImageCachePolicies.avatar),
                 size: DsSize.lg,
                 semanticLabel: anchor.name,
               ),
@@ -1480,6 +1482,7 @@ final class _AreaSkeleton extends ConsumerWidget {
       mainSpacing: browse.mainSpacing,
       aspectRatio: areaCardAspectRatio(tileLayout),
       cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+      oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
       compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
       isLoading: true,
       itemBuilder: (_, _) => const SizedBox.shrink(),

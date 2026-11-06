@@ -147,28 +147,31 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
     if (notification.metrics.axis != Axis.vertical) return false;
     final position = _positionOf(notification.context);
     if (position == null) return false;
-    if (notification is ScrollMetricsNotification) {
-      // A page that grew or shrank says so while it is laying out; the pair
-      // reads the new extent after the frame, where a rebuild belongs.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _attach(position);
-      });
-      return false;
-    }
     _attach(position);
     return false;
   }
 
-  /// The position a notification came from.
-  ///
-  /// A scroll notification carries its scrollable's own element, so the
-  /// position is that element's state's — an ancestor lookup would walk past
-  /// the scrollable that sent the notification.
+  /// A page that grew or shrank, or a skeleton that was replaced by its
+  /// loaded grid, says so with a metrics notification while it lays out.
+  /// Attach after the frame, where adding a listener and rebuilding belongs.
+  bool _onMetrics(ScrollMetricsNotification notification) {
+    if (notification.depth != 0) return false;
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final position = _positionOf(notification.context);
+    if (position == null) return false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _attach(position);
+    });
+    return false;
+  }
+
+  /// The position a notification came from: the notification's context sits
+  /// inside the scrollable's gesture detector, so the state is found through
+  /// the nearest vertical [Scrollable], not by assuming the context itself is
+  /// the scrollable.
   ScrollPosition? _positionOf(BuildContext? context) {
-    if (context is! StatefulElement) return null;
-    if (context.widget is! Scrollable) return null;
-    final state = context.state;
-    return state is ScrollableState ? state.position : null;
+    if (context == null) return null;
+    return Scrollable.maybeOf(context, axis: Axis.vertical)?.position;
   }
 
   /// The shown page's outermost vertical scroll: the first one a walk down
@@ -212,37 +215,40 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: _onNotification,
-      child: Stack(
-        children: [
-          Positioned.fill(key: const ValueKey('scrollEdgeContent'), child: widget.child),
-          if (_scrollable)
-            Positioned(
-              key: const ValueKey('scrollEdgeButtons'),
-              right: _inset,
-              bottom: _inset,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                spacing: DsSpace.s8,
-                children: [
-                  _EdgeButton(
-                    icon: DsIcons.arrowUp,
-                    label: context.t.common.backToTop,
-                    enabled: !_atTop,
-                    onPressed: () => _jump(toTop: true),
-                  ),
-                  _EdgeButton(
-                    icon: DsIcons.arrowDown,
-                    label: context.t.common.backToBottom,
-                    enabled: !_atEnd,
-                    onPressed: () => _jump(toTop: false),
-                  ),
-                ],
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: _onMetrics,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _onNotification,
+        child: Stack(
+          children: [
+            Positioned.fill(key: const ValueKey('scrollEdgeContent'), child: widget.child),
+            if (_scrollable)
+              Positioned(
+                key: const ValueKey('scrollEdgeButtons'),
+                right: _inset,
+                bottom: _inset,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  spacing: DsSpace.s8,
+                  children: [
+                    _EdgeButton(
+                      icon: DsIcons.arrowUp,
+                      label: context.t.common.backToTop,
+                      enabled: !_atTop,
+                      onPressed: () => _jump(toTop: true),
+                    ),
+                    _EdgeButton(
+                      icon: DsIcons.arrowDown,
+                      label: context.t.common.backToBottom,
+                      enabled: !_atEnd,
+                      onPressed: () => _jump(toTop: false),
+                    ),
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

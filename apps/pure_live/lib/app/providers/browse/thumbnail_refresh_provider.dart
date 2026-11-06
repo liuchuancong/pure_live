@@ -1,7 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 
-import 'package:flutter/widgets.dart' show PaintingBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show ImageCacheCategories;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -17,12 +17,13 @@ const int kThumbnailRefreshMax = 360;
 /// The reference's thumbnail interval choices (five minutes … six hours).
 const List<int> kThumbnailRefreshIntervalChoices = [5, 10, 15, 30, 60, 120, 240, 360];
 
-/// Periodically empties the encoded and in-memory image caches, so the next
-/// draw of a cover, avatar or logo fetches it again.
+/// Periodically invalidates the live-room cover cache, so the next draw of a
+/// cover asks the site again.
 ///
-/// The reference does this from its cache controller while the app runs; the
-/// timer is process-wide and belongs to the primary window. Turning the
-/// choice off or changing the interval reschedules it immediately.
+/// Only covers are touched: avatars, emotes, icons and wallpapers keep their
+/// long TTLs, which is the point of the per-category cache. The timer is
+/// process-wide and belongs to the primary window. Turning the choice off or
+/// changing the interval reschedules it immediately.
 final class ThumbnailRefreshController extends Notifier<ThumbnailRefresh> {
   Timer? _timer;
   bool _started = false;
@@ -87,17 +88,18 @@ final class ThumbnailRefreshController extends Notifier<ThumbnailRefresh> {
     _timer = null;
   }
 
-  /// Empties both caches now (the settings pane's manual refresh).
+  /// Invalidates the room covers now (the settings pane's manual refresh).
   Future<void> refreshNow() => _refresh();
 
   Future<void> _refresh() async {
     try {
-      await clearImageCache();
-      // The manager's bytes are gone; dropping decoded images too makes the
-      // next paint ask again instead of keeping a stale cover in memory.
-      PaintingBinding.instance.imageCache.clear();
+      final manager = installedLiveCacheManager;
+      if (manager == null) {
+        return;
+      }
+      await manager.image.invalidateByCategory(ImageCacheCategories.liveRoomCover);
     } on Object {
-      // A cache that cannot be emptied this round is retried next tick.
+      // A cache that cannot be invalidated this round is retried next tick.
     }
   }
 }

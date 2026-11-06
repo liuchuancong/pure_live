@@ -5,14 +5,12 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/shared/grids/card_grid.dart';
-import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 
 /// The paged grid's single-column sibling over [CardList]: the same rule
 /// for rows whose height is their own (a task card grows a progress line, an
-/// error line) and so cannot ride the grid's fixed-extent list form. A wide
-/// window pages the rows by number under the kit's pagination, a narrow one
-/// appends one block of [pageSize] as the viewer reaches the end and pulls to
-/// refresh.
+/// error line) and so cannot ride the grid's fixed-extent list form. The rows
+/// page by number under the kit's pagination at every width, so a phone and a
+/// desktop share the same way through a long list.
 final class PagedCardList<T> extends StatefulWidget {
   /// A dual-mode list over [items].
   const PagedCardList({
@@ -71,22 +69,11 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
   /// The page the wide pager was asked for.
   int _asked = 1;
 
-  /// How many blocks the narrow list has revealed.
-  int _revealed = 1;
-
   /// The last display page the accumulated list fills, whole or in part.
   int get _lastInHand => widget.items.isEmpty ? 1 : (widget.items.length + widget.pageSize - 1) ~/ widget.pageSize;
 
   /// The page actually shown: [_asked] pulled back into the list's range.
   int get _page => _asked.clamp(1, _lastInHand);
-
-  @override
-  void didUpdateWidget(PagedCardList<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // A list that shrank is a new one: the narrow end starts from its first
-    // block again.
-    if (widget.items.length < oldWidget.items.length) _revealed = 1;
-  }
 
   void _jumpToTop() {
     final controller = widget.scrollController;
@@ -109,27 +96,8 @@ final class _PagedCardListState<T> extends State<PagedCardList<T>> {
     _jumpToTop();
   }
 
-  /// Appends the next narrow block: the one in hand, else the source's.
-  Future<void> _revealMore() async {
-    if (widget.items.length > _revealed * widget.pageSize) {
-      setState(() => _revealed++);
-      return;
-    }
-    final load = widget.onLoadMore;
-    if (load == null || !widget.hasMore) return;
-    await load();
-    if (mounted) setState(() => _revealed++);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
-    if (!wide) {
-      final end = math.min(widget.items.length, _revealed * widget.pageSize);
-      final shown = end == widget.items.length ? widget.items : widget.items.sublist(0, end);
-      final moreInHand = widget.items.length > end;
-      return _list(items: shown, hasMore: moreInHand || widget.hasMore, onLoadMore: _revealMore);
-    }
     final start = (_page - 1) * widget.pageSize;
     final end = math.min(widget.items.length, start + widget.pageSize);
     final shown = start >= widget.items.length ? const <Never>[] : widget.items.sublist(start, end);

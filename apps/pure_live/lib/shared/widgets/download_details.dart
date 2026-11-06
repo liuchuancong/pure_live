@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/images.dart' show cachedImage;
 import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
@@ -108,7 +109,7 @@ final class DownloadDetailsBody extends StatelessWidget {
           children: [
             DsAvatar(
               initials: avatarInitials(details.title),
-              image: cover.isEmpty ? null : cachedImage(cover),
+              image: cover.isEmpty ? null : cachedImage(cover, policy: ImageCachePolicies.videoCover),
               size: DsSize.lg,
               semanticLabel: details.title,
             ),
