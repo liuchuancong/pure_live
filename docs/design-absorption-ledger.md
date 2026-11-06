@@ -40,7 +40,7 @@
 - 🟡 录制输入本地中继：渐进流（FLV/TS）可经 RecordingInputRelay 走回环字节管道，停止=关上游连接→FFmpeg EOF 自收尾→5s 排空窗才强杀；默认关（FfmpegRecordConfig.inputRelay），HLS 与中继起不来的回退直连。参考 `live_record/src/capture.dart:120-127`。落 media_core 737413b，150 测全绿。未做：坏尾包"尾部截断"记法（尾部截断语义已由 _secondPass 留尾段+失败分类承担）；HLS 保留窗口中继=W6 另一条；app 侧录制引擎尚未开此开关。
 - ✅ 分类退避：进程遗言分类器（401/403/404=需新签名、EOF/重置=地址到期、拒连/超时/解析失败=纯网络）；需新签名走 2s→15s 快车道且预算翻倍，纯网络失败不计次。参考 `policy.dart:19-46`、`recorder.dart:494-516`。落 media_core recording_failure_shape+backend 尾日志 2114ade，5 测，录制包 150 测全绿。
 - ✅ refreshAt 前 5s 预取新签名地址，快速恢复直接用。参考 `recorder.dart:1022-1061`。落 app 录制引擎：会话挂 leaseTimer/leasedFromUrl/prefetched，refreshTake 先消费预取（同源+租约未过期才收），预取自身带下一轮时钟。
-- ⬜ HLS 保留窗口+并发预下载（48 段/4 路/96MiB 上限）+跳段标记 CaptureCoverageGap。参考 `live_media/src/relay/hls_window.dart`。
+- ✅ HLS 保留窗口+并发预下载：录制侧 HLS 捕获走与渐进流同一 inputRelay 开关的保留窗口回环中继（media_core 98c45cb）：中继按上游滚出仍为读者保留 48 段/96MiB（4 路并发预取、单段 32MiB 不持有、空闲 12 轮即停）、段 URL 重写回环、KEY/MAP 连续合并+URI 绝对化、LL-HLS 粒度标签丢弃、master 透传+warning；上游滚走且无人取走的段=缺口上报（HlsCoverageGap 回调+计数+日志，不默默隐藏）；stop=冻结窗口补 EXT-X-ENDLIST 让 FFmpeg 排空自收尾（5s 窗口外仍 kill），起不来只丢干净停。参考 `live_media/src/relay/hls_window.dart`。未搬：加密段密钥下载策略/Set-Cookie 会话/query 令牌传播/Bigo 式段还原器（录制地址是预签名完整 URL 用不上）；master 形态 clean-end 退化为 kill；FFmpeg 侧"skipping N segments"日志行未进失败形状。
 - 🟡 完整性判定：合并读自身日志——trailer 写失败/ muxer 拒包=输出不可信，不改名不提交；失败合并一遍重试留尾段（干净前缀提交，被切段留旁边）。参考 `ffmpeg.dart:332-369`、`merge.dart:93-110`。落 media_core recording_remuxer 974ac38，150 测全绿。未做 -xerror（v2 无它的两遍回退语义配套，加了会让良性输入包损坏丢整个输出）。
 
 ## W7 传输吸收（media_core）
