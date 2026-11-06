@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:live_storage/live_storage.dart';
 
 /// The settings subset the backup document carries: the simple prefs a
@@ -469,6 +470,16 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('backup.webdav.selected', BackupPrefKind.string),
   ('backup.webdav.url', BackupPrefKind.string),
   ('backup.webdav.user', BackupPrefKind.string),
+  // The scheduled WebDAV backup's choices. Its run record —
+  // `backup.webdav.auto.lastSuccess`, `.lastAttempt`, `.failures`,
+  // `.lastTarget` — is this device's own history and stays out, like the
+  // LAN sync's identity keys above.
+  ('backup.webdav.auto.enabled', BackupPrefKind.boolean),
+  ('backup.webdav.auto.hours', BackupPrefKind.integer),
+  ('backup.webdav.auto.scope', BackupPrefKind.string),
+  ('backup.webdav.auto.folder', BackupPrefKind.string),
+  ('backup.webdav.auto.keep', BackupPrefKind.integer),
+  ('backup.webdav.auto.includeSecrets', BackupPrefKind.boolean),
 ];
 
 /// Reads every backed-up pref that currently has a value.
@@ -501,25 +512,64 @@ Map<String, Object?> captureSettingsSnapshot() {
 /// skipped. A closed store loses the restore, like every pref write.
 Future<void> applySettingsSnapshot(Map<String, Object?> snapshot) async {
   for (final (key, kind) in kBackedUpPrefs) {
-    final value = snapshot[key];
+    final value = restorablePrefValue(kind, snapshot[key]);
     if (value == null) continue;
     try {
       switch (kind) {
         case BackupPrefKind.string:
-          if (value is String) await StoragePrefs.setString(key, value);
+          await StoragePrefs.setString(key, value as String);
         case BackupPrefKind.boolean:
-          if (value is bool) await StoragePrefs.setBool(key, value);
+          await StoragePrefs.setBool(key, value as bool);
         case BackupPrefKind.integer:
-          if (value is int) await StoragePrefs.setInt(key, value);
+          await StoragePrefs.setInt(key, value as int);
         case BackupPrefKind.floating:
-          if (value is num) await StoragePrefs.setDouble(key, value.toDouble());
+          await StoragePrefs.setDouble(key, value as double);
         case BackupPrefKind.stringList:
-          if (value is List && value.every((entry) => entry is String)) {
-            await StoragePrefs.setStringList(key, List<String>.from(value));
-          }
+          await StoragePrefs.setStringList(key, value as List<String>);
       }
     } on Object {
       // One unwritable key loses itself; the rest still land.
     }
   }
+}
+
+/// The value a restore writes for a pref of [kind] from a document's
+/// [value], in the shape its typed setter takes; null when there is none or
+/// it is of the wrong shape, and the key is skipped.
+///
+/// [applySettingsSnapshot] writes through this gate and the restore's
+/// preview counts through it, so the two never disagree on a key.
+Object? restorablePrefValue(BackupPrefKind kind, Object? value) => switch (kind) {
+  BackupPrefKind.string => value is String ? value : null,
+  BackupPrefKind.boolean => value is bool ? value : null,
+  BackupPrefKind.integer => value is int ? value : null,
+  BackupPrefKind.floating => value is num ? value.toDouble() : null,
+  BackupPrefKind.stringList =>
+    value is List && value.every((entry) => entry is String) ? List<String>.from(value) : null,
+};
+
+/// What [applySettingsSnapshot] would do with [snapshot] on this device:
+/// the known keys it writes, how many of those differ from the stored
+/// value (one with no stored value differs), and how many it skips for
+/// their shape. Keys this build does not know are neither: the restore
+/// ignores them, as it ignores a newer writer's prefs.
+({int written, int changed, int skipped}) settingsSnapshotChanges(Map<String, Object?> snapshot) {
+  final current = captureSettingsSnapshot();
+  var written = 0;
+  var changed = 0;
+  var skipped = 0;
+  for (final (key, kind) in kBackedUpPrefs) {
+    final raw = snapshot[key];
+    if (raw == null) continue;
+    final value = restorablePrefValue(kind, raw);
+    if (value == null) {
+      skipped++;
+      continue;
+    }
+    written++;
+    final now = current[key];
+    final same = value is List<String> && now is List ? listEquals(value, now) : value == now;
+    if (!same) changed++;
+  }
+  return (written: written, changed: changed, skipped: skipped);
 }

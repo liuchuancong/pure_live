@@ -83,6 +83,7 @@ final class BackupDocument {
     this.multiview = const {},
     this.secrets = const {},
     Set<BackupSection>? presentSections,
+    this.skipped = const {},
   }) : presentSections = presentSections ?? BackupSection.all;
 
   factory BackupDocument._fromRoot(Map<String, Object?> root) {
@@ -91,7 +92,7 @@ final class BackupDocument {
         DateTime.tryParse(version?['exportedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
     // Only the sections the document actually carries may be restored: an
     // older writer that never knew a section must not clear it.
-    var present = {
+    final carried = {
       for (final section in BackupSection.values)
         if (root[section.key] is Map) section,
     };
@@ -99,18 +100,30 @@ final class BackupDocument {
     // rest as empty maps) and relied on the scope to keep a restore off
     // them; honour that scope so those files still restore the two boxes
     // they meant.
-    if (version?['scope'] == 'follows') present = present.intersection(BackupSection.followsOnly);
+    final present = version?['scope'] == 'follows' ? carried.intersection(BackupSection.followsOnly) : carried;
+    // What the reader leaves out is counted for the restore's preview; a
+    // section that is not restored keeps no count.
+    final skipped = <BackupSection, int>{};
+    Map<String, Map<String, Object?>> entries(BackupSection section) {
+      final (read, dropped) = _entries(root[section.key]);
+      if (dropped > 0 && present.contains(section)) skipped[section] = dropped;
+      return read;
+    }
+
+    final (secrets, droppedSecrets) = _secretsOf(root['secrets']);
+    if (droppedSecrets > 0 && present.contains(BackupSection.secrets)) skipped[BackupSection.secrets] = droppedSecrets;
     return BackupDocument(
       exportedAt: exportedAt,
-      follows: _entries(root['follows']),
-      history: _entries(root['history']),
-      areaFollows: _entries(root['areaFollows']),
-      recordings: _entries(root['recordings']),
+      follows: entries(BackupSection.follows),
+      history: entries(BackupSection.history),
+      areaFollows: entries(BackupSection.areaFollows),
+      recordings: entries(BackupSection.recordings),
       settings: _settingsOf(root['settings']),
-      iptv: _entries(root['iptv']),
-      multiview: _entries(root['multiview']),
-      secrets: _secretsOf(root['secrets']),
+      iptv: entries(BackupSection.iptv),
+      multiview: entries(BackupSection.multiview),
+      secrets: secrets,
       presentSections: present,
+      skipped: skipped,
     );
   }
 
@@ -152,9 +165,21 @@ final class BackupDocument {
   /// than clearing data the document never knew about.
   final Set<BackupSection> presentSections;
 
+  /// The entries the reader had to leave out, per present section: one
+  /// that is not an object, a secret that is not text. Reader-side only —
+  /// never written, and a restore never sees them; the preview says how
+  /// many there were.
+  final Map<BackupSection, int> skipped;
+
   /// Whether the document is the reference app's "favorites only" backup:
   /// rooms and areas and nothing else.
   bool get followsOnly => setEquals(presentSections, BackupSection.followsOnly);
+
+  /// Whether a restore of this document can touch nothing but followed
+  /// rooms and areas: a follows-only backup, whatever its writer meant. A
+  /// restore of "everything" from it restores those and leaves the rest,
+  /// which is what the reference's downgrade did.
+  bool get restoresFollowsOnly => presentSections.isNotEmpty && BackupSection.followsOnly.containsAll(presentSections);
 
   /// Whether the document carries followed rooms.
   bool get hasFollows => presentSections.contains(BackupSection.follows);
@@ -237,18 +262,25 @@ final class BackupDocument {
   /// This document narrowed to [sections]: the ones it carries that the
   /// user still wants restored. The rest drop out of [presentSections], so
   /// a restore leaves their boxes alone.
-  BackupDocument only(Set<BackupSection> sections) => BackupDocument(
-    exportedAt: exportedAt,
-    follows: follows,
-    history: history,
-    areaFollows: areaFollows,
-    recordings: recordings,
-    settings: settings,
-    iptv: iptv,
-    multiview: multiview,
-    secrets: secrets,
-    presentSections: presentSections.intersection(sections),
-  );
+  BackupDocument only(Set<BackupSection> sections) {
+    final present = presentSections.intersection(sections);
+    return BackupDocument(
+      exportedAt: exportedAt,
+      follows: follows,
+      history: history,
+      areaFollows: areaFollows,
+      recordings: recordings,
+      settings: settings,
+      iptv: iptv,
+      multiview: multiview,
+      secrets: secrets,
+      presentSections: present,
+      skipped: {
+        for (final MapEntry(key: section, value: count) in skipped.entries)
+          if (present.contains(section)) section: count,
+      },
+    );
+  }
 
   /// The document as the wire JSON, so a file or a server payload stays
   /// readable.
@@ -301,31 +333,37 @@ final class BackupDocument {
     return BackupDocument._fromRoot(root);
   }
 
-  /// One keyed section: identity key → a stored JSON map. Entries that
-  /// are not maps (a future writer's new shape) are skipped.
-  static Map<String, Map<String, Object?>> _entries(Object? section) {
-    if (section is! Map) return const {};
+  /// One keyed section: identity key → a stored JSON map, and how many
+  /// entries were skipped for not being maps (a future writer's new shape).
+  static (Map<String, Map<String, Object?>>, int) _entries(Object? section) {
+    if (section is! Map) return (const {}, 0);
     final entries = <String, Map<String, Object?>>{};
+    var dropped = 0;
     for (final entry in section.entries) {
       final key = entry.key;
       final value = entry.value;
-      if (key is String && value is Map) entries[key] = Map<String, Object?>.from(value);
+      if (key is String && value is Map) {
+        entries[key] = Map<String, Object?>.from(value);
+      } else {
+        dropped++;
+      }
     }
-    return entries;
+    return (entries, dropped);
   }
 
   /// The settings section: pref key → the stored value as-is.
   static Map<String, Object?> _settingsOf(Object? section) =>
       section is Map ? Map<String, Object?>.from(section) : const {};
 
-  /// The secrets section: ref → plain text; anything but a string is
-  /// skipped.
-  static Map<String, String> _secretsOf(Object? section) {
-    if (section is! Map) return const {};
-    return {
+  /// The secrets section: ref → plain text, and how many entries were
+  /// skipped for not being text.
+  static (Map<String, String>, int) _secretsOf(Object? section) {
+    if (section is! Map) return (const {}, 0);
+    final secrets = {
       for (final entry in section.entries)
         if (entry.key is String && entry.value is String) entry.key as String: entry.value as String,
     };
+    return (secrets, section.length - secrets.length);
   }
 
   /// A nested object with string keys, or null when [value] is not one.

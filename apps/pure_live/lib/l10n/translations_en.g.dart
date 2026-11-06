@@ -322,6 +322,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get restoreFailed => 'Restore failed';
 	@override String get restoreEmptyDocument => 'This backup holds no data';
 	@override String get restoreRecordingsBusy => 'This device is recording or still finishing a take — end it before restoring the recording tasks';
+	@override String get restoreBusy => 'A restore is already running; try again once it finishes';
 	@override String get deleteConfirmTitle => 'Delete this backup file?';
 	@override String deleteConfirmDesc({required String name}) => '${name} will be permanently deleted.';
 	@override String get deleteDone => 'Backup file deleted';
@@ -359,6 +360,44 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get webdavMoved => 'Moved';
 	@override String get webdavMoveIntoItself => 'A folder cannot be moved into itself';
 	@override String webdavQuota({required String used, required String total}) => '${used} used · ${total} total';
+	@override String get webdavAutoTitle => 'Scheduled backup';
+	@override String get webdavAutoMenu => 'Scheduled backup…';
+	@override String get webdavAutoScheduleSection => 'Schedule';
+	@override String get webdavAutoContentSection => 'Contents';
+	@override String get webdavAutoStatusSection => 'Status';
+	@override String get webdavAutoEnabled => 'Back up while the app runs';
+	@override String get webdavAutoEnabledDesc => 'Checked and uploaded only while the app is in the foreground; nothing runs in the background or after the app closes.';
+	@override String get webdavAutoAccount => 'Upload to';
+	@override String get webdavAutoAccountDesc => 'Always the account selected on the WebDAV drive page.';
+	@override String get webdavAutoAccountNone => 'No WebDAV account yet; add one on the drive page first.';
+	@override String get webdavAutoInterval => 'Backup interval';
+	@override String webdavAutoIntervalHours({required int hours}) => 'Every ${hours} h';
+	@override String webdavAutoIntervalDays({required int days}) => 'Every ${days} d';
+	@override String get webdavAutoFolder => 'Remote folder';
+	@override String get webdavAutoFolderDesc => 'A relative path below the account\'s root, such as pure_live or backup/pure_live; it does not follow the folder the drive page is browsing.';
+	@override String get webdavAutoFolderInvalid => 'Enter a valid relative path: not empty, and without . or ..';
+	@override String get webdavAutoKeep => 'Keep';
+	@override String webdavAutoKeepValue({required int count}) => 'Keep the newest ${count}';
+	@override String get webdavAutoKeepDesc => 'Only the files this schedule uploaded (their names carry auto) are cleaned up; a manually uploaded backup is never deleted.';
+	@override String get webdavAutoScope => 'Contents';
+	@override String get webdavAutoScopeAll => 'Everything';
+	@override String get webdavAutoScopeFollows => 'Follows only';
+	@override String get webdavAutoSecrets => 'Include account credentials';
+	@override String get webdavAutoSecretsDesc => 'Cookies and WebDAV passwords are written into the uploaded file in plain text.';
+	@override String get webdavAutoSecretsGated => 'Turn on "Include account credentials in backups and syncs" on the backup hub first.';
+	@override String get webdavAutoSecretsFollows => 'A follows-only backup never carries credentials.';
+	@override String get webdavAutoLastSuccess => 'Last success';
+	@override String get webdavAutoNever => 'No successful backup yet';
+	@override String get webdavAutoNextDue => 'Next check';
+	@override String get webdavAutoDueNow => 'At the next foreground check';
+	@override String get webdavAutoOff => 'Off';
+	@override String webdavAutoFailures({required int count, required String time}) => '${count} failures in a row; retrying after ${time}';
+	@override String get webdavAutoRunNow => 'Back up now';
+	@override String get webdavAutoRunNowDesc => 'Upload one copy to the remote folder without waiting for the interval.';
+	@override String get webdavAutoRunning => 'Uploading…';
+	@override String webdavAutoUploaded({required String file}) => 'Automatically backed up to WebDAV: ${file}';
+	@override String webdavAutoFailed({required String reason}) => 'WebDAV scheduled backup failed: ${reason}';
+	@override String get webdavAutoNothing => 'Nothing to back up; nothing was uploaded this time';
 	@override String get sectionFollows => 'Followed rooms';
 	@override String get sectionFollowsDesc => 'The streamers and rooms you follow, with their tags.';
 	@override String get sectionAreaFollows => 'Followed areas';
@@ -389,6 +428,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get transportsSection => 'Other ways';
 	@override String get methodsSection => 'Ways to back up';
 	@override String get moreSection => 'Help and management';
+	@override late final _Translations$backup$preview$en preview = _Translations$backup$preview$en._(_root);
 	@override late final _Translations$backup$webdavHelp$en webdavHelp = _Translations$backup$webdavHelp$en._(_root);
 	@override late final _Translations$backup$cloud$en cloud = _Translations$backup$cloud$en._(_root);
 }
@@ -3999,6 +4039,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get cloudAdminDescription => 'Admins list accounts and grant or revoke uploads.';
 	@override String get webdavHelpTitle => 'WebDAV help';
 	@override String get webdavHelpDescription => 'Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.';
+	@override String get webdavAutoBackupTitle => 'Scheduled backup';
+	@override String get webdavAutoBackupDescription => 'Uploads a backup to a WebDAV account on an interval and prunes the old copies to a count.';
 	@override String get lanSync => 'LAN sync';
 	@override String get lanSyncDescription => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.';
 	@override String get lanSyncEnable => 'Enable LAN sync';
@@ -4661,6 +4703,31 @@ class _Translations$wallpaper$en extends Translations$wallpaper$zh_CN {
 	@override String get sourceSexyBeautyMioical => 'Beauty · Mioical';
 }
 
+// Path: backup.preview
+class _Translations$backup$preview$en extends Translations$backup$preview$zh_CN {
+	_Translations$backup$preview$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get changes => 'What the restore changes';
+	@override String get followsOnlyFile => 'This backup holds follows only: it restores followed rooms and areas.';
+	@override String figures({required int current, required int incoming}) => '${current} → ${incoming}';
+	@override String added({required int count}) => '${count} added';
+	@override String removed({required int count}) => '${count} removed';
+	@override String get same => 'No change';
+	@override String items({required int count}) => '${count} items';
+	@override String settingsChanged({required int count}) => '${count} differ from the current ones';
+	@override String get settingsSame => 'All match the current ones';
+	@override String get accounts => 'Writes these credentials only; the others on this device stay';
+	@override String kept({required String sections}) => 'Kept as they are: ${sections}';
+	@override String get separator => ', ';
+	@override String skipped({required int count}) => '${count} entries cannot be read and are skipped';
+	@override String get nothing => 'Nothing is added or removed, and the settings match the current ones';
+	@override String get warning => 'The listed parts are replaced and this cannot be undone; make a backup first if needed.';
+	@override String get confirm => 'Restore';
+}
+
 // Path: backup.webdavHelp
 class _Translations$backup$webdavHelp$en extends Translations$backup$webdavHelp$zh_CN {
 	_Translations$backup$webdavHelp$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -5057,6 +5124,7 @@ extension on TranslationsEn {
 			'backup.restoreFailed' => 'Restore failed',
 			'backup.restoreEmptyDocument' => 'This backup holds no data',
 			'backup.restoreRecordingsBusy' => 'This device is recording or still finishing a take — end it before restoring the recording tasks',
+			'backup.restoreBusy' => 'A restore is already running; try again once it finishes',
 			'backup.deleteConfirmTitle' => 'Delete this backup file?',
 			'backup.deleteConfirmDesc' => ({required String name}) => '${name} will be permanently deleted.',
 			'backup.deleteDone' => 'Backup file deleted',
@@ -5094,6 +5162,44 @@ extension on TranslationsEn {
 			'backup.webdavMoved' => 'Moved',
 			'backup.webdavMoveIntoItself' => 'A folder cannot be moved into itself',
 			'backup.webdavQuota' => ({required String used, required String total}) => '${used} used · ${total} total',
+			'backup.webdavAutoTitle' => 'Scheduled backup',
+			'backup.webdavAutoMenu' => 'Scheduled backup…',
+			'backup.webdavAutoScheduleSection' => 'Schedule',
+			'backup.webdavAutoContentSection' => 'Contents',
+			'backup.webdavAutoStatusSection' => 'Status',
+			'backup.webdavAutoEnabled' => 'Back up while the app runs',
+			'backup.webdavAutoEnabledDesc' => 'Checked and uploaded only while the app is in the foreground; nothing runs in the background or after the app closes.',
+			'backup.webdavAutoAccount' => 'Upload to',
+			'backup.webdavAutoAccountDesc' => 'Always the account selected on the WebDAV drive page.',
+			'backup.webdavAutoAccountNone' => 'No WebDAV account yet; add one on the drive page first.',
+			'backup.webdavAutoInterval' => 'Backup interval',
+			'backup.webdavAutoIntervalHours' => ({required int hours}) => 'Every ${hours} h',
+			'backup.webdavAutoIntervalDays' => ({required int days}) => 'Every ${days} d',
+			'backup.webdavAutoFolder' => 'Remote folder',
+			'backup.webdavAutoFolderDesc' => 'A relative path below the account\'s root, such as pure_live or backup/pure_live; it does not follow the folder the drive page is browsing.',
+			'backup.webdavAutoFolderInvalid' => 'Enter a valid relative path: not empty, and without . or ..',
+			'backup.webdavAutoKeep' => 'Keep',
+			'backup.webdavAutoKeepValue' => ({required int count}) => 'Keep the newest ${count}',
+			'backup.webdavAutoKeepDesc' => 'Only the files this schedule uploaded (their names carry auto) are cleaned up; a manually uploaded backup is never deleted.',
+			'backup.webdavAutoScope' => 'Contents',
+			'backup.webdavAutoScopeAll' => 'Everything',
+			'backup.webdavAutoScopeFollows' => 'Follows only',
+			'backup.webdavAutoSecrets' => 'Include account credentials',
+			'backup.webdavAutoSecretsDesc' => 'Cookies and WebDAV passwords are written into the uploaded file in plain text.',
+			'backup.webdavAutoSecretsGated' => 'Turn on "Include account credentials in backups and syncs" on the backup hub first.',
+			'backup.webdavAutoSecretsFollows' => 'A follows-only backup never carries credentials.',
+			'backup.webdavAutoLastSuccess' => 'Last success',
+			'backup.webdavAutoNever' => 'No successful backup yet',
+			'backup.webdavAutoNextDue' => 'Next check',
+			'backup.webdavAutoDueNow' => 'At the next foreground check',
+			'backup.webdavAutoOff' => 'Off',
+			'backup.webdavAutoFailures' => ({required int count, required String time}) => '${count} failures in a row; retrying after ${time}',
+			'backup.webdavAutoRunNow' => 'Back up now',
+			'backup.webdavAutoRunNowDesc' => 'Upload one copy to the remote folder without waiting for the interval.',
+			'backup.webdavAutoRunning' => 'Uploading…',
+			'backup.webdavAutoUploaded' => ({required String file}) => 'Automatically backed up to WebDAV: ${file}',
+			'backup.webdavAutoFailed' => ({required String reason}) => 'WebDAV scheduled backup failed: ${reason}',
+			'backup.webdavAutoNothing' => 'Nothing to back up; nothing was uploaded this time',
 			'backup.sectionFollows' => 'Followed rooms',
 			'backup.sectionFollowsDesc' => 'The streamers and rooms you follow, with their tags.',
 			'backup.sectionAreaFollows' => 'Followed areas',
@@ -5124,6 +5230,22 @@ extension on TranslationsEn {
 			'backup.transportsSection' => 'Other ways',
 			'backup.methodsSection' => 'Ways to back up',
 			'backup.moreSection' => 'Help and management',
+			'backup.preview.changes' => 'What the restore changes',
+			'backup.preview.followsOnlyFile' => 'This backup holds follows only: it restores followed rooms and areas.',
+			'backup.preview.figures' => ({required int current, required int incoming}) => '${current} → ${incoming}',
+			'backup.preview.added' => ({required int count}) => '${count} added',
+			'backup.preview.removed' => ({required int count}) => '${count} removed',
+			'backup.preview.same' => 'No change',
+			'backup.preview.items' => ({required int count}) => '${count} items',
+			'backup.preview.settingsChanged' => ({required int count}) => '${count} differ from the current ones',
+			'backup.preview.settingsSame' => 'All match the current ones',
+			'backup.preview.accounts' => 'Writes these credentials only; the others on this device stay',
+			'backup.preview.kept' => ({required String sections}) => 'Kept as they are: ${sections}',
+			'backup.preview.separator' => ', ',
+			'backup.preview.skipped' => ({required int count}) => '${count} entries cannot be read and are skipped',
+			'backup.preview.nothing' => 'Nothing is added or removed, and the settings match the current ones',
+			'backup.preview.warning' => 'The listed parts are replaced and this cannot be undone; make a backup first if needed.',
+			'backup.preview.confirm' => 'Restore',
 			'backup.webdavHelp.introSection' => 'Before you start',
 			'backup.webdavHelp.introBody' => 'Jianguoyun supports WebDAV access for backup and file management. This guide uses a personal Jianguoyun account as an example.\nFree plan: 1 GB uploads/month and 3 GB downloads/month. Storage grows with uploaded data. Plans can change; check the official pages before relying on a quota.',
 			'backup.webdavHelp.paramsSection' => 'Connection details',
@@ -5280,6 +5402,8 @@ extension on TranslationsEn {
 			'common.forward' => 'Forward',
 			'common.searchHint' => 'Search rooms or streamers',
 			'common.switchModule' => 'Switch content type',
+			_ => null,
+		} ?? switch (path) {
 			'common.openNavigation' => 'Open navigation',
 			'common.refreshFailed' => 'Refresh failed',
 			'common.refresh' => 'Refresh',
@@ -5335,8 +5459,6 @@ extension on TranslationsEn {
 			'common.previewDeleteBody' => ({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.',
 			'common.previewDeleteFailed' => 'The file could not be deleted',
 			'common.previewSkipBack' => 'Back 10 seconds',
-			_ => null,
-		} ?? switch (path) {
 			'common.previewSkipForward' => 'Forward 10 seconds',
 			'common.previewLoop' => 'Loop',
 			'common.previewDrawerLabel' => 'Files',
@@ -5794,6 +5916,8 @@ extension on TranslationsEn {
 			'iptv.filterAll' => 'All',
 			'iptv.filterPlaylists' => 'Playlists',
 			'iptv.filterGuides' => 'Guides',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.searchChannels' => 'Search channels…',
 			'iptv.searchSources' => 'Search names or addresses…',
 			'iptv.noChannelMatch' => 'No channels match',
@@ -5849,8 +5973,6 @@ extension on TranslationsEn {
 			'iptv.catchupUnavailable' => 'No catch-up',
 			'iptv.playingCatchup' => 'Replaying',
 			'iptv.catchupFailed' => 'This programme cannot be replayed',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importDefaultName' => 'Imported playlist',
 			'iptv.copySourceAddress' => 'Copy the source address',
 			'iptv.openSourceAddress' => 'Open the source address',
@@ -6308,6 +6430,8 @@ extension on TranslationsEn {
 			'music.localAddFolder' => 'Add a folder',
 			'music.localHint' => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
+			_ => null,
+		} ?? switch (path) {
 			'music.localRescan' => 'Scan again',
 			'music.localFolders' => 'Music folders',
 			'music.localRemoveFolder' => 'Remove the folder',
@@ -6363,8 +6487,6 @@ extension on TranslationsEn {
 			'music.desktopLyricLockDesc' => 'A locked window lets clicks pass through to the app underneath.',
 			'music.desktopLyricStyleSection' => 'Style',
 			'music.desktopLyricShow' => 'Show & lock',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricFontSize' => 'Font size',
 			'music.desktopLyricFontSizeDesc' => 'The overlay’s text size.',
 			'music.desktopLyricOpacity' => 'Opacity',
@@ -6822,6 +6944,8 @@ extension on TranslationsEn {
 			'recorder.libraryFailedTitle' => 'The recording folder cannot be read',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
 			'recorder.emptyLibraryTitle' => 'No recordings yet',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.emptyLibraryDescription' => 'Finished takes appear here, filed by day, platform and room.',
 			'recorder.emptySearchTitle' => 'No recording matches',
 			'recorder.emptySearchDescription' => 'Try another word, or clear the filters.',
@@ -6877,8 +7001,6 @@ extension on TranslationsEn {
 			'recorder.keepAliveTitle' => 'Keep recording in the background',
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
 			'recorder.verifyTitle' => 'Verify on stop',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
 			'recorder.tlsVerifyTitle' => 'Verify HTTPS certificates',
 			'recorder.tlsVerifyDesc' => 'Off accepts self-signed or proxy-intercepted certificates; the server\'s identity is then unverified and interception is possible.',
@@ -7336,6 +7458,8 @@ extension on TranslationsEn {
 			'search.scopeSummary' => ({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.',
 			'search.anchorUnsupported' => ({required String site}) => '${site} cannot search streamers; switch to “Rooms”.',
+			_ => null,
+		} ?? switch (path) {
 			'search.anchorPlatforms' => ({required String sites}) => 'Anchor search covers: ${sites}.',
 			'settings.title' => 'Settings',
 			'settings.navGeneral' => 'Browsing & window',
@@ -7391,8 +7515,6 @@ extension on TranslationsEn {
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backupDescription' => 'Local backups, restores and WebDAV sync.',
 			'settings.aboutDescription' => 'Version, licences and project links.',
 			'settings.browsingPageDescription' => 'Cards and lists, how dense the follows page is, the audience metric and the room card.',
@@ -7850,6 +7972,8 @@ extension on TranslationsEn {
 			'settings.cacheDiskEnabledDesc' => 'Off keeps memory and network only; existing files stay until the next clear.',
 			'settings.cacheFreshness' => 'Freshness',
 			'settings.cacheFreshnessDesc' => 'Update first swaps covers sooner; save data keeps them longer.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheFreshnessFresh' => 'Update first',
 			'settings.cacheFreshnessBalanced' => 'Balanced',
 			'settings.cacheFreshnessThrifty' => 'Save data',
@@ -7905,8 +8029,6 @@ extension on TranslationsEn {
 			'settings.groupMusic' => 'Music',
 			'settings.navMusic' => 'Music',
 			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusicPlay' => 'Playback',
 			'settings.musicPlaybackDescription' => 'Sources, quality and how playback behaves.',
 			'settings.navMusicSources' => 'Custom sources',
@@ -8364,6 +8486,8 @@ extension on TranslationsEn {
 			'settings.downloadColumnActions' => 'Actions',
 			'settings.downloadSearchPlaceholder' => 'Search downloads',
 			'settings.downloadPercent' => ({required Object percent}) => 'Downloading ${percent}%',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadStatusPaused' => 'Paused',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
 			'settings.downloadLoadingMore' => 'Loading more…',
@@ -8419,8 +8543,6 @@ extension on TranslationsEn {
 			'settings.windowsPipMinWidth' => 'Small window minimum width',
 			'settings.windowsPipMinWidthDesc' => 'Smallest width the compact window can be dragged to, range 100–320; applies only while compact and restores the app window\'s normal floor on exit.',
 			'settings.windowsPipMinHeight' => 'Small window minimum height',
-			_ => null,
-		} ?? switch (path) {
 			'settings.windowsPipMinHeightDesc' => 'Smallest height the compact window can be dragged to, range 60–240; applies only while compact and restores the app window\'s normal floor on exit.',
 			'settings.fullscreenDefault' => 'Auto Full Screen',
 			'settings.fullscreenDefaultDesc' => 'When enter live play, auto into full screen',
@@ -8756,6 +8878,8 @@ extension on TranslationsEn {
 			'settings.cloudAdminDescription' => 'Admins list accounts and grant or revoke uploads.',
 			'settings.webdavHelpTitle' => 'WebDAV help',
 			'settings.webdavHelpDescription' => 'Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.',
+			'settings.webdavAutoBackupTitle' => 'Scheduled backup',
+			'settings.webdavAutoBackupDescription' => 'Uploads a backup to a WebDAV account on an interval and prunes the old copies to a count.',
 			'settings.lanSync' => 'LAN sync',
 			'settings.lanSyncDescription' => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.',
 			'settings.lanSyncEnable' => 'Enable LAN sync',
@@ -8876,6 +9000,8 @@ extension on TranslationsEn {
 			'shield.usersTitle' => 'Users',
 			'shield.keywordFieldHint' => 'Type a keyword to block — /…/ is a regular expression',
 			'shield.userFieldHint' => 'Type a user name to block',
+			_ => null,
+		} ?? switch (path) {
 			'shield.add' => 'Add',
 			'shield.keywordsEmpty' => 'No blocked keywords yet',
 			'shield.usersEmpty' => 'No blocked users yet',
@@ -8933,8 +9059,6 @@ extension on TranslationsEn {
 			'toolbox.linkEmpty' => 'Paste a link first',
 			'toolbox.linkUnsupported' => 'This link is not recognised; the platform is not supported yet.',
 			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkFailed' => 'The resolve failed; try again later.',
 			'toolbox.linkCopyDone' => 'Room link copied',
 			'toolbox.linkCopyFailed' => 'Copy failed',

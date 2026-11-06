@@ -793,6 +793,9 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '本机正在录制或还在处理录制结果，先结束它再恢复录制任务'
 	String get restoreRecordingsBusy => '本机正在录制或还在处理录制结果，先结束它再恢复录制任务';
 
+	/// zh-CN: '已有一个恢复正在进行，请等它完成后再试'
+	String get restoreBusy => '已有一个恢复正在进行，请等它完成后再试';
+
 	/// zh-CN: '删除这个备份文件？'
 	String get deleteConfirmTitle => '删除这个备份文件？';
 
@@ -904,6 +907,120 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '已用 {used: String} · 共 {total: String}'
 	String webdavQuota({required String used, required String total}) => '已用 ${used} · 共 ${total}';
 
+	/// zh-CN: '定时自动备份'
+	String get webdavAutoTitle => '定时自动备份';
+
+	/// zh-CN: '定时自动备份…'
+	String get webdavAutoMenu => '定时自动备份…';
+
+	/// zh-CN: '计划'
+	String get webdavAutoScheduleSection => '计划';
+
+	/// zh-CN: '内容'
+	String get webdavAutoContentSection => '内容';
+
+	/// zh-CN: '状态'
+	String get webdavAutoStatusSection => '状态';
+
+	/// zh-CN: '应用运行时自动备份'
+	String get webdavAutoEnabled => '应用运行时自动备份';
+
+	/// zh-CN: '只在应用前台运行时检查并上传；退到后台或关闭应用后不会备份。'
+	String get webdavAutoEnabledDesc => '只在应用前台运行时检查并上传；退到后台或关闭应用后不会备份。';
+
+	/// zh-CN: '上传到账号'
+	String get webdavAutoAccount => '上传到账号';
+
+	/// zh-CN: '始终使用 WebDAV 网盘页当前选中的账号。'
+	String get webdavAutoAccountDesc => '始终使用 WebDAV 网盘页当前选中的账号。';
+
+	/// zh-CN: '还没有 WebDAV 账号，先在网盘页添加一个。'
+	String get webdavAutoAccountNone => '还没有 WebDAV 账号，先在网盘页添加一个。';
+
+	/// zh-CN: '备份间隔'
+	String get webdavAutoInterval => '备份间隔';
+
+	/// zh-CN: '每 {hours: int} 小时'
+	String webdavAutoIntervalHours({required int hours}) => '每 ${hours} 小时';
+
+	/// zh-CN: '每 {days: int} 天'
+	String webdavAutoIntervalDays({required int days}) => '每 ${days} 天';
+
+	/// zh-CN: '远程文件夹'
+	String get webdavAutoFolder => '远程文件夹';
+
+	/// zh-CN: '账号根目录下的相对路径，例如 pure_live 或 backup/pure_live；不随网盘页正在浏览的目录变化。'
+	String get webdavAutoFolderDesc => '账号根目录下的相对路径，例如 pure_live 或 backup/pure_live；不随网盘页正在浏览的目录变化。';
+
+	/// zh-CN: '请输入有效的相对路径：不能为空，也不能包含 . 或 ..'
+	String get webdavAutoFolderInvalid => '请输入有效的相对路径：不能为空，也不能包含 . 或 ..';
+
+	/// zh-CN: '保留份数'
+	String get webdavAutoKeep => '保留份数';
+
+	/// zh-CN: '保留最近 {count: int} 份'
+	String webdavAutoKeepValue({required int count}) => '保留最近 ${count} 份';
+
+	/// zh-CN: '只清理本功能自己上传的文件（文件名含 auto），手动上传的备份永远不会被删除。'
+	String get webdavAutoKeepDesc => '只清理本功能自己上传的文件（文件名含 auto），手动上传的备份永远不会被删除。';
+
+	/// zh-CN: '备份内容'
+	String get webdavAutoScope => '备份内容';
+
+	/// zh-CN: '全部数据'
+	String get webdavAutoScopeAll => '全部数据';
+
+	/// zh-CN: '仅关注'
+	String get webdavAutoScopeFollows => '仅关注';
+
+	/// zh-CN: '包含账号凭据'
+	String get webdavAutoSecrets => '包含账号凭据';
+
+	/// zh-CN: 'Cookie 与 WebDAV 密码会明文写进上传的文件。'
+	String get webdavAutoSecretsDesc => 'Cookie 与 WebDAV 密码会明文写进上传的文件。';
+
+	/// zh-CN: '先在备份首页打开「备份与同步时包含账号凭据」。'
+	String get webdavAutoSecretsGated => '先在备份首页打开「备份与同步时包含账号凭据」。';
+
+	/// zh-CN: '仅关注备份不包含账号凭据。'
+	String get webdavAutoSecretsFollows => '仅关注备份不包含账号凭据。';
+
+	/// zh-CN: '上次成功'
+	String get webdavAutoLastSuccess => '上次成功';
+
+	/// zh-CN: '还没有成功备份过'
+	String get webdavAutoNever => '还没有成功备份过';
+
+	/// zh-CN: '下次检查'
+	String get webdavAutoNextDue => '下次检查';
+
+	/// zh-CN: '下次前台检查时上传'
+	String get webdavAutoDueNow => '下次前台检查时上传';
+
+	/// zh-CN: '已关闭'
+	String get webdavAutoOff => '已关闭';
+
+	/// zh-CN: '连续失败 {count: int} 次，{time: String} 后重试'
+	String webdavAutoFailures({required int count, required String time}) => '连续失败 ${count} 次，${time} 后重试';
+
+	/// zh-CN: '立即备份'
+	String get webdavAutoRunNow => '立即备份';
+
+	/// zh-CN: '不等间隔，马上上传一份到远程文件夹。'
+	String get webdavAutoRunNowDesc => '不等间隔，马上上传一份到远程文件夹。';
+
+	/// zh-CN: '正在上传…'
+	String get webdavAutoRunning => '正在上传…';
+
+	/// zh-CN: '已自动备份到 WebDAV：{file: String}'
+	String webdavAutoUploaded({required String file}) => '已自动备份到 WebDAV：${file}';
+
+	/// zh-CN: 'WebDAV 自动备份失败：{reason: String}'
+	String webdavAutoFailed({required String reason}) => 'WebDAV 自动备份失败：${reason}';
+
+	/// zh-CN: '没有可备份的数据，这次没有上传'
+	String get webdavAutoNothing => '没有可备份的数据，这次没有上传';
+
 	/// zh-CN: '关注房间'
 	String get sectionFollows => '关注房间';
 
@@ -994,6 +1111,7 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '帮助与管理'
 	String get moreSection => '帮助与管理';
 
+	late final Translations$backup$preview$zh_CN preview = Translations$backup$preview$zh_CN.internal(_root);
 	late final Translations$backup$webdavHelp$zh_CN webdavHelp = Translations$backup$webdavHelp$zh_CN.internal(_root);
 	late final Translations$backup$cloud$zh_CN cloud = Translations$backup$cloud$zh_CN.internal(_root);
 }
@@ -11569,6 +11687,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '以坚果云为例：注册、生成应用密码、填写参数与常见问题。'
 	String get webdavHelpDescription => '以坚果云为例：注册、生成应用密码、填写参数与常见问题。';
 
+	/// zh-CN: '定时自动备份'
+	String get webdavAutoBackupTitle => '定时自动备份';
+
+	/// zh-CN: '按设定间隔把备份自动上传到 WebDAV 账号，按份数清理旧备份。'
+	String get webdavAutoBackupDescription => '按设定间隔把备份自动上传到 WebDAV 账号，按份数清理旧备份。';
+
 	/// zh-CN: '局域网同步'
 	String get lanSync => '局域网同步';
 
@@ -13460,6 +13584,63 @@ class Translations$wallpaper$zh_CN {
 	String get sourceSexyBeautyMioical => '随机美女·Mioical';
 }
 
+// Path: backup.preview
+class Translations$backup$preview$zh_CN {
+	Translations$backup$preview$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '恢复后会这样变化'
+	String get changes => '恢复后会这样变化';
+
+	/// zh-CN: '这是只含关注的备份：只会恢复关注房间与关注分区。'
+	String get followsOnlyFile => '这是只含关注的备份：只会恢复关注房间与关注分区。';
+
+	/// zh-CN: '{current: int} → {incoming: int}'
+	String figures({required int current, required int incoming}) => '${current} → ${incoming}';
+
+	/// zh-CN: '新增 {count: int}'
+	String added({required int count}) => '新增 ${count}';
+
+	/// zh-CN: '移除 {count: int}'
+	String removed({required int count}) => '移除 ${count}';
+
+	/// zh-CN: '无变化'
+	String get same => '无变化';
+
+	/// zh-CN: '{count: int} 项'
+	String items({required int count}) => '${count} 项';
+
+	/// zh-CN: '其中 {count: int} 项与当前不同'
+	String settingsChanged({required int count}) => '其中 ${count} 项与当前不同';
+
+	/// zh-CN: '都与当前相同'
+	String get settingsSame => '都与当前相同';
+
+	/// zh-CN: '只写入文件里的这些凭据，本机其他凭据不变'
+	String get accounts => '只写入文件里的这些凭据，本机其他凭据不变';
+
+	/// zh-CN: '保持不变：{sections: String}'
+	String kept({required String sections}) => '保持不变：${sections}';
+
+	/// zh-CN: '、'
+	String get separator => '、';
+
+	/// zh-CN: '{count: int} 项内容无法读取，将跳过'
+	String skipped({required int count}) => '${count} 项内容无法读取，将跳过';
+
+	/// zh-CN: '不会新增或移除任何条目，设置也都与当前相同'
+	String get nothing => '不会新增或移除任何条目，设置也都与当前相同';
+
+	/// zh-CN: '恢复会替换上面列出的内容，无法撤销；需要时先创建一份备份。'
+	String get warning => '恢复会替换上面列出的内容，无法撤销；需要时先创建一份备份。';
+
+	/// zh-CN: '恢复'
+	String get confirm => '恢复';
+}
+
 // Path: backup.webdavHelp
 class Translations$backup$webdavHelp$zh_CN {
 	Translations$backup$webdavHelp$zh_CN.internal(this._root);
@@ -14128,6 +14309,7 @@ extension on Translations {
 			'backup.restoreFailed' => '恢复失败',
 			'backup.restoreEmptyDocument' => '这个备份里没有数据',
 			'backup.restoreRecordingsBusy' => '本机正在录制或还在处理录制结果，先结束它再恢复录制任务',
+			'backup.restoreBusy' => '已有一个恢复正在进行，请等它完成后再试',
 			'backup.deleteConfirmTitle' => '删除这个备份文件？',
 			'backup.deleteConfirmDesc' => ({required String name}) => '${name} 将被永久删除。',
 			'backup.deleteDone' => '备份文件已删除',
@@ -14165,6 +14347,44 @@ extension on Translations {
 			'backup.webdavMoved' => '已移动',
 			'backup.webdavMoveIntoItself' => '不能把文件夹移动到自己里面',
 			'backup.webdavQuota' => ({required String used, required String total}) => '已用 ${used} · 共 ${total}',
+			'backup.webdavAutoTitle' => '定时自动备份',
+			'backup.webdavAutoMenu' => '定时自动备份…',
+			'backup.webdavAutoScheduleSection' => '计划',
+			'backup.webdavAutoContentSection' => '内容',
+			'backup.webdavAutoStatusSection' => '状态',
+			'backup.webdavAutoEnabled' => '应用运行时自动备份',
+			'backup.webdavAutoEnabledDesc' => '只在应用前台运行时检查并上传；退到后台或关闭应用后不会备份。',
+			'backup.webdavAutoAccount' => '上传到账号',
+			'backup.webdavAutoAccountDesc' => '始终使用 WebDAV 网盘页当前选中的账号。',
+			'backup.webdavAutoAccountNone' => '还没有 WebDAV 账号，先在网盘页添加一个。',
+			'backup.webdavAutoInterval' => '备份间隔',
+			'backup.webdavAutoIntervalHours' => ({required int hours}) => '每 ${hours} 小时',
+			'backup.webdavAutoIntervalDays' => ({required int days}) => '每 ${days} 天',
+			'backup.webdavAutoFolder' => '远程文件夹',
+			'backup.webdavAutoFolderDesc' => '账号根目录下的相对路径，例如 pure_live 或 backup/pure_live；不随网盘页正在浏览的目录变化。',
+			'backup.webdavAutoFolderInvalid' => '请输入有效的相对路径：不能为空，也不能包含 . 或 ..',
+			'backup.webdavAutoKeep' => '保留份数',
+			'backup.webdavAutoKeepValue' => ({required int count}) => '保留最近 ${count} 份',
+			'backup.webdavAutoKeepDesc' => '只清理本功能自己上传的文件（文件名含 auto），手动上传的备份永远不会被删除。',
+			'backup.webdavAutoScope' => '备份内容',
+			'backup.webdavAutoScopeAll' => '全部数据',
+			'backup.webdavAutoScopeFollows' => '仅关注',
+			'backup.webdavAutoSecrets' => '包含账号凭据',
+			'backup.webdavAutoSecretsDesc' => 'Cookie 与 WebDAV 密码会明文写进上传的文件。',
+			'backup.webdavAutoSecretsGated' => '先在备份首页打开「备份与同步时包含账号凭据」。',
+			'backup.webdavAutoSecretsFollows' => '仅关注备份不包含账号凭据。',
+			'backup.webdavAutoLastSuccess' => '上次成功',
+			'backup.webdavAutoNever' => '还没有成功备份过',
+			'backup.webdavAutoNextDue' => '下次检查',
+			'backup.webdavAutoDueNow' => '下次前台检查时上传',
+			'backup.webdavAutoOff' => '已关闭',
+			'backup.webdavAutoFailures' => ({required int count, required String time}) => '连续失败 ${count} 次，${time} 后重试',
+			'backup.webdavAutoRunNow' => '立即备份',
+			'backup.webdavAutoRunNowDesc' => '不等间隔，马上上传一份到远程文件夹。',
+			'backup.webdavAutoRunning' => '正在上传…',
+			'backup.webdavAutoUploaded' => ({required String file}) => '已自动备份到 WebDAV：${file}',
+			'backup.webdavAutoFailed' => ({required String reason}) => 'WebDAV 自动备份失败：${reason}',
+			'backup.webdavAutoNothing' => '没有可备份的数据，这次没有上传',
 			'backup.sectionFollows' => '关注房间',
 			'backup.sectionFollowsDesc' => '关注的主播与房间、标签。',
 			'backup.sectionAreaFollows' => '关注分区',
@@ -14195,6 +14415,22 @@ extension on Translations {
 			'backup.transportsSection' => '其他方式',
 			'backup.methodsSection' => '备份方式',
 			'backup.moreSection' => '帮助与管理',
+			'backup.preview.changes' => '恢复后会这样变化',
+			'backup.preview.followsOnlyFile' => '这是只含关注的备份：只会恢复关注房间与关注分区。',
+			'backup.preview.figures' => ({required int current, required int incoming}) => '${current} → ${incoming}',
+			'backup.preview.added' => ({required int count}) => '新增 ${count}',
+			'backup.preview.removed' => ({required int count}) => '移除 ${count}',
+			'backup.preview.same' => '无变化',
+			'backup.preview.items' => ({required int count}) => '${count} 项',
+			'backup.preview.settingsChanged' => ({required int count}) => '其中 ${count} 项与当前不同',
+			'backup.preview.settingsSame' => '都与当前相同',
+			'backup.preview.accounts' => '只写入文件里的这些凭据，本机其他凭据不变',
+			'backup.preview.kept' => ({required String sections}) => '保持不变：${sections}',
+			'backup.preview.separator' => '、',
+			'backup.preview.skipped' => ({required int count}) => '${count} 项内容无法读取，将跳过',
+			'backup.preview.nothing' => '不会新增或移除任何条目，设置也都与当前相同',
+			'backup.preview.warning' => '恢复会替换上面列出的内容，无法撤销；需要时先创建一份备份。',
+			'backup.preview.confirm' => '恢复',
 			'backup.webdavHelp.introSection' => '开始前说明',
 			'backup.webdavHelp.introBody' => '坚果云支持通过 WebDAV 备份和管理文件。本页以坚果云个人账号为示例。\n免费版当前每月上传流量 1 GB、下载流量 3 GB，空间随上传的数据增长。套餐规则可能调整，依赖额度前请查看官方页面。',
 			'backup.webdavHelp.paramsSection' => '连接参数',
@@ -14351,6 +14587,8 @@ extension on Translations {
 			'common.forward' => '前进',
 			'common.searchHint' => '搜索房间或主播',
 			'common.switchModule' => '切换内容类型',
+			_ => null,
+		} ?? switch (path) {
 			'common.openNavigation' => '打开导航',
 			'common.refreshFailed' => '刷新失败',
 			'common.refresh' => '刷新',
@@ -14406,8 +14644,6 @@ extension on Translations {
 			'common.previewDeleteBody' => ({required String name}) => '「${name}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。',
 			'common.previewDeleteFailed' => '文件未能删除',
 			'common.previewSkipBack' => '后退 10 秒',
-			_ => null,
-		} ?? switch (path) {
 			'common.previewSkipForward' => '前进 10 秒',
 			'common.previewLoop' => '循环播放',
 			'common.previewDrawerLabel' => '文件列',
@@ -14865,6 +15101,8 @@ extension on Translations {
 			'iptv.filterAll' => '全部',
 			'iptv.filterPlaylists' => '播放列表',
 			'iptv.filterGuides' => '节目单',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.searchChannels' => '搜索频道…',
 			'iptv.searchSources' => '搜索名称或地址…',
 			'iptv.noChannelMatch' => '没有匹配的频道',
@@ -14920,8 +15158,6 @@ extension on Translations {
 			'iptv.catchupUnavailable' => '不可回看',
 			'iptv.playingCatchup' => '正在回看',
 			'iptv.catchupFailed' => '无法生成这个节目的回看地址',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importDefaultName' => '导入的播放列表',
 			'iptv.copySourceAddress' => '复制源地址',
 			'iptv.openSourceAddress' => '打开源地址',
@@ -15379,6 +15615,8 @@ extension on Translations {
 			'music.localAddFolder' => '添加文件夹',
 			'music.localHint' => '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
+			_ => null,
+		} ?? switch (path) {
 			'music.localRescan' => '重新扫描',
 			'music.localFolders' => '音乐文件夹',
 			'music.localRemoveFolder' => '移除文件夹',
@@ -15434,8 +15672,6 @@ extension on Translations {
 			'music.desktopLyricLockDesc' => '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。',
 			'music.desktopLyricStyleSection' => '样式',
 			'music.desktopLyricShow' => '显示与锁定',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricFontSize' => '字号',
 			'music.desktopLyricFontSizeDesc' => '桌面歌词的字体大小。',
 			'music.desktopLyricOpacity' => '不透明度',
@@ -15893,6 +16129,8 @@ extension on Translations {
 			'recorder.libraryFailedTitle' => '读不到录像目录',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
 			'recorder.emptyLibraryTitle' => '还没有录像文件',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.emptyLibraryDescription' => '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。',
 			'recorder.emptySearchTitle' => '没有符合条件的录像',
 			'recorder.emptySearchDescription' => '换个关键词，或把筛选清掉。',
@@ -15948,8 +16186,6 @@ extension on Translations {
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
 			'recorder.verifyTitle' => '结束时校验文件',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
 			'recorder.tlsVerifyTitle' => '校验 HTTPS 证书',
 			'recorder.tlsVerifyDesc' => '关闭后接受自签名或代理抓包证书；无法确认服务器身份，存在中间人风险。',
@@ -16407,6 +16643,8 @@ extension on Translations {
 			'search.scopeSummary' => ({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。',
 			'search.anchorUnsupported' => ({required String site}) => '${site} 不支持主播搜索，请切换到“直播间”。',
+			_ => null,
+		} ?? switch (path) {
 			'search.anchorPlatforms' => ({required String sites}) => '主播搜索支持：${sites}。',
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
@@ -16462,8 +16700,6 @@ extension on Translations {
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
 			'settings.aboutDescription' => '版本、开源许可与项目链接。',
 			'settings.browsingPageDescription' => '卡片与列表、关注页密度、观众指标与房间卡片。',
@@ -16921,6 +17157,8 @@ extension on Translations {
 			'settings.cacheDiskEnabledDesc' => '关闭后图片只走内存与网络；已有文件保留到下次清理。',
 			'settings.cacheFreshness' => '缓存策略',
 			'settings.cacheFreshnessDesc' => '更新优先更快换上新封面，省流量保留更久。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheFreshnessFresh' => '更新优先',
 			'settings.cacheFreshnessBalanced' => '均衡',
 			'settings.cacheFreshnessThrifty' => '省流量',
@@ -16976,8 +17214,6 @@ extension on Translations {
 			'settings.groupMusic' => '音乐',
 			'settings.navMusic' => '音乐',
 			'settings.musicSettingsDescription' => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusicPlay' => '播放',
 			'settings.musicPlaybackDescription' => '音源、音质与播放行为。',
 			'settings.navMusicSources' => '自定义源',
@@ -17435,6 +17671,8 @@ extension on Translations {
 			'settings.downloadColumnActions' => '操作',
 			'settings.downloadSearchPlaceholder' => '搜索下载记录',
 			'settings.downloadPercent' => ({required Object percent}) => '下载中 ${percent}%',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadStatusPaused' => '已暂停',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
 			'settings.downloadLoadingMore' => '正在加载更多…',
@@ -17490,8 +17728,6 @@ extension on Translations {
 			'settings.windowsPipMinWidth' => '小窗最小宽度',
 			'settings.windowsPipMinWidthDesc' => '小窗最小宽度，100–320；离开小窗后恢复常规下限。',
 			'settings.windowsPipMinHeight' => '小窗最小高度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.windowsPipMinHeightDesc' => '小窗最小高度，60–240；离开小窗后恢复常规下限。',
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
@@ -17827,6 +18063,8 @@ extension on Translations {
 			'settings.cloudAdminDescription' => '管理员查看账号、授予或撤销上传权限。',
 			'settings.webdavHelpTitle' => 'WebDAV 帮助',
 			'settings.webdavHelpDescription' => '以坚果云为例：注册、生成应用密码、填写参数与常见问题。',
+			'settings.webdavAutoBackupTitle' => '定时自动备份',
+			'settings.webdavAutoBackupDescription' => '按设定间隔把备份自动上传到 WebDAV 账号，按份数清理旧备份。',
 			'settings.lanSync' => '局域网同步',
 			'settings.lanSyncDescription' => '与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。',
 			'settings.lanSyncEnable' => '启用局域网同步',
@@ -17947,6 +18185,8 @@ extension on Translations {
 			'shield.usersTitle' => '用户',
 			'shield.keywordFieldHint' => '输入要屏蔽的关键词，/…/ 是正则',
 			'shield.userFieldHint' => '输入要屏蔽的用户名',
+			_ => null,
+		} ?? switch (path) {
 			'shield.add' => '添加',
 			'shield.keywordsEmpty' => '还没有屏蔽关键词',
 			'shield.usersEmpty' => '还没有屏蔽的用户',
@@ -18004,8 +18244,6 @@ extension on Translations {
 			'toolbox.linkEmpty' => '请先粘贴链接',
 			'toolbox.linkUnsupported' => '无法识别该链接，暂不支持此平台。',
 			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkFailed' => '解析失败，请稍后重试。',
 			'toolbox.linkCopyDone' => '已复制房间链接',
 			'toolbox.linkCopyFailed' => '复制失败',

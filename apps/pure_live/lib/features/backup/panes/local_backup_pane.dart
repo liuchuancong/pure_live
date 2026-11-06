@@ -9,6 +9,7 @@ import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart';
 import 'package:pure_live/features/backup/panes/backup_section_picker.dart';
+import 'package:pure_live/features/backup/panes/restore_preview_dialog.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// The one action running: the other rows grey out and the running row
@@ -19,7 +20,8 @@ enum _BackupAction { createAll, createFollows, folder, openFolder, restoreFile, 
 /// the document written as a file in a local backup folder — the sections
 /// the user picked, or the follows alone in one tap — the folder itself,
 /// and what it holds (newest first), each file restored or deleted behind
-/// a confirm; a restore asks which of the file's sections to take.
+/// a confirm; a restore asks which of the file's sections to take, then
+/// shows what taking them changes before it writes anything.
 ///
 /// Public for the settings surface to embed; the page owns nothing beyond
 /// its own busy and folder state. The secrets switch lives on the hub page
@@ -78,6 +80,7 @@ final class _LocalBackupPaneState extends ConsumerState<LocalBackupPane> {
   String _failureMessage(_BackupAction action, Object error) {
     final t = context.t;
     // A refusal of its own: the pane says why the data was left alone.
+    if (error is BackupRestoreBusy) return t.backup.restoreBusy;
     if (error is BackupRecordingsBusy) return t.backup.restoreRecordingsBusy;
     if (error is BackupDocumentEmpty) return t.backup.restoreEmptyDocument;
     return switch (action) {
@@ -204,42 +207,54 @@ final class _LocalBackupPaneState extends ConsumerState<LocalBackupPane> {
     });
   }
 
-  /// Reads the file, asks which of its sections to take, confirms on their
-  /// counts, then restores exactly those.
+  /// Reads the file, asks which of its sections to take, shows what taking
+  /// them changes on this device, then restores exactly those.
   Future<void> _restoreFile(LocalBackupFile entry) async {
     final t = context.t;
     if (_busy != null) {
       _toast(t.backup.busy);
       return;
     }
-    final document = await readBackupDocument(entry.file);
-    if (!mounted) return;
-    if (document == null) {
-      _toast(t.backup.importBadData);
+    // A restore another page started is still writing: say so before the
+    // file is even read, not after the user picked and confirmed.
+    if (restoreInProgress(ref)) {
+      _toast(t.backup.restoreBusy);
       return;
     }
-    final sections = await showBackupSectionPicker(
-      context,
-      title: t.backup.pickRestoreTitle(name: entry.name),
-      confirmLabel: t.backup.webdavRestore,
-      available: document.presentSections,
-      initial: document.presentSections,
-      counts: {for (final section in document.presentSections) section: document.countOf(section)},
-      secretsAllowed: includeSecretsAllowed(),
-      note: t.backup.pickRestoreNote,
-    );
-    if (sections == null || !mounted) return;
-    final chosen = document.only(sections);
-    final confirmed = await _confirm(
-      t.backup.restoreConfirmTitle,
-      description: '${t.backup.restoreConfirmDesc(name: entry.name)}\n${_summaryLine(chosen)}',
-    );
-    if (!confirmed || !mounted) return;
+    final chosen = await _pickRestore(entry);
+    if (chosen == null || !mounted) return;
     await _run(_BackupAction.restoreFile, () async {
       await applyBackup(ref, chosen);
       ref.invalidate(backupSummaryProvider);
       if (mounted) _toast(t.backup.importDone);
     }, path: entry.file.path);
+  }
+
+  /// Reads [entry] and takes it through the picker and the preview: the
+  /// document to restore, or null when the user backed out or the file was
+  /// no backup (the pane has said why).
+  Future<BackupDocument?> _pickRestore(LocalBackupFile entry) async {
+    final t = context.t;
+    try {
+      final document = await readBackupDocument(entry.file);
+      if (!mounted) return null;
+      if (document == null) {
+        _toast(t.backup.importBadData);
+        return null;
+      }
+      return await pickAndPreviewRestore(
+        context,
+        ref,
+        document: document,
+        name: entry.name,
+        title: t.backup.pickRestoreTitle(name: entry.name),
+      );
+    } on Object {
+      // The file could not be read, or the stores to compare it with did
+      // not open: nothing was written.
+      if (mounted) _toast(t.backup.restoreFailed);
+      return null;
+    }
   }
 
   Future<void> _deleteFile(LocalBackupFile entry) async {
@@ -261,12 +276,6 @@ final class _LocalBackupPaneState extends ConsumerState<LocalBackupPane> {
   }
 
   // -- Dialogs ------------------------------------------------------------
-
-  /// The one line on what a restore would change, shown in the confirms:
-  /// the chosen sections and their counts.
-  String _summaryLine(BackupDocument document) => backupSectionsSummary(context.t, {
-    for (final section in document.presentSections) section: document.countOf(section),
-  });
 
   Future<bool> _confirm(String title, {required String description}) => showDsConfirm(
     context: context,

@@ -14,6 +14,7 @@ import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart' show backupSummaryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show captureBackupDocument, includeSecretsAllowed;
 import 'package:pure_live/features/backup/panes/backup_section_picker.dart';
+import 'package:pure_live/features/backup/panes/restore_preview_dialog.dart';
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
@@ -43,6 +44,10 @@ String cloudFailureMessage(Translations t, String code) {
     'callback-invalid' => c.errCallbackInvalid,
     'signed-out' => c.errSignedOut,
     'web-context-cancelled' || 'canceled' => c.errCancelled,
+    // The restore's own refusals, worded as the other ways word them.
+    'restore-busy' => t.backup.restoreBusy,
+    'restore-recordings-busy' => t.backup.restoreRecordingsBusy,
+    'restore-empty' => t.backup.restoreEmptyDocument,
     _ => c.errUnknown(code: code),
   };
 }
@@ -207,6 +212,12 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
 
   Future<void> _download() async {
     final t = context.t;
+    // A restore another page started is still writing: say so before the
+    // download, not after the user picked and confirmed.
+    if (restoreInProgress(ref)) {
+      _toast(t.backup.restoreBusy, status: DsStatus.danger);
+      return;
+    }
     final CloudDownload download;
     try {
       download = await _controller.download();
@@ -215,33 +226,23 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
       return;
     }
     if (!mounted) return;
-    final decoded = download.document;
-    final sections = await showBackupSectionPicker(
-      context,
-      title: t.backup.cloud.pickRestoreTitle,
-      confirmLabel: t.backup.webdavRestore,
-      available: decoded.presentSections,
-      initial: decoded.presentSections,
-      counts: {for (final section in decoded.presentSections) section: decoded.countOf(section)},
-      secretsAllowed: includeSecretsAllowed(),
-      note: download.legacy
-          ? t.backup.cloud.legacyNote(skipped: download.skippedLegacy.join(', '))
-          : t.backup.pickRestoreNote,
-    );
-    if (sections == null || !mounted) return;
-    final chosen = decoded.only(sections);
-    final summary = backupSectionsSummary(t, {
-      for (final section in chosen.presentSections) section: chosen.countOf(section),
-    });
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.backup.restoreConfirmTitle,
-      description: '${t.backup.cloud.restoreConfirmDesc}\n$summary',
-      confirmLabel: t.common.confirm,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
+    final BackupDocument? chosen;
+    try {
+      chosen = await pickAndPreviewRestore(
+        context,
+        ref,
+        document: download.document,
+        name: t.backup.cloud.title,
+        title: t.backup.cloud.pickRestoreTitle,
+        note: download.legacy ? t.backup.cloud.legacyNote(skipped: download.skippedLegacy.join(', ')) : null,
+      );
+    } on Object {
+      // The stores to compare the backup with did not open: nothing was
+      // written.
+      if (mounted) _toast(t.backup.restoreFailed, status: DsStatus.danger);
+      return;
+    }
+    if (chosen == null || !mounted) return;
     await _controller.restore(chosen);
     if (mounted && ref.read(cloudControllerProvider).error == null) {
       _toast(t.backup.importDone, status: DsStatus.success);

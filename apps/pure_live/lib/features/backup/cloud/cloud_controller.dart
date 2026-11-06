@@ -7,7 +7,8 @@ import 'package:pure_live/features/backup/cloud/cloud_models.dart';
 import 'package:pure_live/features/backup/cloud/cloud_service.dart';
 import 'package:pure_live/features/backup/cloud/legacy_backup_importer.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
-import 'package:pure_live/features/backup/document/backup_repository.dart' show backupRepositoryProvider;
+import 'package:pure_live/features/backup/document/backup_repository.dart'
+    show BackupDocumentEmpty, BackupRecordingsBusy, BackupRestoreBusy, backupRepositoryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show refreshBackupDataProviders;
 import 'package:pure_live/features/version/app_version.dart';
 
@@ -207,10 +208,20 @@ final class CloudController extends Notifier<CloudState> {
   }
 
   /// Restores [document] into this app and refreshes the info — the same
-  /// repository path a local or WebDAV restore takes.
+  /// repository path, under the same one-restore lock, a local or WebDAV
+  /// restore takes. The repository's refusals come back as codes the pane
+  /// words like its other failures.
   Future<void> restore(BackupDocument document) => _run(() async {
     final repository = await ref.read(backupRepositoryProvider.future);
-    await repository.apply(document);
+    try {
+      await repository.apply(document);
+    } on BackupRestoreBusy {
+      throw const CloudFailure('restore-busy');
+    } on BackupRecordingsBusy {
+      throw const CloudFailure('restore-recordings-busy');
+    } on BackupDocumentEmpty {
+      throw const CloudFailure('restore-empty');
+    }
     if (document.hasSettings) refreshSettings(ref);
     refreshBackupDataProviders(document, invalidate: ref.invalidate);
     await refreshBackupInfo();
