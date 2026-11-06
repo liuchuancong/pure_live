@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "platform": "17live",
+  "sample": "S10-search-rezero",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://api-dsa.17app.co/api/v1/liveStreams/search?query=Re:Zero"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "042517fadd2a52a3485736a81b1cb8e675f550310843ed2856845f308858666d", "length": 1395},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer seventeenlive_test's fake built, not a capture"
+}

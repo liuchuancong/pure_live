@@ -3,6 +3,7 @@ import 'dart:io' show gzip;
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
@@ -49,9 +50,6 @@ import 'package:test/test.dart';
 // shorthand would read as a field declaration at the call site.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// One request as the fake transport records it.
-typedef _Seen = ({String method, Uri url, Map<String, String> headers, String body});
-
 /// The room of the tests: a `liveStreamID` as the platform writes it.
 const String _room = '123456789';
 
@@ -71,9 +69,6 @@ String _frame(Object? value) => _json(value);
 
 /// A live pull URL of [cdn] for the quality field [field].
 String _pull(String cdn, String field) => 'https://$cdn-pull-rtmp-1.17app.co/live/$_user/$field.flv';
-
-LiveResponse _resp(int status, String body) =>
-    LiveResponse(statusCode: status, headers: const {}, bodyBytes: utf8.encode(body));
 
 T _right<T>(Either<LiveSiteError, T> either) => either.match((left) => throw StateError('$left'), (right) => right);
 
@@ -255,35 +250,41 @@ Map<String, Object?> _figures({int? viewers, bool? mute}) => {
   'liveinfo': {'liveViewerCount': ?viewers, 'mute': ?mute},
 };
 
-/// An adapter over [onSend], with the transport it records on and a fixed clock.
-({SeventeenLiveSite site, _FakeHttp http}) _adapter(
-  LiveResponse Function(_Seen request) onSend, {
+/// An adapter over [samples], with the transport it records on and a fixed
+/// clock.
+({SeventeenLiveSite site, ReplayHttp http}) _adapter(
+  List<String> samples, {
   bool Function()? preferH264,
 }) {
-  final http = _FakeHttp(onSend);
+  final http = _replay(samples);
   return (site: SeventeenLiveSite(http: SeventeenLiveHttp(http), preferH264: preferH264), http: http);
 }
 
-/// The fake transport: every site and chat request goes through [onSend].
-final class _FakeHttp implements LiveHttp {
-  _FakeHttp(this.onSend);
+/// The samples under the platform's fixture directory, the answers the fake
+/// transport used to build: `S01` the Taiwan sections page, `S02`-`S04` the
+/// walked pages (their `cursor` picks the answer), `S05` the walk that ends,
+/// `S06` the five-row page, `S07`-`S09` the room reads (live, offline,
+/// locked), `S10`/`S11` the keyword search lists, `S12` the bad search
+/// answer, `S13`-`S15` the room's refusals (520, 404, 403) and `S16`/`S17`
+/// the chat token answers.
+const String _samples = 'test/fixtures/seventeenlive';
 
-  final LiveResponse Function(_Seen request) onSend;
-  final List<_Seen> sent = [];
+/// The transport under the site: [samples] answer, every request is recorded.
+ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, samples);
+
+/// The platform answers [sample] from now on, ahead of what it answered.
+void _answersNow(ReplayHttp http, String sample) => http.samples.insert(0, ReplaySample.load('$_samples/$sample'));
+
+/// A transport that never answers: the one breakdown the replay cannot
+/// record. It serves the transport-break tests alone.
+final class _BrokenHttp implements LiveHttp {
+  const _BrokenHttp();
 
   @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    sent.add((
-      method: request.method,
-      url: request.url,
-      headers: request.headers,
-      body: request.body ?? utf8.decode(request.bodyBytes ?? const <int>[]),
-    ));
-    return onSend(sent.last);
-  }
+  Future<LiveResponse> send(LiveRequest request) async => throw const ConnectFailure('dns down');
 
   @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
+  Future<LiveStreamedResponse> open(LiveRequest request) async => throw const ConnectFailure('dns down');
 
   @override
   void close() {}
@@ -567,7 +568,7 @@ void main() {
       expect(SeventeenLiveEndpoints.areas.map((area) => area.areaId), ['JP', 'TW', 'HK']);
       expect(SeventeenLiveEndpoints.areas.first.parentAreaId, SeventeenLiveEndpoints.categoryId);
       expect(SeventeenLiveEndpoints.areas.first.areaName, '日本');
-      final adapter = _adapter((_) => _resp(200, '{}'));
+      final adapter = _adapter(const []);
       expect(adapter.site.regionOf('jp'), 'JP');
       expect(() => adapter.site.regionOf('LoL'), throwsA(isA<SeventeenLiveFailure>()));
     });
@@ -920,7 +921,7 @@ void main() {
     });
 
     test('the resolver writes the canonical room page', () async {
-      final adapter = _adapter((_) => _resp(200, '{}'));
+      final adapter = _adapter(const []);
       final links = adapter.site.capability<LiveLinkResolver>()!;
       expect(
         _right(await links.resolve(Uri.parse('https://www.17.live/ja/profile/r/1234567'))),
@@ -928,18 +929,18 @@ void main() {
       );
       expect(_leftOf(await links.resolve(Uri.parse('https://chzzk.naver.com/live/x'))), isA<LiveSiteUnsupported>());
       expect(_leftOf(await links.resolve(Uri.parse('https://17.live/en/'))), isA<LiveSiteNotFound>());
-      expect(adapter.http.sent, isEmpty);
+      expect(adapter.http.requests, isEmpty);
     });
   });
 
   group('adapter over the transport', () {
     test('the catalog is three regions and costs no request', () async {
-      final adapter = _adapter((_) => _resp(200, '{}'));
+      final adapter = _adapter(const []);
       final areas = adapter.site.capability<LiveAreaProvider>()!;
       final list = _right(await areas.getAreas());
       expect(list.map((area) => area.areaId), ['JP', 'TW', 'HK']);
       expect(list.first.parentAreaName, SeventeenLiveEndpoints.categoryName);
-      expect(adapter.http.sent, isEmpty);
+      expect(adapter.http.requests, isEmpty);
       expect(adapter.site.manifest.id, '17live');
       expect(adapter.site.manifest.localizedName('zh-CN', 'en-US'), '17LIVE');
       expect(adapter.site.manifest.localizedDescription('zh-CN', 'en-US'), SeventeenLiveEndpoints.directoryScope);
@@ -947,14 +948,7 @@ void main() {
     });
 
     test('a region page asks that region and headers its catalog', () async {
-      final adapter = _adapter(
-        (request) => _resp(
-          200,
-          _sections([
-            _section('Live', [_streamJson()]),
-          ], cursor: 'p2'),
-        ),
-      );
+      final adapter = _adapter(['S01-sections-region-p2']);
       final areas = adapter.site.capability<LiveAreaProvider>()!;
       final page = _right(
         await areas.getAreaRooms(
@@ -965,7 +959,7 @@ void main() {
       expect(page.items, hasLength(1));
       expect(page.nextCursor, 'p2');
       expect(page.hasMore, isTrue);
-      final sent = adapter.http.sent.single;
+      final sent = adapter.http.requests.single;
       expect(sent.method, 'GET');
       expect(sent.url.host, SeventeenLiveEndpoints.apiHost);
       expect(sent.url.path, '/api/v1/sections');
@@ -976,61 +970,41 @@ void main() {
     });
 
     test('an area the platform does not serve is refused before any request', () async {
-      final adapter = _adapter((_) => _resp(200, '{}'));
+      final adapter = _adapter(const []);
       final areas = adapter.site.capability<LiveAreaProvider>()!;
       expect(
         _leftOf(await areas.getAreaRooms(area: LiveArea.normalized(areaId: 'LoL'))),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(adapter.http.sent, isEmpty);
+      expect(adapter.http.requests, isEmpty);
     });
 
     test('a cursor is one request and a page number is a walk', () async {
-      var asks = 0;
-      final adapter = _adapter((request) {
-        asks += 1;
-        final after = request.url.queryParameters['cursor'];
-        final base = after == null || after.isEmpty ? 0 : int.parse(after);
-        return _resp(
-          200,
-          _sections([
-            _section('Live', [for (var i = 1; i <= 2; i++) _streamJson(liveId: base + i, owner: null)]),
-          ], cursor: '${base + 2}'),
-        );
-      });
+      final adapter = _adapter(['S02-sections-p1', 'S03-sections-p2', 'S04-sections-p3']);
       final rooms = adapter.site.capability<LiveRoomProvider>()!;
       final first = _right(await rooms.getRooms(LivePageRequest()));
       expect(first.items.map((room) => room.roomId), ['1', '2']);
       expect(first.hasMore, isTrue);
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
       final second = _right(await rooms.getRooms(LivePageRequest.of(cursor: '2')));
       expect(second.items.map((room) => room.roomId), ['3', '4']);
       expect(second.hasMore, isTrue);
-      expect(asks, 2);
+      expect(adapter.http.requests, hasLength(2));
       // A page number is walked from the first page: that many requests.
-      asks = 0;
+      adapter.http.requests.clear();
       final third = _right(await rooms.getRooms(LivePageRequest.of(page: 3)));
-      expect(asks, 3);
+      expect(adapter.http.requests, hasLength(3));
       expect(third.items.map((room) => room.roomId), ['5', '6']);
       expect(third.nextCursor, '6');
     });
 
     test('a walk that ends early is an empty page, and a bad argument no request', () async {
-      var asks = 0;
-      final adapter = _adapter((_) {
-        asks += 1;
-        return _resp(
-          200,
-          _sections([
-            _section('Live', [_streamJson()]),
-          ]),
-        );
-      });
+      final adapter = _adapter(['S05-sections-end']);
       final discovery = adapter.site.capability<LiveDiscoveryProvider>()!;
       final page = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 4)));
       expect(page.items, isEmpty);
       expect(page.hasMore, isFalse);
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
       expect(
         _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 21))),
         isA<LiveSiteInvalidArgument>(),
@@ -1043,18 +1017,11 @@ void main() {
         _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(pageSize: 0))),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
     });
 
     test('the page size cuts the rows the platform sent', () async {
-      final adapter = _adapter(
-        (_) => _resp(
-          200,
-          _sections([
-            _section('Live', [for (var i = 1; i <= 5; i++) _streamJson(liveId: i, owner: null)]),
-          ]),
-        ),
-      );
+      final adapter = _adapter(['S06-sections-5rows']);
       final discovery = adapter.site.capability<LiveDiscoveryProvider>()!;
       final page = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(pageSize: 2)));
       expect(page.items, hasLength(2));
@@ -1062,11 +1029,7 @@ void main() {
     });
 
     test('a room entry carries its playback and its chat channel', () async {
-      final adapter = _adapter((request) {
-        expect(request.headers['referer'], 'https://17.live/en/live/$_room');
-        expect(request.headers['accept-language'], contains('en-US'));
-        return _resp(200, _roomAnswer());
-      });
+      final adapter = _adapter(['S07-room-live']);
       final room = _right(await adapter.site.capability<LiveRoomProvider>()!.getRoom(' $_room '));
       expect(room.roomId, _room);
       expect(room.broadcast.isLiveNow, isTrue);
@@ -1075,43 +1038,38 @@ void main() {
       expect(data.userId, _user);
       expect(data.qualities, hasLength(4));
       expect((room.runtime.danmakuHandle! as SeventeenLiveDanmakuArgs).roomId, _room);
-      expect(adapter.http.sent.single.url.path, '/api/v1/lives/$_room');
+      final sent = adapter.http.requests.single;
+      expect(sent.headers['referer'], 'https://17.live/en/live/$_room');
+      expect(sent.headers['accept-language'], contains('en-US'));
+      expect(sent.url.path, '/api/v1/lives/$_room');
     });
 
     test('an id that is not a room id is refused without a request', () async {
-      final adapter = _adapter((_) => _resp(200, '{}'));
+      final adapter = _adapter(const []);
       final rooms = adapter.site.capability<LiveRoomProvider>()!;
       expect(_leftOf(await rooms.getRoom('nope')), isA<LiveSiteNotFound>());
-      expect(adapter.http.sent, isEmpty);
+      expect(adapter.http.requests, isEmpty);
     });
 
     test('a room the platform does not know is not-found, and a transport break is network', () async {
-      final gone = _adapter((_) => _resp(520, '{"errorMessage":"stream not found"}'));
+      final gone = _adapter(['S13-room-520']);
       expect(_leftOf(await gone.site.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteNotFound>());
-      final gate = _adapter((_) => _resp(403, '{}'));
+      final gate = _adapter(['S15-room-403']);
       expect(_leftOf(await gate.site.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteRateLimitError>());
-      final broken = _FakeHttp((_) => throw const ConnectFailure('dns down'));
-      final offline = SeventeenLiveSite(http: SeventeenLiveHttp(broken));
+      final offline = SeventeenLiveSite(http: const SeventeenLiveHttp(_BrokenHttp()));
       expect(_leftOf(await offline.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteNetworkError>());
       expect(seventeenliveSiteId, '17live');
     });
 
     test('a refresh reads the same answer without streams and a status is never a guess', () async {
-      final adapter = _adapter((_) => _resp(200, _roomAnswer(status: 0, online: null, total: null)));
+      final adapter = _adapter(['S08-room-offline']);
       final room = await adapter.site.refresh(_room);
       expect(room.broadcast.isExplicitlyOfflineNow, isTrue);
       expect(room.runtime.streamHandle, isNull);
     });
 
     test('search reads a room id, a link and a keyword, one page only', () async {
-      var mode = (asRoom: false, status: 200);
-      final adapter = _adapter((request) {
-        if (request.url.path.startsWith('/api/v1/lives/')) {
-          return mode.status == 200 ? _resp(200, _roomAnswer()) : _resp(mode.status, '{"errorMessage":"other"}');
-        }
-        expect(request.url.path, '/api/v1/liveStreams/search');
-        return _resp(200, _json([_streamJson()]));
-      });
+      final adapter = _adapter(['S07-room-live', 'S10-search-rezero', 'S11-search-z100']);
       final search = adapter.site.capability<LiveSearchProvider>()!;
       expect(search.supportedTargets, {LiveSearchTarget.rooms});
       Future<LivePage<LiveSearchResult>> run(String query, {int page = 1, int pageSize = 20}) async {
@@ -1122,31 +1080,29 @@ void main() {
       }
 
       // A room id and a room link are one room request.
-      mode = (asRoom: true, status: 200);
       expect(((await run(_room)).items.single as RoomSearchResult).room.roomId, _room);
-      expect(adapter.http.sent.single.url.path, '/api/v1/lives/$_room');
-      adapter.http.sent.clear();
+      expect(adapter.http.requests.single.url.path, '/api/v1/lives/$_room');
+      adapter.http.requests.clear();
       expect((await run('https://www.17.live/ja/live/$_room')).items, hasLength(1));
-      expect(adapter.http.sent.single.url.path, '/api/v1/lives/$_room');
+      expect(adapter.http.requests.single.url.path, '/api/v1/lives/$_room');
       // A room that is not there is nothing, not a failure.
-      adapter.http.sent.clear();
-      mode = (asRoom: true, status: 404);
+      adapter.http.requests.clear();
+      _answersNow(adapter.http, 'S14-room-404');
       expect((await run(_room)).items, isEmpty);
-      mode = (asRoom: false, status: 200);
       // A keyword is searched, with its colon and cut to the limit.
-      adapter.http.sent.clear();
+      adapter.http.requests.clear();
       expect(((await run('Re:Zero')).items.single as RoomSearchResult).room.roomId, _room);
-      expect(adapter.http.sent.single.url.queryParameters['query'], 'Re:Zero');
-      adapter.http.sent.clear();
+      expect(adapter.http.requests.single.url.queryParameters['query'], 'Re:Zero');
+      adapter.http.requests.clear();
       await run('z' * 140);
-      expect(adapter.http.sent.single.url.queryParameters['query'], 'z' * 100);
+      expect(adapter.http.requests.single.url.queryParameters['query'], 'z' * 100);
       // An address that is not a room, a blank keyword and another page ask for nothing.
-      adapter.http.sent.clear();
+      adapter.http.requests.clear();
       expect((await run('https://example.com/a')).items, isEmpty);
       expect((await run('   ')).items, isEmpty);
       expect((await run('anything', page: 2)).items, isEmpty);
       expect((await run('anything', pageSize: 0)).items, isEmpty);
-      expect(adapter.http.sent, isEmpty);
+      expect(adapter.http.requests, isEmpty);
       // The page size cuts the rows, and another target is unsupported.
       expect(
         _leftOf(await search.search(LiveSearchRequest.of(query: 'x', target: LiveSearchTarget.anchors))),
@@ -1155,7 +1111,7 @@ void main() {
     });
 
     test('a bad search answer is a parse failure at the boundary', () async {
-      final adapter = _adapter((_) => _resp(200, '{"not":"a list"}'));
+      final adapter = _adapter(['S12-search-bad']);
       final search = adapter.site.capability<LiveSearchProvider>()!;
       expect(
         _leftOf(await search.search(LiveSearchRequest.of(query: 'ann', target: LiveSearchTarget.rooms))),
@@ -1166,14 +1122,14 @@ void main() {
 
   group('playback capability', () {
     test('the qualities come in the order the setting asks for', () async {
-      final on = _adapter((_) => _resp(200, _roomAnswer()), preferH264: () => true);
+      final on = _adapter(['S07-room-live'], preferH264: () => true);
       final playback = on.site.capability<LivePlaybackProvider>()!;
       expect(
         _right(await playback.getQualities(room: LiveRoom.normalized(roomId: _room)))
             .map((quality) => quality.qualityId),
         ['h264', 'source', 'enhanced', 'hd'],
       );
-      final off = _adapter((_) => _resp(200, _roomAnswer()), preferH264: () => false);
+      final off = _adapter(['S07-room-live'], preferH264: () => false);
       expect(
         _right(
           await off.site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _room)),
@@ -1181,7 +1137,7 @@ void main() {
         ['source', 'enhanced', 'hd', 'h264'],
       );
       // The default of the setting is on, as 3.x shipped it.
-      final plain = _adapter((_) => _resp(200, _roomAnswer()));
+      final plain = _adapter(['S07-room-live']);
       expect(plain.site.preferH264(), isTrue);
       expect(
         _right(
@@ -1192,14 +1148,10 @@ void main() {
     });
 
     test('lines come from the answer held, and an unknown quality enters again', () async {
-      var asks = 0;
-      final adapter = _adapter((_) {
-        asks += 1;
-        return _resp(200, _roomAnswer());
-      });
+      final adapter = _adapter(['S07-room-live']);
       final playback = adapter.site.capability<LivePlaybackProvider>()!;
       final qualities = _right(await playback.getQualities(room: LiveRoom.normalized(roomId: _room)));
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
       final source = qualities.firstWhere((quality) => quality.qualityId == 'source');
       expect(
         _right(
@@ -1210,7 +1162,7 @@ void main() {
         ),
         hasLength(3),
       );
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
       // The legacy 标准 id is the same quality: no new request.
       expect(
         _right(
@@ -1221,7 +1173,7 @@ void main() {
         ),
         hasLength(3),
       );
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
       // A quality the held answer does not know is recovery: the room is entered
       // again, and refused when the fresh answer still has it not.
       expect(
@@ -1233,31 +1185,27 @@ void main() {
         ),
         isA<LiveSiteContentUnavailable>(),
       );
-      expect(asks, 2);
+      expect(adapter.http.requests, hasLength(2));
       // Null quality is the default one the caller was shown.
-      asks = 0;
+      adapter.http.requests.clear();
       expect(_right(await playback.getLines(room: LiveRoom.normalized(roomId: _room))), hasLength(1));
-      expect(asks, 0);
+      expect(adapter.http.requests, isEmpty);
     });
 
     test('an offline or locked room names why instead of handing out nothing', () async {
-      var asks = 0;
-      final adapter = _adapter((_) {
-        asks += 1;
-        return _resp(200, _roomAnswer(status: 0));
-      });
+      final adapter = _adapter(['S08-room-offline']);
       final playback = adapter.site.capability<LivePlaybackProvider>()!;
       expect(
         _leftOf(await playback.getQualities(room: LiveRoom.normalized(roomId: _room))),
         isA<LiveSiteContentUnavailable>(),
       );
-      expect(asks, 1);
+      expect(adapter.http.requests, hasLength(1));
       expect(
         _leftOf(await playback.getLines(room: LiveRoom.normalized(roomId: _room))),
         isA<LiveSiteContentUnavailable>(),
       );
-      expect(asks, 1);
-      final locked = _adapter((_) => _resp(200, _roomAnswer(premium: {'premiumType': 1})));
+      expect(adapter.http.requests, hasLength(1));
+      final locked = _adapter(['S09-room-locked']);
       final error = _leftOf(
         await locked.site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _room)),
       );
@@ -1715,12 +1663,12 @@ void main() {
 
   group('chat session over the transport', () {
     test('the room id is the channel and needs no room request', () async {
-      final adapter = _adapter((_) => _resp(200, _json({'provider': 2, 'token': 'x.abc'})));
+      final adapter = _adapter(['S16-token-provider2']);
       final danmaku = adapter.site.capability<LiveDanmakuProvider>()!;
       final failure = _leftOf(await danmaku.createSession(room: LiveRoom.normalized(roomId: ' $_room ')));
       expect(failure, isA<LiveSiteUnsupported>());
       expect(failure.message, contains('provider 2'));
-      final sent = adapter.http.sent.single;
+      final sent = adapter.http.requests.single;
       expect(sent.method, 'POST');
       expect(sent.url.path, '/api/v1/messenger/auth');
       expect(sent.body, '{}');
@@ -1729,20 +1677,19 @@ void main() {
     });
 
     test('an id that is not a room id starts nothing', () async {
-      final adapter = _adapter((_) => _resp(200, '{}'));
+      final adapter = _adapter(const []);
       final danmaku = adapter.site.capability<LiveDanmakuProvider>()!;
       expect(
         _leftOf(await danmaku.createSession(room: LiveRoom.normalized(roomId: '0abc'))),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(adapter.http.sent, isEmpty);
+      expect(adapter.http.requests, isEmpty);
     });
 
     test('a token request that breaks reports it', () async {
-      final broken = _FakeHttp((_) => throw const ConnectFailure('dns down'));
       final session = SeventeenLiveDanmakuSession(
         args: const SeventeenLiveDanmakuArgs(roomId: _room),
-        http: SeventeenLiveHttp(broken),
+        http: const SeventeenLiveHttp(_BrokenHttp()),
       );
       final failure = await session.connect();
       expect(failure, isA<LiveSiteNetworkError>());
@@ -1764,10 +1711,10 @@ void main() {
     });
 
     test('a room entry hands its channel over without a token request', () async {
-      final adapter = _adapter((_) => _resp(200, _roomAnswer()));
+      final adapter = _adapter(['S07-room-live']);
       final room = _right(await adapter.site.capability<LiveRoomProvider>()!.getRoom(_room));
       expect((room.runtime.danmakuHandle! as SeventeenLiveDanmakuArgs).roomId, _room);
-      expect(adapter.http.sent.map((request) => request.method), ['GET']);
+      expect(adapter.http.requests.map((request) => request.method), ['GET']);
     });
   });
 }

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S20-detail-live",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://weibo.com/l/!/2/wblive/room/show_pc_live.json?live_id=1022%3A2321325347923495092258",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "c2614774afd974d96e1bd6f69e4f2c88446457cb13bdf2e57f17cfcea58df93f", "length": 307},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer weibo_streams_test's fake built, not a capture"
+}

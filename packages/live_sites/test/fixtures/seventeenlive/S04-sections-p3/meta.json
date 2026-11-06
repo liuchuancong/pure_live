@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "platform": "17live",
+  "sample": "S04-sections-p3",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://api-dsa.17app.co/api/v1/sections?count=20&typeTab=2&region=JP&cursor=4"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "ce30068aff5bb135547c44965368df7856202a04a003a90603a04a68a1bc6046", "length": 2803},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer seventeenlive_test's fake built, not a capture"
+}

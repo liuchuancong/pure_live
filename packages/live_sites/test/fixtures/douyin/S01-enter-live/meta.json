@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "platform": "douyin",
+  "sample": "S01-enter-live",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://live.douyin.com/webcast/room/web/enter/?app_name=douyin_web&enter_from=web_live&live_id=1&web_rid=127453393722&is_need_double_stream=false&aid=6383&compress=gzip&device_platform=web&browser_language=zh-CN&browser_platform=Win32&browser_name=Edge&browser_version=125.0.0.0&msToken=ENmDuIeQTMV4aZlgEbIpFzHFaNVpQBQ6ipbByRphw=YoUjA6QSTEz69g4Bww84SfZLLnKscNxrIXeASUIW2kGb2BJamPuvRC0GOArj1SKQPW81gysqp2rQEYlfgphmNNJjPJW3xaoHtEG3RFw2uapw4t9q6Yql6PtIk5vuYIpRQwN2gIPkKd4Zcx&a_bogus=xvRhVg3snLkhEyT5f2LfY3q65Z3Ym2N0SVkMD2fmn3zAg39HMYD9exogYzvum8jZsmfIFYjy4hbYNchrQcG0qwfHuUN2ADmESkKl12so0j53inCg6mE0iN-XsACeH0svrAEi8qXtSYmmAdAJ5kIlO62-zo09lj=",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.douyin.com",
+      "referer": "https://live.douyin.com/"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "ade06a192283e30a504b79a845c7c0ff6d86d5862ace59a42e95b94283562dc3", "length": 347},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer douyin_open_test's fake built, not a capture; the per-run msToken and a_bogus carry stand-ins the test leaves out of matching"
+}

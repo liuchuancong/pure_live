@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "platform": "17live",
+  "sample": "S14-room-404",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://api-dsa.17app.co/api/v1/lives/123456789"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "9d07c93f550ed5c73a3068a302d0270fde18d8cdd45126252d46a1af3bfb4f27", "length": 24},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer seventeenlive_test's fake built, not a capture"
+}

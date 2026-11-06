@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S07-detail-owner-9002",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://weibo.com/l/!/2/wblive/room/show_pc_live.json?live_id=1022%3A2321325347923495092258",
+    "headers": {
+      "referer": "https://weibo.com/l/wblive/",
+      "user-agent": "Mozilla/5.0"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "4ae36fe0d8806a84b99a40a91bc328272ea2c6bc469fa4a09f606497b12677f0", "length": 438},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer weibo_site_test's fake built, not a capture"
+}

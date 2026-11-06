@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S22-flv-source-hevc",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://plwb00.live.weibo.com/alicdn/5000000000000000.flv",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/octet-stream"
+    }
+  },
+  "raw": {"sha256": "dae885c529f63179badd7ec5db0c571774fef51159a3620bdfcf69c64c749881", "length": 42},
+  "body": "body.flv",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the FLV bytes weibo_streams_test's fake streamed, not a capture; the video sequence header announces the codec the test asserts"
+}

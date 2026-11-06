@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S02-recommend-alpha-beta",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://weibo.com/l/!/2/wblive/pc_recommend/list.json?count=100&uid=",
+    "headers": {
+      "referer": "https://weibo.com/l/wblive/",
+      "user-agent": "Mozilla/5.0"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {"sha256": "032d02a0d5cf0ef867f1599508ce9fbe0a5b259506076a7b1105e0314bc073e0", "length": 295},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer weibo_site_test's fake built, not a capture"
+}

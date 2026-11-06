@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S27-profile-404-480",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://plwb00.live.weibo.com/alicdn/5000000000000000_wb480avc.flv",
+    "headers": {}
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "text/html"
+    }
+  },
+  "raw": {"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "length": 0},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the FLV bytes weibo_streams_test's fake streamed, not a capture; the video sequence header announces the codec the test asserts"
+}

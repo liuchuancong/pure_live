@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S14-tcn-room",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://t.cn/A6J8Y0lY",
+    "headers": {
+      "referer": "https://weibo.com/l/wblive/",
+      "user-agent": "Mozilla/5.0"
+    }
+  },
+  "response": {
+    "status": 302,
+    "headers": {
+      "content-type": "text/html",
+      "location": "https://weibo.com/l/wblive/p/show/1022:2321325347923495092258"
+    }
+  },
+  "raw": {"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "length": 0},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the t.cn answer weibo_site_test's fake scripted, not a capture"
+}

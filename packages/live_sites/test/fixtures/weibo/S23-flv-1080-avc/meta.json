@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S23-flv-1080-avc",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://plwb00.live.weibo.com/alicdn/5000000000000000_wb1080avc.flv",
+    "headers": {}
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/octet-stream"
+    }
+  },
+  "raw": {"sha256": "5cdd2702463b2ccf71b40d30cb06767bbdc2b1ea8305334d6d1f0cdff7b9ab42", "length": 42},
+  "body": "body.flv",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the FLV bytes weibo_streams_test's fake streamed, not a capture; the video sequence header announces the codec the test asserts"
+}

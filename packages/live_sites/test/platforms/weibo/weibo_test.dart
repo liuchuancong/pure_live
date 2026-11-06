@@ -1,12 +1,12 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
-// The fakes hand back whole records, and a record pattern must name every
+// The parsers hand back whole records, and a record pattern must name every
 // field of the matched value; the field identifications are not redundant.
 // ignore_for_file: simplify_variable_pattern
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
@@ -41,21 +41,18 @@ const String _id = '1022:2321325347923495092258';
 const String _otherId = '1042152:0123456789abcdef0123456789abcdef';
 const String _flv = 'https://kitty.live.weibo.net/alicdn/1022_2321_wb720avc.flv?t=1';
 const String _hls = 'https://kitty.live.weibo.net/alicdn/1022_2321_wb720avc.m3u8?t=1';
-const String _replay = 'http://playback.weibo.com/replay/1022_2321_wb1080avc_index.m3u8';
+const String _replayUrl = 'http://playback.weibo.com/replay/1022_2321_wb1080avc_index.m3u8';
 
 /// A live start in epoch milliseconds (late September 2026).
 const int _startMs = 1790733600000;
 
 String _json(Object? data) => jsonEncode(data);
 
-LiveResponse _resp(int status, String body, {Map<String, String> headers = const {}}) =>
-    LiveResponse(statusCode: status, headers: headers, bodyBytes: Uint8List.fromList(utf8.encode(body)));
-
 /// The envelope both endpoints answer with.
 String _envelope(Object? data, {int code = 100000, int err = 0, Object? msg}) =>
     _json({'code': code, 'error_code': err, 'msg': ?msg, 'data': ?data});
 
-/// `show_pc_live`'s answer.
+/// `show_pc_live`'s answer, as the parsers read it.
 String _detailFixture({
   int code = 100000,
   int err = 0,
@@ -106,58 +103,46 @@ Map<String, Object?> _row({String id = _id, Object? nick = '主播甲', Object? 
 /// `pc_recommend/list.json`'s answer.
 String _recommendFixture({Object? rows}) => _envelope({'data': ?rows});
 
-final class _Seen {
-  new(LiveRequest request) : url = request.url, site = request.site, headers = request.headers;
-  final Uri url;
-  final String? site;
-  final Map<String, String> headers;
-}
+/// The samples under the platform's fixture directory, the answers the site's
+/// fakes used to build: `S01` the snapshot's one row, `S02` its Alpha/beta
+/// rows, `S03`-`S13` the detail's reads (live, missing, FLV+HLS, FLV alone,
+/// another owner, ended, replay, restricted, switched off, unknown state, no
+/// media), `S14`-`S19` the `t.cn` answers (room, sorry, elsewhere, html, 404,
+/// 429).
+const String _samples = 'test/fixtures/weibo';
 
-final class _FakeHttp implements LiveHttp {
-  new(this.onSend);
-  final LiveResponse Function(_Seen request) onSend;
-  final List<_Seen> sent = [];
-  bool closed = false;
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    final seen = _Seen(request);
-    sent.add(seen);
-    return onSend(seen);
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) => throw UnimplementedError();
-
-  @override
-  void close() => closed = true;
-}
-
-/// The site over a fake transport.
-({WeiboSite site, _FakeHttp http}) _adapter({LiveResponse Function(_Seen request)? onSend}) {
-  final http = _FakeHttp(onSend ?? _ordinary);
+/// The transport under the site: [samples] answer, every request is recorded.
+/// The ordinary pair answers what the fake's default did: the snapshot's one
+/// row and the live detail.
+({WeiboSite site, ReplayHttp http}) _adapter([
+  List<String> samples = const ['S01-recommend-row', 'S03-detail-live'],
+]) {
+  final http = ReplayHttp.fixtures(_samples, samples);
   return (site: WeiboSite(http: WeiboHttp(http)), http: http);
 }
 
-/// The answers of the site: the snapshot and one live broadcast.
-LiveResponse _ordinary(_Seen request) {
-  final path = request.url.path;
-  if (path == WeiboEndpoints.recommendPath) return _resp(200, _recommendFixture(rows: [_row()]));
-  if (path == WeiboEndpoints.detailPath) return _resp(200, _detailFixture());
-  return _resp(404, 'nope');
-}
+/// The platform answers [sample] from now on, ahead of what it answered.
+void _answersNow(ReplayHttp http, String sample) => http.samples.insert(0, ReplaySample.load('$_samples/$sample'));
 
-/// The site with per-path answers scripted; every asked path is remembered.
-({WeiboSite site, _FakeHttp http, List<String> asked}) _scripted(String? Function(String path) answer) {
-  final asked = <String>[];
-  final (site: site, http: http) = _adapter(
-    onSend: (request) {
-      asked.add(request.url.path);
-      final body = answer(request.url.path);
-      return body == null ? _ordinary(request) : _resp(200, body);
-    },
-  );
-  return (site: site, http: http, asked: asked);
+/// The replay behind a transport that remembers whether the site closed it
+/// (the replay itself has nothing to release, so it cannot remember).
+final class _Closable implements LiveHttp {
+  new(this.inner);
+
+  final ReplayHttp inner;
+  bool closed = false;
+
+  @override
+  Future<LiveResponse> send(LiveRequest request) => inner.send(request);
+
+  @override
+  Future<LiveStreamedResponse> open(LiveRequest request) => inner.open(request);
+
+  @override
+  void close() {
+    closed = true;
+    inner.close();
+  }
 }
 
 T _right<T>(Either<LiveSiteError, T> either) => either.match((left) => throw StateError('$left'), (right) => right);
@@ -333,26 +318,26 @@ void main() {
     });
 
     test('page 1 asks once, page 2 is empty without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(['S01-recommend-row']);
       final discovery = site.capability<LiveDiscoveryProvider>()!;
       final rooms = _right(await discovery.getRecommendedRooms()).items;
       expect(rooms.single.roomId, _id);
-      expect(http.sent, hasLength(1));
-      expect(http.sent.single.url.query, 'count=100&uid=');
+      expect(http.requests, hasLength(1));
+      expect(http.requests.single.url.query, 'count=100&uid=');
       final second = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 2)));
       expect(second.items, isEmpty);
       expect(second.hasMore, isFalse);
-      expect(http.sent, hasLength(1), reason: 'page 2 costs no request');
+      expect(http.requests, hasLength(1), reason: 'page 2 costs no request');
     });
 
     test('a page below 1 is a caller error without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(const []);
       final discovery = site.capability<LiveDiscoveryProvider>()!;
       expect(
         _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 0))),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
     });
   });
 
@@ -388,7 +373,7 @@ void main() {
 
     test('the states map 1 to live, 3 to replay, 5 to offline and the rest to unknown', () {
       expect(parsed().broadcast.liveStatus, LiveStatus.live);
-      expect(parsed(status: 3, flv: null, replayUrl: _replay).broadcast.liveStatus, LiveStatus.replay);
+      expect(parsed(status: 3, flv: null, replayUrl: _replayUrl).broadcast.liveStatus, LiveStatus.replay);
       expect(parsed(status: 5, flv: null).broadcast.liveStatus, LiveStatus.offline);
       expect(parsed(status: 0, flv: null).broadcast.liveStatus, LiveStatus.unknown);
       expect(parsed(status: 9, flv: null).broadcast.liveStatus, LiveStatus.unknown);
@@ -427,7 +412,7 @@ void main() {
     test('public without a URL is unplayable, other states give no restriction', () {
       expect(parsed(flv: null).broadcast.restriction, LiveRestriction.unplayable);
       expect(parsed(status: 3, flv: null).broadcast.restriction, LiveRestriction.unplayable);
-      expect(parsed(status: 3, flv: null, replayUrl: _replay).broadcast.restriction, LiveRestriction.none);
+      expect(parsed(status: 3, flv: null, replayUrl: _replayUrl).broadcast.restriction, LiveRestriction.none);
       expect(parsed(status: 5, flv: null).broadcast.restriction, isNull);
       expect(parsed(status: 0, flv: null).broadcast.restriction, isNull);
       expect(
@@ -455,7 +440,7 @@ void main() {
       expect(WeiboJson.replayUrl('http://host/a.m3u8'), 'https://host/a.m3u8');
       expect(WeiboJson.replayUrl('https://host/a.m3u8'), 'https://host/a.m3u8');
       expect(WeiboJson.replayUrl('nonsense'), isNull);
-      final room = parsed(status: 3, flv: null, replayUrl: _replay);
+      final room = parsed(status: 3, flv: null, replayUrl: _replayUrl);
       expect(dataOf(room).replayUrl, 'https://playback.weibo.com/replay/1022_2321_wb1080avc_index.m3u8');
     });
 
@@ -474,7 +459,7 @@ void main() {
       expect(WeiboJson.startedAt('1790733600000'), isNull, reason: 'a string is no time');
       expect(WeiboJson.startedAt(_startMs), DateTime.fromMillisecondsSinceEpoch(_startMs, isUtc: true));
       expect(
-        parsed(status: 3, flv: null, replayUrl: _replay).broadcast.startedAt,
+        parsed(status: 3, flv: null, replayUrl: _replayUrl).broadcast.startedAt,
         isNull,
         reason: 'read while live only',
       );
@@ -511,15 +496,13 @@ void main() {
     });
 
     test('the missing code is not-found through the capability', () async {
-      final (site: site, http: http) = _adapter(
-        onSend: (_) => _resp(200, _detailFixture(err: 27401, msg: 'LiveRoom does not exists!')),
-      );
+      final (site: site, http: http) = _adapter(['S04-detail-missing']);
       expect(_leftOf(await site.capability<LiveRoomProvider>()!.getRoom(_id)), isA<LiveSiteNotFound>());
-      expect(http.sent.single.url.query, 'live_id=1022%3A2321325347923495092258', reason: 'the id is query-encoded');
+      expect(http.requests.single.url.query, 'live_id=1022%3A2321325347923495092258', reason: 'the id is query-encoded');
     });
 
     test('an id that is no broadcast id is not-found without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(const []);
       expect(_leftOf(await site.capability<LiveRoomProvider>()!.getRoom('1022:short')), isA<LiveSiteNotFound>());
       expect(
         _leftOf(
@@ -527,7 +510,7 @@ void main() {
         ),
         isA<LiveSiteNotFound>(),
       );
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
     });
 
     test('entry and directory answers shape the models', () async {
@@ -538,10 +521,10 @@ void main() {
       final page = _right(await site.capability<LiveRoomProvider>()!.getRooms(LivePageRequest()));
       expect(page.items.single.roomId, _id);
       expect(page.hasMore, isFalse);
-      expect(http.sent, hasLength(2));
-      expect(http.sent.every((seen) => seen.site == 'weibo'), isTrue);
-      expect(http.sent.every((seen) => seen.headers['referer'] == 'https://weibo.com/l/wblive/'), isTrue);
-      expect(http.sent.every((seen) => seen.headers['user-agent'] == 'Mozilla/5.0'), isTrue);
+      expect(http.requests, hasLength(2));
+      expect(http.requests.every((request) => request.site == 'weibo'), isTrue);
+      expect(http.requests.every((request) => request.headers['referer'] == 'https://weibo.com/l/wblive/'), isTrue);
+      expect(http.requests.every((request) => request.headers['user-agent'] == 'Mozilla/5.0'), isTrue);
     });
   });
 
@@ -630,7 +613,7 @@ void main() {
     });
 
     test('the resolver canonicalizes room links without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(const []);
       final link = site.capability<LiveLinkResolver>()!;
       final fromPath = _right(
         await link.resolve(Uri.parse('http://www.weibo.com/l/wblive/m/show/1022%3A2321325347923495092258')),
@@ -638,19 +621,14 @@ void main() {
       expect('$fromPath', 'https://weibo.com/l/wblive/p/show/$_id');
       final fromCentre = _right(await link.resolve(Uri.parse('https://live.media.weibo.com/live/show?id=$_id')));
       expect('$fromCentre', 'https://weibo.com/l/wblive/p/show/$_id');
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
       expect(_leftOf(await link.resolve(Uri.parse('https://weibo.com/u/9001'))), isA<LiveSiteNotFound>());
       expect(_leftOf(await link.resolve(Uri.parse('https://live.douyin.com/12345'))), isA<LiveSiteUnsupported>());
     });
 
     test('a t.cn hop leads to the room, to sorry, or nowhere', () async {
-      Future<LiveSiteError?> via(String body, {int status = 200, Map<String, String> headers = const {}}) async {
-        final (site: site, http: _) = _adapter(
-          onSend: (request) {
-            if (request.url.path == WeiboEndpoints.detailPath) return _resp(200, _detailFixture());
-            return _resp(status, body, headers: headers);
-          },
-        );
+      Future<LiveSiteError?> via(String sample) async {
+        final (site: site, http: _) = _adapter([sample, 'S03-detail-live']);
         final result = await site.capability<LiveLinkResolver>()!.resolve(Uri.parse('https://t.cn/A6J8Y0lY'));
         return result.match<LiveSiteError?>((left) => left, (right) {
           expect('$right', 'https://weibo.com/l/wblive/p/show/$_id');
@@ -658,28 +636,24 @@ void main() {
         });
       }
 
-      expect(
-        await via('', status: 302, headers: {'location': 'https://weibo.com/l/wblive/p/show/$_id'}),
-        isNull,
-        reason: 'the redirect names a room',
-      );
-      expect(await via('', status: 302, headers: {'location': 'http://weibo.com/sorry'}), isA<LiveSiteNotFound>());
-      expect(await via('', status: 302, headers: {'location': 'https://live.douyin.com/123'}), isA<LiveSiteNotFound>());
-      expect(await via('<html>landed</html>'), isA<LiveSiteNotFound>(), reason: 'an answer without a redirect');
-      expect(await via('nope', status: 404), isA<LiveSiteNotFound>(), reason: 'HTTP 404 is no room');
+      expect(await via('S14-tcn-room'), isNull, reason: 'the redirect names a room');
+      expect(await via('S15-tcn-sorry'), isA<LiveSiteNotFound>());
+      expect(await via('S16-tcn-external'), isA<LiveSiteNotFound>());
+      expect(await via('S17-tcn-html'), isA<LiveSiteNotFound>(), reason: 'an answer without a redirect');
+      expect(await via('S18-tcn-404'), isA<LiveSiteNotFound>(), reason: 'HTTP 404 is no room');
     });
 
     test('a t.cn answer with another status fails as the status gate says', () async {
-      final (site: site, http: http) = _adapter(onSend: (_) => _resp(429, ''));
+      final (site: site, http: http) = _adapter(['S19-tcn-429']);
       final error = _leftOf(await site.capability<LiveLinkResolver>()!.resolve(Uri.parse('https://t.cn/A6J8Y0lY')));
       expect(error, isA<LiveSiteRateLimitError>());
-      expect(http.sent, hasLength(1));
+      expect(http.requests, hasLength(1));
     });
   });
 
   group('search', () {
     test('a broadcast id or room link finds that room', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(['S03-detail-live']);
       final search = site.capability<LiveSearchProvider>()!;
       final byId = _right(await search.search(LiveSearchRequest.of(query: _id, target: LiveSearchTarget.rooms)));
       expect(byId.items, hasLength(1));
@@ -693,81 +667,57 @@ void main() {
         ),
       );
       expect(byLink.items, hasLength(1));
-      expect(http.sent.map((seen) => seen.url.path), [WeiboEndpoints.detailPath, WeiboEndpoints.detailPath]);
+      expect(http.requests.map((request) => request.url.path), [
+        WeiboEndpoints.detailPath,
+        WeiboEndpoints.detailPath,
+      ]);
     });
 
     test('a missing broadcast finds nothing', () async {
-      final (site: site, http: http) = _adapter(
-        onSend: (request) => request.url.path == WeiboEndpoints.detailPath
-            ? _resp(200, _detailFixture(err: 27401, msg: 'LiveRoom does not exists!'))
-            : _resp(200, _recommendFixture(rows: [])),
-      );
+      final (site: site, http: http) = _adapter(['S04-detail-missing']);
       final result = _right(
         await site.capability<LiveSearchProvider>()!.search(
           LiveSearchRequest.of(query: _id, target: LiveSearchTarget.rooms),
         ),
       );
       expect(result.items, isEmpty);
-      expect(http.sent, hasLength(1), reason: 'the detail asked once; no snapshot after the miss');
+      expect(http.requests, hasLength(1), reason: 'the detail asked once; no snapshot after the miss');
     });
 
     test('a t.cn keyword is followed once, then the room is asked', () async {
-      final (site: site, http: http) = _adapter(
-        onSend: (request) {
-          if (request.url.host == 't.cn') {
-            return _resp(302, '', headers: {'location': 'https://weibo.com/l/wblive/p/show/$_id'});
-          }
-          if (request.url.path == WeiboEndpoints.detailPath) return _resp(200, _detailFixture());
-          return _resp(404, 'must not ask the snapshot');
-        },
-      );
+      final (site: site, http: http) = _adapter(['S14-tcn-room', 'S03-detail-live']);
       final result = _right(
         await site.capability<LiveSearchProvider>()!.search(
           LiveSearchRequest.of(query: 'https://t.cn/A6J8Y0lY', target: LiveSearchTarget.rooms),
         ),
       );
       expect(result.items, hasLength(1));
-      expect(http.sent.map((seen) => seen.url.host), ['t.cn', 'weibo.com']);
+      expect(http.requests.map((request) => request.url.host), ['t.cn', 'weibo.com']);
     });
 
     test('a t.cn that leads elsewhere finds nothing, without asking the snapshot', () async {
-      final (site: site, http: http) = _adapter(
-        onSend: (request) {
-          if (request.url.host == 't.cn') return _resp(302, '', headers: {'location': 'http://weibo.com/sorry'});
-          return _resp(404, 'must not ask anything else');
-        },
-      );
+      final (site: site, http: http) = _adapter(['S15-tcn-sorry']);
       final result = _right(
         await site.capability<LiveSearchProvider>()!.search(
           LiveSearchRequest.of(query: 'https://t.cn/A6J8Y0lY', target: LiveSearchTarget.rooms),
         ),
       );
       expect(result.items, isEmpty);
-      expect(http.sent, hasLength(1));
+      expect(http.requests, hasLength(1));
     });
 
     test('other links and blanks find nothing, without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(const []);
       final search = site.capability<LiveSearchProvider>()!;
       for (final query in ['https://example.com/x', '', '   ', 'https://weibo.com/u/9001']) {
         final result = _right(await search.search(LiveSearchRequest.of(query: query, target: LiveSearchTarget.rooms)));
         expect(result.items, isEmpty, reason: query);
       }
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
     });
 
     test('a keyword filters the snapshot by nickname, case ignored, page 1 only', () async {
-      final (site: site, http: http) = _adapter(
-        onSend: (_) => _resp(
-          200,
-          _recommendFixture(
-            rows: [
-              _row(nick: 'Alpha 甲'),
-              _row(id: _otherId, nick: 'beta 乙'),
-            ],
-          ),
-        ),
-      );
+      final (site: site, http: http) = _adapter(['S02-recommend-alpha-beta']);
       final search = site.capability<LiveSearchProvider>()!;
       final found = _right(await search.search(LiveSearchRequest.of(query: ' ALPHA ', target: LiveSearchTarget.rooms)));
       expect(found.items, hasLength(1));
@@ -780,11 +730,11 @@ void main() {
         await search.search(LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.rooms, pageSize: 1)),
       );
       expect(cut.items, hasLength(1));
-      expect(http.sent.where((seen) => seen.url.path == WeiboEndpoints.recommendPath), isNotEmpty);
+      expect(http.requests.where((request) => request.url.path == WeiboEndpoints.recommendPath), isNotEmpty);
     });
 
     test('out-of-bounds pages and sizes are caller errors without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(const []);
       final search = site.capability<LiveSearchProvider>()!;
       for (final request in [
         LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.rooms, page: 0),
@@ -801,21 +751,19 @@ void main() {
         _leftOf(await search.search(LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.areas))),
         isA<LiveSiteUnsupported>(),
       );
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
     });
   });
 
   group('playback', () {
     test('a live quality re-reads the detail and plays the FLV first', () async {
-      final (site: site, http: _, asked: asked) = _scripted(
-        (path) => path == WeiboEndpoints.detailPath ? _detailFixture(hls: _hls) : null,
-      );
+      final (site: site, http: http) = _adapter(['S05-detail-flv-hls']);
       final room = _right(await site.capability<LiveRoomProvider>()!.getRoom(_id));
       final playback = site.capability<LivePlaybackProvider>()!;
       expect(_right(await playback.getQualities(room: LiveRoom.normalized(roomId: room.roomId))), [
         WeiboEndpoints.original,
       ]);
-      expect(asked, hasLength(1), reason: 'the qualities come from the kept detail, no request');
+      expect(http.requests, hasLength(1), reason: 'the qualities come from the kept detail, no request');
       final lines = _right(
         await playback.getLines(
           room: LiveRoom.normalized(roomId: room.roomId),
@@ -825,25 +773,21 @@ void main() {
       expect(lines.map((line) => line.url), [_flv, _hls], reason: 'FLV before HLS');
       expect(lines.first.format, LiveStreamFormat.flv);
       expect(lines.last.format, LiveStreamFormat.hls);
-      expect(asked, hasLength(2), reason: 'the live playback asked the detail again, once');
+      expect(http.requests, hasLength(2), reason: 'the live playback asked the detail again, once');
     });
 
     test('a null quality takes what the broadcast plays', () async {
-      final (site: site, http: http, asked: _) = _scripted(
-        (path) => path == WeiboEndpoints.detailPath ? _detailFixture(hls: _flv) : null,
-      );
+      final (site: site, http: http) = _adapter(['S06-detail-flv-only']);
       await site.detail(_id);
       final lines = _right(
         await site.capability<LivePlaybackProvider>()!.getLines(room: LiveRoom.normalized(roomId: _id)),
       );
       expect(lines.single.url, _flv);
-      expect(http.sent, hasLength(2), reason: 'the live default still re-reads the detail');
+      expect(http.requests, hasLength(2), reason: 'the live default still re-reads the detail');
     });
 
     test('a live read without a kept detail costs one request', () async {
-      final (site: site, http: http, asked: _) = _scripted(
-        (path) => path == WeiboEndpoints.detailPath ? _detailFixture(hls: _flv) : null,
-      );
+      final (site: site, http: http) = _adapter(['S06-detail-flv-only']);
       final lines = _right(
         await site.capability<LivePlaybackProvider>()!.getLines(
           room: LiveRoom.normalized(roomId: _id),
@@ -851,17 +795,14 @@ void main() {
         ),
       );
       expect(lines.single.url, _flv);
-      expect(http.sent, hasLength(1));
+      expect(http.requests, hasLength(1));
     });
 
     test('the re-read must still be the same anchor', () async {
-      var reads = 0;
-      final (site: site, http: http, asked: _) = _scripted((path) {
-        if (path != WeiboEndpoints.detailPath) return null;
-        reads++;
-        return reads > 1 ? _detailFixture(uid: 9002) : null;
-      });
+      final (site: site, http: http) = _adapter(['S03-detail-live']);
       await site.detail(_id);
+      // The second read answers with another anchor's broadcast.
+      _answersNow(http, 'S07-detail-owner-9002');
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
           room: LiveRoom.normalized(roomId: _id),
@@ -870,17 +811,14 @@ void main() {
       );
       expect(error, isA<LiveSiteParseError>());
       expect(error.message, contains('not of 9001'));
-      expect(http.sent, hasLength(2));
+      expect(http.requests, hasLength(2));
     });
 
     test('a broadcast that ended meanwhile is refused, never silently its replay', () async {
-      var reads = 0;
-      final (site: site, http: http, asked: _) = _scripted((path) {
-        if (path != WeiboEndpoints.detailPath) return null;
-        reads++;
-        return reads > 1 ? _detailFixture(status: 5, flv: null) : null;
-      });
+      final (site: site, http: http) = _adapter(['S03-detail-live']);
       await site.detail(_id);
+      // The second read answers with the broadcast it ended as.
+      _answersNow(http, 'S08-detail-offline');
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
           room: LiveRoom.normalized(roomId: _id),
@@ -889,13 +827,13 @@ void main() {
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('the broadcast has ended'));
-      expect(http.sent, hasLength(2), reason: 'the re-read answered, then the gate refused');
+      expect(http.requests, hasLength(2), reason: 'the re-read answered, then the gate refused');
     });
 
     test('asking the replay of a live broadcast refuses without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(['S03-detail-live']);
       await site.detail(_id);
-      final before = http.sent.length;
+      final before = http.requests.length;
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
           room: LiveRoom.normalized(roomId: _id),
@@ -904,13 +842,11 @@ void main() {
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('not a replay'));
-      expect(http.sent, hasLength(before));
+      expect(http.requests, hasLength(before));
     });
 
     test('a replay plays its stored recording without another request', () async {
-      final (site: site, http: http, asked: _) = _scripted(
-        (path) => path == WeiboEndpoints.detailPath ? _detailFixture(status: 3, flv: null, replayUrl: _replay) : null,
-      );
+      final (site: site, http: http) = _adapter(['S09-detail-replay']);
       final room = _right(await site.capability<LiveRoomProvider>()!.getRoom(_id));
       final playback = site.capability<LivePlaybackProvider>()!;
       expect(_right(await playback.getQualities(room: LiveRoom.normalized(roomId: room.roomId))), [
@@ -926,13 +862,11 @@ void main() {
       expect(lines.single.format, LiveStreamFormat.hls);
       expect(lines.single.codec, LiveStreamCodec.avc);
       expect(lines.single.lineLabel, 'replay');
-      expect(http.sent, hasLength(1), reason: 'the stored replay URL plays; the detail was asked once');
+      expect(http.requests, hasLength(1), reason: 'the stored replay URL plays; the detail was asked once');
     });
 
     test('a replay asked without a kept detail reads the detail once', () async {
-      final (site: site, http: http, asked: _) = _scripted(
-        (path) => path == WeiboEndpoints.detailPath ? _detailFixture(status: 3, flv: null, replayUrl: _replay) : null,
-      );
+      final (site: site, http: http) = _adapter(['S09-detail-replay']);
       final lines = _right(
         await site.capability<LivePlaybackProvider>()!.getLines(
           room: LiveRoom.normalized(roomId: _id),
@@ -940,13 +874,11 @@ void main() {
         ),
       );
       expect(lines.single.url, startsWith('https://'));
-      expect(http.sent, hasLength(1));
+      expect(http.requests, hasLength(1));
     });
 
     test('asking the live quality of an ended broadcast names the replay', () async {
-      final (site: site, http: http, asked: _) = _scripted(
-        (path) => path == WeiboEndpoints.detailPath ? _detailFixture(status: 3, flv: null, replayUrl: _replay) : null,
-      );
+      final (site: site, http: http) = _adapter(['S09-detail-replay']);
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
           room: LiveRoom.normalized(roomId: _id),
@@ -955,31 +887,29 @@ void main() {
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('its replay is quality replay'));
-      expect(http.sent, hasLength(1), reason: 'the read answers once, then the gate refuses');
+      expect(http.requests, hasLength(1), reason: 'the read answers once, then the gate refuses');
     });
 
     test('restricted, switched-off, unknown and URL-less broadcasts refuse the qualities', () async {
-      for (final (fixture, needle) in [
-        (_detailFixture(watchLimit: 10), 'restricted broadcast (private, watch_limit 10)'),
-        (_detailFixture(playSwitch: 0), 'play_switch 0'),
-        (_detailFixture(status: 0, flv: null), 'status 0'),
-        (_detailFixture(flv: null), 'live without a media URL'),
+      for (final (sample, needle) in [
+        ('S10-detail-restricted', 'restricted broadcast (private, watch_limit 10)'),
+        ('S11-detail-switched-off', 'play_switch 0'),
+        ('S12-detail-unknown', 'status 0'),
+        ('S13-detail-no-media', 'live without a media URL'),
       ]) {
-        final (site: site, http: http, asked: _) = _scripted(
-          (path) => path == WeiboEndpoints.detailPath ? fixture : null,
-        );
+        final (site: site, http: http) = _adapter([sample]);
         await site.detail(_id);
         final error = _leftOf(
           await site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _id)),
         );
         expect(error, isA<LiveSiteContentUnavailable>(), reason: needle);
         expect(error.message, contains(needle));
-        expect(http.sent, hasLength(1), reason: 'the kept detail answers without a request');
+        expect(http.requests, hasLength(1), reason: 'the kept detail answers without a request');
       }
     });
 
     test('another quality is not offered', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(['S03-detail-live']);
       await site.detail(_id);
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
@@ -989,23 +919,23 @@ void main() {
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('quality 720 is not offered'));
-      expect(http.sent, hasLength(1));
+      expect(http.requests, hasLength(1));
     });
   });
 
   group('areas and wiring', () {
     test('the one area is 公开推荐 under the platform, without a request', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(const []);
       final areas = _right(await site.capability<LiveAreaProvider>()!.getAreas());
       expect(areas.single.areaId, 'live');
       expect(areas.single.areaName, '公开推荐');
       expect(areas.single.parentAreaId, 'weibo');
       expect(areas.single.parentAreaName, '微博直播');
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
     });
 
     test('the area holds the snapshot; other areas and pages say so', () async {
-      final (site: site, http: http) = _adapter();
+      final (site: site, http: http) = _adapter(['S01-recommend-row']);
       final area = site.capability<LiveAreaProvider>()!;
       final rooms = _right(await area.getAreaRooms(area: LiveArea.normalized(areaId: 'live')));
       expect(rooms.items.single.roomId, _id);
@@ -1013,7 +943,7 @@ void main() {
         _leftOf(await area.getAreaRooms(area: LiveArea.normalized(areaId: 'nope'))),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(http.sent, hasLength(1));
+      expect(http.requests, hasLength(1));
       final latePage = _right(
         await area.getAreaRooms(
           area: LiveArea.normalized(areaId: 'live'),
@@ -1031,11 +961,12 @@ void main() {
         ),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(http.sent, hasLength(1), reason: 'pages beyond the first cost no request');
+      expect(http.requests, hasLength(1), reason: 'pages beyond the first cost no request');
     });
 
     test('the site speaks through its manifest and its capabilities', () async {
-      final (site: site, http: http) = _adapter();
+      final transport = _Closable(ReplayHttp.fixtures(_samples, const []));
+      final site = WeiboSite(http: WeiboHttp(transport));
       expect(site.manifest.id, 'weibo');
       expect(site.manifest.localizedName('zh-CN', 'en-US'), '微博直播');
       expect(site.manifest.localizedName('en-US', 'en-US'), 'Weibo Live');
@@ -1052,7 +983,7 @@ void main() {
       expect(site.capability<LiveDanmakuProvider>(), isNull, reason: 'the platform has no chat');
       expect(site.capability<LiveSiteCapability>(), isNull, reason: 'a type the site does not offer at all');
       await site.dispose();
-      expect(http.closed, isTrue);
+      expect(transport.closed, isTrue);
     });
   });
 }

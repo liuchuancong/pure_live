@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "platform": "weibo",
+  "sample": "S18-tcn-404",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://t.cn/A6J8Y0lY",
+    "headers": {
+      "referer": "https://weibo.com/l/wblive/",
+      "user-agent": "Mozilla/5.0"
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "text/html"
+    }
+  },
+  "raw": {"sha256": "ca3704aa0b06f5954c79ee837faa152d84d6b2d42838f0637a15eda8337dbdce", "length": 4},
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the t.cn answer weibo_site_test's fake scripted, not a capture"
+}

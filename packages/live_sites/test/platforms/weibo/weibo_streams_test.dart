@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
@@ -15,12 +16,15 @@ import 'package:live_sites/src/platforms/weibo/weibo_site.dart';
 import 'package:live_sites/src/platforms/weibo/weibo_streams.dart';
 import 'package:test/test.dart';
 
-// The fakes reuse the platform's constructor-name style, and the FLV bytes
-// need no type annotation to be read.
+// The fake's stream hands back its chunks with a type annotation the reader
+// needs spelled out.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
 const String _id = '1022:2321325347923495092258';
 const String _canonical = 'https://plwb00.live.weibo.com/alicdn/5000000000000000_wb720avc.flv';
+
+/// The pull host the probes open.
+const String _pullHost = 'plwb00.live.weibo.com';
 
 /// A minimal FLV answer: a header and one video tag whose sequence header
 /// announces codec `code` (7 AVC, 12 HEVC).
@@ -38,7 +42,28 @@ List<int> _flv({int codec = 7}) {
   ];
 }
 
+/// The samples of the replayed tests, under the platform's fixture directory:
+/// `S20` the live detail whose canonical address the profiles derive from,
+/// `S21` its restricted read, `S22-S24` the probed profiles' FLV answers (the
+/// video sequence header announces the codec), `S25-S27` their 404 refusals,
+/// `S28` the canonical address's own FLV and `S29` an answer that is no FLV.
+const String _samples = 'test/fixtures/weibo';
+
+/// The transport under the replayed tests: [samples] answer, every request is
+/// recorded.
+ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, samples);
+
+/// How many times the site asked the API detail.
+int _details(ReplayHttp http) =>
+    http.requests.where((request) => request.url.path == WeiboEndpoints.detailPath).length;
+
+/// Whether a probe reached the pull host.
+bool _probed(ReplayHttp http) => http.requests.any((request) => request.url.host == _pullHost);
+
 /// A streamed answer of `chunks`, remembering whether its stream was closed.
+/// Two probe tests need this: the replay transport always answers in one
+/// piece and cannot report that a response was closed, so the tests about
+/// fragmented delivery and the close stay on it.
 final class _FakeStream implements LiveStreamedResponse {
   _FakeStream(this._status, List<List<int>> chunks) : _controller = StreamController<Uint8List>(), _chunks = chunks {
     _controller.onCancel = () {
@@ -76,27 +101,20 @@ final class _FakeStream implements LiveStreamedResponse {
   }
 }
 
-/// A transport whose API answers are scripted and whose CDN opens are too.
+/// A transport whose CDN opens are scripted; it serves the two
+/// stream-observation probe tests alone. The API answer is never read by them.
 final class _FakeHttp implements LiveHttp {
   _FakeHttp({this.onOpen});
 
   /// The streamed answer of every `open`, or null for none scripted.
   _FakeStream? Function(LiveRequest request)? onOpen;
 
-  /// The detail body `send` answers with, rewritten per test.
-  String detailBody = _liveDetail();
-
+  /// Every `open` handed over, in order.
   final List<LiveRequest> opened = [];
-  int details = 0;
 
   @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    if (request.url.path == WeiboEndpoints.detailPath) {
-      details++;
-      return LiveResponse(statusCode: 200, headers: const {}, bodyBytes: _body(detailBody));
-    }
-    return LiveResponse(statusCode: 404, headers: const {}, bodyBytes: _body('nope'));
-  }
+  Future<LiveResponse> send(LiveRequest request) async =>
+      throw StateError('the stream-observation probes only open');
 
   @override
   Future<LiveStreamedResponse> open(LiveRequest request) async {
@@ -106,8 +124,6 @@ final class _FakeHttp implements LiveHttp {
 
   @override
   void close() {}
-
-  static Uint8List _body(String text) => Uint8List.fromList(utf8.encode(text));
 }
 
 /// The detail of one live broadcast whose FLV is the canonical public address.
@@ -125,18 +141,6 @@ String _liveDetail({int status = 1, int watchLimit = 0, String? flv = _canonical
     'user': {'uid': 9001, 'screenName': '主播甲'},
   },
 });
-
-/// The codec each profile address answers with.
-int _codecByteOf(String path) {
-  if (path.endsWith('/5000000000000000.flv')) return 12; // the source answers HEVC
-  return 7; // the transcodes answer AVC
-}
-
-_FakeStream _flvStream(LiveRequest request) {
-  final stream = _FakeStream(200, [_flv(codec: _codecByteOf(request.url.path))]);
-  scheduleMicrotask(stream.deliver);
-  return stream;
-}
 
 void main() {
   group('candidates', () {
@@ -213,9 +217,9 @@ void main() {
     });
 
     test('the probe asks for a bounded prefix with its own agent', () async {
-      final http = _FakeHttp(onOpen: _flvStream);
-      await WeiboStreams.probe(http, Uri.parse(_canonical));
-      final request = http.opened.single;
+      final http = _replay(['S28-flv-canonical-avc']);
+      expect(await WeiboStreams.probe(http, Uri.parse(_canonical)), LiveStreamCodec.avc);
+      final request = http.requests.single;
       expect(request.headers['range'], 'bytes=0-65535');
       expect(request.headers['user-agent'], 'Mozilla/5.0');
       expect(request.timeout, WeiboStreams.probeTimeout);
@@ -229,20 +233,15 @@ void main() {
     });
 
     test('bytes that are no FLV answer are a missing profile', () async {
-      final stream = _FakeStream(200, [utf8.encode('<html>no media</html>')]);
-      final http = _FakeHttp(
-        onOpen: (request) {
-          scheduleMicrotask(stream.deliver);
-          return stream;
-        },
-      );
+      final http = _replay(['S29-canonical-html']);
       expect(await WeiboStreams.probe(http, Uri.parse(_canonical)), isNull);
+      expect(http.requests, hasLength(1), reason: 'the open was made; its answer is just no FLV');
     });
   });
 
   group('discovery over the site', () {
     test('a canonical live broadcast offers the probed profiles beside 超清', () async {
-      final http = _FakeHttp(onOpen: _flvStream);
+      final http = _replay(['S20-detail-live', 'S22-flv-source-hevc', 'S23-flv-1080-avc', 'S24-flv-480-avc']);
       final site = WeiboSite(http: WeiboHttp(http));
       final room = await site.detail(_id);
       final qualities = await site.discoveredQualities(room.roomId);
@@ -261,13 +260,12 @@ void main() {
     });
 
     test('a profile nothing serves leaves the API answer as 超清', () async {
-      final http = _FakeHttp(
-        onOpen: (request) {
-          final stream = _FakeStream(404, const []);
-          scheduleMicrotask(stream.close);
-          return stream;
-        },
-      );
+      final http = _replay([
+        'S20-detail-live',
+        'S25-profile-404-source',
+        'S26-profile-404-1080',
+        'S27-profile-404-480',
+      ]);
       final site = WeiboSite(http: WeiboHttp(http));
       await site.detail(_id);
       final qualities = await site.discoveredQualities(_id);
@@ -276,10 +274,11 @@ void main() {
       expect(qualities.map((quality) => quality.qualityId), ['original']);
       expect(qualities.single.label, '超清');
       expect(qualities.single.codec, LiveStreamCodec.avc);
+      expect(_details(http), 1, reason: 'only the detail was asked');
     });
 
     test('a replay is not probed', () async {
-      final http = _FakeHttp();
+      final http = _replay(const []);
       final site = WeiboSite(http: WeiboHttp(http));
       final parsed = WeiboRoomParser.detail(
         _liveDetail(status: 3).replaceFirst('"startTime":1790733600000,', '"startTime":1790733600000,"replay_origin_url":"http://playback.weibo.com/r/index.m3u8",'),
@@ -290,11 +289,11 @@ void main() {
         data: parsed.runtime.streamHandle! as WeiboRoomData,
       );
       expect(qualities.map((quality) => quality.qualityId), ['replay']);
-      expect(http.opened, isEmpty);
+      expect(http.requests, isEmpty);
     });
 
     test('a probed profile is rebuilt from the fresh answer and probed again', () async {
-      final http = _FakeHttp(onOpen: _flvStream);
+      final http = _replay(['S20-detail-live', 'S23-flv-1080-avc']);
       final site = WeiboSite(http: WeiboHttp(http));
       final room = await site.detail(_id);
       final lines = await site.linesOf(room.roomId, quality: LivePlayQuality.of(label: '蓝光', qualityId: 'weibo-1080-avc'));
@@ -303,36 +302,27 @@ void main() {
       expect(lines.single.format, LiveStreamFormat.flv);
       expect(lines.single.lineLabel, 'alicdn');
       // The line request read the detail again (entry + line call).
-      expect(http.details, greaterThanOrEqualTo(2));
+      expect(_details(http), greaterThanOrEqualTo(2));
     });
 
     test('a restricted broadcast refuses a profile before any probe', () async {
-      final http = _FakeHttp()..detailBody = _liveDetail(watchLimit: 10);
+      final http = _replay(['S21-detail-restricted']);
       final site = WeiboSite(http: WeiboHttp(http));
       await expectLater(
         site.linesOf(_id, quality: LivePlayQuality.of(label: '蓝光', qualityId: 'weibo-1080-avc')),
         throwsA(isA<WeiboFailure>().having((failure) => failure.kind, 'kind', WeiboFailureKind.streamUnavailable)),
       );
-      expect(http.opened, isEmpty);
+      expect(_probed(http), isFalse, reason: 'the refusal came before any open');
     });
 
     test('a profile the broadcast does not offer is refused', () async {
-      final http = _FakeHttp(
-        onOpen: (request) {
-          // The 1080 profile is refused; the others answer.
-          if (request.url.path.endsWith('_wb1080avc.flv')) {
-            final stream = _FakeStream(404, const []);
-            scheduleMicrotask(stream.close);
-            return stream;
-          }
-          return _flvStream(request);
-        },
-      );
+      final http = _replay(['S20-detail-live', 'S26-profile-404-1080']);
       final site = WeiboSite(http: WeiboHttp(http));
       await expectLater(
         site.linesOf(_id, quality: LivePlayQuality.of(label: '蓝光', qualityId: 'weibo-1080-avc')),
         throwsA(isA<WeiboFailure>().having((failure) => failure.kind, 'kind', WeiboFailureKind.streamUnavailable)),
       );
+      expect(_details(http), 1, reason: 'the line call read the detail once, then the probe was refused');
     });
   });
 }
