@@ -1126,7 +1126,7 @@ final class _SearchResults extends ConsumerWidget {
         hasMore: search.hasMore,
         loading: search.loading,
         // The streamer row is the room card's small row, so it keeps the
-        // room row's own height; the card layout has no say here.
+        // room row's own height and slices into the rooms list's columns.
         listMainAxisExtent: kRoomCardListDesignHeight,
       ),
       LiveSearchTarget.areas => _AreaResults(search: search),
@@ -1216,8 +1216,8 @@ final class _AreaResults extends ConsumerWidget {
   }
 }
 
-/// The anchors and areas targets' list: one full-width column of cards that
-/// pages in exactly like the rooms grid, so every target pages the same way.
+/// The anchors target's list: the room card's small rows, slicing into the
+/// same columns the rooms' list does and paging in exactly like the grid.
 final class _ListResults extends ConsumerWidget {
   const _ListResults({
     required this.items,
@@ -1253,9 +1253,9 @@ final class _ListResults extends ConsumerWidget {
       layout: CardLayout.list,
       crossSpacing: browse.crossSpacing,
       mainSpacing: browse.mainSpacing,
-      // The streamer row is the room card's small row: one full-width
-      // column of them, so its three lines stay one line each.
-      listFullWidth: true,
+      // The streamer rows wear the rooms' list measure: a wide window
+      // slices them into the same small columns, a narrow one appends.
+      listMatchesGridWidth: true,
       listMainAxisExtent: listMainAxisExtent,
       listItemBuilder: itemBuilder,
       hasMore: hasMore,
@@ -1269,10 +1269,10 @@ final class _ListResults extends ConsumerWidget {
 
 /// One streamer hit in the room card's small list-row shape: the avatar
 /// leads, the name carries its verified mark, the self description fills
-/// the second line and the meta line says the one actionable fact — a live
-/// hit says so, the rest count followers. The row opens the streamer's room
-/// when the result carries one, else the platform profile; without either
-/// it stays inert rather than pretending a page exists.
+/// the second line and the meta line names the live state — a live pill,
+/// a muted offline word — beside the follower count. The row opens the
+/// streamer's room when the result carries one, else the platform profile;
+/// without either it stays inert rather than pretending a page exists.
 final class _AnchorCard extends StatelessWidget {
   const _AnchorCard({required this.anchor, this.onOpen});
 
@@ -1340,18 +1340,17 @@ final class _AnchorCard extends StatelessWidget {
                       children: [
                         if (live)
                           DsBadge(
+                            status: DsStatus.danger,
                             label: Text(context.t.search.liveBadge),
-                            dot: false,
                             style: DsBadgeStyle(
                               height: 18,
                               padding: const EdgeInsets.symmetric(horizontal: 6),
-                              background: const Color(0x8C000000),
-                              foreground: colors.danger.fill,
-                              borderRadius: BorderRadius.circular(6),
                               textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, fontSize: 10),
                             ),
                           )
-                        else if (followers.isNotEmpty) ...[
+                        else
+                          Text(context.t.search.offlineBadge, style: caption),
+                        if (followers.isNotEmpty) ...[
                           DsIcon(DsIcons.users, size: 12, color: colors.textSubtle),
                           Text(followers, style: theme.typography.numeric(caption)),
                         ],

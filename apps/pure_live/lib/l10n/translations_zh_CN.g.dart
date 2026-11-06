@@ -7093,6 +7093,9 @@ class Translations$search$zh_CN {
 	/// zh-CN: '直播中'
 	String get liveBadge => '直播中';
 
+	/// zh-CN: '未开播'
+	String get offlineBadge => '未开播';
+
 	/// zh-CN: '全部'
 	String get scopeAll => '全部';
 
@@ -16140,6 +16143,7 @@ extension on Translations {
 			'search.unsupportedTitle' => '该平台不支持搜索',
 			'search.unsupportedDescription' => '请切换到其他平台再试。',
 			'search.liveBadge' => '直播中',
+			'search.offlineBadge' => '未开播',
 			'search.scopeAll' => '全部',
 			'search.historyTitle' => '搜索历史',
 			'search.clearHistory' => '清空',
@@ -16269,9 +16273,9 @@ extension on Translations {
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
-			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
 			'settings.aboutDescription' => '版本、开源许可与项目链接。',
 			'settings.browsingPageDescription' => '卡片与列表、关注页密度、观众指标与房间卡片。',
 			'settings.windowPageDescription' => '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。',
@@ -16783,9 +16787,9 @@ extension on Translations {
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
 			'settings.navIptvGroups' => '分组显示',
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
-			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
 			'settings.navKernel' => '播放器内核',
@@ -17297,9 +17301,9 @@ extension on Translations {
 			'settings.audiencePlatformNeedsOnline' => '先开启「真实在线人数优先」',
 			'settings.audienceHeatOnlyGroup' => '仅热度或累计观看的平台',
 			'settings.audienceHeatOnlyDesc' => '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。',
-			'settings.backgroundSolid' => '纯色',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundSolid' => '纯色',
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
 			'settings.backgroundLibraryTitle' => '壁纸图库',
@@ -17811,9 +17815,9 @@ extension on Translations {
 			'toolbox.nodeTest' => '测速',
 			'toolbox.nodeTesting' => '测速中',
 			'toolbox.nodeUntested' => '未测速',
-			'toolbox.nodeReachable' => '正常',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeReachable' => '正常',
 			'toolbox.nodeFailed' => '失败',
 			'toolbox.nodeNoSites' => '没有可测速的平台',
 			'toolbox.nodeHint' => '点「测速」检查这个平台。',

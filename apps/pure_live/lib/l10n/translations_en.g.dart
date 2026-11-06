@@ -2501,6 +2501,7 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get unsupportedTitle => 'This platform cannot search';
 	@override String get unsupportedDescription => 'Switch to another platform and try again.';
 	@override String get liveBadge => 'Live';
+	@override String get offlineBadge => 'Offline';
 	@override String get scopeAll => 'All';
 	@override String get historyTitle => 'Search history';
 	@override String get clearHistory => 'Clear';
@@ -7197,6 +7198,7 @@ extension on TranslationsEn {
 			'search.unsupportedTitle' => 'This platform cannot search',
 			'search.unsupportedDescription' => 'Switch to another platform and try again.',
 			'search.liveBadge' => 'Live',
+			'search.offlineBadge' => 'Offline',
 			'search.scopeAll' => 'All',
 			'search.historyTitle' => 'Search history',
 			'search.clearHistory' => 'Clear',
@@ -7326,9 +7328,9 @@ extension on TranslationsEn {
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
-			'settings.backupDescription' => 'Local backups, restores and WebDAV sync.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backupDescription' => 'Local backups, restores and WebDAV sync.',
 			'settings.aboutDescription' => 'Version, licences and project links.',
 			'settings.browsingPageDescription' => 'Cards and lists, how dense the follows page is, the audience metric and the room card.',
 			'settings.windowPageDescription' => 'Caption, room windows, close behaviour, window size and display rate.',
@@ -7840,9 +7842,9 @@ extension on TranslationsEn {
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
 			'settings.navIptvGroups' => 'Group visibility',
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
-			'settings.iptvSyncDesc' => 'Re-downloads network playlists and guides; local sources stay untouched.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.iptvSyncDesc' => 'Re-downloads network playlists and guides; local sources stay untouched.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
 			'settings.navKernel' => 'Player engine',
@@ -8354,9 +8356,9 @@ extension on TranslationsEn {
 			'settings.audiencePlatformNeedsOnline' => 'Turn on "Prefer concurrent viewers" first',
 			'settings.audienceHeatOnlyGroup' => 'Platforms with heat or total views only',
 			'settings.audienceHeatOnlyDesc' => 'Their public APIs give no concurrent count; cards still show heat or total views.',
-			'settings.backgroundSolid' => 'Solid',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundSolid' => 'Solid',
 			'settings.backgroundGradient' => 'Gradient',
 			'settings.backgroundPresets' => 'Presets',
 			'settings.backgroundLibraryTitle' => 'Wallpaper library',
@@ -8868,9 +8870,9 @@ extension on TranslationsEn {
 			'toolbox.nodeTest' => 'Test',
 			'toolbox.nodeTesting' => 'Testing',
 			'toolbox.nodeUntested' => 'Not tested',
-			'toolbox.nodeReachable' => 'Reachable',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeReachable' => 'Reachable',
 			'toolbox.nodeFailed' => 'Failed',
 			'toolbox.nodeNoSites' => 'No platform can be tested',
 			'toolbox.nodeHint' => 'Run a check to test this platform.',

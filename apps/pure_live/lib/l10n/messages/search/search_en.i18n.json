@@ -14,6 +14,7 @@
   "unsupportedTitle": "This platform cannot search",
   "unsupportedDescription": "Switch to another platform and try again.",
   "liveBadge": "Live",
+  "offlineBadge": "Offline",
   "scopeAll": "All",
   "historyTitle": "Search history",
   "clearHistory": "Clear",
