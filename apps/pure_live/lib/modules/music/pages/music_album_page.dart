@@ -16,7 +16,7 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart' show showAdd
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicArtist;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show MusicSongTableHeader;
-import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, GlyphIcon, LiveWindow, MusicGlyph, cachedImage;
 
 /// One album's page: its cover and credits, its songs, and the way into its
 /// artist — the reference's album browse, read from the platform's own album
@@ -161,7 +161,7 @@ final class _AlbumHero extends ConsumerWidget {
       runSpacing: DsSpace.s8,
       children: [
         DsButton(
-          leading: const DsIcon(DsIcons.play),
+          leading: const GlyphIcon(MusicGlyph.play),
           onPressed: () => unawaited(player.playAll(tracks)),
           child: Text(t.music.playAll),
         ),

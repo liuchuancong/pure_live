@@ -13,6 +13,7 @@ import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/shared.dart' show GlyphIcon, MusicGlyph;
 
 /// The bar's own width thresholds. The sidebar takes its share of the window
 /// first, so the window width says nothing about how much room the bar has.
@@ -88,7 +89,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
       size: DsSize.sm,
       semanticLabel: favourites.contains(track) ? t.music.unfavourite : t.music.favourite,
       onPressed: () => unawaited(favouriteController.toggle(track)),
-      icon: DsIcon(DsIcons.heart, color: favourites.contains(track) ? colors.accent : null),
+      icon: GlyphIcon(MusicGlyph.like, color: favourites.contains(track) ? colors.accent : null),
     );
     return DecoratedBox(
       // The bar is the module's bottom strip, docked flush like every other
@@ -204,7 +205,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                     ),
                   ),
                 ),
-                icon: const DsIcon(DsIcons.listMusic),
+                icon: const GlyphIcon(MusicGlyph.queue),
               );
               Widget actions() => Row(
                 mainAxisSize: MainAxisSize.min,
@@ -317,21 +318,21 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                       size: DsSize.sm,
                       semanticLabel: t.music.previous,
                       onPressed: () => unawaited(controller.previous()),
-                      icon: const DsIcon(DsIcons.skipBack),
+                      icon: const GlyphIcon(MusicGlyph.previous),
                     ),
                   DsButton.icon(
                     variant: DsButtonVariant.primary,
                     size: DsSize.sm,
                     semanticLabel: state.playing ? t.music.pause : t.music.play,
                     onPressed: () => unawaited(controller.toggle()),
-                    icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
+                    icon: GlyphIcon(state.playing ? MusicGlyph.pause : MusicGlyph.play),
                   ),
                   DsButton.icon(
                     variant: DsButtonVariant.ghost,
                     size: DsSize.sm,
                     semanticLabel: t.music.next,
                     onPressed: () => unawaited(controller.next()),
-                    icon: const DsIcon(DsIcons.skipForward),
+                    icon: const GlyphIcon(MusicGlyph.next),
                   ),
                 ],
               );
@@ -360,7 +361,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                 align: DsAlign.end,
                 items: [
                   DsMenuItem(
-                    leading: const DsIcon(DsIcons.listMusic),
+                    leading: const GlyphIcon(MusicGlyph.queue),
                     label: Text(t.music.queueTitle),
                     onPressed: () => unawaited(
                       showDsPanel<void>(
@@ -401,7 +402,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                     onPressed: () => unawaited(controller.setMuted(muted: !state.muted)),
                   ),
                   DsMenuItem(
-                    leading: DsIcon(musicPlayModeIcon(state.mode)),
+                    leading: musicPlayModeGlyph(state.mode) ?? DsIcon(musicPlayModeIcon(state.mode)),
                     label: Text(musicPlayModeLabel(t, state.mode)),
                     onPressed: controller.cycleMode,
                   ),
@@ -411,7 +412,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                   size: DsSize.sm,
                   semanticLabel: t.common.more,
                   onPressed: menu.toggle,
-                  icon: const DsIcon(DsIcons.ellipsisVertical),
+                  icon: const GlyphIcon(MusicGlyph.more),
                 ),
               );
 
