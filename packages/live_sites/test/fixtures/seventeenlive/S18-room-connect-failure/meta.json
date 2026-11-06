@@ -1,0 +1,20 @@
+{
+  "schema": 2,
+  "platform": "17live",
+  "sample": "S18-room-connect-failure",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://api-dsa.17app.co/api/v1/lives/123456789",
+    "headers": {}
+  },
+  "answers": [
+    {
+      "kind": "connect",
+      "description": "dns down"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers seventeenlive_test's _BrokenHttp built, not a capture"
+}

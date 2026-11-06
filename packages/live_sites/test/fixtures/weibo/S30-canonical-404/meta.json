@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "platform": "weibo",
+  "sample": "S30-canonical-404",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://plwb00.live.weibo.com/alicdn/5000000000000000_wb720avc.flv",
+    "headers": {
+      "range": "bytes=0-65535",
+      "user-agent": "Mozilla/5.0"
+    }
+  },
+  "answers": [
+    {
+      "status": 404
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers weibo_streams_test's fake built, not a capture"
+}

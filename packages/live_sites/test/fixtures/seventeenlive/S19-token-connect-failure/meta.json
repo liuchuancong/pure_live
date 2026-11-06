@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "platform": "17live",
+  "sample": "S19-token-connect-failure",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://api-dsa.17app.co/api/v1/messenger/auth",
+    "headers": {},
+    "body": "{}"
+  },
+  "answers": [
+    {
+      "kind": "connect",
+      "description": "dns down"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers seventeenlive_test's _BrokenHttp built, not a capture"
+}

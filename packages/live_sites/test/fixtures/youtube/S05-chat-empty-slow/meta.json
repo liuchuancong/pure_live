@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "platform": "youtube",
+  "sample": "S05-chat-empty-slow",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://www.youtube.com/youtubei/v1/live_chat/get_live_chat?prettyPrint=false",
+    "headers": {
+      "content-type": "application/json",
+      "origin": "https://www.youtube.com"
+    }
+  },
+  "answers": [
+    {
+      "status": 200,
+      "body": "body.json"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers youtube_danmaku_session_test's fake built, not a capture"
+}

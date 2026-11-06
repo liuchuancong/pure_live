@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io' show gzip;
 
 import 'package:fpdart/fpdart.dart';
-import 'package:live_net/live_net.dart';
 import 'package:live_net/testing.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
@@ -45,10 +44,6 @@ import 'package:live_sites/src/platforms/seventeenlive/parsers/seventeenlive_roo
 import 'package:live_sites/src/platforms/seventeenlive/seventeenlive_manifest.dart';
 import 'package:live_sites/src/platforms/seventeenlive/seventeenlive_site.dart';
 import 'package:test/test.dart';
-
-// The test doubles spell their class name in their one constructor; the
-// shorthand would read as a field declaration at the call site.
-// ignore_for_file: unnecessary_type_name_in_constructor
 
 /// The room of the tests: a `liveStreamID` as the platform writes it.
 const String _room = '123456789';
@@ -265,8 +260,9 @@ Map<String, Object?> _figures({int? viewers, bool? mute}) => {
 /// walked pages (their `cursor` picks the answer), `S05` the walk that ends,
 /// `S06` the five-row page, `S07`-`S09` the room reads (live, offline,
 /// locked), `S10`/`S11` the keyword search lists, `S12` the bad search
-/// answer, `S13`-`S15` the room's refusals (520, 404, 403) and `S16`/`S17`
-/// the chat token answers.
+/// answer, `S13`-`S15` the room's refusals (520, 404, 403), `S16`/`S17` the
+/// chat token answers and `S18`/`S19` the connect failures (room read and
+/// token request).
 const String _samples = 'test/fixtures/seventeenlive';
 
 /// The transport under the site: [samples] answer, every request is recorded.
@@ -274,21 +270,6 @@ ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, sample
 
 /// The platform answers [sample] from now on, ahead of what it answered.
 void _answersNow(ReplayHttp http, String sample) => http.samples.insert(0, ReplaySample.load('$_samples/$sample'));
-
-/// A transport that never answers: the one breakdown the replay cannot
-/// record. It serves the transport-break tests alone.
-final class _BrokenHttp implements LiveHttp {
-  const _BrokenHttp();
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async => throw const ConnectFailure('dns down');
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw const ConnectFailure('dns down');
-
-  @override
-  void close() {}
-}
 
 void main() {
   group('answers, ids and readers', () {
@@ -1056,8 +1037,8 @@ void main() {
       expect(_leftOf(await gone.site.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteNotFound>());
       final gate = _adapter(['S15-room-403']);
       expect(_leftOf(await gate.site.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteRateLimitError>());
-      final offline = SeventeenLiveSite(http: const SeventeenLiveHttp(_BrokenHttp()));
-      expect(_leftOf(await offline.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteNetworkError>());
+      final offline = _adapter(['S18-room-connect-failure']);
+      expect(_leftOf(await offline.site.capability<LiveRoomProvider>()!.getRoom(_room)), isA<LiveSiteNetworkError>());
       expect(seventeenliveSiteId, '17live');
     });
 
@@ -1689,7 +1670,7 @@ void main() {
     test('a token request that breaks reports it', () async {
       final session = SeventeenLiveDanmakuSession(
         args: const SeventeenLiveDanmakuArgs(roomId: _room),
-        http: const SeventeenLiveHttp(_BrokenHttp()),
+        http: SeventeenLiveHttp(_replay(['S19-token-connect-failure'])),
       );
       final failure = await session.connect();
       expect(failure, isA<LiveSiteNetworkError>());

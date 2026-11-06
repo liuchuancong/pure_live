@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
@@ -28,7 +27,8 @@ final DateTime _issued = DateTime.utc(2026, 10, 29, 4);
 /// The samples of [_webRid]: `S01-enter-live` the signed room answer with its
 /// stream, `S02-reflow-nostart` the broadcast's reflow answer without a start
 /// time, `S03/S04` the reflow answers that carry one (30 and 5 minutes before
-/// the open).
+/// the open) and `S05-reflow-hang` the reflow request that never answers, the
+/// way a host the network cannot reach does (it accepts and stalls).
 const String _samples = 'test/fixtures/douyin';
 
 /// What differs per run: the random `msToken` and the `a_bogus` it feeds; the
@@ -46,29 +46,6 @@ void _answersNow(ReplayHttp http, String sample) =>
 /// How many times a request whose path contains [needle] was made.
 int _calls(ReplayHttp http, String needle) =>
     http.requests.where((request) => request.url.path.contains(needle)).length;
-
-/// The replay with one hold added: `room/reflow/info/` never answers, the way
-/// a host the network cannot reach does (it accepts and stalls). The replay
-/// transport itself always answers, so the hold cannot be a sample.
-final class _HangsReflow implements LiveHttp {
-  new(this.replay);
-
-  final ReplayHttp replay;
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) {
-    if (request.url.path.contains('/webcast/room/reflow/info/')) {
-      return Completer<LiveResponse>().future;
-    }
-    return replay.send(request);
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) => replay.open(request);
-
-  @override
-  void close() => replay.close();
-}
 
 /// The site over [http], on a clock the test turns.
 DouyinSite _site(LiveHttp http, DateTime Function() now) =>
@@ -146,7 +123,7 @@ void main() {
     });
 
     test('a host that never answers holds the detail for its wait only', () async {
-      final site = _site(_HangsReflow(http), () => now);
+      final site = _site(_replay(['S05-reflow-hang', 'S01-enter-live']), () => now);
       final clock = Stopwatch()..start();
 
       final room = await DouyinRoomProvider(site: site).detail(_webRid);

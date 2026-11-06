@@ -1,0 +1,1 @@
+{"continuationContents":{"liveChatContinuation":{"actions":[{"addChatItemAction":{"item":{"liveChatTextMessageRenderer":{"id":"m1","authorName":"Ann","message":{"runs":[{"text":"join history"}]},"timestampUsec":"1790519893202000"}}}}],"continuations":[{"reloadContinuationData":{"continuation":"r1"}}]}}}

@@ -1,8 +1,4 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/capabilities/live_cookie_refusal_feed.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
@@ -13,50 +9,20 @@ import 'package:test/test.dart';
 /// The stored cookie the tests hand the site (it holds an `auth-token`).
 const String _cookie = 'auth-token=token; login=someone';
 
-/// One canned GraphQL answer.
-typedef _Answer = ({int status, String body});
+/// The samples of the replayed tests, one GraphQL sequence each (the answers
+/// are given in call order and the last repeats): `S01` the refused session
+/// then the anonymous token twice, `S02` the accepted session, `S03` the
+/// Chinese tags, the English ask and the directory batch, `S04` the walk
+/// whose English ask fails, `S05` the walk where every tag is named.
+const String _samples = 'test/fixtures/twitch';
 
-LiveResponse _response(_Answer answer) =>
-    LiveResponse(statusCode: answer.status, headers: const {}, bodyBytes: Uint8List.fromList(utf8.encode(answer.body)));
-
-/// A transport that answers [answers] in order and records the requests.
-final class _FakeHttp implements LiveHttp {
-  new(this.answers);
-
-  final List<_Answer> answers;
-  final List<LiveRequest> requests = [];
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    requests.add(request);
-    return _response(answers.removeAt(0));
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
-
-/// A `PlaybackAccessToken` answer with an unrestricted token.
-const String _token = '{"data":{"streamPlaybackAccessToken":{"value":"{}","signature":"sig"}}}';
-
-/// One Chinese-named tag, one Twitch has no Chinese name for.
-String _tags(String first, String second) =>
-    '{"data":{"searchCategoryTags":[{"id":"t1","tagName":"$first"},{"id":"t2","tagName":"$second"}]}}';
-
-/// A directory batch: one envelope per name, each naming one directory of
-/// that name (one page per tag, the walk ends there).
-String _directories(List<String> names) => '[${[
-  for (final name in names)
-    '{"data":{"directoriesWithTags":{"edges":[{"node":{"id":"g1","slug":"g","displayName":"$name"}}]}}}',
-].join(',')}]';
+/// The transport under the site: [samples] answer, every request is recorded.
+ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, samples);
 
 void main() {
   group('cookie refusals', () {
     test('a 401 for the stored session reports one event and falls back anonymously', () async {
-      final http = _FakeHttp([(status: 401, body: ''), (status: 200, body: _token), (status: 200, body: _token)]);
+      final http = _replay(['S01-gql-refused-then-anonymous']);
       final site = TwitchSite(http: TwitchHttp(http), loginCookie: () => _cookie);
       final feed = site.capability<LiveCookieRefusalFeed>();
       expect(feed, isA<TwitchCookieRefusalFeed>());
@@ -79,7 +45,7 @@ void main() {
     });
 
     test('an accepted session reports nothing', () async {
-      final http = _FakeHttp([(status: 200, body: _token)]);
+      final http = _replay(['S02-gql-token-ok']);
       final site = TwitchSite(http: TwitchHttp(http), loginCookie: () => _cookie);
       final refusals = <void>[];
       final subscription = site.cookieRefusals.listen(refusals.add);
@@ -95,11 +61,7 @@ void main() {
 
   group('the catalog languages', () {
     test('a tag with no Chinese name asks a second time in English', () async {
-      final http = _FakeHttp([
-        (status: 200, body: _tags('游戏', '')),
-        (status: 200, body: _tags('Games', 'Gambling')),
-        (status: 200, body: _directories(['第一个', '第二个'])),
-      ]);
+      final http = _replay(['S03-gql-tags-cn-en-directories']);
       final site = TwitchSite(http: TwitchHttp(http));
 
       final areas = await site.categories();
@@ -115,11 +77,7 @@ void main() {
     });
 
     test('a failed English ask keeps the empty names', () async {
-      final http = _FakeHttp([
-        (status: 200, body: _tags('游戏', '')),
-        (status: 500, body: ''),
-        (status: 200, body: _directories(['第一个', '第二个'])),
-      ]);
+      final http = _replay(['S04-gql-tags-en-fails']);
       final site = TwitchSite(http: TwitchHttp(http));
 
       final areas = await site.categories();
@@ -129,7 +87,7 @@ void main() {
     });
 
     test('every tag named asks once', () async {
-      final http = _FakeHttp([(status: 200, body: _tags('游戏', '派对')), (status: 200, body: _directories(['一', '二']))]);
+      final http = _replay(['S05-gql-tags-party-directories']);
       final site = TwitchSite(http: TwitchHttp(http));
 
       await site.categories();

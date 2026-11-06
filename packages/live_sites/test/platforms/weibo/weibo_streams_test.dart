@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_net/testing.dart';
@@ -15,10 +13,6 @@ import 'package:live_sites/src/platforms/weibo/parsers/weibo_room_parser.dart';
 import 'package:live_sites/src/platforms/weibo/weibo_site.dart';
 import 'package:live_sites/src/platforms/weibo/weibo_streams.dart';
 import 'package:test/test.dart';
-
-// The fake's stream hands back its chunks with a type annotation the reader
-// needs spelled out.
-// ignore_for_file: unnecessary_type_name_in_constructor
 
 const String _id = '1022:2321325347923495092258';
 const String _canonical = 'https://plwb00.live.weibo.com/alicdn/5000000000000000_wb720avc.flv';
@@ -46,7 +40,9 @@ List<int> _flv({int codec = 7}) {
 /// `S20` the live detail whose canonical address the profiles derive from,
 /// `S21` its restricted read, `S22-S24` the probed profiles' FLV answers (the
 /// video sequence header announces the codec), `S25-S27` their 404 refusals,
-/// `S28` the canonical address's own FLV and `S29` an answer that is no FLV.
+/// `S28` the canonical address's own FLV, `S29` an answer that is no FLV,
+/// `S30` the canonical address's 404 and `S31` its fragmented FLV that stalls
+/// after the second chunk (the probe stops a stream that never ends).
 const String _samples = 'test/fixtures/weibo';
 
 /// The transport under the replayed tests: [samples] answer, every request is
@@ -59,72 +55,6 @@ int _details(ReplayHttp http) =>
 
 /// Whether a probe reached the pull host.
 bool _probed(ReplayHttp http) => http.requests.any((request) => request.url.host == _pullHost);
-
-/// A streamed answer of `chunks`, remembering whether its stream was closed.
-/// Two probe tests need this: the replay transport always answers in one
-/// piece and cannot report that a response was closed, so the tests about
-/// fragmented delivery and the close stay on it.
-final class _FakeStream implements LiveStreamedResponse {
-  _FakeStream(this._status, List<List<int>> chunks) : _controller = StreamController<Uint8List>(), _chunks = chunks {
-    _controller.onCancel = () {
-      wasCancelled = true;
-    };
-  }
-
-  final int _status;
-  final StreamController<Uint8List> _controller;
-  final List<List<int>> _chunks;
-  bool wasCancelled = false;
-  bool delivered = false;
-
-  void deliver() {
-    if (delivered) return;
-    delivered = true;
-    for (final chunk in _chunks) {
-      _controller.add(Uint8List.fromList(chunk));
-    }
-  }
-
-  @override
-  int get statusCode => _status;
-
-  @override
-  Map<String, String> get headers => const {};
-
-  @override
-  Stream<Uint8List> get stream => _controller.stream;
-
-  @override
-  Future<void> close() async {
-    wasCancelled = true;
-    if (!_controller.isClosed) await _controller.close();
-  }
-}
-
-/// A transport whose CDN opens are scripted; it serves the two
-/// stream-observation probe tests alone. The API answer is never read by them.
-final class _FakeHttp implements LiveHttp {
-  _FakeHttp({this.onOpen});
-
-  /// The streamed answer of every `open`, or null for none scripted.
-  _FakeStream? Function(LiveRequest request)? onOpen;
-
-  /// Every `open` handed over, in order.
-  final List<LiveRequest> opened = [];
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async =>
-      throw StateError('the stream-observation probes only open');
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async {
-    opened.add(request);
-    return onOpen?.call(request) ?? (throw StateError('no scripted open'));
-  }
-
-  @override
-  void close() {}
-}
 
 /// The detail of one live broadcast whose FLV is the canonical public address.
 String _liveDetail({int status = 1, int watchLimit = 0, String? flv = _canonical}) => jsonEncode({
@@ -200,19 +130,12 @@ void main() {
 
   group('probe', () {
     test('a fragmented answer names its codec and closes only its own stream', () async {
-      final bytes = _flv();
-      final stream = _FakeStream(200, [bytes.sublist(0, 8), bytes.sublist(8)]);
-      final http = _FakeHttp(
-        onOpen: (request) {
-          scheduleMicrotask(stream.deliver);
-          return stream;
-        },
-      );
+      final http = _replay(['S31-canonical-flv-fragmented']);
       final parent = CancelToken();
       expect(await WeiboStreams.probe(http, Uri.parse(_canonical), cancel: parent), LiveStreamCodec.avc);
-      expect(stream.wasCancelled, isTrue);
-      expect(http.opened.single.cancelToken.isCancelled, isTrue);
-      expect(identical(http.opened.single.cancelToken, parent), isFalse);
+      expect(http.opens.single.closed, isTrue, reason: 'the probe stops a stream that never ends');
+      expect(http.requests.single.cancelToken.isCancelled, isTrue);
+      expect(identical(http.requests.single.cancelToken, parent), isFalse);
       expect(parent.isCancelled, isFalse);
     });
 
@@ -226,10 +149,9 @@ void main() {
     });
 
     test('a non-200 answer is a missing profile, its stream closed', () async {
-      final stream = _FakeStream(404, const []);
-      final http = _FakeHttp(onOpen: (_) => stream);
+      final http = _replay(['S30-canonical-404']);
       expect(await WeiboStreams.probe(http, Uri.parse(_canonical)), isNull);
-      expect(stream.wasCancelled, isTrue);
+      expect(http.opens.single.closed, isTrue);
     });
 
     test('bytes that are no FLV answer are a missing profile', () async {

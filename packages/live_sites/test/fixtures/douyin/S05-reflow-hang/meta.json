@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "platform": "douyin",
+  "sample": "S05-reflow-hang",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://webcast.amemv.com/webcast/room/reflow/info/?type_id=0&live_id=1&room_id=7700781210271812361&sec_user_id=&version_code=99.99.99&app_id=6383",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.douyin.com",
+      "referer": "https://live.douyin.com/"
+    }
+  },
+  "answers": [
+    {
+      "kind": "hang"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers douyin_open_test's _HangsReflow wrapper built, not a capture"
+}

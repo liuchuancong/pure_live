@@ -1,0 +1,28 @@
+{
+  "schema": 2,
+  "platform": "kuaishou",
+  "sample": "S01-feed-next-then-later",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://livev.m.chenzhongtech.com/wap/live/feed?liveStreamId=live1",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0 Mobile Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "referer": "https://livev.m.chenzhongtech.com/"
+    }
+  },
+  "answers": [
+    {
+      "status": 200,
+      "body": "body-1.json"
+    },
+    {
+      "status": 200,
+      "body": "body-2.json"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers kuaishou_danmaku_session_test's fake built, not a capture"
+}

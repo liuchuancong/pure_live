@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "platform": "weibo",
+  "sample": "S31-canonical-flv-fragmented",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://plwb00.live.weibo.com/alicdn/5000000000000000_wb720avc.flv",
+    "headers": {
+      "range": "bytes=0-65535",
+      "user-agent": "Mozilla/5.0"
+    }
+  },
+  "answers": [
+    {
+      "kind": "broken",
+      "status": 200,
+      "headers": {
+        "content-type": "video/x-flv"
+      },
+      "body": "body.flv",
+      "chunks": [
+        8,
+        34
+      ],
+      "end": "stalled"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the fragmented stream weibo_streams_test's fake delivered, not a capture"
+}

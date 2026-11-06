@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "platform": "twitch",
+  "sample": "S02-gql-token-ok",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://gql.twitch.tv/gql",
+    "headers": {
+      "content-type": "text/plain;charset=UTF-8",
+      "client-id": "kimne78kx3ncx6brgo4mv6wki5h1ko"
+    }
+  },
+  "answers": [
+    {
+      "status": 200,
+      "body": "body-token.json"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the answers twitch_test's fake built, not a capture"
+}

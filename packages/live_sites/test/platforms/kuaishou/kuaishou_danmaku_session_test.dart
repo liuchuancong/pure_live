@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -14,82 +13,22 @@ import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:test/test.dart';
 
-// The private helpers spell their own class name in their constructors, as the
-// package's value wrappers do.
-// ignore_for_file: unnecessary_type_name_in_constructor
+/// The samples of the replayed tests, under the platform's fixture directory.
+/// Each names one feed answer sequence (the answers are given in call order
+/// and the last repeats): `S01` the cursor `next` then `later`, `S02` the
+/// cursor the feed leaves empty, `S03`/`S07` the slow polls on the two feed
+/// endpoints, `S04` the emoji comment, `S05`/`S06` the 500 refusals,
+/// `S08` the endpoint that never answers, `S09`/`S10` the refused feeds and
+/// `S11` the plain 1 s feed.
+const String _samples = 'test/fixtures/kuaishou';
 
-/// The transport as the feed reads it: every request recorded, one answer per
-/// call (a handler may throw, which is how a breakdown is written).
-final class _FakeHttp implements LiveHttp {
-  _FakeHttp(this.answer);
+/// What differs per poll: the cursor the previous answer handed out; the
+/// samples carry the stand-in value the first request was recorded with.
+const Set<String> _perPoll = {'cursor'};
 
-  /// The answer for the request at hand — [LiveRequest.url] says which endpoint.
-  final FutureOr<Object> Function(LiveRequest request, int call) answer;
-
-  /// Every request that went through, in order.
-  final List<LiveRequest> sent = [];
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    final call = sent.length;
-    sent.add(request);
-    final result = await answer(request, call);
-    if (result is _Breaks) throw result.error;
-    if (result is LiveResponse) return result;
-    throw StateError('a feed request is answered with a response or a breakdown');
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
-
-/// A transport breakdown, so a handler can name one without throwing it here.
-final class _Breaks {
-  const _Breaks(this.error);
-
-  final Exception error;
-}
-
-/// A 2xx answer holding this JSON body.
-LiveResponse _ok(Object? body) => LiveResponse(
-  statusCode: 200,
-  headers: const <String, String>{},
-  bodyBytes: Uint8List.fromList(utf8.encode(jsonEncode(body))),
-);
-
-/// An answer that is not usable (the transport gives a status, and `feedJson`
-/// turns a non-2xx into a failure).
-LiveResponse _status(int code) => LiveResponse(
-  statusCode: code,
-  headers: const <String, String>{},
-  bodyBytes: Uint8List.fromList(utf8.encode('nope')),
-);
-
-/// One feed answer.
-LiveResponse _feed({
-  Object? result = 1,
-  String cursor = 'next',
-  int pull = 1,
-  Object? watching = '76',
-  List<Object?> feeds = const [
-    {
-      'type': 'comment',
-      'content': 'hello',
-      'id': 'c1',
-      'time': 1790733600000,
-      'author': {'userName': 'Ann', 'userId': 'u1'},
-    },
-  ],
-}) => _ok({
-  'result': result,
-  'cursor': cursor,
-  'pullCycleSeconds': pull,
-  'currentWatchingCount': watching,
-  'liveStreamFeeds': feeds,
-});
+/// The transport under the replayed tests: [samples] answer, every request is
+/// recorded.
+ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, samples, ignoredQuery: _perPoll);
 
 /// A session over [http] for the broadcast `live1`.
 KuaishouDanmakuSession _session(
@@ -115,7 +54,7 @@ Future<void> _until(bool Function() test, {int seconds = 6}) async {
 void main() {
   group('joining the feed', () {
     test('the first answer is reported and the next request carries its cursor', () async {
-      final http = _FakeHttp((request, call) => _feed(cursor: call == 0 ? 'next' : 'later'));
+      final http = _replay(['S01-feed-next-then-later']);
       final session = _session(http);
       final seen = <LiveMessage>[];
       final subscription = session.events.listen(seen.add);
@@ -128,44 +67,44 @@ void main() {
       expect(seen.last.sender?.userName, 'Ann');
       expect(seen.last.messageId, 'kuaishou:c1');
 
-      await _until(() => http.sent.length >= 2);
-      expect(http.sent.first.url.queryParameters.containsKey('cursor'), isFalse);
-      expect(http.sent.first.url.queryParameters['liveStreamId'], 'live1');
-      expect(http.sent[1].url.queryParameters['cursor'], 'next');
-      expect(http.sent, hasLength(2), reason: 'one answer at a time: the loop waits for the pull cycle');
+      await _until(() => http.requests.length >= 2);
+      expect(http.requests.first.url.queryParameters.containsKey('cursor'), isFalse);
+      expect(http.requests.first.url.queryParameters['liveStreamId'], 'live1');
+      expect(http.requests[1].url.queryParameters['cursor'], 'next');
+      expect(http.requests, hasLength(2), reason: 'one answer at a time: the loop waits for the pull cycle');
 
       await session.disconnect();
-      final after = http.sent.length;
+      final after = http.requests.length;
       await Future<void>.delayed(const Duration(milliseconds: 1200));
-      expect(http.sent, hasLength(after), reason: 'disconnect stops the loop');
+      expect(http.requests, hasLength(after), reason: 'disconnect stops the loop');
       await subscription.cancel();
     });
 
     test('a cursor the feed leaves empty keeps the one already held', () async {
-      final http = _FakeHttp((request, call) => _feed(cursor: call == 1 ? '' : 'kept'));
+      final http = _replay(['S02-feed-kept-empty-kept']);
       final session = _session(http);
       final subscription = session.events.listen((_) {});
       addTearDown(session.dispose);
 
       await session.connect();
-      await _until(() => http.sent.length >= 3);
-      expect(http.sent[1].url.queryParameters['cursor'], 'kept');
-      expect(http.sent[2].url.queryParameters['cursor'], 'kept', reason: 'an empty cursor is not a reset');
+      await _until(() => http.requests.length >= 3);
+      expect(http.requests[1].url.queryParameters['cursor'], 'kept');
+      expect(http.requests[2].url.queryParameters['cursor'], 'kept', reason: 'an empty cursor is not a reset');
       await subscription.cancel();
     });
 
     test(
       'the request says who it is for, waits at most the site cap, and carries the cookie only when there is one',
       () async {
-        final withCookie = _FakeHttp((request, call) => _feed(pull: 10));
-        final anonymous = _FakeHttp((request, call) => _feed(pull: 10));
+        final withCookie = _replay(['S03-feed-slow']);
+        final anonymous = _replay(['S03-feed-slow']);
         final cookieSession = _session(withCookie, cookie: '  sid=1 ');
         final anonymousSession = _session(anonymous);
         addTearDown(cookieSession.dispose);
         addTearDown(anonymousSession.dispose);
 
         await cookieSession.connect();
-        final request = withCookie.sent.single;
+        final request = withCookie.requests.single;
         expect(request.method, 'GET');
         expect(request.site, kuaishouSiteId);
         expect(request.timeout, KuaishouEndpoints.requestTimeout);
@@ -174,25 +113,12 @@ void main() {
         expect(request.headers['Referer'], KuaishouEndpoints.feedReferer);
 
         await anonymousSession.connect();
-        expect(anonymous.sent.single.headers.containsKey('cookie'), isFalse);
+        expect(anonymous.requests.single.headers.containsKey('cookie'), isFalse);
       },
     );
 
     test('the room page emoji table rides into every reported comment', () async {
-      final http = _FakeHttp(
-        (request, call) => _feed(
-          pull: 10,
-          feeds: [
-            {
-              'type': 'comment',
-              'content': '真好[笑哭]',
-              'id': 'c9',
-              'time': 1790733600000,
-              'author': {'userName': 'Ann', 'userId': 'u1'},
-            },
-          ],
-        ),
-      );
+      final http = _replay(['S04-feed-emote']);
       final session = _session(http, emotes: const {'[笑哭]': 'https://cdn.example/laugh.png'});
       final seen = <LiveMessage>[];
       final subscription = session.events.listen(seen.add);
@@ -207,24 +133,21 @@ void main() {
 
   group('when an answer does not come', () {
     test('one pull tries the backup endpoint before it fails', () async {
-      final http = _FakeHttp(
-        (request, call) =>
-            request.url.host == KuaishouDanmakuCodec.endpoints.first.host ? _status(500) : _feed(pull: 10),
-      );
+      final http = _replay(['S05-feed-primary-500', 'S07-feed-backup-slow']);
       final session = _session(http);
       final seen = <LiveMessage>[];
       final subscription = session.events.listen(seen.add);
       addTearDown(session.dispose);
 
       expect(await session.connect(), isNull, reason: 'the fallback answer joins the feed');
-      expect(http.sent.map((request) => request.url.host), ['livev.m.chenzhongtech.com', 'm.gifshow.com']);
+      expect(http.requests.map((request) => request.url.host), ['livev.m.chenzhongtech.com', 'm.gifshow.com']);
       await _until(() => seen.length >= 2);
       expect(seen, hasLength(2));
       await subscription.cancel();
     });
 
     test('the first request is asked three times, and then the feed says it never began', () async {
-      final http = _FakeHttp((request, call) => _status(500));
+      final http = _replay(['S05-feed-primary-500', 'S06-feed-backup-500']);
       final session = _session(http);
       final subscription = session.events.listen((_) {});
       addTearDown(session.dispose);
@@ -234,7 +157,7 @@ void main() {
       expect(error, isA<LiveSiteNetworkError>());
       expect(error!.message, contains('danmaku feed failed to start'));
       expect(
-        http.sent,
+        http.requests,
         hasLength(KuaishouDanmakuCodec.endpoints.length * (KuaishouDanmakuCodec.startRetryDelays.length + 1)),
         reason: 'three attempts of two endpoints each',
       );
@@ -244,34 +167,31 @@ void main() {
     });
 
     test('a cancellation is not passed on to the backup endpoint', () async {
-      final http = _FakeHttp((request, call) async {
-        await request.cancelToken.whenCancel;
-        return const _Breaks(CancelledFailure());
-      });
+      final http = _replay(['S08-feed-hang']);
       final session = _session(http);
       final subscription = session.events.listen((_) {});
       addTearDown(session.dispose);
 
       final joining = session.connect();
-      await _until(() => http.sent.isNotEmpty);
+      await _until(() => http.requests.isNotEmpty);
       await session.disconnect();
       expect(await joining, isNull, reason: 'a stopped join is not a failed one');
-      expect(http.sent, hasLength(1), reason: 'the fallback is for a breakdown, not for a cancellation');
+      expect(http.requests, hasLength(1), reason: 'the fallback is for a breakdown, not for a cancellation');
       await subscription.cancel();
     });
 
     test('a room that names no broadcast is never polled', () async {
-      final http = _FakeHttp((request, call) => _feed());
+      final http = _replay(['S11-feed-default']);
       final session = _session(http, liveStreamId: '  ');
       expect(await session.connect(), isA<LiveSiteContentUnavailable>());
-      expect(http.sent, isEmpty);
+      expect(http.requests, isEmpty);
 
       await session.dispose();
       expect(await session.connect(), isA<LiveSiteUnsupported>());
     });
 
     test('a body the codec refuses is a failed answer, not a crash', () async {
-      final http = _FakeHttp((request, call) => _feed(result: 2, pull: 10));
+      final http = _replay(['S09-feed-primary-refused', 'S10-feed-backup-refused']);
       final session = _session(http);
       final subscription = session.events.listen((_) {});
       addTearDown(session.dispose);
@@ -281,16 +201,16 @@ void main() {
     });
 
     test('dispose closes the stream and ends the loop', () async {
-      final http = _FakeHttp((request, call) => _feed());
+      final http = _replay(['S11-feed-default']);
       final session = _session(http);
       final closed = Completer<void>();
       final subscription = session.events.listen((_) {}, onDone: closed.complete);
       await session.connect();
-      final sent = http.sent.length;
+      final sent = http.requests.length;
       await session.dispose();
       await closed.future;
       await Future<void>.delayed(const Duration(milliseconds: 1200));
-      expect(http.sent, hasLength(sent), reason: 'nothing is asked after the stream is closed');
+      expect(http.requests, hasLength(sent), reason: 'nothing is asked after the stream is closed');
       await subscription.cancel();
     });
   });
