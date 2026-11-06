@@ -339,6 +339,129 @@ final class BilibiliVodClient {
     return response.text;
   }
 
+  /// The player's own extras for one part (`/x/player/wbi/v2`): the marked
+  /// moments, the subtitle tracks and the scrub filmstrip.
+  ///
+  /// A guest gets the marked moments and little else — the station holds the
+  /// subtitle list and the filmstrip back until the viewer signs in, and the
+  /// answer's own `need_login_subtitle` says so. A refusal or a shape this
+  /// reader does not know answers as an empty extras record rather than a
+  /// failure: the picture plays whether or not the station named its chapters.
+  Future<VodPlayerExtra> playerExtra({required String bvid, required int cid}) async {
+    if (cid <= 0) throw const VodFailure('the part names no cid');
+    try {
+      final query = await _signed({'bvid': bvid, 'cid': '$cid', 'web_location': '1315873'});
+      final response = await http.send(
+        LiveRequest.custom(
+          method: 'GET',
+          url: Uri.https('api.bilibili.com', '/x/player/wbi/v2', query),
+          headers: {..._headers, 'referer': 'https://www.bilibili.com'},
+        ),
+      );
+      final data = _body(response)['data'];
+      if (data is! Map) return const VodPlayerExtra();
+      return _playerExtraOf(data);
+    } on Object {
+      return const VodPlayerExtra();
+    }
+  }
+
+  /// One subtitle track's lines. [url] comes from the track list and is a
+  /// source-signed address, so it is asked exactly as it was given.
+  Future<List<VodSubtitleLine>> subtitleLines(String url) async {
+    if (url.isEmpty) return const [];
+    final uri = Uri.parse(_https(url));
+    final response = await http.send(
+      LiveRequest.custom(method: 'GET', url: uri, headers: {..._headers, 'referer': 'https://www.bilibili.com'}),
+    );
+    if (!response.isOk) throw VodFailure('HTTP ${response.statusCode}', statusCode: response.statusCode);
+    final decoded = jsonDecode(response.text);
+    if (decoded is! Map) return const [];
+    final body = decoded['body'];
+    if (body is! List) return const [];
+    return [
+      for (final line in body)
+        if (line is Map && '${line['content'] ?? ''}'.trim().isNotEmpty)
+          VodSubtitleLine(
+            start: Duration(milliseconds: ((_numOf(line['from']) ?? 0) * 1000).round()),
+            end: Duration(milliseconds: ((_numOf(line['to']) ?? 0) * 1000).round()),
+            text: '${line['content']}'.trim(),
+          ),
+    ];
+  }
+
+  /// The extras read off a player answer's data: [VodPlayerExtra]'s fields in
+  /// the order the station lays them out, each defended against a shape it
+  /// has not sent this time.
+  VodPlayerExtra _playerExtraOf(Map<Object?, Object?> data) {
+    final points = data['view_points'];
+    final subtitle = data['subtitle'];
+    final tracks = subtitle is Map ? subtitle['subtitles'] : null;
+    return VodPlayerExtra(
+      chapters: [for (final point in points is List ? points : const <Object?>[]) ?_chapterOf(point)],
+      subtitles: [for (final track in tracks is List ? tracks : const <Object?>[]) ?_subtitleOf(track)],
+      preview: _seekPreviewOf(data['video_shot']),
+      needsLoginForSubtitles: data['need_login_subtitle'] == true,
+    );
+  }
+
+  /// One marked moment: the station names it and says where it stands, and
+  /// sends its own thumbnail beside it when it has one.
+  static VodChapter? _chapterOf(Object? point) {
+    if (point is! Map) return null;
+    final title = '${point['content'] ?? ''}'.trim();
+    if (title.isEmpty) return null;
+    final from = _intOf(point['from']);
+    if (from == null || from < 0) return null;
+    return VodChapter(
+      title: title,
+      at: Duration(seconds: from),
+      coverUrl: _coverOf(point['imgUrl'] ?? point['img_url']),
+      kind: _intOf(point['type']) ?? 0,
+    );
+  }
+
+  /// One subtitle track: its words live at [VodSubtitleTrack.url], and a
+  /// track the source generated itself is marked so the viewer can tell.
+  static VodSubtitleTrack? _subtitleOf(Object? track) {
+    if (track is! Map) return null;
+    final url = '${track['subtitle_url'] ?? ''}'.trim();
+    if (url.isEmpty) return null;
+    return VodSubtitleTrack(
+      id: '${track['id'] ?? track['id_string'] ?? ''}',
+      language: '${track['lan'] ?? ''}'.trim(),
+      languageName: '${track['lan_doc'] ?? ''}'.trim(),
+      url: url,
+      auto: (_intOf(track['ai_type']) ?? 0) != 0,
+    );
+  }
+
+  /// The scrub filmstrip, and only when the answer says every figure the
+  /// renderer needs and asks the CDN for one frame per address: a template,
+  /// its per-frame crop, a frame's size, its step and its count. A partial
+  /// shape answers null, so the player falls back to the chapter's own
+  /// thumbnail rather than drawing a sheet it was never told the grid of.
+  VodSeekPreview? _seekPreviewOf(Object? shot) {
+    if (shot is! Map) return null;
+    final template = '${shot['img_url_template'] ?? shot['img_url'] ?? ''}'.trim();
+    if (!template.contains('%ST') || !template.contains('@m_')) return null;
+    final width = _intOf(shot['img_width']);
+    final height = _intOf(shot['img_height']);
+    final stepMs = _intOf(shot['timespan']) ?? _intOf(shot['time_span']) ?? 10000;
+    final count = _intOf(shot['total']) ?? (_intOf(shot['x']) ?? 10) * (_intOf(shot['y']) ?? 10);
+    if (width == null || height == null || width <= 0 || height <= 0 || stepMs <= 0 || count <= 0) return null;
+    return VodSeekPreview(
+      template: template,
+      frameWidth: width,
+      frameHeight: height,
+      step: Duration(milliseconds: stepMs),
+      frames: count,
+    );
+  }
+
+  /// A number the source wrote as either shape.
+  static double? _numOf(Object? value) => value is num ? value.toDouble() : double.tryParse('${value ?? ''}'.trim());
+
   /// The headers a search asks with: Bilibili's search endpoint wants the
   /// search site as its referer, and risk-controls a bare request — a guest
   /// gets through once the fingerprint cookies are there.

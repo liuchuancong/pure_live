@@ -713,3 +713,125 @@ final class VodSeasonDetail {
   /// Whether the signed-in viewer follows it.
   final bool followed;
 }
+
+/// One marked moment the station files beside an archive's picture — the
+/// player's own segment list (`view_points`). A live match names its kills,
+/// an edited archive names its chapters; the frame at `coverUrl` is the
+/// station's own picture of that moment.
+final class VodChapter {
+  /// A marked moment.
+  const new({required this.title, required this.at, this.coverUrl, this.kind = 0});
+
+  /// What the station calls the moment.
+  final String title;
+
+  /// Where it happens.
+  final Duration at;
+
+  /// The station's own thumbnail for the moment; null when it sent none.
+  final String? coverUrl;
+
+  /// The source's own segment kind, kept as a number rather than a name
+  /// because the answer labels it only by type and the label shifts between
+  /// events.
+  final int kind;
+}
+
+/// One subtitle track the station offers for a part. Bilibili sends the list
+/// only to a signed-in viewer — the answer's own `need_login_subtitle` says
+/// as much — and an auto-generated track is marked [auto].
+final class VodSubtitleTrack {
+  /// A subtitle track.
+  const new({required this.id, required this.language, required this.languageName, required this.url, this.auto = false});
+
+  /// The source's track id.
+  final String id;
+
+  /// The track's language code (`ai-zh`, `en-US`).
+  final String language;
+
+  /// The language in the viewer's words, as the source names it.
+  final String languageName;
+
+  /// Where the track's lines live; the player asks for it when the viewer
+  /// picks the track, not when the list arrives.
+  final String url;
+
+  /// Whether the source generated the track rather than a person wrote it.
+  final bool auto;
+}
+
+/// One line of a subtitle track, timed to the picture.
+final class VodSubtitleLine {
+  /// A subtitle line.
+  const new({required this.start, required this.end, required this.text});
+
+  /// When the line appears.
+  final Duration start;
+
+  /// When it leaves.
+  final Duration end;
+
+  /// The words.
+  final String text;
+}
+
+/// The filmstrip a player draws under the pointer while it scrubs: one sheet
+/// of equal frames at a fixed step, addressed by the source's own template.
+///
+/// Only a template the reader fully recognises becomes one of these; a shape
+/// it cannot account for stays absent, so the picture falls back to the
+/// chapter's own thumbnail rather than drawing a wrong grid.
+final class VodSeekPreview {
+  /// A recognised sheet template.
+  const new({
+    required this.template,
+    required this.frameWidth,
+    required this.frameHeight,
+    required this.step,
+    required this.frames,
+  });
+
+  /// The source's address, whose `%ST` slot takes a timestamp.
+  final String template;
+
+  /// One frame's width in pixels.
+  final int frameWidth;
+
+  /// One frame's height in pixels.
+  final int frameHeight;
+
+  /// How far apart the frames stand.
+  final Duration step;
+
+  /// How many frames one sheet holds.
+  final int frames;
+
+  /// The sheet frame for [at], or null when the template cannot say.
+  String? urlAt(Duration at) {
+    if (!template.contains('%ST')) return null;
+    final seconds = at.inMilliseconds ~/ step.inMilliseconds;
+    return template.replaceAll('%ST', (seconds * step.inMilliseconds / 1000).toStringAsFixed(2));
+  }
+}
+
+/// What the player's own answer adds to an archive's record: the marked
+/// moments, the subtitle tracks and the scrub filmstrip. Every field is empty
+/// when the station keeps it from this viewer, which is the ordinary answer
+/// for a guest.
+final class VodPlayerExtra {
+  /// The player's extras.
+  const new({this.chapters = const [], this.subtitles = const [], this.preview, this.needsLoginForSubtitles = false});
+
+  /// The archive's marked moments, in the source's order.
+  final List<VodChapter> chapters;
+
+  /// The subtitle tracks on offer, in the source's order.
+  final List<VodSubtitleTrack> subtitles;
+
+  /// The scrub filmstrip, when the source sent a recognisable one.
+  final VodSeekPreview? preview;
+
+  /// Whether the answer said the subtitle list is held back for a guest.
+  final bool needsLoginForSubtitles;
+}

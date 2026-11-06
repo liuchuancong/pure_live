@@ -543,7 +543,113 @@ void main() {
 
     await expectLater(BilibiliVodClient(http).danmakuXml(1), throwsA(isA<VodFailure>()));
   });
+
+  test('the player answer carries its segments, its tracks and its filmstrip', () async {
+    final http = _FakeHttp({
+      '/x/web-interface/nav': _nav,
+      '/x/player/wbi/v2': {
+        'code': 0,
+        'data': {
+          'need_login_subtitle': true,
+          'view_points': [
+            {'type': 1, 'from': 729, 'content': '开始', 'imgUrl': '//i0.hdslb.com/bfs/vchapter/a.jpg'},
+            {'type': 2, 'from': 947, 'content': '第一滴血'},
+            {'type': 3, 'from': 0, 'content': ''},
+          ],
+          'subtitle': {
+            'subtitles': [
+              {
+                'id': 1,
+                'lan': 'ai-zh',
+                'lan_doc': '中文（自动生成）',
+                'subtitle_url': '//subs.bilibili.com/subtitles/1.json',
+                'ai_type': 1,
+              },
+              {'id': 2, 'lan': 'en', 'lan_doc': 'English'},
+            ],
+          },
+          'video_shot': {
+            'img_url_template': 'https://s1.hdslb.com/bfs/spread/T%ST.jpg@m_0,10.00,160,90,0',
+            'img_width': 160,
+            'img_height': 90,
+            'timespan': 10000,
+            'x': 10,
+            'y': 10,
+          },
+        },
+      },
+    });
+
+    final extra = await BilibiliVodClient(http).playerExtra(bvid: 'BV1xx411c7mD', cid: 888);
+
+    expect(extra.chapters.map((chapter) => chapter.title), ['开始', '第一滴血']);
+    expect(extra.chapters.first.at, const Duration(seconds: 729));
+    expect(extra.chapters.first.coverUrl, 'https://i0.hdslb.com/bfs/vchapter/a.jpg');
+    expect(extra.subtitles.single.language, 'ai-zh');
+    expect(extra.subtitles.single.auto, isTrue);
+    expect(extra.needsLoginForSubtitles, isTrue);
+    expect(extra.preview?.urlAt(const Duration(seconds: 35)), contains('T30.00.jpg'));
+  });
+
+  test('a guest player answer is empty extras, not a failure', () async {
+    final http = _FakeHttp({
+      '/x/web-interface/nav': _nav,
+      '/x/player/wbi/v2': {'code': -403, 'message': 'invalid'},
+    });
+
+    final extra = await BilibiliVodClient(http).playerExtra(bvid: 'BV1xx411c7mD', cid: 888);
+
+    expect(extra.chapters, isEmpty);
+    expect(extra.subtitles, isEmpty);
+    expect(extra.preview, isNull);
+  });
+
+  test('an unrecognised filmstrip shape stays out rather than guessing a grid', () async {
+    final http = _FakeHttp({
+      '/x/web-interface/nav': _nav,
+      '/x/player/wbi/v2': {
+        'code': 0,
+        'data': {
+          'video_shot': {'img_url_template': 'https://s1.hdslb.com/bfs/spread/other.jpg', 'img_width': 160},
+        },
+      },
+    });
+
+    final extra = await BilibiliVodClient(http).playerExtra(bvid: 'BV1xx411c7mD', cid: 888);
+
+    expect(extra.preview, isNull);
+  });
+
+  test("a subtitle track's lines come back timed", () async {
+    final http = _FakeHttp({
+      '/subtitles/1.json': {
+        'font_size': 1.0,
+        'body': [
+          {'from': 0.0, 'to': 2.5, 'content': ' first '},
+          {'from': 2.5, 'to': 5.0, 'content': ''},
+          {'from': '5.0', 'to': '7.5', 'content': 'second'},
+        ],
+      },
+    });
+
+    final lines = await BilibiliVodClient(http).subtitleLines('//subs.bilibili.com/subtitles/1.json');
+
+    expect(lines.map((line) => line.text), ['first', 'second']);
+    expect(lines.first.end, const Duration(milliseconds: 2500));
+    expect(lines.last.start, const Duration(seconds: 5));
+  });
 }
+
+/// The nav answer a signed request signs with.
+final Map<String, Object?> _nav = {
+  'code': 0,
+  'data': {
+    'wbi_img': {
+      'img_url': 'https://i0.hdslb.com/bfs/wbi/7cd084941338484aae1ad9425b84077c.png',
+      'sub_url': 'https://i0.hdslb.com/bfs/wbi/4932caff0ff746eab6f01bf08b70ac45.png',
+    },
+  },
+};
 
 /// A transport that answers canned JSON per path — a string answer is sent
 /// as its own body, for the endpoints that serve XML.
