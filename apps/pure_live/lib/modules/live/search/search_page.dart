@@ -235,19 +235,41 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                 onManagePlatforms: managePlatforms,
                 onChanged: chooseScope,
               );
-              if (!narrow) return tabs;
-              // A stacked toolbar hands the platform menu to the shell's head
-              // line; this row keeps the scope tabs alone.
-              publishPageHeadActions(context, ref, NavigationItem.search, [
-                PlatformToolbarMore(
-                  platforms: platforms,
-                  current: scope,
-                  nameOf: _platformName,
-                  onChanged: chooseScope,
-                  onManagePlatforms: managePlatforms,
+              // The target switch leads the head row at its start — the
+              // areas page's own head: its view switch opens the 44 px row
+              // and the platform tabs follow.
+              final targetSwitch = targets.length >= 2
+                  ? _TargetSegments(
+                      targets: targets,
+                      selected: search.target,
+                      onChanged: (target) => unawaited(ref.read(searchProvider.notifier).switchTarget(target)),
+                    )
+                  : null;
+              if (narrow) {
+                // A stacked toolbar hands the platform menu to the shell's
+                // head line; this row keeps the scope tabs alone, and the
+                // target switch stays with the results below.
+                publishPageHeadActions(context, ref, NavigationItem.search, [
+                  PlatformToolbarMore(
+                    platforms: platforms,
+                    current: scope,
+                    nameOf: _platformName,
+                    onChanged: chooseScope,
+                    onManagePlatforms: managePlatforms,
+                  ),
+                ]);
+                return SizedBox(height: 44, child: tabs);
+              }
+              return SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s12,
+                  children: [
+                    ?targetSwitch,
+                    Expanded(child: tabs),
+                  ],
                 ),
-              ]);
-              return SizedBox(height: 44, child: tabs);
+              );
             },
           ),
         ),
@@ -342,7 +364,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               },
             ),
           ),
-        if (targets.length >= 2)
+        // The narrow page keeps the target switch beside the results: its
+        // head row is the scope tabs alone, the areas head's own answer.
+        if (PageLayoutScope.isNarrow(context) && targets.length >= 2)
           Padding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
             child: _TargetSegments(
