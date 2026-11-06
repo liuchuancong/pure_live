@@ -1239,3 +1239,28 @@ P49（平台自己的付费卡配色）与 P50（平台随消息给的表情）�
 | 门（本轮实况） | 同上 | 包级红集中到一家 | **scoped：`dart analyze lib/src/platforms/liveme test/platforms/liveme` = No issues、liveme 目录 33 绿**（本轮 +11）。包级：**`dart test` 2234 绿 / 1 红**（上一轮的 `looklive/` 三条加载红已被他们自己修好；现在唯一一条是 `test/platforms/xiaohongshu/xiaohongshu_danmaku_session_test.dart`）；**`dart analyze lib test` 48 项全部落在 `xiaohongshu/**`**（含 `test/platforms/xiaohongshu/xiaohongshu_directory_test.dart` 的 lint）⇒ 还是他们一家的在飞工程，不是我的改动。 |
 | 队列 | 同上 | **可认领的只剩一档：huya_json（93）** | 其余未钉解析器全在被点名目录里：twitcasting(166)/youtube_json(148)/douyin(131)/cc(128)/xiaohongshu_link(107)/looklive(180)/bigo(188+170)/niconico(92)/acfun(89)。**下轮若 huya 也被认领或做完，第 4 部分就只剩"等他们交完再复核"这一种活**，届时改从别处挑（如把三份 HTML 读者抽公共件——但那要点名，见 P148 整理候选）。 |
 | 计数 | 同上 | **liveme +11** | `dart format` 只跑本轮新建的一个文件；台账这笔按 pathspec。**推送：开工一次红（`Recv failure: Connection was reset`）+ 443 超时一次，收尾第五组合一次推上 `877f060b8..b7b5bcff1`（含上一轮欠的 `65acbcb23`），`ahead 0`；台账这笔紧随其后同一条命令推。** |
+
+## 第八十三轮（2026-11-06）：参考仓换址换上游 + **soop 分配接口的"等 EOF"stall 在我仓同样存在** + huya 读数钉住
+
+**★ 参考仓已经不是原来那个（本轮核实，后面各轮按这条走）**：用户这轮写的是 `E:\study\PureLive`。实测：
+- `E:\study\Pure_live` **已不存在**，新目录 **`E:\study\PureLive`**；
+- 远端也换了：**`https://github.com/wzgrx/PureLive`**（旧的是 `wzgrx/Pure_live.git`）；
+- **历史里没有旧指针 `f00bebd91`**（`git cat-file -t f00bebd91` ⇒ Not a valid object），HEAD 是 `5b203f21 [Y01.44] Sync 5.6.4 update feeds and layered delivery evidence`；
+- 拉取回 `Already up to date` ⇒ **第 5 部分本轮的结论是"上游有大批新提交"而不是"无新条目"**；
+- **旧记忆里"源码停在 5.6.2、releases 只是需求清单、没有可抄代码"这条对新仓不再成立**：最近 8 个提交里 **`packages/live_core` 改了 9 个文件、`packages/live_danmaku` 改了 10 个**（另加 `apps/pure_live` 64 个），是真代码。
+
+**上游新做的四件事 → 落在我仓哪一档（本轮逐条对过）**：
+| 上游提交 | 行为 | 我仓对应 | 车道 |
+|---|---|---|---|
+| `a45f595f [E03.22]` | **RMD 分配接口给完整小 JSON、不给 Content-Length、连接留 ~10 秒 ⇒ 缓冲式发送等 EOF；改成流式读、解析出完整对象就 cancel（8 秒兜底）** | [soop_site.dart:367](file:///D:/flutter/pure_live/packages/live_sites/lib/src/platforms/soop/soop_site.dart#L367) 正是 `http.get(assignUrl)` + `assign.text` 缓冲读，[soop_http.dart:39](file:///D:/flutter/pure_live/packages/live_sites/lib/src/platforms/soop/api/soop_http.dart#L39) 封顶 20 秒 ⇒ **同一条 stall 在我仓存在**，每次取流多等 ~10 秒（这正是第 2 部分"两三秒 vs 十几秒"量级的一个真因） | **soop 在点名目录 ⇒ 本轮只记录不改**（`cancelToken` 我这传输本来就支持，搬法现成） |
+| `5ad011c6 [A15.6]` | 礼物进度聚合 `gift_progress.dart` + douyin/kuaishou 保留礼物连击载荷 | 我仓 douyin/kuaishou 的弹幕档 | douyin/kuaishou 都在点名目录 |
+| `bd781917` | 弹幕属性过滤、`live_message` 属性位 | 我仓 `common/danmaku/filters/{message_filter,text_shape}.dart` | **这两个文件本轮也是 `M`** |
+| `ebd42857` | 小红书游客目录/聊天 | 我仓 xiaohongshu（且它此刻正在被大改，包级 analyze 45 项全在那家） | 别人手里 |
+
+**⇒ 结论：上游这轮的可抄内容，落点全在并行车道正持有的文件里**，所以第 1/2/3 部分照旧不动、第 4 部分本轮仍交付解析层测试；E03.22 那条**等 soop 交完就由我落地**（或由点名我的人现在批）。
+**第 1/2/3 部分其余**：`apps/pure_live/lib/modules/live/**` 仍整片 `M`；`%APPDATA%\com.purelive` 仍无 2026-11-04 之后日志 ⇒ 进房耗时不可实测（但上表那条是**代码级**证据，不依赖日志）。
+
+| P151 | `4c83b4af1` | huya 的**共享读数**钉住（+12 条） | 新 `test/platforms/huya/huya_json_test.dart`（`huya_json.dart` 93 行此前**没有任何 test 提到**）。**这一家最要紧的是它自带一套与公共件同名的读者**（`decodeHtmlEntities`、`normalizeImageUrl`），尺度不一样：①**`jsonInt`** 收整值浮点、不吃 `'30.0'`、`Infinity`/`NaN` 拒、文本先 trim。②**`jsonCount` 要 `> 0`** ⇒ **`0` 读成"没有"**（bilibili/kugoulive/inke 的同类读数里 0 是合法值——跨站抄读法时这条会静默丢在线人数）。③**`jsonString` 不 trim**（`' a '` 原样）、null 给 null。④**`jsonFlag`**：bool 原样、`'true'`/`'false'` 文本、否则走 `jsonInt` 且**只认 1/0**（`2`/`'yes'`/`''`/null ⇒ null）——`isRoomPay` 在 profileRoom 是布尔、在列表是 `"0"`，就是靠这两支。⑤**`jsonUrl` 只要方案不问主机**：http(s)（`isScheme` 大小写不限）、先 trim；**协议相对 `//a.test/x` 与裸 `a.test/x` 都是 null**（没方案）、`ftp:` 拒、`30` 拒。⑥**`jsonObject` 只认 `Map<String,dynamic>` 且给回同一实例**（不重键，与 inke 同族；liveme/sixroom 那两家会重键）；`jsonList` 对 Map/null/文本给空表；`decodeJson` 坏 body / `''` / `'null'` 都 null。⑦**实体解码是"链式 replaceAll"，`&amp;` 排在中间** ⇒ **排在它之后的那几个会被二次解**（`'&amp;lt;'` ⇒ `'<'`、`'&amp;quot;'` ⇒ `'"'`、`'&amp;nbsp;'` ⇒ 空格），**排在它之前的不会**（`'&amp;mdash;'`/`'&amp;ndash;'` 原样留着）——**与 bilibili 的"amp 最后单独一趟"结果正好互补**，也说明"amp 放最后防二次解"这句在 huya 这里不成立；表只有 8 个（`&hellip;` 这种不认识就原样），**数字引用完全不读**（`&#x41;` 原样、只有 `&#39;` 是硬编码的一条）。⑧**`normalizeImageUrl` 是 huya 自己的窄版本**：只把 `//` 补 https，**其余一律原样返回**（`http://` 不升、裸 `a.test/x.png` 原样、根相对 `/x.png` 原样、**带引号的文本不剥、字符串 `'null'` 也原样给回**），非文本走 `toString()`；这与公共 `site_urls.normalizeImageUrl`（会校验主机、会拒垃圾）不同，**别把两者当一个**。⑨**`htmlPageText`** 先把 script/style **成对**块换成一个空格、再把每个标签换成一个空格 ⇒ 被标签隔开的词不会粘成一个（`'a<b>b</b>c'` ⇒ `'a b c'`）、**未闭合的块不整体删除**（`'<script>oops'` ⇒ `'oops'`，标签仍被换掉）；最后走 `jsonSnippet` 的 80 字符截断。⑩`jsonSnippet` 与各家同尺（压平、80 以内原样、81 截 80 加 `…`）。**首跑红 1 条是我自己的算术**（`'a<b>b</b>c'` 我数成 `'a b b c'`，实际每个标签只换一个空格）；另有一处 `dart:convert` 空导入自查。**站点代码零改动。** |
+| 门（本轮实况） | 同上 | 包级测试全绿、lint 仍在别人家 | **scoped：`dart analyze lib/src/platforms/huya test/platforms/huya` = No issues、huya 目录 68 绿**（本轮 +12）。包级：**`dart test` 2247 条全绿**（上一轮那条 xiaohongshu 弹幕会话红已被他们自己修好）；**`dart analyze lib test` 仍有 45 项，全在 `xiaohongshu/**` 与 `built_in_sites.dart`**（他们未收口），我没碰。 |
+| 队列 | 同上 | 解析层未钉的**只剩在别人手里的**了：bigo_studio(188)/looklive_json(180)/bigo_json(170)/twitcasting_html(166)/youtube_json(148)/douyin_json(131)/cc_json(128)/xiaohongshu_link(107)/niconico_json(92)/acfun_json(89) | **下轮起的挑活顺序改为：①先看这些目录有没有交完（交完就接着钉）；②若全在飞，就把力气转向上游新代码的对账（live_core/live_danmaku 的 9+10 档）与 E03.22 这类可量化的 stall，需要点名才动别人文件；③队列在此记死，免得每轮重新量。** |
+| 计数 | 同上 | **huya +12 + 参考仓换址记账** | `dart format` 只跑本轮新建的一个文件；台账这笔按 pathspec。**推送：开工 `ahead 0`（上一轮欠的 P150 台账已在收尾推上），本轮 test `1e98a9842..4c83b4af1` 一次成功、`ahead 0`；台账这笔紧随其后同一条命令推。参考侧本轮两条通道都通（拉 `Already up to date`）。** |
