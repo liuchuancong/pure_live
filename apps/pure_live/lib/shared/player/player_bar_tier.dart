@@ -29,7 +29,7 @@ final class PlayerBarTier extends InheritedWidget {
   /// from the same source as its controls instead of being remembered as a
   /// literal that a tier change silently invalidates.
   static double controlSize(BuildContext context) =>
-      tvOf(context) ? DsTheme.of(context).sizes.lg : DsTheme.of(context).sizes.sm;
+      tvOf(context) ? DsTheme.of(context).sizes.lg : DsTheme.of(context).sizes.md;
 
   @override
   bool updateShouldNotify(PlayerBarTier oldWidget) => tv != oldWidget.tv;

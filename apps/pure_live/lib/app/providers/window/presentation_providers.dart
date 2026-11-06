@@ -303,10 +303,12 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// Leaves whatever mode is active, back to the page's own layout.
   Future<void> exit(PlayerId player) => _exitMode(player);
 
-  /// The F key and the fullscreen button: enter the system fullscreen, or
-  /// leave whichever variant is active.
+  /// The F key and the fullscreen button: enter the system fullscreen from
+  /// anywhere — the driver hands over from the window variant — or leave it
+  /// when that is the variant on. The two variants answer to their own
+  /// buttons only; neither exits the other as a side effect.
   Future<void> toggleFullscreen(PlayerId player) async {
-    if (state != PresentationMode.normal) {
+    if (state == PresentationMode.fullscreen) {
       await _exitMode(player);
     } else {
       await _apply(player, PresentationMode.fullscreen);
@@ -314,9 +316,11 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   }
 
   /// The desktop variant: the picture fills the app window while the window
-  /// stays a window.
+  /// stays a window. Symmetric with [toggleFullscreen]: a press switches
+  /// straight over from the system variant, a press on the active one
+  /// leaves it.
   Future<void> toggleWindowFullscreen(PlayerId player) async {
-    if (state != PresentationMode.normal) {
+    if (state == PresentationMode.windowFullscreen) {
       await _exitMode(player);
     } else {
       await _apply(player, PresentationMode.windowFullscreen);

@@ -1,4 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
+import 'dart:io' show Directory;
 import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -14,6 +15,7 @@ import 'package:live_device/live_device.dart'
     show PlatformBatteryService, PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveRoom, LiveStreamCodec, LiveStreamFormat;
 import 'package:media_core/media_core.dart';
+import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart' show FfmpegDiskSpace;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -1423,7 +1425,7 @@ final class _AmbientBackdrop extends StatelessWidget {
             Transform.scale(
               scale: 1.14,
               child: Image(
-                image: ResizeImage(cachedImage(art, policy: ImageCachePolicies.albumCover), width: _decodeWidth),
+                image: cachedImage(art, policy: ImageCachePolicies.albumCover, width: _decodeWidth),
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
                 errorBuilder: (context, error, stack) => const SizedBox.shrink(),
@@ -1694,6 +1696,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
     final replay = detail?.broadcast.isRecord ?? false;
     final tv = PlayerBarTier.tvOf(context);
     final onTitle = widget.onTitle;
+    final recordingTask = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, detail);
     return LayoutBuilder(
       builder: (context, constraints) {
         // The same floor the control bar uses for its medium tier: below it a
@@ -1728,6 +1731,17 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
               mainAxisAlignment: MainAxisAlignment.end,
               spacing: DsSpace.s8,
               children: [
+                // A running capture leads the row: the red dot, the elapsed
+                // count and the disk's battery, said at the top where the
+                // viewer checks on it without opening the bar.
+                if (recordingTask != null)
+                  _RecordingTopChip(
+                    task: recordingTask,
+                    onStop: () {
+                      widget.onWake();
+                      unawaited(toggleRoomRecording(context, ref));
+                    },
+                  ),
                 // The capture leads the verbs: the reference's row puts the
                 // frame-copy first, then where the picture goes, then the menu.
                 if (widget.canScreenshot && widget.onScreenshot != null)
@@ -1770,6 +1784,16 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                   ),
                 ),
               if (widget.fullscreen) const _PlayerClockBattery(),
+              // A running capture sits at the top here too: the red dot, the
+              // elapsed count and the disk's battery, beside the room's name.
+              if (recordingTask != null)
+                _RecordingTopChip(
+                  task: recordingTask,
+                  onStop: () {
+                    widget.onWake();
+                    unawaited(toggleRoomRecording(context, ref));
+                  },
+                ),
               if (label != null)
                 Expanded(
                   child: onTitle == null
@@ -1918,10 +1942,11 @@ final class _DanmakuBarCluster extends ConsumerWidget {
               width: side,
               height: side,
               alignment: Alignment.center,
+              // The off state is the glyph alone: a ring around it read as a
+              // second button beside the settings gear.
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: on ? theme.colors.accent : const Color(0x00000000),
-                border: on ? null : Border.all(color: const Color(0x59FFFFFF)),
               ),
               child: SvgPicture.asset(
                 'assets/icons/danmaku.svg',
@@ -2110,12 +2135,25 @@ final class _PresentationCluster extends ConsumerWidget {
                 },
               ),
             ),
-          if (showRecord)
+          // A running capture is the red control itself here — the breathing
+          // dot and the elapsed count on the strip, a press ends it — and the
+          // plain disc returns once nothing is writing.
+          if (recording && task != null)
+            RecordingIndicator(
+              startedAt: task.startedAt,
+              figures: task.bytes <= 0 ? null : formatRecordingBytes(task.bytes),
+              tv: tv,
+              label: t.room.stopRecording,
+              onStop: () {
+                onWake();
+                unawaited(toggleRoomRecording(context, ref));
+              },
+            )
+          else if (showRecord)
             PlayerGlassPill(
               child: PlayerBarButton(
                 icon: DsIcons.disc,
-                label: recording ? t.room.stopRecording : t.room.record,
-                selected: recording,
+                label: t.room.record,
                 onPressed: () {
                   onWake();
                   unawaited(toggleRoomRecording(context, ref));
@@ -2693,9 +2731,12 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   unawaited(controller.setMuted(value: !muted));
                 },
               ),
-              if (wide) ...[
+              // The volume slider fits every width but the truly crowded one:
+              // a thumb reaches it the same on a small window as in
+              // fullscreen, so it no longer waits for the wide tier.
+              if (!crowded && !pip) ...[
                 SizedBox(
-                  width: tv ? 140 : 90,
+                  width: tv ? 140 : wide ? 90 : 72,
                   child: DsSlider(
                     value: volume,
                     onChanged: (value) {
@@ -2705,26 +2746,28 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                     semanticLabel: t.room.volume,
                   ),
                 ),
-                // The visit's clock: a live stream has no position, and this
-                // answers "how long have I been here" where a VOD bar would
-                // draw its time. A replay's time is the seek line's own, so
-                // the clock keeps to the live rooms it belongs to.
-                if (!replay) const _WatchElapsed(),
-                // A running capture is said here, beside the transport, as
-                // the reference does: the red dot and the word, the elapsed
-                // count with them, and a press ends it.
-                if (recordingTask != null) ...[
-                  const SizedBox(width: DsSpace.s4),
-                  RecordingIndicator(
-                    startedAt: recordingTask.startedAt,
-                    figures: recordingTask.bytes <= 0 ? null : formatRecordingBytes(recordingTask.bytes),
-                    tv: tv,
-                    label: t.room.stopRecording,
-                    onStop: () {
-                      widget.onWake();
-                      unawaited(toggleRoomRecording(context, ref));
-                    },
-                  ),
+                if (wide) ...[
+                  // The visit's clock: a live stream has no position, and this
+                  // answers "how long have I been here" where a VOD bar would
+                  // draw its time. A replay's time is the seek line's own, so
+                  // the clock keeps to the live rooms it belongs to.
+                  if (!replay) const _WatchElapsed(),
+                  // A running capture is said here, beside the transport, as
+                  // the reference does: the red dot and the word, the elapsed
+                  // count with them, and a press ends it.
+                  if (recordingTask != null) ...[
+                    const SizedBox(width: DsSpace.s4),
+                    RecordingIndicator(
+                      startedAt: recordingTask.startedAt,
+                      figures: recordingTask.bytes <= 0 ? null : formatRecordingBytes(recordingTask.bytes),
+                      tv: tv,
+                      label: t.room.stopRecording,
+                      onStop: () {
+                        widget.onWake();
+                        unawaited(toggleRoomRecording(context, ref));
+                      },
+                    ),
+                  ],
                 ],
               ],
               const Spacer(),
@@ -2790,6 +2833,105 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               ? bar
               : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s4, children: [seekLine, bar]);
         },
+      ),
+    );
+  }
+}
+
+/// The running capture, said at the top of the picture: the breathing dot
+/// and the elapsed count, the bytes it has written, and a battery that
+/// reads how many hours the disk still holds at the pace the take has
+/// actually written at. A press ends it.
+final class _RecordingTopChip extends StatefulWidget {
+  const _RecordingTopChip({required this.task, required this.onStop});
+
+  /// The capture whose facts are shown.
+  final RecordingTask task;
+
+  /// Stops the recording.
+  final VoidCallback onStop;
+
+  @override
+  State<_RecordingTopChip> createState() => _RecordingTopChipState();
+}
+
+final class _RecordingTopChipState extends State<_RecordingTopChip> {
+  Timer? _tick;
+  Timer? _probe;
+  int? _freeBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+    unawaited(_readDisk());
+    _probe = Timer.periodic(const Duration(seconds: 30), (_) => unawaited(_readDisk()));
+  }
+
+  @override
+  void didUpdateWidget(_RecordingTopChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task.filePath != widget.task.filePath) unawaited(_readDisk());
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    _probe?.cancel();
+    super.dispose();
+  }
+
+  /// The free bytes under the take's own directory — the take names the
+  /// drive that matters. A probe shells out, so it runs on entry and at
+  /// most twice a minute, never on every clock tick; a failed probe leaves
+  /// the last reading up, and the battery hides until one lands.
+  Future<void> _readDisk() async {
+    final path = widget.task.filePath;
+    if (path == null || path.isEmpty) return;
+    final directory = Directory(path);
+    final dir = directory.existsSync() ? directory.path : directory.parent.path;
+    try {
+      final free = await FfmpegDiskSpace.probe(dir);
+      if (mounted && free != null) setState(() => _freeBytes = free);
+    } on Object {
+      // The last reading stands.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final task = widget.task;
+    final elapsed = DateTime.now().difference(task.startedAt);
+    // The hours the disk still holds at the take's own pace; a take younger
+    // than a minute has no pace worth quoting, so the battery waits for one.
+    double? hoursLeft;
+    final seconds = elapsed.inSeconds;
+    if (_freeBytes != null && task.bytes > 0 && seconds >= 60) {
+      final perHour = task.bytes * 3600 / seconds;
+      if (perHour > 0) hoursLeft = _freeBytes! / perHour;
+    }
+    return PlayerGlassPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s6,
+        children: [
+          RecordingIndicator(
+            startedAt: task.startedAt,
+            figures: task.bytes <= 0 ? null : formatRecordingBytes(task.bytes),
+            label: context.t.room.stopRecording,
+            onStop: widget.onStop,
+          ),
+          if (hoursLeft != null) ...[
+            const DsIcon(DsIcons.battery, size: 14, color: playerInkMuted),
+            Text(
+              '${hoursLeft.toStringAsFixed(1)}h',
+              style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk)),
+            ),
+          ],
+        ],
       ),
     );
   }

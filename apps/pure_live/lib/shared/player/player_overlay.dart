@@ -14,7 +14,7 @@ const Color playerInk = Color(0xFFFFFFFF);
 /// captured": the live dot on the room's strip and the breathing dot of a
 /// running recording are the same signal, so they carry the same colour.
 const Color playerSignal = Color(0xFFFF3B5C);
-const Color playerInkMuted = Color(0xCCFFFFFF);
+const Color playerInkMuted = Color(0xE6FFFFFF);
 const Color playerInkSubtle = Color(0x99FFFFFF);
 const Color playerInkHover = Color(0x24FFFFFF);
 

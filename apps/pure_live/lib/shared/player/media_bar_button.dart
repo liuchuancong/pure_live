@@ -91,13 +91,11 @@ final class MediaBarButton extends StatelessWidget {
         final focused = states.contains(WidgetState.focused);
         final lit = states.contains(WidgetState.hovered) || focused;
         final corners = theme.radii.controlCorners(null, side);
-        final glyphSide = iconSize ?? theme.sizes.iconSm;
+        final glyphSide = iconSize ?? theme.sizes.iconLg;
         final glyphColor = onDark
             ? !enabled
                   ? const Color(0x66FFFFFF)
-                  : selected
-                  ? playerInk
-                  : const Color(0xCCFFFFFF)
+                  : playerInk
             : !enabled
             ? colors.textSubtle
             : selected
@@ -107,7 +105,11 @@ final class MediaBarButton extends StatelessWidget {
           width: side,
           height: side,
           decoration: DsBoxDecoration(
-            color: lit && enabled ? (onDark ? const Color(0x24FFFFFF) : colors.hover) : null,
+            color: lit && enabled
+                ? (onDark ? const Color(0x24FFFFFF) : colors.hover)
+                : selected && onDark
+                ? const Color(0x2EFFFFFF)
+                : null,
             borderRadius: corners,
           ),
           foregroundDecoration: focusRing && focused && enabled
