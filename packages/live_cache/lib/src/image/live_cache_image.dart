@@ -108,11 +108,8 @@ final class LiveCacheImage extends ImageProvider<LiveCacheImage> {
   Future<void> _pump(LiveCacheImage key, ImageDecoderCallback decode, _CacheImageCompleter completer) async {
     try {
       final result = await key.cache.resolve(key.request);
-      if (completer.isClosed) {
-        return;
-      }
       await _show(result.bytes, key, decode, completer);
-      if (result.isStale && key.request.policy.mode == ImageExpiryMode.staleWhileRevalidate && !completer.isClosed) {
+      if (result.isStale && key.request.policy.mode == ImageExpiryMode.staleWhileRevalidate) {
         unawaited(_refresh(key, decode, completer));
       }
     } on Object catch (error, stack) {
@@ -123,7 +120,7 @@ final class LiveCacheImage extends ImageProvider<LiveCacheImage> {
   Future<void> _refresh(LiveCacheImage key, ImageDecoderCallback decode, _CacheImageCompleter completer) async {
     try {
       final fresh = await key.cache.refresh(key.request);
-      if (fresh == null || completer.isClosed) {
+      if (fresh == null) {
         return;
       }
       await _show(fresh.bytes, key, decode, completer);
@@ -140,24 +137,26 @@ final class LiveCacheImage extends ImageProvider<LiveCacheImage> {
     _CacheImageCompleter completer,
   ) async {
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-    final codec = await decode(
-      buffer,
-      getTargetSize: (intrinsicWidth, intrinsicHeight) {
-        var targetWidth = key.width;
-        var targetHeight = key.height;
-        if (targetWidth != null && targetWidth > intrinsicWidth) {
-          targetWidth = intrinsicWidth;
-        }
-        if (targetHeight != null && targetHeight > intrinsicHeight) {
-          targetHeight = intrinsicHeight;
-        }
-        return ui.TargetImageSize(width: targetWidth, height: targetHeight);
-      },
-    );
-    if (completer.isClosed) {
-      codec.dispose();
-      return;
-    }
+    // A resizing wrapper (`ResizeImage`, the design kit's cover image) hands
+    // this provider a decode callback that refuses a second `getTargetSize`,
+    // so the callback is only used when the caller asked for no box of its
+    // own; with a box the provider decodes at that size itself.
+    final codec = key.width == null && key.height == null
+        ? await decode(buffer)
+        : await ui.instantiateImageCodecWithSize(
+            buffer,
+            getTargetSize: (intrinsicWidth, intrinsicHeight) {
+              var targetWidth = key.width;
+              var targetHeight = key.height;
+              if (targetWidth != null && targetWidth > intrinsicWidth) {
+                targetWidth = intrinsicWidth;
+              }
+              if (targetHeight != null && targetHeight > intrinsicHeight) {
+                targetHeight = intrinsicHeight;
+              }
+              return ui.TargetImageSize(width: targetWidth, height: targetHeight);
+            },
+          );
     if (codec.frameCount > 1) {
       // Flutter's own multi-frame completer owns the codec's lifetime and
       // frame clock; this stream only forwards its images.
@@ -166,7 +165,13 @@ final class LiveCacheImage extends ImageProvider<LiveCacheImage> {
     }
     try {
       final frame = await codec.getNextFrame();
-      completer.emitStatic(ImageInfo(image: frame.image, scale: key.scale));
+      final info = ImageInfo(image: frame.image, scale: key.scale);
+      completer.emitStatic(info);
+      // One enormous picture is drawn but not kept: retaining it would push
+      // every thumbnail out of the decoded-image budget.
+      if (info.sizeBytes > key.cache.config.image.maxMemoryEntryBytes) {
+        key.cache.memory.evict(key);
+      }
     } finally {
       codec.dispose();
     }
@@ -177,8 +182,14 @@ final class LiveCacheImage extends ImageProvider<LiveCacheImage> {
 ///
 /// Static images are emitted directly, so a stale-while-revalidate refresh
 /// replaces the picture in place. Multi-frame images delegate to Flutter's
-/// [MultiFrameImageStreamCompleter], which owns the frame clock; replacing
-/// the sequence starts the new animation from its first frame.
+/// [MultiFrameImageStreamCompleter], which owns the frame clock: this stream
+/// forwards its frames while anybody is watching, and detaches when the last
+/// watcher leaves so the animation pauses instead of burning frames.
+///
+/// Emitting does not wait for a listener. `loadImage` runs before the widget
+/// attaches its own listener, and the framework's image cache holds a
+/// keep-alive on the completer until the first frame lands — the same contract
+/// `OneFrameImageStreamCompleter` relies on.
 final class _CacheImageCompleter extends ImageStreamCompleter {
   new({required this.scale, String? debugLabel}) {
     this.debugLabel = debugLabel;
@@ -188,48 +199,38 @@ final class _CacheImageCompleter extends ImageStreamCompleter {
 
   MultiFrameImageStreamCompleter? _animation;
   ImageStreamListener? _forwarder;
-  bool _closed = false;
-
-  /// Whether the stream went away; late work must not call [setImage].
-  bool get isClosed => _closed || !hasListeners;
+  bool _forwarding = false;
 
   /// Draws one decoded image, replacing any earlier frame sequence.
   void emitStatic(ImageInfo info) {
-    if (isClosed) {
-      info.dispose();
-      return;
-    }
     _stopAnimation();
-    setImage(info);
+    try {
+      setImage(info);
+      // The framework reports a disposed stream by throwing a StateError from
+      // an assert; there is no Exception to catch and the frame has nowhere
+      // to go, so the picture is released here instead.
+      // ignore: avoid_catching_errors
+    } on StateError {
+      info.dispose();
+    }
   }
 
   /// Starts a multi-frame sequence, replacing any earlier one.
   void play(ui.Codec codec) {
-    if (isClosed) {
-      codec.dispose();
-      return;
-    }
     _stopAnimation();
-    final animation = MultiFrameImageStreamCompleter(
+    _animation = MultiFrameImageStreamCompleter(
       codec: Future<ui.Codec>.value(codec),
       scale: scale,
       debugLabel: debugLabel,
     );
-    final forwarder = ImageStreamListener((info, synchronousCall) {
-      if (!_closed) {
-        setImage(info);
-      }
-    });
-    animation.addListener(forwarder);
-    _animation = animation;
-    _forwarder = forwarder;
+    _forwarder = ImageStreamListener((info, synchronousCall) => setImage(info));
+    if (hasListeners) {
+      _attach();
+    }
   }
 
   /// Reports a load failure to the image listener.
   void fail(Object error, StackTrace stack) {
-    if (isClosed) {
-      return;
-    }
     reportError(
       context: ErrorDescription('while loading an image through the disk cache'),
       exception: error,
@@ -239,21 +240,45 @@ final class _CacheImageCompleter extends ImageStreamCompleter {
   }
 
   @override
-  void removeListener(ImageStreamListener listener) {
-    super.removeListener(listener);
-    if (!hasListeners) {
-      _closed = true;
-      _stopAnimation();
+  void addListener(ImageStreamListener listener) {
+    final wasIdle = !hasListeners;
+    super.addListener(listener);
+    if (wasIdle) {
+      _attach();
     }
   }
 
-  void _stopAnimation() {
+  @override
+  void removeListener(ImageStreamListener listener) {
+    super.removeListener(listener);
+    if (!hasListeners) {
+      _detach();
+    }
+  }
+
+  void _attach() {
     final animation = _animation;
     final forwarder = _forwarder;
+    if (animation == null || forwarder == null || _forwarding) {
+      return;
+    }
+    animation.addListener(forwarder);
+    _forwarding = true;
+  }
+
+  void _detach() {
+    final animation = _animation;
+    final forwarder = _forwarder;
+    if (animation == null || forwarder == null || !_forwarding) {
+      return;
+    }
+    animation.removeListener(forwarder);
+    _forwarding = false;
+  }
+
+  void _stopAnimation() {
+    _detach();
     _animation = null;
     _forwarder = null;
-    if (animation != null && forwarder != null) {
-      animation.removeListener(forwarder);
-    }
   }
 }
