@@ -29,6 +29,7 @@ import 'package:pure_live/app/theme/settings/theme_persistence.dart';
 import 'package:pure_live/app/theme/settings/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/app/windows/context/refresh_rate_interaction_scope.dart' show RefreshRateInteractionScope;
 import 'package:pure_live/features/backup/cloud/cloud_callback.dart' show cloudCallbackBindingProvider;
+import 'package:pure_live/features/backup/webdav/webdav_auto_backup_scheduler.dart' show webdavAutoBackupSchedulerProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -143,6 +144,11 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // Only the primary polls: a clone shares the task store, and two
     // windows starting the same task would capture it twice.
     if (ref.read(isPrimaryWindowProvider)) ref.read(recordingLiveMonitorProvider);
+    // The scheduled WebDAV backup keeps its own clock (first check shortly
+    // after start, then every quarter hour while the app runs). Only the
+    // primary uploads: a clone shares the prefs, and two windows would send
+    // the same document twice. The provider starts the schedule itself.
+    if (ref.read(isPrimaryWindowProvider)) ref.read(webdavAutoBackupSchedulerProvider);
     // lxmusic:// links: one listener per process, started with the root so a
     // cold-start link is caught as soon as the dispatcher's dependencies read.
     if (ref.read(isPrimaryWindowProvider)) ref.read(musicDeeplinkBindingProvider).start();

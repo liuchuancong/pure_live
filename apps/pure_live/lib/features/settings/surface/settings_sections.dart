@@ -65,6 +65,7 @@ enum SettingsSection {
   backup(DsIcons.databaseBackup),
   localBackup(DsIcons.folderArchive),
   webdavSync(DsIcons.cloudUpload),
+  webdavAutoBackup(DsIcons.calendarClock),
   webdavHelp(DsIcons.circleQuestionMark),
   cloudBackup(DsIcons.cloud),
   cloudAdmin(DsIcons.users),
@@ -160,6 +161,7 @@ enum SettingsSection {
     SettingsSection.localBackup => t.settings.localBackupTitle,
     SettingsSection.lanSync => t.settings.lanSync,
     SettingsSection.webdavSync => t.settings.webdavSyncTitle,
+    SettingsSection.webdavAutoBackup => t.settings.webdavAutoBackupTitle,
     SettingsSection.webdavHelp => t.settings.webdavHelpTitle,
     SettingsSection.cloudBackup => t.settings.cloudBackupTitle,
     SettingsSection.cloudAdmin => t.settings.cloudAdminTitle,
@@ -245,6 +247,7 @@ enum SettingsSection {
     SettingsSection.localBackup => t.settings.localBackupDescription,
     SettingsSection.lanSync => t.settings.lanSyncDescription,
     SettingsSection.webdavSync => t.settings.webdavSyncDescription,
+    SettingsSection.webdavAutoBackup => t.settings.webdavAutoBackupDescription,
     SettingsSection.webdavHelp => t.settings.webdavHelpDescription,
     SettingsSection.cloudBackup => t.settings.cloudBackupDescription,
     SettingsSection.cloudAdmin => t.settings.cloudAdminDescription,
@@ -319,12 +322,13 @@ enum SettingsSection {
     SettingsSection.playerGuide => SettingsSection.kernel,
     SettingsSection.iptvBrowse || SettingsSection.iptvGroups => SettingsSection.iptv,
     SettingsSection.vodDownload || SettingsSection.vodInterface => SettingsSection.vod,
-    // The help is a page beside the WebDAV one, not under it: the menu
-    // lists the backup, so all three children hang from that row.
+    // The help and the schedule are pages beside the WebDAV one, not under
+    // it: the menu lists the backup, so all four children hang from that row.
     SettingsSection.localBackup ||
     SettingsSection.webdavSync ||
     SettingsSection.lanSync ||
     SettingsSection.webdavHelp ||
+    SettingsSection.webdavAutoBackup ||
     SettingsSection.cloudBackup ||
     SettingsSection.cloudAdmin => SettingsSection.backup,
     SettingsSection.hongguoInterface || SettingsSection.hongguoDownload => SettingsSection.hongguo,
@@ -424,6 +428,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.cloudBackup,
     SettingsSection.cloudAdmin,
     SettingsSection.webdavSync,
+    SettingsSection.webdavAutoBackup,
     SettingsSection.webdavHelp,
     SettingsSection.lanSync,
   ],

@@ -366,6 +366,10 @@ $unbackedAllowed = @{
     "music.sync.server.authCode" = "the server half of the same secret, kept out for the same reason."
     "music.sync.keyInfo" = "key material for the sync cipher; a backup of it would be a backup of the pair's secrets."
     "music.sync.server.devices" = "the paired machines' keys, which only they may hold."
+    "backup.webdav.auto.lastSuccess" = "the scheduled WebDAV backup's own run record of this device — when it last uploaded; another machine's schedule starts fresh."
+    "backup.webdav.auto.lastAttempt" = "the run record's last attempt, the backoff's anchor; device-local like lastSuccess."
+    "backup.webdav.auto.failures" = "the run record's consecutive failures; device-local like lastSuccess."
+    "backup.webdav.auto.lastTarget" = "the run record's target fingerprint of the last success; device-local like lastSuccess."
 }
 
 foreach ($key in ($observedKinds.Keys | Sort-Object)) {

@@ -10,11 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart'
-    show BackupDocumentEmpty, BackupRecordingsBusy, backupSummaryProvider;
+    show BackupDocumentEmpty, BackupRecordingsBusy, BackupRestoreBusy, backupSummaryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart'
     show applyBackup, captureBackupDocument, formatBackupSize, formatBackupTime, includeSecretsAllowed, webDavClientFor;
-import 'package:pure_live/features/backup/panes/backup_section_picker.dart'
-    show backupSectionsSummary, showBackupSectionPicker;
+import 'package:pure_live/features/backup/panes/backup_section_picker.dart' show showBackupSectionPicker;
+import 'package:pure_live/features/backup/panes/restore_preview_dialog.dart'
+    show pickAndPreviewRestore, restoreInProgress;
 import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
 import 'package:pure_live/features/backup/webdav/webdav_client.dart';
 import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webDavVault;
@@ -509,6 +510,12 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
 
   Future<void> _restore(WebDavEntry entry) async {
     final t = context.t;
+    // A restore another page started is still writing: say so before the
+    // file is even read.
+    if (restoreInProgress(ref)) {
+      _toast(t.backup.restoreBusy);
+      return;
+    }
     final bytes = await _readBytes(entry);
     if (bytes == null || !mounted) return;
     final decoded = BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
@@ -516,34 +523,23 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
       _toast(t.backup.importBadData, status: DsStatus.danger);
       return;
     }
-    final sections = await showBackupSectionPicker(
+    // The section picker and the preview that says what actually changes
+    // replace the old totals-only confirm; the safe choice comes first.
+    final document = await pickAndPreviewRestore(
       context,
+      ref,
+      document: decoded,
+      name: entry.name,
       title: t.backup.pickRestoreTitle(name: entry.name),
-      confirmLabel: t.backup.webdavRestore,
-      available: decoded.presentSections,
-      initial: decoded.presentSections,
-      counts: {for (final section in decoded.presentSections) section: decoded.countOf(section)},
-      secretsAllowed: includeSecretsAllowed(),
-      note: t.backup.pickRestoreNote,
     );
-    if (sections == null || !mounted) return;
-    final document = decoded.only(sections);
-    final summary = backupSectionsSummary(t, {
-      for (final section in document.presentSections) section: document.countOf(section),
-    });
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.backup.webdavRestoreTitle(name: entry.name),
-      description: '${t.backup.webdavRestoreDesc}\n$summary',
-      confirmLabel: t.common.confirm,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
+    if (document == null || !mounted) return;
     // The restore's refusals are messages the viewer can act on, not a
     // transport failure; anything else keeps the server-error wording.
     try {
       await applyBackup(ref, document);
+    } on BackupRestoreBusy {
+      if (mounted) _toast(t.backup.restoreBusy, status: DsStatus.danger);
+      return;
     } on BackupRecordingsBusy {
       if (mounted) _toast(t.backup.restoreRecordingsBusy, status: DsStatus.danger);
       return;
@@ -982,6 +978,11 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
               onPressed: () {
                 if (enabled) unawaited(_uploadBackup(preset: BackupSection.followsOnly));
               },
+            ),
+            DsMenuItem(
+              label: Text(t.backup.webdavAutoMenu),
+              leading: const DsIcon(DsIcons.calendarClock),
+              onPressed: () => openSettingsChild(context, ref, SettingsSection.webdavAutoBackup),
             ),
             const DsMenuDivider(),
             DsMenuItem(

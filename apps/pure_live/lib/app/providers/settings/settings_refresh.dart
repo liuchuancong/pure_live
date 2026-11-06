@@ -150,6 +150,8 @@ final List<ProviderOrFamily> kSettingsProviders = [
   searchHistoryProvider,
   searchExcludedProvider,
   webdavAccountsProvider,
+  webdavAutoBackupSettingsProvider,
+  webdavAutoBackupMetaProvider,
   autoShutdownProvider,
   navMenuProvider,
   sitesDisplayProvider,

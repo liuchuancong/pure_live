@@ -72,6 +72,7 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
             SettingsChildEntry(child: SettingsSection.localBackup),
             SettingsChildEntry(child: SettingsSection.cloudBackup),
             SettingsChildEntry(child: SettingsSection.webdavSync),
+            SettingsChildEntry(child: SettingsSection.webdavAutoBackup),
             SettingsChildEntry(child: SettingsSection.lanSync),
           ],
         ),

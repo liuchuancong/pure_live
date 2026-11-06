@@ -67,6 +67,23 @@ final class WebDavEntry {
   final DateTime? modified;
 }
 
+/// The verbs the scheduled WebDAV backup drives a server with. The real
+/// client below is the one implementation; the service speaks to this
+/// surface so a test can hand its own recording drive.
+abstract interface class WebDavBackupDrive {
+  /// Makes every level of [segments] below the root, in order.
+  Future<void> ensureFolder(List<String> segments);
+
+  /// Writes [bytes] at [path], replacing what is there.
+  Future<void> writeFile(String path, List<int> bytes);
+
+  /// Lists [path] (the root when not given).
+  Future<List<WebDavEntry>> list({String path});
+
+  /// Deletes one entry.
+  Future<void> delete(WebDavEntry entry);
+}
+
 /// One WebDAV account's server, rooted at the collection the viewer named.
 ///
 /// The protocol work belongs to `webdav_client_plus`; what is kept here is the
@@ -77,7 +94,7 @@ final class WebDavEntry {
 /// The proxy is not this client's business: it builds a `dart:io` HTTP client,
 /// and the app-wide `HttpOverrides` installed at start-up is what points that
 /// client at the proxy the viewer configured.
-final class WebDavBackupClient {
+final class WebDavBackupClient implements WebDavBackupDrive {
   /// The client for [url] (the collection the backup lives in), signed with
   /// [username] and [password]. An empty [username] means an anonymous server.
   WebDavBackupClient({required String url, required String username, required String password})
@@ -105,6 +122,7 @@ final class WebDavBackupClient {
 
   /// Lists [path] (the root when null): folders first, then files, each group
   /// in the server's own order.
+  @override
   Future<List<WebDavEntry>> list({String path = root}) async {
     final files = await _guard(() => _client.readDir(path));
     final entries = [
@@ -128,12 +146,28 @@ final class WebDavBackupClient {
   Future<Uint8List> readFile(String path) => _guard(() => _client.read(path));
 
   /// Writes [bytes] at [path], replacing what is there.
+  @override
   Future<void> writeFile(String path, List<int> bytes) =>
       _guard(() => _client.write(path, bytes is Uint8List ? bytes : Uint8List.fromList(bytes)));
 
   /// Creates a folder; the parent must already exist, which is what the
   /// browser's own error message is for.
   Future<void> createFolder(String path) => _guard(() => _client.mkdir(path));
+
+  /// Makes every level of [segments] below the root, in order, so a nested
+  /// folder exists before a scheduled upload writes into it. A level that
+  /// is already there is accepted (the server answers 405, which the client
+  /// treats as created); the first level that cannot be made throws.
+  @override
+  Future<void> ensureFolder(List<String> segments) async {
+    final path = StringBuffer();
+    for (final segment in segments) {
+      path
+        ..write('/')
+        ..write(segment);
+      await createFolder(path.toString());
+    }
+  }
 
   /// Moves [from] to [to] — a rename when only the last segment changes.
   ///
@@ -159,6 +193,7 @@ final class WebDavBackupClient {
 
   /// Deletes one entry. A collection's path keeps its trailing slash, which
   /// several servers insist on.
+  @override
   Future<void> delete(WebDavEntry entry) =>
       _guard(() => _client.remove(entry.isDirectory ? '${entry.path}/' : entry.path));
 

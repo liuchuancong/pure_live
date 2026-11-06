@@ -444,6 +444,16 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.webdavSync, t.backup.webdavUpload, 'webdav upload 上传 备份'),
     _hit(SettingsSection.webdavSync, t.backup.webdavDownloadToLocal, 'webdav download restore 下载 恢复'),
     _hit(
+      SettingsSection.webdavAutoBackup,
+      s.webdavAutoBackupTitle,
+      'webdav scheduled automatic backup interval retention 定时 自动 备份 间隔 保留',
+    ),
+    _hit(
+      SettingsSection.webdavAutoBackup,
+      t.backup.webdavAutoRunNow,
+      'webdav back up now interval keep folder 自动备份 立即 间隔 保留 文件夹',
+    ),
+    _hit(
       SettingsSection.cloudBackup,
       s.cloudBackupTitle,
       'cloud backup firebase sign in email github upload download 云端 备份 登录 邮箱 上传 下载',

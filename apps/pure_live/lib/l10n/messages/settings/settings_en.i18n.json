@@ -1412,6 +1412,8 @@
   "cloudAdminDescription": "Admins list accounts and grant or revoke uploads.",
   "webdavHelpTitle": "WebDAV help",
   "webdavHelpDescription": "Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.",
+  "webdavAutoBackupTitle": "Scheduled backup",
+  "webdavAutoBackupDescription": "Uploads a backup to a WebDAV account on an interval and prunes the old copies to a count.",
   "lanSync": "LAN sync",
   "lanSyncDescription": "Sync follows, history, settings and more with devices on the same network, picked and granted per content.",
   "lanSyncEnable": "Enable LAN sync",

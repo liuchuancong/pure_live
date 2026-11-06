@@ -514,6 +514,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.localBackup => const LocalBackupPane(),
       SettingsSection.lanSync => const LanSyncPane(),
       SettingsSection.webdavSync => const WebDavFileManager(),
+      SettingsSection.webdavAutoBackup => const WebDavAutoBackupPane(),
       SettingsSection.webdavHelp => const WebDavHelpPage(),
       SettingsSection.cloudBackup => const CloudBackupPane(),
       SettingsSection.cloudAdmin => const CloudAdminPane(),

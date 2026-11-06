@@ -1412,6 +1412,8 @@
   "cloudAdminDescription": "管理员查看账号、授予或撤销上传权限。",
   "webdavHelpTitle": "WebDAV 帮助",
   "webdavHelpDescription": "以坚果云为例：注册、生成应用密码、填写参数与常见问题。",
+  "webdavAutoBackupTitle": "定时自动备份",
+  "webdavAutoBackupDescription": "按设定间隔把备份自动上传到 WebDAV 账号，按份数清理旧备份。",
   "lanSync": "局域网同步",
   "lanSyncDescription": "与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。",
   "lanSyncEnable": "启用局域网同步",
