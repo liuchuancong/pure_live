@@ -59,7 +59,8 @@ abstract final class KuaishouPlayParser {
   }
 
   /// The lines of the quality [qualityId] in [playUrls] (the quality with the
-  /// same id; else the next lower one, else the highest), received at
+  /// same id; else the next lower one; an id older than every current tier
+  /// answers the lowest, no id the highest), received at
   /// [issuedAt] for streamer [roomId]. Lines keep one codec (the first known
   /// one), carry the media headers with the user's [cookie], the CDN host as
   /// the line label and the lease of their signature. An empty list means the
@@ -230,7 +231,9 @@ abstract final class KuaishouPlayParser {
   }
 
   /// The tier with [qualityId]'s key, else the next lower one (H.265-only tiers
-  /// only when there is nothing else), else the highest.
+  /// only when there is nothing else). An id older than every current tier —
+  /// a retired quality kept in a stored preference — names "smaller", not
+  /// "best", and answers the lowest tier; no id at all keeps the highest.
   static _Tier _choose(List<_Tier> tiers, String? qualityId) {
     final id = qualityId?.trim() ?? '';
     for (final tier in tiers) {
@@ -239,6 +242,7 @@ abstract final class KuaishouPlayParser {
     final pool = tiers.where((tier) => !tier.hevcOnly).toList();
     final candidates = pool.isEmpty ? tiers : pool;
     final wanted = _sortOfKey(id);
+    if (id.isNotEmpty && candidates.every((tier) => tier.sort > wanted)) return candidates.last;
     for (final tier in candidates) {
       if (tier.sort <= wanted) return tier;
     }

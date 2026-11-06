@@ -113,7 +113,7 @@ abstract final class LiveQualityLabel {
     if (shortSide >= 720) return '720P 清晰';
     if (shortSide >= 480) return '480P 流畅';
     if (shortSide >= 360) return '360P 极速';
-    return '$shortSide P';
+    return '${shortSide}P';
   }
 
   static String _bitrateLabel(int bitsPerSecond) {

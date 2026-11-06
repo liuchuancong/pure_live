@@ -124,8 +124,11 @@ abstract final class KickEndpoints {
   /// The full page URL of a channel slug (the resolver's canonical answer).
   static Uri roomPage(String slug) => Uri.parse(roomPageUrl(slug));
 
-  /// Kick's Pusher app key, as the web client sends it.
-  static const String pusherAppKey = '32cbd69e4b950bf97679';
+  /// Kick's Pusher app key, as the web client sends it. Kick rotated the
+  /// key in 2026-10; the stale one is refused with "not in this cluster",
+  /// which read like a dead socket. The live key is also discoverable from
+  /// the per-channel chat-connection info on web.kick.com.
+  static const String pusherAppKey = '34bf7a0ff419a2a775b9';
 
   /// Kick's Pusher endpoint: the US2 socket of Kick's own app (protocol 7,
   /// the web client's `pusher-js` version).

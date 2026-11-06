@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
+import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/platforms/kuaishou/danmaku/kuaishou_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_play_parser.dart';
 import 'package:test/test.dart';
 
 Map<Object?, Object?> _comment({
@@ -153,6 +155,39 @@ void main() {
       final audience = message.payload! as LiveAudienceUpdate;
       expect(audience.kind, LiveAudienceSignalKind.onlineViewers);
       expect(audience.value, 2472);
+    });
+  });
+
+  group('play lines', () {
+    final playUrls = {
+      'h264': {
+        'adaptationSet': {
+          'representation': [
+            {'level': 2000, 'name': '蓝光', 'url': 'https://best.example/live.flv'},
+            {'level': 1000, 'name': '流畅', 'url': 'https://low.example/live.flv'},
+          ],
+        },
+      },
+    };
+
+    LivePlayLine pick({Object? qualityId}) => KuaishouPlayParser.lines(
+      playUrls,
+      roomId: 'r1',
+      issuedAt: DateTime(2026),
+      qualityId: qualityId?.toString(),
+    ).single;
+
+    test('a stored id older than every tier answers the lowest quality, not the best', () {
+      expect(pick(qualityId: '标清').lineLabel, 'low.example');
+    });
+
+    test('no id keeps the best-first default', () {
+      expect(pick().lineLabel, 'best.example');
+    });
+
+    test('the next lower tier answers a missing middle id', () {
+      expect(pick(qualityId: '蓝光\x002000').lineLabel, 'best.example');
+      expect(pick(qualityId: '高清\x001500').lineLabel, 'low.example');
     });
   });
 }
