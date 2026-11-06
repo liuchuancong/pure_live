@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/painting.dart'
+    show ImageConfiguration, ImageInfo, ImageProvider, ImageStreamListener, PaintingBinding, ResizeImage;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_cache/live_cache.dart';
 import 'package:live_net/live_net.dart';
@@ -99,6 +101,32 @@ Future<File?> _firstImage(Directory root) async {
     }
   }
   return null;
+}
+
+/// Resolves [provider] the way a widget does and answers its first frame.
+///
+/// This is the regression guard for a stream that never emits: a completer
+/// that mistakes "no listener yet" for "disposed" drops the only frame the
+/// caller ever gets, and the picture stays a placeholder forever.
+Future<ImageInfo> _firstFrame(ImageProvider<Object> provider) {
+  PaintingBinding.instance.imageCache.clear();
+  final stream = provider.resolve(ImageConfiguration.empty);
+  final done = Completer<ImageInfo>();
+  late final ImageStreamListener listener;
+  listener = ImageStreamListener(
+    (info, synchronousCall) {
+      if (!done.isCompleted) {
+        done.complete(info);
+      }
+    },
+    onError: (error, stack) {
+      if (!done.isCompleted) {
+        done.completeError(error, stack);
+      }
+    },
+  );
+  stream.addListener(listener);
+  return done.future.timeout(const Duration(seconds: 10)).whenComplete(() => stream.removeListener(listener));
 }
 
 void main() {
@@ -399,6 +427,93 @@ void main() {
     });
   });
 
+  group('derived files and targeted cleanup', () {
+    test('bytes the caller produced are stored and found again', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+
+      final stored = await manager.image.putBytes(
+        identity: 'converted:cover-1',
+        policy: ImageCachePolicies.liveRoomDetail,
+        bytes: _png,
+      );
+      expect(stored, isNotNull);
+      expect(await stored!.exists(), isTrue);
+      expect(http.requests, 0);
+
+      final found = await manager.image.existingFile(
+        identity: 'converted:cover-1',
+        policy: ImageCachePolicies.liveRoomDetail,
+      );
+      expect(found?.path, stored.path);
+
+      await manager.dispose();
+    });
+
+    test('an expired derived file is not served', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      final policy = ImageCachePolicies.liveRoomDetail.copyWith(ttl: const Duration(milliseconds: 10));
+      await manager.initialize();
+
+      await manager.image.putBytes(identity: 'converted:cover-2', policy: policy, bytes: _png);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(await manager.image.existingFile(identity: 'converted:cover-2', policy: policy), isNull);
+
+      await manager.dispose();
+    });
+
+    test('clearImages leaves partial writes; clearAll takes them too', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+      await manager.image.resolve(_request('cover.png'));
+
+      final temporary = Directory(p.join(root.path, 'live_cache', 'temporary'));
+      final part = File(p.join(temporary.path, 'cover.img.9.part'))..writeAsBytesSync([1, 2, 3]);
+
+      final images = await manager.clearImages();
+      expect(images.removedFiles, 1);
+      expect(part.existsSync(), isTrue);
+
+      final all = await manager.clearAll();
+      expect(all.removedFiles, 1);
+      expect(part.existsSync(), isFalse);
+
+      await manager.dispose();
+    });
+
+    test('a category clear leaves the other categories alone', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+      await manager.image.resolve(_request('cover.png', policy: ImageCachePolicies.liveRoomCover));
+      await manager.image.resolve(_request('face.png', policy: ImageCachePolicies.avatar));
+
+      final result = await manager.clearByCategory(ImageCacheCategories.liveRoomCover);
+      expect(result.removedFiles, 1);
+      expect(manager.image.imageStatistics().categories.map((row) => row.category), [ImageCacheCategories.avatar]);
+
+      await manager.dispose();
+    });
+
+    test('invalidating a category keeps the bytes but ages them', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+      await manager.image.resolve(_request('cover.png', policy: ImageCachePolicies.liveRoomCover));
+
+      await manager.image.invalidateByCategory(ImageCacheCategories.liveRoomCover);
+      final stale = await manager.image.resolve(_request('cover.png', policy: ImageCachePolicies.liveRoomCover));
+      expect(stale.source, CacheSource.disk);
+      expect(stale.isStale, isTrue);
+      expect(http.requests, 1);
+
+      await manager.dispose();
+    });
+  });
+
   group('API memory cache', () {
     test('TTL, LRU and capacity', () async {
       final cache =
@@ -431,6 +546,24 @@ void main() {
   });
 
   group('image provider', () {
+    test('the decoded-image budget follows the configuration', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(
+        root,
+        http,
+        image: const ImageCacheConfig(autoClean: false, maxMemoryBytes: 64 * 1024 * 1024),
+      );
+      await manager.initialize();
+      expect(PaintingBinding.instance.imageCache.maximumSizeBytes, 64 * 1024 * 1024);
+
+      await manager.updateConfig(
+        manager.config.copyWith(image: const ImageCacheConfig(maxMemoryBytes: 32 * 1024 * 1024)),
+      );
+      expect(PaintingBinding.instance.imageCache.maximumSizeBytes, 32 * 1024 * 1024);
+
+      await manager.dispose();
+    });
+
     test('the same request and decode box are one key', () {
       final http = _FakeImageHttp();
       final manager = _manager(root, http);
@@ -440,6 +573,65 @@ void main() {
       expect(first, second);
       expect(first.hashCode, second.hashCode);
       expect(first, isNot(LiveCacheImage(cache: manager.image, request: request, width: 64)));
+    });
+
+    test('a cover reaches the listener on the first resolve', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+
+      final info = await _firstFrame(LiveCacheImage(cache: manager.image, request: _request('cover.png')));
+      expect(info.image.width, 1);
+      expect(http.requests, 1);
+
+      await manager.dispose();
+    });
+
+    test('a picture through a resizing wrapper reaches the listener', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+
+      final provider = LiveCacheImage(
+        cache: manager.image,
+        request: _request('face.png', policy: ImageCachePolicies.avatar),
+      );
+      final info = await _firstFrame(ResizeImage(provider, width: 80));
+      expect(info.image.width, 1);
+
+      await manager.dispose();
+    });
+
+    test('a decode box reaches the listener', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+
+      final info = await _firstFrame(
+        LiveCacheImage(
+          cache: manager.image,
+          request: _request('emote.png', policy: ImageCachePolicies.chatEmote),
+          width: 64,
+          height: 64,
+        ),
+      );
+      expect(info.image.width, 1);
+
+      await manager.dispose();
+    });
+
+    test('the second resolve is served from disk, not the network', () async {
+      final http = _FakeImageHttp();
+      final manager = _manager(root, http);
+      await manager.initialize();
+
+      await _firstFrame(LiveCacheImage(cache: manager.image, request: _request('cover.png')));
+      expect(http.requests, 1);
+      final again = await _firstFrame(LiveCacheImage(cache: manager.image, request: _request('cover.png')));
+      expect(again.image.width, 1);
+      expect(http.requests, 1);
+
+      await manager.dispose();
     });
   });
 }
