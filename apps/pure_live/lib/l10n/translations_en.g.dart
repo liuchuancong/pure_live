@@ -3169,11 +3169,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get musicEqDescription => 'The master switch, presets, the ten-band equalizer and its preamp.';
 	@override String get musicDesktopLyricDescription => 'The floating lyric\'s switch, lock, font, colour and alignment.';
 	@override String get vodQuality => 'Default quality';
-	@override String get vodQualityDesc => 'Quality a video opens with; signed-out Bilibili may cap at 720P.';
+	@override String get vodQualityDesc => 'The definition a video is asked for. Only the tiers the source grants appear in its menu: 720P for a guest, 1080P once signed in, and the high-bitrate, high-frame-rate, 4K, HDR, Dolby and 8K tiers for a paid membership.';
 	@override String get vodQuality720 => '720P';
 	@override String get vodQuality1080 => '1080P';
 	@override String get vodQuality1080Plus => '1080P+';
 	@override String get vodQuality4K => '4K';
+	@override String get vodQuality8K => '8K';
+	@override String get vodQualityDolby => 'Dolby Vision';
+	@override String get vodQualityHdr => 'HDR';
+	@override String get vodQuality1080P60 => '1080P60';
 	@override String get vodDownloadTitle => 'Video downloads';
 	@override String get vodDownloadDescription => 'The station\'s download tasks, lanes and save folder.';
 	@override String get iptvGuideUpdates => 'Guide updates';
@@ -7920,11 +7924,15 @@ extension on TranslationsEn {
 			'settings.musicEqDescription' => 'The master switch, presets, the ten-band equalizer and its preamp.',
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
 			'settings.vodQuality' => 'Default quality',
-			'settings.vodQualityDesc' => 'Quality a video opens with; signed-out Bilibili may cap at 720P.',
+			'settings.vodQualityDesc' => 'The definition a video is asked for. Only the tiers the source grants appear in its menu: 720P for a guest, 1080P once signed in, and the high-bitrate, high-frame-rate, 4K, HDR, Dolby and 8K tiers for a paid membership.',
 			'settings.vodQuality720' => '720P',
 			'settings.vodQuality1080' => '1080P',
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
+			'settings.vodQuality8K' => '8K',
+			'settings.vodQualityDolby' => 'Dolby Vision',
+			'settings.vodQualityHdr' => 'HDR',
+			'settings.vodQuality1080P60' => '1080P60',
 			'settings.vodDownloadTitle' => 'Video downloads',
 			'settings.vodDownloadDescription' => 'The station\'s download tasks, lanes and save folder.',
 			'settings.iptvGuideUpdates' => 'Guide updates',
@@ -8411,12 +8419,12 @@ extension on TranslationsEn {
 			'settings.windowsPipMinWidth' => 'Small window minimum width',
 			'settings.windowsPipMinWidthDesc' => 'Smallest width the compact window can be dragged to, range 100–320; applies only while compact and restores the app window\'s normal floor on exit.',
 			'settings.windowsPipMinHeight' => 'Small window minimum height',
+			_ => null,
+		} ?? switch (path) {
 			'settings.windowsPipMinHeightDesc' => 'Smallest height the compact window can be dragged to, range 60–240; applies only while compact and restores the app window\'s normal floor on exit.',
 			'settings.fullscreenDefault' => 'Auto Full Screen',
 			'settings.fullscreenDefaultDesc' => 'When enter live play, auto into full screen',
 			'settings.portraitSwipeSwitch' => 'Swipe between rooms in portrait',
-			_ => null,
-		} ?? switch (path) {
 			'settings.portraitSwipeSwitchDesc' => 'In the portrait full screen, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.',
 			'settings.keepScreenOn' => 'Keep the screen awake while playing',
 			'settings.keepScreenOnDesc' => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.',
@@ -8925,12 +8933,12 @@ extension on TranslationsEn {
 			'toolbox.linkEmpty' => 'Paste a link first',
 			'toolbox.linkUnsupported' => 'This link is not recognised; the platform is not supported yet.',
 			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkFailed' => 'The resolve failed; try again later.',
 			'toolbox.linkCopyDone' => 'Room link copied',
 			'toolbox.linkCopyFailed' => 'Copy failed',
 			'toolbox.linkSupportTitle' => 'Supported platforms',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkSupportHint' => 'Room links of these platforms resolve and open directly.',
 			'toolbox.networkSiteLabel' => 'Choose a platform',
 			'toolbox.networkRun' => 'Run the check',

@@ -22,6 +22,8 @@ export 'pages/vod_search_page.dart';
 export 'pages/vod_season_page.dart';
 export 'pages/vod_settings_pane.dart';
 export 'pages/vod_video_page.dart';
+export 'widgets/vod_media_source.dart';
+export 'widgets/vod_picture_gestures.dart';
 export 'widgets/vod_player_chrome.dart';
 export 'widgets/vod_toolbar.dart';
 export 'widgets/vod_widgets.dart';

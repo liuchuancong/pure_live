@@ -4,7 +4,6 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
-import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
@@ -35,7 +34,9 @@ import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/controller/vod_social.dart' show VodCommentsController, vodCommentsProvider;
-import 'package:pure_live/modules/vod/widgets/vod_media_source.dart' show vodDashSourceOf;
+import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
+    show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
+import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar, VodSubtitleLayer;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
@@ -61,7 +62,9 @@ final class VodVideoPage extends ConsumerStatefulWidget {
 }
 
 final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAware, WidgetsBindingObserver {
-  /// The progressive mp4's default qn (720P); the source may serve lower.
+  /// The tier a part opens with before the station's own preference is read
+  /// in `initState`. This is a choice about what plays; the number the source
+  /// is asked with is the whole ladder, and lives with it.
   static const int _defaultQn = 64;
 
   VodDetail? _detail;
@@ -80,6 +83,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   DanmakuPlayerBinding? _danmakuBinding;
   int _danmakuCid = 0;
   int _qn = _defaultQn;
+
+  /// The definition actually opened, which the source may answer below what
+  /// was asked: the ladder the account is entitled to is the ceiling, and a
+  /// bar that named the request rather than the answer would be selling a
+  /// picture nobody is watching.
+  int _openedQn = _defaultQn;
+  String? _openedLabel;
   PlayerHandle? _handle;
   PlayerId? _boundPlayer;
   final FocusNode _playFocus = FocusNode(debugLabel: 'vod-play');
@@ -137,10 +147,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// five seconds once, then ten, then twenty, so a long skip is one key.
   double _seekStep = 5;
   DateTime? _lastSeekKey;
-
-  /// Where the picture's last double tap landed, so the second tap can say
-  /// which third of it was tapped without asking the pointer again.
-  double? _doubleTapX;
 
   /// The horizontal drag on the picture: where it started from, how far it
   /// has walked, and where that stands, so the release seeks once rather than
@@ -504,14 +510,20 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       final appClient = ref.read(vodAppClientProvider);
       final aid = _detail?.aid ?? 0;
       VodPlayInfo info;
+      // The tier the viewer asked for this part: the ladder ask is the
+      // source's business (it names the whole ladder so the menu can list
+      // what the account is entitled to), and this number chooses which
+      // rendition of that ladder is opened.
+      final want = qn ?? _qn;
+      _qn = want;
       if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null && aid > 0) {
         try {
-          info = await appClient.playUgc(aid: aid, cid: part.cid, qn: qn ?? _qn);
+          info = await appClient.playUgc(aid: aid, cid: part.cid);
         } on Object {
-          info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
+          info = await client.playPart(bvid: widget.bvid, cid: part.cid);
         }
       } else {
-        info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
+        info = await client.playPart(bvid: widget.bvid, cid: part.cid);
       }
       if (!mounted || _disposed) return;
       final existing = _handle;
@@ -531,7 +543,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _handle = handle;
       _bind(handle);
       await _applyEngineOptions(handle);
-      final dash = vodDashSourceOf(info, maxQuality: qn ?? _qn);
+      // What plays, and what the bar therefore says plays: the rendition at or
+      // below the viewer's tier that this engine can be handed, named by the
+      // answer's own list rather than by a table of ours.
+      final picture = vodDashVideoOf(info, maxQuality: want);
+      _openedQn = picture?.quality ?? info.servedQuality ?? want;
+      _openedLabel = vodQualityLabel(info, _openedQn) ?? info.quality;
+      final dash = vodDashSourceOf(info, maxQuality: want);
       if (dash != null) {
         try {
           await handle.openMedia(dash, autoPlay: true);
@@ -541,8 +559,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         } on UnsupportedError {
           // This engine joins one URL only: ask for the muxed answer, whose
           // definition is lower but whose sound is already inside it.
-          info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn, dash: false);
+          info = await client.playPart(bvid: widget.bvid, cid: part.cid, dash: false);
           if (!mounted || _disposed) return;
+          _openedQn = info.servedQuality ?? _openedQn;
+          _openedLabel = info.quality;
           await handle.open(_partSource(info, part), autoPlay: true);
         }
       } else {
@@ -567,7 +587,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (!mounted || _disposed) return;
       setState(() {
         _play = info;
-        _qn = info.servedQuality ?? qn ?? _defaultQn;
         _silent = info.silent;
         _opening = false;
       });
@@ -866,8 +885,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   /// A vertical drag on the picture: the right half is the volume, the left
   /// half the screen's brightness — where the display takes the write.
-  void _beginPictureDrag(double dx, double width) {
-    if (_brightnessWritable == true && dx < width / 2) {
+  void _beginPictureDrag(double xFraction) {
+    if (_brightnessWritable == true && xFraction < 0.5) {
       _dragIsBrightness = true;
       _dragBrightness = _brightness;
       _showGesture(VodGestureKind.brightness, '${_brightness.round()}%');
@@ -940,26 +959,19 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     unawaited(_stepSeek(step * sign));
   }
 
-  /// A double tap on the picture: either third steps ten seconds, the middle
+  /// A double tap on the picture: either side steps ten seconds, the middle
   /// plays or pauses. The sides answer rather than the whole picture because a
   /// viewer who wants the part back taps where the line already went.
-  Future<void> _doubleTap(double width) async {
-    final x = _doubleTapX;
-    _doubleTapX = null;
-    if (x == null || width <= 0) {
-      await _togglePlay();
-      return;
+  void _doubleTapAt(VodTapSide side) {
+    _wake();
+    switch (side) {
+      case VodTapSide.left:
+        unawaited(_stepSeek(-_doubleTapStep));
+      case VodTapSide.right:
+        unawaited(_stepSeek(_doubleTapStep));
+      case VodTapSide.middle:
+        unawaited(_togglePlay());
     }
-    final third = width / 3;
-    if (x < third) {
-      await _stepSeek(-_doubleTapStep);
-      return;
-    }
-    if (x > width - third) {
-      await _stepSeek(_doubleTapStep);
-      return;
-    }
-    await _togglePlay();
   }
 
   /// A horizontal drag on the picture walks the part: a full sweep of its
@@ -984,9 +996,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  /// Seeks once, where the drag left the picture.
-  Future<void> _commitScrub() async {
-    final target = _scrubSeconds;
+  /// Seeks once, where the drag left the picture — or nowhere, when the drag
+  /// was taken away by something else rather than let go.
+  Future<void> _endScrub(bool committed) async {
+    final target = committed ? _scrubSeconds : null;
     _resetScrub();
     if (target == null) return;
     await _seekTo(target);
@@ -1019,6 +1032,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
     _showGesture(VodGestureKind.speed, boosted.label, note: note);
   }
+
+  /// The hold's two halves, in the shape the gesture surface reports them.
+  void _speedHold(bool held) => unawaited(held ? _beginSpeedHold() : _endSpeedHold());
 
   Future<void> _endSpeedHold() async {
     if (!_speedHeld) return;
@@ -1734,41 +1750,19 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   Positioned.fill(
                     child: VodSubtitleLayer(text: words, bottomInset: showBar ? _subtitleInset : 0),
                   ),
-                // The picture itself is the bar's switch and the gesture
-                // surface: a tap toggles the chrome, a drag along it scrubs, a
-                // drag down it takes the volume or the brightness, a double tap
-                // on either side steps ten seconds and on the middle plays or
-                // pauses, and a hold runs the part faster until it lets go.
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
-                    return Listener(
-                      onPointerSignal: (signal) {
-                        if (signal is PointerScrollEvent) _wheelVolume(signal.scrollDelta.dy);
-                      },
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _toggleControls,
-                        onDoubleTapDown: (tap) => _doubleTapX = tap.localPosition.dx,
-                        onDoubleTap: handle == null
-                            ? null
-                            : () {
-                                _wake();
-                                unawaited(_doubleTap(width));
-                              },
-                        onHorizontalDragUpdate: handle == null || width <= 0
-                            ? null
-                            : (move) => _scrubBy(move.delta.dx, width),
-                        onHorizontalDragEnd: (_) => unawaited(_commitScrub()),
-                        onHorizontalDragCancel: _resetScrub,
-                        onVerticalDragStart: (start) => _beginPictureDrag(start.localPosition.dx, width),
-                        onVerticalDragUpdate: (move) => _dragPictureBy(move.delta.dy),
-                        onLongPressStart: handle == null ? null : (_) => unawaited(_beginSpeedHold()),
-                        onLongPressEnd: handle == null ? null : (_) => unawaited(_endSpeedHold()),
-                        onLongPressCancel: handle == null ? null : () => unawaited(_endSpeedHold()),
-                      ),
-                    );
-                  },
+                // The picture's own vocabulary, measured against this surface
+                // and answered by the methods below.
+                VodPictureGestures(
+                  enabled: handle != null,
+                  onTap: _toggleControls,
+                  onDoubleTap: _doubleTapAt,
+                  onScrub: _scrubBy,
+                  onScrubEnd: _endScrub,
+                  onAdjustStart: _beginPictureDrag,
+                  onAdjust: _dragPictureBy,
+                  onHold: _speedHold,
+                  onWheel: _wheelVolume,
+                  child: const SizedBox.expand(),
                 ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
@@ -2327,7 +2321,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     _vodPickerButton(
                       panel: _VodPanel.quality,
                       icon: DsIcons.gauge,
-                      label: _play?.quality ?? t.vod.quality,
+                      label: _openedLabel ?? t.vod.quality,
                       semanticLabel: t.vod.quality,
                       compact: compact,
                     ),
@@ -2562,7 +2556,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             for (final quality in qualities)
               PlayerPanelOption(
                 label: quality.label,
-                selected: quality.qn == _qn,
+                selected: quality.qn == _openedQn,
                 onPressed: () {
                   _closePanel();
                   final current = _part;

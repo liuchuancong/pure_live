@@ -37,6 +37,16 @@ MediaSource? vodDashSourceOf(VodPlayInfo info, {required int maxQuality}) {
   );
 }
 
+/// The answer's own name for [qn]; null when its ladder does not carry that
+/// definition, which is the cue to fall back to what the answer called the
+/// part rather than to a table of the app's.
+String? vodQualityLabel(VodPlayInfo info, int qn) {
+  for (final quality in info.qualities) {
+    if (quality.qn == qn) return quality.label;
+  }
+  return null;
+}
+
 /// The picture to show for [maxQuality]: the best definition that does not
 /// exceed it, AVC preferred, then HEVC, then AV1 — the order the engines can
 /// decode, not the order the ladder lists them in.

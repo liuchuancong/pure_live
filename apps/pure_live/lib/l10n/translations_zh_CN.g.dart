@@ -9079,8 +9079,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '默认清晰度'
 	String get vodQuality => '默认清晰度';
 
-	/// zh-CN: '打开视频的清晰度；未登录 B 站可能只有 720P。'
-	String get vodQualityDesc => '打开视频的清晰度；未登录 B 站可能只有 720P。';
+	/// zh-CN: '打开视频时想要的清晰度。服务端只把它愿意给的那几档列进菜单：未登录最高 720P，1080P 起要登录，高码率/高帧率/4K/HDR/杜比/8K 要大会员。'
+	String get vodQualityDesc => '打开视频时想要的清晰度。服务端只把它愿意给的那几档列进菜单：未登录最高 720P，1080P 起要登录，高码率/高帧率/4K/HDR/杜比/8K 要大会员。';
 
 	/// zh-CN: '720P'
 	String get vodQuality720 => '720P';
@@ -9093,6 +9093,18 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '4K'
 	String get vodQuality4K => '4K';
+
+	/// zh-CN: '8K'
+	String get vodQuality8K => '8K';
+
+	/// zh-CN: '杜比视界'
+	String get vodQualityDolby => '杜比视界';
+
+	/// zh-CN: 'HDR 真彩'
+	String get vodQualityHdr => 'HDR 真彩';
+
+	/// zh-CN: '1080P60'
+	String get vodQuality1080P60 => '1080P60';
 
 	/// zh-CN: '视频下载'
 	String get vodDownloadTitle => '视频下载';
@@ -16983,11 +16995,15 @@ extension on Translations {
 			'settings.musicEqDescription' => '音效总开关、内置预设、十段均衡器与预放增益。',
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
 			'settings.vodQuality' => '默认清晰度',
-			'settings.vodQualityDesc' => '打开视频的清晰度；未登录 B 站可能只有 720P。',
+			'settings.vodQualityDesc' => '打开视频时想要的清晰度。服务端只把它愿意给的那几档列进菜单：未登录最高 720P，1080P 起要登录，高码率/高帧率/4K/HDR/杜比/8K 要大会员。',
 			'settings.vodQuality720' => '720P',
 			'settings.vodQuality1080' => '1080P',
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
+			'settings.vodQuality8K' => '8K',
+			'settings.vodQualityDolby' => '杜比视界',
+			'settings.vodQualityHdr' => 'HDR 真彩',
+			'settings.vodQuality1080P60' => '1080P60',
 			'settings.vodDownloadTitle' => '视频下载',
 			'settings.vodDownloadDescription' => 'Bilibili 视频的下载任务、并发与保存目录。',
 			'settings.iptvGuideUpdates' => '节目单更新',
@@ -17474,12 +17490,12 @@ extension on Translations {
 			'settings.windowsPipMinWidth' => '小窗最小宽度',
 			'settings.windowsPipMinWidthDesc' => '小窗最小宽度，100–320；离开小窗后恢复常规下限。',
 			'settings.windowsPipMinHeight' => '小窗最小高度',
+			_ => null,
+		} ?? switch (path) {
 			'settings.windowsPipMinHeightDesc' => '小窗最小高度，60–240；离开小窗后恢复常规下限。',
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
 			'settings.portraitSwipeSwitch' => '竖屏全屏滑动换直播间',
-			_ => null,
-		} ?? switch (path) {
 			'settings.portraitSwipeSwitchDesc' => '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
@@ -17988,12 +18004,12 @@ extension on Translations {
 			'toolbox.linkEmpty' => '请先粘贴链接',
 			'toolbox.linkUnsupported' => '无法识别该链接，暂不支持此平台。',
 			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkFailed' => '解析失败，请稍后重试。',
 			'toolbox.linkCopyDone' => '已复制房间链接',
 			'toolbox.linkCopyFailed' => '复制失败',
 			'toolbox.linkSupportTitle' => '支持解析的平台',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkSupportHint' => '以下平台的直播间链接可以直接解析并打开。',
 			'toolbox.networkSiteLabel' => '选择平台',
 			'toolbox.networkRun' => '开始检测',
