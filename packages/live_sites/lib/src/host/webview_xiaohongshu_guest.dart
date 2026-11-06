@@ -239,6 +239,10 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
   /// The open's budget: the public page must answer its load in this.
   static const Duration _openTimeout = Duration(seconds: 30);
 
+  /// The plugin-side budget for one script execution; above the Dart-side
+  /// [_visitTimeout] so the visitor's own accounting decides the wait.
+  static const Duration _scriptBudget = Duration(seconds: 60);
+
   /// The script's budget: the page may still be settling, and the script
   /// itself waits for the site's own feed traffic before signing — a slow
   /// load must not eat the whole window.
@@ -323,6 +327,12 @@ for (let n=0; n<400; n++) {
     const body = await r.text();
     if (body.length > 2097152) throw new Error('Visitor response too large');
     return body;
+  }
+  if (n===30 && typeof window._webmsxyw === 'function') {
+    // The signer is there but the page has produced no captured feed
+    // traffic: poke the squarefeed once, so the site's own request
+    // interceptor signs it and the capture below picks the headers up.
+    fetch('https://live-room.xiaohongshu.com/api/sns/red/live/web/feed/v1/squarefeed?cursor_score=&source=13&category=&pre_source=&size=10', {credentials:'include'}).catch(()=>{});
   }
   await new Promise(resolve=>setTimeout(resolve,100));
 }
@@ -490,7 +500,12 @@ final class _OffscreenXiaohongshuKeptPage implements XiaohongshuKeptGuestPage {
     if (_released) throw const ConnectFailure('the Xiaohongshu visitor page is released');
     if (cancel?.isCancelled ?? false) throw const CancelledFailure();
     await _loaded.future;
-    final answer = _session.controller.callAsyncJavaScript(script);
+    // The plugin's own default script budget is thirty seconds; the visit
+    // scripts' poll may legitimately run longer, so the budget is ours.
+    final answer = _session.controller.callAsyncJavaScript(
+      script,
+      timeout: WebViewXiaohongshuGuest._scriptBudget,
+    );
     if (cancel == null) return await answer;
     return await Future.any([
       answer,
