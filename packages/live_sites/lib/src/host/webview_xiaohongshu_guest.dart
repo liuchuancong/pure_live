@@ -172,10 +172,11 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
 
   /// The visit scripts' own refusal words. They are fixed strings with no
   /// page content or credentials, so they may surface; a plugin error that
-  /// carries none keeps the generic text.
+  /// carries none keeps the generic text with the error's type alone.
   static const List<String> _visitRefusals = [
     'Visitor directory unavailable',
     'Visitor directory refused',
+    'Visitor signer failed',
     'Visitor response too large',
     'Visitor chat unavailable',
     'Visitor handshake refused',
@@ -183,8 +184,9 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
 
   /// The failure a visit's error maps to: the script's own refusal word
   /// when it carries one — the site not serving the visitor feed, refusing
-  /// the signed fetch, refusing the push handshake — and the generic text
-  /// for everything else.
+  /// the signed fetch, a broken signer, refusing the push handshake — and
+  /// the generic text plus the error's type for everything else, so the
+  /// notice says which layer failed without quoting plugin text.
   Exception _visitFailure(Object error) {
     final text = error.toString();
     for (final refusal in _visitRefusals) {
@@ -192,7 +194,7 @@ final class WebViewXiaohongshuGuest implements XiaohongshuGuest {
         return XiaohongshuFailure(XiaohongshuFailureKind.network, 'the visitor page said: $refusal');
       }
     }
-    return const ConnectFailure('the Xiaohongshu visitor page failed');
+    return ConnectFailure('the Xiaohongshu visitor page failed (${error.runtimeType})');
   }
 
   Future<void> _dropKept() async {
@@ -321,7 +323,12 @@ const path = ${jsonEncode(path)};
 for (let n=0; n<400; n++) {
   const s = window.__pureLiveXhs;
   if (s && s.headers && typeof window._webmsxyw === 'function') {
-    const headers = Object.assign({}, s.headers, window._webmsxyw(path));
+    let headers;
+    try {
+      headers = Object.assign({}, s.headers, window._webmsxyw(path));
+    } catch (e) {
+      throw new Error('Visitor signer failed');
+    }
     const r = await fetch('https://live-room.xiaohongshu.com'+path, {headers, credentials:'include'});
     if (r.status !== 200) throw new Error('Visitor directory refused');
     const body = await r.text();
