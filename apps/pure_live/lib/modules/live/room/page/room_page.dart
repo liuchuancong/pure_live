@@ -27,7 +27,7 @@ import 'package:pure_live/modules/live/room/page/player_surface.dart'
     show PlayerSurface, kPlayerStageColor, toggleRoomPip, toggleRoomRecording;
 import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
 import 'package:pure_live/modules/live/room/page/room_details.dart'
-    show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
+    show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom;
 import 'package:pure_live/modules/live/room/page/room_glass_card.dart';
 import 'package:pure_live/modules/live/room/page/room_orientation.dart'
     show
@@ -43,6 +43,16 @@ import 'package:pure_live/modules/live/room/page/room_shortcuts.dart'
     show RoomShortcutAction, RoomShortcutBinding, roomShortcutBindings, showRoomShortcuts;
 import 'package:pure_live/modules/live/room/page/room_status.dart' show roomSlowProvider, slowAfter;
 import 'package:pure_live/modules/live/room/page/room_theater.dart' show roomTheaterProvider;
+import 'package:pure_live/modules/live/room/panels/room_panel.dart'
+    show
+        RoomPanelController,
+        RoomPanelKind,
+        RoomPanelScope,
+        isRoomPanelRoute,
+        roomPanelRouteName,
+        roomPanelSheet,
+        showRoomDetails,
+        showRoomSleepTimer;
 import 'package:pure_live/modules/live/room/player/floating_room_player.dart' show FloatingRoomPlayer;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart'
     show RoomPlaylistController, roomPlaylistProvider;
@@ -98,6 +108,16 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   late final RoomImmersiveController _immersiveNotifier;
   late final RoomPlaylistController _playlistNotifier;
   late final SleepTimerController _sleepTimerNotifier;
+
+  /// The room's side panels (details, sleep timer): one at a time, hosted
+  /// by the page through [RoomPanelScope].
+  final RoomPanelController _panels = RoomPanelController();
+  RoomPanelKind? _openPanelKind;
+
+  /// The window-level navigator, captured while the page can still look
+  /// its ancestors up: the panel routes live there, and the sweep on open
+  /// and close has to reach them after dispose-time lookups are gone.
+  NavigatorState? _rootNav;
 
   /// The screen wakelock while the picture plays: a live room is watched,
   /// not read, and the display should not sleep under it.
@@ -228,6 +248,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _playlistNotifier = ref.read(roomPlaylistProvider.notifier);
     _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
     WidgetsBinding.instance.addObserver(this);
+    _panels.addListener(_onRoomPanelChanged);
     _currentRoomKey = '${widget.platform.trim().toLowerCase()}:${widget.roomId.trim()}';
     // A new room page supersedes any older floating handoff; open() below
     // tears the old handle down.
@@ -427,6 +448,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _rootNav = Navigator.of(context, rootNavigator: true);
     final route = ModalRoute.of(context);
     if (route is ModalRoute<void> && route != _observedRoute) {
       // The field is not promoted by flow analysis, so name the type.
@@ -463,6 +485,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // must get its window strip back.
     _writeAfterFrame(() => _immersiveNotifier.set(value: false));
     _writeAfterFrame(() => _playlistNotifier.clearIfCurrent(_currentRoomKey));
+    if (_openPanelKind != null) {
+      _rootNav?.popUntil((route) => !isRoomPanelRoute(route));
+      _openPanelKind = null;
+    }
+    _panels.removeListener(_onRoomPanelChanged);
+    _panels.dispose();
     _routeObserver?.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
@@ -850,6 +878,34 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final index = rooms.indexWhere((room) => room.ref.identityKey == current.ref.identityKey);
     if (index < 0) return step > 0 ? rooms.first : rooms.last;
     return rooms[(index + step) % rooms.length];
+  }
+
+  /// The panel state moved: sweep whatever panel route is up, then show
+  /// the wanted one (or nothing). A close routes through here too, so the
+  /// page's bookkeeping and the stack agree.
+  void _onRoomPanelChanged() {
+    final kind = _panels.value;
+    if (kind == _openPanelKind) return;
+    _rootNav?.popUntil((route) => !isRoomPanelRoute(route));
+    _openPanelKind = kind;
+    if (kind == null) return;
+    unawaited(_showRoomPanel(kind));
+  }
+
+  Future<void> _showRoomPanel(RoomPanelKind kind) async {
+    await showDsPanel<void>(
+      context: context,
+      routeSettings: RouteSettings(name: roomPanelRouteName(kind)),
+      builder: (sheetContext) => roomPanelSheet(sheetContext, kind),
+    );
+    if (!mounted) return;
+    // The sheet went away for good (its own close, the scrim, back): the
+    // controller follows, quietly — a replaced panel has already been
+    // swept by the open that displaced it.
+    if (_panels.value == kind) {
+      _openPanelKind = null;
+      _panels.close();
+    }
   }
 
   @override
@@ -1414,20 +1470,23 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // the theme's surface.
     final ownChrome = WindowChromeState.drawsCaptionControls;
     return withShortcuts(
-      ColoredBox(
-        color: kPlayerStageColor,
-        child: ownsWindow
-            ? Scaffold(backgroundColor: kPlayerStageColor, body: _immersiveChatDrawer(playerWith()))
-            : Scaffold(
-                // The portrait full-screen surface is the page's own way of
-                // filling the window: it keeps its black stage and drops the
-                // app bar with it, so no header survives into the mode.
-                backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
-                appBar: _portraitFullscreen
-                    ? null
-                    : _roomAppBar(context, colors: colors, ownChrome: ownChrome, shortcuts: shortcuts, leave: leave),
-                body: _portraitFullscreen ? body : SafeArea(child: body),
-              ),
+      RoomPanelScope(
+        notifier: _panels,
+        child: ColoredBox(
+          color: kPlayerStageColor,
+          child: ownsWindow
+              ? Scaffold(backgroundColor: kPlayerStageColor, body: _immersiveChatDrawer(playerWith()))
+              : Scaffold(
+                  // The portrait full-screen surface is the page's own way of
+                  // filling the window: it keeps its black stage and drops the
+                  // app bar with it, so no header survives into the mode.
+                  backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
+                  appBar: _portraitFullscreen
+                      ? null
+                      : _roomAppBar(context, colors: colors, ownChrome: ownChrome, shortcuts: shortcuts, leave: leave),
+                  body: _portraitFullscreen ? body : SafeArea(child: body),
+                ),
+        ),
       ),
     );
   }
@@ -1861,7 +1920,7 @@ List<Widget> roomMenuItems(
       DsMenuItem(
         leading: DsIcon(sleepRunning ? DsIcons.timer : DsIcons.moon),
         label: Text(sleepRunning ? '${t.room.sleep} · ${asmrSleepDurationLabel(sleepMinutes)}' : t.room.sleep),
-        onPressed: () => unawaited(showRoomSleepTimer(context, ref)),
+        onPressed: () => unawaited(showRoomSleepTimer(context)),
       ),
       DsMenuItem(
         leading: const DsIcon(DsIcons.activity),

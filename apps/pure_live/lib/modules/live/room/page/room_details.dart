@@ -16,17 +16,8 @@ import 'package:pure_live/shared/shared.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
-/// Opens the room details: the reference's "直播间详情" laid over the page,
-/// never over the picture. Everything a viewer may want to know about the
-/// room and do about it lives here — the streamer and the way back to the
-/// platform, the state and the full title, the figures, the notice and the
-/// introduction, the room number and the link, plus share and open.
-Future<void> showRoomDetails(BuildContext context) => showDsPanel<void>(
-  context: context,
-  builder: (context) => DsPanel(title: Text(context.t.room.details), child: const RoomDetailsPanel()),
-);
-
-/// The details panel's content; the page's info strip and menu open it.
+/// The details panel's content; the page's info strip and menu open it
+/// through the room panel bus (`../panels/room_panel.dart`).
 final class RoomDetailsPanel extends ConsumerWidget {
   /// The panel's content.
   const RoomDetailsPanel({super.key});

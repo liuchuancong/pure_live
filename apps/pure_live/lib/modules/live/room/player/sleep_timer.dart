@@ -107,17 +107,3 @@ List<Widget> roomSleepTimerChoices(BuildContext context, WidgetRef ref) {
       ),
   ];
 }
-
-/// The choices as a panel, for the surfaces that carry actions in a list
-/// rather than a hover menu.
-Future<void> showRoomSleepTimer(BuildContext context, WidgetRef ref) => showDsPanel<void>(
-  context: context,
-  builder: (panelContext) => DsPanel(
-    title: Text(panelContext.t.room.sleep),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s4,
-      children: roomSleepTimerChoices(panelContext, ref),
-    ),
-  ),
-);
