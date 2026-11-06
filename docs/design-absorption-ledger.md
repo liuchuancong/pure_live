@@ -70,7 +70,7 @@
 ## W11 UI 观感
 - ⬜ OnVideoColors 全套角色（~35 语义角色+对比度注释+shade 渐变工厂）+InkOnColor WCAG 比值选墨。参考 `live_colors.dart:9,303`。
 - ⬜ WindowClassScope：约束级尺寸类 InheritedWidget（类变化才通知）+DisplayHinge 折叠避让+高度 compact 档。参考 `window_layout.dart:22,68`。
-- ⬜ RoomCard 纯数据入参：app 层映射、组件不 watch provider。参考 `live_ui/src/widgets/room_card.dart:25`。
+- ✅ RoomCard 纯数据入参：app 层映射、组件不 watch provider。参考 `live_ui/src/widgets/room_card.dart:25`。落 `RoomCardView`（纯渲染，3 测裸跑）+ `RoomCard` 壳只做 provider 解析，8 处调用方不变。
 
 ## 已核实不必吸收
 错误 sealed 体系/清晰度实际下发/礼物连击合并/房间稀疏合并/礼物档位/clock-v1 日志/.partial/配对协议（v2 更强）/DLNA（cast_dlna 更完整）/跨进程存储同步（模型不同各自解决）/AppIcons 按用途命名（方向不同）/danmaku_overlay（flame_barrage 已等价）。
