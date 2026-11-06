@@ -121,17 +121,15 @@ final class AppPaths {
   /// fetched again, so it is the one folder the viewer may point elsewhere.
   Directory get cacheRoot => Directory(areas.cache.path);
 
-  /// Re-fetchable network images: the cover and avatar cache.
-  Directory get imageCache => Directory(p.join(cacheRoot.path, 'images'));
-
-  /// Platform covers the hongguo surfaces fetched for themselves; they live
-  /// under [imageCache] so one folder holds every cached picture.
-  Directory get covers => Directory(p.join(imageCache.path, 'covers'));
+  /// The one clearable tree `live_cache` owns: re-fetchable covers, avatars,
+  /// emotes and temporary files, with its index beside them.
+  Directory get liveCache => Directory(p.join(cacheRoot.path, 'live_cache'));
 
   /// The frames cut from the recordings on disk, so a library row shows its own
   /// take instead of a generic glyph; regenerable from the files, so it is
-  /// cache and not data.
-  Directory get recordingCovers => Directory(p.join(imageCache.path, 'recording_covers'));
+  /// cache and not data — but not `live_cache`'s, because the library refills
+  /// it from local recordings rather than the network.
+  Directory get recordingCovers => Directory(p.join(cacheRoot.path, 'recording_covers'));
 
   /// The backup files the viewer exports and imports.
   Directory get backups => Directory(p.join(areas.exports?.path ?? p.join(areas.data.path, 'exports'), 'backups'));

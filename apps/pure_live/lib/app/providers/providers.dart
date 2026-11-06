@@ -6,6 +6,7 @@ library;
 
 export 'boot/boot.dart';
 export 'browse/browse.dart';
+export 'cache/cache.dart';
 export 'device/device.dart';
 export 'navigation/navigation.dart';
 export 'network/network.dart';

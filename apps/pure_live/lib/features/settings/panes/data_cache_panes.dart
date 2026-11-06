@@ -6,11 +6,13 @@ import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_cache/live_cache.dart' show CacheCleanupResult, CategoryCacheStatistics, LiveCacheManager;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_page_action.dart' show SettingsPageActionScope;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart'
+    show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/shared/shared.dart';
@@ -89,7 +91,7 @@ final class _StorageFoldersSectionState extends ConsumerState<StorageFoldersSect
     StorageFolder.backgrounds => folders.backgrounds,
     StorageFolder.fonts => folders.fonts,
     StorageFolder.logs => folders.logs,
-    StorageFolder.cache => folders.imageCache,
+    StorageFolder.cache => folders.liveCache,
   };
 
   Future<void> _pick(BuildContext context, WidgetRef ref, StorageFolder folder) async {
@@ -279,8 +281,8 @@ final class DataCachePane extends ConsumerWidget {
   }
 }
 
-/// The cache pane: the cover/avatar disk cache the network images live in —
-/// its size, a manual clear, and the automatic cap the boot prunes to.
+/// The cache pane: what `live_cache` holds, the policy that decides how long
+/// each kind of picture lives, and the actions that clear it.
 final class CachePane extends ConsumerStatefulWidget {
   const CachePane({super.key});
 
@@ -289,54 +291,14 @@ final class CachePane extends ConsumerStatefulWidget {
 }
 
 final class CachePaneState extends ConsumerState<CachePane> {
-  int? _bytes;
-  int _limitMb = imageCacheLimitMb();
   bool _busy = false;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_measure());
-  }
-
-  Future<void> _measure() async {
-    final bytes = await imageCacheBytes();
-    if (mounted) {
-      setState(() => _bytes = bytes);
-    }
-  }
-
-  Future<void> _clear() async {
-    final t = context.t;
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.settings.cacheClear,
-      description: t.settings.cacheClearDesc,
-      confirmLabel: t.common.confirm,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
-    );
-    if (!confirmed || !mounted) return;
-    setState(() => _busy = true);
-    try {
-      await clearImageCache();
-      await _measure();
-      if (mounted) {
-        showDsToast(context: context, title: context.t.settings.cacheCleared);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-  }
+  bool _showCategories = false;
 
   Future<void> _refreshThumbnails() async {
     setState(() => _busy = true);
     try {
       await ref.read(thumbnailRefreshProvider.notifier).refreshNow();
-      await _measure();
+      ref.invalidate(cacheStatisticsProvider);
       if (mounted) {
         showDsToast(context: context, title: context.t.settings.cacheRefreshThumbnailsDone);
       }
@@ -347,72 +309,324 @@ final class CachePaneState extends ConsumerState<CachePane> {
     }
   }
 
-  Future<void> _setLimit(int? value) async {
-    if (value == null) {
+  Future<void> _run(Future<CacheCleanupResult> Function(LiveCacheManager manager) work) async {
+    final t = context.t;
+    setState(() => _busy = true);
+    try {
+      final result = await work(ref.read(liveCacheManagerProvider));
+      ref.invalidate(cacheStatisticsProvider);
+      if (!mounted) {
+        return;
+      }
+      showDsToast(
+        context: context,
+        title: result.failedFiles > 0
+            ? t.settings.cacheClearPartial(count: result.failedFiles)
+            : t.settings.cacheClearDone(size: formatCacheSize(result.freedBytes)),
+      );
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.settings.cacheClearFailed, status: DsStatus.danger);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _confirmAndRun({
+    required String title,
+    required String description,
+    required Future<CacheCleanupResult> Function(LiveCacheManager manager) work,
+  }) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: title,
+      description: description,
+      confirmLabel: t.common.confirm,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) {
       return;
     }
-    setState(() => _limitMb = value);
-    await storeImageCacheLimitMb(value);
-    // Applying the cap at once makes the setting honest on the spot.
-    if (value > 0) {
-      await enforceImageCacheLimit(value * 1024 * 1024);
-      await _measure();
+    await _run(work);
+  }
+
+  Future<void> _copyPath(String path) async {
+    await Clipboard.setData(ClipboardData(text: path));
+    if (mounted) {
+      showDsToast(context: context, title: context.t.common.copied);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsListSection(
-      header: Text(t.settings.navCache),
+    final settings = ref.watch(liveCacheSettingsProvider);
+    final statistics = ref.watch(cacheStatisticsProvider);
+    final stats = statistics.value;
+    final folders = ref.watch(appPathsProvider);
+    final image = stats?.image;
+    final used = image?.diskSize ?? 0;
+    final limitBytes = settings.maxMb * 1024 * 1024;
+    final fraction = limitBytes <= 0 ? 0.0 : (used / limitBytes).clamp(0.0, 1.0);
+    final hasFiles = (image?.fileCount ?? 0) > 0;
+    final groups = <CacheCategoryGroup, ({int size, int count})>{};
+    for (final row in image?.categories ?? const <CategoryCacheStatistics>[]) {
+      final group = cacheCategoryGroup(row.category);
+      final previous = groups[group] ?? (size: 0, count: 0);
+      groups[group] = (size: previous.size + row.diskSize, count: previous.count + row.fileCount);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        // The policy first, then what it holds and the two ways to act on it.
-        SettingsChoiceRow<int>(
-          leading: const DsIcon(DsIcons.database),
-          title: t.settings.cacheLimit,
-          description: t.settings.cacheLimitDesc,
-          value: _limitMb,
-          options: [
-            DsSelectOption(value: 0, label: t.settings.cacheLimitOff),
-            for (final mb in const [100, 200, 500, 1024, 2048]) DsSelectOption(value: mb, label: '$mb MB'),
+        DsListSection(
+          header: Text(t.settings.navCache),
+          children: [
+            if (statistics.hasError)
+              DsListRow(
+                leading: const DsIcon(DsIcons.triangleAlert),
+                title: Text(t.settings.cacheStatsFailed),
+                description: Text('${statistics.error}'),
+                trailing: DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.refreshCw, size: 16),
+                  onPressed: () => ref.invalidate(cacheStatisticsProvider),
+                  child: Text(t.settings.cacheRefresh),
+                ),
+              )
+            else ...[
+              if (stats != null && !stats.diskAvailable)
+                DsListRow(
+                  leading: const DsIcon(DsIcons.triangleAlert),
+                  title: Text(t.settings.cacheDiskUnavailable),
+                ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.hardDrive),
+                title: Text(t.settings.cacheSize),
+                detail: Text('${formatCacheSize(used)} / ${_sizeLabel(settings.maxMb)}'),
+                description: Padding(
+                  padding: const EdgeInsets.only(top: DsSpace.s6),
+                  child: DsProgressBar(value: fraction, semanticLabel: t.settings.cacheSize),
+                ),
+                trailing: DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  semanticLabel: t.settings.cacheRefresh,
+                  onPressed: _busy ? null : () => ref.invalidate(cacheStatisticsProvider),
+                  icon: const DsIcon(DsIcons.refreshCw, size: 16),
+                ),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.archive),
+                title: Text(t.settings.cacheFileCount),
+                detail: Text(statistics.isLoading ? '…' : '${image?.fileCount ?? 0}'),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.gauge),
+                title: Text(t.settings.cacheHitRate),
+                detail: Text(statistics.isLoading ? '…' : '${((image?.hitRate ?? 0) * 100).toStringAsFixed(1)}%'),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.database),
+                title: Text(t.settings.cacheApiMemory),
+                detail: Text(
+                  statistics.isLoading
+                      ? '…'
+                      : '${stats?.apiMemory.entryCount ?? 0} · ${formatCacheSize(stats?.apiMemory.estimatedSize ?? 0)}',
+                ),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.clock),
+                title: Text(t.settings.cacheLastCleanup),
+                detail: Text(
+                  stats?.lastCleanupAt == null ? t.settings.cacheNever : _formatTime(stats!.lastCleanupAt!),
+                ),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.image),
+                title: Text(t.settings.cacheCategoryBreakdown),
+                trailing: DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  semanticLabel: t.settings.cacheCategoryBreakdown,
+                  onPressed: () => setState(() => _showCategories = !_showCategories),
+                  icon: DsIcon(_showCategories ? DsIcons.chevronUp : DsIcons.chevronDown, size: 16),
+                ),
+              ),
+              if (_showCategories)
+                for (final group in CacheCategoryGroup.values)
+                  if ((groups[group]?.size ?? 0) > 0)
+                    DsListRow(
+                      title: Padding(
+                        padding: const EdgeInsetsDirectional.only(start: DsSpace.s28),
+                        child: Text(_groupLabel(t, group)),
+                      ),
+                      detail: Text(
+                        '${formatCacheSize(groups[group]!.size)} · ${groups[group]!.count}',
+                      ),
+                    ),
+            ],
           ],
-          onChanged: (value) => unawaited(_setLimit(value)),
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.archive),
-          title: Text(t.settings.cacheSize),
-          detail: Text(_bytes == null ? '…' : formatCacheSize(_bytes!)),
-          trailing: DsButton(
-            variant: DsButtonVariant.ghost,
-            size: DsSize.sm,
-            leading: const DsIcon(DsIcons.refreshCw, size: 16),
-            onPressed: _busy ? null : () => unawaited(_measure()),
-            child: Text(t.settings.cacheRefresh),
-          ),
+        DsListSection(
+          header: Text(t.settings.cacheImagesSection),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.hardDrive),
+              title: t.settings.cacheDiskEnabled,
+              description: t.settings.cacheDiskEnabledDesc,
+              control: DsSwitch(
+                value: settings.diskCacheEnabled,
+                onChanged: (value) =>
+                    unawaited(ref.read(liveCacheSettingsProvider.notifier).setDiskCacheEnabled(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.database),
+              title: t.settings.cacheLimit,
+              description: t.settings.cacheLimitDesc,
+              value: settings.maxMb,
+              options: [
+                for (final mb in LiveCacheSettings.limitChoices) DsSelectOption(value: mb, label: _sizeLabel(mb)),
+              ],
+              onChanged: (value) => unawaited(ref.read(liveCacheSettingsProvider.notifier).setMaxMb(value)),
+            ),
+            SettingsChoiceRow<CacheFreshness>(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.settings.cacheFreshness,
+              description: t.settings.cacheFreshnessDesc,
+              value: settings.freshness,
+              options: [
+                DsSelectOption(value: CacheFreshness.fresh, label: t.settings.cacheFreshnessFresh),
+                DsSelectOption(value: CacheFreshness.balanced, label: t.settings.cacheFreshnessBalanced),
+                DsSelectOption(value: CacheFreshness.thrifty, label: t.settings.cacheFreshnessThrifty),
+              ],
+              onChanged: (value) => unawaited(ref.read(liveCacheSettingsProvider.notifier).setFreshness(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.clock),
+              title: t.settings.cacheAutoClean,
+              description: t.settings.cacheAutoCleanDesc,
+              control: DsSwitch(
+                value: settings.autoClean,
+                onChanged: (value) => unawaited(ref.read(liveCacheSettingsProvider.notifier).setAutoClean(value: value)),
+              ),
+            ),
+          ],
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.image),
-          title: Text(t.settings.cacheRefreshThumbnails),
-          description: Text(t.settings.cacheRefreshThumbnailsDesc),
-          trailing: DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: _busy ? null : () => unawaited(_refreshThumbnails()),
-            child: Text(t.settings.cacheRefreshThumbnails),
-          ),
+        DsListSection(
+          header: Text(t.settings.cacheClear),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.clock),
+              title: Text(t.settings.cacheClearExpired),
+              description: Text(t.settings.cacheClearExpiredDesc),
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: _busy || !hasFiles ? null : () => unawaited(_run((manager) => manager.clearExpired())),
+                child: Text(t.settings.cacheClearExpired),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.refreshCw),
+              title: Text(t.settings.cacheRefreshThumbnails),
+              description: Text(t.settings.cacheRefreshThumbnailsDesc),
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: _busy ? null : () => unawaited(_refreshThumbnails()),
+                child: Text(t.settings.cacheRefreshThumbnails),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.image),
+              title: Text(t.settings.cacheClearImages),
+              description: Text(t.settings.cacheClearImagesDesc),
+              trailing: DsButton(
+                variant: DsButtonVariant.dangerSoft,
+                size: DsSize.sm,
+                onPressed: _busy || !hasFiles
+                    ? null
+                    : () => unawaited(
+                        _confirmAndRun(
+                          title: t.settings.cacheClearImages,
+                          description: t.settings.cacheClearImagesDesc,
+                          work: (manager) => manager.clearImages(),
+                        ),
+                      ),
+                child: Text(t.settings.cacheClearImages),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.trash2),
+              title: Text(t.settings.cacheClearAll),
+              description: Text(t.settings.cacheClearAllDesc),
+              trailing: DsButton(
+                variant: DsButtonVariant.dangerSoft,
+                size: DsSize.sm,
+                onPressed: _busy || !hasFiles
+                    ? null
+                    : () => unawaited(
+                        _confirmAndRun(
+                          title: t.settings.cacheClearAll,
+                          description: t.settings.cacheClearAllDesc,
+                          work: (manager) => manager.clearAll(),
+                        ),
+                      ),
+                child: Text(t.settings.cacheClearAll),
+              ),
+            ),
+          ],
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.trash2),
-          title: Text(t.settings.cacheClear),
-          description: Text(t.settings.cacheClearDesc),
-          trailing: DsButton(
-            variant: DsButtonVariant.dangerSoft,
-            size: DsSize.sm,
-            onPressed: _busy ? null : () => unawaited(_clear()),
-            child: Text(t.settings.cacheClear),
-          ),
+        DsListSection(
+          header: Text(t.settings.storageFolderCache),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.folderOpen),
+              title: Text(t.settings.storageFolderCache),
+              description: DsTooltip(
+                message: folders.liveCache.path,
+                child: Text(folders.liveCache.path, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              trailing: DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.settings.storageFolderCopyPath,
+                onPressed: () => unawaited(_copyPath(folders.liveCache.path)),
+                icon: const DsIcon(DsIcons.copy, size: 16),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
+
+  static String _sizeLabel(int megabytes) =>
+      megabytes >= 1024 ? '${megabytes ~/ 1024} GB' : '$megabytes MB';
+
+  static String _formatTime(DateTime value) {
+    final local = value.toLocal();
+    String two(int number) => number.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)} ${two(local.hour)}:${two(local.minute)}';
+  }
+
+  static String _groupLabel(Translations t, CacheCategoryGroup group) => switch (group) {
+    CacheCategoryGroup.cover => t.settings.cacheCategoryCover,
+    CacheCategoryGroup.avatar => t.settings.cacheCategoryAvatar,
+    CacheCategoryGroup.icon => t.settings.cacheCategoryIcon,
+    CacheCategoryGroup.emote => t.settings.cacheCategoryEmote,
+    CacheCategoryGroup.album => t.settings.cacheCategoryAlbum,
+    CacheCategoryGroup.wallpaper => t.settings.cacheCategoryWallpaper,
+    CacheCategoryGroup.preview => t.settings.cacheCategoryPreview,
+    CacheCategoryGroup.other => t.settings.cacheCategoryOther,
+  };
 }

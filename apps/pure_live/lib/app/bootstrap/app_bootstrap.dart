@@ -6,13 +6,13 @@ import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
 import 'package:live_storage/live_storage.dart' show StorageBootstrap, StoragePathProvider, StoragePrefs;
+import 'package:pure_live/app/bootstrap/cache_migration.dart' show migrateLegacyImageCache;
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show AppProxyHttpOverrides;
 import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
 import 'package:pure_live/app/logging/media_core_log_bridge.dart' show installMediaCoreLogBridge;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/theme/settings/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/infrastructure/infrastructure.dart';
-import 'package:pure_live/shared/shared.dart';
 
 /// What one process boot produced: the platform snapshot, the resolved
 /// storage layout, and the error when the boot failed.
@@ -111,6 +111,10 @@ Future<Boot> bootstrap() async {
     // members to the layers that cannot take a provider (logging, the
     // singleton caches), the providers carry it to everything else.
     final appPaths = AppPaths(storagePaths);
+    // The device-default layout; the viewer's overrides replace it once the
+    // preference store is open. The cache migration below uses whichever one
+    // is in force, so a failed store still clears the default tree.
+    var folders = AppFolders(appPaths, const {});
     // The storage layer is best-effort: a failure logs and the boot carries
     // on — browsing works without storage, and the providers fall back to
     // their defaults when the SQLite database never opened.
@@ -120,23 +124,18 @@ Future<Boot> bootstrap() async {
       );
       await storageBootstrap.initialize();
       await StoragePrefs.init();
-      // The viewer's own folder choices, read once here: the two layers that
-      // never take a provider — the log tree and the image cache manager — are
-      // pointed at the folder in force, so a moved folder is in use from this
-      // run on.
-      final folders = AppFolders(appPaths, readStorageFolderOverrides());
+      // The viewer's own folder choices, read once here: the log tree is
+      // pointed at the folder in force, and the cache manager reads the same
+      // choice through its provider on the first frame.
+      folders = AppFolders(appPaths, readStorageFolderOverrides());
       initAppLog(directory: folders.logs);
-      // The cover cache follows the layout, including a folder the viewer
-      // moved. It is read once here because the manager is built against one
-      // root; a change lands on the next start.
-      installImageCacheRoot(folders.imageCache);
       bootLog.info('storage ready', fields: {'data': storagePaths.data.path});
     } on Object catch (error, stackTrace) {
       log.forCategory('storage').error('storage bootstrap failed', error: error, stackTrace: stackTrace);
     }
-    // Network images need their cache folder before the first frame; the
-    // folder is independent of whether the data store opened.
-    await prepareImageCache();
+    // The pre-live_cache tree is cache and can be re-fetched, except the
+    // recording frames: carry those across before the first image is drawn.
+    await migrateLegacyImageCache(folders);
     return Boot(runtime: runtime, storagePaths: storagePaths);
   } on Object catch (error, stackTrace) {
     bootLog.fatal('boot failed', error: error, stackTrace: stackTrace);

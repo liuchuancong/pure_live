@@ -277,8 +277,12 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.filter.blockLong', BackupPrefKind.boolean),
   ('danmaku.filter.blockLongLength', BackupPrefKind.integer),
   ('danmaku.filter.douyuSuspected', BackupPrefKind.boolean),
-  // The image cache's cap. The moved folders stay out, as above.
+  // The cache's cap, switches and freshness. The moved folders stay out, as
+  // above.
   ('cache.maxMB', BackupPrefKind.integer),
+  ('cache.images.enabled', BackupPrefKind.boolean),
+  ('cache.images.freshness', BackupPrefKind.string),
+  ('cache.images.autoClean', BackupPrefKind.boolean),
   // IPTV: the schedule, the active guide and the source order.
   ('iptv.update.hours', BackupPrefKind.integer),
   ('iptv.autoSync', BackupPrefKind.boolean),

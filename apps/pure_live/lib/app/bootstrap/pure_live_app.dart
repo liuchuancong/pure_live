@@ -93,9 +93,18 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     _customSeedColor = _readStoredCustomSeedColor();
     _ensureFontLoaded();
     _showSplash = widget.showStartupSplash && ref.read(splashSettingsProvider);
-    // The image cache's configured cap is applied once per start, off the
-    // first frame so a big tree never waits on the disk walk.
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(enforceConfiguredImageCacheLimit()));
+    // The one cache manager is installed before the first page builds; the
+    // sync provider applies the stored limits, and initialize opens the folder
+    // and sweeps leftovers without blocking the first frame.
+    final cacheManager = ref.read(liveCacheManagerProvider);
+    installLiveCacheManager(cacheManager);
+    ref.read(liveCacheConfigSyncProvider);
+    unawaited(cacheManager.initialize());
+    // The index is usually trustworthy; a full reconciliation is the slow
+    // path, so only the primary runs it, once, well after the first frame.
+    if (ref.read(isPrimaryWindowProvider)) {
+      Future<void>.delayed(const Duration(seconds: 20), () => unawaited(cacheManager.reconcile()));
+    }
     // The emoticon atlas is one sheet decode for every platform's emoticons;
     // the flying danmaku renders them as text until it lands.
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(loadEmojiAtlas()));

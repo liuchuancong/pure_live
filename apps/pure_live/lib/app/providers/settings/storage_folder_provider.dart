@@ -280,12 +280,8 @@ final class AppFolders {
   /// The clearable cache area: the device default unless the viewer moved it.
   Directory get cacheRoot => _pick(StorageFolder.cache, paths.cacheRoot);
 
-  /// The clearable cover and avatar cache.
-  Directory get imageCache => Directory(p.join(cacheRoot.path, 'images'));
-
-  /// The HEIC cover cache; it sits under [imageCache], so one folder holds
-  /// every cached picture and the cap prunes them together.
-  Directory get covers => Directory(p.join(imageCache.path, 'covers'));
+  /// The clearable tree `live_cache` owns.
+  Directory get liveCache => Directory(p.join(cacheRoot.path, 'live_cache'));
 
   /// The frames cut from the recordings on disk; see
   /// [AppPaths.recordingCovers]. Not a viewer folder — it is cache, and the
