@@ -3,6 +3,7 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
@@ -437,9 +438,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (dash != null) {
         try {
           await handle.openMedia(dash, autoPlay: true);
-        // media_core signals "this engine cannot join two essences" as an
-        // UnsupportedError; the muxed request below is its handler.
-        // ignore: avoid_catching_errors
+          // media_core signals "this engine cannot join two essences" as an
+          // UnsupportedError; the muxed request below is its handler.
+          // ignore: avoid_catching_errors
         } on UnsupportedError {
           // This engine joins one URL only: ask for the muxed answer, whose
           // definition is lower but whose sound is already inside it.
@@ -599,6 +600,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         if (bvid.isEmpty) return;
         unawaited(context.push('/vod/$bvid'));
     }
+  }
+
+  /// Whether a part follows the one playing: the 下一P chip shows only when
+  /// the step it names exists.
+  bool get _hasNextPart {
+    final parts = _detail?.parts ?? const <VodPart>[];
+    final index = parts.indexWhere((part) => part.cid == _part?.cid);
+    return index >= 0 && index + 1 < parts.length;
+  }
+
+  /// Opens the part after the one playing — the chip's step, the sequential
+  /// twin of the shelf's jump and of the finish action's own next part.
+  void _openNextPart() {
+    final parts = _detail?.parts ?? const <VodPart>[];
+    final index = parts.indexWhere((part) => part.cid == _part?.cid);
+    if (index < 0 || index + 1 >= parts.length) return;
+    final next = parts[index + 1];
+    unawaited(_openPart(next, resume: _resumeFor(next)));
   }
 
   Future<void> _togglePlay() async {
@@ -1023,7 +1042,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     if (detail == null) return const SizedBox.shrink();
     final colors = DsTheme.colorsOf(context);
     final player = _playerSurface(context, immersive: false);
-    final info = _info(context, detail, t);
     final window = _relatedWindow;
     final related = window.isEmpty
         ? null
@@ -1055,9 +1073,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 VodVideoRow(video: video, onOpen: () => unawaited(context.push('/vod/${video.bvid ?? video.id}'))),
             ],
           );
+    // The parts shelf sits in the rail beside the picture on a wide window —
+    // the episode strip the reference's own video page draws — and back under
+    // the picture on a narrow one, where no rail exists. Related reads under
+    // it there, one column: choose the next part first, then wander off.
+    final parts = detail.parts.length > 1
+        ? _PartsSection(
+            parts: detail.parts,
+            current: _part,
+            onOpen: (part) => unawaited(_openPart(part, resume: _resumeFor(part))),
+          )
+        : null;
+    final rail = parts == null && related == null
+        ? null
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s16, children: [?parts, ?related]);
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = LiveWindow.isExpanded(constraints.maxWidth);
+        final info = _info(context, detail, t, showParts: parts == null || !wide);
         if (!wide) {
           final inset = LiveWindow.pageInset(constraints.maxWidth);
           return SingleChildScrollView(
@@ -1082,12 +1115,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 ),
               ),
             ),
-            if (related != null)
+            if (rail != null)
               SizedBox(
                 width: 340,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, DsSpace.s24, DsSpace.s24),
-                  child: related,
+                  child: rail,
                 ),
               ),
           ],
@@ -1314,36 +1347,81 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// never disagree about what is bookmarked.
   bool savedOf(String bvid) => ref.watch(vodFavouritesProvider).any((video) => video.bvid == bvid);
 
-  /// The strip over the picture: the way out and the archive's name when the
-  /// page's own headline is gone, and the presentation cluster (the small
-  /// window) at the right edge wherever the picture is.
+  /// The strip over the picture's top edge: what acts on the picture — keep a
+  /// frame of it, send it to a TV, fold it into a window — in one glass pill,
+  /// the rest under a ⋮ menu beside it, and, when the picture owns the whole
+  /// window, the way out and the archive's name at the left.
   ///
   /// In-page the identity half is skipped on purpose — the page header above
   /// already names the archive — so what sits over the picture's top-right is
-  /// only the verb that changes how the picture is shown. Same rule as the live
-  /// room's strip.
+  /// only the verbs. Same rule as the live room's strip.
   Widget _vodTopStrip(Translations t, VodDetail? detail, {required bool immersive}) {
     final theme = DsTheme.of(context);
     final presentation = ref.watch(roomPresentationProvider);
     final pipAvailable = _handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
-    final pipButton = pipAvailable
-        ? PlayerBarButton(
-            icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
-            label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
-            selected: presentation == PresentationMode.pip,
-            onPressed: () {
-              _wake();
-              unawaited(_togglePip());
-            },
-          )
-        : const SizedBox.shrink();
+    final actions = <Widget>[
+      // The frame-copy leads, the room strip's order: keep the frame, send the
+      // part to a TV, then the small window.
+      if (_handle?.canCaptureScreenshot ?? false)
+        PlayerBarButton(
+          icon: DsIcons.camera,
+          label: t.room.screenshot,
+          onPressed: () {
+            _wake();
+            unawaited(_screenshot());
+          },
+        ),
+      if (_play != null)
+        PlayerBarButton(
+          icon: DsIcons.cast,
+          label: t.room.cast,
+          onPressed: () {
+            _wake();
+            unawaited(_cast());
+          },
+        ),
+      if (pipAvailable)
+        PlayerBarButton(
+          icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+          label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
+          selected: presentation == PresentationMode.pip,
+          onPressed: () {
+            _wake();
+            unawaited(_togglePip());
+          },
+        ),
+    ];
+    final actionPill = actions.isEmpty
+        ? const SizedBox.shrink()
+        : PlayerGlassPill(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+              children: actions,
+            ),
+          );
+    final morePill = PlayerGlassPill(
+      child: DsMenuAnchor(
+        semanticLabel: t.common.more,
+        align: DsAlign.end,
+        items: _vodMenuItems(t),
+        builder: (context, controller, _) => PlayerBarButton(
+          icon: DsIcons.ellipsisVertical,
+          label: t.common.more,
+          onPressed: () {
+            _wake();
+            controller.toggle();
+          },
+        ),
+      ),
+    );
     if (!immersive) {
+      // No handle, no verbs: the picture has nothing yet to act on, and the
+      // page header above carries the errands until it does.
+      if (_handle == null) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, 0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [if (pipAvailable) PlayerGlassPill(child: pipButton)],
-        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.end, spacing: DsSpace.s8, children: [actionPill, morePill]),
       );
     }
     return Container(
@@ -1388,10 +1466,70 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 onPressed: () => unawaited(_toggleFavourite()),
               ),
             ),
-          if (pipAvailable) PlayerGlassPill(child: pipButton),
+          actionPill,
+          morePill,
         ],
       ),
     );
+  }
+
+  /// The ⋮ menu's rows: how the picture meets its box, what rides on it (the
+  /// stream's numbers, the sound-only mode) and the errand it feeds (a
+  /// download). The bottom bar keeps to the watching verbs, so these — chosen
+  /// once rather than while watching — read better as a list than as bar
+  /// furniture. The info area's action row still carries its own download, so
+  /// a row that dims here loses nothing.
+  List<Widget> _vodMenuItems(Translations t) {
+    final handle = _handle;
+    final fit = ref.watch(playbackSettingsProvider).fit;
+    return [
+      DsMenuItem.submenu(
+        leading: const DsIcon(DsIcons.aspectRatio),
+        label: Text(t.settings.fit),
+        submenu: [
+          for (final option in PlaybackFit.values)
+            DsMenuItem(
+              label: Text(fitLabels(t)[option.index]),
+              checked: option == fit,
+              onPressed: () => unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option)),
+            ),
+        ],
+      ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.activity),
+        label: Text(t.room.statsToggle),
+        checked: ref.watch(playerStatsVisibleProvider),
+        checkRole: DsMenuCheckRole.checkbox,
+        onPressed: handle == null
+            ? null
+            : () {
+                _wake();
+                ref.read(playerStatsVisibleProvider.notifier).toggle();
+              },
+      ),
+      DsMenuItem(
+        leading: DsIcon(_audioOnly ? DsIcons.headphones : DsIcons.music2),
+        label: Text(t.room.audioOnlyMode),
+        checked: _audioOnly,
+        checkRole: DsMenuCheckRole.checkbox,
+        onPressed: handle == null
+            ? null
+            : () {
+                _wake();
+                unawaited(_toggleAudioOnly());
+              },
+      ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.download),
+        label: Text(t.vod.download),
+        onPressed: _part == null || _detail == null
+            ? null
+            : () {
+                _wake();
+                unawaited(_startDownload());
+              },
+      ),
+    ];
   }
 
   /// Hands the current part to the app-wide download queue.
@@ -1428,7 +1566,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   }
 
   /// The bar under the picture: the seek line over the transport, then the
-  /// rendition, the parts, the speed and the presentation verbs.
+  /// watching verbs — play, the step to the next part, the sound, the
+  /// rendition, the speed and the danmaku pair — and the two ways out of the
+  /// box. What acts on the picture (capture, cast, the small window) and the
+  /// errands live on the strip above and its ⋮ menu.
   Widget _vodControlBar(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -1446,7 +1587,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final immersive = presentationController.modeOwnsWindow(presentation);
     final playback = ref.watch(playbackSettingsProvider);
     final danmakuVisible = playback.danmakuVisible;
-    final fit = playback.fit;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
     return Container(
       key: _barAnchor,
@@ -1516,6 +1656,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             unawaited(_togglePlay());
                           },
                   ),
+                  // The step to the part after this one, right beside play: a
+                  // course or a serial is watched forwards, and the chip keeps
+                  // that step on the bar while the shelf under the picture (or
+                  // the rail beside it) keeps the jump to any part.
+                  if (_hasNextPart) _vodNextPartChip(t, compact: compact),
                   PlayerBarButton(
                     icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
                     label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
@@ -1543,19 +1688,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // Only the fitted bar has spare width to split its clusters
                   // with; a scrolling one keeps the verbs right after.
                   if (!compact) const Spacer(),
-                  PlayerBarButton(
-                    icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-                    label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
-                    selected: danmakuVisible,
-                    onPressed: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(
-                              ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !danmakuVisible),
-                            );
-                          },
-                  ),
                   if (qualities.isNotEmpty)
                     _vodPickerButton(
                       panel: _VodPanel.quality,
@@ -1568,8 +1700,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // so the bar that rests on the picture keeps no second copy of
                   // the choice: one list, one entry. The immersive surface has no
                   // page under it — the picture is the whole window — and there
-                  // the catalogue on the bar is the only way from one part to
-                  // the next, so it stays.
+                  // the catalogue on the bar is the only way to any part (the
+                  // chip only steps forward), so it stays.
                   if (parts.length > 1 && immersive)
                     _vodPickerButton(
                       panel: _VodPanel.parts,
@@ -1585,80 +1717,107 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     semanticLabel: t.vod.speed,
                     compact: compact,
                   ),
-                  // The picture is already 16:9 on a phone, so the ratio's
-                  // one more control stays out of the compact bar.
-                  if (!compact)
-                    _vodPickerButton(
-                      panel: _VodPanel.fit,
-                      icon: DsIcons.aspectRatio,
-                      label: fitLabels(t)[fit.index],
-                      semanticLabel: t.settings.fit,
-                      compact: compact,
-                    ),
+                  // The danmaku's switch and its settings, the reading end of
+                  // what is on the picture: the pair the room's bar draws.
                   PlayerBarButton(
-                    icon: DsIcons.download,
-                    label: t.vod.download,
-                    onPressed: _part == null || _detail == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_startDownload());
-                          },
-                  ),
-                  // The four verbs the room's bar has and this one lacked:
-                  // listen without the picture, keep the frame, send it to a
-                  // TV, read the numbers behind it.
-                  PlayerBarButton(
-                    icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
-                    label: t.room.audioOnlyMode,
-                    selected: _audioOnly,
+                    icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+                    label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
+                    selected: danmakuVisible,
                     onPressed: handle == null
                         ? null
                         : () {
                             _wake();
-                            unawaited(_toggleAudioOnly());
+                            unawaited(
+                              ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !danmakuVisible),
+                            );
                           },
                   ),
-                  if (handle?.canCaptureScreenshot ?? false)
-                    PlayerBarButton(
-                      icon: DsIcons.camera,
-                      label: t.room.screenshot,
-                      onPressed: () {
-                        _wake();
-                        unawaited(_screenshot());
-                      },
-                    ),
-                  if (_play != null)
-                    PlayerBarButton(
-                      icon: DsIcons.cast,
-                      label: t.room.cast,
-                      onPressed: () {
-                        _wake();
-                        unawaited(_cast());
-                      },
-                    ),
                   PlayerBarButton(
-                    icon: DsIcons.activity,
-                    label: t.room.statsToggle,
-                    selected: ref.watch(playerStatsVisibleProvider),
-                    onPressed: handle == null ? null : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+                    icon: DsIcons.slidersHorizontal,
+                    label: t.settings.navDanmaku,
+                    onPressed: () {
+                      _wake();
+                      unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location));
+                    },
                   ),
-                  PlayerBarButton(
-                    icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
-                    label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
-                    onPressed: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_toggleFullscreen());
-                          },
-                  ),
+                  // The window verbs, then the way out of the picture's box —
+                  // the room bar's pair: the desktop's window-fullscreen first,
+                  // then the system fullscreen the phone turns for.
+                  if (_desktop && presentation != PresentationMode.pip)
+                    PlayerBarButton(
+                      icon: presentation == PresentationMode.windowFullscreen ? DsIcons.shrink : DsIcons.expand,
+                      label: presentation == PresentationMode.windowFullscreen
+                          ? t.room.windowFullscreenOff
+                          : t.room.windowFullscreenOn,
+                      selected: presentation == PresentationMode.windowFullscreen,
+                      onPressed: handle == null
+                          ? null
+                          : () {
+                              _wake();
+                              unawaited(presentationController.toggleWindowFullscreen(handle.id));
+                            },
+                    ),
+                  if (presentation != PresentationMode.pip)
+                    PlayerBarButton(
+                      icon: immersive ? DsIcons.minimize2 : DsIcons.maximize,
+                      label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
+                      onPressed: handle == null
+                          ? null
+                          : () {
+                              _wake();
+                              unawaited(_toggleFullscreen());
+                            },
+                    ),
                 ],
               );
               return compact ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) : bar;
             },
           ),
         ],
+      ),
+    );
+  }
+
+  /// The 下一P chip: the step's glyph and word in the pickers' shape, one
+  /// press to the part after this one. It stays a word, not a bare glyph,
+  /// because a step forward is a decision about the episode, not a twitch of
+  /// the sound.
+  Widget _vodNextPartChip(Translations t, {required bool compact}) {
+    final theme = DsTheme.of(context);
+    return TvFocusScale(
+      child: DsPressable(
+        semanticLabel: t.vod.nextPart,
+        onPressed: () {
+          _wake();
+          _openNextPart();
+        },
+        builder: (context, states, _) {
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+          return Container(
+            height: theme.sizes.sm,
+            padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+            decoration: DsBoxDecoration(
+              color: lit ? playerInkHover : null,
+              borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s4,
+              children: [
+                DsIcon(DsIcons.skipForward, size: theme.sizes.iconSm, color: playerInkMuted),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 110),
+                  child: Text(
+                    t.vod.nextPart,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: playerInk),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -1731,7 +1890,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _VodPanel.quality => 200,
     _VodPanel.parts => 260,
     _VodPanel.speed => 180,
-    _VodPanel.fit => 180,
   };
 
   /// The open picker's catalogue.
@@ -1789,23 +1947,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 onPressed: () {
                   _closePanel();
                   unawaited(_setSpeed(choice.value));
-                },
-              ),
-          ],
-        );
-      case _VodPanel.fit:
-        final fit = ref.watch(playbackSettingsProvider).fit;
-        return PlayerOverlayPanel(
-          title: t.settings.fit,
-          width: _panelWidth(panel),
-          children: [
-            for (final option in PlaybackFit.values)
-              PlayerPanelOption(
-                label: fitLabels(t)[option.index],
-                selected: option == fit,
-                onPressed: () {
-                  _closePanel();
-                  unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
                 },
               ),
           ],
@@ -1947,7 +2088,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  Widget _info(BuildContext context, VodDetail detail, Translations t) {
+  /// The archive's details under the picture. [showParts] leaves the parts
+  /// shelf out where the rail beside the picture draws it instead (the wide
+  /// layout), so the page never names the same list twice.
+  Widget _info(BuildContext context, VodDetail detail, Translations t, {required bool showParts}) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final silent = _play?.silent ?? _silent;
@@ -2063,7 +2207,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               ],
             ),
           ),
-        if (detail.parts.length > 1)
+        if (showParts && detail.parts.length > 1)
           _PartsSection(
             parts: detail.parts,
             current: _part,
@@ -2088,8 +2232,19 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   }
 }
 
-/// The catalogues the video bar hangs over the picture.
-enum _VodPanel { quality, parts, speed, fit }
+/// Whether this host offers the desktop-only window-fullscreen button — the
+/// room bar's own rule: the picture filling the app window while the window
+/// stays a window is a desktop shell's verb.
+bool get _desktop =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.linux);
+
+/// The catalogues the video bar hangs over the picture. The picture's fit is
+/// not one of them any more: it reads from the strip's ⋮ menu, where a choice
+/// made once belongs.
+enum _VodPanel { quality, parts, speed }
 
 /// The picture's box: a fixed 16:9 card inline, the container's own shape in
 /// the immersive modes.
@@ -2290,19 +2445,28 @@ final class _PartsSectionState extends State<_PartsSection> {
             ],
           ],
         ),
-        Wrap(
-          spacing: DsSpace.s8,
-          runSpacing: DsSpace.s8,
-          children: [
-            for (final candidate in shown)
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => widget.onOpen(candidate),
-                leading: candidate.cid == widget.current?.cid ? const DsIcon(DsIcons.play, size: 12) : null,
-                child: Text('P${candidate.page} ${candidate.title}'),
-              ),
-          ],
+        // A chip never asks for more width than the shelf has: a course's
+        // long part names would push one past the rail the shelf sometimes
+        // reads in, so every chip caps at the shelf's own measure and the
+        // name ellipsizes.
+        LayoutBuilder(
+          builder: (context, constraints) => Wrap(
+            spacing: DsSpace.s8,
+            runSpacing: DsSpace.s8,
+            children: [
+              for (final candidate in shown)
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => widget.onOpen(candidate),
+                    leading: candidate.cid == widget.current?.cid ? const DsIcon(DsIcons.play, size: 12) : null,
+                    child: Text('P${candidate.page} ${candidate.title}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+            ],
+          ),
         ),
       ],
     );

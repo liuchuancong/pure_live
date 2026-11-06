@@ -5,8 +5,8 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 
 /// The cinema's six catalogues, in the reference's tab order: Bilibili's own
-/// season types.
-const List<int> kVodPgcTypes = [1, 4, 2, 3, 5, 7];
+/// season types — anime, movie, documentary, guochuang, tv, variety.
+const List<int> kVodPgcTypes = [1, 2, 3, 4, 5, 7];
 
 /// One catalogue's seasons, the cursor its next page asks with, and its load
 /// state.

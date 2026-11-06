@@ -1,8 +1,10 @@
 import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
+import 'package:flutter/services.dart'
+    show Clipboard, ClipboardData, FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -14,11 +16,14 @@ import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodApp
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
-import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart' show VodApiType, vodPlaybackSettingsProvider;
+import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart'
+    show VodApiType, vodPlaybackSettingsProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart' show vodDashSourceOf;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonHead, vodDurationText;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, silencePlayer;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/shared/shared.dart'
+    show AudienceFormat, CoverFallback, LiveWindow, RoomCoverChip, cachedImage, kRoomCoverScrim, silencePlayer;
+import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
 /// One cinema title's page: the player over media_core, the season's blurb,
 /// and its episodes — the reference's PgcFeatureScreen, with the station's own
@@ -185,9 +190,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       if (dash != null) {
         try {
           await handle.openMedia(dash, autoPlay: true);
-        // media_core signals "this engine cannot join two essences" as an
-        // UnsupportedError; the muxed request below is its handler.
-        // ignore: avoid_catching_errors
+          // media_core signals "this engine cannot join two essences" as an
+          // UnsupportedError; the muxed request below is its handler.
+          // ignore: avoid_catching_errors
         } on UnsupportedError {
           // A single-URL engine: ask the muxed answer, whose sound is inside
           // the file.
@@ -353,7 +358,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     } else if (immersive) {
       body = _player(immersive: true);
     } else {
-      body = _page(season, t);
+      body = _page(season);
     }
     return CallbackShortcuts(
       bindings: {
@@ -386,8 +391,12 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     );
   }
 
-  Widget _page(VodSeasonDetail detail, Translations t) {
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+  Widget _page(VodSeasonDetail detail) {
+    final window = MediaQuery.sizeOf(context).width;
+    final inset = LiveWindow.pageInset(window);
+    final showDetails = ref.watch(vodPlaybackSettingsProvider).showDetails;
+    final episode = _episode;
+    final episodes = detail.episodes;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
       child: Center(
@@ -398,8 +407,27 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
             spacing: DsSpace.s16,
             children: [
               _player(immersive: false),
-              _header(detail),
-              if (detail.episodes.isNotEmpty) _episodes(detail, t),
+              _SeasonHead(
+                season: detail,
+                episode: episode,
+                showDetails: showDetails,
+                // The head's poster keeps the mockup's two sizes: the wall
+                // card's measure beside the words on a desk, a phone's
+                // narrower tile where the column cannot spare the room.
+                posterWidth: LiveWindow.isCompact(window) ? 110 : 216,
+                canPlay: episodes.isNotEmpty,
+                onPlay: _playNow,
+                canDownload: (episode?.cid ?? 0) > 0,
+                onDownload: () => unawaited(_startDownload()),
+                onShare: () => unawaited(_share()),
+              ),
+              const DsDivider(),
+              if (episodes.isNotEmpty)
+                _EpisodesSection(
+                  episodes: episodes,
+                  current: episode,
+                  onOpen: (candidate) => unawaited(_openEpisode(candidate)),
+                ),
             ],
           ),
         ),
@@ -407,26 +435,45 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     );
   }
 
-  /// The season's own front, taken out of the answer the page already reads:
-  /// the poster, the name said once, where the season stands, the episode on
-  /// the picture, its figures and tags, and the blurb the card wall could only
-  /// truncate.
-  Widget _header(VodSeasonDetail detail) {
-    return VodSeasonHead(
-      season: detail,
-      episode: _episode,
-      // The station's one switch for the figures and the blurb; the video
-      // page's details obey it, so this page's do too.
-      showDetails: ref.watch(vodPlaybackSettingsProvider).showDetails,
-    );
+  /// Puts a picture on: the episode already on the player resumes, and before
+  /// one has opened, the season's first does — the head's 立即播放 verb.
+  void _playNow() {
+    final handle = _handle;
+    if (handle != null) {
+      unawaited(handle.play());
+      return;
+    }
+    final episodes = ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.episodes ?? const <VodEpisode>[];
+    if (episodes.isEmpty) return;
+    unawaited(_openEpisode(episodes.first));
   }
 
-  Widget _episodes(VodSeasonDetail detail, Translations t) {
-    return _EpisodesSection(
-      episodes: detail.episodes,
-      current: _episode,
-      onOpen: (episode) => unawaited(_openEpisode(episode)),
-    );
+  /// Sends the season's web address through the system share sheet where the
+  /// platform has one, else copies the link — the live room's share, pointed
+  /// at a title rather than a room.
+  Future<void> _share() async {
+    final season = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+    final title = season?.title.trim() ?? '';
+    final link = 'https://www.bilibili.com/bangumi/play/ss${widget.seasonId}';
+    final platform = defaultTargetPlatform;
+    final sheet =
+        !kIsWeb &&
+        (platform == TargetPlatform.android ||
+            platform == TargetPlatform.iOS ||
+            platform == TargetPlatform.macOS ||
+            platform == TargetPlatform.windows);
+    if (sheet) {
+      try {
+        final text = title.isEmpty ? link : '$title\n$link';
+        await SharePlus.instance.share(ShareParams(text: text, subject: title.isEmpty ? null : title));
+        return;
+      } on Object {
+        // A platform without a usable sheet falls through to the clipboard.
+      }
+    }
+    if (!mounted) return;
+    await Clipboard.setData(ClipboardData(text: link));
+    if (mounted) showDsToast(context: context, title: context.t.vod.linkCopied);
   }
 
   /// The picture and its controls; [immersive] drops the page's chrome and
@@ -635,12 +682,323 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 }
 
+/// One cinema season as the page opens with it: the mockup's poster head —
+/// the front at its own 3:4 with the score on its corner, and beside it the
+/// name, the tags, the figures, the episode on the picture, the actions row
+/// (立即播放, download, share) and the blurb folded to two lines.
+final class _SeasonHead extends StatelessWidget {
+  const _SeasonHead({
+    required this.season,
+    required this.episode,
+    required this.showDetails,
+    required this.posterWidth,
+    required this.canPlay,
+    required this.onPlay,
+    required this.canDownload,
+    required this.onDownload,
+    required this.onShare,
+  });
+
+  /// The season shown.
+  final VodSeasonDetail season;
+
+  /// The episode the page is playing, when one is.
+  final VodEpisode? episode;
+
+  /// Whether the score, the counts and the blurb appear — the station's own
+  /// switch, the same one the video page's details answer to.
+  final bool showDetails;
+
+  /// The poster's width: the wide head's 216, the phone's 110.
+  final double posterWidth;
+
+  /// Whether 立即播放 has an episode to open.
+  final bool canPlay;
+
+  /// Puts a picture on.
+  final VoidCallback onPlay;
+
+  /// Whether the episode on the picture can enter the download queue.
+  final bool canDownload;
+
+  /// Hands the episode to the queue.
+  final VoidCallback onDownload;
+
+  /// Shares the season's web address.
+  final VoidCallback onShare;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final rating = showDetails ? season.rating : '';
+    // A film's state line is its release day (`2023年03月31日上映`), which
+    // already says the year; only a series' line (`更新至第1278话`) leaves
+    // the year for the tags to say.
+    final stateNamesYear = season.subtitle.contains(RegExp(r'\d{4}'));
+    final published = season.publishedAt;
+    final area = season.area;
+    // The tags row leads with where and when — the mockup's `2026 · 日本` —
+    // then the source's own subject tags, then the score in its accent
+    // stamp. A film whose state line already says the year does not say it
+    // twice.
+    final String? lead;
+    if (area.isNotEmpty) {
+      lead = published != null && !stateNamesYear ? '${published.year} · $area' : area;
+    } else {
+      lead = published != null && !stateNamesYear ? '${published.year}' : null;
+    }
+    final chips = <({String text, bool score})>[
+      if (lead != null) (text: lead, score: false),
+      for (final style in season.styles) (text: style, score: false),
+      if (rating.isNotEmpty) (text: rating, score: true),
+    ];
+    final plays = season.viewCount;
+    final danmaku = season.danmakuCount;
+    final facts = [
+      if (showDetails && plays != null && plays > 0) '${AudienceFormat.format(plays)} ${t.vod.views}',
+      if (showDetails && danmaku != null && danmaku > 0) '${AudienceFormat.format(danmaku)} ${t.vod.danmaku}',
+      if (season.subtitle.isNotEmpty) season.subtitle,
+    ];
+    final current = episode;
+    final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
+    final cover = season.coverUrl;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s16,
+      children: [
+        SizedBox(
+          width: posterWidth,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            child: AspectRatio(
+              aspectRatio: 3 / 4,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (cover == null || cover.isEmpty)
+                    fallback
+                  else
+                    DsImage(
+                      image: cachedImage(cover),
+                      aspectRatio: 3 / 4,
+                      semanticLabel: season.title,
+                      fallback: fallback,
+                    ),
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                    ),
+                  ),
+                  // The score on the poster's corner, the mockup's accent
+                  // stamp: the one figure worth reading before the words.
+                  if (rating.isNotEmpty)
+                    PositionedDirectional(top: DsSpace.s6, end: DsSpace.s6, child: _scoreBadge(context, rating)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s8,
+            children: [
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: Text(
+                      season.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.heading.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                  ),
+                  if (season.followed) DsBadge(label: Text(t.vod.following), dot: false),
+                ],
+              ),
+              if (chips.isNotEmpty)
+                Wrap(
+                  spacing: DsSpace.s6,
+                  runSpacing: DsSpace.s6,
+                  children: [
+                    for (final chip in chips)
+                      if (chip.score)
+                        _scoreBadge(context, '${t.vod.score} ${chip.text}')
+                      else
+                        DsBadge(label: Text(chip.text), dot: false),
+                  ],
+                ),
+              if (facts.isNotEmpty)
+                Text(
+                  facts.join(' · '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              if (current != null)
+                Row(
+                  spacing: DsSpace.s6,
+                  children: [
+                    Flexible(
+                      child: DsBadge(label: Text(t.vod.episodeNo(index: current.index)), dot: false),
+                    ),
+                    Expanded(
+                      child: Text(
+                        current.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(color: colors.text),
+                      ),
+                    ),
+                  ],
+                ),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  DsButton(
+                    variant: DsButtonVariant.primary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.play, size: 14),
+                    onPressed: canPlay ? onPlay : null,
+                    child: Text(t.vod.playNow),
+                  ),
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.download, size: 14),
+                    onPressed: canDownload ? onDownload : null,
+                    child: Text(t.vod.download),
+                  ),
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.vod.share,
+                    onPressed: onShare,
+                    icon: const DsIcon(DsIcons.share),
+                  ),
+                ],
+              ),
+              if (showDetails && season.evaluate.isNotEmpty) _SeasonBlurb(text: season.evaluate),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The score in the mockup's accent stamp: white digits on the accent
+  /// fill, the poster corner and the tags row saying the same figure once
+  /// each in their own place.
+  Widget _scoreBadge(BuildContext context, String text) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsBadge(
+      label: Text(text),
+      dot: false,
+      style: DsBadgeStyle(
+        background: colors.accent,
+        foreground: colors.onAccent,
+        borderRadius: BorderRadius.circular(theme.radii.control(18)),
+        textStyle: theme.typography.numeric(
+          theme.typography.caption.copyWith(color: colors.onAccent, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+/// The season's blurb, folded to two lines until the viewer asks for the
+/// rest — the mockup's 简介 rule, measured the same way the video page's
+/// fold is, so it only offers the verb when the words really run past.
+final class _SeasonBlurb extends StatefulWidget {
+  const _SeasonBlurb({required this.text});
+
+  final String text;
+
+  @override
+  State<_SeasonBlurb> createState() => _SeasonBlurbState();
+}
+
+final class _SeasonBlurbState extends State<_SeasonBlurb> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final style = DsTheme.of(context).typography.body.copyWith(color: colors.textMuted);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: 2,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        painter.dispose();
+        if (!overflows) return Text(widget.text, style: style);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s4,
+          children: [
+            Text(
+              widget.text,
+              maxLines: _expanded ? null : 2,
+              overflow: _expanded ? null : TextOverflow.ellipsis,
+              style: style,
+            ),
+            DsButton(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.sm,
+              onPressed: () => setState(() => _expanded = !_expanded),
+              child: Text(_expanded ? t.vod.collapse : t.vod.expand),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// A season's episodes, [kVodEpisodeGroup] at a time with a pager and a jump
 /// box when they run past one group — the episode shelf's pattern shared with
 /// the video page's parts, for the seasons that run to hundreds of episodes.
 const int kVodEpisodeGroup = 20;
 
-final class _EpisodesSection extends StatefulWidget {
+/// The information line under an episode card's cover: one caption line held
+/// at a fixed height, so a row's cards all end at the same line whatever the
+/// column width — the season card's own measure, at an episode's size.
+const double kVodEpisodeInfoExtent = 30;
+
+/// The widest an episode card gets before the shelf takes another column, and
+/// the bounds it keeps whatever the window says: four across on a desktop,
+/// two on a phone — the mockup's own two counts.
+const double kVodEpisodeMaxExtent = 280;
+const int kVodEpisodeMaxColumns = 4;
+const int kVodEpisodeMinColumns = 2;
+
+/// The columns a shelf [content] pixels wide takes: as many as keep a card at
+/// or under [kVodEpisodeMaxExtent], within the mockup's two-to-four bounds.
+/// [crossSpacing] is the viewer's own column spacing, so the count always
+/// leaves room for the gaps it will really draw.
+int episodeColumnsForWidth(double content, {required double crossSpacing}) {
+  if (content <= 0) return kVodEpisodeMinColumns;
+  double width(int columns) => (content - crossSpacing * (columns - 1)) / columns;
+  var columns = 1;
+  while (columns < kVodEpisodeMaxColumns && width(columns) > kVodEpisodeMaxExtent) {
+    columns++;
+  }
+  if (columns < kVodEpisodeMinColumns) return kVodEpisodeMinColumns;
+  return columns;
+}
+
+final class _EpisodesSection extends ConsumerStatefulWidget {
   const _EpisodesSection({required this.episodes, required this.current, required this.onOpen});
 
   final List<VodEpisode> episodes;
@@ -652,10 +1010,10 @@ final class _EpisodesSection extends StatefulWidget {
   final void Function(VodEpisode episode) onOpen;
 
   @override
-  State<_EpisodesSection> createState() => _EpisodesSectionState();
+  ConsumerState<_EpisodesSection> createState() => _EpisodesSectionState();
 }
 
-final class _EpisodesSectionState extends State<_EpisodesSection> {
+final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
   int _group = 0;
 
   @override
@@ -729,6 +1087,11 @@ final class _EpisodesSectionState extends State<_EpisodesSection> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    // The gaps between the cards are the viewer's browsing spacing, the same
+    // measure every feed on the station pages by.
+    final browse = ref.watch(browseSettingsProvider);
+    final crossSpacing = browse.crossSpacing;
+    final mainSpacing = browse.mainSpacing;
     final episodes = widget.episodes;
     final groups = (episodes.length + kVodEpisodeGroup - 1) ~/ kVodEpisodeGroup;
     final group = _group.clamp(0, groups - 1);
@@ -777,20 +1140,116 @@ final class _EpisodesSectionState extends State<_EpisodesSection> {
             ],
           ],
         ),
-        Wrap(
-          spacing: DsSpace.s8,
-          runSpacing: DsSpace.s8,
-          children: [
-            for (final candidate in shown)
-              DsButton(
-                variant: candidate.id == widget.current?.id ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => widget.onOpen(candidate),
-                child: Text(candidate.index),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final content = constraints.maxWidth;
+            // A column with nothing to divide cannot size a tile; the page's
+            // own layout never hands one in, but a guard keeps the delegate
+            // honest.
+            if (content <= 0) return const SizedBox.shrink();
+            final columns = episodeColumnsForWidth(content, crossSpacing: crossSpacing);
+            final tileWidth = (content - crossSpacing * (columns - 1)) / columns;
+            return GridView.builder(
+              shrinkWrap: true,
+              // The page's own scroll carries the shelf; the grid never
+              // competes with it.
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: crossSpacing,
+                mainAxisSpacing: mainSpacing,
+                mainAxisExtent: tileWidth * 9 / 16 + kVodEpisodeInfoExtent,
               ),
-          ],
+              itemCount: shown.length,
+              itemBuilder: (context, index) {
+                final candidate = shown[index];
+                final playing = candidate.id == widget.current?.id;
+                return DsCard(
+                  onPressed: () => widget.onOpen(candidate),
+                  semanticLabel: '${t.vod.episodeNo(index: candidate.index)} ${candidate.title}',
+                  style: DsCardStyle(
+                    padding: EdgeInsets.zero,
+                    hovered: DsCardStyle(background: colors.hover),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _episodeCover(candidate, context),
+                            const Positioned.fill(
+                              child: IgnorePointer(
+                                child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                              ),
+                            ),
+                            // The episode's number on the cover's corner;
+                            // the one on the picture wears the accent, so
+                            // the shelf always answers 观看到第几话.
+                            PositionedDirectional(
+                              top: DsSpace.s6,
+                              start: DsSpace.s6,
+                              child: playing
+                                  ? DsBadge(
+                                      label: Text(t.vod.episodeNo(index: candidate.index)),
+                                      dot: false,
+                                      style: DsBadgeStyle(
+                                        background: colors.accent,
+                                        foreground: colors.onAccent,
+                                        borderRadius: BorderRadius.circular(theme.radii.control(18)),
+                                        textStyle: theme.typography.numeric(
+                                          theme.typography.caption.copyWith(
+                                            color: colors.onAccent,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : RoomCoverChip(
+                                      compact: true,
+                                      text: t.vod.episodeNo(index: candidate.index),
+                                      style: theme.typography.numeric(theme.typography.caption),
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: kVodEpisodeInfoExtent,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(DsSpace.s6, DsSpace.s4, DsSpace.s6, DsSpace.s4),
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: Text(
+                              candidate.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(
+                                color: playing ? colors.accent : colors.text,
+                                fontWeight: playing ? FontWeight.w600 : null,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
         ),
       ],
     );
+  }
+
+  /// An episode's cover, or the theme's stand-in.
+  static Widget _episodeCover(VodEpisode episode, BuildContext context) {
+    final fallback = CoverFallback(title: episode.title, padding: const EdgeInsets.all(DsSpace.s8));
+    final url = episode.coverUrl;
+    if (url == null || url.isEmpty) return fallback;
+    return DsImage(image: cachedImage(url), aspectRatio: 16 / 9, semanticLabel: episode.title, fallback: fallback);
   }
 }

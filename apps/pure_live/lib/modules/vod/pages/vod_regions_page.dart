@@ -14,25 +14,27 @@ import 'package:pure_live/shared/shared.dart';
 
 /// The regions the 分区 page offers: the channel ids (1xxx) the region feed
 /// takes. These are not the classic partition ids — the feed refuses those.
+/// The values stand in the design's strip order, so the tabs read as the
+/// reference lays them out and the page opens on the strip's first name.
 /// The names are the app's own words, not the platform's Chinese labels
 /// pasted into a const table: every other label this row draws comes from
 /// Slang, and a viewer reading the app in English had a Chinese tab strip.
 enum VodRegionChannel {
-  animation(1005),
   games(1008),
-  guichu(1007),
+  animation(1005),
   music(1003),
   dance(1004),
   film(1001),
-  entertainment(1002),
   knowledge(1010),
   tech(1012),
-  news(1009),
   food(1020),
   automotive(1013),
-  fashion(1014),
   sports(1018),
-  animals(1024);
+  animals(1024),
+  guichu(1007),
+  news(1009),
+  entertainment(1002),
+  fashion(1014);
 
   VodRegionChannel(this.id);
 
@@ -41,29 +43,30 @@ enum VodRegionChannel {
 
   /// The channel's name in the viewer's language.
   String label(Translations t) => switch (this) {
-    VodRegionChannel.animation => t.vod.regionAnimation,
     VodRegionChannel.games => t.vod.regionGames,
-    VodRegionChannel.guichu => t.vod.regionGuichu,
+    VodRegionChannel.animation => t.vod.regionAnimation,
     VodRegionChannel.music => t.vod.regionMusic,
     VodRegionChannel.dance => t.vod.regionDance,
     VodRegionChannel.film => t.vod.regionFilm,
-    VodRegionChannel.entertainment => t.vod.regionEntertainment,
     VodRegionChannel.knowledge => t.vod.regionKnowledge,
     VodRegionChannel.tech => t.vod.regionTech,
-    VodRegionChannel.news => t.vod.regionNews,
     VodRegionChannel.food => t.vod.regionFood,
     VodRegionChannel.automotive => t.vod.regionAutomotive,
-    VodRegionChannel.fashion => t.vod.regionFashion,
     VodRegionChannel.sports => t.vod.regionSports,
     VodRegionChannel.animals => t.vod.regionAnimals,
+    VodRegionChannel.guichu => t.vod.regionGuichu,
+    VodRegionChannel.news => t.vod.regionNews,
+    VodRegionChannel.entertainment => t.vod.regionEntertainment,
+    VodRegionChannel.fashion => t.vod.regionFashion,
   };
 }
 
 /// The station's 分区 page: one channel at a time, its recommendation feed
 /// paged by scroll.
 final class VodRegionsPage extends ConsumerStatefulWidget {
-  /// The regions page, opening on [channel].
-  const VodRegionsPage({this.channel = VodRegionChannel.animation, super.key});
+  /// The regions page, opening on [channel] — the strip's first name unless
+  /// a caller names another.
+  const VodRegionsPage({this.channel = VodRegionChannel.games, super.key});
 
   /// The channel the page opens on.
   final VodRegionChannel channel;
@@ -154,7 +157,8 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
   }
 }
 
-/// One channel's cached feed as the shared card grid.
+/// One channel's cached feed as the shared card grid — the home page's grid,
+/// its card/list layout and its spacing the viewer's browse settings say.
 final class _RegionFeedView extends ConsumerWidget {
   const _RegionFeedView({
     required this.feedKey,
@@ -171,7 +175,7 @@ final class _RegionFeedView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(browseSettingsProvider);
+    final browse = ref.watch(browseSettingsProvider);
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
@@ -183,8 +187,8 @@ final class _RegionFeedView extends ConsumerWidget {
       listMainAxisExtent: 104,
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
       infoExtent: kVodCardInfoExtent,
-      crossSpacing: settings.crossSpacing,
-      mainSpacing: settings.mainSpacing,
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
       isLoading: state.loading,
       hasMore: state.hasMore,
       onLoadMore: () => controller.loadMore(feedKey),

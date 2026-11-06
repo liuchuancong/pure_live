@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 
 /// One piece a Bilibili card draws. The cards' layout is fixed — the station's
-/// own cover ink, counts at the foot's start and the length at its end, the
-/// uploader under the title, the poster's state and score in its corners — and
+/// own cover ink, the counts at the cover foot's start, the length in a
+/// capsule at its end, the uploader under the title, the poster's score in
+/// its one corner or the state there with the state line under the name — and
 /// a choice here only says whether a piece appears at all.
 enum VodCardElement {
   /// The play figure at the cover's foot, its start.
@@ -15,17 +16,18 @@ enum VodCardElement {
   /// The danmaku count beside the play figure.
   danmaku,
 
-  /// The length at the cover's foot, its end.
+  /// The length in the dark capsule at the cover's foot's end.
   duration,
 
   /// The uploader's name under the title.
   uploader,
 
-  /// The poster card's corner mark: where the season stands
-  /// (更新至第 12 话 / 全 26 集 / 上映日).
+  /// The poster card's state: where the season stands
+  /// (更新至第 12 话 / 全 26 集 / 上映日) — in the poster's corner while no
+  /// score takes it, else on the line under the name.
   seasonState,
 
-  /// The poster card's score at the foot of its cover.
+  /// The poster card's score, in the accent's ink in the poster's corner.
   seasonScore,
 }
 

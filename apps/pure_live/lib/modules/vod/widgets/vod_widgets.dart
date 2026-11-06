@@ -36,21 +36,24 @@ String vodDateText(DateTime time, {DateTime? now}) {
 const double kVodCardInfoExtent = 72;
 
 /// The information area under a season card's poster: room for a two-line
-/// title, held at a fixed height so the posters of a row all end at the same
-/// line whatever the column width, and the poster takes the height left.
-const double kVodSeasonCardInfoExtent = 60;
+/// title and the state line under it, held at a fixed height so the posters
+/// of a row all end at the same line whatever the column width, and the
+/// poster takes the height left.
+const double kVodSeasonCardInfoExtent = 76;
 
 /// The season tile's width over height — the measure every poster wall of the
 /// station pages by, so a card draws its name block at
-/// [kVodSeasonCardInfoExtent] and gives the poster the rest.
-const double kVodSeasonTileAspect = 0.62;
+/// [kVodSeasonCardInfoExtent] and gives the poster the rest. The figure keeps
+/// the poster itself near the station's 3:4 once the name block is paid for.
+const double kVodSeasonTileAspect = 0.56;
 
 /// One Bilibili archive as a card in a browse or search grid, drawn the way
-/// the station's own home lays them out: the counts sit on the cover as
-/// white ink with a soft shadow — plays and danmaku at its foot's start,
-/// the length at its foot's end — and beneath it the title and the uploader.
-/// The whole card is one press target. Which of those four pieces appears is
-/// the card visibility setting's to say; the title is not one of them.
+/// the station's own home lays them out: the play and danmaku counts sit on
+/// the cover as white ink with a soft shadow at its foot's start, the length
+/// closes the foot as a dark capsule at its end, and beneath the cover the
+/// title runs two lines with the uploader right under it. The whole card is
+/// one press target. Which of those pieces appears is the card visibility
+/// setting's to say; the title is not one of them.
 final class VodVideoCard extends ConsumerWidget {
   /// The card for [video]; [onOpen] opens its page.
   const VodVideoCard({required this.video, this.onOpen, this.rank, super.key});
@@ -126,8 +129,8 @@ final class VodVideoCard extends ConsumerWidget {
                       ),
                     ),
                   // The station's own cover ink: the play and danmaku figures
-                  // at the foot's start, the length at its end, each plain
-                  // white with a soft shadow instead of a capsule. Hidden
+                  // at the foot's start as plain white with a soft shadow,
+                  // the length closing the foot in a dark capsule. Hidden
                   // pieces leave their slot, and with all three hidden the row
                   // is not drawn at all.
                   if (plays.isNotEmpty || danmaku.isNotEmpty || showsDuration)
@@ -149,16 +152,7 @@ final class VodVideoCard extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          if (showsDuration)
-                            Text(
-                              vodDurationText(video.duration!),
-                              style: theme.typography.numeric(
-                                theme.typography.caption.copyWith(
-                                  color: const Color(0xFFFFFFFF),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
+                          if (showsDuration) _VodDurationBadge(duration: video.duration!),
                         ],
                       ),
                     ),
@@ -170,6 +164,7 @@ final class VodVideoCard extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
                   children: [
                     Text(
                       video.title,
@@ -177,7 +172,6 @@ final class VodVideoCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                     ),
-                    const Spacer(),
                     if (uploader.isNotEmpty)
                       Text(
                         uploader,
@@ -224,13 +218,85 @@ final class _CoverInk extends StatelessWidget {
         Text(
           label,
           style: theme.typography.numeric(
-            theme.typography.caption.copyWith(
-              color: const Color(0xFFFFFFFF),
-              shadows: shadow,
-            ),
+            theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), shadows: shadow),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The archive's length in a dark capsule at a cover's foot's end — the
+/// station's own duration mark, its digits tabular so the count holds its
+/// width while it plays. The card and the row close their covers with the
+/// same capsule.
+final class _VodDurationBadge extends StatelessWidget {
+  const _VodDurationBadge({required this.duration});
+
+  /// The length shown.
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return RoomCoverChip(
+      compact: true,
+      text: vodDurationText(duration),
+      style: theme.typography.numeric(
+        theme.typography.caption.copyWith(fontSize: 10, color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+/// The row's one meta line: the uploader — or the page's own line in its
+/// place — opens it, then the play and danmaku figures with their glyphs, as
+/// the station's own search row reads. One line with an ellipsis rather than
+/// a fold: a narrow window shortens the line instead of letting it stripe.
+final class _VodRowMeta extends StatelessWidget {
+  const _VodRowMeta({required this.note, required this.plays, required this.danmaku});
+
+  /// The line's opening words; empty leaves them out.
+  final String note;
+
+  /// The formatted play count; empty leaves it out.
+  final String plays;
+
+  /// The formatted danmaku count; empty leaves it out.
+  final String danmaku;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final style = theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted));
+    const gap = WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      child: SizedBox(width: DsSpace.s12),
+    );
+    WidgetSpan figure(DsIconData icon, String label) => WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s3,
+        children: [
+          DsIcon(icon, size: theme.sizes.iconXs, color: colors.textSubtle),
+          Text(label, style: style),
+        ],
+      ),
+    );
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          if (note.isNotEmpty) TextSpan(text: note),
+          if (plays.isNotEmpty) ...[if (note.isNotEmpty) gap, figure(DsIcons.play, plays)],
+          if (danmaku.isNotEmpty) ...[if (note.isNotEmpty || plays.isNotEmpty) gap, figure(DsIcons.captions, danmaku)],
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: style,
     );
   }
 }
@@ -369,10 +435,14 @@ final class VodFeedHero extends StatelessWidget {
   }
 }
 
-/// One cinema title as a card: the poster carrying its update state and score,
-/// the name on a fixed line block beneath it. Which of the two corner marks
-/// appear is the card visibility setting's to say, the same table the archive
-/// card reads — a title's name is not one of the pieces it can take away.
+/// One cinema title as a card, drawn the way the station's own poster wall
+/// lays them out: the 3:4 poster carries one corner mark at its top-start —
+/// the score in the accent's ink when there is one, otherwise the state in a
+/// dark capsule — and beneath the poster the name on a fixed block with the
+/// state line under it. A score on the poster pushes the state down to that
+/// line, so the two never crowd one corner. Which of the pieces appear is the
+/// card visibility setting's to say, the same table the archive card reads —
+/// a title's name is not one of the pieces it can take away.
 final class VodSeasonCard extends ConsumerWidget {
   /// The card for [season]; [onOpen] opens its page.
   const VodSeasonCard({required this.season, this.onOpen, super.key});
@@ -388,8 +458,15 @@ final class VodSeasonCard extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final visibility = ref.watch(vodCardSettingsProvider);
-    final rating = visibility.shows(VodCardElement.seasonScore) ? season.rating : null;
-    final stateMark = visibility.shows(VodCardElement.seasonState) ? season.subtitle : '';
+    final rating = visibility.shows(VodCardElement.seasonScore) ? (season.rating ?? '').trim() : '';
+    final stateMark = visibility.shows(VodCardElement.seasonState) ? season.subtitle.trim() : '';
+    // The score takes the corner whenever it exists; the state then reads off
+    // the poster, from the line under the name. Without a score the state
+    // keeps the corner it came from, and the line stays empty rather than
+    // say the name twice.
+    final showsScore = rating.isNotEmpty;
+    final showsState = stateMark.isNotEmpty;
+    final stateOnLine = showsScore && showsState;
     final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
     final cover = season.coverUrl;
     return DsCard(
@@ -424,32 +501,33 @@ final class VodSeasonCard extends ConsumerWidget {
                       semanticLabel: season.title,
                       fallback: fallback,
                     ),
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
-                    ),
-                  ),
-                  // The poster's own corners carry a title's state, so the
-                  // block under it keeps to the name.
-                  if (stateMark.isNotEmpty)
+                  // The poster's one corner mark, at its top start: the score
+                  // in the accent's ink, or the state in the capsule the
+                  // archive's ink uses.
+                  if (showsScore)
                     PositionedDirectional(
-                      top: DsSpace.s8,
-                      end: DsSpace.s8,
-                      child: RoomCoverChip(compact: true, text: stateMark),
-                    ),
-                  if (rating != null && rating.isNotEmpty)
-                    PositionedDirectional(
-                      bottom: DsSpace.s8,
-                      end: DsSpace.s8,
-                      child: RoomCoverChip(
-                        text: rating,
-                        style: theme.typography.numeric(
-                          theme.typography.caption.copyWith(
-                            color: const Color(0xFFFFFFFF),
-                            fontWeight: FontWeight.w600,
+                      top: DsSpace.s6,
+                      start: DsSpace.s6,
+                      child: DsBadge(
+                        label: Text(rating),
+                        dot: false,
+                        style: DsBadgeStyle(
+                          height: 18,
+                          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s3),
+                          background: colors.accent,
+                          foreground: colors.onAccent,
+                          borderRadius: BorderRadius.circular(theme.radii.control(18)),
+                          textStyle: theme.typography.numeric(
+                            theme.typography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w700),
                           ),
                         ),
                       ),
+                    )
+                  else if (showsState)
+                    PositionedDirectional(
+                      top: DsSpace.s6,
+                      start: DsSpace.s6,
+                      child: RoomCoverChip(compact: true, text: stateMark),
                     ),
                 ],
               ),
@@ -458,11 +536,24 @@ final class VodSeasonCard extends ConsumerWidget {
               height: kVodSeasonCardInfoExtent,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s12, DsSpace.s8),
-                child: Text(
-                  season.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
+                  children: [
+                    Text(
+                      season.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                    if (stateOnLine)
+                      Text(
+                        stateMark,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -478,9 +569,10 @@ final class VodSeasonCard extends ConsumerWidget {
 /// stands, its score and its crowd's figures, the episode on the picture and
 /// the tags the source files it under — with the blurb underneath, whole.
 ///
-/// The name is written once, here. The card it came from keeps the state and
-/// the score on the poster because it has nowhere else to put them; a detail
-/// head has the column, so the figures belong in words.
+/// The name is written once, here. The card it came from keeps the score in
+/// its corner and the state on its one spare line, because that is all the
+/// room a wall tile has; a detail head has the column, so the figures belong
+/// in words.
 final class VodSeasonHead extends StatelessWidget {
   /// The head for [season]; [episode] is the one the page plays, and
   /// [showDetails] is the station's own switch for the figures and the blurb.
@@ -741,13 +833,20 @@ final class VodDynamicRow extends StatelessWidget {
 }
 
 /// One user search hit as a row: the avatar, the name, the signature and the
-/// figures under it.
+/// figures under it. The station's user tab only presents the hit — there is
+/// no space page behind it — so [onOpen] stays null there and the row reads
+/// as plain text; a caller that does open on a press sets it and the row
+/// turns into one press target with a chevron at its end.
 final class VodUserRow extends StatelessWidget {
-  /// The row for [user].
-  const VodUserRow({required this.user, super.key});
+  /// The row for [user]; [onOpen] opens the user, when there is a place to
+  /// open them at.
+  const VodUserRow({required this.user, this.onOpen, super.key});
 
   /// The user shown.
   final VodUser user;
+
+  /// Opens the user; null leaves the row inert, a display line.
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -758,10 +857,13 @@ final class VodUserRow extends StatelessWidget {
     final fans = user.fans;
     final videos = user.videoCount;
     return DsCard(
+      onPressed: onOpen,
       semanticLabel: user.name,
-      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+      style: DsCardStyle(
+        padding: const EdgeInsets.all(DsSpace.s12),
+        hovered: onOpen == null ? null : DsCardStyle(background: colors.hover),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s12,
         children: [
           DsAvatar(
@@ -808,22 +910,25 @@ final class VodUserRow extends StatelessWidget {
               ],
             ),
           ),
+          // The chevron is the press's own signpost: a row that opens
+          // nowhere points nowhere.
+          if (onOpen != null) DsIcon(DsIcons.chevronRight, size: theme.sizes.iconSm, color: colors.textSubtle),
         ],
       ),
     );
   }
 }
 
-/// One archive as a full-width row: the list layout of a browse feed, and the
-/// shape every collected list of the station draws — 稍后再看, 收藏 and the
-/// player's own history are one archive read three ways, so they take one row.
-///
-/// The cover carries the archive's ink: its length at the foot's end, or the
-/// watched stripe when the row is a way back to a half-finished archive.
-/// [subtitle] is the line under the title — the uploader for an archive found
-/// in a feed, the position for one the player stopped on. [stamp] sits at the
-/// end of the title line and says when the row's record happened, for the
-/// lists that are read by time rather than by what they hold.
+/// One archive as a full-width row, drawn the way the station's own search
+/// lays its hits out: the fixed-width cover on the left with the length
+/// closing its foot in a dark capsule — or the watched stripe when the row is
+/// a way back to a half-finished archive — and on the right the title with
+/// one meta line under it: the uploader, or the page's own line in its place
+/// ([subtitle]), then the play and danmaku figures with their glyphs.
+/// [stamp] sits at the end of the title line and says when the row's record
+/// happened, for the lists that are read by time rather than by what they
+/// hold. Which of the meta pieces appear is the card visibility setting's to
+/// say, the same table the grid card reads.
 final class VodVideoRow extends ConsumerWidget {
   /// The row for [video]; [onOpen] opens its page and [trailing] is the row's
   /// own action.
@@ -916,17 +1021,7 @@ final class VodVideoRow extends ConsumerWidget {
                       PositionedDirectional(
                         bottom: DsSpace.s4,
                         end: DsSpace.s4,
-                        child: RoomCoverChip(
-                          compact: true,
-                          text: vodDurationText(value),
-                          style: theme.typography.numeric(
-                            theme.typography.caption.copyWith(
-                              fontSize: 10,
-                              color: const Color(0xFFFFFFFF),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                        child: _VodDurationBadge(duration: value),
                       ),
                   ],
                 ),
@@ -963,42 +1058,8 @@ final class VodVideoRow extends ConsumerWidget {
                         ),
                     ],
                   ),
-                  if (note.isNotEmpty)
-                    Text(
-                      note,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  if (plays.isNotEmpty || danmaku.isNotEmpty)
-                    // The figures share the line with a fixed 148 px cover, so
-                    // a narrow window leaves them too little for one line —
-                    // they fold under instead of painting stripes.
-                    Wrap(
-                      spacing: DsSpace.s4,
-                      runSpacing: DsSpace.s3,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        if (plays.isNotEmpty) ...[
-                          DsIcon(DsIcons.play, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            plays,
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
-                        if (danmaku.isNotEmpty) ...[
-                          DsIcon(DsIcons.captions, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            danmaku,
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                  if (note.isNotEmpty || plays.isNotEmpty || danmaku.isNotEmpty)
+                    _VodRowMeta(note: note, plays: plays, danmaku: danmaku),
                 ],
               ),
             ),

@@ -160,12 +160,14 @@ final class _VodPageState extends ConsumerState<VodPage> {
         Expanded(
           child: switch (_tab) {
             VodTab.recommend => _VodFeedView(
+              key: ValueKey(_recommendKey),
               feedKey: _recommendKey,
               eyebrow: VodTab.recommend.label(t),
               scrollController: _scrollOf(_recommendKey),
               onOpen: _openVideo,
             ),
             VodTab.popular => _VodFeedView(
+              key: ValueKey(_popularKey),
               feedKey: _popularKey,
               eyebrow: VodTab.popular.label(t),
               scrollController: _scrollOf(_popularKey),
@@ -180,13 +182,16 @@ final class _VodPageState extends ConsumerState<VodPage> {
 }
 
 /// One cached browse feed as the shared card grid, opening on its first pick
-/// drawn at head size when the window has the height for it.
+/// drawn at head size when the window has the height for it. The page keys
+/// each tab's view on its feed, so a switch starts the wide pager on the new
+/// feed's own first page instead of carrying the tab before it.
 final class _VodFeedView extends ConsumerWidget {
   const _VodFeedView({
     required this.feedKey,
     required this.eyebrow,
     required this.scrollController,
     required this.onOpen,
+    super.key,
   });
 
   final String feedKey;
@@ -201,7 +206,7 @@ final class _VodFeedView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(browseSettingsProvider);
+    final browse = ref.watch(browseSettingsProvider);
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
@@ -218,8 +223,8 @@ final class _VodFeedView extends ConsumerWidget {
       listMainAxisExtent: 104,
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
       infoExtent: kVodCardInfoExtent,
-      crossSpacing: settings.crossSpacing,
-      mainSpacing: settings.mainSpacing,
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
       isLoading: state.loading,
       hasMore: state.hasMore,
       onLoadMore: () => controller.loadMore(feedKey),

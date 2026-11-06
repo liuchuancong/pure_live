@@ -5,13 +5,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_vod/live_vod.dart';
+import 'package:pure_live/app/app.dart' show browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/features/account/account.dart' show showBilibiliWebLoginPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
-    show VodSeasonCard, VodVideoRow, kVodSeasonTileAspect, vodDurationText, vodWatchStamp;
+    show
+        VodSeasonCard,
+        VodVideoCard,
+        VodVideoRow,
+        kVodCardInfoExtent,
+        kVodSeasonTileAspect,
+        vodDurationText,
+        vodWatchStamp;
 import 'package:pure_live/shared/shared.dart';
 
 /// The video station's 个人 page: the four lists the reference offers.
@@ -102,7 +110,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     size: DsSize.sm,
     semanticLabel: label,
     onPressed: () => unawaited(onRemove()),
-    icon: const DsIcon(DsIcons.x, size: 16),
+    icon: const DsIcon(DsIcons.trash2, size: 16),
   );
 
   Future<void> _clearHistory() async {
@@ -219,8 +227,12 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     final name = account.value?.name;
     final history = ref.watch(vodHistoryProvider);
     final favourites = ref.watch(vodFavouritesProvider);
-    final toView = ref.watch(vodWatchLaterProvider).value ?? const <VodVideo>[];
-    final following = ref.watch(vodFollowingSeasonsProvider(_seasonType)).value;
+    final watchLater = ref.watch(vodWatchLaterProvider);
+    final seasons = ref.watch(vodFollowingSeasonsProvider(_seasonType));
+    final toView = watchLater.value ?? const <VodVideo>[];
+    final following = seasons.value;
+    final browse = ref.watch(browseSettingsProvider);
+    final layout = ref.watch(browseLayoutProvider);
     final count = switch (_tab) {
       VodPersonalTab.toView => toView.length,
       VodPersonalTab.history => history.length,
@@ -288,8 +300,8 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
               : switch (_tab) {
                   VodPersonalTab.toView => _RemoteVideoList(
                     videos: toView,
-                    loading: ref.watch(vodWatchLaterProvider).isLoading,
-                    error: ref.watch(vodWatchLaterProvider).error,
+                    loading: watchLater.isLoading,
+                    error: watchLater.error,
                     onOpen: _open,
                     onRetry: () => ref.invalidate(vodWatchLaterProvider),
                     emptyIcon: DsIcons.clock3,
@@ -306,39 +318,55 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                             ),
                           )
                         : _historyList(history, inset),
-                  VodPersonalTab.favourites =>
-                    favourites.isEmpty
-                        ? Center(
-                            child: DsEmptyState(
-                              icon: const DsIcon(DsIcons.heart),
-                              title: Text(t.vod.favouritesEmptyTitle),
-                              description: Text(t.vod.favouritesEmptyDescription),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
-                            itemCount: favourites.length,
-                            itemBuilder: (context, index) {
-                              final video = favourites[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: DsSpace.s4),
-                                child: VodVideoRow(
-                                  video: video.video,
-                                  onOpen: () => _open(video.bvid),
-                                  trailing: _drop(
-                                    t.vod.favouriteRemove,
-                                    () => ref.read(vodFavouritesProvider.notifier).remove(video.bvid),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  VodPersonalTab.following => _FollowingList(
-                    page: following,
-                    loading: ref.watch(vodFollowingSeasonsProvider(_seasonType)).isLoading,
-                    error: ref.watch(vodFollowingSeasonsProvider(_seasonType)).error,
-                    onOpen: _openSeason,
+                  VodPersonalTab.favourites => PagedCardGrid<VodSavedVideo>(
+                    items: favourites,
+                    layout: layout,
+                    // The archive row is a cover beside two text lines: a hair
+                    // taller than the room row so a two-line title never
+                    // presses on its edge.
+                    listMainAxisExtent: 104,
+                    listItemBuilder: (context, video) => VodVideoRow(
+                      video: video.video,
+                      onOpen: () => _open(video.bvid),
+                      trailing: _drop(
+                        t.vod.favouriteRemove,
+                        () => ref.read(vodFavouritesProvider.notifier).remove(video.bvid),
+                      ),
+                    ),
+                    infoExtent: kVodCardInfoExtent,
+                    crossSpacing: browse.crossSpacing,
+                    mainSpacing: browse.mainSpacing,
+                    // The collection is this device's own and whole in hand:
+                    // nothing loads behind the grid, the pager counts its
+                    // local pages and the narrow end reveals the next block
+                    // of them.
+                    isLoading: false,
+                    hasMore: false,
+                    onLoadMore: () async {},
+                    emptyIcon: DsIcons.heart,
+                    emptyTitle: t.vod.favouritesEmptyTitle,
+                    emptyDescription: t.vod.favouritesEmptyDescription,
+                    itemBuilder: (context, video) => VodVideoCard(video: video.video, onOpen: () => _open(video.bvid)),
+                  ),
+                  VodPersonalTab.following => PagedCardGrid<VodSeason>(
+                    items: following?.seasons ?? const <VodSeason>[],
+                    layout: layout,
+                    aspectRatio: kVodSeasonTileAspect,
+                    crossSpacing: browse.crossSpacing,
+                    mainSpacing: browse.mainSpacing,
+                    isLoading: seasons.isLoading,
+                    hasMore: false,
+                    onLoadMore: () async {},
+                    error: switch (seasons.error) {
+                      null => null,
+                      final failure => failure.toString(),
+                    },
                     onRetry: () => ref.invalidate(vodFollowingSeasonsProvider(_seasonType)),
+                    emptyIcon: DsIcons.tvMinimal,
+                    emptyTitle: t.vod.followingEmptyTitle,
+                    emptyDescription: t.vod.followingEmptyDescription,
+                    itemBuilder: (context, season) =>
+                        VodSeasonCard(season: season, onOpen: () => _openSeason(season.seasonId)),
                   ),
                 },
         ),
@@ -479,54 +507,6 @@ final class _RemoteVideoList extends StatelessWidget {
           child: VodVideoRow(video: video, onOpen: () => onOpen(video.bvid ?? video.id)),
         );
       },
-    );
-  }
-}
-
-/// The followed seasons as a poster grid.
-final class _FollowingList extends StatelessWidget {
-  const _FollowingList({
-    required this.page,
-    required this.loading,
-    required this.error,
-    required this.onOpen,
-    required this.onRetry,
-  });
-
-  final VodSeasonPage? page;
-  final bool loading;
-  final Object? error;
-  final ValueChanged<int> onOpen;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final seasons = page?.seasons ?? const <VodSeason>[];
-    if (error != null && seasons.isEmpty) {
-      return Center(
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.cloudOff),
-          title: Text(t.vod.loadFailed),
-          description: Text('$error'),
-          actions: [DsButton(onPressed: onRetry, child: Text(t.vod.retry))],
-        ),
-      );
-    }
-    if (loading && seasons.isEmpty) return const Center(child: DsSpinner());
-    if (seasons.isEmpty) {
-      return Center(
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.tvMinimal),
-          title: Text(t.vod.followingEmptyTitle),
-          description: Text(t.vod.followingEmptyDescription),
-        ),
-      );
-    }
-    return CardGrid<VodSeason>(
-      items: seasons,
-      aspectRatio: kVodSeasonTileAspect,
-      itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season.seasonId)),
     );
   }
 }

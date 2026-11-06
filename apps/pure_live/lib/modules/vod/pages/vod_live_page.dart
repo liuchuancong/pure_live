@@ -12,7 +12,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart' show followsProvider;
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_live.dart';
-import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/shared/shared.dart';
 
 /// The followed shelf's row card, and the pair of them plus the gap a column
@@ -24,8 +24,9 @@ const double _kFollowRowCardWidth = 320;
 /// title instead of two halves too cramped to use.
 const double _kFollowCardMinWidth = 150;
 
-/// The reference's 直播 rail entry: the followed rooms and the site's areas
-/// over Bilibili's recommended live feed, pages of it as the grid is read.
+/// The reference's 直播 rail entry: the site's areas in the head's tab row,
+/// the followed rooms as the content's first section, and Bilibili's
+/// recommended live feed under them, pages of it as the grid is read.
 final class VodLivePage extends ConsumerStatefulWidget {
   /// The live page.
   const VodLivePage({super.key});
@@ -47,6 +48,34 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
     unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, room: room, playlist: playlist));
   }
 
+  /// Opens an area's room list: where the head's area tabs all land, the
+  /// page they leave still being the recommendation.
+  void _openArea(LiveArea area) => unawaited(
+    context.push(
+      AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
+      extra: area,
+    ),
+  );
+
+  /// The head's tab row: 推荐 first, the site's areas after it — the
+  /// reference's folding of the area strip into the 44 row. The bar stays
+  /// controlled on 推荐, so an area's press opens that area's rooms while the
+  /// feed under the head remains the recommendation it was: the selection
+  /// never moves, and with the directory ask failed the row is the one tab
+  /// it honestly has.
+  Widget _feedTabs(Translations t, List<LiveArea> areas) => DsTabs<LiveArea?>(
+    value: null,
+    onChanged: (area) {
+      if (area != null) _openArea(area);
+    },
+    semanticLabel: t.vod.liveAreasTitle,
+    style: kVodFeedTabsStyle,
+    tabs: [
+      DsTab<LiveArea?>(value: null, label: Text(t.vod.liveRecommendTitle)),
+      for (final area in areas) DsTab<LiveArea?>(value: area, label: Text(area.areaName)),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -63,93 +92,83 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (followedRooms.isNotEmpty)
-          _Section(
-            title: t.vod.liveFollowTitle,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // The column the shelf is drawn in picks its form. A row card
-                // needs two of itself to read as a shelf; below that the rail
-                // showed one room and a 26px hint of the next on a 390 phone.
-                // There the cards take the shape the feed's grid already uses
-                // — 16:9 cover over the room card's own information block —
-                // two to a screen; a column that holds two rows keeps the row,
-                // which also carries the tags and the audience figure. The gap
-                // is the feed's own, so the shelf and the grid below it
-                // separate their cards the same way.
-                final spacing = settings.crossSpacing;
-                final content = math.max(0, constraints.maxWidth - inset * 2).toDouble();
-                final holdsRows = content >= _kFollowRowCardWidth * 2 + spacing;
-                final cardWidth = holdsRows
-                    ? _kFollowRowCardWidth
-                    : math.max(_kFollowCardMinWidth, (content - spacing) / 2);
-                final cardExtent = holdsRows ? kRoomCardListDesignHeight : roomCardTileHeight(cardWidth);
-                return SizedBox(
-                  height: cardExtent,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: inset),
-                    itemCount: followedRooms.length,
-                    separatorBuilder: (context, index) => SizedBox(width: spacing),
-                    itemBuilder: (context, index) {
-                      final room = followedRooms[index];
-                      return SizedBox(
-                        width: cardWidth,
-                        child: RoomCardMenu(
-                          room: room,
-                          onOpen: () => _openRoom(room, followedRooms),
-                          child: RoomCard(room: room, listRow: holdsRows, onOpen: () => _openRoom(room, followedRooms)),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+          // The feed's head is the module's one: the same 44 row, now wearing
+          // the areas as tabs beside 推荐 where the reference puts them, the
+          // card/list switch the grid below honours, and the reload — on a
+          // narrow window the two controls fold into the more at the page's
+          // end.
+          child: VodFeedToolbar(
+            owner: NavigationItem.vodLive,
+            tabs: _feedTabs(t, areas),
+            onRefresh: controller.refresh,
           ),
-        if (areas.isNotEmpty)
-          _Section(
-            title: t.vod.liveAreasTitle,
-            child: SizedBox(
-              height: 96,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: inset),
-                itemCount: areas.length,
-                separatorBuilder: (context, index) => const SizedBox(width: DsSpace.s12),
-                itemBuilder: (context, index) {
-                  final area = areas[index];
-                  return SizedBox(
-                    width: 96,
-                    child: _AreaTile(
-                      area: area,
-                      onOpen: () => unawaited(
-                        context.push(
-                          AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
-                          extra: area,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+        ),
+        if (followedRooms.isNotEmpty) ...[
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
+            // The shelf's own head: the station's mark, its words, and the
+            // way out to the followed list the rail owns.
+            child: _SectionHeader(
+              mark: const _SiteMark(),
+              title: t.vod.liveFollowTitle,
+              action: DsButton(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                onPressed: () => unawaited(context.push(const FavoritesRoute().location)),
+                trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                child: Text(t.vod.liveFollowViewAll),
               ),
             ),
           ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          // The feed's head is the module's one: the same 44 row, the card/list
-          // switch the grid below already honours, and the reload — on a narrow
-          // window the two controls fold into the more at the page's end.
-          child: VodFeedToolbar(
-            owner: NavigationItem.vodLive,
-            tabs: Text(
-              t.vod.liveRecommendTitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.colorsOf(context).text),
-            ),
-            onRefresh: controller.refresh,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // The column the shelf is drawn in picks its form. A row card
+              // needs two of itself to read as a shelf; below that the rail
+              // showed one room and a 26px hint of the next on a 390 phone.
+              // There the cards take the shape the feed's grid already uses
+              // — 16:9 cover over the room card's own information block —
+              // two to a screen; a column that holds two rows keeps the row,
+              // which also carries the tags and the audience figure. The gap
+              // is the feed's own, so the shelf and the grid below it
+              // separate their cards the same way.
+              final spacing = settings.crossSpacing;
+              final content = math.max(0, constraints.maxWidth - inset * 2).toDouble();
+              final holdsRows = content >= _kFollowRowCardWidth * 2 + spacing;
+              final cardWidth = holdsRows
+                  ? _kFollowRowCardWidth
+                  : math.max(_kFollowCardMinWidth, (content - spacing) / 2);
+              final cardExtent = holdsRows ? kRoomCardListDesignHeight : roomCardTileHeight(cardWidth);
+              return SizedBox(
+                height: cardExtent,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: inset),
+                  itemCount: followedRooms.length,
+                  separatorBuilder: (context, index) => SizedBox(width: spacing),
+                  itemBuilder: (context, index) {
+                    final room = followedRooms[index];
+                    return SizedBox(
+                      width: cardWidth,
+                      child: RoomCardMenu(
+                        room: room,
+                        onOpen: () => _openRoom(room, followedRooms),
+                        child: RoomCard(room: room, listRow: holdsRows, onOpen: () => _openRoom(room, followedRooms)),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
+        ],
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+          // The grid's own section head, the reference's words over its feed:
+          // the tab above names the choice 推荐, this head names what stands
+          // under it.
+          child: _SectionHeader(title: t.vod.liveRecommendTitle),
         ),
         Expanded(
           child: PagedCardGrid<LiveRoom>(
@@ -186,68 +205,55 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
   }
 }
 
-/// One titled strip of the live page.
-final class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
+/// One section's head row: an optional mark, the section's words, and the
+/// section's own way out at the row's end.
+final class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.mark, this.action});
 
+  /// The section's words.
   final String title;
-  final Widget child;
+
+  /// The mark the words open with, when the section carries one.
+  final Widget? mark;
+
+  /// The section's way out, at the row's end.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: DsSpace.s12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          // The title sits at the page's own inset, not a fixed 20: on a
-          // compact window everything else in this column starts 16 in, and
-          // two starts down one column is the break this module keeps cutting.
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: LiveWindow.pageInset(MediaQuery.sizeOf(context).width)),
-            child: Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
-          ),
-          child,
-        ],
-      ),
+    return Row(
+      spacing: DsSpace.s6,
+      children: [
+        ?mark,
+        Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
+        if (action != null) const Spacer(),
+        ?action,
+      ],
     );
   }
 }
 
-/// One area as the reference's mini card: the area's mark over its name.
-final class _AreaTile extends StatelessWidget {
-  const _AreaTile({required this.area, required this.onOpen});
-
-  final LiveArea area;
-  final VoidCallback onOpen;
+/// The station's mark the followed shelf's head opens with: the one accent
+/// square the reference's section rows carry.
+final class _SiteMark extends StatelessWidget {
+  const _SiteMark();
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final icon = area.iconUrl;
-    final fallback = DsIcon(DsIcons.layoutGrid, size: 40, color: colors.textMuted);
-    return DsCard(
-      onPressed: onOpen,
-      semanticLabel: area.areaName,
-      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s8)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: DsSpace.s6,
-        children: [
-          if (icon == null || icon.isEmpty)
-            fallback
-          else
-            DsImage(image: cachedImage(icon), width: 40, height: 40, fit: BoxFit.contain, fallback: fallback),
-          Text(
-            area.areaName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textMuted),
-          ),
-        ],
+    return Container(
+      width: DsSpace.s4,
+      height: DsSpace.s4,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: colors.accent,
+        borderRadius: BorderRadius.circular(theme.radii.control(DsSpace.s4)),
+      ),
+      child: Text(
+        'B',
+        style: theme.typography.caption.copyWith(color: colors.onAccent, fontWeight: FontWeight.w700),
       ),
     );
   }

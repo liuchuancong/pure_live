@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_vod/live_vod.dart';
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
@@ -110,6 +111,9 @@ final class _VodPgcPageState extends ConsumerState<VodPgcPage> {
   }
 }
 
+/// One catalogue's cursor feed as the poster wall, its spacing the viewer's
+/// browse settings say — posters are the wall's one form, so the grid never
+/// grows a list shape and the measure stays the season tile's own.
 final class _PgcFeedView extends ConsumerWidget {
   const _PgcFeedView({required this.type, required this.scrollController, required this.onOpen});
 
@@ -120,6 +124,7 @@ final class _PgcFeedView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final browse = ref.watch(browseSettingsProvider);
     final feed =
         ref.watch(vodPgcProvider.select((feeds) => feeds[type])) ??
         (seasons: const <VodSeason>[], cursor: 0, hasMore: true, loading: false, loaded: false, error: null);
@@ -129,6 +134,8 @@ final class _PgcFeedView extends ConsumerWidget {
       scrollController: scrollController,
       items: feed.seasons,
       aspectRatio: kVodSeasonTileAspect,
+      crossSpacing: browse.crossSpacing,
+      mainSpacing: browse.mainSpacing,
       isLoading: feed.loading,
       hasMore: feed.hasMore,
       onLoadMore: () => controller.loadMore(type),
