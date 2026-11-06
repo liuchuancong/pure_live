@@ -38,6 +38,7 @@ final class PagedCardGrid<T> extends StatefulWidget {
     this.layout = CardLayout.grid,
     this.listItemBuilder,
     this.listMainAxisExtent,
+    this.listFullWidth = false,
     this.listMatchesGridWidth = false,
     this.aspectRatio,
     this.infoExtent,
@@ -84,6 +85,9 @@ final class PagedCardGrid<T> extends StatefulWidget {
 
   /// The fixed height of a list row; see [CardGrid.listMainAxisExtent].
   final double? listMainAxisExtent;
+
+  /// The list's one full-width column; see [CardGrid.listFullWidth].
+  final bool listFullWidth;
 
   /// Whether a list row takes a grid card's width; see
   /// [CardGrid.listMatchesGridWidth].
@@ -219,6 +223,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       layout: widget.layout,
       listItemBuilder: widget.listItemBuilder,
       listMainAxisExtent: widget.listMainAxisExtent,
+      listFullWidth: widget.listFullWidth,
       listMatchesGridWidth: widget.listMatchesGridWidth,
       aspectRatio: widget.aspectRatio,
       infoExtent: widget.infoExtent,

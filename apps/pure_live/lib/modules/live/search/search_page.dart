@@ -231,7 +231,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                 nameOf: _platformName,
                 semanticLabel: context.t.search.targetsLabel,
                 showPlatformWall: !narrow,
-                showLayoutToggle: !narrow,
+                // The head row ends in the target's own layout switch (the
+                // page draws it after the tabs), so the tabs carry none.
+                showLayoutToggle: false,
                 // The panel's way to the hide/reorder setting.
                 onManagePlatforms: managePlatforms,
                 onChanged: chooseScope,
@@ -268,6 +270,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                   children: [
                     ?targetSwitch,
                     Expanded(child: tabs),
+                    _SearchLayoutToggle(target: search.target),
                   ],
                 ),
               );
@@ -1250,7 +1253,9 @@ final class _ListResults extends ConsumerWidget {
       layout: CardLayout.list,
       crossSpacing: browse.crossSpacing,
       mainSpacing: browse.mainSpacing,
-      listMatchesGridWidth: true,
+      // The streamer row is the room card's small row: one full-width
+      // column of them, so its three lines stay one line each.
+      listFullWidth: true,
       listMainAxisExtent: listMainAxisExtent,
       listItemBuilder: itemBuilder,
       hasMore: hasMore,
@@ -1378,6 +1383,66 @@ final class _RoomSkeletonGrid extends ConsumerWidget {
       isLoading: true,
       itemBuilder: (context, room) => const SizedBox.shrink(),
     );
+  }
+}
+
+/// The head row's layout switch, one pair per target: the rooms' grid and
+/// list follow the browse choice; the streamers' small row is the only
+/// shape its card has, so the grid's segment stands disabled; the areas'
+/// pair is the areas page's own tile and row choice.
+final class _SearchLayoutToggle extends ConsumerWidget {
+  const _SearchLayoutToggle({required this.target});
+
+  /// The target whose shapes the switch speaks for.
+  final LiveSearchTarget target;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    return switch (target) {
+      LiveSearchTarget.rooms => const LayoutToggle(),
+      LiveSearchTarget.anchors => DsTooltip(
+        message: t.common.layout,
+        child: DsSegmentedControl<CardLayout>(
+          value: CardLayout.list,
+          onChanged: (_) {},
+          semanticLabel: t.common.layout,
+          segments: [
+            DsSegment(
+              value: CardLayout.grid,
+              enabled: false,
+              icon: const DsIcon(DsIcons.layoutGrid, size: 16),
+              semanticLabel: t.common.layoutGrid,
+            ),
+            DsSegment(
+              value: CardLayout.list,
+              icon: const DsIcon(DsIcons.layoutList, size: 16),
+              semanticLabel: t.common.layoutList,
+            ),
+          ],
+        ),
+      ),
+      LiveSearchTarget.areas => DsTooltip(
+        message: t.common.layout,
+        child: DsSegmentedControl<AreaCardLayout>(
+          value: ref.watch(areaLayoutProvider),
+          onChanged: (layout) => unawaited(ref.read(areaLayoutProvider.notifier).set(layout)),
+          semanticLabel: t.common.layout,
+          segments: [
+            DsSegment(
+              value: AreaCardLayout.tile,
+              icon: const DsIcon(DsIcons.layoutGrid, size: 16),
+              semanticLabel: t.areas.iconTop,
+            ),
+            DsSegment(
+              value: AreaCardLayout.row,
+              icon: const DsIcon(DsIcons.layoutList, size: 16),
+              semanticLabel: t.areas.iconLeft,
+            ),
+          ],
+        ),
+      ),
+    };
   }
 }
 

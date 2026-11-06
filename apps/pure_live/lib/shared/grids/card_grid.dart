@@ -162,6 +162,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.scrollController,
     this.layout = CardLayout.grid,
     this.listMatchesGridWidth = false,
+    this.listFullWidth = false,
     this.listItemBuilder,
     super.key,
   });
@@ -184,6 +185,11 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// whose design is wider than a card (a video row's fixed thumbnail)
   /// leaves it false and keeps [kListCardMinWidth].
   final bool listMatchesGridWidth;
+
+  /// The anchors' one full-width column: the list rows keep the content's
+  /// whole width and never slice into columns, so a compact row's lines
+  /// stay one line each.
+  final bool listFullWidth;
 
   /// The widest a card gets; the columns follow the width. Null — what every
   /// feed passes now that the card width is no longer a setting — lets the
@@ -346,7 +352,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
       ceiling: browse.gridColumns,
       minWidth: kListCardMinWidth,
     );
-    final extent = widget.listMatchesGridWidth
+    final extent = widget.listFullWidth
+        ? content
+        : widget.listMatchesGridWidth
         ? _extentFor(width, browse)
         : capped > 0 && content > 0
         ? columnExtentForWidth(content, capped, widget.crossSpacing)
