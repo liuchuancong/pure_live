@@ -1299,8 +1299,6 @@
   "backgroundPauseDanmakuDesc": "进后台断开弹幕连接，回来重连；聊天保留。",
   "douyuForceRenew": "斗鱼每 5 分钟自动续期",
   "douyuForceRenewDesc": "登录后定期续期 Cookie，降低长时间观看掉登录的概率。",
-  "tvFocusZoom": "焦点放大",
-  "tvFocusZoomDesc": "焦点卡片与控件略微放大。",
   "tvMenuExpanded": "TV 侧栏始终展开",
   "tvMenuExpandedDesc": "侧栏常显名称；关闭后用图标轨。",
   "backgroundPreviewSettingsTitle": "播放设置",

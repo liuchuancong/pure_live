@@ -1299,8 +1299,6 @@
   "backgroundPauseDanmakuDesc": "Drops the danmaku link in the background and reconnects on return.",
   "douyuForceRenew": "Renew the Douyu login every 5 minutes",
   "douyuForceRenewDesc": "Refresh the Douyu cookie periodically after signing in so long sessions keep their login.",
-  "tvFocusZoom": "Grow the focused item",
-  "tvFocusZoomDesc": "Focus zooms cards and controls slightly.",
   "tvMenuExpanded": "Always expand the TV sidebar",
   "tvMenuExpandedDesc": "Sidebar shows names; off uses an icon rail.",
   "backgroundPreviewSettingsTitle": "Playback settings",

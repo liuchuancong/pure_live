@@ -2433,45 +2433,43 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Widget _vodPartStepChip(Translations t, {required bool compact, required bool forward}) {
     final theme = DsTheme.of(context);
     final label = forward ? t.vod.nextPart : t.vod.previousPart;
-    return TvFocusScale(
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: () {
-          _wake();
-          _openSteppedPart(forward ? 1 : -1);
-        },
-        builder: (context, states, _) {
-          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-          return Container(
-            height: theme.sizes.md,
-            padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
-            decoration: DsBoxDecoration(
-              color: lit ? OnVideoColors.inkHover : null,
-              borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s4,
-              children: [
-                DsIcon(
-                  forward ? DsIcons.skipForward : DsIcons.skipBack,
-                  size: theme.sizes.iconLg,
-                  color: OnVideoColors.inkMuted,
+    return DsPressable(
+      semanticLabel: label,
+      onPressed: () {
+        _wake();
+        _openSteppedPart(forward ? 1 : -1);
+      },
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        return Container(
+          height: theme.sizes.md,
+          padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+          decoration: DsBoxDecoration(
+            color: lit ? OnVideoColors.inkHover : null,
+            borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              DsIcon(
+                forward ? DsIcons.skipForward : DsIcons.skipBack,
+                size: theme.sizes.iconLg,
+                color: OnVideoColors.inkMuted,
+              ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 110),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                 ),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 110),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -2491,47 +2489,45 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       child: MouseRegion(
         onEnter: (_) => _hoverPanel(panel),
         onExit: (_) => _leavePanelSoon(),
-        child: TvFocusScale(
-          child: DsPressable(
-            semanticLabel: semanticLabel,
-            onPressed: () {
-              _wake();
-              if (_openPanel == panel) {
-                _closePanel();
-              } else {
-                _showPanel(panel);
-              }
-            },
-            builder: (context, states, _) {
-              final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-              return Container(
-                height: theme.sizes.md,
-                padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
-                decoration: DsBoxDecoration(
-                  color: lit ? OnVideoColors.inkHover : null,
-                  borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s4,
-                  children: [
-                    DsIcon(icon, size: theme.sizes.iconLg, color: OnVideoColors.inkMuted),
-                    if (!compact)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 110),
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                        ),
+        child: DsPressable(
+          semanticLabel: semanticLabel,
+          onPressed: () {
+            _wake();
+            if (_openPanel == panel) {
+              _closePanel();
+            } else {
+              _showPanel(panel);
+            }
+          },
+          builder: (context, states, _) {
+            final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+            return Container(
+              height: theme.sizes.md,
+              padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+              decoration: DsBoxDecoration(
+                color: lit ? OnVideoColors.inkHover : null,
+                borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  DsIcon(icon, size: theme.sizes.iconLg, color: OnVideoColors.inkMuted),
+                  if (!compact)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 110),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                       ),
-                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: OnVideoColors.inkMuted),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ),
+                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: OnVideoColors.inkMuted),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:dpad/dpad.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
@@ -19,6 +20,7 @@ import 'package:pure_live/app/background/tone/background_tone.dart' show backgro
 import 'package:pure_live/app/background/wallpaper/app_background.dart' show AppBackground;
 import 'package:pure_live/app/bootstrap/live_scroll_behavior.dart' show LiveScrollBehavior;
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show appProxyLookup;
+import 'package:pure_live/app/configuration/env.dart' show Env;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/router/app_router.dart' show RecorderRoute, appRouterProvider;
@@ -29,7 +31,8 @@ import 'package:pure_live/app/theme/settings/theme_persistence.dart';
 import 'package:pure_live/app/theme/settings/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/app/windows/context/refresh_rate_interaction_scope.dart' show RefreshRateInteractionScope;
 import 'package:pure_live/features/backup/cloud/cloud_callback.dart' show cloudCallbackBindingProvider;
-import 'package:pure_live/features/backup/webdav/webdav_auto_backup_scheduler.dart' show webdavAutoBackupSchedulerProvider;
+import 'package:pure_live/features/backup/webdav/webdav_auto_backup_scheduler.dart'
+    show webdavAutoBackupSchedulerProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -471,6 +474,14 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
                 ),
               )
             : app;
+        // A TV build installs the D-pad engine over the whole app: region-
+        // first traversal with per-region focus memory, a lost focus that
+        // always comes back, and reveals that jump (grids drive their own
+        // scrolling). The pointer builds keep Flutter's own traversal.
+        Widget routed = content;
+        if (Env.isTv) {
+          routed = Dpad.wrap(theme: const DpadThemeData(scrollDuration: Duration.zero))(context, routed);
+        }
         // Android's balanced rate follows real interaction in the
         // reference; wrapping the live tree is the only way to see every
         // pointer and scroll without touching individual pages. The scope
@@ -484,9 +495,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
             fit: StackFit.expand,
             children: [
               if (defaultTargetPlatform == TargetPlatform.android)
-                RefreshRateInteractionScope(child: content)
+                RefreshRateInteractionScope(child: routed)
               else
-                content,
+                routed,
               if (_showSplash)
                 StartupSplash(
                   onDone: () {

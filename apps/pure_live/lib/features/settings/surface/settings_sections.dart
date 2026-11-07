@@ -321,6 +321,8 @@ enum SettingsSection {
     SettingsSection.shield || SettingsSection.danmakuDisplay => SettingsSection.danmaku,
     SettingsSection.floatingWindow => SettingsSection.picture,
     SettingsSection.audience => SettingsSection.browsing,
+    SettingsSection.backgroundGuide => SettingsSection.picture,
+    SettingsSection.lanRemote => SettingsSection.network,
     SettingsSection.kernelAdvanced => SettingsSection.kernel,
     // The guide is a page beside the advanced one, not under it: the menu
     // lists the kernel, so both children hang from that row (two pages
@@ -407,7 +409,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.followTags,
   ],
   SettingsSection.browsing => const [SettingsSection.audience],
-  SettingsSection.playback => const [SettingsSection.backgroundGuide],
+  SettingsSection.picture => const [SettingsSection.backgroundGuide, SettingsSection.floatingWindow],
   SettingsSection.network => const [SettingsSection.lanRemote],
   // The equaliser is the music page's second segment and the desktop window
   // the lyric page's: the panes build their segments out of this table, so
@@ -415,7 +417,6 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.musicLyric => const [SettingsSection.musicDesktopLyric],
   SettingsSection.nav => const [SettingsSection.navHomeMenu, SettingsSection.navToolOrder],
   SettingsSection.danmaku => const [SettingsSection.danmakuDisplay, SettingsSection.shield],
-  SettingsSection.picture => const [SettingsSection.floatingWindow],
   SettingsSection.kernel => const [SettingsSection.kernelAdvanced, SettingsSection.playerGuide],
   SettingsSection.iptv => const [
     SettingsSection.iptvBrowse,

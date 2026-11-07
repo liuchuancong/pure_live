@@ -158,7 +158,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   sitesOrderProvider,
   twitchLanguagesProvider,
   tvMenuExpandedProvider,
-  tvFocusZoomProvider,
   youtubeAllChatProvider,
   preferH264Provider,
   douyuForceRenewProvider,

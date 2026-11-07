@@ -108,7 +108,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('sites.douyu.forceRenew', BackupPrefKind.boolean),
   ('sites.douyu.cookieSavedAt', BackupPrefKind.integer),
   ('sides.tv.menuAlwaysExpanded', BackupPrefKind.boolean),
-  ('sides.tv.focusZoom', BackupPrefKind.boolean),
   // Follows refresh and the history cap.
   ('refresh.follows.auto', BackupPrefKind.boolean),
   // The room auto-switch scheduler's switch.

@@ -299,11 +299,8 @@ final class _AppShellState extends ConsumerState<AppShell> {
       ),
       _ => const SizedBox.shrink(),
     };
-    return _zoomOnTv(row);
+    return row;
   }
-
-  /// A sidebar row that grows while focused on TV.
-  Widget _zoomOnTv(Widget row) => widget.tv ? TvFocusScale(child: row) : row;
 
   /// The lead above a menu block: a named heading for a settings group in the
   /// expanded rail, the plain divider elsewhere, nothing above the first block.
@@ -604,22 +601,18 @@ final class _AppShellState extends ConsumerState<AppShell> {
                             style: sidebarStyle,
                             children: [
                               if (widget.settingsSection == null)
-                                _zoomOnTv(
-                                  DsSidebarItem<Object>(
-                                    value: NavigationItem.settings,
-                                    leading: const DsIcon(DsIcons.settings),
-                                    label: Text(t.navigation.settings),
-                                    style: widget.expanded ? null : _collapsedItem,
-                                  ),
+                                DsSidebarItem<Object>(
+                                  value: NavigationItem.settings,
+                                  leading: const DsIcon(DsIcons.settings),
+                                  label: Text(t.navigation.settings),
+                                  style: widget.expanded ? null : _collapsedItem,
                                 )
                               else
-                                _zoomOnTv(
-                                  DsSidebarItem<Object>(
-                                    value: NavigationItem.settings,
-                                    leading: const DsIcon(DsIcons.arrowLeft),
-                                    label: Text(t.settings.backHome),
-                                    style: widget.expanded ? null : _collapsedItem,
-                                  ),
+                                DsSidebarItem<Object>(
+                                  value: NavigationItem.settings,
+                                  leading: const DsIcon(DsIcons.arrowLeft),
+                                  label: Text(t.settings.backHome),
+                                  style: widget.expanded ? null : _collapsedItem,
                                 ),
                             ],
                           ),

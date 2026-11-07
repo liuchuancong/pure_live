@@ -721,6 +721,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
+  dpad:
+    dependency: transitive
+    description:
+      name: dpad
+      sha256: "0bd3d509987a85602c0e6668f1c161264cf26151a85cff051ed85d949e2e6b22"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.0"
   drift:
     dependency: transitive
     description:

@@ -3949,8 +3949,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundPauseDanmakuDesc => 'Drops the danmaku link in the background and reconnects on return.';
 	@override String get douyuForceRenew => 'Renew the Douyu login every 5 minutes';
 	@override String get douyuForceRenewDesc => 'Refresh the Douyu cookie periodically after signing in so long sessions keep their login.';
-	@override String get tvFocusZoom => 'Grow the focused item';
-	@override String get tvFocusZoomDesc => 'Focus zooms cards and controls slightly.';
 	@override String get tvMenuExpanded => 'Always expand the TV sidebar';
 	@override String get tvMenuExpandedDesc => 'Sidebar shows names; off uses an icon rail.';
 	@override String get backgroundPreviewSettingsTitle => 'Playback settings';
@@ -8883,8 +8881,6 @@ extension on TranslationsEn {
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
 			'settings.douyuForceRenew' => 'Renew the Douyu login every 5 minutes',
 			'settings.douyuForceRenewDesc' => 'Refresh the Douyu cookie periodically after signing in so long sessions keep their login.',
-			'settings.tvFocusZoom' => 'Grow the focused item',
-			'settings.tvFocusZoomDesc' => 'Focus zooms cards and controls slightly.',
 			'settings.tvMenuExpanded' => 'Always expand the TV sidebar',
 			'settings.tvMenuExpandedDesc' => 'Sidebar shows names; off uses an icon rail.',
 			'settings.backgroundPreviewSettingsTitle' => 'Playback settings',
@@ -9105,10 +9101,10 @@ extension on TranslationsEn {
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.',
 			'settings.backgroundGuideStateOk' => 'OK',
 			'settings.backgroundGuideStateTodo' => 'To do',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideStateManual' => 'Check',
 			'settings.backgroundGuideNotifications' => 'Notifications',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideNotificationsHow' => 'Background play leans on notifications; off, the system tightens on its own.',
 			'settings.backgroundGuideBattery' => 'Battery optimisation exemption',
 			'settings.backgroundGuideBatteryHow' => 'Set the app to unoptimised so power policies do not cut playback.',
@@ -9619,10 +9615,10 @@ extension on TranslationsEn {
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
 			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
 			'wallpaper.sourceAlcyMoez' => 'Alcy · moez',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyYsz' => 'Alcy · ysz',
 			'wallpaper.sourceAlcyYs' => 'Alcy · ys',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyMp' => 'Alcy · mp',
 			'wallpaper.sourceAlcyMoemp' => 'Alcy · moemp',
 			'wallpaper.sourceAlcyYsmp' => 'Alcy · ysmp',

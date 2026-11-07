@@ -102,9 +102,7 @@ final class PictureActionButton extends ConsumerWidget {
       ),
       RoomPictureAction.playAgain => (t.room.play, () => unawaited(controller.retry())),
     };
-    return TvFocusScale(
-      child: DsButton(onPressed: onPressed, autofocus: autofocus, child: Text(label)),
-    );
+    return DsButton(onPressed: onPressed, autofocus: autofocus, child: Text(label));
   }
 }
 
@@ -1523,56 +1521,53 @@ final class _StreamPickerRow extends ConsumerWidget {
       child: MouseRegion(
         onEnter: (_) => onHoverOpen(picker),
         onExit: (_) => onHoverClose(),
-        child: TvFocusScale(
-          child: DsPressable(
-            semanticLabel: semanticLabel,
-            onPressed: () => onToggle(picker),
-            builder: (context, states, _) {
-              final focused = states.contains(WidgetState.focused);
-              final lit = isOpen || states.contains(WidgetState.hovered) || focused;
-              final corners = theme.radii.controlCorners(null, side);
-              return Container(
-                height: side,
-                padding: EdgeInsets.symmetric(
-                  horizontal: tv
-                      ? DsSpace.s12
-                      : labelled
-                      ? DsSpace.s8
-                      : DsSpace.s6,
-                ),
-                decoration: DsBoxDecoration(color: lit ? _onVideoHover : null, borderRadius: corners),
-                foregroundDecoration: tv && focused
-                    ? BoxDecoration(
-                        border: Border.all(color: OnVideoColors.foreground, width: 2),
-                        borderRadius: corners,
-                      )
-                    : null,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s4,
-                  children: [
-                    // With room for words the glyph steps aside: 「原画
-                    // 1080P60 ⌄」 reads as the reference draws it.
-                    if (!labelled)
-                      DsIcon(icon, size: tv ? theme.sizes.iconLg : theme.sizes.iconSm, color: _onVideoMuted),
-                    if (labelled)
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: tv ? 128 : 96),
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          // A TV reads from across the room: the value takes
-                          // the control-label size instead of the caption.
-                          style: (tv ? theme.typography.label : theme.typography.caption).copyWith(color: _onVideo),
-                        ),
+        child: DsPressable(
+          semanticLabel: semanticLabel,
+          onPressed: () => onToggle(picker),
+          builder: (context, states, _) {
+            final focused = states.contains(WidgetState.focused);
+            final lit = isOpen || states.contains(WidgetState.hovered) || focused;
+            final corners = theme.radii.controlCorners(null, side);
+            return Container(
+              height: side,
+              padding: EdgeInsets.symmetric(
+                horizontal: tv
+                    ? DsSpace.s12
+                    : labelled
+                    ? DsSpace.s8
+                    : DsSpace.s6,
+              ),
+              decoration: DsBoxDecoration(color: lit ? _onVideoHover : null, borderRadius: corners),
+              foregroundDecoration: tv && focused
+                  ? BoxDecoration(
+                      border: Border.all(color: OnVideoColors.foreground, width: 2),
+                      borderRadius: corners,
+                    )
+                  : null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  // With room for words the glyph steps aside: 「原画
+                  // 1080P60 ⌄」 reads as the reference draws it.
+                  if (!labelled) DsIcon(icon, size: tv ? theme.sizes.iconLg : theme.sizes.iconSm, color: _onVideoMuted),
+                  if (labelled)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: tv ? 128 : 96),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        // A TV reads from across the room: the value takes
+                        // the control-label size instead of the caption.
+                        style: (tv ? theme.typography.label : theme.typography.caption).copyWith(color: _onVideo),
                       ),
-                    DsIcon(isOpen ? DsIcons.chevronDown : DsIcons.chevronUp, size: tv ? 14 : 12, color: _onVideoMuted),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ),
+                  DsIcon(isOpen ? DsIcons.chevronDown : DsIcons.chevronUp, size: tv ? 14 : 12, color: _onVideoMuted),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -1939,10 +1934,7 @@ final class _DanmakuBarCluster extends ConsumerWidget {
               alignment: Alignment.center,
               // The off state is the glyph alone: a ring around it read as a
               // second button beside the settings gear.
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: on ? theme.colors.accent : OnVideoColors.clear,
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: on ? theme.colors.accent : OnVideoColors.clear),
               child: SvgPicture.asset(
                 'assets/icons/danmaku.svg',
                 width: side * .5,
@@ -2631,7 +2623,9 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
         tv ? DsSpace.s16 : DsSpace.s12,
         tv ? DsSpace.s12 : DsSpace.s8,
       ),
-      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep)),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
+      ),
       // A live stream has no timeline to draw: what used to sit above these
       // buttons was a seek bar that could not seek. The buffer and latency
       // facts live in the stats overlay and in the picture's own buffering

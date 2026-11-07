@@ -7,8 +7,7 @@ import 'package:live_platform/live_platform.dart' show FormFactor, PlatformKind;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/dialogs/asmr_sleep_dialog.dart' show showAsmrSleepMinutesDialog;
 import 'package:pure_live/features/settings/general/refresh_rate_section.dart' show RefreshRateSection;
-import 'package:pure_live/features/settings/general/tv_preferences.dart'
-    show tvFocusZoomProvider, tvMenuExpandedProvider;
+import 'package:pure_live/features/settings/general/tv_preferences.dart' show tvMenuExpandedProvider;
 import 'package:pure_live/features/settings/general/window_size_row.dart' show WindowSizeRow;
 import 'package:pure_live/features/settings/playback/floating_window_settings.dart' show floatingWindowSettingsProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart'
@@ -53,22 +52,13 @@ final class WindowPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        // A TV's remote has no pointer: how far focus grows and whether the
-        // menu stays open are its display choices, so they sit with the
-        // window rather than on the sites page.
+        // A TV's remote has no pointer: whether the menu stays open is one
+        // of its display choices, so it sits with the window rather than on
+        // the sites page.
         if (tv)
           DsListSection(
             header: Text(t.settings.tvGroup),
             children: [
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.focus),
-                title: t.settings.tvFocusZoom,
-                description: t.settings.tvFocusZoomDesc,
-                control: DsSwitch(
-                  value: ref.watch(tvFocusZoomProvider),
-                  onChanged: (value) => unawaited(ref.read(tvFocusZoomProvider.notifier).set(value: value)),
-                ),
-              ),
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.panelLeft),
                 title: t.settings.tvMenuExpanded,

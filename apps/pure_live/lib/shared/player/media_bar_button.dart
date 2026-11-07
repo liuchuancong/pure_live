@@ -2,7 +2,6 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// A compact icon control that floats over the picture: a square hit target,
@@ -23,7 +22,6 @@ final class MediaBarButton extends StatelessWidget {
     this.onDark = true,
     this.autofocus = false,
     this.tooltip = true,
-    this.zoomsOnTv = true,
     this.focusRing = false,
     this.size,
     this.iconSize,
@@ -55,9 +53,6 @@ final class MediaBarButton extends StatelessWidget {
 
   /// Shows [label] in a tooltip; off for a touch strip that has no pointer.
   final bool tooltip;
-
-  /// Grows while focused on a TV, like the cards and menu rows do.
-  final bool zoomsOnTv;
 
   /// Draws an on-video focus ring while focused (a TV bar): a remote has no
   /// pointer, so the brightened fill alone does not say where the focus is.
@@ -133,6 +128,6 @@ final class MediaBarButton extends StatelessWidget {
       },
     );
     final named = tooltip ? DsTooltip(message: label, child: button) : button;
-    return zoomsOnTv ? TvFocusScale(child: named) : named;
+    return named;
   }
 }

@@ -17,7 +17,7 @@ import 'package:pure_live/modules/music/controller/music_playback.dart' show Mus
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseHeader;
-import 'package:pure_live/shared/shared.dart' show TvFocusScale, cachedImage;
+import 'package:pure_live/shared/shared.dart' show cachedImage;
 
 /// The sound-effect center — the spec's own page, drawn after the streaming
 /// apps' own effect rooms: the current track's cover sits blurred behind the
@@ -488,49 +488,47 @@ final class _GalleryCard extends ConsumerWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return TvFocusScale(
-      child: DsPressable(
-        semanticLabel: name,
-        onPressed: onTap,
-        builder: (context, states, _) => Container(
-          padding: const EdgeInsets.symmetric(vertical: DsSpace.s12, horizontal: DsSpace.s4),
-          decoration: BoxDecoration(
-            // A preset card painted nothing for the pointer or the D-pad until
-            // its own states were read; the wash sits under the accent border
-            // so the selected one still reads first.
-            color: states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)
-                ? Color.alphaBlend(colors.hover, colors.surface)
-                : colors.surface,
-            borderRadius: BorderRadius.circular(theme.radii.control(36)),
-            border: Border.all(
-              color: selected
-                  ? colors.accent
-                  : states.contains(WidgetState.focused)
-                  ? colors.focus
-                  : colors.border.withValues(alpha: 0.4),
-              width: selected ? 2 : 1,
+    return DsPressable(
+      semanticLabel: name,
+      onPressed: onTap,
+      builder: (context, states, _) => Container(
+        padding: const EdgeInsets.symmetric(vertical: DsSpace.s12, horizontal: DsSpace.s4),
+        decoration: BoxDecoration(
+          // A preset card painted nothing for the pointer or the D-pad until
+          // its own states were read; the wash sits under the accent border
+          // so the selected one still reads first.
+          color: states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)
+              ? Color.alphaBlend(colors.hover, colors.surface)
+              : colors.surface,
+          borderRadius: BorderRadius.circular(theme.radii.control(36)),
+          border: Border.all(
+            color: selected
+                ? colors.accent
+                : states.contains(WidgetState.focused)
+                ? colors.focus
+                : colors.border.withValues(alpha: 0.4),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          spacing: DsSpace.s6,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: tint),
+                borderRadius: BorderRadius.circular(theme.radii.control(36)),
+              ),
+              child: Center(child: DsIcon(icon, size: 22, color: const Color(0xFFFFFFFF))),
             ),
-          ),
-          child: Column(
-            spacing: DsSpace.s6,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: tint),
-                  borderRadius: BorderRadius.circular(theme.radii.control(36)),
-                ),
-                child: Center(child: DsIcon(icon, size: 22, color: const Color(0xFFFFFFFF))),
-              ),
-              Text(name, style: theme.typography.body, overflow: TextOverflow.ellipsis),
-              Text(
-                selected ? t.music.eqInUse : tag,
-                style: theme.typography.caption.copyWith(color: selected ? colors.accent : colors.textMuted),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+            Text(name, style: theme.typography.body, overflow: TextOverflow.ellipsis),
+            Text(
+              selected ? t.music.eqInUse : tag,
+              style: theme.typography.caption.copyWith(color: selected ? colors.accent : colors.textMuted),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

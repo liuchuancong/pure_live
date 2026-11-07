@@ -11397,12 +11397,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '登录后定期续期 Cookie，降低长时间观看掉登录的概率。'
 	String get douyuForceRenewDesc => '登录后定期续期 Cookie，降低长时间观看掉登录的概率。';
 
-	/// zh-CN: '焦点放大'
-	String get tvFocusZoom => '焦点放大';
-
-	/// zh-CN: '焦点卡片与控件略微放大。'
-	String get tvFocusZoomDesc => '焦点卡片与控件略微放大。';
-
 	/// zh-CN: 'TV 侧栏始终展开'
 	String get tvMenuExpanded => 'TV 侧栏始终展开';
 
@@ -18258,8 +18252,6 @@ extension on Translations {
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
 			'settings.douyuForceRenew' => '斗鱼每 5 分钟自动续期',
 			'settings.douyuForceRenewDesc' => '登录后定期续期 Cookie，降低长时间观看掉登录的概率。',
-			'settings.tvFocusZoom' => '焦点放大',
-			'settings.tvFocusZoomDesc' => '焦点卡片与控件略微放大。',
 			'settings.tvMenuExpanded' => 'TV 侧栏始终展开',
 			'settings.tvMenuExpandedDesc' => '侧栏常显名称；关闭后用图标轨。',
 			'settings.backgroundPreviewSettingsTitle' => '播放设置',
@@ -18480,10 +18472,10 @@ extension on Translations {
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => '${rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。',
 			'settings.backgroundGuideStateOk' => '正常',
 			'settings.backgroundGuideStateTodo' => '待处理',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideStateManual' => '需自查',
 			'settings.backgroundGuideNotifications' => '通知权限',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideNotificationsHow' => '锁屏与后台的播放提醒走通知；关掉后后台可能被系统加码限制。',
 			'settings.backgroundGuideBattery' => '电池优化豁免',
 			'settings.backgroundGuideBatteryHow' => '把本应用设为不优化，后台播放不被省电策略掐断。',
@@ -18994,10 +18986,10 @@ extension on Translations {
 			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
 			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
 			'wallpaper.sourceAlcyMoez' => '栗次元 · moez',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyYsz' => '栗次元 · ysz',
 			'wallpaper.sourceAlcyYs' => '栗次元 · ys',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyMp' => '栗次元 · mp',
 			'wallpaper.sourceAlcyMoemp' => '栗次元 · moemp',
 			'wallpaper.sourceAlcyYsmp' => '栗次元 · ysmp',

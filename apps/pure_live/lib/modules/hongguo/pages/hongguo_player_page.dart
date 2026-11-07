@@ -2259,47 +2259,45 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       child: MouseRegion(
         onEnter: (_) => _hoverPanel(panel),
         onExit: (_) => _leavePanelSoon(),
-        child: TvFocusScale(
-          child: DsPressable(
-            semanticLabel: semanticLabel,
-            onPressed: () {
-              _wake();
-              if (_openPanel == panel) {
-                _closePanel();
-              } else {
-                _showPanel(panel);
-              }
-            },
-            builder: (context, states, _) {
-              final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-              return Container(
-                height: theme.sizes.md,
-                padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
-                decoration: DsBoxDecoration(
-                  color: lit ? OnVideoColors.inkHover : null,
-                  borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s4,
-                  children: [
-                    DsIcon(icon, size: theme.sizes.iconLg, color: OnVideoColors.inkMuted),
-                    if (!compact)
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                        ),
+        child: DsPressable(
+          semanticLabel: semanticLabel,
+          onPressed: () {
+            _wake();
+            if (_openPanel == panel) {
+              _closePanel();
+            } else {
+              _showPanel(panel);
+            }
+          },
+          builder: (context, states, _) {
+            final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+            return Container(
+              height: theme.sizes.md,
+              padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+              decoration: DsBoxDecoration(
+                color: lit ? OnVideoColors.inkHover : null,
+                borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  DsIcon(icon, size: theme.sizes.iconLg, color: OnVideoColors.inkMuted),
+                  if (!compact)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
                       ),
-                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: OnVideoColors.inkMuted),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ),
+                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: OnVideoColors.inkMuted),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

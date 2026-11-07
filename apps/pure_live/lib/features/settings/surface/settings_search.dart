@@ -414,7 +414,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
     _hit(SettingsSection.nodes, t.toolbox.nodeTestAll, 'probe all sweep reachability latency 全部测速 测速 节点 延迟 连通'),
     _hit(SettingsSection.sites, s.showUnplayableTitle, 'unplayable restriction paid locked hidden 不能播放 付费 加锁 隐藏'),
-    _hit(SettingsSection.window, s.tvFocusZoom, 'tv focus grow scale card menu remote 电视 焦点 放大 缩放 卡片 菜单 遥控器'),
     _hit(SettingsSection.followTags, s.tagManagement, 'tag tags management group filter follow 标签 分组 筛选 关注 添加 删除 置顶'),
     _hit(SettingsSection.followTags, s.tagAdd, 'add tag new label 添加 标签 新建'),
     _hit(SettingsSection.followTags, s.tagEdit, 'rename tag note edit 编辑 重命名 备注 标签'),

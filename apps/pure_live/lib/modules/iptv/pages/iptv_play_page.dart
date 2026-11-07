@@ -1451,7 +1451,6 @@ final class _IconButton extends StatelessWidget {
       selected: selected,
       onDark: onDark,
       tooltip: false,
-      zoomsOnTv: false,
     );
   }
 }
