@@ -12,7 +12,7 @@ import 'package:pure_live/shared/focus/tv_focus_style.dart';
 /// the ring and the activation (every DsPressable answers the select key),
 /// and this only watches whether the focus is somewhere below. It exists
 /// because the app's cards and rows are DsPressable-based content that
-/// cannot carry [TvFocusable]'s own-focus effects — a stop would steal the
+/// cannot carry TvFocusable's own-focus effects — a stop would steal the
 /// focus from the pressable and double-fire every tap.
 ///
 /// Arriving animates over [kTvFocusIn]; losing focus snaps, so a held arrow

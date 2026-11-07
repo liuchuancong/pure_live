@@ -12,7 +12,7 @@ import 'package:pure_live/shared/focus/tv_focus_style.dart';
 /// This widget owns the focus — the content inside never takes it (dpad
 /// excludes the child subtree) — so it is for controls built ON a TV build,
 /// not a wrapper to drop around existing pressables (those keep their own
-/// focus, ring and activation; [TvGrowOnFocus] decorates those).
+/// focus, ring and activation; TvGrowOnFocus decorates those).
 final class TvFocusable extends StatelessWidget {
   /// Builds the focusable around [child].
   const TvFocusable({
