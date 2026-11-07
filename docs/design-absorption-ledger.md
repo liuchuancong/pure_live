@@ -44,7 +44,7 @@
 - 🟡 完整性判定：合并读自身日志——trailer 写失败/ muxer 拒包=输出不可信，不改名不提交；失败合并一遍重试留尾段（干净前缀提交，被切段留旁边）。参考 `ffmpeg.dart:332-369`、`merge.dart:93-110`。落 media_core recording_remuxer 974ac38，150 测全绿。未做 -xerror（v2 无它的两遍回退语义配套，加了会让良性输入包损坏丢整个输出）。
 
 ## W7 传输吸收（media_core）
-- 🟡 FLV 关键帧拼接续期：字节级决策层全量移植（FlvTagProbe/Policy 关键帧对齐+平移计算/Plan 切换窗口/Timeline 输出台账，320 行零 I/O）。参考 `flv_splicer.dart:144-496`。落 media_core_ingest 11a49b3。评估结论：播放路径无缝（mpv 内部拉流，Dart 无字节接点）；缺的桥=media_core_ingest 的 FLV loopback 中继 I/O 层约 500 行，决策层已备好，待立项。
+- ✅ FLV 关键帧拼接续期：字节级决策层全量移植（FlvTagProbe/Policy 关键帧对齐+平移计算/Plan 切换窗口/Timeline 输出台账，320 行零 I/O，11a49b3）+ I/O 桥 FlvLoopbackRelay 落 a682384（回环连续流 24 位 secret 路径、pump 逐 tag 走 judgeOldTag→Timeline、续期并行预备不掐旧流、hold 旧关键帧至多 handoverWait 防切点滑一个 GOP、shifted 平移/same-timeline 等切点、script-once、config 变化才重发、失败保旧流 retryDelay 重试、旧流先断提前续期、close=排空 EOF 不撕端口；41 测全绿；刻意不搬 FlvLegacyHevcRewriter/MediaTlsExemptions/ProxyPolicy——codec 归一化归 FfmpegIngestRelay、证书走默认、代理用包内习惯）。参考 `flv_splicer.dart:144-496`、`loopback_relay.dart`。注：播放路径本身无缝（mpv 内部拉流无 Dart 字节接点），此桥供录制/中转类消费方；app 侧接线待有消费方时做。
 - 🟡 HLS 中继内换址：LoopbackIngestRelay.renewAddress（根 manifest 改指新址、玩家回环地址不变、已改写子列表照常解析）落 media_core_ingest 33ac392；FfmpegIngestRelay 进程内换址落 0b392f8（同目录第二轮 FFmpeg：先证明新址发布 join 清单、再停旧轮并把 join 服务在玩家已知的 index.m3u8 名下，失败不动旧轮可重试，自灭轮可复活；DASH 合并双输入不续期；join 是新编码轮时间戳重启=已记档的接缝）。参考 `hls_relay.dart:456-512`、`session.dart:1355-1401`。余：app 侧 refreshAt 接线（待首个声明 expiringUrl 的站点）。
 
 ## W8 live_sites 基座
