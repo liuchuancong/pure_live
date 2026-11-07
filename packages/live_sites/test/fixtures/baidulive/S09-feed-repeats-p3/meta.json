@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "platform": "baidulive",
+  "sample": "S09-feed-repeats-p3",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://tiebac.baidu.com/livefeed/feed",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.baidu.com",
+      "referer": "https://live.baidu.com/",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "body": "appname=pclive&sid&ua=320_480_pc_1.0_0&uid=device-1&timestamp=1790776800&source=pclive&resource=feed&scene=pc_channel&session_id=session-1&refresh_type=1&refresh_index=3&tab=rec&channel_id=570&sign=7003be5d974857ee49fd6bb809a7222c"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "d7ca0cc22ffa986230abaf870490a14cf11779980596a743e9e6e58c8d426ae4",
+    "length": 4202
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer baidulive_test's fake built, not a capture"
+}

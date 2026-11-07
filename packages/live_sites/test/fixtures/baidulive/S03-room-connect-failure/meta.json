@@ -1,0 +1,25 @@
+{
+  "schema": 2,
+  "platform": "baidulive",
+  "sample": "S03-room-connect-failure",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://mbd.baidu.com/searchbox?cmd=371&action=star&service=bdbox&osname=pc&data=%7B%22data%22%3A%7B%22room_id%22%3A%227530951%22%2C%22device_id%22%3A%22device-1%22%2C%22source_type%22%3A0%7D%2C%22replay_slice%22%3A0%2C%22nid%22%3A%22%22%2C%22schemeParams%22%3A%7B%22src_pre%22%3A%22pc%22%2C%22src_suf%22%3A%22other%22%2C%22bd_vid%22%3A%22%22%2C%22share_uid%22%3A%22%22%2C%22share_cuk%22%3A%22%22%2C%22share_ecid%22%3A%22%22%2C%22zb_tag%22%3A%22%22%2C%22shareTaskInfo%22%3A%22%7B%5C%22room_id%5C%22%3A%5C%227530951%5C%22%7D%22%2C%22share_from%22%3A%22%22%2C%22ext_params%22%3A%22%22%2C%22nid%22%3A%22%22%7D%7D&ua=360_740_ANDROID_0&bd_vid&uid=device-1&_=1790776800000",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.baidu.com",
+      "referer": "https://live.baidu.com/"
+    }
+  },
+  "answers": [
+    {
+      "kind": "connect",
+      "description": "dns"
+    }
+  ],
+  "scrubbed": [],
+  "tool": "hand-written (schema 2): the breakdown baidulive_test's fake threw (the connection did not happen), not a capture"
+}

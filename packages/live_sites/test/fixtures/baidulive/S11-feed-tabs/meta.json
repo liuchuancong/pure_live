@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "platform": "baidulive",
+  "sample": "S11-feed-tabs",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://tiebac.baidu.com/livefeed/feed",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.baidu.com",
+      "referer": "https://live.baidu.com/",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "body": "appname=pclive&sid&ua=320_480_pc_1.0_0&uid=device-1&timestamp=1790776800&source=pclive&resource=banner%2Ctab%2Cfeed&scene=pc_channel&session_id&refresh_type=0&refresh_index=1&tab=rec&channel_id=570&sign=9bb3feee5644879110418f072140c319"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "89c14ce78e9e1bcddf39ef32fd3cfeee6a9c53a62ca413a5d8f96212d1eb036b",
+    "length": 411
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer baidulive_test's fake built, not a capture"
+}

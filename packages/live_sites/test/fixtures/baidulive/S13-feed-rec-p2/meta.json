@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "platform": "baidulive",
+  "sample": "S13-feed-rec-p2",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "POST",
+    "url": "https://tiebac.baidu.com/livefeed/feed",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.baidu.com",
+      "referer": "https://live.baidu.com/",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "body": "appname=pclive&sid&ua=320_480_pc_1.0_0&uid=device-1&timestamp=1790776800&source=pclive&resource=feed&scene=pc_channel&session_id=session-rec&refresh_type=1&refresh_index=2&tab=rec&channel_id=570&sign=66c7f357b309fca98b54282aa0061ed8"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    }
+  },
+  "raw": {
+    "sha256": "6c3d1a4f9a16371f083b83818cf8921a58703432490ba2278e3f314e5be34e18",
+    "length": 2380
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer baidulive_test's fake gave every feed page (page 1's again: the session did not move on), not a capture"
+}

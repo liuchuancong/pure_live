@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -21,83 +19,28 @@ final Uri _reliableList = Uri.parse('https://liveshowstatic.baidu.com/live/relia
 final Uri _hostList = Uri.parse('https://liveshowstatic.baidu.com/live/host_$_room-a.m3u8');
 final DateTime _at = DateTime.utc(2026, 11, 5, 12);
 
-String _json(Object? value) => jsonEncode(value);
+/// The samples of the replayed tests, under the platform's fixture directory:
+/// a message list's answers in call order (the last repeats) and the segments
+/// the lists name, each a chat line of [_room] unless told otherwise. `S16` the
+/// chat list whose second answer adds `seg_new.flv` (`S17`), `S18` the chat
+/// list that answers 500, `S19` the empty chat list, `S20`/`S21` the reliable
+/// and host lists naming `r1.flv`/`h1.flv` (`S22`/`S23`), `S24` the reliable
+/// list's 404, `S25`/`S26` the reliable and host lists that cannot be reached
+/// (every request fails before an answer: the lists a test leaves out), `S27`
+/// the empty chat list that then answers 500, `S28`/`S29` the empty reliable
+/// and host lists, `S30` the chat list that adds `b.flv` and `c.flv`
+/// (`S31`/`S32`), `S33` the one that adds `gone.flv` (401, `S34`) and
+/// `flaky.flv` (500, `S35`), `S36` the one that adds `x.flv`, a line of another
+/// room (`S37`), `S38` the one that adds `end.flv`, a line and the broadcast's
+/// end (`S39`), and `S40` the empty chat list that then answers 401.
+const String _samples = 'test/fixtures/baidulive';
 
-/// A message list (`m3u8`) whose segments are [names].
-String _playlist(List<String> names, {int sequence = 1}) =>
-    '#EXTM3U\n'
-    '#EXT-X-MEDIA-SEQUENCE:$sequence\n'
-    '${names.join('\n')}\n';
+/// The transport under the session: [samples] answer, every request is
+/// recorded.
+ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, samples);
 
-/// The envelope the site wraps a message in: the inner object rides along as
-/// the JSON text of `content.text`.
-Map<String, Object?> _outer(Object? inner, {String id = 'm1'}) => {
-  'type': 0,
-  'msgid': id,
-  'create_time': 1700000000,
-  'content': {'text': _json(inner)},
-};
-
-/// A public chat line of room [room].
-Map<String, Object?> _message(String text, {String id = 'm1', String room = _room}) =>
-    _outer({'type': 0, 'room_id': room, 'content': text, 'name': 'Ann', 'uid': 77, 'message_type': 0}, id: id);
-
-/// The notice that the broadcast stopped.
-Map<String, Object?> _stopped({String room = _room}) => _outer({'type': 102, 'room_id': room});
-
-/// The body of a message segment.
-String _segmentBody(List<Map<String, Object?>> messages) => _json({
-  'list': [
-    {'messages': messages},
-  ],
-});
-
-/// What one URL answers; the last answer of a list repeats.
-typedef _Reply = ({int status, List<int> bytes});
-
-_Reply _ok(Object body) => (status: 200, bytes: body is String ? utf8.encode(body) : List<int>.from(body as List<int>));
-
-final _Reply _missing = (status: 404, bytes: <int>[]);
-final _Reply _refused = (status: 401, bytes: <int>[]);
-final _Reply _broken = (status: 500, bytes: <int>[]);
-
-/// The transport under the session: every request recorded, each URL answered
-/// from its own queue.
-final class _Http implements LiveHttp {
-  /// Answers by URL path; a path with no entry throws, as an unexpected call.
-  final Map<String, List<_Reply>> answers = {};
-  final asked = <String>[];
-  final seenHeaders = <Map<String, String>>[];
-  final _cursors = <String, int>{};
-
-  /// When set, every request throws this, as a breakdown does.
-  Exception? breaks;
-
-  void route(String path, List<_Reply> replies) => answers[path] = replies;
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    final path = request.url.path;
-    asked.add(path);
-    seenHeaders.add(request.headers);
-    if (breaks case final error?) throw error;
-    final replies = answers[path];
-    if (replies == null) throw StateError('the session asked $path, which the test did not offer');
-    final at = _cursors.update(path, (value) => value + 1, ifAbsent: () => 0);
-    final reply = replies[at.clamp(0, replies.length - 1)];
-    return LiveResponse(
-      statusCode: reply.status,
-      headers: const <String, String>{},
-      bodyBytes: Uint8List.fromList(reply.bytes),
-    );
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) async => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
+/// The path of every request [http] recorded, in order.
+List<String> _asked(ReplayHttp http) => [for (final request in http.requests) request.url.path];
 
 /// A timer the session can arm and cancel while the test keeps its callback.
 final class _Armed implements Timer {
@@ -158,10 +101,11 @@ final class _Wall {
   void by(Duration delay) => at = at.add(delay);
 }
 
-/// A session over the given lists, with its clock and transport.
-(_Room, _Clock, _Http) _session({BaiduliveDanmakuArgs? args, DateTime Function()? wall}) {
+/// A session over the given lists answered by [samples], with its clock and
+/// transport.
+(_Room, _Clock, ReplayHttp) _session(List<String> samples, {BaiduliveDanmakuArgs? args, DateTime Function()? wall}) {
   final clock = _Clock();
-  final http = _Http();
+  final http = _replay(samples);
   final session = BaiduliveDanmakuSession(
     args:
         args ??
@@ -208,32 +152,26 @@ Future<void> _settle() async {
 void main() {
   group('joining the chat list', () {
     test('the first answer is history: its segments are remembered, not fetched', () async {
-      final (room, clock, http) = _session(
-        args: BaiduliveDanmakuArgs(roomId: _room, chatList: _chatList),
-      );
+      final (room, clock, http) = _session([
+        'S16-chat-old-then-new',
+        'S17-segment-new',
+      ], args: BaiduliveDanmakuArgs(roomId: _room, chatList: _chatList));
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [
-          _ok(_playlist(['seg_old.flv'])),
-          _ok(_playlist(['seg_old.flv', 'seg_new.flv'])),
-        ])
-        ..route('/live/seg_new.flv', [
-          _ok(_segmentBody([_message('你好')])),
-        ]);
 
       expect(await room.connect(), isNull);
       await _settle();
-      expect(http.asked, [_chatList.path], reason: 'the join reads the list only');
+      expect(_asked(http), [_chatList.path], reason: 'the join reads the list only');
       expect(clock.lastArmed, const Duration(seconds: 5), reason: 'and arms the next poll');
 
       clock.fireLast();
       await _settle();
-      expect(http.asked, [_chatList.path, _chatList.path, '/live/seg_new.flv']);
+      expect(_asked(http), [_chatList.path, _chatList.path, '/live/seg_new.flv']);
       expect(room.chat, ['你好']);
     });
 
     test('a signature that ran out ends the start without a request', () async {
       final (room, _, http) = _session(
+        const [],
         args: BaiduliveDanmakuArgs(
           roomId: _room,
           chatList: _chatList,
@@ -247,24 +185,23 @@ void main() {
         contains('signature expired at ${_at.subtract(const Duration(seconds: 1)).toUtc().toIso8601String()}'),
       );
       expect(failure, isA<LiveSiteAuthenticationError>());
-      expect(http.asked, isEmpty);
+      expect(http.requests, isEmpty);
       await room.dispose();
     });
 
     test('the start asks three times, two seconds apart, and then says so', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session(['S18-chat-500']);
       addTearDown(room.dispose);
-      http.route('/live/chat_$_room-a.m3u8', [_broken]);
 
       final pending = room.connect();
       await _settle();
-      expect(http.asked, [_chatList.path]);
+      expect(_asked(http), [_chatList.path]);
       expect(clock.lastArmed, BaiduliveDanmakuProtocol.startRetryDelay);
       clock.fireLast();
       await _settle();
       clock.fireLast();
       await _settle();
-      expect(http.asked, hasLength(BaiduliveDanmakuProtocol.startAttempts));
+      expect(http.requests, hasLength(BaiduliveDanmakuProtocol.startAttempts));
 
       final failure = await pending;
       expect(failure, isA<LiveSiteNetworkError>());
@@ -274,45 +211,36 @@ void main() {
     });
 
     test('a second connect is ignored while the run is up', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session(['S19-chat-empty']);
       addTearDown(room.dispose);
-      http.route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const []))]);
 
       expect(await room.connect(), isNull);
       await _settle();
       expect(await room.connect(), isNull);
       await _settle();
-      expect(http.asked, hasLength(1), reason: 'no second join, no second poll loop');
+      expect(http.requests, hasLength(1), reason: 'no second join, no second poll loop');
       expect(clock.armedCount, 1);
     });
   });
 
   group('the polls', () {
     test('each poll asks the chat list, then the reliable and the host list', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session([
+        'S19-chat-empty',
+        'S20-reliable-r1',
+        'S21-host-h1',
+        'S22-segment-r1',
+        'S23-segment-h1',
+      ]);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const []))])
-        ..route('/live/reliable_$_room-a.m3u8', [
-          _ok(_playlist(['r1.flv'])),
-        ])
-        ..route('/live/host_$_room-a.m3u8', [
-          _ok(_playlist(['h1.flv'])),
-        ])
-        ..route('/live/r1.flv', [
-          _ok(_segmentBody([_message('可靠的')])),
-        ])
-        ..route('/live/h1.flv', [
-          _ok(_segmentBody([_message('房主的')])),
-        ]);
 
       await room.connect();
       await _settle();
-      expect(http.asked, [_chatList.path], reason: 'the first answer of every list is history');
+      expect(_asked(http), [_chatList.path], reason: 'the first answer of every list is history');
 
       clock.fireLast();
       await _settle();
-      expect(http.asked.skip(1), [
+      expect(_asked(http).skip(1), [
         _chatList.path,
         _reliableList.path,
         _hostList.path,
@@ -320,7 +248,7 @@ void main() {
 
       clock.fireLast();
       await _settle();
-      expect(http.asked.skip(4), [
+      expect(_asked(http).skip(4), [
         _chatList.path,
         _reliableList.path,
         _hostList.path,
@@ -329,11 +257,8 @@ void main() {
     });
 
     test('a list that answers 404 is asked less often as it keeps failing', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session(['S19-chat-empty', 'S24-reliable-404', 'S26-host-down']);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const []))])
-        ..route('/live/reliable_$_room-a.m3u8', [_missing]);
 
       await room.connect();
       await _settle();
@@ -342,20 +267,16 @@ void main() {
         await _settle();
       }
       expect(
-        http.asked.where((path) => path == _reliableList.path).length,
+        _asked(http).where((path) => path == _reliableList.path).length,
         2,
         reason: 'the 404 is asked at the join, skipped once, then asked again',
       );
-      expect(http.asked.where((path) => path == _chatList.path).length, 4, reason: 'the chat list never skips');
+      expect(_asked(http).where((path) => path == _chatList.path).length, 4, reason: 'the chat list never skips');
     });
 
     test('the chat list’s failures back off 1, 2, 4, 8 and the ninth ends the run', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, _) = _session(['S27-chat-empty-then-500', 'S28-reliable-empty', 'S29-host-empty']);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const [])), _broken])
-        ..route('/live/reliable_$_room-a.m3u8', [_ok(_playlist(const []))])
-        ..route('/live/host_$_room-a.m3u8', [_ok(_playlist(const []))]);
 
       await room.connect();
       await _settle();
@@ -379,72 +300,63 @@ void main() {
     });
 
     test('a new segment is fetched once, in the list’s order', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session([
+        'S30-chat-a-then-abc',
+        'S31-segment-b',
+        'S32-segment-c',
+        'S25-reliable-down',
+        'S26-host-down',
+      ]);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [
-          _ok(_playlist(['a.flv'])),
-          _ok(_playlist(['a.flv', 'b.flv', 'c.flv'])),
-        ])
-        ..route('/live/b.flv', [
-          _ok(_segmentBody([_message('二')])),
-        ])
-        ..route('/live/c.flv', [
-          _ok(_segmentBody([_message('三')])),
-        ]);
 
       await room.connect();
       await _settle();
       clock.fireLast();
       await _settle();
       expect(room.chat, ['二', '三'], reason: 'in the order the list names them');
-      expect(http.asked.where((path) => path == '/live/b.flv').length, 1);
+      expect(_asked(http).where((path) => path == '/live/b.flv').length, 1);
 
       clock.fireLast();
       await _settle();
-      expect(http.asked.where((path) => path == '/live/b.flv').length, 1, reason: 'seen is seen');
+      expect(_asked(http).where((path) => path == '/live/b.flv').length, 1, reason: 'seen is seen');
     });
 
     test('a segment answered 4xx is given up at once; one not answered is tried three times', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session([
+        'S33-chat-empty-then-gone-flaky',
+        'S34-segment-gone-401',
+        'S35-segment-flaky-500',
+        'S25-reliable-down',
+        'S26-host-down',
+      ]);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [
-          _ok(_playlist(const [])),
-          _ok(_playlist(['gone.flv', 'flaky.flv'])),
-        ])
-        ..route('/live/gone.flv', [_refused])
-        ..route('/live/flaky.flv', [_broken]);
 
       await room.connect();
       await _settle();
       clock.fireLast();
       await _settle();
       expect(room.chat, isEmpty);
-      expect(http.asked.where((path) => path == '/live/gone.flv').length, 1, reason: 'a 401 will not come');
-      expect(http.asked.where((path) => path == '/live/flaky.flv').length, 1);
+      expect(_asked(http).where((path) => path == '/live/gone.flv').length, 1, reason: 'a 401 will not come');
+      expect(_asked(http).where((path) => path == '/live/flaky.flv').length, 1);
 
       clock.fireLast();
       await _settle();
       clock.fireLast();
       await _settle();
-      expect(http.asked.where((path) => path == '/live/flaky.flv').length, 3, reason: 'three tries in all');
+      expect(_asked(http).where((path) => path == '/live/flaky.flv').length, 3, reason: 'three tries in all');
       clock.fireLast();
       await _settle();
-      expect(http.asked.where((path) => path == '/live/flaky.flv').length, 3, reason: 'then it is given up');
+      expect(_asked(http).where((path) => path == '/live/flaky.flv').length, 3, reason: 'then it is given up');
     });
 
     test('a message of another room is not this room’s chat', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, _) = _session([
+        'S36-chat-empty-then-x',
+        'S37-segment-x-other-room',
+        'S25-reliable-down',
+        'S26-host-down',
+      ]);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [
-          _ok(_playlist(const [])),
-          _ok(_playlist(['x.flv'])),
-        ])
-        ..route('/live/x.flv', [
-          _ok(_segmentBody([_message('别处的', room: '999')])),
-        ]);
 
       await room.connect();
       await _settle();
@@ -457,16 +369,8 @@ void main() {
 
   group('the end of a broadcast', () {
     test('the stopped notice ends the run once, with a terminal line', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session(['S38-chat-empty-then-end', 'S39-segment-end-stopped']);
       addTearDown(room.dispose);
-      http
-        ..route('/live/chat_$_room-a.m3u8', [
-          _ok(_playlist(const [])),
-          _ok(_playlist(['end.flv'])),
-        ])
-        ..route('/live/end.flv', [
-          _ok(_segmentBody([_message('下播了'), _stopped()])),
-        ]);
 
       await room.connect();
       await _settle();
@@ -477,21 +381,21 @@ void main() {
         BaiduliveDanmakuProtocol.endedDetail,
       ]);
       expect(clock.armedCount, isZero, reason: 'no poll is armed afterwards');
-      final before = http.asked.length;
+      final before = http.requests.length;
       clock.fireLast();
       await _settle();
-      expect(http.asked, hasLength(before));
+      expect(http.requests, hasLength(before));
     });
 
     test('a list refused after its signature ran out ends the run as expired', () async {
       final wall = _Wall();
       final expiry = _at.add(const Duration(minutes: 1));
-      final (room, clock, http) = _session(
+      final (room, clock, _) = _session(
+        ['S40-chat-empty-then-401'],
         args: BaiduliveDanmakuArgs(roomId: _room, chatList: _chatList, expiresAt: expiry),
         wall: wall.read,
       );
       addTearDown(room.dispose);
-      http.route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const [])), _refused]);
 
       await room.connect();
       await _settle();
@@ -514,28 +418,26 @@ void main() {
 
   group('stopping', () {
     test('disconnect ends a wait in flight and stops the polls', () async {
-      final (room, clock, http) = _session();
+      final (room, clock, http) = _session(['S19-chat-empty']);
       addTearDown(room.dispose);
-      http.route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const []))]);
 
       await room.connect();
       await _settle();
-      final before = http.asked.length;
+      final before = http.requests.length;
       await room.session.disconnect();
       clock.fireLast();
       await _settle();
-      expect(http.asked, hasLength(before), reason: 'the cancelled wait ends the loop quietly');
+      expect(http.requests, hasLength(before), reason: 'the cancelled wait ends the loop quietly');
       expect(room.seen, isEmpty, reason: 'no notice for a poll the caller stopped');
       expect(room.closed.isCompleted, isFalse);
 
       await room.connect();
       await _settle();
-      expect(http.asked, hasLength(before + 1), reason: 'and it joins again');
+      expect(http.requests, hasLength(before + 1), reason: 'and it joins again');
     });
 
     test('dispose ends the stream and leaves no timer armed', () async {
-      final (room, clock, http) = _session();
-      http.route('/live/chat_$_room-a.m3u8', [_ok(_playlist(const []))]);
+      final (room, clock, _) = _session(['S19-chat-empty']);
       await room.connect();
       await _settle();
       await room.session.dispose();
@@ -546,7 +448,7 @@ void main() {
     });
 
     test('a disposed session says so', () async {
-      final (room, _, _) = _session();
+      final (room, _, _) = _session(const []);
       await room.session.dispose();
       expect(await room.connect(), isA<LiveSiteUnsupported>());
       await room.dispose();

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "platform": "baidulive",
+  "sample": "S34-segment-gone-401",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://liveshowstatic.baidu.com/live/gone.flv",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.baidu.com",
+      "referer": "https://live.baidu.com/m/room/7530951"
+    }
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "content-type": "text/html"
+    }
+  },
+  "raw": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "length": 0
+  },
+  "body": "body.txt",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer baidulive_danmaku_session_test's fake queued, not a capture"
+}

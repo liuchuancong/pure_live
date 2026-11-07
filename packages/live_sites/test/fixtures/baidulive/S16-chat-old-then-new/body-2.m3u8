@@ -1,0 +1,4 @@
+#EXTM3U
+#EXT-X-MEDIA-SEQUENCE:1
+seg_old.flv
+seg_new.flv

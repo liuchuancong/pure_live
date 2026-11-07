@@ -1,15 +1,10 @@
-// Test fakes re-create the platform's constructor shapes, whose naming rules
-// the public surface's lints govern.
-// ignore_for_file: unnecessary_type_name_in_constructor
-
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show gzip;
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
+import 'package:live_net/testing.dart';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
@@ -188,81 +183,43 @@ Map<String, Object?> _liveCommand({int status = 0, Map<String, Object?>? video, 
 /// The live room of the full command, as the parser reads it.
 BaiduliveRoom _full() => BaiduliveRoomParser.room(_roomFixture(_liveCommand()), expectedRoomId: _roomId);
 
-// Transport and timer fakes ---------------------------------------------------
+// Replayed transport -----------------------------------------------------------
 
-final class _Seen {
-  _Seen(LiveRequest request)
-    : method = request.method,
-      url = request.url,
-      body = request.body,
-      headers = request.headers;
+/// The samples under the platform's fixture directory, the answers the fake
+/// transport used to build, every request made at the clock [_at] by the client
+/// [_deviceId]: `S01` the empty first feed page and `S02` the live room command
+/// of [_roomId] (the pair a plain request was answered with), `S03`/`S04` the
+/// room command that cannot connect and the one that never answers,
+/// `S05`/`S06` the first two full pages of a session, `S07` a full first page
+/// and the second and third pages after it (`S08` with some of its rooms again,
+/// `S09` of its rooms only, `S10` its own answer again: the session does not
+/// move on), `S11` a first page that lists the platform's channels,
+/// `S12`/`S13` the pages of the session `session-rec`, `S14` a first page
+/// whose card the sparse room command `S15` leaves to be filled.
+const String _samples = 'test/fixtures/baidulive';
 
-  final String method;
-  final Uri url;
-  final String? body;
-  final Map<String, String> headers;
+/// What differs per run: the feed's clock (`timestamp`) and its signature over
+/// every field (`sign`), and the room command's cache-busting clock (`_`); the
+/// samples carry the values of the test clock. The rest of the feed form and of
+/// the room query is matched, so a page's `session_id` and `refresh_index` pick
+/// its answer.
+const Set<String> _perRun = {'timestamp', 'sign', '_'};
 
-  Map<String, String> get query => url.queryParameters;
-  String get path => url.path;
-}
+/// The transport under the site: [samples] answer, every request is recorded.
+ReplayHttp _replay(List<String> samples) => ReplayHttp.fixtures(_samples, samples, ignoredQuery: _perRun);
 
-final class _FakeHttp implements LiveHttp {
-  _FakeHttp(this.onSend);
+/// The feed POSTs among the requests [http] recorded, in order.
+List<LiveRequest> _posts(ReplayHttp http) => [
+  for (final request in http.requests)
+    if (request.method == 'POST') request,
+];
 
-  final FutureOr<LiveResponse> Function(_Seen request) onSend;
-  final List<_Seen> sent = [];
+/// The fields of a recorded feed POST.
+Map<String, String> _form(LiveRequest request) => Uri.splitQueryString(request.body!);
 
-  List<_Seen> get posts => sent.where((seen) => seen.method == 'POST').toList();
-  int get requestCount => sent.length;
-  int get postCount => posts.length;
-
-  @override
-  Future<LiveResponse> send(LiveRequest request) async {
-    final seen = _Seen(request);
-    sent.add(seen);
-    return await onSend(seen);
-  }
-
-  @override
-  Future<LiveStreamedResponse> open(LiveRequest request) => throw UnimplementedError();
-
-  @override
-  void close() {}
-}
-
-LiveResponse _resp(int status, Object body) => LiveResponse(
-  statusCode: status,
-  headers: const {},
-  bodyBytes: body is String ? Uint8List.fromList(utf8.encode(body)) : Uint8List.fromList(body as List<int>),
-);
-
-/// The website's two answers: the feed POST and the room command GET; 404 for
-/// anything else (a message list that is not there).
-LiveResponse Function(_Seen) _api({String? feed, String? room}) => (seen) {
-  if (seen.method == 'POST') return _resp(200, feed ?? _feedFixture());
-  if (seen.path == BaiduliveEndpoints.roomPath) {
-    return _resp(200, room ?? _roomFixture(_liveCommand()));
-  }
-  return _resp(404, 'nothing here');
-};
-
-BaiduliveSite _bound({
-  String? feed,
-  String? room,
-  LiveResponse Function(_Seen)? onSend,
-  bool? preferH264,
-  DateTime Function()? now,
-  String? deviceId = _deviceId,
-  _FakeHttp? transport,
-}) {
-  final http = transport ?? _FakeHttp(onSend ?? _api(feed: feed, room: room));
-  return BaiduliveSite(
-    http: BaiduliveHttp(http),
-    now: now ?? () => _at,
-    deviceId: deviceId,
-    preferH264: preferH264 == null ? null : () => preferH264,
-  );
-}
+/// The site over [http] at the clock [_at].
+BaiduliveSite _bound(ReplayHttp http, {String? deviceId = _deviceId}) =>
+    BaiduliveSite(http: BaiduliveHttp(http), now: () => _at, deviceId: deviceId);
 
 T _right<T>(Either<LiveSiteError, T> either) => either.match((left) => throw StateError('$left'), (right) => right);
 
@@ -291,7 +248,7 @@ BaiduliveFailure _pageFailure(String body, {int status = 200}) {
 void main() {
   group('identity and lifecycle', () {
     test('the manifest carries the stable id, the name and the icon', () async {
-      final site = _bound();
+      final site = _bound(_replay(const []));
       expect(site.manifest.id, baiduliveSiteId);
       expect(site.manifest.localizedName('zh-CN', 'en-US'), '百度直播');
       expect(site.manifest.localizedName('en-GB', 'en-US'), 'Baidu Live');
@@ -373,11 +330,11 @@ void main() {
     });
 
     test('the resolver canonicalizes its own links without a request', () async {
-      final http = _FakeHttp(_api());
-      final link = _bound(transport: http).capability<LiveLinkResolver>()!;
+      final http = _replay(const []);
+      final link = _bound(http).capability<LiveLinkResolver>()!;
       final player = Uri.parse('https://live.baidu.com/m/media/pclive/pchome/live.html?room_id=$_roomId');
       expect(_right(await link.resolve(player)).toString(), 'https://live.baidu.com/m/room/$_roomId');
-      expect(http.requestCount, 0);
+      expect(http.requests, isEmpty);
       expect(_leftOf(await link.resolve(Uri.parse('https://example.com/m/room/$_roomId'))), isA<LiveSiteUnsupported>());
       expect(
         _leftOf(await link.resolve(Uri.parse('https://live.baidu.com/m/other/$_roomId'))),
@@ -388,16 +345,16 @@ void main() {
 
   group('client names, the feed form and its signature', () {
     test('the injected device id names both the feed and the room command', () async {
-      final http = _FakeHttp(_api());
-      final site = _bound(transport: http);
+      final http = _replay(['S01-feed-empty', 'S02-room-live']);
+      final site = _bound(http);
       await site.recommend(1, 20);
       await site.detail(_roomId);
-      final form = Uri.splitQueryString(http.posts.single.body!);
+      final form = _form(_posts(http).single);
       expect(form['uid'], _deviceId);
       expect(form['timestamp'], '${_at.millisecondsSinceEpoch ~/ 1000}');
       expect(site.feedDevice, _deviceId);
       expect(site.roomDevice(), _deviceId);
-      final query = http.sent.last.query;
+      final query = http.requests.last.url.queryParameters;
       expect(query['uid'], _deviceId);
       expect(query['cmd'], '371');
       expect(query['action'], 'star');
@@ -426,7 +383,7 @@ void main() {
     });
 
     test('without one the clock spells them', () {
-      final site = _bound(deviceId: null);
+      final site = _bound(_replay(const []), deviceId: null);
       expect(site.feedDevice, 'pc-${_at.microsecondsSinceEpoch.toRadixString(36)}purelivedev');
       expect(site.roomDevice(), 'pc-${_at.microsecondsSinceEpoch.toRadixString(36)}baidulive');
     });
@@ -507,15 +464,15 @@ void main() {
     });
 
     test("every request is tagged baidulive and carries the website's headers", () async {
-      final http = _FakeHttp(_api());
-      final site = _bound(transport: http);
+      final http = _replay(['S01-feed-empty', 'S02-room-live']);
+      final site = _bound(http);
       await site.recommend(1, 20);
       await site.detail(_roomId);
-      expect(http.posts.single.headers, BaiduliveEndpoints.feedHeaders);
-      expect(http.sent.last.headers, BaiduliveEndpoints.apiHeaders);
-      expect(http.posts.single.url, BaiduliveEndpoints.feedUrl);
-      expect(http.sent.last.url.scheme, 'https');
-      expect(http.sent.last.url.host, 'mbd.baidu.com');
+      expect(_posts(http).single.headers, BaiduliveEndpoints.feedHeaders);
+      expect(http.requests.last.headers, BaiduliveEndpoints.apiHeaders);
+      expect(_posts(http).single.url, BaiduliveEndpoints.feedUrl);
+      expect(http.requests.last.url.scheme, 'https');
+      expect(http.requests.last.url.host, 'mbd.baidu.com');
     });
   });
 
@@ -580,10 +537,15 @@ void main() {
     });
 
     test('a transport breakdown is a network failure, a cancellation is left alone', () async {
-      final failing = _bound(transport: _FakeHttp((_) => throw const ConnectFailure('dns')));
+      final failing = _bound(_replay(['S03-room-connect-failure']));
       expect(_leftOf(await failing.capability<LiveRoomProvider>()!.getRoom(_roomId)), isA<LiveSiteNetworkError>());
-      final cancelled = _bound(transport: _FakeHttp((_) => throw const CancelledFailure()));
-      final left = _leftOf(await cancelled.capability<LiveRoomProvider>()!.getRoom(_roomId));
+      // The room command that never answers, given up by its caller while it
+      // waits (the request is on the wire as soon as the call is made).
+      final hung = _replay(['S04-room-hang']);
+      final cancelled = _bound(hung);
+      final pending = cancelled.capability<LiveRoomProvider>()!.getRoom(_roomId);
+      hung.requests.single.cancelToken.cancel();
+      final left = _leftOf(await pending);
       expect(left, isA<LiveSiteUnexpectedError>());
       expect(left.message, contains('cancelled'));
     });
@@ -727,38 +689,31 @@ void main() {
 
   group('directory paging', () {
     test('page 1 starts the session and later pages continue it', () async {
-      List<Object?> full(int page) => [
-        for (var index = 0; index < BaiduliveEndpoints.fullPage; index++) _card(roomId: '${_roomId}0$page$index'),
-      ];
-      final http = _FakeHttp((seen) {
-        final form = Uri.splitQueryString(seen.body!);
-        final page = int.parse(form['refresh_index']!);
-        return _resp(200, _feedFixture(items: full(page), sessionId: 'session-$page', refreshIndex: page));
-      });
-      final discovery = _bound(transport: http).capability<LiveDiscoveryProvider>()!;
+      final http = _replay(['S05-feed-full-p1', 'S06-feed-full-p2']);
+      final discovery = _bound(http).capability<LiveDiscoveryProvider>()!;
       final first = _right(await discovery.getRecommendedRooms());
       expect(first.items, hasLength(BaiduliveEndpoints.fullPage));
       expect(first.hasMore, isTrue);
-      final form = Uri.splitQueryString(http.posts.single.body!);
+      final form = _form(_posts(http).single);
       expect(form['resource'], 'banner,tab,feed');
       expect(form['session_id'], isEmpty);
       expect(form['refresh_index'], '1');
       final unsigned = {...form}..remove('sign');
       expect(form['sign'], BaiduliveEndpoints.signFeed(unsigned));
-      expect(http.requestCount, 1);
+      expect(http.requests, hasLength(1));
 
       final second = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 2)));
-      final secondForm = Uri.splitQueryString(http.posts.last.body!);
+      final secondForm = _form(_posts(http).last);
       expect(secondForm['resource'], 'feed');
       expect(secondForm['session_id'], 'session-1');
       expect(secondForm['refresh_index'], '2');
       expect(second.items.first.roomId, '${_roomId}020');
-      expect(http.requestCount, 2);
+      expect(http.requests, hasLength(2));
 
       // The page a session served last is replayed without a request (30-6).
       final replay = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 2)));
       expect(replay.items.first.roomId, '${_roomId}020');
-      expect(http.requestCount, 2);
+      expect(http.requests, hasLength(2));
 
       // A page that is not the session's next is empty without a request, and
       // so is one past the last page the directory ever asks for.
@@ -767,17 +722,17 @@ void main() {
         expect(skipped.items, isEmpty, reason: 'page $page');
         expect(skipped.hasMore, isFalse, reason: 'page $page');
       }
-      expect(http.requestCount, 2);
+      expect(http.requests, hasLength(2));
 
       // Page 1 always starts the session over.
       await discovery.getRecommendedRooms();
-      expect(http.postCount, 3);
-      expect(Uri.splitQueryString(http.posts.last.body!)['session_id'], isEmpty);
+      expect(_posts(http), hasLength(3));
+      expect(_form(_posts(http).last)['session_id'], isEmpty);
     });
 
     test('a page below one asks for nothing', () async {
-      final http = _FakeHttp(_api());
-      final site = _bound(transport: http);
+      final http = _replay(const []);
+      final site = _bound(http);
       final discovery = site.capability<LiveDiscoveryProvider>()!;
       final area = site.capability<LiveAreaProvider>()!;
       expect(_right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 0))).items, isEmpty);
@@ -802,28 +757,13 @@ void main() {
       );
       expect(_right(await site.capability<LiveRoomProvider>()!.getRooms(LivePageRequest.of(page: 0))).items, isEmpty);
       expect((await site.directory(0)).rooms, isEmpty);
-      expect(http.requestCount, 0);
+      expect(http.requests, isEmpty);
     });
 
     test('a page repeats no room of its session and ends while nothing is fresh', () async {
       String room(int index) => '${123456 + index}';
-      final http = _FakeHttp((seen) {
-        final form = Uri.splitQueryString(seen.body!);
-        final page = int.parse(form['refresh_index']!);
-        final ids = switch (page) {
-          1 => [for (var index = 0; index < 10; index++) room(index)],
-          2 => [for (var index = 8; index < 18; index++) room(index)],
-          _ => [for (var index = 0; index < 18; index++) room(index)],
-        };
-        return _resp(
-          200,
-          _feedFixture(
-            items: [for (final id in ids) _card(roomId: id)],
-            refreshIndex: page,
-          ),
-        );
-      });
-      final site = _bound(transport: http);
+      final http = _replay(['S07-feed-ten', 'S08-feed-overlap-p2', 'S09-feed-repeats-p3']);
+      final site = _bound(http);
       final first = await site.directory(1);
       expect(first.rooms, hasLength(10));
       expect(first.hasMore, isTrue);
@@ -845,28 +785,26 @@ void main() {
       expect(third.hasMore, isFalse);
       // The session is over: a later page is empty without a request.
       expect((await site.directory(4)).rooms, isEmpty);
-      expect(http.postCount, 3);
+      expect(_posts(http), hasLength(3));
     });
 
     test('a full page that moved the session on has more', () async {
-      final items = [for (var index = 0; index < 10; index++) _card(roomId: '${123456 + index}')];
-      final site = _bound(onSend: (_) => _resp(200, _feedFixture(items: items)));
+      final site = _bound(_replay(['S07-feed-ten', 'S10-feed-stuck-p2']));
       expect((await site.directory(1)).hasMore, isTrue);
       expect((await site.directory(2)).hasMore, isFalse);
     });
 
     test('a full page that does not move the session on ends the list', () async {
-      final items = [for (var index = 0; index < 10; index++) _card(roomId: '${123456 + index}')];
-      final http = _FakeHttp((_) => _resp(200, _feedFixture(items: items)));
-      final site = _bound(transport: http);
+      final http = _replay(['S07-feed-ten', 'S10-feed-stuck-p2']);
+      final site = _bound(http);
       expect((await site.directory(1)).hasMore, isTrue);
       expect((await site.directory(2)).hasMore, isFalse);
-      expect(http.postCount, 2);
+      expect(_posts(http), hasLength(2));
     });
 
     test('areas come without a request and an unknown one is refused before one', () async {
-      final http = _FakeHttp(_api());
-      final site = _bound(transport: http);
+      final http = _replay(const []);
+      final site = _bound(http);
       final areas = _right(await site.capability<LiveAreaProvider>()!.getAreas());
       expect(areas.map((area) => area.areaId), [
         'rec',
@@ -877,7 +815,7 @@ void main() {
         'news',
         'leisure',
       ]);
-      expect(http.requestCount, 0);
+      expect(http.requests, isEmpty);
       final unknown = _leftOf(
         await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized(areaId: 'sport')),
       );
@@ -891,22 +829,10 @@ void main() {
         _leftOf(await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized())),
         isA<LiveSiteInvalidArgument>(),
       );
-      expect(http.requestCount, 0);
+      expect(http.requests, isEmpty);
 
       // The first feed page's tab list replaces the catalog.
-      final listed = _FakeHttp(
-        _api(
-          feed: _feedFixture(
-            items: [_card()],
-            tab: _tabFixture(
-              items: [
-                {'type': 'games', 'name': '游戏', 'channel_id': 700},
-              ],
-            ),
-          ),
-        ),
-      );
-      final withTabs = _bound(transport: listed);
+      final withTabs = _bound(_replay(['S11-feed-tabs']));
       await withTabs.directory(1);
       expect(_right(await withTabs.capability<LiveAreaProvider>()!.getAreas()).single.areaId, 'games');
       expect(
@@ -916,28 +842,23 @@ void main() {
     });
 
     test('the recommendations and the "推荐" channel keep separate sessions (30-6)', () async {
-      final http = _FakeHttp((seen) {
-        final form = Uri.splitQueryString(seen.body!);
-        final items = [for (var index = 0; index < 10; index++) _card(roomId: '${123456 + index}')];
-        return _resp(200, _feedFixture(items: items, sessionId: 'session-${form['tab']}'));
-      });
-      final site = _bound(transport: http);
+      final http = _replay(['S12-feed-rec-p1', 'S13-feed-rec-p2']);
+      final site = _bound(http);
       await site.capability<LiveDiscoveryProvider>()!.getRecommendedRooms();
       await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized(areaId: 'rec'));
       await site.capability<LiveAreaProvider>()!.getAreaRooms(
         area: LiveArea.normalized(areaId: 'rec'),
         request: LivePageRequest.of(page: 2),
       );
-      final third = Uri.splitQueryString(http.posts.last.body!);
+      final third = _form(_posts(http).last);
       expect(third['session_id'], 'session-rec');
       expect(third['refresh_index'], '2');
-      expect(http.postCount, 3);
+      expect(_posts(http), hasLength(3));
     });
 
     test('a page size cuts the rooms of the feed page', () async {
-      final items = [for (var index = 0; index < 10; index++) _card(roomId: '${123456 + index}')];
-      final http = _FakeHttp((_) => _resp(200, _feedFixture(items: items)));
-      final site = _bound(transport: http);
+      final http = _replay(['S07-feed-ten']);
+      final site = _bound(http);
       final page = _right(
         await site.capability<LiveAreaProvider>()!.getAreaRooms(
           area: LiveArea.normalized(areaId: 'rec'),
@@ -951,7 +872,7 @@ void main() {
       expect(page.items.first.broadcast.effectiveLiveStatus, LiveStatus.live);
       expect(page.items.first.runtime.streamHandle, isNull);
       expect(page.items.first.runtime.danmakuHandle, isNull);
-      expect(http.postCount, 1);
+      expect(_posts(http), hasLength(1));
     });
   });
 
@@ -1187,21 +1108,10 @@ void main() {
     });
 
     test('a room command fills what a card of the same room knew', () async {
+      // `S14` lists this card; the room command `S15` names the room live
+      // and leaves the rest out.
       final card = _card(cover: 'https://pic.bdimg.com/c.png', audience: 900);
-      final http = _FakeHttp((seen) {
-        if (seen.method == 'POST') return _resp(200, _feedFixture(items: [card]));
-        return _resp(
-          200,
-          _roomFixture({
-            'error_code': 0,
-            'status': 0,
-            'host': {'uk': 'anchor-uk'},
-            'video': {'live_flv_url': 'https://hls-live.bdstatic.com/live/live_$_roomId.flv'},
-            'online_users': null,
-          }),
-        );
-      });
-      final site = _bound(transport: http);
+      final site = _bound(_replay(['S14-feed-card', 'S15-room-sparse']));
       await site.directory(1);
       final room = await site.detail(_roomId);
       expect(room.content.title, '晚间聊天');
@@ -1228,18 +1138,18 @@ void main() {
     });
 
     test("room entry keeps the answer as the room's stream data", () async {
-      final http = _FakeHttp(_api());
-      final site = _bound(transport: http);
+      final http = _replay(['S02-room-live']);
+      final site = _bound(http);
       final room = _right(await site.capability<LiveRoomProvider>()!.getRoom(_roomId));
       expect(room.runtime.streamHandle, isA<BaiduliveRoom>());
       expect((room.runtime.streamHandle! as BaiduliveRoom).variants, isNotEmpty);
-      expect(http.requestCount, 1);
+      expect(http.requests, hasLength(1));
       // The refresh and the recording answer are the same one command.
       expect(
         _right(await site.capability<LiveRoomProvider>()!.getRoom('https://live.baidu.com/m/room/$_roomId')).roomId,
         _roomId,
       );
-      expect(http.requestCount, 2);
+      expect(http.requests, hasLength(2));
     });
   });
 

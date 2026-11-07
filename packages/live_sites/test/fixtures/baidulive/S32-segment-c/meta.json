@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "platform": "baidulive",
+  "sample": "S32-segment-c",
+  "capturedAt": "2026-11-07T12:00:00Z",
+  "route": "direct",
+  "request": {
+    "method": "GET",
+    "url": "https://liveshowstatic.baidu.com/live/c.flv",
+    "headers": {
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "origin": "https://live.baidu.com",
+      "referer": "https://live.baidu.com/m/room/7530951"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/octet-stream"
+    }
+  },
+  "raw": {
+    "sha256": "98c6d7679febbf241d387f6c9c33952561ccd21e0c7233b0e1aab0c153bb4d9d",
+    "length": 199
+  },
+  "body": "body.json",
+  "scrubbed": [],
+  "tool": "hand-written (schema 1): the answer baidulive_danmaku_session_test's fake queued, not a capture"
+}
