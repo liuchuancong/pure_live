@@ -20,6 +20,7 @@ import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPlayerPage, 
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/archive/archive_catalog_page.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
+import 'package:pure_live/modules/live/archive/archive_player_page.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
@@ -568,6 +569,22 @@ GoRouter buildAppRouter({
                 _ => const ArchiveArguments(),
               },
             ),
+          ),
+        ),
+      ),
+      // One recording's archive player: the parts and renditions are the
+      // station's own, so the page drives the kernel handle through the
+      // archive controller. A deep link without the extra has nothing to
+      // open and says so.
+      GoRoute(
+        path: RouteNames.archivePlayer,
+        builder: (context, state) => _PlayerWindowChrome(
+          drawsOwnChrome: true,
+          child: ArchivePlayerPage(
+            request: switch (state.extra) {
+              final ArchivePlayerRequest request => request,
+              _ => null,
+            },
           ),
         ),
       ),

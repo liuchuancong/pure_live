@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart' show DsStatus, showDsToast;
 import 'package:flutter/widgets.dart' show BuildContext, ValueChanged;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
+import 'package:live_vod/live_vod.dart' show SoopArchiveVideo;
 
 import 'package:pure_live/l10n/translations.dart';
 
@@ -22,6 +23,22 @@ final class ArchiveArguments {
 
   /// Reports actual asynchronous native retirement to the owning page.
   final ValueChanged<Future<void>>? onRetire;
+}
+
+/// What the archive player page opens: the recording's public metadata and
+/// the invoking room's ownership callbacks, riding the route's `extra`
+/// together. In-memory only; never serialized or persisted.
+final class ArchivePlayerRequest {
+  /// Kept local to the app's memory.
+  const new({required this.video, required this.arguments});
+
+  /// The recording to open (SOOP today; other platforms ride their own
+  /// metadata as their sources land).
+  final SoopArchiveVideo video;
+
+  /// The invoking room's callbacks (its decoder release and the retirement
+  /// it waits on).
+  final ArchiveArguments arguments;
 }
 
 /// Opens the archive route and awaits both entry and native retirement

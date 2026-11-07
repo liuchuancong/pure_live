@@ -4,8 +4,6 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_vod/live_vod.dart' show VodArchive;
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_catalog_controller.dart';
@@ -29,35 +27,54 @@ final class ArchiveCatalogPage extends ConsumerStatefulWidget {
 }
 
 final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
-  int _mid = 0;
-
-  int get _midOf => int.tryParse(widget.arguments.room?.anchor?.anchorId ?? '') ?? 0;
+  String _siteId = '';
+  String _creator = '';
 
   @override
   void initState() {
     super.initState();
-    _mid = _midOf;
+    // The creator's own id — a Bilibili uid or a SOOP broadcaster id, never
+    // the room number — names the catalog; the room's platform picks the
+    // source.
+    final room = widget.arguments.room;
+    _siteId = room?.ref.platform ?? '';
+    _creator = (room?.anchor?.anchorId ?? '').trim();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(ref.read(archiveCatalogProvider.notifier).start(_mid));
+      if (mounted) {
+        unawaited(ref.read(archiveCatalogProvider.notifier).start(siteId: _siteId, creator: _creator));
+      }
     });
   }
 
-  Future<void> _pick(VodArchive archive) async {
+  Future<void> _pick(ArchivePick pick) async {
     final arguments = widget.arguments;
     if (arguments.pickOnly) {
-      Navigator.of(context).pop(archive);
+      Navigator.of(context).pop(pick);
       return;
     }
     // The covered live decoder goes quiet before another player opens; the
     // invoking room resumes once the whole walk has settled.
     await arguments.beforePlay?.call();
     if (!mounted) return;
-    unawaited(context.push(RouteNames.vodVideo.replaceFirst(':bvid', archive.bvid)));
+    final bilibili = pick.bilibili;
+    if (bilibili != null) {
+      unawaited(context.push(RouteNames.vodVideo.replaceFirst(':bvid', bilibili.bvid)));
+      return;
+    }
+    final soop = pick.soop;
+    if (soop != null) {
+      unawaited(
+        context.push(
+          RouteNames.archivePlayer,
+          extra: ArchivePlayerRequest(video: soop, arguments: arguments),
+        ),
+      );
+    }
   }
 
   /// The recording's own day, the identity a replay catalog reads by.
-  String _dayOf(VodArchive archive) {
-    final at = archive.publishedAt;
+  String _dayOf(ArchivePick pick) {
+    final at = pick.bilibili?.publishedAt ?? pick.soop?.publishedAt;
     if (at == null) return '';
     final month = '${at.month}'.padLeft(2, '0');
     final day = '${at.day}'.padLeft(2, '0');
@@ -85,7 +102,9 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
           action: DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
-            onPressed: state.selectedKey == null ? () => unawaited(controller.start(_mid)) : controller.reload,
+            onPressed: state.selectedKey == null
+                ? () => unawaited(controller.start(siteId: _siteId, creator: _creator))
+                : controller.reload,
             child: Text(t.common.retry),
           ),
         ),
@@ -99,14 +118,13 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
         ),
       );
     } else {
-      body = PagedCardGrid<VodArchive>(
+      body = PagedCardGrid<ArchivePick>(
         items: state.recordings,
-        itemBuilder: (context, archive) =>
-            VodVideoCard(video: archive.asVideo(), onOpen: () => unawaited(_pick(archive))),
+        itemBuilder: (context, pick) => VodVideoCard(video: pick.display, onOpen: () => unawaited(_pick(pick))),
         layout: ref.watch(browseLayoutProvider),
         listMainAxisExtent: 104,
-        listItemBuilder: (context, archive) =>
-            VodVideoRow(video: archive.asVideo(), subtitle: _dayOf(archive), onOpen: () => unawaited(_pick(archive))),
+        listItemBuilder: (context, pick) =>
+            VodVideoRow(video: pick.display, subtitle: _dayOf(pick), onOpen: () => unawaited(_pick(pick))),
         infoExtent: kVodCardInfoExtent,
         isLoading: state.loading || state.loadingMore,
         hasMore: state.hasMore,

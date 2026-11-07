@@ -226,5 +226,8 @@
   "replayCatalog": "Replay catalog",
   "replayCollections": "Replay collections",
   "replayEmpty": "No replays here yet",
-  "replayFailed": "Couldn't load the replays"
+  "replayFailed": "Couldn't load the replays",
+  "replayQuality": "Quality",
+  "replayRate": "Speed",
+  "replayParts": "Parts"
 }

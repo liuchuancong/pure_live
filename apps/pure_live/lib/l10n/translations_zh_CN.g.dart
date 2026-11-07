@@ -7232,6 +7232,15 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '回放加载失败'
 	String get replayFailed => '回放加载失败';
+
+	/// zh-CN: '画质'
+	String get replayQuality => '画质';
+
+	/// zh-CN: '倍速'
+	String get replayRate => '倍速';
+
+	/// zh-CN: '分段'
+	String get replayParts => '分段';
 }
 
 // Path: search
@@ -16891,6 +16900,9 @@ extension on Translations {
 			'room.replayCollections' => '回放合集',
 			'room.replayEmpty' => '还没有回放',
 			'room.replayFailed' => '回放加载失败',
+			'room.replayQuality' => '画质',
+			'room.replayRate' => '倍速',
+			'room.replayParts' => '分段',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -16956,11 +16968,11 @@ extension on Translations {
 			'search.webVersion' => '打开网页版',
 			'search.webVersionTitle' => '这里没有内置列表',
 			'search.webVersionDescription' => '可以在应用内打开该平台的网页版查看直播间。',
+			_ => null,
+		} ?? switch (path) {
 			'search.coverageShortLiveOnly' => '只能搜到正在直播的房间',
 			'search.coverageShortLiveAndOffline' => '能搜到直播中和部分未开播的房间',
 			'search.coverageShortChannelLookup' => '只能用频道链接或频道号查找',
-			_ => null,
-		} ?? switch (path) {
 			'search.coverageShortRoomLookup' => '只能用房间号或直播链接查找',
 			'search.coverageShortShowcase' => '只在平台当前推荐的直播里按昵称筛选',
 			'search.coverageShortLocal' => '搜索本机已导入的频道',
@@ -17470,11 +17482,11 @@ extension on Translations {
 			'settings.cacheSize' => '当前缓存大小',
 			'settings.cacheRefresh' => '刷新',
 			'settings.cacheClear' => '清除缓存',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheClearDesc' => '删除所有已缓存的封面、头像与站点图标。',
 			'settings.cacheCleared' => '缓存已清除',
 			'settings.cacheLimit' => '最大缓存容量',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheLimitDesc' => '达到上限时按优先级和最近使用时间清理。',
 			'settings.cacheLimitOff' => '不自动清理',
 			'settings.cacheHint' => '封面按 6 小时、头像按 30 天缓存；过期后先显示旧图，再在后台刷新。',
@@ -17984,11 +17996,11 @@ extension on Translations {
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadDelete' => '删除',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
 			'settings.downloadClearFinished' => '清除已完成',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadDuplicateRunning' => '这个文件正在下载',
 			'settings.downloadDuplicateDone' => '这个文件已经下载过了',
 			'settings.downloadManagerOpenFolder' => '打开文件夹',
@@ -18498,11 +18510,11 @@ extension on Translations {
 			'settings.lanSyncConflictOutdated' => '本机数据刚变过，请重新查看后再决定',
 			'settings.navMusicInterface' => '界面与列表',
 			'settings.musicInterfaceDescription' => '列表行、来源与不喜欢的显示方式。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navMusicStorage' => '存储与重置',
 			'settings.musicStorageDescription' => '缓存清理与恢复默认。',
 			'settings.navBackgroundGuide' => '后台播放引导',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideDescription' => '本机系统在后台对应用做了什么，以及逐项改它的开关。',
 			'settings.backgroundGuideUnavailable' => '这台设备没有后台引导可看。',
 			'settings.backgroundGuideOpenFailed' => '没有打开任何系统页面',
@@ -19012,11 +19024,11 @@ extension on Translations {
 			'wallpaper.sourceLabel' => '来源',
 			'wallpaper.retry' => '重试',
 			'wallpaper.groupBing' => '必应壁纸',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceBingBiturl' => '必应随机Biturl',
 			'wallpaper.sourceBingJasonZeng' => '必应随机Jason Zeng',
 			'wallpaper.sourceBingUapi' => '必应随机UAPI',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceBingYingJoy' => '必应随机YingJoy',
 			'wallpaper.sourceBingW3h5' => '必应W3H5',
 			'wallpaper.sourceBingWumingDaily' => '无铭必应每日壁纸',

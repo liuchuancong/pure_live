@@ -60,6 +60,11 @@ abstract final class RouteNames {
   /// shell; the invoking room's arguments object rides in as `extra`.
   static const String archive = '/archives';
 
+  /// One recording's archive player, pushed on the root navigator above
+  /// the shell; the recording and the invoking room's arguments ride in
+  /// as `extra`.
+  static const String archivePlayer = '/archive/player';
+
   /// The music module's player, pushed on the root navigator above the shell
   /// (the reference's PlayDetail).
   static const String musicPlayer = '/music/player';

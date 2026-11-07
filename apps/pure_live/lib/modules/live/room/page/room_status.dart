@@ -208,15 +208,17 @@ RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = fa
 /// never lands here — it plays, so the playback reads above decide its
 /// state (`replayEnded` names its end).
 RoomPictureState _offline(Translations t, LiveRoom room) {
-  // A creator whose platform keeps a labeled replay collection gets the way
-  // into it: the platform is one the catalog reads, and the room's anchor
-  // carries the creator uid the catalog asks for (never the room number).
-  final replays = room.ref.platform == SiteIds.bilibili && (int.tryParse(room.anchor?.anchorId ?? '') ?? 0) > 0;
-  final walk = [
-    RoomPictureAction.refresh,
-    if (replays) RoomPictureAction.openReplays,
-    RoomPictureAction.back,
-  ];
+  // A creator whose platform keeps a replay catalog gets the way into it:
+  // the platform is one the catalog reads, and the room's anchor carries
+  // the creator id the catalog asks for (never the room number — Bilibili
+  // wants the numeric uid, SOOP the broadcaster's own handle).
+  final creator = (room.anchor?.anchorId ?? '').trim();
+  final replays =
+      (room.ref.platform == SiteIds.bilibili && (int.tryParse(creator) ?? 0) > 0) ||
+      (room.ref.platform == SiteIds.soop &&
+          RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(creator) &&
+          !const {'station', 'vod', 'live', 'main'}.contains(creator));
+  final walk = [RoomPictureAction.refresh, if (replays) RoomPictureAction.openReplays, RoomPictureAction.back];
   final state = switch (room.broadcast.effectiveLiveStatus) {
     LiveStatus.banned => _of(
       RoomPictureKind.banned,

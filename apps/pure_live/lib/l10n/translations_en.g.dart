@@ -2549,6 +2549,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get replayCollections => 'Replay collections';
 	@override String get replayEmpty => 'No replays here yet';
 	@override String get replayFailed => 'Couldn\'t load the replays';
+	@override String get replayQuality => 'Quality';
+	@override String get replayRate => 'Speed';
+	@override String get replayParts => 'Parts';
 }
 
 // Path: search
@@ -7502,6 +7505,9 @@ extension on TranslationsEn {
 			'room.replayCollections' => 'Replay collections',
 			'room.replayEmpty' => 'No replays here yet',
 			'room.replayFailed' => 'Couldn\'t load the replays',
+			'room.replayQuality' => 'Quality',
+			'room.replayRate' => 'Speed',
+			'room.replayParts' => 'Parts',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -7567,11 +7573,11 @@ extension on TranslationsEn {
 			'search.webVersion' => 'Open web version',
 			'search.webVersionTitle' => 'No in-app list here',
 			'search.webVersionDescription' => 'Open the platform\'s web version in the app to see its rooms.',
+			_ => null,
+		} ?? switch (path) {
 			'search.coverageShortLiveOnly' => 'Finds live rooms only',
 			'search.coverageShortLiveAndOffline' => 'Finds live rooms and some offline ones',
 			'search.coverageShortChannelLookup' => 'Channel id or link only',
-			_ => null,
-		} ?? switch (path) {
 			'search.coverageShortRoomLookup' => 'Room id or live link only',
 			'search.coverageShortShowcase' => 'A nickname filter over the current showcase',
 			'search.coverageShortLocal' => 'Searches imported channels',
@@ -8081,11 +8087,11 @@ extension on TranslationsEn {
 			'settings.cacheSize' => 'Current cache size',
 			'settings.cacheRefresh' => 'Refresh',
 			'settings.cacheClear' => 'Clear cache',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheClearDesc' => 'Deletes every cached cover, avatar and site icon.',
 			'settings.cacheCleared' => 'Cache cleared',
 			'settings.cacheLimit' => 'Maximum cache size',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheLimitDesc' => 'Past the cap, lower-priority and least-recently-used images go first.',
 			'settings.cacheLimitOff' => 'No automatic cleanup',
 			'settings.cacheHint' => 'Covers last 6 hours and avatars 30 days; an expired picture shows first and refreshes in the background.',
@@ -8595,11 +8601,11 @@ extension on TranslationsEn {
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadDelete' => 'Delete',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
 			'settings.downloadClearFinished' => 'Clear finished',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadDuplicateRunning' => 'That file is already downloading',
 			'settings.downloadDuplicateDone' => 'That file has already been downloaded',
 			'settings.downloadManagerOpenFolder' => 'Open folder',
@@ -9109,11 +9115,11 @@ extension on TranslationsEn {
 			'settings.lanSyncConflictOutdated' => 'This device\'s copy just changed; review it and decide again',
 			'settings.navMusicInterface' => 'Interface & lists',
 			'settings.musicInterfaceDescription' => 'How list rows, sources and dislikes read.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navMusicStorage' => 'Storage & reset',
 			'settings.musicStorageDescription' => 'Cache cleanup and the defaults.',
 			'settings.navBackgroundGuide' => 'Background playback guide',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideDescription' => 'What this phone\'s system does to an app in the background, and the switches to change it.',
 			'settings.backgroundGuideUnavailable' => 'No background guide for this device.',
 			'settings.backgroundGuideOpenFailed' => 'No system page opened',
@@ -9623,11 +9629,11 @@ extension on TranslationsEn {
 			'wallpaper.sourceLabel' => 'Source',
 			'wallpaper.retry' => 'Retry',
 			'wallpaper.groupBing' => 'Bing',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceBingBiturl' => 'Bing · random (Biturl)',
 			'wallpaper.sourceBingJasonZeng' => 'Bing · random (Jason Zeng)',
 			'wallpaper.sourceBingUapi' => 'Bing · random (UAPI)',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceBingYingJoy' => 'Bing · random (YingJoy)',
 			'wallpaper.sourceBingW3h5' => 'Bing · W3H5',
 			'wallpaper.sourceBingWumingDaily' => 'Bing daily · Wuming',

@@ -226,5 +226,8 @@
   "replayCatalog": "回放目录",
   "replayCollections": "回放合集",
   "replayEmpty": "还没有回放",
-  "replayFailed": "回放加载失败"
+  "replayFailed": "回放加载失败",
+  "replayQuality": "画质",
+  "replayRate": "倍速",
+  "replayParts": "分段"
 }
