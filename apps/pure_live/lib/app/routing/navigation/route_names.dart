@@ -56,6 +56,10 @@ abstract final class RouteNames {
   /// One cinema title's page (its blurb, episodes and player).
   static const String vodSeason = '/vod/season/:seasonId';
 
+  /// A creator's replay catalog, pushed on the root navigator above the
+  /// shell; the invoking room's arguments object rides in as `extra`.
+  static const String archive = '/archives';
+
   /// The music module's player, pushed on the root navigator above the shell
   /// (the reference's PlayDetail).
   static const String musicPlayer = '/music/player';

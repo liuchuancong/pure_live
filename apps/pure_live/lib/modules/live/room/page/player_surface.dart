@@ -20,6 +20,7 @@ import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart' sh
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/archive/archive_navigation.dart' show openArchives;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
@@ -30,8 +31,26 @@ import 'package:pure_live/modules/live/room/page/room_status.dart'
 // The replay bar's clock words: the one duration formatter the app keeps
 // ("12:34" or "1:02:03"), the same the vod player's own bar reads.
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
+
+/// Opens the creator's replay catalog from the room: the covered decoder
+/// goes quiet when a recording opens, and the room reads its own picture
+/// again after the walk to resume what it parked.
+Future<void> _openReplays(BuildContext context, WidgetRef ref, LiveRoom room) async {
+  final controller = ref.read(roomProvider.notifier);
+  final walked = await openArchives(
+    context,
+    room: room,
+    push: (arguments) => context.push<Object?>(RouteNames.archive, extra: arguments),
+    beforePlay: controller.pause,
+  );
+  if (!walked || !context.mounted) return;
+  // A decoder parked by the walk plays again; a room the viewer had
+  // personally paused keeps their choice.
+  if (pictureStateOf(context.t, ref.read(roomProvider)).kind == RoomPictureKind.paused) {
+    await controller.togglePlayPause();
+  }
+}
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
 /// the bars, the state overlay and the position line never borrow the
@@ -102,6 +121,10 @@ final class PictureActionButton extends ConsumerWidget {
         },
       ),
       RoomPictureAction.playAgain => (t.room.play, () => unawaited(controller.retry())),
+      RoomPictureAction.openReplays => (
+        t.room.replayOpen,
+        room == null ? null : () => unawaited(_openReplays(context, ref, room)),
+      ),
     };
     return DsButton(onPressed: onPressed, autofocus: autofocus, child: Text(label));
   }

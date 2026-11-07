@@ -742,7 +742,13 @@ final class VodChapter {
 /// as much — and an auto-generated track is marked [auto].
 final class VodSubtitleTrack {
   /// A subtitle track.
-  const new({required this.id, required this.language, required this.languageName, required this.url, this.auto = false});
+  const new({
+    required this.id,
+    required this.language,
+    required this.languageName,
+    required this.url,
+    this.auto = false,
+  });
 
   /// The source's track id.
   final String id;
@@ -813,6 +819,84 @@ final class VodSeekPreview {
     final seconds = at.inMilliseconds ~/ step.inMilliseconds;
     return template.replaceAll('%ST', (seconds * step.inMilliseconds / 1000).toStringAsFixed(2));
   }
+}
+
+/// One broadcast recording of a creator's replay collection: a video the
+/// station's own catalog lists as 直播回放, never one inferred from a title.
+///
+/// Unlike a search's [VodVideo] it carries its publish moment — the catalog
+/// reads and sorts by it — and never the uploader fields, because a
+/// collection belongs to one creator.
+final class VodArchive {
+  /// A recording.
+  const new({
+    required this.bvid,
+    required this.title,
+    this.aid,
+    this.coverUrl,
+    this.duration,
+    this.publishedAt,
+    this.playCount,
+  });
+
+  /// The recording's bvid, the id every read and open goes through.
+  final String bvid;
+
+  /// The numeric aid, when the row carried one.
+  final int? aid;
+
+  /// The recording's own title.
+  final String title;
+
+  /// The cover address; null when the row gave none.
+  final String? coverUrl;
+
+  /// The recording's length; null until a row carries it.
+  final Duration? duration;
+
+  /// When the broadcast was recorded; null when the row gave no readable
+  /// timestamp.
+  final DateTime? publishedAt;
+
+  /// How many times it was played.
+  final int? playCount;
+
+  /// The recording as the shared video model, for the row and card widgets
+  /// a video list already renders with.
+  VodVideo asVideo() => VodVideo(
+    id: bvid,
+    bvid: bvid,
+    aid: aid,
+    title: title,
+    coverUrl: coverUrl,
+    duration: duration,
+    playCount: playCount,
+  );
+}
+
+/// One creator-owned replay collection: a season or series the station
+/// labels as broadcast recordings. Unrelated uploads never qualify — the
+/// label is the collection's proof.
+final class ReplayCollection {
+  /// A collection.
+  const new({required this.id, required this.name, required this.season, this.updated = 0});
+
+  /// The numeric season or series id, unique in its own namespace.
+  final int id;
+
+  /// The label the creator gave the collection.
+  final String name;
+
+  /// Whether the id names a season (different endpoint) rather than a
+  /// series.
+  final bool season;
+
+  /// The collection's last update, as an epoch second; 0 when the station
+  /// gave none.
+  final int updated;
+
+  /// The stable key a selector holds; season and series ids may collide.
+  String get key => season ? 'season:$id' : 'series:$id';
 }
 
 /// What the player's own answer adds to an archive's record: the marked

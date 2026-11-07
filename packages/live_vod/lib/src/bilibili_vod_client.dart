@@ -163,6 +163,122 @@ final class BilibiliVodClient {
     );
   }
 
+  /// A creator's replay collections (`seasons_series_list`), paged.
+  ///
+  /// Only collections the station labels as broadcast recordings qualify —
+  /// a plain series of uploads stays out. The [mid] is the creator's own
+  /// uid, never a room number.
+  Future<({List<ReplayCollection> items, bool hasMore})> replayCollections(int mid, {int page = 1}) async {
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/polymer/web-space/seasons_series_list', {
+          'mid': '$mid',
+          'page_num': '$page',
+          'page_size': '20',
+        }),
+        headers: {..._headers, 'referer': 'https://space.bilibili.com/$mid/'},
+      ),
+    );
+    final data = _body(response)['data'];
+    final lists = data is Map ? data['items_lists'] : null;
+    if (lists is! Map) {
+      throw const VodFailure('the replay collection answer lost its lists');
+    }
+    final found = <ReplayCollection>[];
+    final seen = <String>{};
+    for (final season in const [false, true]) {
+      final rows = (lists[season ? 'seasons_list' : 'series_list'] as List<Object?>?) ?? const [];
+      for (final row in rows) {
+        if (row is! Map) continue;
+        final meta = row['meta'];
+        if (meta is! Map) continue;
+        final owner = _intOf(meta['mid']) ?? 0;
+        final id = _intOf(meta[season ? 'season_id' : 'series_id']) ?? 0;
+        final name = _plain('${meta['name'] ?? ''}');
+        // The label is the proof: a collection that does not say it holds
+        // broadcasts is somebody's uploads, however it sits in the list.
+        if (owner != mid || id <= 0 || !kBilibiliReplayLabel.hasMatch(name)) continue;
+        final collection = ReplayCollection(
+          id: id,
+          name: name,
+          season: season,
+          updated: _intOf(meta['last_update_ts']) ?? _intOf(meta['mtime']) ?? _intOf(meta['ptime']) ?? 0,
+        );
+        if (seen.add(collection.key)) found.add(collection);
+      }
+    }
+    found.sort((a, b) => b.updated.compareTo(a.updated));
+    final paging = lists['page'];
+    final total = paging is Map ? _intOf(paging['total']) ?? 0 : 0;
+    return (items: List<ReplayCollection>.unmodifiable(found), hasMore: page * 20 < total);
+  }
+
+  /// One collection's recordings, newest first (`seasons_archives_list` for
+  /// a season, `series/archives` for a series), paged.
+  Future<({List<VodArchive> items, bool hasMore})> replayArchives(
+    int mid,
+    ReplayCollection collection, {
+    int page = 1,
+  }) async {
+    if (collection.id <= 0) {
+      throw const VodFailure('the replay collection has no id to read');
+    }
+    final season = collection.season;
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: season
+            ? Uri.https('api.bilibili.com', '/x/polymer/web-space/seasons_archives_list', {
+                'mid': '$mid',
+                'season_id': '${collection.id}',
+                'sort_reverse': 'false',
+                'page_num': '$page',
+                'page_size': '20',
+              })
+            : Uri.https('api.bilibili.com', '/x/series/archives', {
+                'mid': '$mid',
+                'series_id': '${collection.id}',
+                'only_normal': 'true',
+                'sort': 'desc',
+                'pn': '$page',
+                'ps': '20',
+              }),
+        headers: {..._headers, 'referer': 'https://space.bilibili.com/$mid/'},
+      ),
+    );
+    final data = _body(response)['data'];
+    final rows = data is Map ? (data['archives'] as List<Object?>?) ?? const [] : const <Object?>[];
+    final found = <VodArchive>[];
+    final seen = <String>{};
+    for (final row in rows) {
+      if (row is! Map) continue;
+      final bvid = '${row['bvid'] ?? ''}';
+      final title = _plain('${row['title'] ?? ''}');
+      // A recording names itself with a bvid the station's own shape gives;
+      // anything else is a row the parser cannot trust, and one bad row
+      // must not drop the page.
+      if (!RegExp(r'^BV[0-9A-Za-z]{10}$').hasMatch(bvid) || title.isEmpty || !seen.add(bvid)) continue;
+      final seconds = _intOf(row['duration']) ?? 0;
+      final published = _intOf(row['pubdate']) ?? 0;
+      found.add(
+        VodArchive(
+          bvid: bvid,
+          aid: _intOf(row['aid']),
+          title: title,
+          coverUrl: _coverOf(row['pic']),
+          duration: seconds > 0 ? Duration(seconds: seconds) : null,
+          publishedAt: published > 0 ? DateTime.fromMillisecondsSinceEpoch(published * 1000, isUtc: true) : null,
+          playCount: _intOf(row['play']),
+        ),
+      );
+    }
+    found.sort((a, b) => (b.publishedAt ?? DateTime(1970)).compareTo(a.publishedAt ?? DateTime(1970)));
+    final paging = data is Map ? data['page'] : null;
+    final total = paging is Map ? _intOf(paging['total']) ?? 0 : 0;
+    return (items: List<VodArchive>.unmodifiable(found), hasMore: rows.isNotEmpty && page * 20 < total);
+  }
+
   /// One archive's full metadata and parts (`x/web-interface/view`).
   Future<VodDetail> detail(String bvid) async {
     final response = await http.send(
@@ -548,19 +664,13 @@ final class BilibiliVodClient {
   /// The user hits of a search (`bili_user`).
   Future<VodUserSearchPage> searchUsers(String keyword, {int page = 1, int pageSize = 20}) async {
     final answer = await _searchType(keyword, type: 'bili_user', page: page, pageSize: pageSize);
-    return VodUserSearchPage(
-      users: [for (final hit in answer.results) ?_userOf(hit)],
-      hasMore: answer.hasMore,
-    );
+    return VodUserSearchPage(users: [for (final hit in answer.results) ?_userOf(hit)], hasMore: answer.hasMore);
   }
 
   /// The live-room hits of a search (`live_room`).
   Future<VodLiveRoomSearchPage> searchLiveRooms(String keyword, {int page = 1, int pageSize = 20}) async {
     final answer = await _searchType(keyword, type: 'live_room', page: page, pageSize: pageSize);
-    return VodLiveRoomSearchPage(
-      rooms: [for (final hit in answer.results) ?_liveRoomOf(hit)],
-      hasMore: answer.hasMore,
-    );
+    return VodLiveRoomSearchPage(rooms: [for (final hit in answer.results) ?_liveRoomOf(hit)], hasMore: answer.hasMore);
   }
 
   /// The generic answer behind the typed searches: the raw hits and whether
@@ -1490,6 +1600,13 @@ final class BilibiliVodClient {
   }
 
   /// "12:34" or "1:02:03" as a duration.
+  /// The title words that mark a collection as broadcast recordings; the
+  /// tolerant forms real catalogs use, in either language.
+  static final RegExp kBilibiliReplayLabel = RegExp(
+    r'直播[\s·・_-]*(?:回放|回看|录像|录播)|live[\s_-]*(?:replay|archive|vod)',
+    caseSensitive: false,
+  );
+
   static Duration? _durationOf(String text) {
     final parts = text.split(':');
     if (parts.isEmpty || parts.any((part) => int.tryParse(part) == null)) {

@@ -18,6 +18,8 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPlayerPage, HongguoSeriesPage;
 import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/archive/archive_catalog_page.dart';
+import 'package:pure_live/modules/live/archive/archive_navigation.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
@@ -552,6 +554,22 @@ GoRouter buildAppRouter({
       GoRoute(
         path: RouteNames.musicPlayer,
         builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),
+      ),
+      // A creator's replay catalog, opened by an offline room: the room's
+      // ownership callbacks ride in as the extra and never serialize.
+      GoRoute(
+        path: RouteNames.archive,
+        builder: (context, state) => WindowChromeFrame(
+          child: ScrollEdgeControls(
+            pageIdentity: 'archive',
+            child: ArchiveCatalogPage(
+              arguments: switch (state.extra) {
+                final ArchiveArguments arguments => arguments,
+                _ => const ArchiveArguments(),
+              },
+            ),
+          ),
+        ),
       ),
       // The effect centre the mini bar opens: the same page the module's rail
       // shows, under its own header so a pushed visit keeps its back.

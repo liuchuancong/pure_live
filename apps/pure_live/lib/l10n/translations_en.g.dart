@@ -2544,6 +2544,11 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get danmakuMark => 'D';
 	@override String get chatDrawerLabel => 'Chat';
 	@override String get replayOpenFailed => 'Couldn\'t open the replay';
+	@override String get replayOpen => 'Watch replays';
+	@override String get replayCatalog => 'Replay catalog';
+	@override String get replayCollections => 'Replay collections';
+	@override String get replayEmpty => 'No replays here yet';
+	@override String get replayFailed => 'Couldn\'t load the replays';
 }
 
 // Path: search
@@ -7492,6 +7497,11 @@ extension on TranslationsEn {
 			'room.danmakuMark' => 'D',
 			'room.chatDrawerLabel' => 'Chat',
 			'room.replayOpenFailed' => 'Couldn\'t open the replay',
+			'room.replayOpen' => 'Watch replays',
+			'room.replayCatalog' => 'Replay catalog',
+			'room.replayCollections' => 'Replay collections',
+			'room.replayEmpty' => 'No replays here yet',
+			'room.replayFailed' => 'Couldn\'t load the replays',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -7560,13 +7570,13 @@ extension on TranslationsEn {
 			'search.coverageShortLiveOnly' => 'Finds live rooms only',
 			'search.coverageShortLiveAndOffline' => 'Finds live rooms and some offline ones',
 			'search.coverageShortChannelLookup' => 'Channel id or link only',
+			_ => null,
+		} ?? switch (path) {
 			'search.coverageShortRoomLookup' => 'Room id or live link only',
 			'search.coverageShortShowcase' => 'A nickname filter over the current showcase',
 			'search.coverageShortLocal' => 'Searches imported channels',
 			'search.coverageShortUnavailable' => 'Search is unavailable',
 			'search.noteKuaishou' => 'Kuaishou: guest searches may be limited; sign in to a platform account and retry, or paste an official share link to open the room directly.',
-			_ => null,
-		} ?? switch (path) {
 			'search.noteKuaishouShort' => 'Guest searches may be limited; official share links work — sign in and retry',
 			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
 			'search.noteAcfunShort' => 'Finds creators live and offline',
@@ -8074,13 +8084,13 @@ extension on TranslationsEn {
 			'settings.cacheClearDesc' => 'Deletes every cached cover, avatar and site icon.',
 			'settings.cacheCleared' => 'Cache cleared',
 			'settings.cacheLimit' => 'Maximum cache size',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheLimitDesc' => 'Past the cap, lower-priority and least-recently-used images go first.',
 			'settings.cacheLimitOff' => 'No automatic cleanup',
 			'settings.cacheHint' => 'Covers last 6 hours and avatars 30 days; an expired picture shows first and refreshes in the background.',
 			'settings.cacheFileCount' => 'Cached files',
 			'settings.cacheHitRate' => 'Cache hit rate',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheApiMemory' => 'API memory cache',
 			'settings.cacheLastCleanup' => 'Last cleanup',
 			'settings.cacheNever' => 'Not yet',
@@ -8588,13 +8598,13 @@ extension on TranslationsEn {
 			'settings.downloadDelete' => 'Delete',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
 			'settings.downloadClearFinished' => 'Clear finished',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadDuplicateRunning' => 'That file is already downloading',
 			'settings.downloadDuplicateDone' => 'That file has already been downloaded',
 			'settings.downloadManagerOpenFolder' => 'Open folder',
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadKindFilter' => 'Filter by kind',
 			'settings.downloadFilterLabel' => 'Filter',
 			'settings.downloadFilterTitle' => 'Filter downloads',
@@ -9102,13 +9112,13 @@ extension on TranslationsEn {
 			'settings.navMusicStorage' => 'Storage & reset',
 			'settings.musicStorageDescription' => 'Cache cleanup and the defaults.',
 			'settings.navBackgroundGuide' => 'Background playback guide',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideDescription' => 'What this phone\'s system does to an app in the background, and the switches to change it.',
 			'settings.backgroundGuideUnavailable' => 'No background guide for this device.',
 			'settings.backgroundGuideOpenFailed' => 'No system page opened',
 			'settings.backgroundGuidePowerSave' => 'Battery saver is on: it may stop background playback.',
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideStateOk' => 'OK',
 			'settings.backgroundGuideStateTodo' => 'To do',
 			'settings.backgroundGuideStateManual' => 'Check',
@@ -9616,13 +9626,13 @@ extension on TranslationsEn {
 			'wallpaper.sourceBingBiturl' => 'Bing · random (Biturl)',
 			'wallpaper.sourceBingJasonZeng' => 'Bing · random (Jason Zeng)',
 			'wallpaper.sourceBingUapi' => 'Bing · random (UAPI)',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceBingYingJoy' => 'Bing · random (YingJoy)',
 			'wallpaper.sourceBingW3h5' => 'Bing · W3H5',
 			'wallpaper.sourceBingWumingDaily' => 'Bing daily · Wuming',
 			'wallpaper.groupAlcy' => 'Alcy',
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
 			'wallpaper.sourceAlcyMoez' => 'Alcy · moez',
 			'wallpaper.sourceAlcyYsz' => 'Alcy · ysz',

@@ -221,5 +221,10 @@
   "watchedFor": "Watched {time: String}",
   "danmakuMark": "D",
   "chatDrawerLabel": "Chat",
-  "replayOpenFailed": "Couldn't open the replay"
+  "replayOpenFailed": "Couldn't open the replay",
+  "replayOpen": "Watch replays",
+  "replayCatalog": "Replay catalog",
+  "replayCollections": "Replay collections",
+  "replayEmpty": "No replays here yet",
+  "replayFailed": "Couldn't load the replays"
 }

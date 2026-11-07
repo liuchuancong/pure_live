@@ -221,5 +221,10 @@
   "watchedFor": "已看 {time: String}",
   "danmakuMark": "弹",
   "chatDrawerLabel": "弹幕列",
-  "replayOpenFailed": "回放打开失败"
+  "replayOpenFailed": "回放打开失败",
+  "replayOpen": "看回放",
+  "replayCatalog": "回放目录",
+  "replayCollections": "回放合集",
+  "replayEmpty": "还没有回放",
+  "replayFailed": "回放加载失败"
 }

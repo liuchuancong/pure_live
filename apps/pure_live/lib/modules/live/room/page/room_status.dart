@@ -75,6 +75,9 @@ enum RoomPictureAction {
 
   /// Play the replay or the carousel from its start.
   playAgain,
+
+  /// Open the creator's replay catalog (a platform that keeps one).
+  openReplays,
 }
 
 /// How heavily the overlay dims what is behind it.
@@ -205,6 +208,15 @@ RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = fa
 /// never lands here — it plays, so the playback reads above decide its
 /// state (`replayEnded` names its end).
 RoomPictureState _offline(Translations t, LiveRoom room) {
+  // A creator whose platform keeps a labeled replay collection gets the way
+  // into it: the platform is one the catalog reads, and the room's anchor
+  // carries the creator uid the catalog asks for (never the room number).
+  final replays = room.ref.platform == SiteIds.bilibili && (int.tryParse(room.anchor?.anchorId ?? '') ?? 0) > 0;
+  final walk = [
+    RoomPictureAction.refresh,
+    if (replays) RoomPictureAction.openReplays,
+    RoomPictureAction.back,
+  ];
   final state = switch (room.broadcast.effectiveLiveStatus) {
     LiveStatus.banned => _of(
       RoomPictureKind.banned,
@@ -223,15 +235,10 @@ RoomPictureState _offline(Translations t, LiveRoom room) {
       RoomPictureKind.offline,
       t.room.offlineTitle,
       reason: t.room.offlineReason,
-      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
+      actions: walk,
       dim: RoomPictureDim.cover,
     ),
-    _ => _of(
-      RoomPictureKind.offline,
-      t.room.offlineTitle,
-      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
-      dim: RoomPictureDim.cover,
-    ),
+    _ => _of(RoomPictureKind.offline, t.room.offlineTitle, actions: walk, dim: RoomPictureDim.cover),
   };
   return state;
 }
