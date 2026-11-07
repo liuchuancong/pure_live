@@ -2543,6 +2543,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String watchedFor({required String time}) => 'Watched ${time}';
 	@override String get danmakuMark => 'D';
 	@override String get chatDrawerLabel => 'Chat';
+	@override String get replayOpenFailed => 'Couldn\'t open the replay';
 }
 
 // Path: search
@@ -7490,6 +7491,7 @@ extension on TranslationsEn {
 			'room.watchedFor' => ({required String time}) => 'Watched ${time}',
 			'room.danmakuMark' => 'D',
 			'room.chatDrawerLabel' => 'Chat',
+			'room.replayOpenFailed' => 'Couldn\'t open the replay',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -7563,9 +7565,9 @@ extension on TranslationsEn {
 			'search.coverageShortLocal' => 'Searches imported channels',
 			'search.coverageShortUnavailable' => 'Search is unavailable',
 			'search.noteKuaishou' => 'Kuaishou: guest searches may be limited; sign in to a platform account and retry, or paste an official share link to open the room directly.',
-			'search.noteKuaishouShort' => 'Guest searches may be limited; official share links work — sign in and retry',
 			_ => null,
 		} ?? switch (path) {
+			'search.noteKuaishouShort' => 'Guest searches may be limited; official share links work — sign in and retry',
 			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
 			'search.noteAcfunShort' => 'Finds creators live and offline',
 			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
@@ -8077,9 +8079,9 @@ extension on TranslationsEn {
 			'settings.cacheHint' => 'Covers last 6 hours and avatars 30 days; an expired picture shows first and refreshes in the background.',
 			'settings.cacheFileCount' => 'Cached files',
 			'settings.cacheHitRate' => 'Cache hit rate',
-			'settings.cacheApiMemory' => 'API memory cache',
 			_ => null,
 		} ?? switch (path) {
+			'settings.cacheApiMemory' => 'API memory cache',
 			'settings.cacheLastCleanup' => 'Last cleanup',
 			'settings.cacheNever' => 'Not yet',
 			'settings.cacheDiskUnavailable' => 'The cache folder is unavailable; using memory and network only.',
@@ -8591,9 +8593,9 @@ extension on TranslationsEn {
 			'settings.downloadManagerOpenFolder' => 'Open folder',
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
-			'settings.downloadKindFilter' => 'Filter by kind',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadKindFilter' => 'Filter by kind',
 			'settings.downloadFilterLabel' => 'Filter',
 			'settings.downloadFilterTitle' => 'Filter downloads',
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
@@ -9105,9 +9107,9 @@ extension on TranslationsEn {
 			'settings.backgroundGuideOpenFailed' => 'No system page opened',
 			'settings.backgroundGuidePowerSave' => 'Battery saver is on: it may stop background playback.',
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.',
-			'settings.backgroundGuideStateOk' => 'OK',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundGuideStateOk' => 'OK',
 			'settings.backgroundGuideStateTodo' => 'To do',
 			'settings.backgroundGuideStateManual' => 'Check',
 			'settings.backgroundGuideNotifications' => 'Notifications',
@@ -9619,9 +9621,9 @@ extension on TranslationsEn {
 			'wallpaper.sourceBingWumingDaily' => 'Bing daily · Wuming',
 			'wallpaper.groupAlcy' => 'Alcy',
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
-			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
 			_ => null,
 		} ?? switch (path) {
+			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
 			'wallpaper.sourceAlcyMoez' => 'Alcy · moez',
 			'wallpaper.sourceAlcyYsz' => 'Alcy · ysz',
 			'wallpaper.sourceAlcyYs' => 'Alcy · ys',

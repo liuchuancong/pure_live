@@ -7214,6 +7214,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '弹幕列'
 	String get chatDrawerLabel => '弹幕列';
+
+	/// zh-CN: '回放打开失败'
+	String get replayOpenFailed => '回放打开失败';
 }
 
 // Path: search
@@ -16867,6 +16870,7 @@ extension on Translations {
 			'room.watchedFor' => ({required String time}) => '已看 ${time}',
 			'room.danmakuMark' => '弹',
 			'room.chatDrawerLabel' => '弹幕列',
+			'room.replayOpenFailed' => '回放打开失败',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -16940,9 +16944,9 @@ extension on Translations {
 			'search.coverageShortLocal' => '搜索本机已导入的频道',
 			'search.coverageShortUnavailable' => '暂不支持搜索',
 			'search.noteKuaishou' => '快手：游客搜索可能受限；可在平台账号中登录后重试，或粘贴官方分享链接直接打开直播间。',
-			'search.noteKuaishouShort' => '游客搜索可能受限；支持官方分享短链，可登录后重试',
 			_ => null,
 		} ?? switch (path) {
+			'search.noteKuaishouShort' => '游客搜索可能受限；支持官方分享短链，可登录后重试',
 			'search.noteAcfun' => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。',
 			'search.noteAcfunShort' => '能搜到直播中和未开播的作者',
 			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
@@ -17454,9 +17458,9 @@ extension on Translations {
 			'settings.cacheHint' => '封面按 6 小时、头像按 30 天缓存；过期后先显示旧图，再在后台刷新。',
 			'settings.cacheFileCount' => '缓存文件数',
 			'settings.cacheHitRate' => '缓存命中率',
-			'settings.cacheApiMemory' => '接口内存缓存',
 			_ => null,
 		} ?? switch (path) {
+			'settings.cacheApiMemory' => '接口内存缓存',
 			'settings.cacheLastCleanup' => '最后清理',
 			'settings.cacheNever' => '尚未清理',
 			'settings.cacheDiskUnavailable' => '缓存目录不可用，当前仅使用内存与网络。',
@@ -17968,9 +17972,9 @@ extension on Translations {
 			'settings.downloadManagerOpenFolder' => '打开文件夹',
 			'settings.downloadFilterAll' => '全部',
 			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
-			'settings.downloadKindFilter' => '按类型筛选',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadKindFilter' => '按类型筛选',
 			'settings.downloadFilterLabel' => '筛选',
 			'settings.downloadFilterTitle' => '筛选下载任务',
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
@@ -18482,9 +18486,9 @@ extension on Translations {
 			'settings.backgroundGuideOpenFailed' => '没有打开任何系统页面',
 			'settings.backgroundGuidePowerSave' => '省电模式开着：它可能在后台停掉播放。',
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => '${rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。',
-			'settings.backgroundGuideStateOk' => '正常',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundGuideStateOk' => '正常',
 			'settings.backgroundGuideStateTodo' => '待处理',
 			'settings.backgroundGuideStateManual' => '需自查',
 			'settings.backgroundGuideNotifications' => '通知权限',
@@ -18996,9 +19000,9 @@ extension on Translations {
 			'wallpaper.sourceBingWumingDaily' => '无铭必应每日壁纸',
 			'wallpaper.groupAlcy' => '栗次元',
 			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
-			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
 			_ => null,
 		} ?? switch (path) {
+			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
 			'wallpaper.sourceAlcyMoez' => '栗次元 · moez',
 			'wallpaper.sourceAlcyYsz' => '栗次元 · ysz',
 			'wallpaper.sourceAlcyYs' => '栗次元 · ys',

@@ -220,5 +220,6 @@
   "fitShort": "比例",
   "watchedFor": "已看 {time: String}",
   "danmakuMark": "弹",
-  "chatDrawerLabel": "弹幕列"
+  "chatDrawerLabel": "弹幕列",
+  "replayOpenFailed": "回放打开失败"
 }

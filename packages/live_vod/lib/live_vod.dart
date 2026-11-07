@@ -2,6 +2,7 @@
 /// playable address, without knowing which player will open it.
 library;
 
+export 'src/archive.dart';
 export 'src/bilibili_app_client.dart';
 export 'src/bilibili_tv_login.dart';
 export 'src/bilibili_vod_client.dart';
