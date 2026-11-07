@@ -1,7 +1,7 @@
 import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart'
-    show DanmakuTextShape, LiveMessage, danmakuMessageShape, danmakuShapeBlocked;
+    show DanmakuTextShape, LiveMessage, LiveMessageQuery, danmakuMessageShape, danmakuShapeBlocked;
 import 'package:live_storage/live_storage.dart';
 
 /// The fuzzy half of the room danmaku filter: whether a line that closely
@@ -13,7 +13,9 @@ import 'package:live_storage/live_storage.dart';
 /// The three content blocks (D02.2 / the reference's 屏蔽页) ride along:
 /// emoticon-only, over-long with its length, and the douyu
 /// suspected-automation filter — the room's pipeline and the douyu site
-/// read them here.
+/// read them here. The attribute blocks (the reference's 屏蔽页 c3) ride
+/// with them: a grey line when the viewer asked for colour only, and the
+/// sender-level floors.
 typedef DanmakuFilterRules = ({
   bool similarityEnabled,
   int similarityThreshold,
@@ -23,6 +25,9 @@ typedef DanmakuFilterRules = ({
   bool blockLong,
   int blockLongLength,
   bool douyuSuspectedAutomated,
+  bool coloredOnly,
+  int minUserLevel,
+  int minFansLevel,
 });
 
 const DanmakuFilterRules _defaults = (
@@ -34,6 +39,9 @@ const DanmakuFilterRules _defaults = (
   blockLong: false,
   blockLongLength: 30,
   douyuSuspectedAutomated: false,
+  coloredOnly: false,
+  minUserLevel: 0,
+  minFansLevel: 0,
 );
 
 const String _similarityKey = 'danmaku.filter.similarity';
@@ -44,6 +52,9 @@ const String _emoteOnlyKey = 'danmaku.filter.emoteOnly';
 const String _blockLongKey = 'danmaku.filter.blockLong';
 const String _blockLongLengthKey = 'danmaku.filter.blockLongLength';
 const String _douyuSuspectedKey = 'danmaku.filter.douyuSuspected';
+const String _coloredOnlyKey = 'danmaku.filter.coloredOnly';
+const String _minUserLevelKey = 'danmaku.filter.minUserLevel';
+const String _minFansLevelKey = 'danmaku.filter.minFansLevel';
 
 /// The ranges the reference offers; the pane's sliders and the controller's
 /// reads share them, so a stored value and its control cannot disagree.
@@ -77,6 +88,9 @@ abstract final class DanmakuFilterRange {
 
   /// The over-long slider's step.
   static const int blockLongLengthStep = 5;
+
+  /// Highest level a floor can name; the sliders run 0 (off) to this.
+  static const int levelMax = 100;
 }
 
 /// Owns the fuzzy filter's rules: every edit moves the state first and then
@@ -115,6 +129,19 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
           DanmakuFilterRange.blockLongLengthMax,
         ),
         douyuSuspectedAutomated: StoragePrefs.getBool(_douyuSuspectedKey) ?? _defaults.douyuSuspectedAutomated,
+        coloredOnly: StoragePrefs.getBool(_coloredOnlyKey) ?? _defaults.coloredOnly,
+        minUserLevel: _inRange(
+          StoragePrefs.getInt(_minUserLevelKey),
+          _defaults.minUserLevel,
+          0,
+          DanmakuFilterRange.levelMax,
+        ),
+        minFansLevel: _inRange(
+          StoragePrefs.getInt(_minFansLevelKey),
+          _defaults.minFansLevel,
+          0,
+          DanmakuFilterRange.levelMax,
+        ),
       );
     } on Object {
       return _defaults;
@@ -131,6 +158,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Moves the similarity threshold, writing through.
@@ -143,6 +173,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Moves the cache window, writing through.
@@ -155,6 +188,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Moves the cache size, writing through.
@@ -167,6 +203,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Hides (or shows) the lines that are nothing but emoticons.
@@ -179,6 +218,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Hides (or shows) the lines longer than the rules' `blockLongLength`.
@@ -191,6 +233,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: value,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Moves the length an over-long line must exceed to be hidden.
@@ -203,6 +248,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: value.clamp(DanmakuFilterRange.blockLongLengthMin, DanmakuFilterRange.blockLongLengthMax),
     douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
   ));
 
   /// Turns the douyu suspected-automation filter (its protocol drops those
@@ -216,6 +264,55 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
     blockLong: state.blockLong,
     blockLongLength: state.blockLongLength,
     douyuSuspectedAutomated: value,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
+  ));
+
+  /// Hides (or shows) the grey lines — a text colour with red, green and
+  /// blue equal — while the viewer asked for colour only.
+  Future<void> setColoredOnly({required bool value}) => _write((
+    similarityEnabled: state.similarityEnabled,
+    similarityThreshold: state.similarityThreshold,
+    similarityCacheSeconds: state.similarityCacheSeconds,
+    similarityMaxCacheSize: state.similarityMaxCacheSize,
+    blockEmoteOnly: state.blockEmoteOnly,
+    blockLong: state.blockLong,
+    blockLongLength: state.blockLongLength,
+    douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: value,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: state.minFansLevel,
+  ));
+
+  /// Moves the user-level floor; zero disables it.
+  Future<void> setMinUserLevel(int value) => _write((
+    similarityEnabled: state.similarityEnabled,
+    similarityThreshold: state.similarityThreshold,
+    similarityCacheSeconds: state.similarityCacheSeconds,
+    similarityMaxCacheSize: state.similarityMaxCacheSize,
+    blockEmoteOnly: state.blockEmoteOnly,
+    blockLong: state.blockLong,
+    blockLongLength: state.blockLongLength,
+    douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: value.clamp(0, DanmakuFilterRange.levelMax),
+    minFansLevel: state.minFansLevel,
+  ));
+
+  /// Moves the fan-badge level floor; zero disables it.
+  Future<void> setMinFansLevel(int value) => _write((
+    similarityEnabled: state.similarityEnabled,
+    similarityThreshold: state.similarityThreshold,
+    similarityCacheSeconds: state.similarityCacheSeconds,
+    similarityMaxCacheSize: state.similarityMaxCacheSize,
+    blockEmoteOnly: state.blockEmoteOnly,
+    blockLong: state.blockLong,
+    blockLongLength: state.blockLongLength,
+    douyuSuspectedAutomated: state.douyuSuspectedAutomated,
+    coloredOnly: state.coloredOnly,
+    minUserLevel: state.minUserLevel,
+    minFansLevel: value.clamp(0, DanmakuFilterRange.levelMax),
   ));
 
   Future<void> _write(DanmakuFilterRules next) async {
@@ -229,6 +326,9 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
       await StoragePrefs.setBool(_blockLongKey, next.blockLong);
       await StoragePrefs.setInt(_blockLongLengthKey, next.blockLongLength);
       await StoragePrefs.setBool(_douyuSuspectedKey, next.douyuSuspectedAutomated);
+      await StoragePrefs.setBool(_coloredOnlyKey, next.coloredOnly);
+      await StoragePrefs.setInt(_minUserLevelKey, next.minUserLevel);
+      await StoragePrefs.setInt(_minFansLevelKey, next.minFansLevel);
     } on Object {
       // The rules are a preference; a closed store loses them, nothing else.
     }
@@ -252,6 +352,28 @@ bool danmakuShapeBlockedByRules(LiveMessage message, DanmakuFilterRules rules) =
   blockLongLength: rules.blockLongLength,
   shapeOf: _shapeAsDrawn,
 );
+
+/// Whether [message] is one of the attribute blocks under [rules]: a grey
+/// line while the viewer asked for colour only, or a sender under one of
+/// the level floors. A level the platform did not give is never under a
+/// floor — unknown reads as no opinion, not as zero — and a line the viewer
+/// sent themselves is never blocked.
+bool danmakuAttributesBlockedByRules(LiveMessage message, DanmakuFilterRules rules) {
+  if (message.isLocal) return false;
+  if (rules.coloredOnly) {
+    final color = message.effectiveColor;
+    if (color.r == color.g && color.g == color.b) return true;
+  }
+  final sender = message.sender;
+  if (sender == null) return false;
+  return _underFloor(sender.userLevel, rules.minUserLevel) || _underFloor(sender.fanBadgeLevel, rules.minFansLevel);
+}
+
+bool _underFloor(String? display, int floor) {
+  if (floor <= 0) return false;
+  final level = display == null ? null : int.tryParse(display.trim());
+  return level != null && level >= 0 && level < floor;
+}
 
 /// The message's shape read the way the chat draws it.
 ///

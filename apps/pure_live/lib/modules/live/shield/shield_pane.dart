@@ -265,6 +265,47 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
                 onChanged: (value) => unawaited(filterController.setDouyuSuspectedAutomated(value: value)),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.palette),
+              title: t.shield.coloredOnly,
+              description: t.shield.coloredOnlyDescription,
+              control: DsSwitch(
+                value: filter.coloredOnly,
+                onChanged: (value) => unawaited(filterController.setColoredOnly(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.users),
+              title: t.shield.minUserLevel,
+              description: t.shield.minUserLevelDescription,
+              detail: Text(
+                filter.minUserLevel == 0 ? t.shield.levelOff : t.shield.levelValue(count: filter.minUserLevel),
+              ),
+              controlWidth: 220,
+              control: DsSlider(
+                value: filter.minUserLevel.toDouble(),
+                max: DanmakuFilterRange.levelMax.toDouble(),
+                divisions: DanmakuFilterRange.levelMax,
+                onChanged: (value) => unawaited(filterController.setMinUserLevel(value.round())),
+                semanticLabel: t.shield.minUserLevel,
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.users),
+              title: t.shield.minFansLevel,
+              description: t.shield.minFansLevelDescription,
+              detail: Text(
+                filter.minFansLevel == 0 ? t.shield.levelOff : t.shield.levelValue(count: filter.minFansLevel),
+              ),
+              controlWidth: 220,
+              control: DsSlider(
+                value: filter.minFansLevel.toDouble(),
+                max: DanmakuFilterRange.levelMax.toDouble(),
+                divisions: DanmakuFilterRange.levelMax,
+                onChanged: (value) => unawaited(filterController.setMinFansLevel(value.round())),
+                semanticLabel: t.shield.minFansLevel,
+              ),
+            ),
           ],
         ),
       ],

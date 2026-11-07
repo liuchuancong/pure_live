@@ -4200,6 +4200,14 @@ class _Translations$shield$en extends Translations$shield$zh_CN {
 	@override String get patternRejected => 'That pattern is too long, malformed, or unsafe to run';
 	@override String get patternTooSlow => 'That pattern is too slow to run on every message';
 	@override String blockedThisStream({required Object count}) => '${count} hidden by your shield this stream';
+	@override String get coloredOnly => 'Coloured only';
+	@override String get coloredOnlyDescription => 'Grey lines — red, green and blue equal — are hidden.';
+	@override String get minUserLevel => 'Minimum user level';
+	@override String get minUserLevelDescription => 'Lines under the level are hidden; a level the platform never gave is never blocked.';
+	@override String get minFansLevel => 'Minimum fan-badge level';
+	@override String get minFansLevelDescription => 'Lines under the level are hidden; a badge the platform never gave is never blocked.';
+	@override String levelValue({required int count}) => 'Level ${count}';
+	@override String get levelOff => 'Off';
 }
 
 // Path: sites
@@ -9037,6 +9045,14 @@ extension on TranslationsEn {
 			'shield.patternRejected' => 'That pattern is too long, malformed, or unsafe to run',
 			'shield.patternTooSlow' => 'That pattern is too slow to run on every message',
 			'shield.blockedThisStream' => ({required Object count}) => '${count} hidden by your shield this stream',
+			'shield.coloredOnly' => 'Coloured only',
+			'shield.coloredOnlyDescription' => 'Grey lines — red, green and blue equal — are hidden.',
+			'shield.minUserLevel' => 'Minimum user level',
+			'shield.minUserLevelDescription' => 'Lines under the level are hidden; a level the platform never gave is never blocked.',
+			'shield.minFansLevel' => 'Minimum fan-badge level',
+			'shield.minFansLevelDescription' => 'Lines under the level are hidden; a badge the platform never gave is never blocked.',
+			'shield.levelValue' => ({required int count}) => 'Level ${count}',
+			'shield.levelOff' => 'Off',
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',

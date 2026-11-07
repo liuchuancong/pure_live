@@ -2419,7 +2419,7 @@ final class RoomController extends Notifier<RoomState> {
       if (message.payload case final LiveAudienceUpdate update) _applyAudience(update);
       return;
     }
-    if (_shapeBlocked(message)) {
+    if (_shapeBlocked(message) || _attributesBlocked(message)) {
       _countShielded();
       return;
     }
@@ -2529,6 +2529,13 @@ final class RoomController extends Notifier<RoomState> {
   /// change on the shield page bites the very next line. The viewer's own
   /// echo is never blocked.
   bool _shapeBlocked(LiveMessage message) => danmakuShapeBlockedByRules(message, ref.read(danmakuFilterProvider));
+
+  /// The attribute blocks (the reference's 屏蔽页 c3): a grey line while the
+  /// viewer asked for colour only, a sender under a level floor. The floors
+  /// read the display strings the sites already hand over, parsed here — a
+  /// level the site did not give never blocks.
+  bool _attributesBlocked(LiveMessage message) =>
+      danmakuAttributesBlockedByRules(message, ref.read(danmakuFilterProvider));
 
   /// One more line the viewer's shield hid, for 「本场已屏蔽 N 条」.
   void _countShielded() {

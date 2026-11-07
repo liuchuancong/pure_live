@@ -12151,6 +12151,30 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '本场已屏蔽 {count} 条'
 	String blockedThisStream({required Object count}) => '本场已屏蔽 ${count} 条';
+
+	/// zh-CN: '只显示彩色弹幕'
+	String get coloredOnly => '只显示彩色弹幕';
+
+	/// zh-CN: '灰色弹幕（红绿蓝相等的默认色）不显示。'
+	String get coloredOnlyDescription => '灰色弹幕（红绿蓝相等的默认色）不显示。';
+
+	/// zh-CN: '用户等级下限'
+	String get minUserLevel => '用户等级下限';
+
+	/// zh-CN: '低于该等级的弹幕不显示；等级未知的永不屏蔽。'
+	String get minUserLevelDescription => '低于该等级的弹幕不显示；等级未知的永不屏蔽。';
+
+	/// zh-CN: '粉丝等级下限'
+	String get minFansLevel => '粉丝等级下限';
+
+	/// zh-CN: '低于该等级的弹幕不显示；粉丝牌未知的永不屏蔽。'
+	String get minFansLevelDescription => '低于该等级的弹幕不显示；粉丝牌未知的永不屏蔽。';
+
+	/// zh-CN: '{count: int} 级'
+	String levelValue({required int count}) => '${count} 级';
+
+	/// zh-CN: '关闭'
+	String get levelOff => '关闭';
 }
 
 // Path: sites
@@ -18232,6 +18256,14 @@ extension on Translations {
 			'shield.patternRejected' => '这条正则太长、写错或跑不动，不能用',
 			'shield.patternTooSlow' => '这条正则逐条匹配太慢，会拖住消息过滤',
 			'shield.blockedThisStream' => ({required Object count}) => '本场已屏蔽 ${count} 条',
+			'shield.coloredOnly' => '只显示彩色弹幕',
+			'shield.coloredOnlyDescription' => '灰色弹幕（红绿蓝相等的默认色）不显示。',
+			'shield.minUserLevel' => '用户等级下限',
+			'shield.minUserLevelDescription' => '低于该等级的弹幕不显示；等级未知的永不屏蔽。',
+			'shield.minFansLevel' => '粉丝等级下限',
+			'shield.minFansLevelDescription' => '低于该等级的弹幕不显示；粉丝牌未知的永不屏蔽。',
+			'shield.levelValue' => ({required int count}) => '${count} 级',
+			'shield.levelOff' => '关闭',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
