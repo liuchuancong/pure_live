@@ -13,6 +13,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
@@ -971,7 +972,10 @@ final class _PaneTile extends StatelessWidget {
                   spacing: DsSpace.s6,
                   children: [
                     const DsIcon(DsIcons.pause, size: 14, color: OnVideoColors.foreground),
-                    Text(t.multiview.panePaused, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
+                    Text(
+                      t.multiview.panePaused,
+                      style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
+                    ),
                   ],
                 ),
               ),
@@ -1160,7 +1164,10 @@ final class _PaneIslandButton extends StatelessWidget {
         return Container(
           width: 26,
           height: 26,
-          decoration: DsBoxDecoration(color: lit ? OnVideoColors.inkHover : null, borderRadius: BorderRadius.circular(7)),
+          decoration: DsBoxDecoration(
+            color: lit ? OnVideoColors.inkHover : null,
+            borderRadius: BorderRadius.circular(7),
+          ),
           child: Center(
             child: switch (iconAsset) {
               final String asset => SvgPicture.asset(
@@ -1219,7 +1226,11 @@ final class _PaneStreamBadge extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.typography.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w600, color: OnVideoColors.inkMuted),
+        style: theme.typography.caption.copyWith(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: OnVideoColors.inkMuted,
+        ),
       ),
     );
   }
@@ -1738,7 +1749,7 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-            child: DsSearchField(
+            child: TvInputField(
               placeholder: t.multiview.pickerSearchShort,
               semanticLabel: t.multiview.pickerSearch,
               onChanged: (value) => setState(() => _query = value),

@@ -25,7 +25,7 @@ import 'package:pure_live/app/app.dart';
 final class TvInputField extends ConsumerStatefulWidget {
   /// Builds the field around [controller].
   const TvInputField({
-    required this.controller,
+    this.controller,
     this.onChanged,
     this.onSubmitted,
     this.placeholder,
@@ -37,8 +37,9 @@ final class TvInputField extends ConsumerStatefulWidget {
     super.key,
   });
 
-  /// The text the field holds and edits.
-  final TextEditingController controller;
+  /// The text the field holds and edits; null lets the field own its text
+  /// (a picker filter that only reports changes).
+  final TextEditingController? controller;
 
   /// Reports every change while editing.
   final ValueChanged<String>? onChanged;
@@ -71,6 +72,7 @@ final class TvInputField extends ConsumerStatefulWidget {
 final class _TvInputFieldState extends ConsumerState<TvInputField> {
   late final FocusNode _displayNode = FocusNode(debugLabel: 'tv input display');
   late final FocusNode _editNode = FocusNode(debugLabel: 'tv input edit');
+  late final TextEditingController _own = widget.controller ?? TextEditingController();
   bool _editing = false;
 
   @override
@@ -78,7 +80,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
     super.initState();
     // The display is a Text, not a field: something else writing the
     // controller (a clipboard offer, a form reset) must still show up.
-    widget.controller.addListener(_onControllerChanged);
+    _own.addListener(_onControllerChanged);
   }
 
   void _onControllerChanged() {
@@ -87,7 +89,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
 
   @override
   void dispose() {
-    widget.controller.removeListener(_onControllerChanged);
+    _own.removeListener(_onControllerChanged);
     _displayNode.dispose();
     _editNode.dispose();
     super.dispose();
@@ -125,7 +127,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
     if (!tv) {
       if (!multiline) {
         return DsTextField(
-          controller: widget.controller,
+          controller: _own,
           onChanged: widget.onChanged,
           onSubmitted: widget.onSubmitted,
           placeholder: widget.placeholder,
@@ -134,7 +136,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
         );
       }
       return DsTextField.multiline(
-        controller: widget.controller,
+        controller: _own,
         onChanged: widget.onChanged,
         placeholder: widget.placeholder,
         minLines: widget.minLines,
@@ -162,12 +164,10 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
             ),
             alignment: Alignment.centerLeft,
             child: Text(
-              widget.controller.text.isEmpty ? (widget.placeholder ?? '') : widget.controller.text,
+              _own.text.isEmpty ? (widget.placeholder ?? '') : _own.text,
               maxLines: widget.maxLines,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.body.copyWith(
-                color: widget.controller.text.isEmpty ? colors.textSubtle : colors.text,
-              ),
+              style: theme.typography.body.copyWith(color: _own.text.isEmpty ? colors.textSubtle : colors.text),
             ),
           ),
         ),
@@ -185,7 +185,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
       child: multiline
           ? DsTextField.multiline(
               key: const ValueKey('tv-input-editing'),
-              controller: widget.controller,
+              controller: _own,
               focusNode: _editNode,
               autofocus: true,
               onChanged: widget.onChanged,
@@ -196,7 +196,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
             )
           : DsTextField(
               key: const ValueKey('tv-input-editing'),
-              controller: widget.controller,
+              controller: _own,
               focusNode: _editNode,
               autofocus: true,
               onChanged: widget.onChanged,

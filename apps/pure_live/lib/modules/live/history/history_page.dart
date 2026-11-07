@@ -12,6 +12,7 @@ import 'package:pure_live/features/settings/room/room_card_settings.dart'
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
 import 'package:pure_live/modules/live/history/history_repository.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
@@ -913,7 +914,7 @@ final class _FilterPanelState extends State<_FilterPanel> {
         children: [
           DsField(
             label: Text(t.history.filterKeyword),
-            child: DsSearchField(
+            child: TvInputField(
               controller: _query,
               autofocus: true,
               placeholder: t.history.filterHint,
