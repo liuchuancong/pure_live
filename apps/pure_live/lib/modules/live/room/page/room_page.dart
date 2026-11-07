@@ -856,6 +856,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _portraitSwipeTarget = target.ref.identityKey;
     _currentRoomKey = target.ref.identityKey;
     if (fromSource) ref.read(roomPlaylistProvider.notifier).move(step);
+    // The switch names itself: a remote's Up or Down leaves no trail on the
+    // picture, and the viewer needs to know whose room just came up — the
+    // anchor when the list carried one, the title always.
+    final nick = target.anchor?.name ?? '';
+    final title = target.content.title;
+    final named = [nick, title].where((part) => part.isNotEmpty).join(' · ');
+    if (named.isNotEmpty) ref.read(roomHintProvider.notifier).show(named);
     unawaited(
       ref
           .read(roomProvider.notifier)

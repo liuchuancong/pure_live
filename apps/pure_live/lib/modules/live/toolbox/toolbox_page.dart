@@ -13,6 +13,7 @@ import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show dete
 import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsSection;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart';
 import 'package:pure_live/modules/live/toolbox/log_settings_section.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox_controllers.dart';
@@ -240,7 +241,10 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
             children: [
               DsField(
                 label: Text(t.toolbox.linkFieldLabel),
-                child: DsTextField.multiline(
+                // A TV build reads the paste target as text until OK: a live
+                // multi-line field would eat the remote's arrows. TvInputField
+                // passes through to the same multi-line field elsewhere.
+                child: TvInputField(
                   controller: _field,
                   onChanged: (_) => _edited(),
                   placeholder: t.toolbox.linkFieldHint,

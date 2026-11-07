@@ -6,12 +6,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/live/areas/areas.dart' show areaLayoutProvider;
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/search/search_capability.dart';
@@ -290,13 +292,25 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
             spacing: DsSpace.s8,
             children: [
               Expanded(
-                child: DsSearchField(
-                  controller: _field,
-                  autofocus: true,
-                  placeholder: context.t.common.searchHint,
-                  onChanged: _onDraftChanged,
-                  onSubmitted: _onSubmitted,
-                ),
+                // A TV build reads the field as text until OK: a live search
+                // field would eat the remote's arrows for caret moves. The
+                // other form factors keep the search field's own shape (its
+                // clear button and search glyph).
+                child: ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv
+                    ? TvInputField(
+                        controller: _field,
+                        autofocus: true,
+                        placeholder: context.t.common.searchHint,
+                        onChanged: _onDraftChanged,
+                        onSubmitted: _onSubmitted,
+                      )
+                    : DsSearchField(
+                        controller: _field,
+                        autofocus: true,
+                        placeholder: context.t.common.searchHint,
+                        onChanged: _onDraftChanged,
+                        onSubmitted: _onSubmitted,
+                      ),
               ),
               // The result's own conditions sit behind one button, the kit's
               // filter-button pattern, so the field row stays two controls.

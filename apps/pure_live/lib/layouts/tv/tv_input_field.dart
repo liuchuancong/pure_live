@@ -33,6 +33,7 @@ final class TvInputField extends ConsumerStatefulWidget {
     this.maxLines = 1,
     this.semanticLabel,
     this.focusNode,
+    this.autofocus = false,
     super.key,
   });
 
@@ -58,6 +59,10 @@ final class TvInputField extends ConsumerStatefulWidget {
   /// The display's focus stop, when the caller owns one (a page shell's
   /// opening claim names it).
   final FocusNode? focusNode;
+
+  /// Takes the keyboard when the page opens, so a page whose whole job is
+  /// one field needs no extra walk.
+  final bool autofocus;
 
   @override
   ConsumerState<TvInputField> createState() => _TvInputFieldState();
@@ -142,6 +147,7 @@ final class _TvInputFieldState extends ConsumerState<TvInputField> {
     if (!_editing) {
       return Focus(
         focusNode: widget.focusNode ?? _displayNode,
+        autofocus: widget.autofocus,
         onKeyEvent: _onDisplayKey,
         child: GestureDetector(
           onTap: () => setState(() => _editing = true),
