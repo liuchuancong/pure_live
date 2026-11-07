@@ -118,7 +118,6 @@ final class Fc2LiveDanmakuSession extends DanmakuSessionBase {
   StreamSubscription<Object?>? _subscription;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _join;
   Timer? _retry;
   CancelToken? _grant;
   int _nextHeartbeatId = 1;
@@ -189,8 +188,8 @@ final class Fc2LiveDanmakuSession extends DanmakuSessionBase {
         if (run.isActive) _scheduleRetry(Fc2LiveDanmakuCodec.redact('$error'), run);
       },
     );
-    _join = timers.after(Fc2LiveDanmakuCodec.joinTimeout, () {
-      if (run.isActive && !run.isJoined) _scheduleRetry('no connect_complete in time', run);
+    run.armJoinTimeout(Fc2LiveDanmakuCodec.joinTimeout, () {
+      _scheduleRetry('no connect_complete in time', run);
     });
     _startHeartbeat();
     _startWatchdog(run);
@@ -204,11 +203,7 @@ final class Fc2LiveDanmakuSession extends DanmakuSessionBase {
     if (frame == null) return;
     switch (frame.name) {
       case 'connect_complete':
-        if (!run.isJoined) {
-          run.joined();
-          _join?.cancel();
-          _join = null;
-        }
+        if (!run.isJoined) run.joined();
       case 'ng_comment':
         _ng.apply(frame.arguments);
       case 'comment':
@@ -331,7 +326,12 @@ final class Fc2LiveDanmakuSession extends DanmakuSessionBase {
     run
       ..exhausted(reason)
       ..message(
-        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: reason,
+          color: LiveMessageColor.white,
+          sentAt: _now(),
+        ),
       );
     unawaited(dispose());
   }
@@ -341,8 +341,7 @@ final class Fc2LiveDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }

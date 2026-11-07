@@ -110,7 +110,6 @@ final class PicartoDanmakuSession extends DanmakuSessionBase {
   StreamSubscription<Object?>? _subscription;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _join;
   Timer? _retry;
   int _failures = 0;
   int _refreshes = 0;
@@ -147,8 +146,7 @@ final class PicartoDanmakuSession extends DanmakuSessionBase {
     }
     // The join budget bounds the handshake: an open socket counts as
     // joined, so a socket that never opens is replaced within it.
-    _join = timers.after(PicartoDanmakuCodec.joinTimeout, () {
-      if (!run.isActive || run.isJoined) return;
+    run.armJoinTimeout(PicartoDanmakuCodec.joinTimeout, () {
       _scheduleRetry('no chat within ${PicartoDanmakuCodec.joinTimeout.inSeconds} s', run);
     });
     final SocketChannel socket;
@@ -173,8 +171,6 @@ final class PicartoDanmakuSession extends DanmakuSessionBase {
     }
     _socket = socket;
     run.joined();
-    _join?.cancel();
-    _join = null;
     _failures = 0;
     _startHeartbeat();
     _startWatchdog(run);
@@ -319,7 +315,12 @@ final class PicartoDanmakuSession extends DanmakuSessionBase {
     run
       ..exhausted(reason)
       ..message(
-        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: reason,
+          color: LiveMessageColor.white,
+          sentAt: _now(),
+        ),
       );
     unawaited(dispose());
   }
@@ -329,8 +330,7 @@ final class PicartoDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }

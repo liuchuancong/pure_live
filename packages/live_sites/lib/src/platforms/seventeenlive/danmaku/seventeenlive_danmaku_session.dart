@@ -153,7 +153,6 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
   final LinkedHashSet<String> _seen = LinkedHashSet<String>();
 
   DanmakuSocket? _socket;
-  Timer? _join;
   Timer? _reattachWatch;
   CancelToken? _cancel;
   String? _token;
@@ -165,7 +164,6 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
   bool _attachedBefore = false;
   bool _attachPending = false;
   bool _reattaching = false;
-  bool _joined = false;
   bool _reconnecting = false;
   int _refusals = 0;
   int _sockets = 0;
@@ -189,7 +187,6 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
   /// token and the key.
   Future<LiveSiteError?> _openSocket() async {
     final run = beginRun();
-    _joined = false;
     _socketReset();
     await _teardownSocket();
     final token = _token;
@@ -219,8 +216,7 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
       return const LiveSiteError.network(siteId: seventeenliveSiteId, message: 'danmaku connect failed');
     }
     _sockets += 1;
-    _join = timers.after(SeventeenLiveDanmakuCodec.joinTimeout, () {
-      if (!run.isActive || _joined) return;
+    run.armJoinTimeout(SeventeenLiveDanmakuCodec.joinTimeout, () {
       // An attach sent and not answered: the channel is suspended, so its serial
       // goes (ably-js's own rule) and the socket is replaced.
       if (_attachPending) _channelSerial = null;
@@ -279,9 +275,6 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
         _backlogBefore = frame.backlog ? now : null;
         _reattachWatch?.cancel();
         _reattachWatch = null;
-        _joined = true;
-        _join?.cancel();
-        _join = null;
         if (!run.isJoined) run.joined();
       case SeventeenLiveSignal.detached:
         _detached(frame.error, run);
@@ -474,8 +467,7 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
   }
 
   Future<void> _teardownSocket() async {
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     final socket = _socket;
     _socket = null;
     await socket?.stop();
@@ -485,7 +477,6 @@ final class SeventeenLiveDanmakuSession extends DanmakuSessionBase {
   /// timers; safe when nothing is open.
   @override
   Future<void> stop() async {
-    _joined = false;
     _socketReset();
     _cancel?.cancel();
     _cancel = null;

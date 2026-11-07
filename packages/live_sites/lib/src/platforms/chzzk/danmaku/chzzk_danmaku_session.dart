@@ -169,7 +169,6 @@ final class ChzzkDanmakuSession extends DanmakuSessionBase {
 
   final Set<String> _reported = {};
   DanmakuSocket? _socket;
-  Timer? _join;
   Timer? _quiet;
   List<String> _servers = ChzzkDanmakuCodec.defaultServers;
   String _token = '';
@@ -220,8 +219,8 @@ final class ChzzkDanmakuSession extends DanmakuSessionBase {
     if (!await socket.start()) {
       return LiveSiteError.network(siteId: chzzkSiteId, message: 'danmaku connect failed on $endpoint');
     }
-    _join = timers.after(ChzzkDanmakuCodec.joinTimeout, () {
-      if (run.isActive && !run.isJoined) _scheduleReconnect(run, 'join timed out');
+    run.armJoinTimeout(ChzzkDanmakuCodec.joinTimeout, () {
+      _scheduleReconnect(run, 'join timed out');
     });
     return null;
   }
@@ -270,16 +269,13 @@ final class ChzzkDanmakuSession extends DanmakuSessionBase {
     switch (frame.joined) {
       case true:
         if (!run.isJoined) run.joined();
-        _join?.cancel();
-        _join = null;
         _restartQuiet(run);
         if (frame.sessionId.isNotEmpty) _send(ChzzkDanmakuCodec.recent(args.chatChannelId, frame.sessionId));
       case false:
         // The site's own client connects again on codes 302–304 (a broadcast
         // moving between chat servers); the rest end the session, as the
         // server closes the socket after any refusal.
-        _join?.cancel();
-        _join = null;
+        run.cancelJoinTimeout();
         if (frame.retry) {
           unawaited(_teardownSocket());
           _scheduleReconnect(run, 'join refused (${frame.refusal ?? ''})');
@@ -396,8 +392,7 @@ final class ChzzkDanmakuSession extends DanmakuSessionBase {
   }
 
   Future<void> _teardownSocket() async {
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     final socket = _socket;
     _socket = null;
     await socket?.stop();

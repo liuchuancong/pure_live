@@ -115,7 +115,6 @@ final class MissevanDanmakuSession extends DanmakuSessionBase {
   StreamSubscription<Object?>? _subscription;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _join;
   Timer? _retry;
   String? _session;
   String _uuid = '';
@@ -181,10 +180,8 @@ final class MissevanDanmakuSession extends DanmakuSessionBase {
     _startHeartbeat();
     _startWatchdog(run);
     _uuid = MissevanDanmakuCodec.uuid(_random);
-    _join = timers.after(MissevanDanmakuCodec.joinTimeout, () {
-      if (run.isActive && !run.isJoined) {
-        _scheduleRetry('no join within ${MissevanDanmakuCodec.joinTimeout.inSeconds} s', run);
-      }
+    run.armJoinTimeout(MissevanDanmakuCodec.joinTimeout, () {
+      _scheduleRetry('no join within ${MissevanDanmakuCodec.joinTimeout.inSeconds} s', run);
     });
     _send(MissevanDanmakuCodec.join(args.roomId.trim(), uuid: _uuid, reconnect: _joinedBefore));
     _subscription = socket.stream.listen(
@@ -239,8 +236,6 @@ final class MissevanDanmakuSession extends DanmakuSessionBase {
       case true when !run.isJoined:
         run.joined();
         _joinedBefore = true;
-        _join?.cancel();
-        _join = null;
         _refusals = 0;
         _failures = 0;
       case false:
@@ -299,7 +294,12 @@ final class MissevanDanmakuSession extends DanmakuSessionBase {
     run
       ..exhausted(reason)
       ..message(
-        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: reason,
+          color: LiveMessageColor.white,
+          sentAt: _now(),
+        ),
       );
     unawaited(dispose());
   }
@@ -309,8 +309,7 @@ final class MissevanDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }

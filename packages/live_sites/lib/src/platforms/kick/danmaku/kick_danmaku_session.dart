@@ -121,7 +121,6 @@ final class KickDanmakuSession extends DanmakuSessionBase {
   DanmakuSocket? _socket;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _joinTimer;
 
   /// One reconnect in flight per run (the watchdog and `onDone` both fire on
   /// a dead socket; without this they would double-open).
@@ -159,8 +158,8 @@ final class KickDanmakuSession extends DanmakuSessionBase {
       if (run.isJoined && run.isActive) _send(KickDanmakuCodec.ping);
     });
     _startWatchdog(run);
-    _joinTimer = timers.after(KickDanmakuCodec.joinTimeout, () {
-      if (!run.isJoined && run.isActive) _scheduleReconnect(run, 'join timeout');
+    run.armJoinTimeout(KickDanmakuCodec.joinTimeout, () {
+      _scheduleReconnect(run, 'join timeout');
     });
     return null;
   }
@@ -178,11 +177,7 @@ final class KickDanmakuSession extends DanmakuSessionBase {
       if (!run.isActive) return;
       run.message(message);
     }
-    if (frame.joined && !run.isJoined) {
-      run.joined();
-      _joinTimer?.cancel();
-      _joinTimer = null;
-    }
+    if (frame.joined && !run.isJoined) run.joined();
     if (frame.error != null) {
       _scheduleReconnect(run, frame.error!);
       return;
@@ -243,8 +238,7 @@ final class KickDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _joinTimer?.cancel();
-    _joinTimer = null;
+    run?.cancelJoinTimeout();
     final socket = _socket;
     _socket = null;
     await socket?.stop();

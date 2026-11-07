@@ -200,6 +200,7 @@ abstract base class DanmakuSessionBase implements LiveDanmakuSession {
     _generation++;
     final run = _run;
     _run = null;
+    run?._teardown();
     if (run != null && !run._ended.isCompleted) run._ended.complete();
   }
 
@@ -217,6 +218,7 @@ final class DanmakuRun {
   final DanmakuSessionBase _session;
   final int _generation;
   final Completer<void> _ended = Completer();
+  Timer? _joinWatch;
   var _joined = false;
   var _toldExhausted = false;
 
@@ -240,9 +242,12 @@ final class DanmakuRun {
 
   /// The protocol joined: messages flow, and [DanmakuJoined] is told. A
   /// session's reconnect budget resets here, where the platform counts it.
+  /// The join budget ([armJoinTimeout]) ends with the join.
   void joined() {
     if (!isActive) return;
     _joined = true;
+    _joinWatch?.cancel();
+    _joinWatch = null;
     _session._add(const DanmakuJoined());
   }
 
@@ -284,6 +289,35 @@ final class DanmakuRun {
     timer.cancel();
     return isActive;
   }
+
+  /// Arms the join budget: [onTimeout] runs unless the protocol joined
+  /// ([joined]) or the attempt ended first. Re-arming replaces the previous
+  /// watch — the budget restarts at every socket open. Eleven sessions wrote
+  /// this same timer by hand (`Timer(joinTimeout, () { if joined/disposed
+  /// return; ... })` plus a cancel at every teardown); the watch is the
+  /// base's now, cancelled by [joined], by [cancelJoinTimeout] — the
+  /// platform's answer to the join, even a refusal, stops it — and when the
+  /// attempt ends, so a replaced or disposed session leaks no timer.
+  void armJoinTimeout(Duration timeout, void Function() onTimeout) {
+    _joinWatch?.cancel();
+    _joinWatch = _session.timers.after(timeout, () {
+      _joinWatch = null;
+      if (isActive && !_joined) onTimeout();
+    });
+  }
+
+  /// Stops the join budget without counting the join: the platform got an
+  /// answer to its join frames — a refusal is an answer too — and its own
+  /// escalation decides what happens next.
+  void cancelJoinTimeout() {
+    _joinWatch?.cancel();
+    _joinWatch = null;
+  }
+
+  void _teardown() {
+    _joinWatch?.cancel();
+    _joinWatch = null;
+  }
 }
 
 /// [text] without the invisible characters platforms pad into frame text,
@@ -291,9 +325,12 @@ final class DanmakuRun {
 /// U+000E-U+001F (\t, \n and \r stay), the C1 controls U+007F-U+009F, and
 /// the U+FFF9-U+FFFC placeholders and the U+FFFE-U+FFFF noncharacters. CJK
 /// and every other letter stay. The same string when it has none.
-String cleanDanmakuText(String text) => _invisibleCharacters.hasMatch(text) ? text.replaceAll(_invisibleCharacters, '') : text;
+String cleanDanmakuText(String text) =>
+    _invisibleCharacters.hasMatch(text) ? text.replaceAll(_invisibleCharacters, '') : text;
 
-final RegExp _invisibleCharacters = RegExp(r'[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\uFFF9-\uFFFC\uFFFE\uFFFF]');
+final RegExp _invisibleCharacters = RegExp(
+  r'[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\uFFF9-\uFFFC\uFFFE\uFFFF]',
+);
 
 /// [message] with its text and the sender's name and fan badge name without
 /// invisible placeholder characters ([cleanDanmakuText]); the same message
@@ -309,7 +346,11 @@ LiveMessage cleanDanmakuMessage(LiveMessage message) {
     final badge = cleanDanmakuText(sender.fanBadgeName);
     cleaned = identical(name, sender.userName) && identical(badge, sender.fanBadgeName)
         ? sender
-        : sender.rebuild((builder) => builder..userName = name..fanBadgeName = badge);
+        : sender.rebuild(
+            (builder) => builder
+              ..userName = name
+              ..fanBadgeName = badge,
+          );
   }
   if (identical(text, message.text) && identical(cleaned, sender)) return message;
   return message.rebuild((builder) {

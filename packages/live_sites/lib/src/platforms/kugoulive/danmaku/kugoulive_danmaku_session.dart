@@ -118,7 +118,6 @@ final class KugouliveDanmakuSession extends DanmakuSessionBase {
   StreamSubscription<Object?>? _subscription;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _join;
   Timer? _retry;
   KugouliveChatGrant? _grant;
   DateTime _grantedAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -246,10 +245,8 @@ final class KugouliveDanmakuSession extends DanmakuSessionBase {
     run.handshakeDone();
     _startHeartbeat();
     _startWatchdog(run);
-    _join = timers.after(KugouliveDanmakuCodec.joinTimeout, () {
-      if (run.isActive && !run.isJoined) {
-        _scheduleRetry('no login within ${KugouliveDanmakuCodec.joinTimeout.inSeconds} s', run);
-      }
+    run.armJoinTimeout(KugouliveDanmakuCodec.joinTimeout, () {
+      _scheduleRetry('no login within ${KugouliveDanmakuCodec.joinTimeout.inSeconds} s', run);
     });
     socket.add(
       KugouliveDanmakuCodec.login(
@@ -288,8 +285,6 @@ final class KugouliveDanmakuSession extends DanmakuSessionBase {
       _refusals = 0;
       _failures = 0;
       _sessionId = frame.sessionId ?? _sessionId;
-      _join?.cancel();
-      _join = null;
       if (!run.isJoined) run.joined();
     }
     for (final message in frame.messages) {
@@ -355,7 +350,12 @@ final class KugouliveDanmakuSession extends DanmakuSessionBase {
     run
       ..exhausted(reason)
       ..message(
-        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: reason,
+          color: LiveMessageColor.white,
+          sentAt: _now(),
+        ),
       );
     unawaited(dispose());
   }
@@ -365,8 +365,7 @@ final class KugouliveDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }

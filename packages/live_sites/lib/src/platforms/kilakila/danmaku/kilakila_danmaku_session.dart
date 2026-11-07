@@ -103,7 +103,6 @@ final class KilakilaDanmakuSession extends DanmakuSessionBase {
   StreamSubscription<Object?>? _subscription;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _join;
   Timer? _retry;
   int _failures = 0;
   int _refusals = 0;
@@ -153,10 +152,8 @@ final class KilakilaDanmakuSession extends DanmakuSessionBase {
     run.handshakeDone();
     _startHeartbeat();
     _startWatchdog(run);
-    _join = timers.after(KilakilaDanmakuCodec.joinTimeout, () {
-      if (run.isActive && !run.isJoined) {
-        _scheduleRetry('no join within ${KilakilaDanmakuCodec.joinTimeout.inSeconds} s', run);
-      }
+    run.armJoinTimeout(KilakilaDanmakuCodec.joinTimeout, () {
+      _scheduleRetry('no join within ${KilakilaDanmakuCodec.joinTimeout.inSeconds} s', run);
     });
     // The namespace join goes out as soon as the socket opens.
     _send(KilakilaDanmakuCodec.join(args.roomId));
@@ -193,8 +190,6 @@ final class KilakilaDanmakuSession extends DanmakuSessionBase {
     }
     if (frame.joined && !run.isJoined) {
       run.joined();
-      _join?.cancel();
-      _join = null;
       _refusals = 0;
       _failures = 0;
       return;
@@ -247,7 +242,12 @@ final class KilakilaDanmakuSession extends DanmakuSessionBase {
     run
       ..exhausted(reason)
       ..message(
-        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: reason,
+          color: LiveMessageColor.white,
+          sentAt: _now(),
+        ),
       );
     unawaited(dispose());
   }
@@ -257,8 +257,7 @@ final class KilakilaDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }

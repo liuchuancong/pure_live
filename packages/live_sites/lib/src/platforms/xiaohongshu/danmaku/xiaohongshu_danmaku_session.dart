@@ -59,12 +59,8 @@ typedef XiaohongshuDanmakuTimers = DanmakuTimers;
 final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   /// The chat of [args]' broadcast for [guest]'s visitor identity, sockets
   /// opened by [connector]. [timers] is injectable for tests.
-  XiaohongshuDanmakuSession({
-    required this.args,
-    required this.guest,
-    SocketConnector? connector,
-    super.timers,
-  }) : _connector = connector ?? webSocketConnect;
+  XiaohongshuDanmakuSession({required this.args, required this.guest, SocketConnector? connector, super.timers})
+    : _connector = connector ?? webSocketConnect;
 
   /// The broadcast this session subscribes to.
   final XiaohongshuDanmakuArgs args;
@@ -93,7 +89,6 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   SocketChannel? _socket;
   StreamSubscription<Object?>? _subscription;
   Timer? _beat;
-  Timer? _join;
   Timer? _retry;
   XiaohongshuPushIdentity? _identity;
   CancelToken? _cancel;
@@ -104,7 +99,6 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   int _reconnectFailures = 0;
   String _expected = '';
   bool _channelLive = false;
-  bool _joined = false;
   bool _reconnecting = false;
 
   /// Asks for the visitor identity and opens the first socket; null once it
@@ -146,7 +140,6 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   /// epoch, so a retry armed for a superseded socket finds itself stale.
   Future<LiveSiteError?> _open(DanmakuRun run, XiaohongshuPushIdentity identity) async {
     final epoch = ++_socketEpoch;
-    _joined = false;
     _step = 0;
     _channelLive = false;
     await _teardownSocket();
@@ -188,10 +181,10 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
       },
     );
     _expected = _nextId();
-    _join = timers.after(joinTimeout, () {
-      if (epoch == _socketEpoch && run.isActive && !_joined) {
-        _scheduleReconnect('bootstrap did not finish', run);
-      }
+    // The socket-epoch ledger stays: the budget is this socket's, and a
+    // superseded socket's answer must not speak for the current one.
+    run.armJoinTimeout(joinTimeout, () {
+      if (epoch == _socketEpoch) _scheduleReconnect('bootstrap did not finish', run);
     });
     _send(XiaohongshuDanmakuCodec.handshake(_expected, identity));
     return null;
@@ -218,9 +211,6 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
         _step = 3;
         _renewals = 0;
         _reconnectFailures = 0;
-        _joined = true;
-        _join?.cancel();
-        _join = null;
         if (!run.isJoined) run.joined();
         _send(XiaohongshuDanmakuCodec.viewerHeart(_nextId(), args.roomId, _identity?.uid ?? ''));
       }
@@ -238,8 +228,7 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   /// A refused step: the handshake's first refusal renews the identity once
   /// and starts over; anything else ends the session.
   void _refused(DanmakuRun run) {
-    _join?.cancel();
-    _join = null;
+    run.cancelJoinTimeout();
     if (_step == 0 && _renewals++ == 0) {
       _step = -1;
       _expected = '';
@@ -343,8 +332,7 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   void _cancelTimers() {
     _beat?.cancel();
     _beat = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }
@@ -366,7 +354,6 @@ final class XiaohongshuDanmakuSession extends DanmakuSessionBase {
   /// in-flight bootstrap request is cancelled with the run it belonged to.
   @override
   Future<void> stop() async {
-    _joined = false;
     _cancelTimers();
     _cancel?.cancel();
     _cancel = null;

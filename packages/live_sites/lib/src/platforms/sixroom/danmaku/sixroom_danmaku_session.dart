@@ -110,7 +110,6 @@ final class SixroomDanmakuSession extends DanmakuSessionBase {
   StreamSubscription<Object?>? _subscription;
   Timer? _heartbeat;
   Timer? _watchdog;
-  Timer? _join;
   Timer? _retry;
   List<Uri> _servers = const [];
   int _nextServer = 0;
@@ -170,10 +169,8 @@ final class SixroomDanmakuSession extends DanmakuSessionBase {
     _socket = socket;
     run.handshakeDone();
     _startWatchdog(run);
-    _join = timers.after(SixroomDanmakuCodec.joinTimeout, () {
-      if (run.isActive && !run.isJoined) {
-        _scheduleRetry('no login answer within ${SixroomDanmakuCodec.joinTimeout.inSeconds} s', run);
-      }
+    run.armJoinTimeout(SixroomDanmakuCodec.joinTimeout, () {
+      _scheduleRetry('no login answer within ${SixroomDanmakuCodec.joinTimeout.inSeconds} s', run);
     });
     // The login goes out as soon as the socket opens.
     _send(SixroomDanmakuCodec.login(_guestId, args.userId));
@@ -220,8 +217,6 @@ final class SixroomDanmakuSession extends DanmakuSessionBase {
       run.joined();
       _refusals = 0;
       _failures = 0;
-      _join?.cancel();
-      _join = null;
       // The page sends a heartbeat a second after the login.
       _send(SixroomDanmakuCodec.heartbeat);
       _startHeartbeat();
@@ -263,7 +258,12 @@ final class SixroomDanmakuSession extends DanmakuSessionBase {
     run
       ..exhausted(reason)
       ..message(
-        LiveMessage.normalized(type: LiveMessageType.system, text: reason, color: LiveMessageColor.white, sentAt: _now()),
+        LiveMessage.normalized(
+          type: LiveMessageType.system,
+          text: reason,
+          color: LiveMessageColor.white,
+          sentAt: _now(),
+        ),
       );
     unawaited(dispose());
   }
@@ -273,8 +273,7 @@ final class SixroomDanmakuSession extends DanmakuSessionBase {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    run?.cancelJoinTimeout();
     _retry?.cancel();
     _retry = null;
   }
