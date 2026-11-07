@@ -2970,6 +2970,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  workmanager:
+    dependency: transitive
+    description:
+      name: workmanager
+      sha256: "53c2ae5d54f46b2eefacf541446efe01039471b1f0a605d5bbf3c77690702448"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.3"
+  workmanager_android:
+    dependency: transitive
+    description:
+      name: workmanager_android
+      sha256: "757fd2ef0761a130c6f71cd46ea656b7ea393d813ace46c1ef4fc24a7136953d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.3"
+  workmanager_apple:
+    dependency: transitive
+    description:
+      name: workmanager_apple
+      sha256: f960e829eea48859c7bdd730f59c4972f22259fb052416d611798e3976a3f4eb
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.6"
+  workmanager_platform_interface:
+    dependency: transitive
+    description:
+      name: workmanager_platform_interface
+      sha256: "687ce0e27f2f7ce716d8e66143381e63312478ecc4aa0880e8064c7bf72e3e90"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.4"
   xdg_directories:
     dependency: transitive
     description:

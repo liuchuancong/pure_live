@@ -18,6 +18,7 @@ import 'package:multiview_desktop/multiview_desktop.dart'
         WindowOptions,
         runMultiApp;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_background.dart' show initializeLiveAlertBackground;
 import 'package:pure_live/l10n/translations.dart' show TranslationProvider;
 
 /// The process entry point.
@@ -32,6 +33,10 @@ import 'package:pure_live/l10n/translations.dart' show TranslationProvider;
 /// collection to orchestrate there, and the multiview plugin's runners exist
 /// only on the desktop.
 Future<void> main(List<String> arguments) async {
+  // The background check's dispatcher, where the platform has one; the
+  // periodic task itself is scheduled and cancelled with the live-alert
+  // switch, and its shared state rides the registration.
+  await initializeLiveAlertBackground();
   final boot = await bootstrap();
   if (boot.failed) {
     // The rescue screen: retry runs the boot from the top, and a success

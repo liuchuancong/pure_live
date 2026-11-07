@@ -1,13 +1,18 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:io' show File;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_background.dart' show scheduleLiveAlertCheck;
 import 'package:pure_live/modules/live/favorites/alerts/live_alert_events.dart'
     show LiveAlertObserver, liveAlertObserver;
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_watch.dart'
+    show LiveAlertRoom, LiveAlertTexts, LiveAlertWatch, LiveAlertWatchFile, writeLiveAlertWatch;
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show FollowTag, followTagsProvider;
 import 'package:pure_live/shared/shared.dart';
@@ -46,9 +51,10 @@ final class LiveAlertTracker {
       final key = room.ref.identityKey;
       final seen = _seen[key];
       if (seen == null) {
-        _seen[key] = _Seen(live: live, startedAt: live ? room.broadcast.startedAt : null);
+        _seen[key] = _Seen(live: live, startedAt: live ? room.broadcast.startedAt : null, seenAt: now);
         continue;
       }
+      seen.seenAt = now;
       if (!live) {
         if (seen.live) {
           seen
@@ -74,6 +80,23 @@ final class LiveAlertTracker {
   /// Forgets every room (the switch turned off: turning it on starts over).
   void forget() => _seen.clear();
 
+  /// What is known of each room (identity key → state), for the background
+  /// check, which carries on from it and hands its own back.
+  Map<String, LiveAlertSeen> get states => {
+    for (final MapEntry(:key, :value) in _seen.entries)
+      key: (live: value.live, startedAt: value.startedAt, endedAt: value.endedAt, seenAt: value.seenAt ?? _now()),
+  };
+
+  /// Takes [states] where they are newer than what is known: a broadcast
+  /// the background check already told of is not told again here.
+  void adopt(Map<String, LiveAlertSeen> states) {
+    for (final MapEntry(:key, :value) in states.entries) {
+      final known = _seen[key];
+      if (known != null && !value.seenAt.isAfter(known.seenAt ?? DateTime.fromMillisecondsSinceEpoch(0))) continue;
+      _seen[key] = _Seen(live: value.live, startedAt: value.startedAt, seenAt: value.seenAt)..endedAt = value.endedAt;
+    }
+  }
+
   bool _sameBroadcast(_Seen seen, LiveRoom room, DateTime now) {
     final before = seen.startedAt;
     final start = room.broadcast.startedAt;
@@ -87,12 +110,17 @@ final class LiveAlertTracker {
 }
 
 final class _Seen {
-  _Seen({required this.live, this.startedAt});
+  _Seen({required this.live, required this.seenAt, this.startedAt});
 
   bool live;
   DateTime? startedAt;
   DateTime? endedAt;
+  DateTime? seenAt;
 }
+
+/// One room's last known state, shared with the background check
+/// ([LiveAlertTracker.states]).
+typedef LiveAlertSeen = ({bool live, DateTime? startedAt, DateTime? endedAt, DateTime seenAt});
 
 /// The follows "开播提醒" covers: every follow, or with tags chosen those
 /// carrying one of them. A chosen tag that no longer exists does not count;
@@ -181,9 +209,16 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
       _timer = null;
       _seeded = false;
       _tracker.forget();
+      final file = _watchFile();
+      if (file != null) unawaited(file.clear());
+      unawaited(scheduleLiveAlertCheck(on: false, filePath: ''));
       return;
     }
     unawaited(requestUserNotificationPermission());
+    // The background check carries the same schedule the app keeps: the
+    // system runs it while the app is frozen or gone.
+    final file = _watchFile();
+    if (file != null) unawaited(scheduleLiveAlertCheck(on: true, filePath: file.file.path));
     _timer ??= Timer.periodic(kLiveAlertCheckInterval, (_) => unawaited(_check(quiet: false)));
     if (!_seeded || checkNow) unawaited(_check(quiet: !_seeded));
   }
@@ -212,9 +247,67 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
         if (!keys.contains(room.ref.identityKey)) continue;
         await _post(room);
       }
+      unawaited(_writeWatch(covered: covered));
     } finally {
       _checking = false;
     }
+  }
+
+  /// The state file the background check shares, in the app's data area.
+  LiveAlertWatchFile? _watchFile() {
+    final container = _container;
+    if (container == null) return null;
+    try {
+      return LiveAlertWatchFile(File(p.join(container.read(appPathsProvider).data.path, LiveAlertWatchFile.name)));
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The words the notification carries, written with their placeholders so
+  /// the background check fills them in the app's language at write time.
+  LiveAlertTexts? _texts() {
+    try {
+      final t = context.t;
+      return (
+        bodyTemplate: t.settings.liveAlertNotificationBody(platform: '{platform}'),
+        fallbackTemplate: t.settings.liveAlertFallbackTitle(platform: '{platform}', roomId: '{roomId}'),
+      );
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Lays the shared state down: the covered follows, what the tracker has
+  /// seen, and the words. The background check skips while this file says
+  /// the app is current, and merges what it learns into what is here.
+  Future<void> _writeWatch({required List<LiveRoom> covered}) async {
+    final file = _watchFile();
+    final texts = _texts();
+    if (file == null || texts == null) return;
+    final sites = _container?.read(sitesProvider);
+    final rows = [
+      for (final room in covered)
+        LiveAlertRoom(
+          platform: room.ref.platform,
+          roomId: room.ref.roomId,
+          name: room.anchor?.name ?? '',
+          platformLabel: sites == null
+              ? room.ref.platform
+              : (sites.getById(room.ref.platform) == null
+                    ? room.ref.platform
+                    : localizedSiteName(sites.getById(room.ref.platform)!)),
+        ),
+    ];
+    writeLiveAlertWatch(
+      file,
+      LiveAlertWatch(
+        rooms: rows,
+        states: _tracker.states,
+        texts: texts,
+        nextCheck: DateTime.now().add(kLiveAlertCheckInterval),
+      ),
+    );
   }
 
   /// One follows refresh pass's fresh rooms, from the favorites page's

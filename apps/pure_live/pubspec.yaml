@@ -113,6 +113,7 @@ dependencies:
   media_core_cast_dlna: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_cast_dlna } # DLNA 投屏后端
   media_core_mediasession: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession } # 媒体会话通知
   media_core_notify: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_notify } # 用户通知
+  workmanager: ^0.9.0 # Android 后台周期任务（开播提醒后台 check）
 
   responsive_breakpoints: ^1.0.3
 
