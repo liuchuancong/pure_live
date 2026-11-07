@@ -78,5 +78,8 @@
   "previewLoop": "循环播放",
   "previewDrawerLabel": "文件列",
   "previewCollapseList": "收起列表",
-  "rename": "重命名"
+  "rename": "重命名",
+  "exitAppTitle": "退出 Pure Live",
+  "exitAppMessage": "确认退出应用吗？",
+  "exitApp": "退出"
 }

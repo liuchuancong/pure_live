@@ -78,5 +78,8 @@
   "previewLoop": "Loop",
   "previewDrawerLabel": "Files",
   "previewCollapseList": "Collapse list",
-  "rename": "Rename"
+  "rename": "Rename",
+  "exitAppTitle": "Exit Pure Live",
+  "exitAppMessage": "Exit the app?",
+  "exitApp": "Exit"
 }

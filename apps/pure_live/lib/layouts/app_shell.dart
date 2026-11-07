@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:dpad/dpad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -189,6 +190,12 @@ final class _AppShellState extends ConsumerState<AppShell> {
     _searchFocus.dispose();
     super.dispose();
   }
+
+  /// A TV build draws the rail and the page as two dpad regions — each keeps
+  /// its own focus memory, and the beam walk crosses between them when an
+  /// edge presses outward. The pointer builds pass the child through.
+  Widget _tvRegion(String memoryKey, Widget child) =>
+      widget.tv ? DpadRegion(memoryKey: memoryKey, child: child) : child;
 
   @override
   void didUpdateWidget(AppShell oldWidget) {
@@ -577,46 +584,52 @@ final class _AppShellState extends ConsumerState<AppShell> {
                       // A live drag moves the width itself; the spring is for
                       // the toggle, not for the pointer's hand.
                       data: _resizing ? theme.copyWith(motion: theme.motion.copyWith(reduced: true)) : theme,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: DsSidebar(
-                              collapsed: !widget.expanded,
-                              header: widget.settingsSection == null
-                                  ? AppSwitcher(
-                                      collapsed: !widget.expanded,
-                                      module: widget.module,
-                                      onModule: widget.onModuleSelected,
-                                    )
-                                  : null,
-                              value: widget.menuValue,
-                              onChanged: widget.onMenu,
-                              style: sidebarStyle,
-                              children: items,
+                      // The rail is the remote's first stop: its own region
+                      // remembers the row the viewer left, and the beam walk
+                      // crosses into the page when the viewer presses right.
+                      child: _tvRegion(
+                        'tv.shell.rail',
+                        Column(
+                          children: [
+                            Expanded(
+                              child: DsSidebar(
+                                collapsed: !widget.expanded,
+                                header: widget.settingsSection == null
+                                    ? AppSwitcher(
+                                        collapsed: !widget.expanded,
+                                        module: widget.module,
+                                        onModule: widget.onModuleSelected,
+                                      )
+                                    : null,
+                                value: widget.menuValue,
+                                onChanged: widget.onMenu,
+                                style: sidebarStyle,
+                                children: items,
+                              ),
                             ),
-                          ),
-                          DsSidebar<Object>(
-                            collapsed: !widget.expanded,
-                            onChanged: _footerChanged,
-                            style: sidebarStyle,
-                            children: [
-                              if (widget.settingsSection == null)
-                                DsSidebarItem<Object>(
-                                  value: NavigationItem.settings,
-                                  leading: const DsIcon(DsIcons.settings),
-                                  label: Text(t.navigation.settings),
-                                  style: widget.expanded ? null : _collapsedItem,
-                                )
-                              else
-                                DsSidebarItem<Object>(
-                                  value: NavigationItem.settings,
-                                  leading: const DsIcon(DsIcons.arrowLeft),
-                                  label: Text(t.settings.backHome),
-                                  style: widget.expanded ? null : _collapsedItem,
-                                ),
-                            ],
-                          ),
-                        ],
+                            DsSidebar<Object>(
+                              collapsed: !widget.expanded,
+                              onChanged: _footerChanged,
+                              style: sidebarStyle,
+                              children: [
+                                if (widget.settingsSection == null)
+                                  DsSidebarItem<Object>(
+                                    value: NavigationItem.settings,
+                                    leading: const DsIcon(DsIcons.settings),
+                                    label: Text(t.navigation.settings),
+                                    style: widget.expanded ? null : _collapsedItem,
+                                  )
+                                else
+                                  DsSidebarItem<Object>(
+                                    value: NavigationItem.settings,
+                                    leading: const DsIcon(DsIcons.arrowLeft),
+                                    label: Text(t.settings.backHome),
+                                    style: widget.expanded ? null : _collapsedItem,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     if (widget.expanded)
@@ -633,49 +646,55 @@ final class _AppShellState extends ConsumerState<AppShell> {
                         child: const SizedBox(width: 1, height: double.infinity),
                       ),
                     Expanded(
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
-                            child: Row(
-                              children: [
-                                Expanded(child: widget.breadcrumb),
-                                if (showField) ...[
-                                  const SizedBox(width: DsSpace.s16),
-                                  SizedBox(
-                                    width: searchFieldWidth,
-                                    child: _ToolbarSearch(
-                                      key: ValueKey((widget.module, widget.menuValue)),
-                                      hint: pageSearch.hint,
-                                      focusNode: _searchFocus,
-                                      shortcut: theme.platform == TargetPlatform.macOS ? '⌘K' : 'Ctrl K',
-                                      onSubmitted: (word) {
-                                        _clearInlineSearches();
-                                        pageSearch.take(word);
-                                      },
+                      // The page's region: it remembers where the viewer was
+                      // in each page's own columns, so coming back from the
+                      // rail or a room lands on the row they left.
+                      child: _tvRegion(
+                        'tv.shell.content',
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
+                              child: Row(
+                                children: [
+                                  Expanded(child: widget.breadcrumb),
+                                  if (showField) ...[
+                                    const SizedBox(width: DsSpace.s16),
+                                    SizedBox(
+                                      width: searchFieldWidth,
+                                      child: _ToolbarSearch(
+                                        key: ValueKey((widget.module, widget.menuValue)),
+                                        hint: pageSearch.hint,
+                                        focusNode: _searchFocus,
+                                        shortcut: theme.platform == TargetPlatform.macOS ? '⌘K' : 'Ctrl K',
+                                        onSubmitted: (word) {
+                                          _clearInlineSearches();
+                                          pageSearch.take(word);
+                                        },
+                                      ),
                                     ),
-                                  ),
+                                  ],
+                                  if (searchButtonShown) ...[const SizedBox(width: DsSpace.s8), searchButton()],
+                                  if (verbs.isNotEmpty) ...[
+                                    const SizedBox(width: DsSpace.s8),
+                                    Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: verbs),
+                                  ],
+                                  if (logsGear) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
+                                  if (themeToggle) ...[
+                                    const SizedBox(width: DsSpace.s8),
+                                    const ThemeModeToggle(size: 36),
+                                  ],
                                 ],
-                                if (searchButtonShown) ...[const SizedBox(width: DsSpace.s8), searchButton()],
-                                if (verbs.isNotEmpty) ...[
-                                  const SizedBox(width: DsSpace.s8),
-                                  Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: verbs),
-                                ],
-                                if (logsGear) ...[const LogsSettingsButton(), const SizedBox(width: DsSpace.s8)],
-                                if (themeToggle) ...[
-                                  const SizedBox(width: DsSpace.s8),
-                                  const ThemeModeToggle(size: 36),
-                                ],
-                              ],
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            child: PageLayoutScope(
-                              narrow: pageNarrow,
-                              child: WindowClassScope(child: widget.content),
+                            Expanded(
+                              child: PageLayoutScope(
+                                narrow: pageNarrow,
+                                child: WindowClassScope(child: widget.content),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],

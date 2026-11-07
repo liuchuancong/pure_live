@@ -8,6 +8,8 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/layouts/app_shell.dart';
 import 'package:pure_live/layouts/location_breadcrumb.dart';
+// No `show` clause on this one either: the save-time organizer wraps it.
+import 'package:pure_live/layouts/tv/tv_exit_confirm.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
 import 'package:pure_live/modules/music/widgets/music_now_playing_bar.dart' show MusicNowPlayingBar;
 import 'package:pure_live/shared/shared.dart';
@@ -389,7 +391,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         ? PhoneBridge(input: showTvPhoneInput, view: showTvPhoneView, child: shownContent)
         : shownContent;
 
-    return AppShell(
+    final shell = AppShell(
       content: bridged,
       module: module,
       selected: selected,
@@ -433,6 +435,18 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       onSidebarWidthChanged: ref.read(sidebarProvider.notifier).setWidth,
       homeMenuItems: homeMenu,
       tv: tv,
+    );
+    // The remote's back at the root: the shell route cannot pop, so the key
+    // asks whether the viewer is done for the day instead of ending the app
+    // without a word. Routes above the shell pop on their own and never
+    // reach this.
+    if (!tv) return shell;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(showTvExitConfirm(context));
+      },
+      child: shell,
     );
   }
 

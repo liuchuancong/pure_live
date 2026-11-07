@@ -521,6 +521,9 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewDrawerLabel => 'Files';
 	@override String get previewCollapseList => 'Collapse list';
 	@override String get rename => 'Rename';
+	@override String get exitAppTitle => 'Exit Pure Live';
+	@override String get exitAppMessage => 'Exit the app?';
+	@override String get exitApp => 'Exit';
 }
 
 // Path: favorites
@@ -5567,6 +5570,9 @@ extension on TranslationsEn {
 			'common.previewDrawerLabel' => 'Files',
 			'common.previewCollapseList' => 'Collapse list',
 			'common.rename' => 'Rename',
+			'common.exitAppTitle' => 'Exit Pure Live',
+			'common.exitAppMessage' => 'Exit the app?',
+			'common.exitApp' => 'Exit',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -6016,11 +6022,11 @@ extension on TranslationsEn {
 			'iptv.noChannelMatch' => 'No channels match',
 			'iptv.noSourceMatch' => 'No sources match',
 			'iptv.sourceCount' => ({required int count}) => '${count} items',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.colChannel' => 'Channel',
 			'iptv.colGroup' => 'Group',
 			'iptv.colNow' => 'On now',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.colFavorite' => 'Favourite',
 			'iptv.colActions' => 'Actions',
 			'iptv.colName' => 'Name',
@@ -6530,11 +6536,11 @@ extension on TranslationsEn {
 			'music.localRescan' => 'Scan again',
 			'music.localFolders' => 'Music folders',
 			'music.localRemoveFolder' => 'Remove the folder',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
 			'music.localEmptyDescription' => 'Downloaded songs land in this list by themselves. To play files you already have, add a folder of audio.',
-			_ => null,
-		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
 			'music.playbackRate' => 'Playback speed',
 			'music.preservesPitch' => 'Pitch compensation',
@@ -7044,11 +7050,11 @@ extension on TranslationsEn {
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.delete' => 'Delete',
 			'recorder.deleteTitle' => ({required String name}) => 'Delete “${name}”?',
 			'recorder.deleteBody' => 'This removes the task only; files already saved stay on disk.',
@@ -7558,11 +7564,11 @@ extension on TranslationsEn {
 			'search.coverageShortUnavailable' => 'Search is unavailable',
 			'search.noteKuaishou' => 'Kuaishou: guest searches may be limited; sign in to a platform account and retry, or paste an official share link to open the room directly.',
 			'search.noteKuaishouShort' => 'Guest searches may be limited; official share links work — sign in and retry',
+			_ => null,
+		} ?? switch (path) {
 			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
 			'search.noteAcfunShort' => 'Finds creators live and offline',
 			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
-			_ => null,
-		} ?? switch (path) {
 			'search.noteTwitcastingShort' => 'Keywords find live channels only',
 			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
 			'search.noteKilakilaShort' => 'Find anchors by nickname, UID or link',
@@ -8072,11 +8078,11 @@ extension on TranslationsEn {
 			'settings.cacheFileCount' => 'Cached files',
 			'settings.cacheHitRate' => 'Cache hit rate',
 			'settings.cacheApiMemory' => 'API memory cache',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheLastCleanup' => 'Last cleanup',
 			'settings.cacheNever' => 'Not yet',
 			'settings.cacheDiskUnavailable' => 'The cache folder is unavailable; using memory and network only.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheStatsFailed' => 'Could not read cache statistics',
 			'settings.cacheCategoryBreakdown' => 'By type',
 			'settings.cacheCategoryCover' => 'Covers',
@@ -8586,11 +8592,11 @@ extension on TranslationsEn {
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
 			'settings.downloadKindFilter' => 'Filter by kind',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFilterLabel' => 'Filter',
 			'settings.downloadFilterTitle' => 'Filter downloads',
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadFilterReset' => 'Clear filters',
 			'settings.downloadRecheck' => 'Re-check files',
 			'settings.downloadMerge' => 'Merge into this folder',
@@ -9100,11 +9106,11 @@ extension on TranslationsEn {
 			'settings.backgroundGuidePowerSave' => 'Battery saver is on: it may stop background playback.',
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.',
 			'settings.backgroundGuideStateOk' => 'OK',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideStateTodo' => 'To do',
 			'settings.backgroundGuideStateManual' => 'Check',
 			'settings.backgroundGuideNotifications' => 'Notifications',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideNotificationsHow' => 'Background play leans on notifications; off, the system tightens on its own.',
 			'settings.backgroundGuideBattery' => 'Battery optimisation exemption',
 			'settings.backgroundGuideBatteryHow' => 'Set the app to unoptimised so power policies do not cut playback.',
@@ -9614,11 +9620,11 @@ extension on TranslationsEn {
 			'wallpaper.groupAlcy' => 'Alcy',
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
 			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyMoez' => 'Alcy · moez',
 			'wallpaper.sourceAlcyYsz' => 'Alcy · ysz',
 			'wallpaper.sourceAlcyYs' => 'Alcy · ys',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyMp' => 'Alcy · mp',
 			'wallpaper.sourceAlcyMoemp' => 'Alcy · moemp',
 			'wallpaper.sourceAlcyYsmp' => 'Alcy · ysmp',

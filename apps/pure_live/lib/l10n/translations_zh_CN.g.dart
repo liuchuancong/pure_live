@@ -1364,6 +1364,15 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '重命名'
 	String get rename => '重命名';
+
+	/// zh-CN: '退出 Pure Live'
+	String get exitAppTitle => '退出 Pure Live';
+
+	/// zh-CN: '确认退出应用吗？'
+	String get exitAppMessage => '确认退出应用吗？';
+
+	/// zh-CN: '退出'
+	String get exitApp => '退出';
 }
 
 // Path: favorites
@@ -14938,6 +14947,9 @@ extension on Translations {
 			'common.previewDrawerLabel' => '文件列',
 			'common.previewCollapseList' => '收起列表',
 			'common.rename' => '重命名',
+			'common.exitAppTitle' => '退出 Pure Live',
+			'common.exitAppMessage' => '确认退出应用吗？',
+			'common.exitApp' => '退出',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -15387,11 +15399,11 @@ extension on Translations {
 			'iptv.noChannelMatch' => '没有匹配的频道',
 			'iptv.noSourceMatch' => '没有匹配的来源',
 			'iptv.sourceCount' => ({required int count}) => '共 ${count} 项',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.colChannel' => '频道',
 			'iptv.colGroup' => '分组',
 			'iptv.colNow' => '正在播出',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.colFavorite' => '收藏',
 			'iptv.colActions' => '操作',
 			'iptv.colName' => '名称',
@@ -15901,11 +15913,11 @@ extension on Translations {
 			'music.localRescan' => '重新扫描',
 			'music.localFolders' => '音乐文件夹',
 			'music.localRemoveFolder' => '移除文件夹',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
 			'music.localEmptyDescription' => '下载的歌会自己进到这个列表；要放本机已有的文件，添加一个存放音频的文件夹。',
-			_ => null,
-		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
 			'music.playbackRate' => '播放速度',
 			'music.preservesPitch' => '音调补偿',
@@ -16415,11 +16427,11 @@ extension on Translations {
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.delete' => '删除',
 			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
 			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
@@ -16929,11 +16941,11 @@ extension on Translations {
 			'search.coverageShortUnavailable' => '暂不支持搜索',
 			'search.noteKuaishou' => '快手：游客搜索可能受限；可在平台账号中登录后重试，或粘贴官方分享链接直接打开直播间。',
 			'search.noteKuaishouShort' => '游客搜索可能受限；支持官方分享短链，可登录后重试',
+			_ => null,
+		} ?? switch (path) {
 			'search.noteAcfun' => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。',
 			'search.noteAcfunShort' => '能搜到直播中和未开播的作者',
 			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
-			_ => null,
-		} ?? switch (path) {
 			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
 			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
 			'search.noteKilakilaShort' => '可按昵称、UID 或链接查找主播',
@@ -17443,11 +17455,11 @@ extension on Translations {
 			'settings.cacheFileCount' => '缓存文件数',
 			'settings.cacheHitRate' => '缓存命中率',
 			'settings.cacheApiMemory' => '接口内存缓存',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheLastCleanup' => '最后清理',
 			'settings.cacheNever' => '尚未清理',
 			'settings.cacheDiskUnavailable' => '缓存目录不可用，当前仅使用内存与网络。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheStatsFailed' => '读取缓存统计失败',
 			'settings.cacheCategoryBreakdown' => '按类型查看',
 			'settings.cacheCategoryCover' => '封面',
@@ -17957,11 +17969,11 @@ extension on Translations {
 			'settings.downloadFilterAll' => '全部',
 			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
 			'settings.downloadKindFilter' => '按类型筛选',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFilterLabel' => '筛选',
 			'settings.downloadFilterTitle' => '筛选下载任务',
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadFilterReset' => '清空筛选',
 			'settings.downloadRecheck' => '重新检查文件',
 			'settings.downloadMerge' => '并入当前目录',
@@ -18471,11 +18483,11 @@ extension on Translations {
 			'settings.backgroundGuidePowerSave' => '省电模式开着：它可能在后台停掉播放。',
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => '${rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。',
 			'settings.backgroundGuideStateOk' => '正常',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideStateTodo' => '待处理',
 			'settings.backgroundGuideStateManual' => '需自查',
 			'settings.backgroundGuideNotifications' => '通知权限',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideNotificationsHow' => '锁屏与后台的播放提醒走通知；关掉后后台可能被系统加码限制。',
 			'settings.backgroundGuideBattery' => '电池优化豁免',
 			'settings.backgroundGuideBatteryHow' => '把本应用设为不优化，后台播放不被省电策略掐断。',
@@ -18985,11 +18997,11 @@ extension on Translations {
 			'wallpaper.groupAlcy' => '栗次元',
 			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
 			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyMoez' => '栗次元 · moez',
 			'wallpaper.sourceAlcyYsz' => '栗次元 · ysz',
 			'wallpaper.sourceAlcyYs' => '栗次元 · ys',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyMp' => '栗次元 · mp',
 			'wallpaper.sourceAlcyMoemp' => '栗次元 · moemp',
 			'wallpaper.sourceAlcyYsmp' => '栗次元 · ysmp',
