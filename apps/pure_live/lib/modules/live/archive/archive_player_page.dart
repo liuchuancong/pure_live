@@ -1,16 +1,19 @@
-import 'dart:async' show Future, unawaited;
+import 'dart:async' show Future, StreamSubscription, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flame_barrage/flame_barrage.dart' show BarrageController, BarrageItem, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
-import 'package:live_sites/live_sites.dart' show SiteIds;
+import 'package:live_sites/live_sites.dart' show LiveMessage, LiveMessageQuery, LiveRetraction, SiteIds;
 import 'package:live_vod/live_vod.dart' show DouyuVodVideo, SoopArchivePart;
 import 'package:media_core/media_core.dart'
     show MediaPlayerView, PlayerConfig, PlayerHandle, PlayerKernel, PlayerTransportState;
+import 'package:media_core_danmaku/media_core_danmaku.dart' show DanmakuPlayerBinding;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart' show accountsProvider;
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
 import 'package:pure_live/modules/live/archive/archive_playback.dart';
@@ -42,6 +45,13 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   ArchivePlaybackController? _controller;
   bool _disposed = false;
   bool _startFailed = false;
+
+  /// The flying layer's engine, carried pause and seek by the binding: a
+  /// recording's comments follow its own timeline, unlike a live room's.
+  final BarrageController _barrage = BarrageController();
+  DanmakuPlayerBinding? _danmakuBinding;
+  StreamSubscription<LiveMessage>? _messagesSub;
+  StreamSubscription<LiveRetraction>? _retractionsSub;
 
   static final ChangeTracker _idle = ChangeTracker();
 
@@ -100,12 +110,39 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
         );
       }
       if (_controller == null) return;
+      _wireDanmaku(_controller!, handle);
       setState(() {});
       final recordingId = request.soop?.id ?? request.huya?.id ?? request.douyu?.id;
       if (recordingId != null) await _controller!.open(recordingId);
     } on Object {
       if (!_disposed) setState(() => _startFailed = true);
     }
+  }
+
+  /// Feeds the flying layer from the recording's own comment timeline: the
+  /// controller's messages arrive already gated by the clock, the binding
+  /// carries the transport's pause, seek and speed into the engine, and a
+  /// retraction empties the frame a seek just left.
+  void _wireDanmaku(ArchivePlaybackController controller, PlayerHandle handle) {
+    unawaited(_messagesSub?.cancel() ?? Future<void>.value());
+    unawaited(_retractionsSub?.cancel() ?? Future<void>.value());
+    unawaited(_danmakuBinding?.dispose() ?? Future<void>.value());
+    _barrage.clear();
+    _danmakuBinding = DanmakuPlayerBinding.forHandle(controller: _barrage, handle: handle)..attach();
+    _messagesSub = controller.messages.listen((message) {
+      if (_disposed || message.text.isEmpty) return;
+      final color = message.effectiveColor;
+      _barrage.send(
+        BarrageItem(
+          content: message.text,
+          id: message.messageId.isEmpty ? null : message.messageId,
+          textColor: Color.fromARGB(255, color.r, color.g, color.b),
+        ),
+      );
+    });
+    _retractionsSub = controller.retractions.listen((_) {
+      if (!_disposed) _barrage.retractWhere((_) => true);
+    });
   }
 
   /// The viewer's SOOP login, the same credential the live site uses.
@@ -134,6 +171,10 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   @override
   void dispose() {
     _disposed = true;
+    unawaited(_messagesSub?.cancel() ?? Future<void>.value());
+    unawaited(_retractionsSub?.cancel() ?? Future<void>.value());
+    unawaited(_danmakuBinding?.dispose() ?? Future<void>.value());
+    _barrage.dispose();
     final controller = _controller;
     final handle = _handle;
     final kernel = _kernel;
@@ -189,6 +230,8 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   Widget _stage(BuildContext context) {
     final controller = _controller;
     final handle = _handle;
+    final danmakuStyle = ref.watch(danmakuStyleProvider);
+    final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
     return ListenableBuilder(
       listenable: controller ?? _idle,
       builder: (context, _) {
@@ -198,6 +241,23 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
           children: [
             const ColoredBox(color: Color(0xFF000000)),
             if (handle != null) MediaPlayerView(handle: handle),
+            // The recording's own comments, on a clock the binding keeps
+            // equal to the picture's; hidden while the layer is switched
+            // off or the recording carries none.
+            if (handle != null && controller?.supportsDanmaku == true && controller!.danmakuVisible)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: FlameBarrageWidget(
+                    config: playerBarrageConfig(
+                      danmakuStyle,
+                      danmakuFps,
+                      family: resolvedFontFamily(danmakuStyle.fontFamily),
+                    ),
+                    emojiAtlas: EmojiAtlas.instance,
+                    controller: _barrage,
+                  ),
+                ),
+              ),
             if (controller != null && controller.busy)
               const Center(child: DsSpinner())
             else if (failed)
@@ -262,6 +322,13 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
                 '${vodDurationText(position)} / ${vodDurationText(total)}',
                 style: DsTheme.of(context).typography.numeric(DsTheme.of(context).typography.caption),
               ),
+              if (controller.supportsDanmaku)
+                PlayerBarButton(
+                  iconAsset: 'assets/icons/danmaku.svg',
+                  label: controller.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+                  selected: controller.danmakuVisible,
+                  onPressed: controller.toggleDanmaku,
+                ),
               if (controller.qualities.length > 1)
                 DsMenuAnchor(
                   semanticLabel: t.room.replayQuality,
