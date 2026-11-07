@@ -10,6 +10,7 @@ export 'cache/cache.dart';
 export 'device/device.dart';
 export 'navigation/navigation.dart';
 export 'network/network.dart';
+export 'remote/remote_providers.dart';
 export 'player/player.dart';
 export 'settings/settings.dart';
 export 'theme/theme.dart';

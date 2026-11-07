@@ -4202,6 +4202,39 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundGuideMeizuBackgroundHow => 'Let the app through Flyme\'s background controls.';
 	@override String get backgroundGuideLockRecents => 'Lock in recents';
 	@override String get backgroundGuideLockRecentsHow => 'Pull the app down in recents to lock it, so a sweep leaves it alive.';
+	@override String get navLanRemote => 'LAN remote';
+	@override String get lanRemoteDescription => 'Pair a phone\'s browser to drive playback on this device.';
+	@override String get lanRemoteServe => 'Allow LAN remote';
+	@override String get lanRemoteServeDesc => 'Serves a remote-only page on this network; off drops every pairing at once.';
+	@override String get lanRemoteCodeLabel => 'Pairing code';
+	@override String get lanRemotePairedLabel => 'Paired devices';
+	@override String get lanRemoteRevoke => 'Unpair all';
+	@override String get lanRemoteAddressHint => 'Scan or type this address from a phone on the same network, then pair with the code.';
+	@override String get lanRemoteHint => 'The code shows only here; commands are a fixed whitelist, sessions expire after 12 hours.';
+	@override String get lanRemoteFailed => 'The remote could not start (network or port restricted)';
+	@override String get remoteTitle => 'PureLive remote';
+	@override String get remotePair => 'Pair';
+	@override String get remoteCodeHint => '6-digit code';
+	@override String get remoteLinkHint => 'Room share link or text';
+	@override String get remoteSend => 'Send to TV';
+	@override String get remoteUnpair => 'Disconnect';
+	@override String get remoteIdle => 'No page to control right now';
+	@override String get remoteFailed => 'The action failed';
+	@override String get remotePaired => 'Paired';
+	@override String get remoteOk => 'Done';
+	@override String get remoteTextSend => 'Type text';
+	@override String get remoteTextHint => 'Into the focused field';
+	@override String get remotePlay => 'Play';
+	@override String get remotePause => 'Pause';
+	@override String get remoteRefresh => 'Refresh';
+	@override String get remotePrevious => 'Previous';
+	@override String get remoteNext => 'Next';
+	@override String get remoteVolume => 'Volume';
+	@override String get remoteMute => 'Mute';
+	@override String get remoteFullscreen => 'Fullscreen';
+	@override String get remoteDanmaku => 'Danmaku';
+	@override String get remoteBack => 'Back';
+	@override String get remoteHome => 'Home';
 }
 
 // Path: shield
@@ -9105,6 +9138,39 @@ extension on TranslationsEn {
 			'settings.backgroundGuideMeizuBackgroundHow' => 'Let the app through Flyme\'s background controls.',
 			'settings.backgroundGuideLockRecents' => 'Lock in recents',
 			'settings.backgroundGuideLockRecentsHow' => 'Pull the app down in recents to lock it, so a sweep leaves it alive.',
+			'settings.navLanRemote' => 'LAN remote',
+			'settings.lanRemoteDescription' => 'Pair a phone\'s browser to drive playback on this device.',
+			'settings.lanRemoteServe' => 'Allow LAN remote',
+			'settings.lanRemoteServeDesc' => 'Serves a remote-only page on this network; off drops every pairing at once.',
+			'settings.lanRemoteCodeLabel' => 'Pairing code',
+			'settings.lanRemotePairedLabel' => 'Paired devices',
+			'settings.lanRemoteRevoke' => 'Unpair all',
+			'settings.lanRemoteAddressHint' => 'Scan or type this address from a phone on the same network, then pair with the code.',
+			'settings.lanRemoteHint' => 'The code shows only here; commands are a fixed whitelist, sessions expire after 12 hours.',
+			'settings.lanRemoteFailed' => 'The remote could not start (network or port restricted)',
+			'settings.remoteTitle' => 'PureLive remote',
+			'settings.remotePair' => 'Pair',
+			'settings.remoteCodeHint' => '6-digit code',
+			'settings.remoteLinkHint' => 'Room share link or text',
+			'settings.remoteSend' => 'Send to TV',
+			'settings.remoteUnpair' => 'Disconnect',
+			'settings.remoteIdle' => 'No page to control right now',
+			'settings.remoteFailed' => 'The action failed',
+			'settings.remotePaired' => 'Paired',
+			'settings.remoteOk' => 'Done',
+			'settings.remoteTextSend' => 'Type text',
+			'settings.remoteTextHint' => 'Into the focused field',
+			'settings.remotePlay' => 'Play',
+			'settings.remotePause' => 'Pause',
+			'settings.remoteRefresh' => 'Refresh',
+			'settings.remotePrevious' => 'Previous',
+			'settings.remoteNext' => 'Next',
+			'settings.remoteVolume' => 'Volume',
+			'settings.remoteMute' => 'Mute',
+			'settings.remoteFullscreen' => 'Fullscreen',
+			'settings.remoteDanmaku' => 'Danmaku',
+			'settings.remoteBack' => 'Back',
+			'settings.remoteHome' => 'Home',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -9553,6 +9619,8 @@ extension on TranslationsEn {
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
 			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
 			'wallpaper.sourceAlcyMoez' => 'Alcy · moez',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyYsz' => 'Alcy · ysz',
 			'wallpaper.sourceAlcyYs' => 'Alcy · ys',
 			'wallpaper.sourceAlcyMp' => 'Alcy · mp',
@@ -9586,8 +9654,6 @@ extension on TranslationsEn {
 			'wallpaper.sourceUapiFurrySzs8k' => 'UAPI · furry szs8k',
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI · furry s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI · furry 4k',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.group360' => '360 Wallpaper',
 			'wallpaper.source360Beauty' => '360 Wallpaper · Beauty',
 			'wallpaper.source360Landscape' => '360 Wallpaper · Landscape',

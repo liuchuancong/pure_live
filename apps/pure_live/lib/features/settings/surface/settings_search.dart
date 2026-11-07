@@ -217,6 +217,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       t.settings.navBackgroundGuide,
       'background battery autostart lock 后台 电池 自启动 引导 加锁 后台播放',
     ),
+    _hit(SettingsSection.lanRemote, t.settings.navLanRemote, 'lan remote control pair qr 局域网 遥控 配对 扫码 手机'),
     _hit(SettingsSection.shield, t.shield.contentTitle, 'content block emote long bot 内容 屏蔽 表情 超长 机器人'),
     _hit(SettingsSection.shield, t.shield.blockEmoteOnly, 'emoticon only emoji block 纯表情 表情 屏蔽 弹幕'),
     _hit(SettingsSection.shield, t.shield.blockLong, 'long danmaku length threshold block 超长 字数 屏蔽 弹幕'),

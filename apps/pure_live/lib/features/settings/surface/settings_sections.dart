@@ -107,6 +107,7 @@ enum SettingsSection {
   miniDanmaku(DsIcons.pictureInPicture),
   video(DsIcons.video),
   backgroundGuide(DsIcons.batteryCharging),
+  lanRemote(DsIcons.remote),
   audio(DsIcons.volume),
   data(DsIcons.database),
   cache(DsIcons.archive),
@@ -201,6 +202,7 @@ enum SettingsSection {
     SettingsSection.miniDanmaku => t.settings.navMiniDanmaku,
     SettingsSection.video => t.settings.navPlaybackPreferences,
     SettingsSection.backgroundGuide => t.settings.navBackgroundGuide,
+    SettingsSection.lanRemote => t.settings.navLanRemote,
     SettingsSection.audio => t.settings.navAudio,
     SettingsSection.data => t.settings.navData,
     SettingsSection.cache => t.settings.navCache,
@@ -288,6 +290,7 @@ enum SettingsSection {
     SettingsSection.miniDanmaku => t.settings.miniDanmakuDescription,
     SettingsSection.video => t.settings.videoDescription,
     SettingsSection.backgroundGuide => t.settings.backgroundGuideDescription,
+    SettingsSection.lanRemote => t.settings.lanRemoteDescription,
     SettingsSection.audio => t.settings.audioPageDescription,
     SettingsSection.data => t.settings.dataDescription,
     SettingsSection.cache => t.settings.cacheDescription,
@@ -405,6 +408,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   ],
   SettingsSection.browsing => const [SettingsSection.audience],
   SettingsSection.playback => const [SettingsSection.backgroundGuide],
+  SettingsSection.network => const [SettingsSection.lanRemote],
   // The equaliser is the music page's second segment and the desktop window
   // the lyric page's: the panes build their segments out of this table, so
   // the tab a deep link opens and the section it names are one and the same.

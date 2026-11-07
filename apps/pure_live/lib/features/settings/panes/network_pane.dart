@@ -8,6 +8,8 @@ import 'package:live_device/live_device.dart' show SystemProxyEndpoint, SystemPr
 import 'package:pure_live/app/providers/network/network_providers.dart' show ProxyMode, proxySettingsProvider;
 import 'package:pure_live/app/providers/network/system_proxy_provider.dart' show systemProxyProvider;
 import 'package:pure_live/features/settings/panes/github_mirror_pane.dart' show GithubMirrorSection;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 
@@ -198,6 +200,17 @@ final class NetworkPaneState extends ConsumerState<NetworkPane> {
               title: Text(t.settings.proxySystemRecheck),
               description: Text(t.settings.proxySystemRecheckDesc),
               onPressed: () => unawaited(ref.read(systemProxyProvider.notifier).refresh()),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.remote),
+              title: Text(t.settings.navLanRemote),
+              description: Text(t.settings.lanRemoteDescription),
+              onPressed: () => openSettingsChild(context, ref, SettingsSection.lanRemote),
+              showChevron: true,
             ),
           ],
         ),

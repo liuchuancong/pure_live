@@ -12155,6 +12155,105 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '在最近任务里下拉本应用加锁，清理时不会被杀。'
 	String get backgroundGuideLockRecentsHow => '在最近任务里下拉本应用加锁，清理时不会被杀。';
+
+	/// zh-CN: '局域网遥控'
+	String get navLanRemote => '局域网遥控';
+
+	/// zh-CN: '手机浏览器扫码配对，遥控本机的播放。'
+	String get lanRemoteDescription => '手机浏览器扫码配对，遥控本机的播放。';
+
+	/// zh-CN: '允许局域网遥控'
+	String get lanRemoteServe => '允许局域网遥控';
+
+	/// zh-CN: '在本网络起一个只答遥控的页面；关掉立即断开所有配对。'
+	String get lanRemoteServeDesc => '在本网络起一个只答遥控的页面；关掉立即断开所有配对。';
+
+	/// zh-CN: '配对码'
+	String get lanRemoteCodeLabel => '配对码';
+
+	/// zh-CN: '已配对设备'
+	String get lanRemotePairedLabel => '已配对设备';
+
+	/// zh-CN: '全部断开'
+	String get lanRemoteRevoke => '全部断开';
+
+	/// zh-CN: '同一网络的手机扫码或输入此地址，输入配对码即成。'
+	String get lanRemoteAddressHint => '同一网络的手机扫码或输入此地址，输入配对码即成。';
+
+	/// zh-CN: '配对码只显示在本机；命令是固定白名单，页面会话 12 小时后自动过期。'
+	String get lanRemoteHint => '配对码只显示在本机；命令是固定白名单，页面会话 12 小时后自动过期。';
+
+	/// zh-CN: '遥控服务起不来（网络或端口受限）'
+	String get lanRemoteFailed => '遥控服务起不来（网络或端口受限）';
+
+	/// zh-CN: '纯粹直播遥控'
+	String get remoteTitle => '纯粹直播遥控';
+
+	/// zh-CN: '配对'
+	String get remotePair => '配对';
+
+	/// zh-CN: '6 位配对码'
+	String get remoteCodeHint => '6 位配对码';
+
+	/// zh-CN: '房间分享链接或口令'
+	String get remoteLinkHint => '房间分享链接或口令';
+
+	/// zh-CN: '发送到电视'
+	String get remoteSend => '发送到电视';
+
+	/// zh-CN: '断开连接'
+	String get remoteUnpair => '断开连接';
+
+	/// zh-CN: '当前没有可遥控的页面'
+	String get remoteIdle => '当前没有可遥控的页面';
+
+	/// zh-CN: '操作失败'
+	String get remoteFailed => '操作失败';
+
+	/// zh-CN: '已配对'
+	String get remotePaired => '已配对';
+
+	/// zh-CN: '已执行'
+	String get remoteOk => '已执行';
+
+	/// zh-CN: '输入文字'
+	String get remoteTextSend => '输入文字';
+
+	/// zh-CN: '输入到焦点输入框'
+	String get remoteTextHint => '输入到焦点输入框';
+
+	/// zh-CN: '播放'
+	String get remotePlay => '播放';
+
+	/// zh-CN: '暂停'
+	String get remotePause => '暂停';
+
+	/// zh-CN: '刷新'
+	String get remoteRefresh => '刷新';
+
+	/// zh-CN: '上一个'
+	String get remotePrevious => '上一个';
+
+	/// zh-CN: '下一个'
+	String get remoteNext => '下一个';
+
+	/// zh-CN: '音量'
+	String get remoteVolume => '音量';
+
+	/// zh-CN: '静音'
+	String get remoteMute => '静音';
+
+	/// zh-CN: '全屏'
+	String get remoteFullscreen => '全屏';
+
+	/// zh-CN: '弹幕'
+	String get remoteDanmaku => '弹幕';
+
+	/// zh-CN: '返回'
+	String get remoteBack => '返回';
+
+	/// zh-CN: '主页'
+	String get remoteHome => '主页';
 }
 
 // Path: shield
@@ -18414,6 +18513,39 @@ extension on Translations {
 			'settings.backgroundGuideMeizuBackgroundHow' => 'Flyme 的后台管控里放行本应用。',
 			'settings.backgroundGuideLockRecents' => '最近任务里加锁',
 			'settings.backgroundGuideLockRecentsHow' => '在最近任务里下拉本应用加锁，清理时不会被杀。',
+			'settings.navLanRemote' => '局域网遥控',
+			'settings.lanRemoteDescription' => '手机浏览器扫码配对，遥控本机的播放。',
+			'settings.lanRemoteServe' => '允许局域网遥控',
+			'settings.lanRemoteServeDesc' => '在本网络起一个只答遥控的页面；关掉立即断开所有配对。',
+			'settings.lanRemoteCodeLabel' => '配对码',
+			'settings.lanRemotePairedLabel' => '已配对设备',
+			'settings.lanRemoteRevoke' => '全部断开',
+			'settings.lanRemoteAddressHint' => '同一网络的手机扫码或输入此地址，输入配对码即成。',
+			'settings.lanRemoteHint' => '配对码只显示在本机；命令是固定白名单，页面会话 12 小时后自动过期。',
+			'settings.lanRemoteFailed' => '遥控服务起不来（网络或端口受限）',
+			'settings.remoteTitle' => '纯粹直播遥控',
+			'settings.remotePair' => '配对',
+			'settings.remoteCodeHint' => '6 位配对码',
+			'settings.remoteLinkHint' => '房间分享链接或口令',
+			'settings.remoteSend' => '发送到电视',
+			'settings.remoteUnpair' => '断开连接',
+			'settings.remoteIdle' => '当前没有可遥控的页面',
+			'settings.remoteFailed' => '操作失败',
+			'settings.remotePaired' => '已配对',
+			'settings.remoteOk' => '已执行',
+			'settings.remoteTextSend' => '输入文字',
+			'settings.remoteTextHint' => '输入到焦点输入框',
+			'settings.remotePlay' => '播放',
+			'settings.remotePause' => '暂停',
+			'settings.remoteRefresh' => '刷新',
+			'settings.remotePrevious' => '上一个',
+			'settings.remoteNext' => '下一个',
+			'settings.remoteVolume' => '音量',
+			'settings.remoteMute' => '静音',
+			'settings.remoteFullscreen' => '全屏',
+			'settings.remoteDanmaku' => '弹幕',
+			'settings.remoteBack' => '返回',
+			'settings.remoteHome' => '主页',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -18862,6 +18994,8 @@ extension on Translations {
 			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
 			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
 			'wallpaper.sourceAlcyMoez' => '栗次元 · moez',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceAlcyYsz' => '栗次元 · ysz',
 			'wallpaper.sourceAlcyYs' => '栗次元 · ys',
 			'wallpaper.sourceAlcyMp' => '栗次元 · mp',
@@ -18895,8 +19029,6 @@ extension on Translations {
 			'wallpaper.sourceUapiFurrySzs8k' => 'UAPI福瑞·szs8k',
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI福瑞·s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI福瑞·4k',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.group360' => '360壁纸',
 			'wallpaper.source360Beauty' => '360壁纸美女',
 			'wallpaper.source360Landscape' => '360壁纸风景',
