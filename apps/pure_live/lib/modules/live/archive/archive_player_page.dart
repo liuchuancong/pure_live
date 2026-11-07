@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_sites/live_sites.dart' show SiteIds;
-import 'package:live_vod/live_vod.dart' show SoopArchivePart;
+import 'package:live_vod/live_vod.dart' show DouyuVodVideo, SoopArchivePart;
 import 'package:media_core/media_core.dart'
     show MediaPlayerView, PlayerConfig, PlayerHandle, PlayerKernel, PlayerTransportState;
 
@@ -15,6 +15,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
 import 'package:pure_live/modules/live/archive/archive_playback.dart';
 import 'package:pure_live/modules/live/archive/archive_progress.dart';
+import 'package:pure_live/modules/live/archive/douyu_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/huya_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/soop_archive_controller.dart';
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
@@ -77,6 +78,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
       final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
       final soop = request.soop;
       final huya = request.huya;
+      final douyu = request.douyu;
       if (soop != null) {
         _controller = SoopArchiveController(
           http: http,
@@ -88,10 +90,18 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
         );
       } else if (huya != null) {
         _controller = HuyaArchiveController(http: http, session: handle, video: huya, progress: ArchiveProgress());
+      } else if (douyu != null) {
+        _controller = DouyuArchiveController(
+          http: http,
+          session: handle,
+          video: douyu,
+          progress: ArchiveProgress(),
+          cookie: _douyuCookie(),
+        );
       }
       if (_controller == null) return;
       setState(() {});
-      final recordingId = request.soop?.id ?? request.huya?.id;
+      final recordingId = request.soop?.id ?? request.huya?.id ?? request.douyu?.id;
       if (recordingId != null) await _controller!.open(recordingId);
     } on Object {
       if (!_disposed) setState(() => _startFailed = true);
@@ -102,6 +112,18 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   String _soopCookie() {
     try {
       final credential = ref.read(accountsProvider).credentials[SiteIds.soop];
+      if (credential == null) return '';
+      return credential.cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+    } on Object {
+      return '';
+    }
+  }
+
+  /// The viewer's Douyu login, the credential the replay's permission
+  /// tiers read.
+  String _douyuCookie() {
+    try {
+      final credential = ref.read(accountsProvider).credentials[SiteIds.douyu];
       if (credential == null) return '';
       return credential.cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
     } on Object {
@@ -189,7 +211,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
                     size: DsSize.sm,
                     onPressed: () {
                       final seed = widget.request;
-                      final id = seed?.soop?.id ?? seed?.huya?.id;
+                      final id = seed?.soop?.id ?? seed?.huya?.id ?? seed?.douyu?.id;
                       if (id != null) unawaited(controller?.open(id));
                     },
                     child: Text(context.t.common.retry),
@@ -283,17 +305,20 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   }
 
   /// The recording's parts, when the broadcast spans more than one file:
-  /// one chip each, the on-screen part filled.
+  /// one chip each, the on-screen part filled. SOOP names its parts by
+  /// order; Douyu's session segments sit in the platform's own order.
   Widget _parts(BuildContext context, ArchivePlaybackController controller) {
     final t = context.t;
     final current = controller.video?.id;
+    final soopParts = controller.segments.whereType<SoopArchivePart>().toList();
+    final douyuParts = controller.segments.whereType<DouyuVodVideo>().toList();
     return SizedBox(
       height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
         children: [
-          for (final part in controller.segments.whereType<SoopArchivePart>())
+          for (final part in soopParts)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
               child: DsButton(
@@ -302,6 +327,17 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
                 semanticLabel: '${t.room.replayParts} ${part.order}',
                 onPressed: part.id == current ? null : () => unawaited(controller.open(part.id)),
                 child: Text('P${part.order}'),
+              ),
+            ),
+          for (final (index, part) in douyuParts.indexed)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
+              child: DsButton(
+                variant: part.id == current ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                size: DsSize.sm,
+                semanticLabel: '${t.room.replayParts} ${index + 1}',
+                onPressed: part.id == current ? null : () => unawaited(controller.open(part.id)),
+                child: Text('P${index + 1}'),
               ),
             ),
         ],

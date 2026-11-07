@@ -210,16 +210,17 @@ RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = fa
 RoomPictureState _offline(Translations t, LiveRoom room) {
   // A creator whose platform keeps a replay catalog gets the way into it:
   // the platform is one the catalog reads, and the room's anchor carries
-  // the creator id the catalog asks for (never the room number — Bilibili
-  // and Huya want the numeric presenter uid, SOOP the broadcaster's own
-  // handle).
+  // the creator id the catalog asks for (Bilibili and Huya the numeric
+  // presenter uid, SOOP the broadcaster's own handle, and Douyu the room
+  // number, which the catalog resolves to the presenter's encoded id).
   final creator = (room.anchor?.anchorId ?? '').trim();
   final replays =
       ((room.ref.platform == SiteIds.bilibili || room.ref.platform == SiteIds.huya) &&
           RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(creator)) ||
       (room.ref.platform == SiteIds.soop &&
           RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(creator) &&
-          !const {'station', 'vod', 'live', 'main'}.contains(creator));
+          !const {'station', 'vod', 'live', 'main'}.contains(creator)) ||
+      (room.ref.platform == SiteIds.douyu && RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(creator));
   final walk = [RoomPictureAction.refresh, if (replays) RoomPictureAction.openReplays, RoomPictureAction.back];
   final state = switch (room.broadcast.effectiveLiveStatus) {
     LiveStatus.banned => _of(

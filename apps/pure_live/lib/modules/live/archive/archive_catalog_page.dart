@@ -33,9 +33,9 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
   @override
   void initState() {
     super.initState();
-    // The creator's own id — a Bilibili uid or a SOOP broadcaster id, never
-    // the room number — names the catalog; the room's platform picks the
-    // source.
+    // The creator's own id — a Bilibili uid, a SOOP broadcaster handle, or
+    // the Douyu room the presenter owns — names the catalog; the room's
+    // platform picks the source.
     final room = widget.arguments.room;
     _siteId = room?.ref.platform ?? '';
     _creator = (room?.anchor?.anchorId ?? '').trim();
@@ -79,12 +79,22 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
           extra: ArchivePlayerRequest(huya: huya, arguments: arguments),
         ),
       );
+      return;
+    }
+    final douyu = pick.douyu;
+    if (douyu != null) {
+      unawaited(
+        context.push(
+          RouteNames.archivePlayer,
+          extra: ArchivePlayerRequest(douyu: douyu, arguments: arguments),
+        ),
+      );
     }
   }
 
   /// The recording's own day, the identity a replay catalog reads by.
   String _dayOf(ArchivePick pick) {
-    final at = pick.bilibili?.publishedAt ?? pick.soop?.publishedAt;
+    final at = pick.bilibili?.publishedAt ?? pick.soop?.publishedAt ?? pick.douyu?.publishedAt;
     if (at == null) return '';
     final month = '${at.month}'.padLeft(2, '0');
     final day = '${at.day}'.padLeft(2, '0');

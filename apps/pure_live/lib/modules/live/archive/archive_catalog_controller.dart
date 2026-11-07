@@ -2,7 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:live_vod/live_vod.dart'
-    show HuyaArchiveApi, HuyaArchiveVideo, ReplayCollection, SoopArchiveApi, SoopArchiveVideo, VodArchive, VodVideo;
+    show
+        DouyuVodApi,
+        DouyuVodVideo,
+        HuyaArchiveApi,
+        HuyaArchiveVideo,
+        ReplayCollection,
+        SoopArchiveApi,
+        SoopArchiveVideo,
+        VodArchive,
+        VodVideo;
 
 import 'package:pure_live/app/app.dart' show networkFactoryProvider;
 import 'package:pure_live/features/account/account.dart' show accountsProvider;
@@ -10,10 +19,17 @@ import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodCl
 
 /// One row of the replay catalog: what the list renders and what a pick
 /// opens. A recording rides as its display model plus its own platform's
-/// metadata, because the two stations open replays differently — Bilibili
+/// metadata, because the stations open replays differently — Bilibili
 /// hands the bvid to the video station's player, SOOP keeps its parts and
-/// renditions for the archive player.
-typedef ArchivePick = ({VodVideo display, VodArchive? bilibili, SoopArchiveVideo? soop, HuyaArchiveVideo? huya});
+/// renditions, Huya its playlists, and Douyu its signed session segments
+/// for the archive player.
+typedef ArchivePick = ({
+  VodVideo display,
+  VodArchive? bilibili,
+  SoopArchiveVideo? soop,
+  HuyaArchiveVideo? huya,
+  DouyuVodVideo? douyu,
+});
 
 /// The replay catalog's whole state: the creator's collections, the one
 /// being read, and its recordings. The walk's guards are per request, so a
@@ -57,19 +73,26 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
   int? _mid;
   int _epoch = 0;
   String? _cookie;
+  String? _authorId;
 
   @override
   ArchiveCatalogState build() => _catalogInitial();
 
   /// Reads the creator's collections, then opens the freshest one (or, on
-  /// SOOP, the review list itself).
+  /// SOOP, the review list itself, and on Douyu the resolved presenter's
+  /// replay sessions).
   Future<void> start({required String siteId, required String creator}) async {
     if (creator.isEmpty) return;
     if (state.siteId == siteId && state.creator == creator) return;
     _epoch++;
     final epoch = _epoch;
     _mid = siteId == SiteIds.bilibili ? int.tryParse(creator) : null;
-    _cookie = siteId == SiteIds.soop ? _soopCookie() : '';
+    _cookie = siteId == SiteIds.soop
+        ? _liveCookie(SiteIds.soop)
+        : siteId == SiteIds.douyu
+        ? _liveCookie(SiteIds.douyu)
+        : '';
+    _authorId = null;
     state = (
       siteId: siteId,
       creator: creator,
@@ -85,6 +108,26 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
       error: null,
     );
     try {
+      if (siteId == SiteIds.douyu) {
+        // The live room only names its rid; the replay catalog reads the
+        // presenter's encoded id behind it.
+        final api = DouyuVodApi(
+          ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
+          cookie: _cookie ?? '',
+        );
+        final authorId = _authorId = await api.authorIdFromRoom(creator);
+        if (epoch != _epoch) return;
+        final answer = await api.replays(authorId);
+        if (epoch != _epoch) return;
+        state = _with(
+          recordings: _douyuPicks(answer.videos),
+          page: 1,
+          hasMore: answer.hasMore,
+          opening: false,
+          loading: false,
+        );
+        return;
+      }
       if (siteId == SiteIds.soop) {
         final answer = await SoopArchiveApi(
           ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
@@ -171,7 +214,16 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
     try {
       List<ArchivePick> next;
       var more = false;
-      if (siteId == SiteIds.soop) {
+      if (siteId == SiteIds.douyu) {
+        final authorId = _authorId;
+        if (authorId == null) return;
+        final answer = await DouyuVodApi(
+          ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
+          cookie: _cookie ?? '',
+        ).replays(authorId, page: page);
+        next = _douyuPicks(answer.videos);
+        more = answer.hasMore;
+      } else if (siteId == SiteIds.soop) {
         final creator = state.creator ?? '';
         final answer = await SoopArchiveApi(
           ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
@@ -192,7 +244,8 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
         final client = ref.read(vodClientProvider);
         final answer = await client.replayArchives(_mid ?? 0, collection, page: page);
         next = [
-          for (final archive in answer.items) (display: archive.asVideo(), bilibili: archive, soop: null, huya: null),
+          for (final archive in answer.items)
+            (display: archive.asVideo(), bilibili: archive, soop: null, huya: null, douyu: null),
         ];
         more = answer.hasMore;
       }
@@ -222,7 +275,8 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
         recordings: [
           ...state.recordings,
           ...[
-            for (final archive in answer.items) (display: archive.asVideo(), bilibili: archive, soop: null, huya: null),
+            for (final archive in answer.items)
+              (display: archive.asVideo(), bilibili: archive, soop: null, huya: null, douyu: null),
           ],
         ],
         page: page,
@@ -237,18 +291,22 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
   }
 
   List<ArchivePick> _soopPicks(List<SoopArchiveVideo> videos) => [
-    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: video, huya: null),
+    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: video, huya: null, douyu: null),
   ];
 
   List<ArchivePick> _huyaPicks(List<HuyaArchiveVideo> videos) => [
-    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: null, huya: video),
+    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: null, huya: video, douyu: null),
   ];
 
-  /// The viewer's SOOP login, the same credential the live site uses, in
-  /// the cookie shape the station's web API reads.
-  String _soopCookie() {
+  List<ArchivePick> _douyuPicks(List<DouyuVodVideo> videos) => [
+    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: null, huya: null, douyu: video),
+  ];
+
+  /// The viewer's platform login, the same credential the live site uses,
+  /// in the cookie shape the station's web API reads.
+  String _liveCookie(String siteId) {
     try {
-      final credential = ref.read(accountsProvider).credentials[SiteIds.soop];
+      final credential = ref.read(accountsProvider).credentials[siteId];
       if (credential == null) return '';
       return credential.cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
     } on Object {

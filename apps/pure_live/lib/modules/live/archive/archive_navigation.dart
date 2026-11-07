@@ -1,7 +1,7 @@
 import 'package:desen_ui/desen_ui.dart' show DsStatus, showDsToast;
 import 'package:flutter/widgets.dart' show BuildContext, ValueChanged;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:live_vod/live_vod.dart' show HuyaArchiveVideo, SoopArchiveVideo;
+import 'package:live_vod/live_vod.dart' show DouyuVodVideo, HuyaArchiveVideo, SoopArchiveVideo;
 
 import 'package:pure_live/l10n/translations.dart';
 
@@ -30,7 +30,7 @@ final class ArchiveArguments {
 /// callbacks. In-memory only; never serialized or persisted.
 final class ArchivePlayerRequest {
   /// Kept local to the app's memory; exactly one recording slot is filled.
-  const new({required this.arguments, this.soop, this.huya});
+  const new({required this.arguments, this.soop, this.huya, this.douyu});
 
   /// The SOOP recording, whose parts the controller walks.
   final SoopArchiveVideo? soop;
@@ -38,12 +38,15 @@ final class ArchivePlayerRequest {
   /// The Huya recording, whose renditions the controller reads.
   final HuyaArchiveVideo? huya;
 
+  /// The Douyu recording, whose session's segments the controller reads.
+  final DouyuVodVideo? douyu;
+
   /// The invoking room's callbacks (its decoder release and the retirement
   /// it waits on).
   final ArchiveArguments arguments;
 
   /// The recording's title, whatever platform it rides.
-  String get title => soop?.title ?? huya?.title ?? '';
+  String get title => soop?.title ?? huya?.title ?? douyu?.title ?? '';
 }
 
 /// Opens the archive route and awaits both entry and native retirement

@@ -266,6 +266,43 @@ final class DouyuVodApi {
     return parseDanmaku(response.text, start: start);
   }
 
+  /// The presenter's encoded author id behind a room number: the live room
+  /// only ever names its rid, while the replay catalog reads `up_id`. A
+  /// room number is never taken for a presenter id.
+  Future<String> authorIdFromRoom(String room) async {
+    if (!RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(room)) {
+      throw const VodFailure('the replay room asked for is not a room');
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('www.douyu.com', '/betard/$room'),
+        headers: {'user-agent': userAgent, 'referer': 'https://www.douyu.com/'},
+        site: 'douyu',
+      ),
+    );
+    return authorIdFromBetard(response.text, status: response.statusCode);
+  }
+
+  /// Reads `room.up_id` out of a `betard` answer, which may arrive wrapped
+  /// as a JSON-encoded string.
+  static String authorIdFromBetard(String body, {int status = 200}) {
+    if (status != 200) throw VodFailure('HTTP $status', statusCode: status);
+    if (body.length > 8388608) throw const VodFailure('the room answer broke its bounds');
+    Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+      if (decoded is String) decoded = jsonDecode(decoded);
+    } on FormatException {
+      throw const VodFailure('the room answer is not JSON the station sends');
+    }
+    final room = decoded is Map ? decoded['room'] : null;
+    final id = room is Map ? _text(room['up_id']) : '';
+    if (!RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(id) || id == '0') {
+      throw const VodFailure('the room answer names no replay presenter');
+    }
+    return id;
+  }
+
   Future<LiveResponse> _get(Uri uri) => _send(LiveRequest.get(uri, headers: _headers, site: 'douyu'));
 
   Future<LiveResponse> _send(LiveRequest request) async {
