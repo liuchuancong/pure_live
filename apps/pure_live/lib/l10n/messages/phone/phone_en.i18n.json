@@ -1,0 +1,12 @@
+{
+  "htmlTitle": "PureLive",
+  "doneSent": "Sent to the TV — back to the TV now.",
+  "stepScan": "Scan with a phone on the same network",
+  "stepFill": "Fill it in on the phone and send",
+  "stepDone": "Come back to the TV when sent",
+  "stepRead": "Read it on the phone",
+  "running": "Waiting for a phone to open…",
+  "opened": "A phone has opened the page",
+  "failed": "The one-off page could not start (network or port restricted)",
+  "starting": "Starting the page…"
+}

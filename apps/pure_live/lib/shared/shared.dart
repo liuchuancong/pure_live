@@ -1,8 +1,8 @@
 /// Everything the app's pages, modules and layouts share: area pieces, enums,
 /// focus helpers, card grids, image caching, navigation openers, paging,
-/// platform naming, playback pieces, room visibility, text formats, window
-/// measures and widgets. Import this one file instead of the shared modules
-/// it happens to use.
+/// the phone bridge, platform naming, playback pieces, room visibility, text
+/// formats, window measures and widgets. Import this one file instead of the
+/// shared modules it happens to use.
 library;
 
 export 'areas/areas.dart';
@@ -13,6 +13,7 @@ export 'grids/grids.dart';
 export 'images/images.dart';
 export 'layout/layout.dart';
 export 'navigation/navigation.dart';
+export 'phone/phone.dart';
 export 'paging/paging.dart';
 export 'platforms/platforms.dart';
 export 'player/player.dart';

@@ -50,6 +50,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$multiview$en multiview = _Translations$multiview$en._(_root);
 	@override late final _Translations$music$en music = _Translations$music$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
+	@override late final _Translations$phone$en phone = _Translations$phone$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
 	@override late final _Translations$popular$en popular = _Translations$popular$en._(_root);
 	@override late final _Translations$recorder$en recorder = _Translations$recorder$en._(_root);
@@ -1924,6 +1925,25 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get musicLocal => 'Local music';
 	@override String get musicDownloads => 'Downloads';
 	@override String get hongguoDownloads => 'Downloads';
+}
+
+// Path: phone
+class _Translations$phone$en extends Translations$phone$zh_CN {
+	_Translations$phone$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get htmlTitle => 'PureLive';
+	@override String get doneSent => 'Sent to the TV — back to the TV now.';
+	@override String get stepScan => 'Scan with a phone on the same network';
+	@override String get stepFill => 'Fill it in on the phone and send';
+	@override String get stepDone => 'Come back to the TV when sent';
+	@override String get stepRead => 'Read it on the phone';
+	@override String get running => 'Waiting for a phone to open…';
+	@override String get opened => 'A phone has opened the page';
+	@override String get failed => 'The one-off page could not start (network or port restricted)';
+	@override String get starting => 'Starting the page…';
 }
 
 // Path: player
@@ -6861,6 +6881,16 @@ extension on TranslationsEn {
 			'navigation.musicLocal' => 'Local music',
 			'navigation.musicDownloads' => 'Downloads',
 			'navigation.hongguoDownloads' => 'Downloads',
+			'phone.htmlTitle' => 'PureLive',
+			'phone.doneSent' => 'Sent to the TV — back to the TV now.',
+			'phone.stepScan' => 'Scan with a phone on the same network',
+			'phone.stepFill' => 'Fill it in on the phone and send',
+			'phone.stepDone' => 'Come back to the TV when sent',
+			'phone.stepRead' => 'Read it on the phone',
+			'phone.running' => 'Waiting for a phone to open…',
+			'phone.opened' => 'A phone has opened the page',
+			'phone.failed' => 'The one-off page could not start (network or port restricted)',
+			'phone.starting' => 'Starting the page…',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
@@ -6986,6 +7016,8 @@ extension on TranslationsEn {
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.delete' => 'Delete',
 			'recorder.deleteTitle' => ({required String name}) => 'Delete “${name}”?',
 			'recorder.deleteBody' => 'This removes the task only; files already saved stay on disk.',
@@ -6996,8 +7028,6 @@ extension on TranslationsEn {
 			'recorder.librarySearchHint' => 'Search recordings (room / platform / day / file)',
 			'recorder.libraryFailedTitle' => 'The recording folder cannot be read',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.emptyLibraryTitle' => 'No recordings yet',
 			'recorder.emptyLibraryDescription' => 'Finished takes appear here, filed by day, platform and room.',
 			'recorder.emptySearchTitle' => 'No recording matches',
@@ -7500,6 +7530,8 @@ extension on TranslationsEn {
 			'search.noteAcfun' => 'AcFun: searches creators, live and offline; the live state is confirmed on entering the room, and follower counts are not viewers.',
 			'search.noteAcfunShort' => 'Finds creators live and offline',
 			'search.noteTwitcasting' => 'TwitCasting: keywords find live channels only; a channel link finds an offline channel too.',
+			_ => null,
+		} ?? switch (path) {
 			'search.noteTwitcastingShort' => 'Keywords find live channels only',
 			'search.noteKilakila' => 'KilaKila: search anchors by nickname, or enter a UID or paste a profile or share link; the live state is confirmed in the room.',
 			'search.noteKilakilaShort' => 'Find anchors by nickname, UID or link',
@@ -7510,8 +7542,6 @@ extension on TranslationsEn {
 			'search.scopeTagAnchors' => 'Anchors',
 			'search.scopeTagWeb' => 'Web',
 			'search.scopeTagsHint' => '“Anchors”: the platform searches streamers. “Web”: the platform\'s web search page can be opened.',
-			_ => null,
-		} ?? switch (path) {
 			'search.scopeSummary' => ({required String count}) => 'Searches ${count} platforms at once; what each finds differs — tap to review.',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => 'Searches ${count} of ${total} platforms (${excluded} excluded) — tap to review or change.',
 			'search.anchorUnsupported' => ({required String site}) => '${site} cannot search streamers; switch to “Rooms”.',
@@ -8014,6 +8044,8 @@ extension on TranslationsEn {
 			'settings.cacheLastCleanup' => 'Last cleanup',
 			'settings.cacheNever' => 'Not yet',
 			'settings.cacheDiskUnavailable' => 'The cache folder is unavailable; using memory and network only.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheStatsFailed' => 'Could not read cache statistics',
 			'settings.cacheCategoryBreakdown' => 'By type',
 			'settings.cacheCategoryCover' => 'Covers',
@@ -8024,8 +8056,6 @@ extension on TranslationsEn {
 			'settings.cacheCategoryWallpaper' => 'Wallpapers',
 			'settings.cacheCategoryPreview' => 'Previews and search thumbnails',
 			'settings.cacheCategoryOther' => 'Other',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheImagesSection' => 'Image cache',
 			'settings.cacheDiskEnabled' => 'Cache images on disk',
 			'settings.cacheDiskEnabledDesc' => 'Off keeps memory and network only; existing files stay until the next clear.',
@@ -8528,6 +8558,8 @@ extension on TranslationsEn {
 			'settings.downloadFilterLabel' => 'Filter',
 			'settings.downloadFilterTitle' => 'Filter downloads',
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFilterReset' => 'Clear filters',
 			'settings.downloadRecheck' => 'Re-check files',
 			'settings.downloadMerge' => 'Merge into this folder',
@@ -8538,8 +8570,6 @@ extension on TranslationsEn {
 			'settings.downloadMergeDone' => ({required Object count}) => 'Merged ${count} file(s)',
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => 'Merged ${moved}; ${failed} did not finish',
 			'settings.downloadColumnFile' => 'File',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadColumnSize' => 'Size',
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
@@ -9042,6 +9072,8 @@ extension on TranslationsEn {
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.',
 			'settings.backgroundGuideStateOk' => 'OK',
 			'settings.backgroundGuideStateTodo' => 'To do',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideStateManual' => 'Check',
 			'settings.backgroundGuideNotifications' => 'Notifications',
 			'settings.backgroundGuideNotificationsHow' => 'Background play leans on notifications; off, the system tightens on its own.',
@@ -9052,8 +9084,6 @@ extension on TranslationsEn {
 			'settings.backgroundGuideDataSaver' => 'Data Saver',
 			'settings.backgroundGuideDataSaverHow' => 'Saver is on without an exemption, so background mobile data is cut.',
 			'settings.backgroundGuideXiaomiAutostart' => 'Autostart',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideXiaomiAutostartHow' => 'MIUI/HyperOS needs autostart allowed for a steady background.',
 			'settings.backgroundGuideOppoAutostart' => 'Autostart',
 			'settings.backgroundGuideOppoAutostartHow' => 'ColorOS/realme UI needs autostart allowed for a steady background.',
@@ -9556,6 +9586,8 @@ extension on TranslationsEn {
 			'wallpaper.sourceUapiFurrySzs8k' => 'UAPI · furry szs8k',
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI · furry s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI · furry 4k',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.group360' => '360 Wallpaper',
 			'wallpaper.source360Beauty' => '360 Wallpaper · Beauty',
 			'wallpaper.source360Landscape' => '360 Wallpaper · Landscape',
@@ -9566,8 +9598,6 @@ extension on TranslationsEn {
 			'wallpaper.source360Car' => '360 Wallpaper · Cars',
 			'wallpaper.source360Pet' => '360 Wallpaper · Pets',
 			'wallpaper.source360Fresh' => '360 Wallpaper · Fresh',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Sport' => '360 Wallpaper · Sports',
 			'wallpaper.source360Child' => '360 Wallpaper · Kids',
 			'wallpaper.source360Military' => '360 Wallpaper · Military',

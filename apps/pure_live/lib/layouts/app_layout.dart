@@ -380,9 +380,17 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
             ],
           )
         : page;
+    // The TV's 「扫码到手机」 sits above every page: what is hard with a
+    // remote — typing a cookie, reading a long log — is done on a phone that
+    // scans a code. Pages ask through PhoneBridge.maybeOf and hide their
+    // phone entries where there is none, so the other form factors are
+    // unwrapped.
+    final bridged = tv
+        ? PhoneBridge(input: showTvPhoneInput, view: showTvPhoneView, child: shownContent)
+        : shownContent;
 
     return AppShell(
-      content: shownContent,
+      content: bridged,
       module: module,
       selected: selected,
       onSelected: handleSelected,

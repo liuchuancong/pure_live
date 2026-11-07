@@ -52,6 +52,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$multiview$zh_CN multiview = Translations$multiview$zh_CN.internal(_root);
 	late final Translations$music$zh_CN music = Translations$music$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
+	late final Translations$phone$zh_CN phone = Translations$phone$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
 	late final Translations$popular$zh_CN popular = Translations$popular$zh_CN.internal(_root);
 	late final Translations$recorder$zh_CN recorder = Translations$recorder$zh_CN.internal(_root);
@@ -5449,6 +5450,45 @@ class Translations$navigation$zh_CN {
 
 	/// zh-CN: '下载管理'
 	String get hongguoDownloads => '下载管理';
+}
+
+// Path: phone
+class Translations$phone$zh_CN {
+	Translations$phone$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '纯粹直播'
+	String get htmlTitle => '纯粹直播';
+
+	/// zh-CN: '已发送到电视，可以回到电视上了。'
+	String get doneSent => '已发送到电视，可以回到电视上了。';
+
+	/// zh-CN: '用手机扫码（同一网络）'
+	String get stepScan => '用手机扫码（同一网络）';
+
+	/// zh-CN: '在手机上填写并发送'
+	String get stepFill => '在手机上填写并发送';
+
+	/// zh-CN: '发送后回到电视'
+	String get stepDone => '发送后回到电视';
+
+	/// zh-CN: '在手机上阅读'
+	String get stepRead => '在手机上阅读';
+
+	/// zh-CN: '等待手机打开…'
+	String get running => '等待手机打开…';
+
+	/// zh-CN: '手机已打开'
+	String get opened => '手机已打开';
+
+	/// zh-CN: '起不来一次性页面（网络或端口受限）'
+	String get failed => '起不来一次性页面（网络或端口受限）';
+
+	/// zh-CN: '正在起页面…'
+	String get starting => '正在起页面…';
 }
 
 // Path: player
@@ -16150,6 +16190,16 @@ extension on Translations {
 			'navigation.musicLocal' => '本地音乐',
 			'navigation.musicDownloads' => '下载管理',
 			'navigation.hongguoDownloads' => '下载管理',
+			'phone.htmlTitle' => '纯粹直播',
+			'phone.doneSent' => '已发送到电视，可以回到电视上了。',
+			'phone.stepScan' => '用手机扫码（同一网络）',
+			'phone.stepFill' => '在手机上填写并发送',
+			'phone.stepDone' => '发送后回到电视',
+			'phone.stepRead' => '在手机上阅读',
+			'phone.running' => '等待手机打开…',
+			'phone.opened' => '手机已打开',
+			'phone.failed' => '起不来一次性页面（网络或端口受限）',
+			'phone.starting' => '正在起页面…',
 			'player.title' => '播放',
 			'player.back' => '返回',
 			'player.quality' => '清晰度',
@@ -16275,6 +16325,8 @@ extension on Translations {
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.delete' => '删除',
 			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
 			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
@@ -16285,8 +16337,6 @@ extension on Translations {
 			'recorder.librarySearchHint' => '搜索录像（直播间 / 平台 / 日期 / 文件名）',
 			'recorder.libraryFailedTitle' => '读不到录像目录',
 			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.emptyLibraryTitle' => '还没有录像文件',
 			'recorder.emptyLibraryDescription' => '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。',
 			'recorder.emptySearchTitle' => '没有符合条件的录像',
@@ -16789,6 +16839,8 @@ extension on Translations {
 			'search.noteAcfun' => 'AcFun：搜索作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。',
 			'search.noteAcfunShort' => '能搜到直播中和未开播的作者',
 			'search.noteTwitcasting' => 'TwitCasting：关键词只能搜到正在直播的频道；粘贴频道链接可查到未开播的频道。',
+			_ => null,
+		} ?? switch (path) {
 			'search.noteTwitcastingShort' => '关键词只能搜到正在直播的频道',
 			'search.noteKilakila' => '克拉克拉：可按昵称搜索主播，也可输入主播 UID 或粘贴主页、直播分享链接；开播状态进入直播间后确认。',
 			'search.noteKilakilaShort' => '可按昵称、UID 或链接查找主播',
@@ -16799,8 +16851,6 @@ extension on Translations {
 			'search.scopeTagAnchors' => '主播',
 			'search.scopeTagWeb' => '网页',
 			'search.scopeTagsHint' => '“主播”：能搜主播；“网页”：能打开平台的网页搜索。',
-			_ => null,
-		} ?? switch (path) {
 			'search.scopeSummary' => ({required String count}) => '同时搜索 ${count} 个平台，各平台能搜到的范围不同，点此查看。',
 			'search.scopeSummaryExcluded' => ({required String count, required String total, required String excluded}) => '同时搜索 ${count} 个平台（共 ${total} 个，已排除 ${excluded} 个），点此查看或修改。',
 			'search.anchorUnsupported' => ({required String site}) => '${site} 不支持主播搜索，请切换到“直播间”。',
@@ -17303,6 +17353,8 @@ extension on Translations {
 			'settings.cacheLastCleanup' => '最后清理',
 			'settings.cacheNever' => '尚未清理',
 			'settings.cacheDiskUnavailable' => '缓存目录不可用，当前仅使用内存与网络。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheStatsFailed' => '读取缓存统计失败',
 			'settings.cacheCategoryBreakdown' => '按类型查看',
 			'settings.cacheCategoryCover' => '封面',
@@ -17313,8 +17365,6 @@ extension on Translations {
 			'settings.cacheCategoryWallpaper' => '壁纸与背景',
 			'settings.cacheCategoryPreview' => '预览与搜索缩略图',
 			'settings.cacheCategoryOther' => '其他',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheImagesSection' => '图片缓存',
 			'settings.cacheDiskEnabled' => '启用图片磁盘缓存',
 			'settings.cacheDiskEnabledDesc' => '关闭后图片只走内存与网络；已有文件保留到下次清理。',
@@ -17817,6 +17867,8 @@ extension on Translations {
 			'settings.downloadFilterLabel' => '筛选',
 			'settings.downloadFilterTitle' => '筛选下载任务',
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFilterReset' => '清空筛选',
 			'settings.downloadRecheck' => '重新检查文件',
 			'settings.downloadMerge' => '并入当前目录',
@@ -17827,8 +17879,6 @@ extension on Translations {
 			'settings.downloadMergeDone' => ({required Object count}) => '已并入 ${count} 个文件',
 			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => '已并入 ${moved} 个，${failed} 个未完成',
 			'settings.downloadColumnFile' => '文件',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadColumnSize' => '大小',
 			'settings.downloadColumnTime' => '时间',
 			'settings.downloadColumnActions' => '操作',
@@ -18331,6 +18381,8 @@ extension on Translations {
 			'settings.backgroundGuideManualNote' => ({required Object rom}) => '${rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。',
 			'settings.backgroundGuideStateOk' => '正常',
 			'settings.backgroundGuideStateTodo' => '待处理',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundGuideStateManual' => '需自查',
 			'settings.backgroundGuideNotifications' => '通知权限',
 			'settings.backgroundGuideNotificationsHow' => '锁屏与后台的播放提醒走通知；关掉后后台可能被系统加码限制。',
@@ -18341,8 +18393,6 @@ extension on Translations {
 			'settings.backgroundGuideDataSaver' => '流量节省程序',
 			'settings.backgroundGuideDataSaverHow' => '节省程序开着且没放行本应用，后台用不了移动数据。',
 			'settings.backgroundGuideXiaomiAutostart' => '自启动权限',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundGuideXiaomiAutostartHow' => 'MIUI/HyperOS 要求允许自启动，后台才稳。',
 			'settings.backgroundGuideOppoAutostart' => '自启动权限',
 			'settings.backgroundGuideOppoAutostartHow' => 'ColorOS/realme UI 要求允许自启动，后台才稳。',
@@ -18845,6 +18895,8 @@ extension on Translations {
 			'wallpaper.sourceUapiFurrySzs8k' => 'UAPI福瑞·szs8k',
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI福瑞·s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI福瑞·4k',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.group360' => '360壁纸',
 			'wallpaper.source360Beauty' => '360壁纸美女',
 			'wallpaper.source360Landscape' => '360壁纸风景',
@@ -18855,8 +18907,6 @@ extension on Translations {
 			'wallpaper.source360Car' => '360壁纸汽车',
 			'wallpaper.source360Pet' => '360壁纸萌宠',
 			'wallpaper.source360Fresh' => '360壁纸清新',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Sport' => '360壁纸体育',
 			'wallpaper.source360Child' => '360壁纸萌娃',
 			'wallpaper.source360Military' => '360壁纸军事',

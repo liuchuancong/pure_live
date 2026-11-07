@@ -1,0 +1,12 @@
+{
+  "htmlTitle": "纯粹直播",
+  "doneSent": "已发送到电视，可以回到电视上了。",
+  "stepScan": "用手机扫码（同一网络）",
+  "stepFill": "在手机上填写并发送",
+  "stepDone": "发送后回到电视",
+  "stepRead": "在手机上阅读",
+  "running": "等待手机打开…",
+  "opened": "手机已打开",
+  "failed": "起不来一次性页面（网络或端口受限）",
+  "starting": "正在起页面…"
+}
