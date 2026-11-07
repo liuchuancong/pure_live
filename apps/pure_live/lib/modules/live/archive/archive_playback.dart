@@ -93,6 +93,15 @@ abstract class ArchivePlaybackController extends ChangeNotifier {
   /// Saves metadata and position only.
   Future<void> record();
 
+  /// Plays or pauses, whichever the transport is not doing.
+  Future<void> togglePlayPause() async {
+    if (session.playbackStream.value.command.isPlaying) {
+      await session.pause();
+    } else {
+      await session.play();
+    }
+  }
+
   /// Toggles a supported comment timeline.
   void toggleDanmaku() {}
 }

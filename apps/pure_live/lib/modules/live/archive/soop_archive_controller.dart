@@ -16,7 +16,7 @@ import 'package:media_core/media_core.dart'
         SourceType;
 
 import 'package:pure_live/modules/live/archive/archive_playback.dart';
-import 'package:pure_live/modules/live/archive/soop_archive_progress.dart';
+import 'package:pure_live/modules/live/archive/archive_progress.dart';
 
 /// Public SOOP files on the page's own kernel handle. No live chat is
 /// attached to an old recording, and only local part positions persist.
@@ -47,7 +47,7 @@ final class SoopArchiveController extends ArchivePlaybackController {
   final SoopArchiveVideo recording;
 
   /// The local part positions.
-  final SoopArchiveProgress progress;
+  final ArchiveProgress progress;
 
   /// The viewer's SOOP cookie, or empty for a guest read.
   final String cookie;
@@ -153,6 +153,11 @@ final class SoopArchiveController extends ArchivePlaybackController {
       await session.open(_source(part, quality), autoPlay: true);
       if (!_current(generation)) return;
       await session.setVolume(volume);
+      // The kernel's open has no start position: the walk lands on its own
+      // clock, and the pending ask above is what the seek's acknowledgement
+      // clears.
+      if (at > Duration.zero) await session.seek(at);
+      if (!_current(generation)) return;
       await restoreRate();
       _ready = true;
     } on Object catch (failure) {
@@ -309,15 +314,6 @@ final class SoopArchiveController extends ArchivePlaybackController {
     final state = session.playbackStream.value;
     if (state.command.isLoading || state.command.isIdle || state.command.isStopped) return;
     await progress.save(part.id, _atEnd(state) ? Duration.zero : position);
-  }
-
-  /// Plays or pauses, whichever the transport is not doing.
-  Future<void> togglePlayPause() async {
-    if (session.playbackStream.value.command.isPlaying) {
-      await session.pause();
-    } else {
-      await session.play();
-    }
   }
 
   @override

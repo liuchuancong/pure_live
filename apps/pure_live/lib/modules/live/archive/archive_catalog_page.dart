@@ -66,7 +66,17 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
       unawaited(
         context.push(
           RouteNames.archivePlayer,
-          extra: ArchivePlayerRequest(video: soop, arguments: arguments),
+          extra: ArchivePlayerRequest(soop: soop, arguments: arguments),
+        ),
+      );
+      return;
+    }
+    final huya = pick.huya;
+    if (huya != null) {
+      unawaited(
+        context.push(
+          RouteNames.archivePlayer,
+          extra: ArchivePlayerRequest(huya: huya, arguments: arguments),
         ),
       );
     }

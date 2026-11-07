@@ -211,10 +211,12 @@ RoomPictureState _offline(Translations t, LiveRoom room) {
   // A creator whose platform keeps a replay catalog gets the way into it:
   // the platform is one the catalog reads, and the room's anchor carries
   // the creator id the catalog asks for (never the room number — Bilibili
-  // wants the numeric uid, SOOP the broadcaster's own handle).
+  // and Huya want the numeric presenter uid, SOOP the broadcaster's own
+  // handle).
   final creator = (room.anchor?.anchorId ?? '').trim();
   final replays =
-      (room.ref.platform == SiteIds.bilibili && (int.tryParse(creator) ?? 0) > 0) ||
+      ((room.ref.platform == SiteIds.bilibili || room.ref.platform == SiteIds.huya) &&
+          RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(creator)) ||
       (room.ref.platform == SiteIds.soop &&
           RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(creator) &&
           !const {'station', 'vod', 'live', 'main'}.contains(creator));

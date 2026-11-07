@@ -94,7 +94,7 @@ final class HuyaArchiveApi {
   final LiveHttp http;
 
   /// Media carries no application cookie and no cross-platform headers.
-  static const Map<String, String> _mediaHeaders = {
+  static const Map<String, String> mediaHeaders = {
     'referer': 'https://www.huya.com/',
     'user-agent': _desktopUserAgent,
   };
@@ -137,7 +137,7 @@ final class HuyaArchiveApi {
     return qualities;
   }
 
-  Future<LiveResponse> _get(Uri url, {Map<String, String> headers = _mediaHeaders}) async {
+  Future<LiveResponse> _get(Uri url, {Map<String, String> headers = mediaHeaders}) async {
     final response = await http.send(LiveRequest.get(url, headers: headers, site: 'huya'));
     if (response.statusCode == 404) {
       throw const VodFailure('the station keeps no such replay');

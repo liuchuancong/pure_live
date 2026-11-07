@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_sites/live_sites.dart' show SiteIds;
+import 'package:live_vod/live_vod.dart' show SoopArchivePart;
 import 'package:media_core/media_core.dart'
     show MediaPlayerView, PlayerConfig, PlayerHandle, PlayerKernel, PlayerTransportState;
 
@@ -12,8 +13,10 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart' show accountsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
+import 'package:pure_live/modules/live/archive/archive_playback.dart';
+import 'package:pure_live/modules/live/archive/archive_progress.dart';
+import 'package:pure_live/modules/live/archive/huya_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/soop_archive_controller.dart';
-import 'package:pure_live/modules/live/archive/soop_archive_progress.dart';
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -35,7 +38,7 @@ final class ArchivePlayerPage extends ConsumerStatefulWidget {
 
 final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   PlayerHandle? _handle;
-  SoopArchiveController? _controller;
+  ArchivePlaybackController? _controller;
   bool _disposed = false;
   bool _startFailed = false;
 
@@ -54,8 +57,8 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
     });
   }
 
-  /// Attaches the kernel's handle, builds the controller over it, and opens
-  /// the recording at the part the viewer last walked.
+  /// Attaches the kernel's handle, builds the recording's own controller
+  /// over it, and opens where the viewer last walked.
   Future<void> _start() async {
     final request = widget.request;
     final kernel = _kernel;
@@ -71,16 +74,25 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
         return;
       }
       _handle = handle;
-      _controller = SoopArchiveController(
-        http: ref.read(networkFactoryProvider).create(profile: ClientProfile.api),
-        session: handle,
-        recording: request.video,
-        progress: SoopArchiveProgress(),
-        cookie: _soopCookie(),
-        ownsSession: false,
-      );
+      final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
+      final soop = request.soop;
+      final huya = request.huya;
+      if (soop != null) {
+        _controller = SoopArchiveController(
+          http: http,
+          session: handle,
+          recording: soop,
+          progress: ArchiveProgress(),
+          cookie: _soopCookie(),
+          ownsSession: false,
+        );
+      } else if (huya != null) {
+        _controller = HuyaArchiveController(http: http, session: handle, video: huya, progress: ArchiveProgress());
+      }
+      if (_controller == null) return;
       setState(() {});
-      await _controller!.open(request.video.id);
+      final recordingId = request.soop?.id ?? request.huya?.id;
+      if (recordingId != null) await _controller!.open(recordingId);
     } on Object {
       if (!_disposed) setState(() => _startFailed = true);
     }
@@ -132,14 +144,14 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
         ),
       );
     }
-    final name = request.video.title;
+    final name = request.title;
     return PageSurface(
       child: Scaffold(
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             PageHeader(title: name),
-            Expanded(child: _stage(context, request)),
+            Expanded(child: _stage(context)),
             if (_controller case final controller?) ...[
               _bar(context, controller),
               if (controller.segments.length > 1) _parts(context, controller),
@@ -152,7 +164,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
 
   /// The picture and its overlays: a dark stage while the handle arrives,
   /// a spinner while the walk opens, and the failure with its way back in.
-  Widget _stage(BuildContext context, ArchivePlayerRequest request) {
+  Widget _stage(BuildContext context) {
     final controller = _controller;
     final handle = _handle;
     return ListenableBuilder(
@@ -175,7 +187,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
                   action: DsButton(
                     variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
-                    onPressed: () => unawaited(controller?.open(request.video.id)),
+                    onPressed: () {
+                      final seed = widget.request;
+                      final id = seed?.soop?.id ?? seed?.huya?.id;
+                      if (id != null) unawaited(controller?.open(id));
+                    },
                     child: Text(context.t.common.retry),
                   ),
                 ),
@@ -190,7 +206,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   /// menus a recording owns — the part's renditions and the speed. The
   /// transport's stream drives the clock, the controller's notifies drive
   /// the rest.
-  Widget _bar(BuildContext context, SoopArchiveController controller) {
+  Widget _bar(BuildContext context, ArchivePlaybackController controller) {
     final t = context.t;
     return StreamBuilder<PlayerTransportState>(
       stream: _handle?.playbackStream,
@@ -268,7 +284,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
 
   /// The recording's parts, when the broadcast spans more than one file:
   /// one chip each, the on-screen part filled.
-  Widget _parts(BuildContext context, SoopArchiveController controller) {
+  Widget _parts(BuildContext context, ArchivePlaybackController controller) {
     final t = context.t;
     final current = controller.video?.id;
     return SizedBox(
@@ -277,7 +293,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
         children: [
-          for (final part in controller.segments)
+          for (final part in controller.segments.whereType<SoopArchivePart>())
             Padding(
               padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
               child: DsButton(

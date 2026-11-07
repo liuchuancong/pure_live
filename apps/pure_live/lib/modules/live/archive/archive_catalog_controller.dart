@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_sites/live_sites.dart' show SiteIds;
-import 'package:live_vod/live_vod.dart' show ReplayCollection, SoopArchiveApi, SoopArchiveVideo, VodArchive, VodVideo;
+import 'package:live_vod/live_vod.dart'
+    show HuyaArchiveApi, HuyaArchiveVideo, ReplayCollection, SoopArchiveApi, SoopArchiveVideo, VodArchive, VodVideo;
 
 import 'package:pure_live/app/app.dart' show networkFactoryProvider;
 import 'package:pure_live/features/account/account.dart' show accountsProvider;
@@ -12,7 +13,7 @@ import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodCl
 /// metadata, because the two stations open replays differently — Bilibili
 /// hands the bvid to the video station's player, SOOP keeps its parts and
 /// renditions for the archive player.
-typedef ArchivePick = ({VodVideo display, VodArchive? bilibili, SoopArchiveVideo? soop});
+typedef ArchivePick = ({VodVideo display, VodArchive? bilibili, SoopArchiveVideo? soop, HuyaArchiveVideo? huya});
 
 /// The replay catalog's whole state: the creator's collections, the one
 /// being read, and its recordings. The walk's guards are per request, so a
@@ -99,6 +100,19 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
         );
         return;
       }
+      if (siteId == SiteIds.huya) {
+        final answer = await HuyaArchiveApi(ref.read(networkFactoryProvider).create(profile: ClientProfile.api))
+            .list(creator);
+        if (epoch != _epoch) return;
+        state = _with(
+          recordings: _huyaPicks(answer.videos),
+          page: 1,
+          hasMore: answer.hasMore,
+          opening: false,
+          loading: false,
+        );
+        return;
+      }
       final mid = _mid ?? 0;
       final client = ref.read(vodClientProvider);
       final answer = await client.replayCollections(mid);
@@ -165,13 +179,21 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
         ).list(creator, page: page);
         next = _soopPicks(answer.videos);
         more = answer.hasMore;
+      } else if (siteId == SiteIds.huya) {
+        final creator = state.creator ?? '';
+        final answer = await HuyaArchiveApi(ref.read(networkFactoryProvider).create(profile: ClientProfile.api))
+            .list(creator, page: page);
+        next = _huyaPicks(answer.videos);
+        more = answer.hasMore;
       } else {
         final key = state.selectedKey;
         final collection = state.collections.where((item) => item.key == key).firstOrNull;
         if (collection == null) return;
         final client = ref.read(vodClientProvider);
         final answer = await client.replayArchives(_mid ?? 0, collection, page: page);
-        next = [for (final archive in answer.items) (display: archive.asVideo(), bilibili: archive, soop: null)];
+        next = [
+          for (final archive in answer.items) (display: archive.asVideo(), bilibili: archive, soop: null, huya: null),
+        ];
         more = answer.hasMore;
       }
       if (epoch != _epoch) return;
@@ -199,7 +221,9 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
       state = _with(
         recordings: [
           ...state.recordings,
-          ...[for (final archive in answer.items) (display: archive.asVideo(), bilibili: archive, soop: null)],
+          ...[
+            for (final archive in answer.items) (display: archive.asVideo(), bilibili: archive, soop: null, huya: null),
+          ],
         ],
         page: page,
         hasMore: answer.hasMore,
@@ -213,7 +237,11 @@ final class ArchiveCatalogController extends Notifier<ArchiveCatalogState> {
   }
 
   List<ArchivePick> _soopPicks(List<SoopArchiveVideo> videos) => [
-    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: video),
+    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: video, huya: null),
+  ];
+
+  List<ArchivePick> _huyaPicks(List<HuyaArchiveVideo> videos) => [
+    for (final video in videos) (display: video.asVideo(), bilibili: null, soop: null, huya: video),
   ];
 
   /// The viewer's SOOP login, the same credential the live site uses, in

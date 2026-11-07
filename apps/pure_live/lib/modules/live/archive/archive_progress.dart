@@ -2,13 +2,14 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-/// The replay walk's own progress namespace: a recording's parts, keyed by
+/// The replay walk's own progress namespace: a recording's parts (or a
+/// single-file recording's one id), keyed by
 /// their part ids, with the position each one stopped at. The store keeps a
 /// bounded map — the oldest entries fall off the front when a viewer's walk
 /// outgrows the room — and a closed store only loses the persistence, like
 /// every preference here.
-final class SoopArchiveProgress {
-  static const String _key = 'archive.soop.progress';
+final class ArchiveProgress {
+  static const String _key = 'archive.replay.progress';
 
   /// The most positions one namespace holds before the oldest give way.
   static const int _limit = 200;
