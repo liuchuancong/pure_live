@@ -16,6 +16,7 @@ import 'package:pure_live/layouts/mobile/liquid_glass.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_inline_search.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/layouts/tv/tv_page_shell.dart' show TvPageShell;
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
@@ -690,7 +691,20 @@ final class _AppShellState extends ConsumerState<AppShell> {
                             Expanded(
                               child: PageLayoutScope(
                                 narrow: pageNarrow,
-                                child: WindowClassScope(child: widget.content),
+                                // A TV build hangs the page shell here, so the
+                                // route-stable content keeps its own focus
+                                // plumbing: covered pages leave the tree, the
+                                // highlight claims the page's first row, and a
+                                // branch switch re-claims because the key
+                                // moves.
+                                child: WindowClassScope(
+                                  child: widget.tv
+                                      ? TvPageShell(
+                                          child: widget.content,
+                                          reclaimKey: (widget.module, widget.menuValue),
+                                        )
+                                      : widget.content,
+                                ),
                               ),
                             ),
                           ],

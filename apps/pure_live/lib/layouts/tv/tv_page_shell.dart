@@ -12,7 +12,14 @@ import 'package:pure_live/shared/focus/tv_focus_restorer.dart';
 /// draws.
 final class TvPageShell extends ConsumerStatefulWidget {
   /// Builds the shell around [child].
-  const TvPageShell({required this.child, this.topBar, this.openingFocus, this.openingRegion, super.key});
+  const TvPageShell({
+    required this.child,
+    this.topBar,
+    this.openingFocus,
+    this.openingRegion,
+    this.reclaimKey,
+    super.key,
+  });
 
   /// The page's content.
   final Widget child;
@@ -26,6 +33,12 @@ final class TvPageShell extends ConsumerStatefulWidget {
   /// Where the opening highlight lands; defaults to the content's top-left
   /// node.
   final GlobalKey<DpadRegionState>? openingRegion;
+
+  /// The page content's identity: when it changes, the opening claim runs
+  /// again — a stable route that swaps the page under itself (the home rail
+  /// moving between branches) must put the highlight on the new page's own
+  /// rows, or it stays wherever the previous branch left it.
+  final Object? reclaimKey;
 
   @override
   ConsumerState<TvPageShell> createState() => _TvPageShellState();
@@ -74,6 +87,12 @@ final class _TvPageShellState extends ConsumerState<TvPageShell> with RouteAware
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route != null) _observer?.subscribe(this, route);
+  }
+
+  @override
+  void didUpdateWidget(TvPageShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reclaimKey != oldWidget.reclaimKey) _reclaim();
   }
 
   @override
