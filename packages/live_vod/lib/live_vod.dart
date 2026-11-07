@@ -7,6 +7,8 @@ export 'src/bilibili_app_client.dart';
 export 'src/bilibili_tv_login.dart';
 export 'src/bilibili_vod_client.dart';
 export 'src/bilibili_wbi.dart';
+export 'src/douyu_replay.dart';
+export 'src/douyu_sign.dart';
 export 'src/huya_replay.dart';
 export 'src/lyric_lookup.dart';
 export 'src/lyric_query.dart';
