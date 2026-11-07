@@ -844,7 +844,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// no list swipes through the switcher's followed-on-air/history rooms.
   /// The new room opens on this page's controller, so the portrait surface
   /// and the player stay.
-  void _switchPortraitRoom(int step) {
+  void _switchRoomByStep(int step) {
     if (_switchingPortraitRoom) return;
     final current = ref.read(roomProvider).room;
     if (current == null) return;
@@ -1115,13 +1115,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       // has no pointer to wake them, and arrows must walk controls.
       keepControls: tv,
       autofocusFirstControl: tv,
+      // The remote's Up and Down on the picture switch rooms — the same
+      // step walk the portrait full screen's swipe runs, the playlist when
+      // the room came from one, the switcher's list otherwise.
+      onSwitchRoom: tv ? _switchRoomByStep : null,
       // A TV's bars take their own tier: larger controls, wider gaps and a
       // focus ring, since the remote has no pointer and the viewer sits back.
       tv: tv,
       portraitFullscreen: _portraitFullscreen,
       canEnterPortraitFullscreen: pictureRatio < 1,
       onPortraitFullscreen: () => _setPortraitFullscreen(true),
-      onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
+      onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchRoomByStep : null,
       // The swipe up from the portrait full screen's bottom band, back to the
       // panel: a touch screen's gesture, where the surface is the whole of it.
       onPortraitRestore: _portraitFullscreen && mobile ? () => _setPortraitFullscreen(false) : null,

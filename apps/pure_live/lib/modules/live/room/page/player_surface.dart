@@ -6,6 +6,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
+import 'package:flutter/services.dart' show KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -133,6 +134,7 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onPortraitSwipe,
     this.onPortraitRestore,
     this.onTitle,
+    this.onSwitchRoom,
     this.ambient = false,
     this.overlay,
     this.bottomInset = 0,
@@ -198,6 +200,13 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// as its layout draws it.
   final VoidCallback? onTitle;
 
+  /// Switches to the room `step` places away in the list this room came
+  /// from (+1 the next, -1 the previous). The TV room's scope hands it a
+  /// held Up or Down; the page answers with its own room switch, so the
+  /// surface stays mounted and only the room changes. Null leaves the
+  /// arrows to the dpad's own traversal.
+  final ValueChanged<int>? onSwitchRoom;
+
   /// Whether the frame sits over the room's own art instead of black bars (the
   /// reference's ambient presentation): the page asks for it where the room
   /// frames its stream as portrait, and on the portrait full screen whatever
@@ -246,6 +255,40 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   /// A stream picker panel is open over the picture: the bars stay while it
   /// is, or the panel would vanish under the pointer that is using it.
   bool _panelOpen = false;
+
+  /// The TV room switch's debounce: a held Up or Down adds its step to
+  /// [_switchStep], and only when the remote has been quiet for the window
+  /// does the room switch — by as many places as the hold gathered, the way
+  /// the reference's channel keys walk a long list.
+  Timer? _switchDebounce;
+  int _switchStep = 0;
+
+  /// The scope's own stop: the keyboard lands here when no bar control
+  /// holds it, and the scope's Up and Down switch rooms from there.
+  late final FocusNode _scopeFocus = FocusNode(debugLabel: 'tv room scope');
+
+  /// The remote's Up and Down on the TV room's picture: they switch rooms
+  /// instead of moving focus, because a bar that never hides has no row the
+  /// arrows should walk to first. An open picker panel owns the keys until
+  /// it is done with them.
+  KeyEventResult _onScopeKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    if (_panelOpen) return KeyEventResult.ignored;
+    final step = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowUp => -1,
+      LogicalKeyboardKey.arrowDown => 1,
+      _ => 0,
+    };
+    if (step == 0 || widget.onSwitchRoom == null) return KeyEventResult.ignored;
+    _switchStep += step;
+    _switchDebounce?.cancel();
+    _switchDebounce = Timer(const Duration(milliseconds: 300), () {
+      final gathered = _switchStep;
+      _switchStep = 0;
+      if (gathered != 0) widget.onSwitchRoom?.call(gathered);
+    });
+    return KeyEventResult.handled;
+  }
 
   StreamSubscription<PlayerTransportState>? _transportSub;
 
@@ -351,6 +394,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     _volumeHudTimer?.cancel();
     _pickerHover?.cancel();
     _pickerLeave?.cancel();
+    _switchDebounce?.cancel();
+    _scopeFocus.dispose();
     _releaseDanmaku();
     _controlsFocus
       ..removeListener(_onControlsFocus)
@@ -849,434 +894,464 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
         setState(() => _controlsVisible = true);
       }
     });
-    return PlayerBarTier(
-      tv: widget.tv,
-      child: Focus(
-        focusNode: _controlsFocus,
-        canRequestFocus: false,
-        skipTraversal: true,
-        includeSemantics: false,
-        // The reference's own rule: moving the pointer over the picture brings
-        // the overlay back, a click is not needed. A touch screen never hovers,
-        // so phones keep the tap.
-        child: MouseRegion(
-          onHover: mini ? null : (_) => _wake(),
-          onExit: mini ? null : (_) => _scheduleHide(),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (player == null)
-                const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
-              else if (room.audioOnly && room.room != null)
-                AudioOnlyCover(room: room.room!)
-              else
-                // The room's art fills the bars only under the contain fit, the
-                // one that keeps the whole frame and leaves bars to fill; the
-                // small window is cut to the frame's own shape by its driver.
-                _AmbientPicture(
-                  player: player,
-                  art: widget.ambient && playback.fit == PlaybackFit.contain && !mini ? _ambientArtOf(roomInfo) : '',
-                  child: MediaPlayerView(handle: player, fit: playback.fit.boxFit),
-                ),
-              if (widget.barrage case final barrage? when showDanmaku)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: mini
-                        ? LayoutBuilder(
-                            builder: (context, constraints) => FlameBarrageWidget(
-                              // The compact (PiP) surface keeps the main look and
-                              // adds one width-derived or pinned factor; its own
-                              // lane geometry and smaller caches follow the
-                              // reference's CompactDanmakuMetrics.
-                              config: _barrageConfig(
-                                style,
-                                danmakuFps,
-                                family: danmakuFamily,
-                                area: style.area,
-                                compact: CompactDanmakuMetrics.resolve(
-                                  width: constraints.maxWidth,
-                                  auto: pipScale.auto,
-                                  pinnedScale: pipScale.scale,
-                                  configuredFontSize: style.fontSize,
-                                  configuredSpeed: style.baseSpeed,
-                                ),
-                              ),
-                              emojiAtlas: EmojiAtlas.instance,
-                              controller: barrage,
-                            ),
-                          )
-                        : FlameBarrageWidget(
-                            config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: style.area),
-                            emojiAtlas: EmojiAtlas.instance,
-                            controller: barrage,
-                          ),
-                  ),
-                ),
-              // The gesture layer: a tap shows or hides the bar, a double tap
-              // enters or leaves fullscreen, a vertical drag and the wheel set
-              // the volume. The compact window keeps only the window verbs:
-              // dragging the picture moves the small window (its native caption
-              // is hidden) and a double press brings it back.
-              //
-              // A paused picture keeps this too: the tap still answers it, and a
-              // stream that answers no gesture while it is stopped reads as a
-              // frozen player. The way back to play is the bar's own button,
-              // which stays up for as long as the pause does.
-              if (barOverPicture)
-                Listener(
-                  onPointerSignal: (event) {
-                    if (_locked) return;
-                    if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
-                      _wheelVolume(event.scrollDelta.dy);
-                    }
-                  },
-                  onPointerDown: _holdDanmaku,
-                  onPointerMove: _releaseDanmakuOnMove,
-                  onPointerCancel: (_) => _releaseDanmaku(),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapUp: mini ? null : (_) => unawaited(_onPictureTap()),
-                    // With the switch off no long-press recognizer is registered,
-                    // so it never holds back a drag.
-                    onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
-                    // A long press cancels the tap first; releasing here would
-                    // drop the message before _onPictureLongPress can take it.
-                    onLongPressCancel: _releaseDanmaku,
-                    onDoubleTap: () {
-                      _releaseDanmaku();
-                      if (_locked) return;
-                      if (mini) {
-                        widget.onLeave();
-                        return;
-                      }
-                      // The fullscreen button's own verb: the reference's double
-                      // tap, its button and F are one toggle, and play and pause
-                      // keep the bar's button. A catalogue left open would only
-                      // float over the picture in its new box, so the double
-                      // tap puts it away the way a single tap would.
-                      _hidePicker();
-                      final committed = widget.roomState.handle?.id;
-                      if (committed == null) return;
-                      unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(committed));
-                    },
-                    // The compact window is dragged by its picture: it has no
-                    // caption of its own to grab. The main window is not — its
-                    // title band is the handle (see _roomAppBar), which frees the
-                    // whole picture for the two adjustment halves below.
-                    onPanStart: mini
-                        ? (_) {
-                            final window = ref.read(windowsPipWindowProvider);
-                            if (window != null) unawaited(window.startDragging());
-                          }
-                        : null,
-                    // Where the finger went down decides what the drag is (see
-                    // _pictureDragAt); by its start it has already moved.
-                    onVerticalDragDown: mini ? null : (details) => _dragDown = details,
-                    onVerticalDragStart: mini
-                        ? null
-                        : (details) {
-                            _releaseDanmaku();
-                            final drag = _pictureDragAt(_dragDown, details);
-                            _pictureDrag = drag;
-                            switch (drag) {
-                              case _PictureDrag.adjust:
-                                final width = context.size?.width ?? MediaQuery.sizeOf(context).width;
-                                _beginPictureDrag(details.localPosition.dx, width);
-                              case _PictureDrag.switchRoom:
-                                _portraitSwipeDy = 0;
-                              case _PictureDrag.restore:
-                                _restoreTravel = 0;
-                              case null:
-                                // Locked, or the system's edge: the drag is not
-                                // the picture's.
-                                break;
-                            }
-                          },
-                    onVerticalDragUpdate: mini
-                        ? null
-                        : (details) {
-                            switch (_pictureDrag) {
-                              case _PictureDrag.adjust:
-                                _dragPictureBy(details.delta.dy);
-                              case _PictureDrag.switchRoom:
-                                _portraitSwipeDy += details.delta.dy;
-                              case _PictureDrag.restore:
-                                _restoreTravel = (_restoreTravel - details.delta.dy).clamp(0.0, double.infinity);
-                              case null:
-                                break;
-                            }
-                          },
-                    onVerticalDragEnd: mini
-                        ? null
-                        : (details) {
-                            final drag = _pictureDrag;
-                            _pictureDrag = null;
-                            _dragDown = null;
-                            final velocity = details.primaryVelocity ?? 0;
-                            switch (drag) {
-                              case _PictureDrag.switchRoom:
-                                final dy = _portraitSwipeDy + velocity * 0.08;
-                                _portraitSwipeDy = 0;
-                                if (dy.abs() < 80) return;
-                                widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
-                              case _PictureDrag.restore:
-                                final upward = _restoreTravel;
-                                _restoreTravel = 0;
-                                if (_swipeRestoresPanel(upward: upward, velocity: velocity)) {
-                                  widget.onPortraitRestore?.call();
-                                }
-                              case _PictureDrag.adjust || null:
-                                break;
-                            }
-                          },
-                    onVerticalDragCancel: mini
-                        ? null
-                        : () {
-                            _pictureDrag = null;
-                            _dragDown = null;
-                            _portraitSwipeDy = 0;
-                            _restoreTravel = 0;
-                          },
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-              if (_volumeHud case final volume?)
-                PositionedDirectional(
-                  end: DsSpace.s20,
-                  top: 0,
-                  bottom: 0,
-                  // The glyph names the figure, so a drag on the left half never
-                  // reads as the volume it is not.
-                  child: PlayerVolumeHud(value: volume, icon: _hudIsBrightness ? DsIcons.sun : null),
-                ),
-              if (picture.kind != RoomPictureKind.none)
-                Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // The reference draws the room's own cover behind a picture
-                    // that is not there: an offline room reads as *that room*, not
-                    // as a black screen with a sentence on it.
-                    if (picture.dim == RoomPictureDim.cover && roomInfo != null) _RoomCoverBackdrop(room: roomInfo),
-                    // A card that offers no verb must not eat the pointer: the
-                    // pause's own word is not a control, and the picture's tap,
-                    // double tap and drags have to reach the gesture layer
-                    // under it. A card that does carry buttons keeps its scrim.
-                    IgnorePointer(
-                      ignoring: picture.actions.isEmpty,
-                      child: ColoredBox(
-                        color: _veilOf(picture.dim, withCover: picture.dim == RoomPictureDim.cover && roomInfo != null),
-                      ),
+    return PopScope(
+      // An open picker panel is a layer the remote's back peels first: the
+      // route only pops when no panel is open. The dialogs above the room
+      // pop on their own and never reach this.
+      canPop: !_panelOpen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _hidePicker();
+      },
+      child: PlayerBarTier(
+        tv: widget.tv,
+        child: Focus(
+          focusNode: _controlsFocus,
+          canRequestFocus: false,
+          skipTraversal: true,
+          includeSemantics: false,
+          // The reference's own rule: moving the pointer over the picture brings
+          // the overlay back, a click is not needed. A touch screen never hovers,
+          // so phones keep the tap.
+          child: _tvScope(
+            MouseRegion(
+              onHover: mini ? null : (_) => _wake(),
+              onExit: mini ? null : (_) => _scheduleHide(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (player == null)
+                    const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
+                  else if (room.audioOnly && room.room != null)
+                    AudioOnlyCover(room: room.room!)
+                  else
+                    // The room's art fills the bars only under the contain fit, the
+                    // one that keeps the whole frame and leaves bars to fill; the
+                    // small window is cut to the frame's own shape by its driver.
+                    _AmbientPicture(
+                      player: player,
+                      art: widget.ambient && playback.fit == PlaybackFit.contain && !mini
+                          ? _ambientArtOf(roomInfo)
+                          : '',
+                      child: MediaPlayerView(handle: player, fit: playback.fit.boxFit),
                     ),
-                    Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: DsSpace.s12,
-                        children: [
-                          if (picture.busy) const DsSpinner(style: DsSpinnerStyle(size: 20, color: _onVideoSubtle)),
-                          Text(
-                            picture.title,
-                            textAlign: TextAlign.center,
-                            style: DsTheme.of(context).typography.title.copyWith(color: _onVideo),
-                          ),
-                          if (picture.reason case final reason?)
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 520),
-                              child: Text(
-                                reason,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: DsTheme.of(context).typography.caption.copyWith(color: _onVideoMuted),
-                              ),
-                            ),
-                          if (picture.actions.isNotEmpty)
-                            Wrap(
-                              spacing: DsSpace.s8,
-                              runSpacing: DsSpace.s8,
-                              alignment: WrapAlignment.center,
-                              children: [
-                                for (final (index, action) in picture.actions.indexed)
-                                  PictureActionButton(
-                                    action: action,
-                                    autofocus: widget.autofocusFirstControl && index == 0,
+                  if (widget.barrage case final barrage? when showDanmaku)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: mini
+                            ? LayoutBuilder(
+                                builder: (context, constraints) => FlameBarrageWidget(
+                                  // The compact (PiP) surface keeps the main look and
+                                  // adds one width-derived or pinned factor; its own
+                                  // lane geometry and smaller caches follow the
+                                  // reference's CompactDanmakuMetrics.
+                                  config: _barrageConfig(
+                                    style,
+                                    danmakuFps,
+                                    family: danmakuFamily,
+                                    area: style.area,
+                                    compact: CompactDanmakuMetrics.resolve(
+                                      width: constraints.maxWidth,
+                                      auto: pipScale.auto,
+                                      pinnedScale: pipScale.scale,
+                                      configuredFontSize: style.fontSize,
+                                      configuredSpeed: style.baseSpeed,
+                                    ),
                                   ),
-                              ],
+                                  emojiAtlas: EmojiAtlas.instance,
+                                  controller: barrage,
+                                ),
+                              )
+                            : FlameBarrageWidget(
+                                config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: style.area),
+                                emojiAtlas: EmojiAtlas.instance,
+                                controller: barrage,
+                              ),
+                      ),
+                    ),
+                  // The gesture layer: a tap shows or hides the bar, a double tap
+                  // enters or leaves fullscreen, a vertical drag and the wheel set
+                  // the volume. The compact window keeps only the window verbs:
+                  // dragging the picture moves the small window (its native caption
+                  // is hidden) and a double press brings it back.
+                  //
+                  // A paused picture keeps this too: the tap still answers it, and a
+                  // stream that answers no gesture while it is stopped reads as a
+                  // frozen player. The way back to play is the bar's own button,
+                  // which stays up for as long as the pause does.
+                  if (barOverPicture)
+                    Listener(
+                      onPointerSignal: (event) {
+                        if (_locked) return;
+                        if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+                          _wheelVolume(event.scrollDelta.dy);
+                        }
+                      },
+                      onPointerDown: _holdDanmaku,
+                      onPointerMove: _releaseDanmakuOnMove,
+                      onPointerCancel: (_) => _releaseDanmaku(),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapUp: mini ? null : (_) => unawaited(_onPictureTap()),
+                        // With the switch off no long-press recognizer is registered,
+                        // so it never holds back a drag.
+                        onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
+                        // A long press cancels the tap first; releasing here would
+                        // drop the message before _onPictureLongPress can take it.
+                        onLongPressCancel: _releaseDanmaku,
+                        onDoubleTap: () {
+                          _releaseDanmaku();
+                          if (_locked) return;
+                          if (mini) {
+                            widget.onLeave();
+                            return;
+                          }
+                          // The fullscreen button's own verb: the reference's double
+                          // tap, its button and F are one toggle, and play and pause
+                          // keep the bar's button. A catalogue left open would only
+                          // float over the picture in its new box, so the double
+                          // tap puts it away the way a single tap would.
+                          _hidePicker();
+                          final committed = widget.roomState.handle?.id;
+                          if (committed == null) return;
+                          unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(committed));
+                        },
+                        // The compact window is dragged by its picture: it has no
+                        // caption of its own to grab. The main window is not — its
+                        // title band is the handle (see _roomAppBar), which frees the
+                        // whole picture for the two adjustment halves below.
+                        onPanStart: mini
+                            ? (_) {
+                                final window = ref.read(windowsPipWindowProvider);
+                                if (window != null) unawaited(window.startDragging());
+                              }
+                            : null,
+                        // Where the finger went down decides what the drag is (see
+                        // _pictureDragAt); by its start it has already moved.
+                        onVerticalDragDown: mini ? null : (details) => _dragDown = details,
+                        onVerticalDragStart: mini
+                            ? null
+                            : (details) {
+                                _releaseDanmaku();
+                                final drag = _pictureDragAt(_dragDown, details);
+                                _pictureDrag = drag;
+                                switch (drag) {
+                                  case _PictureDrag.adjust:
+                                    final width = context.size?.width ?? MediaQuery.sizeOf(context).width;
+                                    _beginPictureDrag(details.localPosition.dx, width);
+                                  case _PictureDrag.switchRoom:
+                                    _portraitSwipeDy = 0;
+                                  case _PictureDrag.restore:
+                                    _restoreTravel = 0;
+                                  case null:
+                                    // Locked, or the system's edge: the drag is not
+                                    // the picture's.
+                                    break;
+                                }
+                              },
+                        onVerticalDragUpdate: mini
+                            ? null
+                            : (details) {
+                                switch (_pictureDrag) {
+                                  case _PictureDrag.adjust:
+                                    _dragPictureBy(details.delta.dy);
+                                  case _PictureDrag.switchRoom:
+                                    _portraitSwipeDy += details.delta.dy;
+                                  case _PictureDrag.restore:
+                                    _restoreTravel = (_restoreTravel - details.delta.dy).clamp(0.0, double.infinity);
+                                  case null:
+                                    break;
+                                }
+                              },
+                        onVerticalDragEnd: mini
+                            ? null
+                            : (details) {
+                                final drag = _pictureDrag;
+                                _pictureDrag = null;
+                                _dragDown = null;
+                                final velocity = details.primaryVelocity ?? 0;
+                                switch (drag) {
+                                  case _PictureDrag.switchRoom:
+                                    final dy = _portraitSwipeDy + velocity * 0.08;
+                                    _portraitSwipeDy = 0;
+                                    if (dy.abs() < 80) return;
+                                    widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
+                                  case _PictureDrag.restore:
+                                    final upward = _restoreTravel;
+                                    _restoreTravel = 0;
+                                    if (_swipeRestoresPanel(upward: upward, velocity: velocity)) {
+                                      widget.onPortraitRestore?.call();
+                                    }
+                                  case _PictureDrag.adjust || null:
+                                    break;
+                                }
+                              },
+                        onVerticalDragCancel: mini
+                            ? null
+                            : () {
+                                _pictureDrag = null;
+                                _dragDown = null;
+                                _portraitSwipeDy = 0;
+                                _restoreTravel = 0;
+                              },
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  if (_volumeHud case final volume?)
+                    PositionedDirectional(
+                      end: DsSpace.s20,
+                      top: 0,
+                      bottom: 0,
+                      // The glyph names the figure, so a drag on the left half never
+                      // reads as the volume it is not.
+                      child: PlayerVolumeHud(value: volume, icon: _hudIsBrightness ? DsIcons.sun : null),
+                    ),
+                  if (picture.kind != RoomPictureKind.none)
+                    Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // The reference draws the room's own cover behind a picture
+                        // that is not there: an offline room reads as *that room*, not
+                        // as a black screen with a sentence on it.
+                        if (picture.dim == RoomPictureDim.cover && roomInfo != null) _RoomCoverBackdrop(room: roomInfo),
+                        // A card that offers no verb must not eat the pointer: the
+                        // pause's own word is not a control, and the picture's tap,
+                        // double tap and drags have to reach the gesture layer
+                        // under it. A card that does carry buttons keeps its scrim.
+                        IgnorePointer(
+                          ignoring: picture.actions.isEmpty,
+                          child: ColoredBox(
+                            color: _veilOf(
+                              picture.dim,
+                              withCover: picture.dim == RoomPictureDim.cover && roomInfo != null,
                             ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              // The page's own layer: the theatre's chat sits over the picture
-              // but under the bars and panels, so choosing a quality while the
-              // glass column is open still shows the catalogue.
-              ?widget.overlay,
-              if (showBar && !mini)
-                PositionedDirectional(
-                  top: 0,
-                  start: 0,
-                  end: 0,
-                  child: _PlayerTopBar(
-                    room: room,
-                    onLeave: widget.onLeave,
-                    onWake: _wake,
-                    onScreenshot: () => unawaited(_screenshot()),
-                    canScreenshot: handle.canCaptureScreenshot,
-                    menuItems: widget.immersive ? widget.roomMenu : const [],
-                    fullscreen: widget.immersive,
-                    portraitExit: widget.portraitFullscreen,
-                    // The page's own header already carries the avatar, the live
-                    // ring, the counts and the title above the picture, so the
-                    // strip only names the room once the chrome is gone — or on
-                    // a TV, where the title belongs on the screen itself, or on a
-                    // phone held sideways, whose room card has no column to sit
-                    // in and folds into the strip instead.
-                    identity: widget.immersive || widget.tv || widget.onTitle != null,
-                    onTitle: widget.onTitle,
-                  ),
-                ),
-              // The compact window's own strip: its caption is hidden, so this is
-              // the only place that carries the window verbs. It never hides —
-              // without it the small window would have no way back.
-              // A running capture outlives the chrome: whether the disk is
-              // still filling must not need a mouse wiggle to answer, and the
-              // strip's own copy hides with the bar. This is the quiet-hours
-              // version of it — the same control, so tapping it stops.
-              if (recording && !showBar && !mini)
-                PositionedDirectional(
-                  // The left corner: the right one belongs to the stats panel
-                  // when that is open, and two glass pills stacked in one
-                  // corner read as a bug. With the bar away, nothing else
-                  // lives here — the strip that would is hidden with the bar.
-                  top: DsSpace.s8,
-                  start: DsSpace.s12,
-                  child: PlayerGlassPill(
-                    child: RecordingIndicator(
-                      startedAt: liveCapture?.startedAt,
-                      figures: liveCapture == null || liveCapture.bytes <= 0
-                          ? null
-                          : formatRecordingBytes(liveCapture.bytes),
-                      label: context.t.room.stopRecording,
-                      tv: widget.tv,
-                      // Locked, it is a mark and not a switch: the figures
-                      // stay, the accidental tap that would end the take does
-                      // not. The verb is back in the bar the moment unlocks.
-                      onStop: _locked ? null : () => unawaited(toggleRoomRecording(context, ref)),
-                    ),
-                  ),
-                ),
-              if (mini)
-                PositionedDirectional(
-                  top: 0,
-                  start: 0,
-                  end: 0,
-                  child: _PipBar(room: room, onRestore: widget.onLeave, onClose: widget.onCloseRoom ?? widget.onLeave),
-                ),
-              if (showBar && !mini)
-                Positioned(
-                  bottom: widget.bottomInset,
-                  left: 0,
-                  right: 0,
-                  child: MouseRegion(
-                    onEnter: (_) => _hideTimer?.cancel(),
-                    onExit: (_) => _scheduleHide(),
-                    // The bar stands over the gesture layer and keeps the pointer
-                    // from it, yet it is the floor of the portrait full screen's
-                    // restore band: the swipe up is listened for here as well.
-                    child: _RestoreSwipe(
-                      onRestore: widget.onPortraitRestore,
-                      child: _ControlBar(
-                        key: _barKey,
-                        handle: handle,
-                        transport: transport,
-                        onWake: _wake,
-                        streamPickers: ({required labelled}) => _StreamPickerRow(
-                          room: room,
-                          open: _openPicker,
-                          anchors: _pickerAnchors,
-                          labelled: labelled,
-                          onToggle: _togglePicker,
-                          onHoverOpen: _hoverPicker,
-                          onHoverClose: _hoverPickerClose,
+                          ),
                         ),
-                        autofocusPlay: widget.autofocusFirstControl,
-                        canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
-                        portraitFullscreen: widget.portraitFullscreen,
-                        onPortraitFullscreen: widget.onPortraitFullscreen,
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: DsSpace.s12,
+                            children: [
+                              if (picture.busy) const DsSpinner(style: DsSpinnerStyle(size: 20, color: _onVideoSubtle)),
+                              Text(
+                                picture.title,
+                                textAlign: TextAlign.center,
+                                style: DsTheme.of(context).typography.title.copyWith(color: _onVideo),
+                              ),
+                              if (picture.reason case final reason?)
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 520),
+                                  child: Text(
+                                    reason,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: DsTheme.of(context).typography.caption.copyWith(color: _onVideoMuted),
+                                  ),
+                                ),
+                              if (picture.actions.isNotEmpty)
+                                Wrap(
+                                  spacing: DsSpace.s8,
+                                  runSpacing: DsSpace.s8,
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                    for (final (index, action) in picture.actions.indexed)
+                                      PictureActionButton(
+                                        action: action,
+                                        autofocus: widget.autofocusFirstControl && index == 0,
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  // The page's own layer: the theatre's chat sits over the picture
+                  // but under the bars and panels, so choosing a quality while the
+                  // glass column is open still shows the catalogue.
+                  ?widget.overlay,
+                  if (showBar && !mini)
+                    PositionedDirectional(
+                      top: 0,
+                      start: 0,
+                      end: 0,
+                      child: _PlayerTopBar(
+                        room: room,
+                        onLeave: widget.onLeave,
+                        onWake: _wake,
+                        onScreenshot: () => unawaited(_screenshot()),
+                        canScreenshot: handle.canCaptureScreenshot,
+                        menuItems: widget.immersive ? widget.roomMenu : const [],
+                        fullscreen: widget.immersive,
+                        portraitExit: widget.portraitFullscreen,
+                        // The page's own header already carries the avatar, the live
+                        // ring, the counts and the title above the picture, so the
+                        // strip only names the room once the chrome is gone — or on
+                        // a TV, where the title belongs on the screen itself, or on a
+                        // phone held sideways, whose room card has no column to sit
+                        // in and folds into the strip instead.
+                        identity: widget.immersive || widget.tv || widget.onTitle != null,
+                        onTitle: widget.onTitle,
                       ),
                     ),
-                  ),
-                )
-              // The bar away, the picture keeps an invisible strip along its
-              // bottom edge as the place to wake it from — not the shared idle
-              // progress line, because a live stream has no played share to
-              // draw and a line of its own would read as a timeline.
-              else if (playing && !mini && handle != null && !_locked)
-                Positioned(
-                  bottom: widget.bottomInset,
-                  left: 0,
-                  right: 0,
-                  child: _RestoreSwipe(
-                    onRestore: widget.onPortraitRestore,
-                    child: _IdleWakeStrip(onWake: _wake),
-                  ),
-                ),
-              // The stream's own numbers when the viewer asked for them: a small
-              // glass panel under the top bar, over the picture and out of the
-              // buttons' way.
-              if (handle != null &&
-                  picture.kind == RoomPictureKind.none &&
-                  !_locked &&
-                  ref.watch(playerStatsVisibleProvider))
-                PositionedDirectional(
-                  // The strip's own height, from the same tier that sizes it:
-                  // 8 of padding, the control, 12 below it. A literal here sat
-                  // under the strip the moment the TV tier grew the controls.
-                  top: showBar && !mini ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s12 : DsSpace.s12,
-                  end: 12,
-                  child: PlayerStatsOverlay(handle: handle),
-                ),
-              // The open catalogue, above the bar that raised it: the host only
-              // paints its card, so the picture stays tappable around it.
-              if (_openPicker case final picker?)
-                Positioned.fill(
-                  child: PlayerPanelHost(
-                    anchorKey: _pickerAnchors[picker]!,
-                    barKey: _barKey,
-                    width: _panelWidth(picker),
-                    child: MouseRegion(
-                      onEnter: (_) => _pickerLeave?.cancel(),
-                      onExit: (_) => _hoverPickerClose(),
-                      child: _pickerPanel(context.t, picker),
-                    ),
-                  ),
-                ),
-              // The lock, on the picture's right edge (the reference's
-              // LockButton): it comes with the bars, and once it is on it is
-              // the only thing drawn — whatever the room does next. A locked
-              // picture with no unlock on it is a door bricked from inside.
-              if (widget.immersive && !mini && (_locked || showBar))
-                PositionedDirectional(
-                  end: 20,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: PlayerGlassPill(
-                      child: PlayerBarButton(
-                        icon: _locked ? DsIcons.unlock : DsIcons.lock,
-                        label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
-                        size: 50,
-                        iconSize: 22,
-                        onPressed: _toggleLock,
+                  // The compact window's own strip: its caption is hidden, so this is
+                  // the only place that carries the window verbs. It never hides —
+                  // without it the small window would have no way back.
+                  // A running capture outlives the chrome: whether the disk is
+                  // still filling must not need a mouse wiggle to answer, and the
+                  // strip's own copy hides with the bar. This is the quiet-hours
+                  // version of it — the same control, so tapping it stops.
+                  if (recording && !showBar && !mini)
+                    PositionedDirectional(
+                      // The left corner: the right one belongs to the stats panel
+                      // when that is open, and two glass pills stacked in one
+                      // corner read as a bug. With the bar away, nothing else
+                      // lives here — the strip that would is hidden with the bar.
+                      top: DsSpace.s8,
+                      start: DsSpace.s12,
+                      child: PlayerGlassPill(
+                        child: RecordingIndicator(
+                          startedAt: liveCapture?.startedAt,
+                          figures: liveCapture == null || liveCapture.bytes <= 0
+                              ? null
+                              : formatRecordingBytes(liveCapture.bytes),
+                          label: context.t.room.stopRecording,
+                          tv: widget.tv,
+                          // Locked, it is a mark and not a switch: the figures
+                          // stay, the accidental tap that would end the take does
+                          // not. The verb is back in the bar the moment unlocks.
+                          onStop: _locked ? null : () => unawaited(toggleRoomRecording(context, ref)),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-            ],
+                  if (mini)
+                    PositionedDirectional(
+                      top: 0,
+                      start: 0,
+                      end: 0,
+                      child: _PipBar(
+                        room: room,
+                        onRestore: widget.onLeave,
+                        onClose: widget.onCloseRoom ?? widget.onLeave,
+                      ),
+                    ),
+                  if (showBar && !mini)
+                    Positioned(
+                      bottom: widget.bottomInset,
+                      left: 0,
+                      right: 0,
+                      child: MouseRegion(
+                        onEnter: (_) => _hideTimer?.cancel(),
+                        onExit: (_) => _scheduleHide(),
+                        // The bar stands over the gesture layer and keeps the pointer
+                        // from it, yet it is the floor of the portrait full screen's
+                        // restore band: the swipe up is listened for here as well.
+                        child: _RestoreSwipe(
+                          onRestore: widget.onPortraitRestore,
+                          child: _ControlBar(
+                            key: _barKey,
+                            handle: handle,
+                            transport: transport,
+                            onWake: _wake,
+                            streamPickers: ({required labelled}) => _StreamPickerRow(
+                              room: room,
+                              open: _openPicker,
+                              anchors: _pickerAnchors,
+                              labelled: labelled,
+                              onToggle: _togglePicker,
+                              onHoverOpen: _hoverPicker,
+                              onHoverClose: _hoverPickerClose,
+                            ),
+                            autofocusPlay: widget.autofocusFirstControl,
+                            canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
+                            portraitFullscreen: widget.portraitFullscreen,
+                            onPortraitFullscreen: widget.onPortraitFullscreen,
+                          ),
+                        ),
+                      ),
+                    )
+                  // The bar away, the picture keeps an invisible strip along its
+                  // bottom edge as the place to wake it from — not the shared idle
+                  // progress line, because a live stream has no played share to
+                  // draw and a line of its own would read as a timeline.
+                  else if (playing && !mini && handle != null && !_locked)
+                    Positioned(
+                      bottom: widget.bottomInset,
+                      left: 0,
+                      right: 0,
+                      child: _RestoreSwipe(
+                        onRestore: widget.onPortraitRestore,
+                        child: _IdleWakeStrip(onWake: _wake),
+                      ),
+                    ),
+                  // The stream's own numbers when the viewer asked for them: a small
+                  // glass panel under the top bar, over the picture and out of the
+                  // buttons' way.
+                  if (handle != null &&
+                      picture.kind == RoomPictureKind.none &&
+                      !_locked &&
+                      ref.watch(playerStatsVisibleProvider))
+                    PositionedDirectional(
+                      // The strip's own height, from the same tier that sizes it:
+                      // 8 of padding, the control, 12 below it. A literal here sat
+                      // under the strip the moment the TV tier grew the controls.
+                      top: showBar && !mini
+                          ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s12
+                          : DsSpace.s12,
+                      end: 12,
+                      child: PlayerStatsOverlay(handle: handle),
+                    ),
+                  // The open catalogue, above the bar that raised it: the host only
+                  // paints its card, so the picture stays tappable around it.
+                  if (_openPicker case final picker?)
+                    Positioned.fill(
+                      child: PlayerPanelHost(
+                        anchorKey: _pickerAnchors[picker]!,
+                        barKey: _barKey,
+                        width: _panelWidth(picker),
+                        child: MouseRegion(
+                          onEnter: (_) => _pickerLeave?.cancel(),
+                          onExit: (_) => _hoverPickerClose(),
+                          child: _pickerPanel(context.t, picker),
+                        ),
+                      ),
+                    ),
+                  // The lock, on the picture's right edge (the reference's
+                  // LockButton): it comes with the bars, and once it is on it is
+                  // the only thing drawn — whatever the room does next. A locked
+                  // picture with no unlock on it is a door bricked from inside.
+                  if (widget.immersive && !mini && (_locked || showBar))
+                    PositionedDirectional(
+                      end: 20,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: PlayerGlassPill(
+                          child: PlayerBarButton(
+                            icon: _locked ? DsIcons.unlock : DsIcons.lock,
+                            label: _locked ? context.t.room.unlockControls : context.t.room.lockControls,
+                            size: 50,
+                            iconSize: 22,
+                            onPressed: _toggleLock,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
+  }
+
+  /// The TV room's key scope: the one stop that holds the keyboard when no
+  /// control does, so the remote's Up and Down switch rooms instead of
+  /// dying on the picture. The pointer builds pass through.
+  Widget _tvScope(Widget child) {
+    if (!widget.keepControls) return child;
+    return Focus(focusNode: _scopeFocus, autofocus: true, onKeyEvent: _onScopeKey, child: child);
   }
 }
 
