@@ -234,6 +234,12 @@
 @import webview_all_wkwebview;
 #endif
 
+#if __has_include(<workmanager_apple/WorkmanagerPlugin.h>)
+#import <workmanager_apple/WorkmanagerPlugin.h>
+#else
+@import workmanager_apple;
+#endif
+
 @implementation GeneratedPluginRegistrant
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
@@ -275,6 +281,7 @@
   [VolumeControllerPlugin registerWithRegistrar:[registry registrarForPlugin:@"VolumeControllerPlugin"]];
   [WakelockPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"WakelockPlusPlugin"]];
   [WebviewAllWKWebViewPlugin registerWithRegistrar:[registry registrarForPlugin:@"WebviewAllWKWebViewPlugin"]];
+  [WorkmanagerPlugin registerWithRegistrar:[registry registrarForPlugin:@"WorkmanagerPlugin"]];
 }
 
 @end
