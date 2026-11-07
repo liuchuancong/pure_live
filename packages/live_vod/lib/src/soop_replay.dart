@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest;
 import 'package:live_vod/src/archive.dart' show ArchiveQuality, ArchiveVideo;
-import 'package:live_vod/src/vod_models.dart' show VodFailure;
+import 'package:live_vod/src/vod_models.dart' show VodFailure, VodVideo;
 
 /// Public SOOP broadcast metadata, without transient media URLs.
 final class SoopArchiveVideo implements ArchiveVideo {
@@ -37,6 +37,16 @@ final class SoopArchiveVideo implements ArchiveVideo {
 
   @override
   final Duration duration;
+
+  /// The recording as the shared video model, for the row and card widgets
+  /// a video list already renders with.
+  VodVideo asVideo() => VodVideo(
+    id: id,
+    title: title,
+    coverUrl: cover.isEmpty ? null : cover,
+    duration: duration == Duration.zero ? null : duration,
+    uploader: authorName.isEmpty ? null : authorName,
+  );
 }
 
 /// The server's pagination, independent of how many rows survive validation.
