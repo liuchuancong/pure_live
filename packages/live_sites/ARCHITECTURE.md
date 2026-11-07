@@ -243,6 +243,7 @@ Future<Either<LiveSiteError, T>> xxx(...);   // 能力接口签名
 | 响应形状损坏 | `ParseError` |
 | 意外异常 | 边界处 `captureLiveSite` 兜底转 `UnexpectedError`（不得当统一归类器） |
 | 成功但空列表 | **Right**（空页不是错误） |
+| 调用方取消 | `LiveSiteCancelled`（Left；isTransient=false，是调用方的决定不是故障） |
 | 缓存未命中 | `T?` / `Option`，不用 Either |
 
 错误信息不得泄露 token/cookie/签名 URL。UI 文案本地化在应用层。`LiveSiteError` 家族清单见 MODELS.md §4。
@@ -297,6 +298,8 @@ Future<Either<LiveSiteError, T>> xxx(...);   // 能力接口签名
 | `LiveDanmakuProvider` | 弹幕会话（协议重连归会话；事件流 `Stream<LiveMessage>`） | `createSession(roomId)` |
 | `LiveLinkResolver` | 分享链接→房间身份 | `resolve(uri)` |
 | `LiveSiteCapability` | marker | — |
+
+可取消形态：`LiveDiscoveryProvider`/`LiveSearchProvider`/`LiveAreaProvider` 各有精化孪生（`LiveCancellableDiscovery` 等，方法多一个可选 `cancel` 令牌；可选命名参数天然满足基接口成员，采纳平台只覆写一个方法，`capability<T>()` 仍按基类型应答）。调用入口 `LiveCancellableFetches on LiveSite`（`fetchRecommended`/`fetchSearch`/`fetchAreaRooms`）：无能力返回 null（同 capability 契约），有令牌到传输即真中断（inke/huya），否则边界前置拒绝+后置丢弃（后台工作自己结束，不假装已中断）；一屏一个 `LiveFetchScope`，`dispose()` 全取消并等在途 settle。
 
 ---
 

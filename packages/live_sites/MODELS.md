@@ -677,6 +677,7 @@ LiveSiteError (sealed)
 ├─ LiveSiteRateLimitError   限流
 ├─ LiveSiteContentUnavailable  内容不可用（在播但无流推送，重试无意义）
 ├─ LiveSiteInvalidArgument  参数不合法
+├─ LiveSiteCancelled        调用方取消（isTransient=false；不是错误，不横幅不重试）
 └─ LiveSiteUnexpectedError  兜底（含 cause）
 ```
 
