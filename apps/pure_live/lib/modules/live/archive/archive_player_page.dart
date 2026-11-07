@@ -3,8 +3,10 @@ import 'dart:async' show Future, StreamSubscription, unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, BarrageItem, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveMessage, LiveMessageQuery, LiveRetraction, SiteIds;
 import 'package:live_vod/live_vod.dart' show DouyuVodVideo, SoopArchivePart;
 import 'package:media_core/media_core.dart'
@@ -208,18 +210,40 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
       );
     }
     final name = request.title;
+    final controller = _controller;
+    // A TV sits far from the screen: the bar's controls grow, its buttons
+    // draw the focus ring a remote needs, and the space key reaches the
+    // transport without the pointer the page otherwise assumes.
+    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     return PageSurface(
-      child: Scaffold(
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PageHeader(title: name),
-            Expanded(child: _stage(context)),
-            if (_controller case final controller?) ...[
-              _bar(context, controller),
-              if (controller.segments.length > 1) _parts(context, controller),
-            ],
-          ],
+      child: PlayerBarTier(
+        tv: tv,
+        child: CallbackShortcuts(
+          bindings: {
+            if (controller != null)
+              const SingleActivator(LogicalKeyboardKey.space): () => unawaited(controller.togglePlayPause()),
+            // A pointer platform's arrows scrub; a TV's arrows walk the
+            // bar's focus and the slider's own keys scrub once focused.
+            if (controller != null && !tv) ...{
+              const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+                  unawaited(controller.seek(controller.position - const Duration(seconds: 5))),
+              const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+                  unawaited(controller.seek(controller.position + const Duration(seconds: 5))),
+            },
+          },
+          child: Scaffold(
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PageHeader(title: name),
+                Expanded(child: _stage(context)),
+                if (_controller case final controller?) ...[
+                  _bar(context, controller),
+                  if (controller.segments.length > 1) _parts(context, controller),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -290,6 +314,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
   /// the rest.
   Widget _bar(BuildContext context, ArchivePlaybackController controller) {
     final t = context.t;
+    final menuSize = PlayerBarTier.tvOf(context) ? DsSize.lg : DsSize.sm;
     return StreamBuilder<PlayerTransportState>(
       stream: _handle?.playbackStream,
       builder: (context, snapshot) {
@@ -302,12 +327,13 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
           child: Row(
             spacing: DsSpace.s12,
             children: [
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: playing ? t.room.pause : t.room.play,
+              // The bar's first control and a TV's landing focus: the remote
+              // reaches play before anything else.
+              PlayerBarButton(
+                icon: playing ? DsIcons.pause : DsIcons.play,
+                label: playing ? t.room.pause : t.room.play,
+                autofocus: PlayerBarTier.tvOf(context),
                 onPressed: () => unawaited(controller.togglePlayPause()),
-                icon: DsIcon(playing ? DsIcons.pause : DsIcons.play, size: 16),
               ),
               Expanded(
                 child: DsSlider(
@@ -342,7 +368,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
                   ],
                   builder: (context, menu, _) => DsButton(
                     variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
+                    size: menuSize,
                     onPressed: menu.toggle,
                     child: Text(
                       controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
@@ -359,7 +385,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
                 ],
                 builder: (context, menu, _) => DsButton(
                   variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
+                  size: menuSize,
                   onPressed: menu.toggle,
                   child: Text('${controller.rate}x'),
                 ),
@@ -379,8 +405,9 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
     final current = controller.video?.id;
     final soopParts = controller.segments.whereType<SoopArchivePart>().toList();
     final douyuParts = controller.segments.whereType<DouyuVodVideo>().toList();
+    final size = PlayerBarTier.tvOf(context) ? DsSize.lg : DsSize.sm;
     return SizedBox(
-      height: 48,
+      height: PlayerBarTier.tvOf(context) ? 64 : 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
@@ -390,7 +417,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
               padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
               child: DsButton(
                 variant: part.id == current ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                size: DsSize.sm,
+                size: size,
                 semanticLabel: '${t.room.replayParts} ${part.order}',
                 onPressed: part.id == current ? null : () => unawaited(controller.open(part.id)),
                 child: Text('P${part.order}'),
@@ -401,7 +428,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> {
               padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
               child: DsButton(
                 variant: part.id == current ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                size: DsSize.sm,
+                size: size,
                 semanticLabel: '${t.room.replayParts} ${index + 1}',
                 onPressed: part.id == current ? null : () => unawaited(controller.open(part.id)),
                 child: Text('P${index + 1}'),
