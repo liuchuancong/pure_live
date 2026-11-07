@@ -23,3 +23,7 @@ final class DpadLongPressGate {
     return at != null && DateTime.now().difference(at) < _window;
   }
 }
+
+/// One per process: only one long-press can be in the air at a time, so the
+/// gate every D-pad focusable checks is shared.
+final DpadLongPressGate tvLongPressGate = DpadLongPressGate();

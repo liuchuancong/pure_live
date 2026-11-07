@@ -10,6 +10,7 @@ import 'package:pure_live/app/app.dart' show BrowseSettings, browseSettingsProvi
 import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardCoverRatio, kRoomCardInfoExtent, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/layouts.dart' show TvGrowOnFocus;
 import 'package:pure_live/shared/layout/layout.dart' show LiveWindow;
 import 'package:pure_live/shared/widgets/pull_to_refresh.dart' show buildDsRefreshIndicator;
 import 'package:pure_live/shared/widgets/refresh_progress_bar.dart' show RefreshProgressBar;
@@ -553,14 +554,16 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if ((target - position.pixels).abs() > 0.5) position.jumpTo(target);
   }
 
-  /// Wraps one card with its D-pad stop and index.
-  Widget _focusableItem(int index, Widget child) => _GridFocusItem(
+  /// Wraps one card with its D-pad stop and index, and — on a TV build,
+  /// grid mode only — the grow that makes the highlight read from across
+  /// the room; full-width list rows keep only the ring.
+  Widget _focusableItem(int index, Widget child, {bool zoom = false}) => _GridFocusItem(
     index: index,
     register: _registerItem,
     unregister: _unregisterItem,
     onKey: _onItemKey,
     onFocusChanged: _onItemFocus,
-    child: child,
+    child: zoom ? TvGrowOnFocus(child: child) : child,
   );
 
   /// Asks for the next page when the shown one does not fill the viewport:
@@ -699,7 +702,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
                 if (index >= widget.items.length) {
                   return const _LoadingTile();
                 }
-                return _focusableItem(index, widget.itemBuilder(context, widget.items[index]));
+                return _focusableItem(index, widget.itemBuilder(context, widget.items[index]), zoom: true);
               },
             );
           },

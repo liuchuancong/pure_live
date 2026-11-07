@@ -11,4 +11,6 @@ export 'page_head_actions.dart';
 export 'page_inline_search.dart';
 export 'page_layout_scope.dart';
 export 'tv/tv_exit_confirm.dart';
+export 'tv/tv_focusable.dart';
+export 'tv/tv_grow_on_focus.dart';
 export 'tv/tv_page_shell.dart';
