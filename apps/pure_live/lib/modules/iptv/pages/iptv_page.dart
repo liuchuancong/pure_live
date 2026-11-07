@@ -9,6 +9,8 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
+
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
@@ -468,7 +470,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
       overflow: TextOverflow.ellipsis,
       style: theme.typography.small.copyWith(color: colors.textMuted),
     );
-    final field = DsSearchField(
+    final field = TvInputField(
       controller: search,
       placeholder: t.iptv.searchChannels,
       semanticLabel: t.iptv.searchChannels,

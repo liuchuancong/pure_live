@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart' show iptvEpgProvider;
@@ -477,7 +478,7 @@ final class _ChannelPickerState extends ConsumerState<_ChannelPicker> {
               spacing: DsSpace.s8,
               children: [
                 if (widget.showGroupEntry) IptvGroupEntry(filter: widget.groups, onSelect: widget.onSelectGroup),
-                DsSearchField(
+                TvInputField(
                   controller: widget.search,
                   placeholder: t.iptv.searchChannels,
                   semanticLabel: t.iptv.searchChannels,

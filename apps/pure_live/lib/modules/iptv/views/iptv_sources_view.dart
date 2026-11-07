@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
@@ -740,7 +741,7 @@ final class _SourcesToolbar extends StatelessWidget {
       t.iptv.sourceCount(count: count),
       style: theme.typography.small.copyWith(color: colors.textMuted),
     );
-    final field = DsSearchField(
+    final field = TvInputField(
       controller: search,
       placeholder: t.iptv.searchSources,
       semanticLabel: t.iptv.searchSources,
