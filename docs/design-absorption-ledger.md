@@ -64,7 +64,7 @@
 - ⬜ 开播提醒 WorkManager：app/后台共用小 JSON（原子写+双方合并去重）、后台 check 不开库不持 cookie。需新增 workmanager 依赖。参考 `favorite/live_alert_watch.dart`。
 - ⬜ 房间身份迁移框架：存储层定义迁移规则+解析签名，app 注入适配器，刷新前执行、分组 moveRoom 跟迁、重复关注合并。参考 `legacy_import.dart:350-390`。
 - ✅ 音乐音频缓存（d2ea031f1）：CachedTrackSource 装饰器挂在 MusicSourceRegistry 上（resolve 先问磁盘、命中 Uri.file、未命中边播边下 .part→commit、LRU 上限设置行+清空钮、传输走 LiveHttp 吃代理策略）。参考 `live_vod/src/music/audio_cache.dart`。
-- ⬜ 后台引导 Dart 侧重移植：Kotlin BackgroundGuideChannel.kt 还在，664 行 ROM 分型页从 659089725 恢复适配。
+- 🟡 后台引导 Dart 侧重移植：**已落 app defe45bec**——Kotlin 通道 BackgroundGuideChannel.kt 一直在（status/open 两方法，v2 包名 com.mystyle.purelive 已接 MainActivity）；Dart 侧按当前架构重建：ROM 八族识别+vendor 页面表=纯 Dart（features/settings/pages/background_guide.dart），pane 走设置子页惯用法（SettingsSection.backgroundGuide 挂 playback 子节、QualityAudioPane 的 Android 块内入口行、settings_page pane 映射、搜索索引、slang 中英 38 键）；状态三档 ok/todo/manual+回系统页 onResume 重读；vendor 页列表恒以应用信息兜底。参考提交 659089725（664 行旧实现，重建清掉）。差异：旧 PureScaffold/PureListRow 改 DsListSection/DsListRow pane 形态；l10n 从根 strings 移 settings 域。待真机验证（小米/华为等 vendor 页可达性）。
 - ⬜ 屏幕镜像（末）：WebRTC 点对点+本地 RFC 8489 STUN 子集+会话绑定媒体槽。需 flutter_webrtc 依赖，做遥控后二期。参考 `shared/remote/screen_share.dart`。
 
 ## W11 UI 观感
