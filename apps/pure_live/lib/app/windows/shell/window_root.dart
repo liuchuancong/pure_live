@@ -160,13 +160,31 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
           child: Stack(
             alignment: Alignment.topLeft,
             children: [
-              Positioned.fill(child: PureLiveApp(showStartupSplash: _context.isMain)),
+              Positioned.fill(
+                // The main window binds the receiver's app-level seams once:
+                // a phone lands on back/home and share links when no
+                // playback page answers. Other windows read nothing.
+                child: _context.isMain ? const _BoundMainApp() : const PureLiveApp(showStartupSplash: false),
+              ),
               Positioned(left: 0, right: 0, top: 0, child: WindowTopResizeBand(viewId: widget.viewId)),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+/// The main window's app, with the receiver's app-level seams bound once:
+/// a phone lands on back/home and share links when no playback page
+/// answers. Other windows read nothing, so they take the bare app.
+final class _BoundMainApp extends ConsumerWidget {
+  const _BoundMainApp();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(remoteRuntimeProvider);
+    return const PureLiveApp();
   }
 }
 

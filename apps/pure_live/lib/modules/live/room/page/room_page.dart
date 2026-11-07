@@ -241,6 +241,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// the subtree instead of tearing the video texture down and back.
   final GlobalKey _playerKey = GlobalKey();
 
+  /// The phone's view of this room, registered for as long as the page is.
+  late final RemotePlaybackTarget _remoteTarget;
+
   @override
   void initState() {
     super.initState();
@@ -304,6 +307,78 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     FloatingOverlay.listen();
     FloatingOverlay.active.addListener(_onFloatingWindowChanged);
     FloatingOverlay.permitted.addListener(_onFloatingWindowPermitted);
+    // The phone's view of this room: the same verbs the bar carries. The
+    // closures read the controller at call time, so a room switch inside
+    // the page cannot answer with the room that was there before.
+    _remoteTarget = RemotePlaybackTarget(
+      available: () => mounted && (ModalRoute.isCurrentOf(context) ?? true),
+      scope: () => ref.read(roomProvider).room?.ref.identityKey ?? '${widget.platform}:${widget.roomId}',
+      snapshot: () {
+        final room = ref.read(roomProvider);
+        final detail = room.room;
+        return {
+          'nick': detail?.anchor?.name ?? '',
+          'title': detail?.content.title ?? '',
+          'platform': room.room?.ref.platform ?? widget.platform,
+          'paused': !room.playback.playing,
+          'volume': ref.read(roomProvider.notifier).volume,
+          'commands': [
+            'play',
+            'pause',
+            'refresh',
+            'volume',
+            'mute',
+            'danmaku',
+            'fullscreen',
+            'previous',
+            'next',
+            'up',
+            'down',
+          ],
+        };
+      },
+      execute: (command, value) async {
+        if (!mounted) return false;
+        final room = ref.read(roomProvider);
+        final controller = ref.read(roomProvider.notifier);
+        switch (command) {
+          case 'play':
+            if (!room.playback.playing) await controller.togglePlayPause();
+            return true;
+          case 'pause':
+            if (room.playback.playing) await controller.togglePlayPause();
+            return true;
+          case 'refresh':
+            await controller.refreshRoom();
+            return true;
+          case 'volume':
+            if (value == null) return false;
+            await controller.setVolume(value);
+            return true;
+          case 'mute':
+            await controller.setMuted(value: !controller.muted);
+            return true;
+          case 'danmaku':
+            await ref
+                .read(playbackSettingsProvider.notifier)
+                .setDanmakuVisible(value: !ref.read(playbackSettingsProvider).danmakuVisible);
+            return true;
+          case 'fullscreen':
+            _enterFullscreen();
+            return true;
+          case 'previous':
+          case 'up':
+            _switchRoomByStep(-1);
+            return true;
+          case 'next':
+          case 'down':
+            _switchRoomByStep(1);
+            return true;
+        }
+        return false;
+      },
+    );
+    playbackRemote.register(_remoteTarget);
   }
 
   /// Remembers where the chat sheet settled: the bars over the picture stand
@@ -482,6 +557,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   void dispose() {
+    playbackRemote.unregister(_remoteTarget);
     // The page may be destroyed while it fills the window; the next route
     // must get its window strip back.
     _writeAfterFrame(() => _immersiveNotifier.set(value: false));

@@ -62,6 +62,10 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   /// runs, and leaving must still tell the playback owner the wall is gone.
   late final MultiviewPlaybackController _playbackNotifier;
 
+  /// The phone's view of the wall, registered for as long as the page is:
+  /// the verbs the selected (audible) pane honestly serves.
+  late final RemotePlaybackTarget _remoteTarget;
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +79,71 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     // one handed as the page arrives.
     ref.listenManual(multiviewSearchHandoffProvider, (_, _) => _takeHandoff());
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+    // The closures read the provider at call time, so a pane switch inside
+    // the page cannot answer with the pane that was audible before.
+    _remoteTarget = RemotePlaybackTarget(
+      available: () => mounted && (ModalRoute.isCurrentOf(context) ?? true),
+      scope: () => 'multiview',
+      snapshot: () {
+        final playback = ref.read(multiviewPlaybackProvider);
+        final selected = playback.selected;
+        final pane = selected == null ? null : playback.panes[selected];
+        if (pane == null) return const {'scope': 'multiview', 'commands': <String>[]};
+        return {
+          'nick': pane.room?.anchor?.name ?? '',
+          'title': pane.room?.content.title ?? '',
+          'paused': pane.paused,
+          'volume': pane.volume,
+          'commands': ['play', 'pause', 'refresh', 'volume', 'mute', 'previous', 'next', 'up', 'down'],
+        };
+      },
+      execute: (command, value) async {
+        if (!mounted) return false;
+        final playback = ref.read(multiviewPlaybackProvider);
+        final controller = ref.read(multiviewPlaybackProvider.notifier);
+        final selected = playback.selected;
+        if (selected == null) return false;
+        switch (command) {
+          case 'play':
+            if (playback.panes[selected]?.paused ?? false) await controller.togglePause(selected);
+            return true;
+          case 'pause':
+            if (!(playback.panes[selected]?.paused ?? true)) await controller.togglePause(selected);
+            return true;
+          case 'refresh':
+            await controller.retry(selected);
+            return true;
+          case 'volume':
+            if (value == null) return false;
+            await controller.setVolume(selected, value);
+            return true;
+          case 'mute':
+            controller.toggleMuteAll();
+            return true;
+          case 'previous':
+          case 'up':
+            _stepSelection(-1);
+            return true;
+          case 'next':
+          case 'down':
+            _stepSelection(1);
+            return true;
+        }
+        return false;
+      },
+    );
+    playbackRemote.register(_remoteTarget);
+  }
+
+  /// Walks the audible pane across the wall's assigned panes, wrapping at
+  /// the ends; the phone's previous and next are the tap a finger cannot
+  /// make on a wall that far away.
+  void _stepSelection(int step) {
+    final playback = ref.read(multiviewPlaybackProvider);
+    final slots = playback.panes.keys.toList()..sort();
+    if (slots.isEmpty) return;
+    final at = playback.selected == null ? -step : slots.indexOf(playback.selected!);
+    ref.read(multiviewPlaybackProvider.notifier).select(slots[(at + step + slots.length) % slots.length]);
   }
 
   /// The saved wall's ask on arrival: open what it kept, or start blank.
@@ -119,6 +188,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
 
   @override
   void dispose() {
+    playbackRemote.unregister(_remoteTarget);
     _playbackNotifier.setActive(active: false);
     super.dispose();
   }
