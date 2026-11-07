@@ -60,7 +60,7 @@
 ## W10 大特性
 - ⬜ 回放抽象：ArchivePlaybackController 五平台统一面+decoder 退休握手（await entering/retirement）+路由表解耦。参考 `shared/rooms/archive_playback.dart`、`archive_navigation.dart`。
 - ⬜ 局域网遥控：HTML 遥控页+6 位配对码→12h Bearer+targetId 界面修订号 ETag+Origin/Host 校验+命令白名单。更新 lan-sync spec 非目标条目。参考 `shared/remote/playback_remote.dart:168-513`。
-- ⬜ PhoneBridge：TV 难输入转手机，一次性 64 位随机路径即凭证、1s 自动关、maybeOf 无能力隐藏按钮。注意不放初值敏感数据。参考 `shared/phone_bridge.dart`、`tv/phone/*`。
+- 🟡 PhoneBridge：**已落 app 3260b871c**——能力契约=PhoneBridge InheritedWidget（maybeOf，null=无此能力→页面藏手机按钮）；一次性页面=TvPhoneServer（64 位随机路径即凭证、only-本网络、无设置无敏感初值、表单发出后 1s 自关）；TV 壳提供桥（app_layout tv 分支包页），手机端 HTML 表单/文本页；对话框=QR+地址+已开状态+提交即 pop 带值；slang 新 phone 域 10 键。参考 `shared/phone_bridge.dart`+`tv/phone/*`（335 行）。余：具体消费页（cookie 输入/日志查看）在 v2 尚无承载面——特性到时接 maybeOf 即可；TV 真机扫码待验。
 - ⬜ 开播提醒 WorkManager：app/后台共用小 JSON（原子写+双方合并去重）、后台 check 不开库不持 cookie。需新增 workmanager 依赖。参考 `favorite/live_alert_watch.dart`。
 - ⬜ 房间身份迁移框架：存储层定义迁移规则+解析签名，app 注入适配器，刷新前执行、分组 moveRoom 跟迁、重复关注合并。参考 `legacy_import.dart:350-390`。
 - ✅ 音乐音频缓存（d2ea031f1）：CachedTrackSource 装饰器挂在 MusicSourceRegistry 上（resolve 先问磁盘、命中 Uri.file、未命中边播边下 .part→commit、LRU 上限设置行+清空钮、传输走 LiveHttp 吃代理策略）。参考 `live_vod/src/music/audio_cache.dart`。
