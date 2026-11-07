@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:io' show HttpOverrides;
 
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
@@ -66,6 +67,11 @@ Future<Boot> bootstrap() async {
     // executable, so it never reads or writes a release's data.
     debug: kDebugMode,
   );
+  // A TV panel is a television: the app comes up landscape and stays there.
+  // Every other surface keeps the system's own rotation.
+  if (runtime.environment.runtime.formFactor == FormFactor.tv) {
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+  }
   final log = appLog;
   final bootLog = log.forCategory('boot');
 

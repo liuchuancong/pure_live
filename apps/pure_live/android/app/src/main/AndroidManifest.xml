@@ -19,10 +19,21 @@
          the app is left ("离开应用时自动小窗"); the viewer grants it from the
          system's "display over other apps" page. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <!-- The TV build shares this manifest with the phone build, so every
+         feature is declared support-not-requirement (required=true would
+         filter the other side out of stores and sideloads). touchscreen
+         required=false is what lets a TV box without touch install at all;
+         the banner and the LEANBACK_LAUNCHER category are what put the app
+         on the TV launcher's recommendation row. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+    <uses-feature android:name="android.hardware.gamepad" android:required="false"/>
+    <uses-feature android:name="android.software.leanback" android:required="false"/>
+    <uses-feature android:name="android.hardware.type.television" android:required="false"/>
     <application
         android:label="pure_live"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/tv_banner"
         android:enableOnBackInvokedCallback="true"
         android:usesCleartextTraffic="true">
         <activity
@@ -46,6 +57,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <!-- The TV launcher's own row; the phone launchers ignore it. -->
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
             <!-- The app's own deep links (`purelive://room?site=&id=`): a
                  browser link or a QR scan reaches the router's redirect, on a
