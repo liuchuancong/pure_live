@@ -212,6 +212,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.shield, t.shield.repeatTitle, 'repeat identical collapse duplicate burst 重复 相同 合并 弹幕'),
     _hit(SettingsSection.shield, t.shield.repeatEnabled, 'collapse identical repeated danmaku 合并 相同 重复 弹幕'),
     _hit(SettingsSection.shield, t.shield.repeatWindow, 'repeat window seconds duration 合并 时间 秒 窗口'),
+    _hit(
+      SettingsSection.backgroundGuide,
+      t.settings.navBackgroundGuide,
+      'background battery autostart lock 后台 电池 自启动 引导 加锁 后台播放',
+    ),
     _hit(SettingsSection.shield, t.shield.contentTitle, 'content block emote long bot 内容 屏蔽 表情 超长 机器人'),
     _hit(SettingsSection.shield, t.shield.blockEmoteOnly, 'emoticon only emoji block 纯表情 表情 屏蔽 弹幕'),
     _hit(SettingsSection.shield, t.shield.blockLong, 'long danmaku length threshold block 超长 字数 屏蔽 弹幕'),

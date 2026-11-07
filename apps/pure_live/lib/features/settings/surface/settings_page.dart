@@ -9,6 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/lan_sync/lan_sync.dart' show LanSyncPane;
+import 'package:pure_live/features/settings/pages/background_guide_pane.dart' show BackgroundGuidePane;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart' show FontManagerPage;
 import 'package:pure_live/features/settings/pages/player_guide_page.dart' show PlayerGuidePage;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show WallpaperDownloadsPane;
@@ -504,6 +505,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.kernel => const PlayerKernelPane(),
       SettingsSection.kernelAdvanced => const PlayerKernelAdvancedPane(),
       SettingsSection.playerGuide => const PlayerGuidePage(),
+      SettingsSection.backgroundGuide => const BackgroundGuidePane(),
       SettingsSection.startup || SettingsSection.system => const StartupPane(),
       SettingsSection.window => const WindowPane(),
       SettingsSection.network => const NetworkPane(),

@@ -29,6 +29,7 @@ import 'package:pure_live/features/settings/playback/portrait_settings_providers
     show PortraitLayoutMode, portraitLayoutModeProvider;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
@@ -244,6 +245,16 @@ final class QualityAudioPane extends ConsumerWidget {
                   value: settings.backgroundPlay,
                   onChanged: (value) => unawaited(controller.setBackgroundPlay(value: value)),
                 ),
+              ),
+              // The phone's own switches behind background play: what this
+              // build restricts and where to change it (Android only — the
+              // whole block is).
+              DsListRow(
+                leading: const DsIcon(DsIcons.batteryCharging),
+                title: Text(t.settings.navBackgroundGuide),
+                description: Text(t.settings.backgroundGuideDescription),
+                onPressed: () => openSettingsChild(context, ref, SettingsSection.backgroundGuide),
+                showChevron: true,
               ),
               // The room's own background habits: the danmaku that stops when
               // the app does, the audio-only continuation, the PiP close that

@@ -11998,6 +11998,123 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '缓存清理与恢复默认。'
 	String get musicStorageDescription => '缓存清理与恢复默认。';
+
+	/// zh-CN: '后台播放引导'
+	String get navBackgroundGuide => '后台播放引导';
+
+	/// zh-CN: '本机系统在后台对应用做了什么，以及逐项改它的开关。'
+	String get backgroundGuideDescription => '本机系统在后台对应用做了什么，以及逐项改它的开关。';
+
+	/// zh-CN: '这台设备没有后台引导可看。'
+	String get backgroundGuideUnavailable => '这台设备没有后台引导可看。';
+
+	/// zh-CN: '没有打开任何系统页面'
+	String get backgroundGuideOpenFailed => '没有打开任何系统页面';
+
+	/// zh-CN: '省电模式开着：它可能在后台停掉播放。'
+	String get backgroundGuidePowerSave => '省电模式开着：它可能在后台停掉播放。';
+
+	/// zh-CN: '{rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。'
+	String backgroundGuideManualNote({required Object rom}) => '${rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。';
+
+	/// zh-CN: '正常'
+	String get backgroundGuideStateOk => '正常';
+
+	/// zh-CN: '待处理'
+	String get backgroundGuideStateTodo => '待处理';
+
+	/// zh-CN: '需自查'
+	String get backgroundGuideStateManual => '需自查';
+
+	/// zh-CN: '通知权限'
+	String get backgroundGuideNotifications => '通知权限';
+
+	/// zh-CN: '锁屏与后台的播放提醒走通知；关掉后后台可能被系统加码限制。'
+	String get backgroundGuideNotificationsHow => '锁屏与后台的播放提醒走通知；关掉后后台可能被系统加码限制。';
+
+	/// zh-CN: '电池优化豁免'
+	String get backgroundGuideBattery => '电池优化豁免';
+
+	/// zh-CN: '把本应用设为不优化，后台播放不被省电策略掐断。'
+	String get backgroundGuideBatteryHow => '把本应用设为不优化，后台播放不被省电策略掐断。';
+
+	/// zh-CN: '后台受限'
+	String get backgroundGuideRestricted => '后台受限';
+
+	/// zh-CN: '系统正在限制本应用的后台活动，去应用信息里解除。'
+	String get backgroundGuideRestrictedHow => '系统正在限制本应用的后台活动，去应用信息里解除。';
+
+	/// zh-CN: '流量节省程序'
+	String get backgroundGuideDataSaver => '流量节省程序';
+
+	/// zh-CN: '节省程序开着且没放行本应用，后台用不了移动数据。'
+	String get backgroundGuideDataSaverHow => '节省程序开着且没放行本应用，后台用不了移动数据。';
+
+	/// zh-CN: '自启动权限'
+	String get backgroundGuideXiaomiAutostart => '自启动权限';
+
+	/// zh-CN: 'MIUI/HyperOS 要求允许自启动，后台才稳。'
+	String get backgroundGuideXiaomiAutostartHow => 'MIUI/HyperOS 要求允许自启动，后台才稳。';
+
+	/// zh-CN: '自启动权限'
+	String get backgroundGuideOppoAutostart => '自启动权限';
+
+	/// zh-CN: 'ColorOS/realme UI 要求允许自启动，后台才稳。'
+	String get backgroundGuideOppoAutostartHow => 'ColorOS/realme UI 要求允许自启动，后台才稳。';
+
+	/// zh-CN: '自启动权限'
+	String get backgroundGuideVivoAutostart => '自启动权限';
+
+	/// zh-CN: 'OriginOS/Funtouch 要求允许后台弹出与自启动。'
+	String get backgroundGuideVivoAutostartHow => 'OriginOS/Funtouch 要求允许后台弹出与自启动。';
+
+	/// zh-CN: '省电策略'
+	String get backgroundGuideXiaomiBattery => '省电策略';
+
+	/// zh-CN: '把本应用设为「无限制」，不要「后台超过 10 分钟后关闭」。'
+	String get backgroundGuideXiaomiBatteryHow => '把本应用设为「无限制」，不要「后台超过 10 分钟后关闭」。';
+
+	/// zh-CN: '耗电管理'
+	String get backgroundGuideOppoBattery => '耗电管理';
+
+	/// zh-CN: '允许后台运行，不要被「智能耗电保护」拦下。'
+	String get backgroundGuideOppoBatteryHow => '允许后台运行，不要被「智能耗电保护」拦下。';
+
+	/// zh-CN: '后台高耗电'
+	String get backgroundGuideVivoPower => '后台高耗电';
+
+	/// zh-CN: '允许本应用后台高耗电，播放才不会被判成异常。'
+	String get backgroundGuideVivoPowerHow => '允许本应用后台高耗电，播放才不会被判成异常。';
+
+	/// zh-CN: '应用启动管理'
+	String get backgroundGuideHuaweiLaunch => '应用启动管理';
+
+	/// zh-CN: '关闭自动管理，手动允许自启动/关联启动/后台活动。'
+	String get backgroundGuideHuaweiLaunchHow => '关闭自动管理，手动允许自启动/关联启动/后台活动。';
+
+	/// zh-CN: '电池用量'
+	String get backgroundGuideSamsungBattery => '电池用量';
+
+	/// zh-CN: '把本应用设为「不受限制」。'
+	String get backgroundGuideSamsungBatteryHow => '把本应用设为「不受限制」。';
+
+	/// zh-CN: '休眠应用'
+	String get backgroundGuideSamsungSleeping => '休眠应用';
+
+	/// zh-CN: '把本应用从深度休眠/休眠列表里移出。'
+	String get backgroundGuideSamsungSleepingHow => '把本应用从深度休眠/休眠列表里移出。';
+
+	/// zh-CN: '后台管理'
+	String get backgroundGuideMeizuBackground => '后台管理';
+
+	/// zh-CN: 'Flyme 的后台管控里放行本应用。'
+	String get backgroundGuideMeizuBackgroundHow => 'Flyme 的后台管控里放行本应用。';
+
+	/// zh-CN: '最近任务里加锁'
+	String get backgroundGuideLockRecents => '最近任务里加锁';
+
+	/// zh-CN: '在最近任务里下拉本应用加锁，清理时不会被杀。'
+	String get backgroundGuideLockRecentsHow => '在最近任务里下拉本应用加锁，清理时不会被杀。';
 }
 
 // Path: shield
@@ -18206,6 +18323,47 @@ extension on Translations {
 			'settings.musicInterfaceDescription' => '列表行、来源与不喜欢的显示方式。',
 			'settings.navMusicStorage' => '存储与重置',
 			'settings.musicStorageDescription' => '缓存清理与恢复默认。',
+			'settings.navBackgroundGuide' => '后台播放引导',
+			'settings.backgroundGuideDescription' => '本机系统在后台对应用做了什么，以及逐项改它的开关。',
+			'settings.backgroundGuideUnavailable' => '这台设备没有后台引导可看。',
+			'settings.backgroundGuideOpenFailed' => '没有打开任何系统页面',
+			'settings.backgroundGuidePowerSave' => '省电模式开着：它可能在后台停掉播放。',
+			'settings.backgroundGuideManualNote' => ({required Object rom}) => '${rom} 的开关系统不向应用报告，下面几项要你在系统里自己确认。',
+			'settings.backgroundGuideStateOk' => '正常',
+			'settings.backgroundGuideStateTodo' => '待处理',
+			'settings.backgroundGuideStateManual' => '需自查',
+			'settings.backgroundGuideNotifications' => '通知权限',
+			'settings.backgroundGuideNotificationsHow' => '锁屏与后台的播放提醒走通知；关掉后后台可能被系统加码限制。',
+			'settings.backgroundGuideBattery' => '电池优化豁免',
+			'settings.backgroundGuideBatteryHow' => '把本应用设为不优化，后台播放不被省电策略掐断。',
+			'settings.backgroundGuideRestricted' => '后台受限',
+			'settings.backgroundGuideRestrictedHow' => '系统正在限制本应用的后台活动，去应用信息里解除。',
+			'settings.backgroundGuideDataSaver' => '流量节省程序',
+			'settings.backgroundGuideDataSaverHow' => '节省程序开着且没放行本应用，后台用不了移动数据。',
+			'settings.backgroundGuideXiaomiAutostart' => '自启动权限',
+			_ => null,
+		} ?? switch (path) {
+			'settings.backgroundGuideXiaomiAutostartHow' => 'MIUI/HyperOS 要求允许自启动，后台才稳。',
+			'settings.backgroundGuideOppoAutostart' => '自启动权限',
+			'settings.backgroundGuideOppoAutostartHow' => 'ColorOS/realme UI 要求允许自启动，后台才稳。',
+			'settings.backgroundGuideVivoAutostart' => '自启动权限',
+			'settings.backgroundGuideVivoAutostartHow' => 'OriginOS/Funtouch 要求允许后台弹出与自启动。',
+			'settings.backgroundGuideXiaomiBattery' => '省电策略',
+			'settings.backgroundGuideXiaomiBatteryHow' => '把本应用设为「无限制」，不要「后台超过 10 分钟后关闭」。',
+			'settings.backgroundGuideOppoBattery' => '耗电管理',
+			'settings.backgroundGuideOppoBatteryHow' => '允许后台运行，不要被「智能耗电保护」拦下。',
+			'settings.backgroundGuideVivoPower' => '后台高耗电',
+			'settings.backgroundGuideVivoPowerHow' => '允许本应用后台高耗电，播放才不会被判成异常。',
+			'settings.backgroundGuideHuaweiLaunch' => '应用启动管理',
+			'settings.backgroundGuideHuaweiLaunchHow' => '关闭自动管理，手动允许自启动/关联启动/后台活动。',
+			'settings.backgroundGuideSamsungBattery' => '电池用量',
+			'settings.backgroundGuideSamsungBatteryHow' => '把本应用设为「不受限制」。',
+			'settings.backgroundGuideSamsungSleeping' => '休眠应用',
+			'settings.backgroundGuideSamsungSleepingHow' => '把本应用从深度休眠/休眠列表里移出。',
+			'settings.backgroundGuideMeizuBackground' => '后台管理',
+			'settings.backgroundGuideMeizuBackgroundHow' => 'Flyme 的后台管控里放行本应用。',
+			'settings.backgroundGuideLockRecents' => '最近任务里加锁',
+			'settings.backgroundGuideLockRecentsHow' => '在最近任务里下拉本应用加锁，清理时不会被杀。',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -18224,8 +18382,6 @@ extension on Translations {
 			'shield.repeatTitle' => '重复弹幕过滤',
 			'shield.repeatEnabled' => '合并重复弹幕',
 			'shield.repeatEnabledDescription' => '相同内容只保留第一条。',
-			_ => null,
-		} ?? switch (path) {
 			'shield.repeatWindow' => '合并时间',
 			'shield.keywordsTitle' => '关键词',
 			'shield.usersTitle' => '用户',
@@ -18699,6 +18855,8 @@ extension on Translations {
 			'wallpaper.source360Car' => '360壁纸汽车',
 			'wallpaper.source360Pet' => '360壁纸萌宠',
 			'wallpaper.source360Fresh' => '360壁纸清新',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Sport' => '360壁纸体育',
 			'wallpaper.source360Child' => '360壁纸萌娃',
 			'wallpaper.source360Military' => '360壁纸军事',

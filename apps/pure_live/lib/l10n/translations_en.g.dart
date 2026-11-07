@@ -4143,6 +4143,45 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get musicInterfaceDescription => 'How list rows, sources and dislikes read.';
 	@override String get navMusicStorage => 'Storage & reset';
 	@override String get musicStorageDescription => 'Cache cleanup and the defaults.';
+	@override String get navBackgroundGuide => 'Background playback guide';
+	@override String get backgroundGuideDescription => 'What this phone\'s system does to an app in the background, and the switches to change it.';
+	@override String get backgroundGuideUnavailable => 'No background guide for this device.';
+	@override String get backgroundGuideOpenFailed => 'No system page opened';
+	@override String get backgroundGuidePowerSave => 'Battery saver is on: it may stop background playback.';
+	@override String backgroundGuideManualNote({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.';
+	@override String get backgroundGuideStateOk => 'OK';
+	@override String get backgroundGuideStateTodo => 'To do';
+	@override String get backgroundGuideStateManual => 'Check';
+	@override String get backgroundGuideNotifications => 'Notifications';
+	@override String get backgroundGuideNotificationsHow => 'Background play leans on notifications; off, the system tightens on its own.';
+	@override String get backgroundGuideBattery => 'Battery optimisation exemption';
+	@override String get backgroundGuideBatteryHow => 'Set the app to unoptimised so power policies do not cut playback.';
+	@override String get backgroundGuideRestricted => 'Background restricted';
+	@override String get backgroundGuideRestrictedHow => 'The system is restricting this app in the background; undo it in the app info.';
+	@override String get backgroundGuideDataSaver => 'Data Saver';
+	@override String get backgroundGuideDataSaverHow => 'Saver is on without an exemption, so background mobile data is cut.';
+	@override String get backgroundGuideXiaomiAutostart => 'Autostart';
+	@override String get backgroundGuideXiaomiAutostartHow => 'MIUI/HyperOS needs autostart allowed for a steady background.';
+	@override String get backgroundGuideOppoAutostart => 'Autostart';
+	@override String get backgroundGuideOppoAutostartHow => 'ColorOS/realme UI needs autostart allowed for a steady background.';
+	@override String get backgroundGuideVivoAutostart => 'Autostart';
+	@override String get backgroundGuideVivoAutostartHow => 'OriginOS/Funtouch needs background pop-up and autostart allowed.';
+	@override String get backgroundGuideXiaomiBattery => 'Power-saving policy';
+	@override String get backgroundGuideXiaomiBatteryHow => 'Set the app to "No restrictions", not "Close after 10 minutes in background".';
+	@override String get backgroundGuideOppoBattery => 'Power usage';
+	@override String get backgroundGuideOppoBatteryHow => 'Allow background running; do not let smart power protection intercept it.';
+	@override String get backgroundGuideVivoPower => 'Background high power';
+	@override String get backgroundGuideVivoPowerHow => 'Allow background high power use, or playback reads as abnormal.';
+	@override String get backgroundGuideHuaweiLaunch => 'App launch management';
+	@override String get backgroundGuideHuaweiLaunchHow => 'Turn off automatic management; allow autostart, associated launch and background activity.';
+	@override String get backgroundGuideSamsungBattery => 'Battery usage';
+	@override String get backgroundGuideSamsungBatteryHow => 'Set the app to "Unrestricted".';
+	@override String get backgroundGuideSamsungSleeping => 'Sleeping apps';
+	@override String get backgroundGuideSamsungSleepingHow => 'Take the app out of deep sleep and the sleeping list.';
+	@override String get backgroundGuideMeizuBackground => 'Background management';
+	@override String get backgroundGuideMeizuBackgroundHow => 'Let the app through Flyme\'s background controls.';
+	@override String get backgroundGuideLockRecents => 'Lock in recents';
+	@override String get backgroundGuideLockRecentsHow => 'Pull the app down in recents to lock it, so a sweep leaves it alive.';
 }
 
 // Path: shield
@@ -8995,6 +9034,47 @@ extension on TranslationsEn {
 			'settings.musicInterfaceDescription' => 'How list rows, sources and dislikes read.',
 			'settings.navMusicStorage' => 'Storage & reset',
 			'settings.musicStorageDescription' => 'Cache cleanup and the defaults.',
+			'settings.navBackgroundGuide' => 'Background playback guide',
+			'settings.backgroundGuideDescription' => 'What this phone\'s system does to an app in the background, and the switches to change it.',
+			'settings.backgroundGuideUnavailable' => 'No background guide for this device.',
+			'settings.backgroundGuideOpenFailed' => 'No system page opened',
+			'settings.backgroundGuidePowerSave' => 'Battery saver is on: it may stop background playback.',
+			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The ${rom} switches are not reported to apps — check them yourself in the system.',
+			'settings.backgroundGuideStateOk' => 'OK',
+			'settings.backgroundGuideStateTodo' => 'To do',
+			'settings.backgroundGuideStateManual' => 'Check',
+			'settings.backgroundGuideNotifications' => 'Notifications',
+			'settings.backgroundGuideNotificationsHow' => 'Background play leans on notifications; off, the system tightens on its own.',
+			'settings.backgroundGuideBattery' => 'Battery optimisation exemption',
+			'settings.backgroundGuideBatteryHow' => 'Set the app to unoptimised so power policies do not cut playback.',
+			'settings.backgroundGuideRestricted' => 'Background restricted',
+			'settings.backgroundGuideRestrictedHow' => 'The system is restricting this app in the background; undo it in the app info.',
+			'settings.backgroundGuideDataSaver' => 'Data Saver',
+			'settings.backgroundGuideDataSaverHow' => 'Saver is on without an exemption, so background mobile data is cut.',
+			'settings.backgroundGuideXiaomiAutostart' => 'Autostart',
+			_ => null,
+		} ?? switch (path) {
+			'settings.backgroundGuideXiaomiAutostartHow' => 'MIUI/HyperOS needs autostart allowed for a steady background.',
+			'settings.backgroundGuideOppoAutostart' => 'Autostart',
+			'settings.backgroundGuideOppoAutostartHow' => 'ColorOS/realme UI needs autostart allowed for a steady background.',
+			'settings.backgroundGuideVivoAutostart' => 'Autostart',
+			'settings.backgroundGuideVivoAutostartHow' => 'OriginOS/Funtouch needs background pop-up and autostart allowed.',
+			'settings.backgroundGuideXiaomiBattery' => 'Power-saving policy',
+			'settings.backgroundGuideXiaomiBatteryHow' => 'Set the app to "No restrictions", not "Close after 10 minutes in background".',
+			'settings.backgroundGuideOppoBattery' => 'Power usage',
+			'settings.backgroundGuideOppoBatteryHow' => 'Allow background running; do not let smart power protection intercept it.',
+			'settings.backgroundGuideVivoPower' => 'Background high power',
+			'settings.backgroundGuideVivoPowerHow' => 'Allow background high power use, or playback reads as abnormal.',
+			'settings.backgroundGuideHuaweiLaunch' => 'App launch management',
+			'settings.backgroundGuideHuaweiLaunchHow' => 'Turn off automatic management; allow autostart, associated launch and background activity.',
+			'settings.backgroundGuideSamsungBattery' => 'Battery usage',
+			'settings.backgroundGuideSamsungBatteryHow' => 'Set the app to "Unrestricted".',
+			'settings.backgroundGuideSamsungSleeping' => 'Sleeping apps',
+			'settings.backgroundGuideSamsungSleepingHow' => 'Take the app out of deep sleep and the sleeping list.',
+			'settings.backgroundGuideMeizuBackground' => 'Background management',
+			'settings.backgroundGuideMeizuBackgroundHow' => 'Let the app through Flyme\'s background controls.',
+			'settings.backgroundGuideLockRecents' => 'Lock in recents',
+			'settings.backgroundGuideLockRecentsHow' => 'Pull the app down in recents to lock it, so a sweep leaves it alive.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -9013,8 +9093,6 @@ extension on TranslationsEn {
 			'shield.repeatTitle' => 'Repeated danmaku filter',
 			'shield.repeatEnabled' => 'Collapse repeats',
 			'shield.repeatEnabledDescription' => 'Keep only the first copy.',
-			_ => null,
-		} ?? switch (path) {
 			'shield.repeatWindow' => 'Merge window',
 			'shield.keywordsTitle' => 'Keywords',
 			'shield.usersTitle' => 'Users',
@@ -9488,6 +9566,8 @@ extension on TranslationsEn {
 			'wallpaper.source360Car' => '360 Wallpaper · Cars',
 			'wallpaper.source360Pet' => '360 Wallpaper · Pets',
 			'wallpaper.source360Fresh' => '360 Wallpaper · Fresh',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Sport' => '360 Wallpaper · Sports',
 			'wallpaper.source360Child' => '360 Wallpaper · Kids',
 			'wallpaper.source360Military' => '360 Wallpaper · Military',
