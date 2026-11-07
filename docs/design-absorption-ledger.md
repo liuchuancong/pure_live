@@ -55,7 +55,7 @@
 - ✅ 屏蔽三维：等级下限（minUserLevel/minFansLevel，0=关；display 字符串现场解析，**null=未知永不屏蔽**对齐参考）、只显示彩色（effectiveColor r==g==b=灰即隐）、疑似机器人（v2 已有 douyu 站点接缝 douyuSuspectedAutomated，参考同款站点级丢弃——本项即收官）。落 app 9c4a3c75a：DanmakuFilterRules 三新字段+danmakuAttributesBlockedByRules（isLocal 永不屏蔽）+room_controller 预门（与 shape 同路计入本场已屏蔽数）+设置页/房间窄条双面板三行控件+搜索索引；零模型改动、零解析器改动（等级读 sites 已交的 display 字符串）。参考 `message_filter.dart:174-210`、`live_message.dart:376-385`。未搬：userLevelValue/fansLevelValue 数值字段（v2 display 解析已等价）、参考的本地化 Level 徽章显示。
 
 ## W9 测试面
-- 🟡 ReplayHttp 抓包回放传输：✅ 传输+单测 b7fdb3aa3；✅ 样板迁移 3/40（kugoulive/pandalive/liveme，2ca375867）；✅ 第二批 douyin+weibo×2+seventeenlive（11cba2bdc，50 个 schema 1 样本）；✅ schema 2=序列应答+connect/hang/broken 三形态+opens/closed 观测面（live_net d230342ab，9 新测，schema 1 逐字节兼容）；✅ 收尾 twitch+kuaishou-danmaku+youtube-danmaku 序列迁移+三站残留 fake 全删（8524c9a38，33 样本，2233 全绿零断言语义变化）。参考 `live_media` 测试面。剩：baidulive 一站（1912 行 fake 等于重写，单独一批）。
+- ✅ ReplayHttp 抓包回放传输：✅ 传输+单测 b7fdb3aa3；✅ 样板迁移 3/40（kugoulive/pandalive/liveme，2ca375867）；✅ 第二批 douyin+weibo×2+seventeenlive（11cba2bdc，50 个 schema 1 样本）；✅ schema 2=序列应答+connect/hang/broken 三形态+opens/closed 观测面（live_net d230342ab，9 新测，schema 1 逐字节兼容）；✅ 收尾 twitch+kuaishou-danmaku+youtube-danmaku 序列迁移+三站残留 fake 全删（8524c9a38，33 样本，2233 全绿零断言语义变化）；✅ 最后一站 baidulive（799dae7f3：31 用例 1:1 迁移+40 个手写样本 29 schema 1/11 schema 2，_FakeHttp/_Http 全删，站点测试零断言语义变化；取消用例改挂起样本+调用方 cancel；`data` 串精确匹配的 S02/S03/S04/S15 待用户首跑确认）。参考 `live_media` 测试面。**W9 全站迁毕，HTTP fake 清零**（计时器/时钟替身与纯解析器 fixture 构造器不属传输，按原样保留）。
 
 ## W10 大特性
 - ⬜ 回放抽象：ArchivePlaybackController 五平台统一面+decoder 退休握手（await entering/retirement）+路由表解耦。参考 `shared/rooms/archive_playback.dart`、`archive_navigation.dart`。
