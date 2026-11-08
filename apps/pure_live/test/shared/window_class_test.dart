@@ -27,7 +27,7 @@ void main() {
     test('the same classes are equal however they were built', () {
       expect(
         WindowClass.of(const Size(700, 700)),
-        WindowClass(width: WindowWidthClass.medium, height: WindowHeightClass.medium),
+        const WindowClass(width: WindowWidthClass.medium, height: WindowHeightClass.medium),
       );
     });
   });
@@ -35,19 +35,19 @@ void main() {
   group('DisplayHinge', () {
     test('a half-opened fold splits; a flat fold and a cutout do not', () {
       // dart:ui draws a fold as a line: zero width or zero height.
-      final fold = DisplayFeature(
+      const fold = DisplayFeature(
         type: DisplayFeatureType.fold,
-        bounds: const Rect.fromLTWH(399, 0, 0, 800),
+        bounds: Rect.fromLTWH(399, 0, 0, 800),
         state: DisplayFeatureState.postureHalfOpened,
       );
-      final flat = DisplayFeature(
+      const flat = DisplayFeature(
         type: DisplayFeatureType.fold,
-        bounds: const Rect.fromLTWH(399, 0, 0, 800),
+        bounds: Rect.fromLTWH(399, 0, 0, 800),
         state: DisplayFeatureState.unknown,
       );
-      final cutout = DisplayFeature(
+      const cutout = DisplayFeature(
         type: DisplayFeatureType.cutout,
-        bounds: const Rect.fromLTWH(399, 0, 2, 800),
+        bounds: Rect.fromLTWH(399, 0, 2, 800),
         state: DisplayFeatureState.unknown,
       );
       expect(DisplayHinge.find([fold], const Size(800, 800))?.bounds, fold.bounds);
@@ -56,17 +56,17 @@ void main() {
     });
 
     test('a vertical hinge splits a row into two panes with the hinge as the gap', () {
-      final hinge = DisplayHinge(const Rect.fromLTWH(398, 0, 4, 800));
+      const hinge = DisplayHinge(Rect.fromLTWH(398, 0, 4, 800));
       final split = hinge.splitRow(left: 0, width: 800);
       expect(split, isNotNull);
       expect(split!.start, 398);
       expect(split.gap, 4);
-      expect(hinge.splitRow(left: 0, width: 500, minPane: 320), isNull);
-      expect(hinge.splitRow(left: 100, width: 300, minPane: 320), isNull);
+      expect(hinge.splitRow(left: 0, width: 500), isNull);
+      expect(hinge.splitRow(left: 100, width: 300), isNull);
     });
 
     test('a hinge down the middle sends each side to its own half', () {
-      final hinge = DisplayHinge(const Rect.fromLTWH(0, 398, 800, 4));
+      const hinge = DisplayHinge(Rect.fromLTWH(0, 398, 800, 4));
       expect(hinge.vertical, isFalse);
       final top = hinge.sideOf(const Offset(400, 200), const Size(800, 800));
       expect(top.bottom, 398);

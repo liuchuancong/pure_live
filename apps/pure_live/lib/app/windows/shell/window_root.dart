@@ -112,6 +112,10 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
           ref.onDispose(router.dispose);
           return router;
         }),
+        // The remote runtime reads this window's context and router, so it
+        // mounts here: a provider no scope overrides lives in the shared
+        // root container, where neither is overridden and the mount throws.
+        remoteRuntimeProvider.overrideWith(startRemoteRuntime),
         maximizedProvider.overrideWith(MaximizedController.new),
         windowSizeProvider.overrideWith(WindowSizeController.new),
         playerKernelProvider.overrideWith(createPlayerKernel),

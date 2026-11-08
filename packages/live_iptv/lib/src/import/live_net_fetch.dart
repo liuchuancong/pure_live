@@ -9,12 +9,20 @@ library;
 import 'package:live_iptv/src/import/iptv_importer.dart';
 import 'package:live_net/live_net.dart';
 
-/// How long one download may take before it is called dead.
+/// How long one playlist download may take before it is called dead.
 ///
-/// A playlist is a few hundred kilobytes and a guide a few megabytes; thirty
-/// seconds is enough for a slow mirror and short enough that a user waiting
-/// on an import is told about it rather than left watching a spinner.
+/// A playlist is a few hundred kilobytes; thirty seconds is enough for a
+/// slow mirror and short enough that a user waiting on an import is told
+/// about it rather than left watching a spinner.
 const Duration iptvFetchDefaultTimeout = Duration(seconds: 30);
+
+/// How long one guide download may take before it is called dead.
+///
+/// Guides are the big ones, served by mirrors that stream for minutes on a
+/// bad evening - a public lite table measured past forty seconds one night -
+/// and the word the viewer needs then is "slow", not "failed". The guide
+/// fetcher defaults to this; the playlist fetcher keeps the short one.
+const Duration iptvGuideFetchTimeout = Duration(seconds: 90);
 
 /// How much of a guide is read before it is refused: 64 MiB of guide text is
 /// a large week of programmes, and anything past that is a wrong address
@@ -49,7 +57,7 @@ IptvFetcher iptvFetcherFor(
 /// inflate it, so the size has to be checked while it arrives.
 IptvBytesFetcher iptvBytesFetcherFor(
   LiveHttp http, {
-  Duration timeout = iptvFetchDefaultTimeout,
+  Duration timeout = iptvGuideFetchTimeout,
   int limit = iptvGuideByteLimit,
   String? userAgent,
   ProxyRoute? proxyRoute,

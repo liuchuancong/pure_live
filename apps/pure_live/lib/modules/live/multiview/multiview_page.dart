@@ -20,7 +20,6 @@ import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
 import 'package:pure_live/modules/live/multiview/multiview_playback.dart';
 import 'package:pure_live/modules/live/multiview/multiview_search_handoff.dart';
 import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2,

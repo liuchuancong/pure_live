@@ -355,6 +355,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         onOpen: open,
         onRemove: remove,
         removeLabel: t.history.remove,
+        livePreview: true,
       ),
     );
   }

@@ -33,6 +33,11 @@ abstract final class OnVideoColors {
   /// The pressed fill of a control over the picture.
   static const Color inkPressed = Color(0x2EFFFFFF);
 
+  /// The soft chip fill behind a mark on a feed cover — the capsule's fill
+  /// and the cover's bottom-edge gradient share one strength, lighter than
+  /// the player bars' [scrim] because a thumbnail is not a moving picture.
+  static const Color coverMark = Color(0x8C000000);
+
   /// The soft chip fill behind a mark on the picture.
   static const Color chipFill = Color(0x1FFFFFFF);
 

@@ -2,7 +2,6 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -301,7 +300,7 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
       return RoomCardMenu(
         room: room,
         onOpen: open,
-        child: RoomCard(room: room, listRow: listRow, onOpen: open),
+        child: RoomCard(room: room, listRow: listRow, onOpen: open, livePreview: true),
       );
     }
 
@@ -343,14 +342,7 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
       // explained in the bar over them.
       onRefresh: () => controller.refresh(platform),
       refreshError: state.error?.message,
-      // A hover rest floats the room's own reading — the cover at the size
-      // the card could not spare it, the figures beside it — on a pointer
-      // that can hover; a phone and a D-pad never see it.
-      itemBuilder: (context, room) => CardHoverPreview(
-        enabled: wide,
-        content: (context) => _RoomHoverPreviewPanel(room: room, platform: platform),
-        child: cardFor(context, room),
-      ),
+      itemBuilder: cardFor,
     );
     // The reference's hidden-count line: rooms the discovery filter keeps
     // out of the page are counted, not dropped silently, and one action
@@ -378,12 +370,23 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
             ),
           )
         : null;
-    // The grid keeps one ancestry: the note is an optional row of the same
-    // Column, never a wrapper that swaps the Column in over the bare grid —
-    // a swap would tear the grid's element down and reset its scroll.
+    // The grid keeps one ancestry: the section head and the note are rows of
+    // the same Column, never a wrapper that swaps the Column in over the bare
+    // grid — a swap would tear the grid's element down and reset its scroll.
+    // The head names the feed and counts the platform's rooms (a "+" while
+    // more may still come); an empty load leaves the count off.
+    final feedCount = ordered.isEmpty
+        ? null
+        : state.hasMore
+        ? t.popular.feedCountMore(count: ordered.length)
+        : t.popular.feedCount(count: ordered.length);
     final feedView = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
+          child: FeedSectionHeader(title: t.popular.feedTitle, caption: feedCount),
+        ),
         Expanded(child: grid),
         ?hiddenNote,
       ],
@@ -550,7 +553,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       return RoomCardMenu(
         room: room,
         onOpen: open,
-        child: RoomCard(room: room, listRow: listRow, onOpen: open),
+        child: RoomCard(room: room, listRow: listRow, onOpen: open, livePreview: true),
       );
     }
 
@@ -630,75 +633,5 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   String _platformName() {
     final site = ref.read(sitesProvider).getById(widget.platform);
     return site == null ? widget.platform : localizedSiteName(site);
-  }
-}
-
-/// The floated reading a hover rest earns: the room's cover at the size a
-/// card could not spare it, the title whole, the audience figure and the
-/// platform's own name beside it — the card's facts, unhurried.
-final class _RoomHoverPreviewPanel extends ConsumerWidget {
-  const _RoomHoverPreviewPanel({required this.room, required this.platform});
-
-  final LiveRoom room;
-  final String platform;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final site = ref.read(sitesProvider).getById(platform);
-    final figure = AudienceFormat.format(
-      audienceFigureOf(room, ref.watch(audienceMetricProvider), policy: ref.watch(audiencePolicyProvider)),
-    );
-    final title = room.content.title;
-    final anchorName = (room.anchor?.name ?? '').trim();
-    final coverUrl = room.content.coverUrl;
-    return SizedBox(
-      width: 280,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: DsImage(
-              image: coverUrl.isEmpty ? null : cachedImage(coverUrl, policy: ImageCachePolicies.liveRoomCover),
-              semanticLabel: title,
-              fallback: CoverFallback(title: title),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(DsSpace.s12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s6,
-              children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                ),
-                Row(
-                  children: [
-                    RoomCoverChip(icon: DsIcons.flame, text: figure),
-                    const Spacer(),
-                    Text(
-                      anchorName.isNotEmpty
-                          ? anchorName
-                          : site == null
-                          ? platform
-                          : localizedSiteName(site),
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

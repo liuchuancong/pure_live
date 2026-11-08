@@ -12,7 +12,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
-import 'package:pure_live/shared/player/on_video_colors.dart';
+import 'package:pure_live/modules/hongguo/widgets/hongguo_series_preview.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// "1:02:03" for an episode's length, mirroring the station pages' clock.
@@ -174,13 +174,15 @@ String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoS
 /// listing line under it. Which of the station's pieces appear is the card
 /// visibility setting's to say; the viewer's own progress is not one of them,
 /// the way it is not on the board's row.
-final class HongguoSeriesCard extends ConsumerWidget {
+final class HongguoSeriesCard extends ConsumerStatefulWidget {
   /// The card for [series]; [onOpen] opens its page. [watched] is the local
   /// shelf's row for the same series, drawn as the cover's state.
   ///
   /// [poster] replaces the series' own picture and [favorited] states the kept
   /// mark without a shelf lookup — the card preview's sample, which must draw
-  /// both while never rewriting this device's library.
+  /// both while never rewriting this device's library. [preview] true plays
+  /// the series' first episode on the poster while a pointer rests on the
+  /// card.
   const HongguoSeriesCard({
     required this.series,
     this.onOpen,
@@ -188,6 +190,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
     this.watched,
     this.poster,
     this.favorited,
+    this.preview = false,
     super.key,
   });
 
@@ -211,8 +214,43 @@ final class HongguoSeriesCard extends ConsumerWidget {
   /// device's shelf, and a state given here draws the heart inert.
   final bool? favorited;
 
+  /// Whether resting a pointer on the card plays the series on its poster.
+  final bool preview;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HongguoSeriesCard> createState() => _HongguoSeriesCardState();
+}
+
+final class _HongguoSeriesCardState extends ConsumerState<HongguoSeriesCard>
+    with CoverPreviewDwell<HongguoSeriesCard> {
+  /// The card's own interaction states, observed through the pressable: the
+  /// preview's dwell rides them, a press rebuilds nothing.
+  final WidgetStatesController _states = WidgetStatesController();
+
+  @override
+  bool get coverPreviewEnabled => widget.preview;
+
+  @override
+  Widget buildCoverPreview() => HongguoSeriesPreview(series: widget.series);
+
+  @override
+  void initState() {
+    super.initState();
+    _states.addListener(_onStates);
+  }
+
+  void _onStates() => syncCoverPreview(_states.value);
+
+  @override
+  void dispose() {
+    _states.removeListener(_onStates);
+    _states.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final series = widget.series;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final t = context.t;
@@ -232,8 +270,9 @@ final class HongguoSeriesCard extends ConsumerWidget {
     final showsCategory = visibility.shows(HongguoCardElement.category) && series.category.isNotEmpty;
     // The corner holds the one state a wall of posters cannot show: where this
     // device stopped, else the newest marker, else the listing's own reading.
-    final stateText = watched != null
-        ? hongguoWatchedLabel(t, watched!)
+    final seen = widget.watched;
+    final stateText = seen != null
+        ? hongguoWatchedLabel(t, seen)
         : showsToday
         ? t.hongguo.todayTag
         : showsScore
@@ -243,18 +282,20 @@ final class HongguoSeriesCard extends ConsumerWidget {
         : null;
     final favored =
         visibility.shows(HongguoCardElement.favorite) &&
-        (favorited ?? (favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId)));
+        (widget.favorited ??
+            (widget.favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId)));
     // A kept state the caller gave is the sample's own: a heart that wrote would
     // rewrite this device's library from a settings page.
-    final onUnfavorite = favorited == null
+    final onUnfavorite = widget.favorited == null
         ? () {
             final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
             showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
           }
         : null;
     return DsCard(
-      onPressed: onOpen,
+      onPressed: widget.onOpen,
       semanticLabel: series.title,
+      statesController: _states,
       // The room card lifts on hover and tints nothing; a fill here would recolour
       // only the name block, and `colors.overlay` is an opaque surface, not a shadow.
       style: const DsCardStyle(padding: EdgeInsets.zero),
@@ -269,7 +310,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
             // title, and the category phrase does the same. What stays on the
             // cover is the board place and the station's heat.
             final wideCover = width >= kHongguoCoverChipFloor;
-            final onCoverState = wideCover || watched == null;
+            final onCoverState = wideCover || seen == null;
             final onCoverCategory = showsCategory && wideCover;
             // The card's own line is the listing line with whatever its corners
             // carry taken out of it, and without the total: the cover's foot and
@@ -279,7 +320,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
                     t,
                     series,
                     withEpisodeCount: false,
-                    watched: onCoverState ? null : watched,
+                    watched: onCoverState ? null : seen,
                     withFigure: !showsHot,
                     withCategory: !onCoverCategory,
                   )
@@ -295,11 +336,11 @@ final class HongguoSeriesCard extends ConsumerWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (poster == null && series.cover.isEmpty)
+                      if (widget.poster == null && series.cover.isEmpty)
                         fallback
                       else
                         DsImage(
-                          image: poster ?? hongguoCoverImage(series.cover),
+                          image: widget.poster ?? hongguoCoverImage(series.cover),
                           aspectRatio: 3 / 4,
                           semanticLabel: series.title,
                           fallback: fallback,
@@ -311,6 +352,10 @@ final class HongguoSeriesCard extends ConsumerWidget {
                           child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                         ),
                       ),
+                      // The hover's live preview: the series' own episode,
+                      // played where the poster stood in for it, under the
+                      // corner pieces so their readings keep working.
+                      if (coverPreviewing) Positioned.fill(child: buildCoverPreview()),
                       if (showsRank || showsTag)
                         PositionedDirectional(
                           top: DsSpace.s8,

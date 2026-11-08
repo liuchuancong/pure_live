@@ -10,7 +10,6 @@ import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/lan_sync/lan_sync.dart' show LanSyncPane;
 import 'package:pure_live/features/settings/pages/background_guide_pane.dart' show BackgroundGuidePane;
-import 'package:pure_live/features/settings/panes/lan_remote_pane.dart' show LanRemotePane;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart' show FontManagerPage;
 import 'package:pure_live/features/settings/pages/player_guide_page.dart' show PlayerGuidePage;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show WallpaperDownloadsPane;
@@ -26,6 +25,7 @@ import 'package:pure_live/features/settings/panes/browse_sites_panes.dart';
 import 'package:pure_live/features/settings/panes/danmaku_panes.dart' show DanmakuPane, DanmakuTab;
 import 'package:pure_live/features/settings/panes/data_cache_panes.dart';
 import 'package:pure_live/features/settings/panes/general_panes.dart';
+import 'package:pure_live/features/settings/panes/lan_remote_pane.dart' show LanRemotePane;
 import 'package:pure_live/features/settings/panes/network_pane.dart';
 import 'package:pure_live/features/settings/panes/playback_panes.dart';
 import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'

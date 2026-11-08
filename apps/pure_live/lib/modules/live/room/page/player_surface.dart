@@ -1,5 +1,4 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
-import 'dart:io' show Directory;
 import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -16,7 +15,6 @@ import 'package:live_device/live_device.dart'
     show PlatformBatteryService, PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveRoom, LiveStreamCodec, LiveStreamFormat;
 import 'package:media_core/media_core.dart';
-import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart' show FfmpegDiskSpace;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -163,6 +161,8 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.bottomInset = 0,
     this.theater = false,
     this.onTheater,
+    this.glassHeader = false,
+    this.topBarEndInset = DsSpace.s12,
     super.key,
   });
 
@@ -262,6 +262,17 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// list the page header's menu shows: in fullscreen the header is gone and
   /// these have to stay reachable.
   final List<Widget> roomMenu;
+
+  /// Whether the page draws the glass header (back, title, the anchor's card
+  /// and the follow pill) on the picture's top-start edge — the immersive
+  /// full-bleed room. The strip's own verbs then shift to the page menu,
+  /// because the header is what carries the door back.
+  final bool glassHeader;
+
+  /// The room left where the top strip's trailing verbs end: the floating
+  /// chat drawer (方案B) reserves the picture's right edge, and the strip,
+  /// the statistics panel and the pickers keep out from under it.
+  final double topBarEndInset;
 
   @override
   ConsumerState<PlayerSurface> createState() => _PlayerSurfaceState();
@@ -1204,9 +1215,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         onWake: _wake,
                         onScreenshot: () => unawaited(_screenshot()),
                         canScreenshot: handle.canCaptureScreenshot,
-                        menuItems: widget.immersive ? widget.roomMenu : const [],
+                        // The glass-header room (方案B) carries the room's menu on
+                        // the strip: the page's app bar is folded away there, and
+                        // the pill is where the room's errands live.
+                        menuItems:
+                            widget.immersive || widget.glassHeader ? widget.roomMenu : const [],
                         fullscreen: widget.immersive,
                         portraitExit: widget.portraitFullscreen,
+                        endInset: widget.topBarEndInset,
                         // The page's own header already carries the avatar, the live
                         // ring, the counts and the title above the picture, so the
                         // strip only names the room once the chrome is gone — or on
@@ -1321,7 +1337,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       top: showBar && !mini
                           ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s12
                           : DsSpace.s12,
-                      end: 12,
+                      end: widget.topBarEndInset,
                       child: PlayerStatsOverlay(handle: handle),
                     ),
                   // The open catalogue, above the bar that raised it: the host only
@@ -1693,6 +1709,7 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
     this.portraitExit = false,
     this.identity = true,
     this.onTitle,
+    this.endInset = DsSpace.s12,
   });
 
   final RoomState room;
@@ -1725,6 +1742,11 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
   /// gone (fullscreen, window fullscreen, portrait) the identity comes back,
   /// and so it does on a phone held sideways, whose room card has no column.
   final bool identity;
+
+  /// The room left where the strip's trailing verbs end: the floating chat
+  /// drawer (方案B) reserves the picture's end edge, and the strip keeps out
+  /// from under it.
+  final double endInset;
 
   /// Opens the room's details from its name: the strip of a phone held
   /// sideways stands in for the room card, so the name takes the card's press
@@ -1790,7 +1812,6 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
     final replay = detail?.broadcast.isRecord ?? false;
     final tv = PlayerBarTier.tvOf(context);
     final onTitle = widget.onTitle;
-    final recordingTask = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, detail);
     return LayoutBuilder(
       builder: (context, constraints) {
         // The same floor the control bar uses for its medium tier: below it a
@@ -1820,22 +1841,11 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
           // reference's row of four), the flying danmaku's switch first — and
           // no gradient band darkening an image the viewer is watching.
           return Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s12, DsSpace.s12, 0),
+            padding: EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s12, widget.endInset, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               spacing: DsSpace.s8,
               children: [
-                // A running capture leads the row: the red dot, the elapsed
-                // count and the disk's battery, said at the top where the
-                // viewer checks on it without opening the bar.
-                if (recordingTask != null)
-                  _RecordingTopChip(
-                    task: recordingTask,
-                    onStop: () {
-                      widget.onWake();
-                      unawaited(toggleRoomRecording(context, ref));
-                    },
-                  ),
                 // The capture leads the verbs: the reference's row puts the
                 // frame-copy first, then where the picture goes, then the menu.
                 if (widget.canScreenshot && widget.onScreenshot != null)
@@ -1856,7 +1866,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
           );
         }
         return Container(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s12),
+          padding: EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, widget.endInset, DsSpace.s12),
           decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
           child: Row(
             spacing: tv ? DsSpace.s12 : DsSpace.s8,
@@ -1872,16 +1882,6 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                   ),
                 ),
               if (widget.fullscreen) const _PlayerClockBattery(),
-              // A running capture sits at the top here too: the red dot, the
-              // elapsed count and the disk's battery, beside the room's name.
-              if (recordingTask != null)
-                _RecordingTopChip(
-                  task: recordingTask,
-                  onStop: () {
-                    widget.onWake();
-                    unawaited(toggleRoomRecording(context, ref));
-                  },
-                ),
               if (label != null)
                 Expanded(
                   child: onTitle == null
@@ -1998,10 +1998,11 @@ final class _StripTitle extends StatelessWidget {
   }
 }
 
-/// The flying danmaku's controls on the bar: the round 「弹」 switch beside the
-/// gear that opens its settings — the pair the reference draws at the bar's
-/// reading end. A viewer toggles the lines and tunes them without leaving the
-/// bar, and the switch's letter reads at every tier the bar is drawn at.
+/// The flying danmaku's controls on the bar: the 「弹」 switch beside the
+/// nut-badged glyph that opens its settings — the pair the reference draws at
+/// the bar's reading end. A viewer toggles the lines and tunes them without
+/// leaving the bar, and the switch's letter reads at every tier the bar is
+/// drawn at.
 final class _DanmakuBarCluster extends ConsumerWidget {
   const _DanmakuBarCluster({required this.onWake});
 
@@ -2011,7 +2012,6 @@ final class _DanmakuBarCluster extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
     final settings = ref.watch(playbackSettingsProvider);
     final side = PlayerBarTier.controlSize(context);
     return Row(
@@ -2026,18 +2026,18 @@ final class _DanmakuBarCluster extends ConsumerWidget {
           },
           builder: (context, states, _) {
             final on = settings.danmakuVisible;
+            // The pair the reference serves: the off glyph wears the barred
+            // circle, the on glyph the check — the badge says which, so both
+            // take the bar's ink and the off one only steps back a shade.
             return Container(
               width: side,
               height: side,
               alignment: Alignment.center,
-              // The off state is the glyph alone: a ring around it read as a
-              // second button beside the settings gear.
-              decoration: BoxDecoration(shape: BoxShape.circle, color: on ? theme.colors.accent : OnVideoColors.clear),
               child: SvgPicture.asset(
-                'assets/icons/danmaku.svg',
+                on ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
                 width: side * .5,
                 height: side * .5,
-                colorFilter: ColorFilter.mode(on ? theme.colors.onAccent : _onVideoMuted, BlendMode.srcIn),
+                colorFilter: ColorFilter.mode(on ? _onVideo : _onVideoMuted, BlendMode.srcIn),
               ),
             );
           },
@@ -2058,15 +2058,22 @@ final class _DanmakuBarCluster extends ConsumerWidget {
 /// The time this visit has watched, on the bar beside the volume. A live
 /// stream has no position to draw, and this is the one number a viewer can
 /// still read off it — how long they have been here.
+///
+/// The clock reads [startedAt] off the room's state — the visit's opening,
+/// reset when the engine commits a stream — rather than this widget's own
+/// mount: the bar hides and remounts as the pointer comes and goes, and a
+/// clock that restarted every time would never say anything at all.
 final class _WatchElapsed extends StatefulWidget {
-  const _WatchElapsed();
+  const _WatchElapsed({required this.startedAt});
+
+  /// When the watched session began.
+  final DateTime startedAt;
 
   @override
   State<_WatchElapsed> createState() => _WatchElapsedState();
 }
 
 final class _WatchElapsedState extends State<_WatchElapsed> {
-  final DateTime _started = DateTime.now();
   Timer? _tick;
 
   @override
@@ -2087,7 +2094,7 @@ final class _WatchElapsedState extends State<_WatchElapsed> {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final elapsed = DateTime.now().difference(_started);
+    final elapsed = DateTime.now().difference(widget.startedAt);
     String two(int value) => value.toString().padLeft(2, '0');
     final time = elapsed.inHours > 0
         ? '${elapsed.inHours}:${two(elapsed.inMinutes % 60)}:${two(elapsed.inSeconds % 60)}'
@@ -2830,7 +2837,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   // answers "how long have I been here" where a VOD bar would
                   // draw its time. A replay's time is the seek line's own, so
                   // the clock keeps to the live rooms it belongs to.
-                  if (!replay) const _WatchElapsed(),
+                  if (!replay) _WatchElapsed(startedAt: room.watchStartedAt),
                   // A running capture is said here, beside the transport, as
                   // the reference does: the red dot and the word, the elapsed
                   // count with them, and a press ends it.
@@ -2863,8 +2870,12 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               // -- The window verbs, then the way out of the picture's box.
               // Capture, record and cast sit in the strip above with the
               // room's state: they say where this picture goes, and a running
-              // capture has a state worth seeing at a glance.
-              if (wide && !pip && _desktop && player != null)
+              // capture has a state worth seeing at a glance. Both ways out
+              // show at every width on every host: the window variant fills
+              // the app's own window on a desktop and the phone's surface on
+              // a handset, and a press either way hands straight over from
+              // the other — neither waits for room the bar may not have.
+              if (!pip && player != null)
                 PlayerBarButton(
                   iconAsset: presentation == PresentationMode.windowFullscreen
                       ? 'assets/icons/fullscreen-exit.svg'
@@ -2916,112 +2927,6 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
     );
   }
 }
-
-/// The running capture, said at the top of the picture: the breathing dot
-/// and the elapsed count, the bytes it has written, and a battery that
-/// reads how many hours the disk still holds at the pace the take has
-/// actually written at. A press ends it.
-final class _RecordingTopChip extends StatefulWidget {
-  const _RecordingTopChip({required this.task, required this.onStop});
-
-  /// The capture whose facts are shown.
-  final RecordingTask task;
-
-  /// Stops the recording.
-  final VoidCallback onStop;
-
-  @override
-  State<_RecordingTopChip> createState() => _RecordingTopChipState();
-}
-
-final class _RecordingTopChipState extends State<_RecordingTopChip> {
-  Timer? _tick;
-  Timer? _probe;
-  int? _freeBytes;
-
-  @override
-  void initState() {
-    super.initState();
-    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-    unawaited(_readDisk());
-    _probe = Timer.periodic(const Duration(seconds: 30), (_) => unawaited(_readDisk()));
-  }
-
-  @override
-  void didUpdateWidget(_RecordingTopChip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.task.filePath != widget.task.filePath) unawaited(_readDisk());
-  }
-
-  @override
-  void dispose() {
-    _tick?.cancel();
-    _probe?.cancel();
-    super.dispose();
-  }
-
-  /// The free bytes under the take's own directory — the take names the
-  /// drive that matters. A probe shells out, so it runs on entry and at
-  /// most twice a minute, never on every clock tick; a failed probe leaves
-  /// the last reading up, and the battery hides until one lands.
-  Future<void> _readDisk() async {
-    final path = widget.task.filePath;
-    if (path == null || path.isEmpty) return;
-    final directory = Directory(path);
-    final dir = directory.existsSync() ? directory.path : directory.parent.path;
-    try {
-      final free = await FfmpegDiskSpace.probe(dir);
-      if (mounted && free != null) setState(() => _freeBytes = free);
-    } on Object {
-      // The last reading stands.
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final task = widget.task;
-    final elapsed = DateTime.now().difference(task.startedAt);
-    // The hours the disk still holds at the take's own pace; a take younger
-    // than a minute has no pace worth quoting, so the battery waits for one.
-    double? hoursLeft;
-    final seconds = elapsed.inSeconds;
-    if (_freeBytes != null && task.bytes > 0 && seconds >= 60) {
-      final perHour = task.bytes * 3600 / seconds;
-      if (perHour > 0) hoursLeft = _freeBytes! / perHour;
-    }
-    return PlayerGlassPill(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s6,
-        children: [
-          RecordingIndicator(
-            startedAt: task.startedAt,
-            figures: task.bytes <= 0 ? null : formatRecordingBytes(task.bytes),
-            label: context.t.room.stopRecording,
-            onStop: widget.onStop,
-          ),
-          if (hoursLeft != null) ...[
-            const DsIcon(DsIcons.battery, size: 14, color: OnVideoColors.inkMuted),
-            Text(
-              '${hoursLeft.toStringAsFixed(1)}h',
-              style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Whether this host offers the desktop-only window-fullscreen button.
-bool get _desktop =>
-    !kIsWeb &&
-    (defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.macOS ||
-        defaultTargetPlatform == TargetPlatform.linux);
 
 /// A hair divider between the fitted bar's clusters: the transport on one
 /// side, the stream's own menus on the other.

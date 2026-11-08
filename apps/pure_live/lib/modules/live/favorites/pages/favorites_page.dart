@@ -333,7 +333,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       return RoomCardMenu(
         room: room,
         onOpen: open,
-        child: RoomCard(room: room, listRow: listRow, tags: names, onOpen: open),
+        child: RoomCard(room: room, listRow: listRow, tags: names, onOpen: open, livePreview: true),
       );
     }
 

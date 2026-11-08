@@ -6,5 +6,8 @@
   "nextPage": "下一页",
   "inlineAt": "在 {platform} 中搜索“{query}”",
   "backToBrowse": "返回浏览",
+  "feedTitle": "推荐直播",
+  "feedCount": "{count: int} 个直播",
+  "feedCountMore": "{count: int}+ 个直播",
   "hiddenUnplayable": "已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）"
 }

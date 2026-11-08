@@ -18,8 +18,8 @@ import 'package:multiview_desktop/multiview_desktop.dart'
         WindowOptions,
         runMultiApp;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/modules/live/favorites/alerts/live_alert_background.dart' show initializeLiveAlertBackground;
 import 'package:pure_live/l10n/translations.dart' show TranslationProvider;
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_background.dart' show initializeLiveAlertBackground;
 
 /// The process entry point.
 ///

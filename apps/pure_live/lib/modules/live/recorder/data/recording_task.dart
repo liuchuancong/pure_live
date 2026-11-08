@@ -328,7 +328,8 @@ final class RecordingTask {
   /// ended waits for its next window to re-arm it; with the live check switched
   /// off neither happens on its own, and the recorder page says so. Anything
   /// capturing, or finished without a schedule, is not waiting on the check.
-  bool get needsLiveCheck => isArmed;
+  bool get needsLiveCheck =>
+      state == RecordingTaskState.waiting || (scheduleEnabled && state == RecordingTaskState.stopped);
 
   /// The folder the take lives in, read back from [filePath] — which is the
   /// joined file once the post-recording steps wrote one, and the take's own

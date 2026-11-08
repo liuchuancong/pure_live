@@ -421,7 +421,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     final lines = answer.fold((error) => throw _PaneOpenFailure(error.message, error), (lines) => lines);
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
-    final ingest = await startLiveIngest(ref: ref, site: site, line: lines.first);
+    final ingest = await startLiveIngest(proxyRoute: () => ref.read(appProxyRouteProvider), site: site, line: lines.first);
     if (ingest == null) return lines;
     if (session.disposed) {
       await ingest.close();
@@ -730,9 +730,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   void _publish() {
     // The panes' schedulers read the wall through this one seam, so every
     // change the page can see is a change they can act on.
-    for (final session in [..._sessions]) {
-      _syncPaneAutoSwitch(session);
-    }
+    [..._sessions].forEach(_syncPaneAutoSwitch);
     state = (
       active: _active,
       allMuted: _allMuted,
@@ -779,7 +777,8 @@ final class _PaneSession {
   String? error;
 
   /// The follow-walking scheduler this pane feeds (see
-  /// [_attachAutoSwitch]); null never after creation, disposed in release.
+  /// [MultiviewPlaybackController._attachAutoSwitch]); null never after
+  /// creation, disposed in release.
   AutoRoomSwitch? autoSwitch;
 
   /// The engine's latest playback state, the scheduler's playback input.

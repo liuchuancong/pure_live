@@ -681,7 +681,10 @@ final class _PlayerWindowChrome extends ConsumerWidget {
         // and the PiP surface carries its own strip of controls.
         mode == PresentationMode.pip ||
         pageImmersive;
-    final selfChrome = drawsOwnChrome && WindowChromeState.drawsCaptionControls;
+    // The page can also fold its own header away (the immersive full-bleed
+    // room); it then hands the window strip back through this flag.
+    final selfChrome =
+        drawsOwnChrome && ref.watch(roomPageOwnChromeProvider) && WindowChromeState.drawsCaptionControls;
     return WindowChromeFrame(enabled: !immersive && !selfChrome, child: child);
   }
 }

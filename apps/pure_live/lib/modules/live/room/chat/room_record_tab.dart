@@ -1,4 +1,4 @@
-import 'dart:async' show Timer;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -8,15 +8,18 @@ import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNam
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart' show roomProvider;
+import 'package:pure_live/modules/live/room/page/player_surface.dart' show toggleRoomRecording;
 import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
 
-/// The room's own recording panel: what this room's capture has written, in the
-/// words the recording centre already uses.
+/// The room's own recording panel: what this room's capture has written, and
+/// the verbs on it — start and stop right here, so managing this room's take
+/// never means leaving the room.
 ///
-/// Read-only on purpose. Every verb that changes the take — start, stop, the
-/// quality it records at — is already on the player's bar and in the recording
-/// centre, and a second copy here would be a second place for the same switch to
-/// disagree with the first.
+/// The verbs are the player bar's own ([toggleRoomRecording]), called with
+/// this panel's ref: one switch, one truth, two doors. The recording centre
+/// stays a quiet line at the foot — the queue, the schedule and the finished
+/// files live there, and this panel says so without sending the viewer off
+/// for a button press.
 ///
 /// The figures come from the task store, which the engine writes once a second
 /// while bytes move. The clock is the exception and ticks on its own: a number
@@ -53,6 +56,9 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
     });
   }
 
+  /// Starts or stops this room's capture — the player bar's own verb.
+  void _toggle() => unawaited(toggleRoomRecording(context, ref));
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -74,7 +80,16 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.disc),
           title: Text(t.room.recordIdle),
-          actions: [_centerButton(t)],
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.primary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.disc, size: 15),
+              onPressed: _toggle,
+              child: Text(t.room.recordStarted),
+            ),
+            _centreButton(t),
+          ],
         ),
       );
     }
@@ -97,7 +112,7 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
       children: [
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: DsBadge(dot: false, label: Text(word), status: tone),
+          child: DsBadge(dot: recording, label: Text(word), status: tone),
         ),
         if (recording)
           Padding(
@@ -134,17 +149,34 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
             ],
           ),
         ),
+        // The verb on the take, where the facts about it are: a press here
+        // starts or stops this room's capture, and the room never moves.
         Padding(
           padding: const EdgeInsets.only(top: DsSpace.s16),
-          child: Align(alignment: AlignmentDirectional.centerStart, child: _centerButton(t)),
+          child: SizedBox(
+            width: double.infinity,
+            child: DsButton(
+              variant: recording ? DsButtonVariant.danger : DsButtonVariant.primary,
+              size: DsSize.sm,
+              leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc, size: 15),
+              onPressed: _toggle,
+              child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: DsSpace.s8),
+          child: Align(alignment: AlignmentDirectional.centerStart, child: _centreButton(t)),
         ),
       ],
     );
   }
 
-  /// The one way out of a read-only panel: the centre that owns the take.
-  Widget _centerButton(Translations t) => DsButton(
-    variant: DsButtonVariant.secondary,
+  /// The centre still exists for what a single room's panel cannot show — the
+  /// queue, the schedule, the finished files — said as one quiet line, not as
+  /// the panel's only door.
+  Widget _centreButton(Translations t) => DsButton(
+    variant: DsButtonVariant.ghost,
     size: DsSize.sm,
     onPressed: () => context.go(RouteNames.recorder),
     child: Text(t.navigation.record),

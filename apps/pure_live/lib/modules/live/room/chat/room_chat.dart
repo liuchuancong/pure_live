@@ -24,7 +24,6 @@ import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The room's chat column: five tabs — the danmaku list with its composer, the
@@ -853,6 +852,77 @@ final class _ChatLine extends ConsumerWidget {
     // talk is a bare line, so the column keeps live chat's own density.
     final paid = gift != null || superChat != null;
     final priceText = superChat == null ? null : _superChatPrice(superChat);
+    // Who is talking, on its own line: the platform's marks, the role it
+    // declares, the fan medal and the level, then the name in its own ink —
+    // and the words on the line below, starting at the same edge. The old
+    // single flow — badges, name and words jammed into one run — read as a
+    // pile of pills in front of a sentence; two lines give the eye a who,
+    // then a what, the way the reference's own columns draw them.
+    final showNameLine = showNames && senderName.isNotEmpty && !repeats;
+    final nameLine = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showBadges) ...[
+          // The platform's own pictures first, then the role it declares,
+          // then the medal and the level: the order a viewer reads a
+          // stranger by.
+          for (final url in badgeUrls)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+              child: _BadgeImage(url: url, height: tagHeight),
+            ),
+          if (roleTag != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+              child: _SenderTag(
+                text: roleTag,
+                background: switch (sender?.role) {
+                  LiveAnchorRole.anchor => colors.accent.withValues(alpha: 0.16),
+                  LiveAnchorRole.moderator => colors.success.tint,
+                  _ => colors.info.tint,
+                },
+                foreground: switch (sender?.role) {
+                  LiveAnchorRole.anchor => colors.accent,
+                  LiveAnchorRole.moderator => colors.success.text,
+                  _ => colors.info.text,
+                },
+                style: badgeStyle,
+                height: tagHeight,
+              ),
+            ),
+          if (fanBadgeName.isNotEmpty)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+              child: _SenderTag(
+                text: fanBadgeLevel.isEmpty ? fanBadgeName : '$fanBadgeName $fanBadgeLevel',
+                background: colors.accent.withValues(alpha: 0.12),
+                foreground: colors.accent,
+                // A tint alone disappears on a pale panel.
+                border: colors.accent.withValues(alpha: 0.32),
+                style: badgeStyle,
+                height: tagHeight,
+              ),
+            ),
+          if (userLevel.isNotEmpty)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+              // The level as the reference draws it: a hairline plate in the
+              // tier's own ink, not a bare number.
+              child: _SenderTag(
+                text: 'Lv.$userLevel',
+                background: levelInk.withValues(alpha: 0.10),
+                foreground: levelInk,
+                border: levelInk.withValues(alpha: 0.55),
+                style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+                height: tagHeight,
+              ),
+            ),
+        ],
+        Flexible(
+          child: Text(senderName, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
+        ),
+      ],
+    );
     Widget content = Padding(
       padding: EdgeInsets.symmetric(vertical: paid ? 2 : vertical),
       child: Row(
@@ -890,105 +960,43 @@ final class _ChatLine extends ConsumerWidget {
               child: _GiftIcon(gift: gift, size: fontSize > 0 ? fontSize.toDouble() : 16),
             ),
           Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  if (priceText != null) ...[
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                        child: _SenderTag(
-                          text: priceText,
-                          background: colors.warning.fill,
-                          foreground: colors.warning.onFill,
-                          style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
-                          height: tagHeight,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (replayed)
-                    TextSpan(
-                      text: '[${t.room.replayed}] ',
-                      style: nameStyle.copyWith(color: colors.textSubtle),
-                    ),
-                  if (showBadges) ...[
-                    // The platform's own pictures first, then the role it
-                    // declares, then the medal and the level: the order a
-                    // viewer reads a stranger by.
-                    for (final url in badgeUrls)
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                          child: _BadgeImage(url: url, height: tagHeight),
-                        ),
-                      ),
-                    if (roleTag != null)
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                          child: _SenderTag(
-                            text: roleTag,
-                            background: switch (sender?.role) {
-                              LiveAnchorRole.anchor => colors.accent.withValues(alpha: 0.16),
-                              LiveAnchorRole.moderator => colors.success.tint,
-                              _ => colors.info.tint,
-                            },
-                            foreground: switch (sender?.role) {
-                              LiveAnchorRole.anchor => colors.accent,
-                              LiveAnchorRole.moderator => colors.success.text,
-                              _ => colors.info.text,
-                            },
-                            style: badgeStyle,
-                            height: tagHeight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 1,
+              children: [
+                if (showNameLine) nameLine,
+                // The words with the platform's own emoticons in them, cut
+                // out of the flying layer's catalogue and drawn as itself -
+                // and, for what the catalogue does not carry, the pictures
+                // this message names.
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      if (priceText != null) ...[
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: Padding(
+                            padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+                            child: _SenderTag(
+                              text: priceText,
+                              background: colors.warning.fill,
+                              foreground: colors.warning.onFill,
+                              style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+                              height: tagHeight,
+                            ),
                           ),
                         ),
-                      ),
-                    if (fanBadgeName.isNotEmpty)
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                          child: _SenderTag(
-                            text: fanBadgeLevel.isEmpty ? fanBadgeName : '$fanBadgeName $fanBadgeLevel',
-                            background: colors.accent.withValues(alpha: 0.12),
-                            foreground: colors.accent,
-                            // A tint alone disappears on a pale panel.
-                            border: colors.accent.withValues(alpha: 0.32),
-                            style: badgeStyle,
-                            height: tagHeight,
-                          ),
+                      ],
+                      if (replayed)
+                        TextSpan(
+                          text: '[${t.room.replayed}] ',
+                          style: nameStyle.copyWith(color: colors.textSubtle),
                         ),
-                      ),
-                    if (userLevel.isNotEmpty)
-                      WidgetSpan(
-                        alignment: PlaceholderAlignment.middle,
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                          // The level as the reference draws it: a hairline
-                          // plate in the tier's own ink, not a bare number.
-                          child: _SenderTag(
-                            text: 'Lv.$userLevel',
-                            background: levelInk.withValues(alpha: 0.10),
-                            foreground: levelInk,
-                            border: levelInk.withValues(alpha: 0.55),
-                            style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
-                            height: tagHeight,
-                          ),
-                        ),
-                      ),
-                  ],
-                  if (showNames && senderName.isNotEmpty && !repeats) TextSpan(text: '$senderName: ', style: nameStyle),
-                  // The words with the platform's own emoticons in them, cut
-                  // out of the flying layer's catalogue and drawn as itself -
-                  // and, for what the catalogue does not carry, the pictures
-                  // this message names.
-                  ..._wordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
-                ],
-              ),
+                      ..._wordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

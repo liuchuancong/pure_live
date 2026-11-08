@@ -1,5 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// A small translucent capsule laid over a room's cover: the title, the
 /// audience figure, a platform mark. Dark enough to read on bright and dark
@@ -41,13 +42,15 @@ final class RoomCoverChip extends StatelessWidget {
         dot: false,
         icon: icon == null ? null : DsIcon(icon!),
         style: DsBadgeStyle(
-          padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 8, vertical: compact ? 2 : 4),
-          background: const Color(0x8C000000),
-          foreground: const Color(0xFFFFFFFF),
-          borderRadius: BorderRadius.circular(compact ? 5 : 6),
-          textStyle: style ?? theme.typography.caption.copyWith(fontSize: compact ? 10 : null),
-          iconSize: compact ? 10 : 12,
-          gap: compact ? 3 : 4,
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? DsSpace.s5 : DsSpace.s8,
+            vertical: compact ? DsSpace.s3 : DsSpace.s4,
+          ),
+          background: OnVideoColors.coverMark,
+          foreground: OnVideoColors.foreground,
+          textStyle: style ?? theme.typography.caption,
+          iconSize: compact ? theme.sizes.iconXs : theme.sizes.iconSm,
+          gap: compact ? DsSpace.s3 : DsSpace.s4,
         ),
       ),
     );
@@ -59,5 +62,5 @@ final class RoomCoverChip extends StatelessWidget {
 const LinearGradient kRoomCoverScrim = LinearGradient(
   begin: AlignmentDirectional.bottomCenter,
   end: AlignmentDirectional.topCenter,
-  colors: [Color(0x8C000000), Color(0x00000000)],
+  colors: [OnVideoColors.coverMark, OnVideoColors.clear],
 );

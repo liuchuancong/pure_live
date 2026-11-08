@@ -79,6 +79,13 @@ typedef RoomState = ({
   bool audioOnly,
   String? error,
   RoomChat chat,
+
+  /// When this visit's current playback session began: the room's opening on
+  /// entry, reset each time the engine commits a stream (a line or quality
+  /// switch, a lease rebuild, a recovery re-open). The bar's 已看 clock reads
+  /// it, so the count survives the bar's own hide and show and the window's
+  /// presentation modes — events that never touched the stream.
+  DateTime watchStartedAt,
 });
 
 RoomState _initial({bool audioOnly = false}) => (
@@ -93,6 +100,7 @@ RoomState _initial({bool audioOnly = false}) => (
   audioOnly: audioOnly,
   error: null,
   chat: (status: RoomChatStatus.connecting, error: null),
+  watchStartedAt: DateTime.now(),
 );
 
 /// The viewer's shield as media_core's policy slot: the pipeline's documented
@@ -1828,7 +1836,7 @@ final class RoomController extends Notifier<RoomState> {
   Future<List<LivePlayLine>> _ingested(LiveRoom room, List<LivePlayLine> lines) async {
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
-    final session = await startLiveIngest(ref: ref, site: site, line: lines.first);
+    final session = await startLiveIngest(proxyRoute: () => ref.read(appProxyRouteProvider), site: site, line: lines.first);
     if (session == null) return lines;
     final previous = _ingest;
     _ingest = session;
@@ -1978,7 +1986,15 @@ final class RoomController extends Notifier<RoomState> {
       // player is.
       if (handle.disposed) return;
       _lastHandle = handle;
-      state = _with(handle: handle, player: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
+      // A committed stream is a new thing to watch: the visit's clock starts
+      // over, whether the reload was the viewer's own hand (a line or a
+      // quality) or the room's (a lease rebuild, a recovery).
+      state = _with(
+        handle: handle,
+        player: handle,
+        lineIndex: _playback?.sourceIndex ?? state.lineIndex,
+        watchStartedAt: DateTime.now(),
+      );
       _watchVideoSize(handle);
       _watchFirstFrame(handle);
       // The player's pause and seek carry into the flying layer; the
@@ -2661,6 +2677,7 @@ final class RoomController extends Notifier<RoomState> {
     bool? audioOnly,
     String? error,
     RoomChat? chat,
+    DateTime? watchStartedAt,
   }) {
     _queueAutoSwitchSync();
     return (
@@ -2675,6 +2692,7 @@ final class RoomController extends Notifier<RoomState> {
       audioOnly: audioOnly ?? state.audioOnly,
       error: error,
       chat: chat ?? state.chat,
+      watchStartedAt: watchStartedAt ?? state.watchStartedAt,
     );
   }
 

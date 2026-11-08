@@ -417,7 +417,7 @@ final class _SearchResults extends StatelessWidget {
           emptyIcon: DsIcons.searchX,
           emptyTitle: t.vod.noResultsTitle,
           emptyDescription: t.vod.noResultsDescription,
-          itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onVideo(video)),
+          itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onVideo(video), preview: true),
         );
       case VodSearchKind.bangumi:
       case VodSearchKind.cinema:
@@ -438,7 +438,7 @@ final class _SearchResults extends StatelessWidget {
           emptyIcon: DsIcons.clapperboard,
           emptyTitle: t.vod.noResultsTitle,
           emptyDescription: t.vod.noResultsDescription,
-          itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onSeason(season)),
+          itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onSeason(season), preview: true),
         );
       case VodSearchKind.user:
         // A user hit is a display row — the station offers no space page to
@@ -482,7 +482,7 @@ final class _SearchResults extends StatelessWidget {
             return RoomCardMenu(
               room: live,
               onOpen: () => onRoom(room),
-              child: RoomCard(room: live, onOpen: () => onRoom(room)),
+              child: RoomCard(room: live, onOpen: () => onRoom(room), livePreview: true),
             );
           },
         );

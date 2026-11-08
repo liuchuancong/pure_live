@@ -146,7 +146,7 @@ final class _PgcFeedView extends ConsumerWidget {
       emptyIcon: DsIcons.clapperboard,
       emptyTitle: t.common.empty,
       emptyDescription: t.vod.pgcEmptyDescription,
-      itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season)),
+      itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season), preview: true),
     );
   }
 }

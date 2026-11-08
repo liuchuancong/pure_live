@@ -133,12 +133,12 @@ final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage>
                       ? SizedBox(
                           width: 320,
                           height: kRoomCardListDesignHeight,
-                          child: RoomCard(room: room, listRow: true, followable: false),
+                          child: RoomCard(room: room, listRow: true, followable: false, hoverReveal: false),
                         )
                       : SizedBox(
                           width: 320,
                           height: tileHeight,
-                          child: RoomCard(room: room, followable: false, cover: _cover),
+                          child: RoomCard(room: room, followable: false, cover: _cover, hoverReveal: false),
                         ),
                 ),
               ),

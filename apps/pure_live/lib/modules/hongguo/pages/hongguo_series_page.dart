@@ -518,7 +518,7 @@ final class _RelatedSectionState extends ConsumerState<_RelatedSection> {
             },
           ),
       ],
-      child: HongguoSeriesCard(series: series, onOpen: open),
+      child: HongguoSeriesCard(series: series, onOpen: open, preview: true),
     );
   }
 }

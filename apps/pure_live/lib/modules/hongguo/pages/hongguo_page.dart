@@ -243,6 +243,7 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                   series: series,
                   onOpen: () => _open(context, series),
                   child: HongguoSeriesCard(
+                    preview: true,
                     series: series,
                     favoritable: true,
                     watched: watchedById[series.seriesId],
@@ -431,6 +432,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
                   series: series,
                   onOpen: () => _open(context, series),
                   child: HongguoSeriesCard(
+                    preview: true,
                     series: series,
                     favoritable: true,
                     watched: watchedById[series.seriesId],
@@ -672,6 +674,7 @@ final class _RankViewState extends ConsumerState<_RankView> {
                   series: series,
                   onOpen: () => _open(context, series),
                   child: HongguoSeriesCard(
+                    preview: true,
                     series: series,
                     favoritable: true,
                     watched: watchedById[series.seriesId],
@@ -902,6 +905,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                     series: series,
                     onOpen: () => _open(context, series),
                     child: HongguoSeriesCard(
+                      preview: true,
                       series: series,
                       // The local shelf's card keeps its corner heart; an
                       // account row's kept state is the account's, and its
@@ -1206,6 +1210,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                           ),
                       ],
                       child: HongguoSeriesCard(
+                        preview: true,
                         series: series,
                         watched: row,
                         onOpen: _managing ? null : () => _open(context, series),
@@ -1439,6 +1444,7 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
                         series: series,
                         onOpen: hongguoSeriesOpenable(series) ? () => _open(context, series) : null,
                         child: HongguoSeriesCard(
+                          preview: true,
                           series: series,
                           onOpen: hongguoSeriesOpenable(series) ? () => _open(context, series) : null,
                         ),
@@ -1906,6 +1912,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                   series: series,
                   onOpen: () => _open(context, series),
                   child: HongguoSeriesCard(
+                    preview: true,
                     series: series,
                     favoritable: true,
                     watched: watchedById[series.seriesId],

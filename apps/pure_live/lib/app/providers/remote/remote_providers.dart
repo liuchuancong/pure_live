@@ -79,7 +79,11 @@ const Duration _remoteLinkBudget = Duration(seconds: 12);
 /// home through the app's own navigation, its confirmations included), and
 /// the share-link walk that opens a resolved room. Non-main windows read
 /// nothing: the receiver is started from the main window's settings.
-final Provider<void> remoteRuntimeProvider = Provider<void>((ref) {
+///
+/// The body reads this window's context and router, so `AppWindowRoot`
+/// overrides the provider into its scope: riverpod mounts a provider no
+/// scope overrides in the shared root container, where those reads throw.
+void startRemoteRuntime(Ref ref) {
   if (!ref.watch(appWindowContextProvider).isMain) return;
   final router = ref.watch(appRouterProvider);
   var revision = 0;
@@ -153,4 +157,8 @@ final Provider<void> remoteRuntimeProvider = Provider<void>((ref) {
     unawaited(router.push(RoomRoute(platform: platform!, roomId: roomId!).location));
     return true;
   };
-});
+}
+
+/// The provider form of [startRemoteRuntime]; `AppWindowRoot` overrides it
+/// into the per-window scope.
+final Provider<void> remoteRuntimeProvider = Provider<void>(startRemoteRuntime);

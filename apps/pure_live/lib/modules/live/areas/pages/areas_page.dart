@@ -331,6 +331,8 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final controller = ref.read(areasCatalogProvider.notifier);
     final catalog = ref.watch(areasCatalogProvider.select((map) => map[widget.platform]));
     final settings = ref.watch(browseSettingsProvider);
@@ -420,16 +422,28 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
         else if (categories.isNotEmpty)
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DsTabs<String>(
-                value: category,
-                onChanged: (value) => setState(() => _category = value),
-                tabs: [
-                  DsTab<String>(value: '', label: Text(context.t.areas.categoryAll)),
-                  for (final (id, name) in categories) DsTab<String>(value: id, label: Text(name)),
-                ],
-              ),
+            // The category filter as the kit's choice chips — they scroll
+            // themselves and fade at the edges — with the count of the shown
+            // category at the row's end.
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: DsChoiceChips<String>(
+                    value: category,
+                    semanticLabel: context.t.areas.allAreas,
+                    onChanged: (value) => setState(() => _category = value),
+                    options: [
+                      DsChipOption(value: '', label: Text(context.t.areas.categoryAll)),
+                      for (final (id, name) in categories) DsChipOption(value: id, label: Text(name)),
+                    ],
+                  ),
+                ),
+                Text(
+                  context.t.areas.areaCount(count: items.length),
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ],
             ),
           ),
         Expanded(
@@ -529,20 +543,36 @@ final class _FollowedAreas extends ConsumerWidget {
       ),
     );
     // The followed areas page like the catalogue: by number on a wide
-    // window, appending on a narrow one.
-    return PagedCardGrid<LiveArea>(
-      items: followed.areas,
-      pageSize: _areaPageSize,
-      hasMore: false,
-      isLoading: false,
-      onLoadMore: () async {},
-      crossSpacing: settings.crossSpacing,
-      mainSpacing: settings.mainSpacing,
-      aspectRatio: areaCardAspectRatio(tileLayout),
-      cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
-      oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
-      compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
-      itemBuilder: cardBuilder,
+    // window, appending on a narrow one. The section head names the view
+    // and counts the areas the viewer follows.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
+          child: FeedSectionHeader(
+            title: t.areas.viewFollowed,
+            caption: t.areas.areaCount(count: followed.areas.length),
+          ),
+        ),
+        Expanded(
+          child: PagedCardGrid<LiveArea>(
+            items: followed.areas,
+            pageSize: _areaPageSize,
+            hasMore: false,
+            isLoading: false,
+            onLoadMore: () async {},
+            crossSpacing: settings.crossSpacing,
+            mainSpacing: settings.mainSpacing,
+            aspectRatio: areaCardAspectRatio(tileLayout),
+            cardExtent: tileLayout == AreaCardLayout.tile ? kAreaTileDesignWidth : null,
+            oneColumnWhenCompact: tileLayout == AreaCardLayout.row,
+            compactMainAxisExtent: tileLayout == AreaCardLayout.row ? kAreaRowDesignHeight : null,
+            itemBuilder: cardBuilder,
+          ),
+        ),
+      ],
     );
   }
 }

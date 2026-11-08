@@ -16,6 +16,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
+import 'package:pure_live/modules/iptv/views/iptv_channel_preview.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart';
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
@@ -706,46 +707,49 @@ final class _ChannelsList extends ConsumerWidget {
       itemBuilder: (context, index) {
         final channel = rows[index];
         final number = browse.showChannelNumber ? channel.number : null;
-        return DsListRow(
-          semanticLabel: channel.entry.name,
-          leading: IptvChannelLogo(channel: channel),
-          title: Text(
-            channel.entry.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-          ),
-          detail: number == null
-              ? null
-              : Text(
-                  '$number',
-                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+        return IptvChannelHoverPreview(
+          channel: channel,
+          child: DsListRow(
+            semanticLabel: channel.entry.name,
+            leading: IptvChannelLogo(channel: channel),
+            title: Text(
+              channel.entry.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+            ),
+            detail: number == null
+                ? null
+                : Text(
+                    '$number',
+                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                  ),
+            description: browse.showProgrammeLine
+                ? IptvNowCell(slot: channels.slots[channel.id])
+                // Same rule as the table's group column: the row says which
+                // group it is in only when the list spans several — the column
+                // or its entry above already named the one that is open.
+                : channels.selectedGroup != null
+                ? null
+                : Text(
+                    _groupOf(t, channel),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s3,
+              children: [
+                _FavoriteCell(
+                  favorite: channel.favorite,
+                  onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
                 ),
-          description: browse.showProgrammeLine
-              ? IptvNowCell(slot: channels.slots[channel.id])
-              // Same rule as the table's group column: the row says which
-              // group it is in only when the list spans several — the column
-              // or its entry above already named the one that is open.
-              : channels.selectedGroup != null
-              ? null
-              : Text(
-                  _groupOf(t, channel),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s3,
-            children: [
-              _FavoriteCell(
-                favorite: channel.favorite,
-                onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
-              ),
-              IptvIconAction(icon: DsIcons.play, label: t.iptv.openChannel, onPressed: () => onOpen(channel)),
-            ],
+                IptvIconAction(icon: DsIcons.play, label: t.iptv.openChannel, onPressed: () => onOpen(channel)),
+              ],
+            ),
+            onPressed: () => onOpen(channel),
           ),
-          onPressed: () => onOpen(channel),
         );
       },
     );
@@ -753,7 +757,9 @@ final class _ChannelsList extends ConsumerWidget {
 }
 
 /// A channel's logo and name, with its dial number under the name when it
-/// has one and the browse setting asks for it.
+/// has one and the browse setting asks for it. A pointer that rests on the
+/// cell floats the channel itself beside the row, muted — the table has no
+/// cover to play on, so the glance hangs here.
 final class _ChannelNameCell extends StatelessWidget {
   const _ChannelNameCell({required this.channel, required this.showNumber});
 
@@ -765,30 +771,33 @@ final class _ChannelNameCell extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final number = showNumber ? channel.number : null;
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        IptvChannelLogo(channel: channel),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 1,
-            children: [
-              Text(
-                channel.entry.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-              ),
-              if (number != null)
+    return IptvChannelHoverPreview(
+      channel: channel,
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          IptvChannelLogo(channel: channel),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 1,
+              children: [
                 Text(
-                  '$number',
-                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                  channel.entry.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                 ),
-            ],
+                if (number != null)
+                  Text(
+                    '$number',
+                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

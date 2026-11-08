@@ -154,7 +154,12 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
                       child: RoomCardMenu(
                         room: room,
                         onOpen: () => _openRoom(room, followedRooms),
-                        child: RoomCard(room: room, listRow: holdsRows, onOpen: () => _openRoom(room, followedRooms)),
+                        child: RoomCard(
+                          room: room,
+                          listRow: holdsRows,
+                          onOpen: () => _openRoom(room, followedRooms),
+                          livePreview: true,
+                        ),
                       ),
                     );
                   },
@@ -196,7 +201,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
             itemBuilder: (context, room) => RoomCardMenu(
               room: room,
               onOpen: () => _openRoom(room, feed.rooms),
-              child: RoomCard(room: room, onOpen: () => _openRoom(room, feed.rooms)),
+              child: RoomCard(room: room, onOpen: () => _openRoom(room, feed.rooms), livePreview: true),
             ),
           ),
         ),

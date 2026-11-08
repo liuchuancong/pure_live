@@ -64,12 +64,12 @@ enum WindowHeightClass {
 /// second pane in it; the area's own constraints are what the page gets.
 @immutable
 final class WindowClass {
+  /// Creates the classes from [width] and [height].
+  const WindowClass({required this.width, required this.height});
+
   /// The classes of an area [size] large.
   factory WindowClass.of(Size size) =>
       WindowClass(width: WindowWidthClass.of(size.width), height: WindowHeightClass.of(size.height));
-
-  /// Creates the classes from [width] and [height].
-  const WindowClass({required this.width, required this.height});
 
   /// The width class.
   final WindowWidthClass width;
@@ -195,7 +195,7 @@ final class DisplayHinge {
 
   /// Two panes of a row [width] wide whose left edge is [left] from the
   /// area's, split by this hinge: the start pane ends where the hinge
-  /// begins and the end pane starts where it ends ([gap] between them).
+  /// begins and the end pane starts where it ends (`gap` between them).
   /// Null when the hinge is not vertical, misses the row, or leaves a pane
   /// narrower than [minPane].
   ({double start, double gap})? splitRow({required double left, required double width, double minPane = 320}) {

@@ -213,6 +213,7 @@ class _Translations$areas$en extends Translations$areas$zh_CN {
 	@override String get roomsEmptyTitle => 'No live rooms in this area right now';
 	@override String get roomsEmptyDescription => 'Try another area, or come back later.';
 	@override String get backToBrowse => 'Back to browsing';
+	@override String areaCount({required int count}) => '${count} categories';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, password, app only…)';
 }
 
@@ -1978,6 +1979,9 @@ class _Translations$popular$en extends Translations$popular$zh_CN {
 	@override String get nextPage => 'Next page';
 	@override String inlineAt({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}';
 	@override String get backToBrowse => 'Back to browsing';
+	@override String get feedTitle => 'Recommended live';
+	@override String feedCount({required int count}) => '${count} streams';
+	@override String feedCountMore({required int count}) => '${count}+ streams';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)';
 }
 
@@ -4705,6 +4709,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get share => 'Share';
 	@override String get linkCopied => 'Link copied';
 	@override String episodeNo({required String index}) => 'EP ${index}';
+	@override String get partsPlaylist => 'Playlist';
+	@override String partsCount({required int count}) => '${count} parts';
 }
 
 // Path: wallpaper
@@ -5138,6 +5144,7 @@ extension on TranslationsEn {
 			'areas.roomsEmptyTitle' => 'No live rooms in this area right now',
 			'areas.roomsEmptyDescription' => 'Try another area, or come back later.',
 			'areas.backToBrowse' => 'Back to browsing',
+			'areas.areaCount' => ({required int count}) => '${count} categories',
 			'areas.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, password, app only…)',
 			'backup.title' => 'Backup & restore',
 			'backup.localSection' => 'Local backup',
@@ -5516,9 +5523,9 @@ extension on TranslationsEn {
 			'common.back' => 'Back',
 			'common.forward' => 'Forward',
 			'common.searchHint' => 'Search rooms or streamers',
-			'common.switchModule' => 'Switch content type',
 			_ => null,
 		} ?? switch (path) {
+			'common.switchModule' => 'Switch content type',
 			'common.openNavigation' => 'Open navigation',
 			'common.refreshFailed' => 'Refresh failed',
 			'common.refresh' => 'Refresh',
@@ -6030,9 +6037,9 @@ extension on TranslationsEn {
 			'iptv.searchSources' => 'Search names or addresses…',
 			'iptv.noChannelMatch' => 'No channels match',
 			'iptv.noSourceMatch' => 'No sources match',
-			'iptv.sourceCount' => ({required int count}) => '${count} items',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.sourceCount' => ({required int count}) => '${count} items',
 			'iptv.colChannel' => 'Channel',
 			'iptv.colGroup' => 'Group',
 			'iptv.colNow' => 'On now',
@@ -6544,9 +6551,9 @@ extension on TranslationsEn {
 			'music.localFiles' => ({required Object count}) => '${count} files',
 			'music.localRescan' => 'Scan again',
 			'music.localFolders' => 'Music folders',
-			'music.localRemoveFolder' => 'Remove the folder',
 			_ => null,
 		} ?? switch (path) {
+			'music.localRemoveFolder' => 'Remove the folder',
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
 			'music.localEmptyDescription' => 'Downloaded songs land in this list by themselves. To play files you already have, add a folder of audio.',
@@ -6950,6 +6957,9 @@ extension on TranslationsEn {
 			'popular.nextPage' => 'Next page',
 			'popular.inlineAt' => ({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}',
 			'popular.backToBrowse' => 'Back to browsing',
+			'popular.feedTitle' => 'Recommended live',
+			'popular.feedCount' => ({required int count}) => '${count} streams',
+			'popular.feedCountMore' => ({required int count}) => '${count}+ streams',
 			'popular.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)',
 			'recorder.tabRunning' => 'Recording',
 			'recorder.tabFinished' => 'Finished',
@@ -7055,12 +7065,12 @@ extension on TranslationsEn {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
@@ -7569,12 +7579,12 @@ extension on TranslationsEn {
 			'search.partialFailureScope' => 'Adjust scope',
 			'search.webView2MissingTitle' => 'WebView2 is missing',
 			'search.webView2MissingBody' => 'This Windows has no WebView2; open the web search in the system browser, or install WebView2 first.',
+			_ => null,
+		} ?? switch (path) {
 			'search.webView2Download' => 'Download WebView2',
 			'search.webVersion' => 'Open web version',
 			'search.webVersionTitle' => 'No in-app list here',
 			'search.webVersionDescription' => 'Open the platform\'s web version in the app to see its rooms.',
-			_ => null,
-		} ?? switch (path) {
 			'search.coverageShortLiveOnly' => 'Finds live rooms only',
 			'search.coverageShortLiveAndOffline' => 'Finds live rooms and some offline ones',
 			'search.coverageShortChannelLookup' => 'Channel id or link only',
@@ -8083,12 +8093,12 @@ extension on TranslationsEn {
 			'settings.textScaleDescription' => 'Scales all text in the app; 100% is the original size.',
 			'settings.backHome' => 'Back to app',
 			'settings.navCache' => 'Cache',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheDescription' => 'Images cached by purpose, with capacity, freshness and cleanup.',
 			'settings.cacheSize' => 'Current cache size',
 			'settings.cacheRefresh' => 'Refresh',
 			'settings.cacheClear' => 'Clear cache',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheClearDesc' => 'Deletes every cached cover, avatar and site icon.',
 			'settings.cacheCleared' => 'Cache cleared',
 			'settings.cacheLimit' => 'Maximum cache size',
@@ -8597,12 +8607,12 @@ extension on TranslationsEn {
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadDelete' => 'Delete',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
 			'settings.downloadClearFinished' => 'Clear finished',
@@ -9111,12 +9121,12 @@ extension on TranslationsEn {
 			'settings.lanSyncConflicts' => ({required int count}) => '${count} conflicts to settle',
 			'settings.lanSyncKeepLocal' => 'Keep mine',
 			'settings.lanSyncKeepRemote' => 'Take theirs',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncConflictResolved' => 'Conflict settled',
 			'settings.lanSyncConflictOutdated' => 'This device\'s copy just changed; review it and decide again',
 			'settings.navMusicInterface' => 'Interface & lists',
 			'settings.musicInterfaceDescription' => 'How list rows, sources and dislikes read.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusicStorage' => 'Storage & reset',
 			'settings.musicStorageDescription' => 'Cache cleanup and the defaults.',
 			'settings.navBackgroundGuide' => 'Background playback guide',
@@ -9615,6 +9625,8 @@ extension on TranslationsEn {
 			'vod.share' => 'Share',
 			'vod.linkCopied' => 'Link copied',
 			'vod.episodeNo' => ({required String index}) => 'EP ${index}',
+			'vod.partsPlaylist' => 'Playlist',
+			'vod.partsCount' => ({required int count}) => '${count} parts',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',
@@ -9623,14 +9635,14 @@ extension on TranslationsEn {
 			'wallpaper.fetchFailed' => 'This picture did not arrive',
 			'wallpaper.unsupported' => 'The source returned an unsupported image format',
 			'wallpaper.previewTitle' => 'Random picture preview',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.previewDisplay' => 'Display',
 			'wallpaper.previewVideoNote' => 'An applied wallpaper keeps looping muted; play, pause and sound here are for the preview only.',
 			'wallpaper.applied' => 'Applied as the background',
 			'wallpaper.sourceLabel' => 'Source',
 			'wallpaper.retry' => 'Retry',
 			'wallpaper.groupBing' => 'Bing',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceBingBiturl' => 'Bing · random (Biturl)',
 			'wallpaper.sourceBingJasonZeng' => 'Bing · random (Jason Zeng)',
 			'wallpaper.sourceBingUapi' => 'Bing · random (UAPI)',

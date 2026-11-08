@@ -1187,7 +1187,7 @@ final class _RoomResults extends ConsumerWidget {
       return RoomCardMenu(
         room: room,
         onOpen: open,
-        child: RoomCard(room: room, listRow: listRow, onOpen: open),
+        child: RoomCard(room: room, listRow: listRow, onOpen: open, livePreview: true),
       );
     }
 

@@ -61,6 +61,32 @@ PlayerKernel createPlayerKernel(Ref ref) {
 /// twice; the adapter ignores repeats.
 void primePlayerEngine() => MediaKitPlayerAdapter.ensureInitialized();
 
+/// The hover previews' own player kernel: one per module, over the same
+/// primed engine, deliberately kept apart from the module's room kernel.
+///
+/// A card's preview plays on [previewKernelProvider] rather than
+/// [playerKernelProvider] for two reasons. A playing handle attaches to the
+/// process's system media session, so a preview would take the smtc over
+/// from what the viewer is actually listening to; this kernel opts out.
+/// And the room kernel refuses a create while earlier releases are still
+/// draining, so a pointer walked fast across a wall of cards could leave the
+/// very player the viewer was about to open waiting on previews it never
+/// watched. No pool, no recovery either: a preview that failed has a cover
+/// to fall back to, and the next hover starts fresh.
+final Provider<PlayerKernel> previewKernelProvider = Provider<PlayerKernel>(createPreviewKernel);
+
+/// Builds one window's preview kernel.
+PlayerKernel createPreviewKernel(Ref ref) {
+  // One kernel per module, the room kernel's own lifecycle: leaving the
+  // module disposes it with every preview it might still hold.
+  ref.watch(selectedModuleProvider);
+  final kernel = PlayerKernel(
+    options: const KernelOptions(autoAttachAudio: false, enablePool: false, enableRecovery: false),
+  )..registerBackend(const MediaKitAdapterFactory().registration());
+  ref.onDispose(() => unawaited(kernel.dispose()));
+  return kernel;
+}
+
 /// One live playback controller per open room: the kernel's single-slot
 /// live orchestration (line × engine sweeps, watchdogs, recovery) over
 /// one site's lines.

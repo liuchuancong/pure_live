@@ -407,3 +407,26 @@ final class RoomImmersiveController extends Notifier<bool> {
 
 /// Whether the room page owns the whole window right now.
 final roomImmersiveProvider = NotifierProvider<RoomImmersiveController, bool>(RoomImmersiveController.new);
+
+/// Whether the room page draws its own window chrome — the app bar that
+/// carries the drag band and the three caption buttons.
+///
+/// The immersive full-bleed room (方案B) folds that app bar away: title,
+/// anchor and follow live on the picture's glass overlays, so the page hands
+/// the window strip back and the route shows the caption bar instead. The
+/// page publishes the fact here; the route's chrome follows.
+final class RoomPageOwnChromeController extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  /// Publishes whether the page draws its own chrome. Silent once the
+  /// provider is gone — a disposed notifier has nothing left to tell, and
+  /// the next page that reads this one gets a fresh `true` from [build].
+  void set({required bool value}) {
+    if (!ref.mounted) return;
+    if (state != value) state = value;
+  }
+}
+
+/// Whether the room page currently draws its own window chrome.
+final roomPageOwnChromeProvider = NotifierProvider<RoomPageOwnChromeController, bool>(RoomPageOwnChromeController.new);

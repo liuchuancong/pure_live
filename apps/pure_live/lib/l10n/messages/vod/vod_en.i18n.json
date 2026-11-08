@@ -262,5 +262,7 @@
   "playNow": "Play now",
   "share": "Share",
   "linkCopied": "Link copied",
-  "episodeNo": "EP {index: String}"
+  "episodeNo": "EP {index: String}",
+  "partsPlaylist": "Playlist",
+  "partsCount": "{count: int} parts"
 }

@@ -79,56 +79,84 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     String name = '',
     IptvReplaceConfirm? confirmReplace,
   }) async {
-    final importer = _importer();
-    if (importer == null || state.importing) {
-      return IptvImportResult(IptvImportStatus.failed);
-    }
     final uri = Uri.tryParse(url.trim());
     if (uri == null || !_isHttp(uri)) {
       return IptvImportResult(IptvImportStatus.unsupportedFormat);
     }
+    final importer = await _readyImporter();
+    if (importer == null || state.importing) {
+      return IptvImportResult(IptvImportStatus.failed);
+    }
     state = _with(importing: true, dropError: true);
+    final IptvImportResult result;
     try {
       final cleanName = name.trim().isEmpty ? uri.host : name.trim();
-      final result = await importer.importGuideFromUrl(url: uri, name: cleanName, confirmReplace: confirmReplace);
-      if (result.isImported && result.id != null) {
-        final library = _library();
-        if (library != null) await library.autoMatch(sourceId: result.id!);
-        // The import may have dropped a same-named duplicate that was the
-        // guide in use; fall back to what just landed.
-        final active = _active;
-        if (active == null || library?.guideSource(active) == null) await _choose(result.id);
-      }
-      return result;
+      result = await importer.importGuideFromUrl(url: uri, name: cleanName, confirmReplace: confirmReplace);
     } on Object catch (error) {
       if (ref.mounted) state = _with(error: error);
       return IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(importing: false);
     }
+    // The guide is stored; the matching and the choice are improvements on
+    // top of a landed import, and a failure there must not call the import
+    // itself failed — the screen already says the guide arrived, and the
+    // matcher runs again on the next sync.
+    await _afterImport(result);
+    return result;
   }
 
   /// Re-downloads [source] from its address and re-runs the matcher; null
   /// when there is no importer or the source is already busy.
   Future<IptvImportResult?> syncSource(EpgSource source) async {
-    final importer = _importer();
     final key = _keyOf(source);
+    final importer = await _readyImporter();
     if (importer == null || state.busy.contains(key)) return null;
     state = _with(busy: {...state.busy, key});
+    IptvImportResult? result;
     try {
-      final result = await importer.syncGuide(source);
-      if (result.isImported) {
-        final library = _library();
-        if (library != null) await library.autoMatch(sourceId: source.id);
-        final active = _active;
-        if (active == null || library?.guideSource(active) == null) await _choose(source.id);
-      }
-      return result;
+      result = await importer.syncGuide(source);
     } on Object catch (error) {
-      return IptvImportResult(IptvImportStatus.failed, error: error);
+      result = IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(busy: {...state.busy}..remove(key));
     }
+    await _afterImport(result, sourceId: source.id);
+    return result;
+  }
+
+  /// The best-effort half of a landed import: match the playlists' channels
+  /// to the guide and make it the guide in use. Neither is the import's
+  /// verdict — a failure here leaves the guide stored and unmapped, and the
+  /// matcher's next run picks the matching up.
+  Future<void> _afterImport(IptvImportResult? result, {String? sourceId}) async {
+    if (result == null || !result.isImported) return;
+    final id = result.id ?? sourceId;
+    if (id == null) return;
+    try {
+      final library = _library();
+      if (library != null) await library.autoMatch(sourceId: id);
+      // The import may have dropped a same-named duplicate that was the
+      // guide in use; fall back to what just landed.
+      final active = _active;
+      if (active == null || library?.guideSource(active) == null) await _choose(id);
+    } on Object {
+      // The guide itself is stored; this half runs again on the next sync.
+    }
+  }
+
+  /// The importer, waiting briefly for the library that builds it: the
+  /// import dialog opens while the store may still be reading its documents,
+  /// and an import pressed in that window fails on the spot if nobody waits.
+  Future<IptvImporter?> _readyImporter() async {
+    final importer = _importer();
+    if (importer != null) return importer;
+    try {
+      await ref.read(iptvLibraryProvider.future).timeout(const Duration(seconds: 15));
+    } on Object {
+      // The store never opened; the read below answers null all the same.
+    }
+    return _importer();
   }
 
   /// Deletes [expected] with its channels, programmes and mappings; when it

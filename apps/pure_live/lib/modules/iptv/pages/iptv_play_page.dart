@@ -26,7 +26,6 @@ import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show catchupUrlOf, iptvClockLabel, showIptvGuide;
 import 'package:pure_live/modules/iptv/views/iptv_zapper.dart' show IptvZapper;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One IPTV channel on media_core's own player: the playlist entry's URL

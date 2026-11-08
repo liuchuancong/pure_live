@@ -1,5 +1,6 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
@@ -2989,12 +2990,10 @@ final class _VodStat extends StatelessWidget {
   }
 }
 
-/// The parts the archive splits into, [kVodPartGroup] at a time with a pager
-/// and a jump box when they run past one group — the episode shelf's pattern
-/// carried over to the station's multi-part uploads, whose courses can run to
-/// hundreds of parts.
-const int kVodPartGroup = 20;
-
+/// The parts the archive splits into, as the playlist the reference's own
+/// video page draws: one scrollable list — 「P1 标题」 per row, the playing
+/// row highlighted and kept in view — instead of a paged strip of chips. The
+/// recommendations read below the list, in the same rail.
 final class _PartsSection extends StatefulWidget {
   const _PartsSection({required this.parts, required this.current, required this.onOpen});
 
@@ -3011,33 +3010,52 @@ final class _PartsSection extends StatefulWidget {
 }
 
 final class _PartsSectionState extends State<_PartsSection> {
-  int _group = 0;
+  /// One row's height, and the list's ceiling: a course running to hundreds
+  /// of parts scrolls inside the panel rather than stretching the rail.
+  static const double _rowHeight = 34;
+  static const double _listMaxHeight = 420;
+
+  final ScrollController _scroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _group = _groupOf(widget.current);
+    _keepCurrentVisible();
   }
 
   @override
   void didUpdateWidget(_PartsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Switching the playing part — from here or from the bar's catalogue —
-    // turns the shelf to the page it sits on.
-    if (oldWidget.current?.cid != widget.current?.cid) {
-      setState(() => _group = _groupOf(widget.current));
-    }
+    // scrolls the playing row back into view.
+    if (oldWidget.current?.cid != widget.current?.cid) _keepCurrentVisible();
   }
 
-  /// The group [part] sits in, by its place in the archive's list.
-  int _groupOf(VodPart? part) {
-    if (part == null) return 0;
-    final position = widget.parts.indexWhere((candidate) => candidate.cid == part.cid);
-    return position < 0 ? 0 : position ~/ kVodPartGroup;
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Scrolls the playing part's row into view: a list this long opens with
+  /// the thing being played on screen, not buried past the fold.
+  void _keepCurrentVisible() {
+    final index = _indexOf(widget.current);
+    if (index < 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final target = (index * _rowHeight).clamp(0.0, _scroll.position.maxScrollExtent);
+      _scroll.jumpTo(target);
+    });
+  }
+
+  int _indexOf(VodPart? part) {
+    if (part == null) return -1;
+    return widget.parts.indexWhere((candidate) => candidate.cid == part.cid);
   }
 
   /// Asks for a part number and opens it; an empty or unknown answer leaves
-  /// the shelf where it was.
+  /// the list where it was.
   Future<void> _jump() async {
     final parts = widget.parts;
     if (parts.isEmpty) return;
@@ -3076,7 +3094,7 @@ final class _PartsSectionState extends State<_PartsSection> {
       },
     );
     controller.dispose();
-    if (position == null || position < 0 || position >= parts.length || !mounted) return;
+    if (position == null || position < 0 || position >= parts.length) return;
     widget.onOpen(parts[position]);
   }
 
@@ -3086,11 +3104,7 @@ final class _PartsSectionState extends State<_PartsSection> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final parts = widget.parts;
-    final groups = (parts.length + kVodPartGroup - 1) ~/ kVodPartGroup;
-    final group = _group.clamp(0, groups - 1);
-    final first = group * kVodPartGroup;
-    final shown = parts.skip(first).take(kVodPartGroup).toList();
-    final last = first + shown.length;
+    final current = _indexOf(widget.current);
     final muted = theme.typography.caption.copyWith(color: colors.textMuted);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3101,61 +3115,87 @@ final class _PartsSectionState extends State<_PartsSection> {
           children: [
             Expanded(
               child: Text(
-                t.vod.parts,
+                t.vod.partsPlaylist,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.title.copyWith(color: colors.text),
               ),
             ),
-            // The shelf says which slice it is showing, not how many the
-            // archive holds: the viewer asked for no episode count here.
-            if (groups > 1) ...[
-              Text('$first–$last', style: muted),
-              DsButton.icon(
-                icon: const DsIcon(DsIcons.chevronLeft),
-                semanticLabel: t.vod.partsPrevious,
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: group > 0 ? () => setState(() => _group = group - 1) : null,
-              ),
-              DsButton.icon(
-                icon: const DsIcon(DsIcons.chevronRight),
-                semanticLabel: t.vod.partsNext,
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: group < groups - 1 ? () => setState(() => _group = group + 1) : null,
-              ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.listOrdered, size: 16),
-                onPressed: () => unawaited(_jump()),
-                child: Text(t.vod.partsJump),
-              ),
-            ],
+            Text(t.vod.partsCount(count: parts.length), style: muted),
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.listOrdered, size: 16),
+              onPressed: () => unawaited(_jump()),
+              child: Text(t.vod.partsJump),
+            ),
           ],
         ),
-        // A chip never asks for more width than the shelf has: a course's
-        // long part names would push one past the rail the shelf sometimes
-        // reads in, so every chip caps at the shelf's own measure and the
-        // name ellipsizes.
-        LayoutBuilder(
-          builder: (context, constraints) => Wrap(
-            spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
-            children: [
-              for (final candidate in shown)
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                  child: DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: () => widget.onOpen(candidate),
-                    leading: candidate.cid == widget.current?.cid ? const DsIcon(DsIcons.play, size: 12) : null,
-                    child: Text('P${candidate.page} ${candidate.title}', maxLines: 1, overflow: TextOverflow.ellipsis),
+        Container(
+          height: math.min(parts.length * _rowHeight + DsSpace.s8 * 2, _listMaxHeight),
+          decoration: BoxDecoration(
+            color: colors.canvas,
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            border: Border.all(color: colors.border),
+          ),
+          child: ListView.builder(
+            controller: _scroll,
+            itemExtent: _rowHeight,
+            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+            itemCount: parts.length,
+            itemBuilder: (context, index) {
+              final part = parts[index];
+              final playing = index == current;
+              return DsPressable(
+                semanticLabel: 'P${part.page} ${part.title}',
+                onPressed: () => widget.onOpen(part),
+                builder: (context, states, child) => ColoredBox(
+                  color: playing
+                      ? colors.accent.withValues(alpha: 0.14)
+                      : states.contains(WidgetState.hovered)
+                      ? colors.hover
+                      : OnVideoColors.clear,
+                  child: child,
+                ),
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s12),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 36,
+                        child: Text(
+                          'P${part.page}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.numeric(
+                            theme.typography.caption.copyWith(
+                              color: playing ? colors.accent : colors.textSubtle,
+                              fontWeight: playing ? FontWeight.w600 : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          part.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(
+                            color: playing ? colors.accent : colors.text,
+                            fontWeight: playing ? FontWeight.w600 : null,
+                          ),
+                        ),
+                      ),
+                      if (part.duration != null) Text(vodDurationText(part.duration!), style: theme.typography.numeric(muted)),
+                      if (playing) ...[
+                        const SizedBox(width: DsSpace.s6),
+                        DsIcon(DsIcons.play, size: 12, color: colors.accent),
+                      ],
+                    ],
                   ),
                 ),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -3163,8 +3203,6 @@ final class _PartsSectionState extends State<_PartsSection> {
   }
 }
 
-/// The archive's comments: twenty at a time, hot or newest first, read on
-/// demand.
 final class _CommentsSection extends ConsumerStatefulWidget {
   const _CommentsSection({required this.aid});
 

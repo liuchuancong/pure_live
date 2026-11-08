@@ -262,5 +262,7 @@
   "playNow": "立即播放",
   "share": "分享",
   "linkCopied": "链接已复制",
-  "episodeNo": "第 {index: String} 话"
+  "episodeNo": "第 {index: String} 话",
+  "partsPlaylist": "播放列表",
+  "partsCount": "共 {count: int} 个"
 }

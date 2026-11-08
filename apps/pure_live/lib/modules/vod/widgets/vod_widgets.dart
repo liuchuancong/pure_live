@@ -5,6 +5,7 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_card_settings.dart';
+import 'package:pure_live/modules/vod/widgets/vod_preview.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// "12:34" or "1:02:03" for a video's length.
@@ -56,9 +57,10 @@ const double kVodSeasonTileAspect = 0.56;
 /// a one-line title with the uploader under it. The whole card is one press
 /// target. Which of those pieces appears is the card visibility setting's to
 /// say; the title is not one of them.
-final class VodVideoCard extends ConsumerWidget {
-  /// The card for [video]; [onOpen] opens its page.
-  const VodVideoCard({required this.video, this.onOpen, this.rank, super.key});
+final class VodVideoCard extends ConsumerStatefulWidget {
+  /// The card for [video]; [onOpen] opens its page. [preview] true plays the
+  /// archive on its cover while a pointer rests on the card.
+  const VodVideoCard({required this.video, this.onOpen, this.rank, this.preview = false, super.key});
 
   /// The archive shown.
   final VodVideo video;
@@ -69,8 +71,44 @@ final class VodVideoCard extends ConsumerWidget {
   /// A 1-based ranking position, shown over the cover when this is a board.
   final int? rank;
 
+  /// Whether resting a pointer on the card plays the archive on its cover.
+  final bool preview;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VodVideoCard> createState() => _VodVideoCardState();
+}
+
+final class _VodVideoCardState extends ConsumerState<VodVideoCard> with CoverPreviewDwell<VodVideoCard> {
+  /// The card's own interaction states, observed through the pressable: the
+  /// preview's dwell rides them, a press rebuilds nothing.
+  final WidgetStatesController _states = WidgetStatesController();
+
+  @override
+  bool get coverPreviewEnabled => widget.preview;
+
+  @override
+  Widget buildCoverPreview() => VodVideoPreview(video: widget.video);
+
+  @override
+  void initState() {
+    super.initState();
+    _states.addListener(_onStates);
+  }
+
+  void _onStates() => syncCoverPreview(_states.value);
+
+  @override
+  void dispose() {
+    _states.removeListener(_onStates);
+    _states.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final video = widget.video;
+    final onOpen = widget.onOpen;
+    final rank = widget.rank;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final visibility = ref.watch(vodCardSettingsProvider);
@@ -89,6 +127,7 @@ final class VodVideoCard extends ConsumerWidget {
     return DsCard(
       onPressed: onOpen,
       semanticLabel: video.title,
+      statesController: _states,
       style: DsCardStyle(
         padding: EdgeInsets.zero,
         hovered: DsCardStyle(
@@ -114,6 +153,10 @@ final class VodVideoCard extends ConsumerWidget {
                       child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                     ),
                   ),
+                  // The hover's live preview: the archive's own picture,
+                  // played where the cover stood in for it, under the corner
+                  // ink so the counts keep reading over it.
+                  if (coverPreviewing) Positioned.fill(child: buildCoverPreview()),
                   if (rank != null)
                     PositionedDirectional(
                       top: DsSpace.s8,
@@ -211,18 +254,21 @@ final class VodVideoCard extends ConsumerWidget {
     );
   }
 
-  /// The cover, or the theme's stand-in.
-  static Widget vodCover(VodVideo video, BuildContext context) {
-    final fallback = CoverFallback(title: video.title, padding: const EdgeInsets.all(DsSpace.s8));
-    final url = video.coverUrl;
-    if (url == null || url.isEmpty) return fallback;
-    return DsImage(
-      image: cachedImage(url, policy: ImageCachePolicies.videoCover),
-      aspectRatio: 16 / 9,
-      semanticLabel: video.title,
-      fallback: fallback,
-    );
-  }
+}
+
+
+
+/// The cover, or the theme's stand-in.
+Widget vodCover(VodVideo video, BuildContext context) {
+  final fallback = CoverFallback(title: video.title, padding: const EdgeInsets.all(DsSpace.s8));
+  final url = video.coverUrl;
+  if (url == null || url.isEmpty) return fallback;
+  return DsImage(
+    image: cachedImage(url, policy: ImageCachePolicies.videoCover),
+    aspectRatio: 16 / 9,
+    semanticLabel: video.title,
+    fallback: fallback,
+  );
 }
 
 /// One figure printed on a cover: a small glyph and its count in a dark
@@ -331,9 +377,10 @@ final class _VodRowMeta extends StatelessWidget {
 /// line, so the two never crowd one corner. Which of the pieces appear is the
 /// card visibility setting's to say, the same table the archive card reads —
 /// a title's name is not one of the pieces it can take away.
-final class VodSeasonCard extends ConsumerWidget {
-  /// The card for [season]; [onOpen] opens its page.
-  const VodSeasonCard({required this.season, this.onOpen, super.key});
+final class VodSeasonCard extends ConsumerStatefulWidget {
+  /// The card for [season]; [onOpen] opens its page. [preview] true plays the
+  /// season's episode on its poster while a pointer rests on the card.
+  const VodSeasonCard({required this.season, this.onOpen, this.preview = false, super.key});
 
   /// The season shown.
   final VodSeason season;
@@ -341,8 +388,42 @@ final class VodSeasonCard extends ConsumerWidget {
   /// Opens the season; null leaves the card inert.
   final VoidCallback? onOpen;
 
+  /// Whether resting a pointer on the card plays the season on its poster.
+  final bool preview;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VodSeasonCard> createState() => _VodSeasonCardState();
+}
+
+final class _VodSeasonCardState extends ConsumerState<VodSeasonCard> with CoverPreviewDwell<VodSeasonCard> {
+  /// The card's own interaction states, observed through the pressable: the
+  /// preview's dwell rides them, a press rebuilds nothing.
+  final WidgetStatesController _states = WidgetStatesController();
+
+  @override
+  bool get coverPreviewEnabled => widget.preview;
+
+  @override
+  Widget buildCoverPreview() => VodSeasonPreview(season: widget.season);
+
+  @override
+  void initState() {
+    super.initState();
+    _states.addListener(_onStates);
+  }
+
+  void _onStates() => syncCoverPreview(_states.value);
+
+  @override
+  void dispose() {
+    _states.removeListener(_onStates);
+    _states.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final season = widget.season;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final visibility = ref.watch(vodCardSettingsProvider);
@@ -358,8 +439,9 @@ final class VodSeasonCard extends ConsumerWidget {
     final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
     final cover = season.coverUrl;
     return DsCard(
-      onPressed: onOpen,
+      onPressed: widget.onOpen,
       semanticLabel: season.title,
+      statesController: _states,
       style: DsCardStyle(
         padding: EdgeInsets.zero,
         hovered: DsCardStyle(
@@ -389,6 +471,9 @@ final class VodSeasonCard extends ConsumerWidget {
                       semanticLabel: season.title,
                       fallback: fallback,
                     ),
+                  // The hover's live preview: the episode's own picture, played
+                  // where the poster stood in for it, under the corner mark.
+                  if (coverPreviewing) Positioned.fill(child: buildCoverPreview()),
                   // The poster's one corner mark, at its top start: the score
                   // in the accent's ink, or the state in the capsule the
                   // archive's ink uses.
@@ -898,7 +983,7 @@ final class VodVideoRow extends ConsumerWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    VodVideoCard.vodCover(video, context),
+                    vodCover(video, context),
                     const Positioned.fill(
                       child: IgnorePointer(
                         child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),

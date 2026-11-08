@@ -50,7 +50,6 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' sh
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
     show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.

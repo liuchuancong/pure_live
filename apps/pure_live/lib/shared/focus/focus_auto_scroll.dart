@@ -72,7 +72,11 @@ final class _FocusAutoScrollState extends State<FocusAutoScroll> {
     if (!position.hasContentDimensions || !position.hasViewportDimension) return;
     final object = context.findRenderObject();
     if (object is! RenderBox || !object.attached || !object.hasSize) return;
-    final viewport = RenderAbstractViewport.of(object);
+    // Scrollable.maybeOf walks the element tree, but the render tree can
+    // disagree: a stop inside an overlay entry renders outside the
+    // viewport's subtree. Only reveal when the box really hangs under one.
+    final viewport = RenderAbstractViewport.maybeOf(object);
+    if (viewport == null) return;
     final start = viewport.getOffsetToReveal(object, 0).offset;
     final extent = position.axis == Axis.vertical ? object.size.height : object.size.width;
     final end = start + extent;

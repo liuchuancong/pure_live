@@ -700,8 +700,8 @@ final class _AppShellState extends ConsumerState<AppShell> {
                                 child: WindowClassScope(
                                   child: widget.tv
                                       ? TvPageShell(
-                                          child: widget.content,
                                           reclaimKey: (widget.module, widget.menuValue),
+                                          child: widget.content,
                                         )
                                       : widget.content,
                                 ),

@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited, Timer;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';

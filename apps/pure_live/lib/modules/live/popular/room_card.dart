@@ -1,6 +1,7 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
@@ -9,7 +10,6 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One recommended room as a card. The two designs — the grid tile and the
@@ -25,6 +25,13 @@ import 'package:pure_live/shared/shared.dart';
 /// title keeps one line, then the anchor beside the avatar. The list row drops
 /// the cover altogether: the streamer's avatar leads and the title, the
 /// streamer and the audience fill three lines beside it.
+///
+/// The cover keeps its quiet pieces resident — the platform, the audience,
+/// the recording — and lets the pieces a viewer acts on or reads once arrive
+/// with attention: the heart (or the page's ✕) and the category chip fade in
+/// on hover or keyboard focus and fade out with the pointer. A touch screen
+/// has no hover, so there they stay on screen; [hoverReveal] false opts out
+/// entirely (the settings preview shows every piece at once).
 ///
 /// Every piece is a Desen component over the theme's surface — the card, the
 /// pills and the corner controls alike — so the corners follow the theme's
@@ -43,7 +50,10 @@ final class RoomCard extends ConsumerWidget {
   /// store — the preview's sample; [cover] replaces the room's own picture
   /// (the preview's bundled sample). [tags] and [cornerNote] carry a page's
   /// own line about the room, and [onRemove] swaps the heart for the page's
-  /// way out of itself (the history's ✕).
+  /// way out of itself (the history's ✕). [hoverReveal] false keeps every
+  /// cover piece on screen without waiting for a pointer. [livePreview] true
+  /// plays the room's own stream on the cover while a pointer rests on the
+  /// card, and takes it back when the pointer leaves.
   const RoomCard({
     required this.room,
     this.onOpen,
@@ -54,6 +64,8 @@ final class RoomCard extends ConsumerWidget {
     this.cornerNote,
     this.onRemove,
     this.removeLabel,
+    this.hoverReveal = true,
+    this.livePreview = false,
     super.key,
   });
 
@@ -89,6 +101,14 @@ final class RoomCard extends ConsumerWidget {
   /// wording of its own.
   final String? removeLabel;
 
+  /// Whether the grid cover's heart and category chip wait for hover or
+  /// focus; false keeps them resident (the settings preview).
+  final bool hoverReveal;
+
+  /// Whether resting a pointer on the card plays the room's own stream on
+  /// the cover. The list row has no cover and takes no preview.
+  final bool livePreview;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Everything the card draws that is a fact about the app — the saved
@@ -120,11 +140,13 @@ final class RoomCard extends ConsumerWidget {
       cornerNote: cornerNote,
       onRemove: onRemove,
       removeLabel: removeLabel,
+      hoverReveal: hoverReveal,
+      livePreview: livePreview,
       visibility: visibility,
       figure: figure,
       followed: followed,
       onFollow: onFollow,
-      platformIcon: localizedSiteIcon(site, size: 18),
+      platformIcon: localizedSiteIcon(site, size: DsTheme.sizesOf(context).iconSm),
       platformName: site == null ? '' : localizedSiteShortName(site),
     );
   }
@@ -153,6 +175,8 @@ final class RoomCardView extends StatelessWidget {
     this.cornerNote,
     this.onRemove,
     this.removeLabel,
+    this.hoverReveal = true,
+    this.livePreview = false,
     super.key,
   });
 
@@ -198,19 +222,24 @@ final class RoomCardView extends StatelessWidget {
   /// wording of its own.
   final String? removeLabel;
 
+  /// Whether the grid cover's heart and category chip wait for hover or
+  /// focus; false keeps them resident.
+  final bool hoverReveal;
+
+  /// Whether resting a pointer on the card plays the room's own stream on
+  /// the cover. The list row has no cover and takes no preview.
+  final bool livePreview;
+
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
     final title = room.content.title;
     final anchorName = (room.anchor?.name ?? '').trim();
     final avatarUrl = (room.anchor?.avatarUrl ?? '').trim();
     final area = (room.area?.areaName ?? '').trim();
-    final radius = BorderRadius.circular(theme.radii.card);
     final image = cover ?? cachedImage(room.content.coverUrl, policy: ImageCachePolicies.liveRoomCover);
     // A feed already assumes a live room is on air, so the cover only names
     // the exception a viewer cannot see: a recording.
     final showsState = visibility.shows(RoomCardElement.status) && room.broadcast.isRecord;
-    final pill = _StatePill(text: context.t.settings.roomCardReplay);
     // The page's ✕ takes the corner the heart holds: a card is either the
     // page's own list of rooms or a feed the viewer follows from. A page that
     // asks for it keeps the ✕ while its action is busy — inert, not a heart
@@ -236,28 +265,191 @@ final class RoomCardView extends StatelessWidget {
         onOpen: onOpen,
       );
     }
+    return _GridTile(
+      room: room,
+      image: image,
+      title: title,
+      anchorName: anchorName,
+      avatarUrl: avatarUrl,
+      area: area,
+      visibility: visibility,
+      figure: figure,
+      followed: followed,
+      onFollow: onFollow,
+      platformIcon: platformIcon,
+      platformName: platformName,
+      showsState: showsState,
+      removeButton: removeButton,
+      cornerNote: cornerNote,
+      onOpen: onOpen,
+      hoverReveal: hoverReveal,
+      livePreview: livePreview,
+    );
+  }
+}
+
+/// The grid tile: the cover with its corner pieces, then the information
+/// area. It owns the card's interaction states so the cover can reveal its
+/// interactive pieces — the heart (or the page's ✕) and the category chip —
+/// on hover or keyboard focus without adding a focus stop of its own: the
+/// states ride the card's own pressable through [DsCard.statesController].
+final class _GridTile extends StatefulWidget {
+  const _GridTile({
+    required this.room,
+    required this.image,
+    required this.title,
+    required this.anchorName,
+    required this.avatarUrl,
+    required this.area,
+    required this.visibility,
+    required this.figure,
+    required this.followed,
+    required this.onFollow,
+    required this.platformIcon,
+    required this.platformName,
+    required this.showsState,
+    required this.removeButton,
+    required this.cornerNote,
+    required this.onOpen,
+    required this.hoverReveal,
+    required this.livePreview,
+  });
+
+  final LiveRoom room;
+  final ImageProvider<Object> image;
+  final String title;
+  final String anchorName;
+  final String avatarUrl;
+  final String area;
+  final RoomCardVisibility visibility;
+  final int? figure;
+  final bool followed;
+  final VoidCallback? onFollow;
+  final Widget? platformIcon;
+  final String platformName;
+  final bool showsState;
+  final Widget? removeButton;
+  final String? cornerNote;
+  final VoidCallback? onOpen;
+  final bool hoverReveal;
+  final bool livePreview;
+
+  @override
+  State<_GridTile> createState() => _GridTileState();
+}
+
+final class _GridTileState extends State<_GridTile> {
+  /// The card's own interaction states, observed through the pressable:
+  /// hover and focus reveal the cover's pieces, a press rebuilds nothing.
+  final WidgetStatesController _states = WidgetStatesController();
+  bool _hoverOrFocus = false;
+
+  /// The rest between the pointer's arrival and the live preview's first
+  /// frame: a grid walk must not open a stream under every card it crosses.
+  static const Duration _previewDwell = Duration(milliseconds: 500);
+
+  Timer? _dwell;
+  bool _previewing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _states.addListener(_onStates);
+  }
+
+  void _onStates() {
+    final value = _states.value;
+    final next = value.contains(WidgetState.hovered) || value.contains(WidgetState.focused);
+    if (next != _hoverOrFocus) setState(() => _hoverOrFocus = next);
+    _syncPreview(value);
+  }
+
+  /// The live preview follows the pointer alone: a rest on the card starts
+  /// it, the pointer leaving takes it back, and a press ends it at once —
+  /// the room is about to open on top of it. A keyboard's focus walks are
+  /// never a rest, so they play nothing.
+  void _syncPreview(Set<WidgetState> value) {
+    if (!widget.livePreview) return;
+    if (value.contains(WidgetState.pressed)) return _endPreview();
+    if (!value.contains(WidgetState.hovered) || !widget.room.broadcast.isLiveNow) return _endPreview();
+    _dwell ??= Timer(_previewDwell, () {
+      _dwell = null;
+      if (mounted && _states.value.contains(WidgetState.hovered) && !_previewing) {
+        setState(() => _previewing = true);
+      }
+    });
+  }
+
+  void _endPreview() {
+    _dwell?.cancel();
+    _dwell = null;
+    if (_previewing && mounted) setState(() => _previewing = false);
+  }
+
+  @override
+  void dispose() {
+    _dwell?.cancel();
+    _states.removeListener(_onStates);
+    _states.dispose();
+    super.dispose();
+  }
+
+  /// Whether the cover's interactive pieces are on screen: a mouse reveals
+  /// them on hover and a keyboard on focus; a finger or a remote has neither,
+  /// so touch platforms keep them resident. The preview opts out entirely.
+  bool get _revealed {
+    if (!widget.hoverReveal || _hoverOrFocus) return true;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS => true,
+      _ => false,
+    };
+  }
+
+  /// Fades a piece with the theme's tone motion and takes it out of reach
+  /// and the semantics tree while it is away — the layout never shifts.
+  Widget _reveal(Widget child) {
+    final motion = DsTheme.of(context).motion;
+    return AnimatedOpacity(
+      opacity: _revealed ? 1 : 0,
+      duration: motion.toneDuration,
+      curve: motion.toneCurve,
+      child: IgnorePointer(
+        ignoring: !_revealed,
+        child: ExcludeSemantics(excluding: !_revealed, child: child),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final radius = BorderRadius.circular(theme.radii.card);
+    final visibility = widget.visibility;
+    final showsType = visibility.shows(RoomCardElement.coverType) && widget.area.isNotEmpty;
+    final showsAudience = visibility.shows(RoomCardElement.audience) && widget.figure != null;
+    final showsPlatform =
+        visibility.shows(RoomCardElement.platformBadge) &&
+        (widget.platformName.isNotEmpty || widget.platformIcon != null);
+    final pill = _StatePill(text: context.t.settings.roomCardReplay);
     return DsCard(
-      onPressed: onOpen,
+      onPressed: widget.onOpen,
+      statesController: _states,
       style: const DsCardStyle(padding: EdgeInsets.zero),
       child: ClipRRect(
         borderRadius: radius,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 320.0;
-            final showsType = visibility.shows(RoomCardElement.coverType) && area.isNotEmpty;
-            final showsAudience = visibility.shows(RoomCardElement.audience) && figure != null;
-            final showsPlatform =
-                visibility.shows(RoomCardElement.platformBadge) && (platformName.isNotEmpty || platformIcon != null);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Stack(
                   children: [
                     DsImage(
-                      image: image,
+                      image: widget.image,
                       aspectRatio: kRoomCardCoverRatio,
-                      semanticLabel: title,
-                      fallback: CoverFallback(title: title),
+                      semanticLabel: widget.title,
+                      fallback: CoverFallback(title: widget.title),
                       style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
                     ),
                     // Darkens the cover's lower edge so the chips keep their
@@ -267,6 +459,11 @@ final class RoomCardView extends StatelessWidget {
                         child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                       ),
                     ),
+                    // The hover's live preview: the room's own picture, played
+                    // where the cover stood in for it. It sits under the
+                    // corner pieces, so the card's facts keep reading over the
+                    // moving picture.
+                    if (widget.livePreview && _previewing) Positioned.fill(child: RoomLivePreview(room: widget.room)),
                     // The platform keeps the corner the state used to take:
                     // its mark and brand read at a glance, larger than the
                     // meta line ever had room for.
@@ -274,7 +471,7 @@ final class RoomCardView extends StatelessWidget {
                       PositionedDirectional(
                         top: DsSpace.s8,
                         start: DsSpace.s8,
-                        child: _PlatformMark(icon: platformIcon, name: platformName),
+                        child: _PlatformMark(icon: widget.platformIcon, name: widget.platformName),
                       ),
                     PositionedDirectional(
                       top: DsSpace.s8,
@@ -283,14 +480,19 @@ final class RoomCardView extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         spacing: DsSpace.s6,
                         children: [
-                          if (showsState) pill,
                           // The heart is the followed state, not an offer:
-                          // an unfollowed room leaves the corner to the state.
-                          if (removeButton != null) removeButton else if (followed) _FollowButton(onPressed: onFollow),
+                          // an unfollowed room says nothing here. It arrives
+                          // with attention; the state pill holds the corner
+                          // so the resident piece never moves.
+                          if (widget.removeButton != null)
+                            _reveal(widget.removeButton!)
+                          else if (widget.followed)
+                            _reveal(_FollowButton(onPressed: widget.onFollow)),
+                          if (widget.showsState) pill,
                         ],
                       ),
                     ),
-                    if (showsType || showsAudience || cornerNote != null)
+                    if (showsType || showsAudience || widget.cornerNote != null)
                       PositionedDirectional(
                         start: DsSpace.s8,
                         end: DsSpace.s8,
@@ -306,21 +508,24 @@ final class RoomCardView extends StatelessWidget {
                               child: Align(
                                 alignment: AlignmentDirectional.centerStart,
                                 child: showsType
-                                    ? RoomCoverChip(text: area, maxWidth: width * 0.55)
+                                    ? _reveal(RoomCoverChip(text: widget.area, maxWidth: width * 0.55))
                                     : const SizedBox.shrink(),
                               ),
                             ),
-                            if (showsType && (showsAudience || cornerNote != null)) const SizedBox(width: DsSpace.s8),
-                            if (cornerNote != null)
-                              RoomCoverChip(text: cornerNote!, maxWidth: width * 0.45)
+                            if (showsType && (showsAudience || widget.cornerNote != null))
+                              const SizedBox(width: DsSpace.s8),
+                            if (widget.cornerNote != null)
+                              RoomCoverChip(text: widget.cornerNote!, maxWidth: width * 0.45)
                             else if (showsAudience)
                               RoomCoverChip(
-                                text: AudienceFormat.format(figure),
+                                text: AudienceFormat.format(widget.figure),
                                 icon: DsIcons.flame,
                                 maxWidth: width * 0.3,
-                                style: DsTheme.of(context).typography.numeric(
-                                  DsTheme.of(context).typography.caption
-                                      .copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
+                                style: theme.typography.numeric(
+                                  theme.typography.caption.copyWith(
+                                    color: OnVideoColors.foreground,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                           ],
@@ -329,7 +534,12 @@ final class RoomCardView extends StatelessWidget {
                   ],
                 ),
                 Expanded(
-                  child: _GridInfo(title: title, anchorName: anchorName, avatarUrl: avatarUrl, visibility: visibility),
+                  child: _GridInfo(
+                    title: widget.title,
+                    anchorName: widget.anchorName,
+                    avatarUrl: widget.avatarUrl,
+                    visibility: visibility,
+                  ),
                 ),
               ],
             );
@@ -359,7 +569,8 @@ final class _GridInfo extends StatelessWidget {
     final showsAnchor = visibility.shows(RoomCardElement.anchorName) && anchorName.isNotEmpty;
     return Padding(
       // The title sits close under the cover: the card reads as one block.
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+      // The vertical pair stays within the feed's fixed information extent.
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s8),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -467,7 +678,7 @@ final class _ListRow extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
+                  spacing: DsSpace.s4,
                   children: [
                     if (showsTitle)
                       Text(
@@ -504,7 +715,7 @@ final class _ListRow extends StatelessWidget {
                             ),
                           // A recording is the one state a list cannot assume;
                           // the pill names it where the cover used to.
-                          if (showsState) _StatePill(text: context.t.settings.roomCardReplay, compact: true),
+                          if (showsState) _StatePill(text: context.t.settings.roomCardReplay),
                         ],
                       ),
                     if (tags.isNotEmpty)
@@ -567,9 +778,6 @@ final class _CornerButton extends StatelessWidget {
     this.color = OnVideoColors.foreground,
   });
 
-  /// The circle's diameter.
-  static const double dimension = 28;
-
   final DsIconData icon;
   final String semanticLabel;
   final VoidCallback? onPressed;
@@ -577,6 +785,7 @@ final class _CornerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
     return DsButton.icon(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
@@ -584,16 +793,16 @@ final class _CornerButton extends StatelessWidget {
       variant: DsButtonVariant.ghost,
       icon: DsIcon(icon),
       style: DsButtonStyle(
-        height: dimension,
+        height: theme.sizes.xs,
         padding: EdgeInsets.zero,
-        background: const Color(0x00000000),
+        background: OnVideoColors.clear,
         foreground: color,
         borderWidth: 0,
         borderRadius: BorderRadius.circular(DsRadii.pill),
-        iconSize: 14,
+        iconSize: theme.sizes.iconXs,
         shadows: const [],
-        hovered: const DsButtonStyle(background: Color(0x00000000)),
-        pressed: const DsButtonStyle(background: Color(0x00000000)),
+        hovered: const DsButtonStyle(background: OnVideoColors.clear),
+        pressed: const DsButtonStyle(background: OnVideoColors.clear),
       ),
     );
   }
@@ -615,31 +824,27 @@ final class _PlatformMark extends StatelessWidget {
       dot: false,
       icon: icon,
       style: DsBadgeStyle(
-        height: 28,
+        height: theme.sizes.xs,
         padding: EdgeInsets.symmetric(horizontal: name.isEmpty ? DsSpace.s6 : DsSpace.s8),
-        background: OnVideoColors.scrim,
+        background: OnVideoColors.coverMark,
         foreground: OnVideoColors.foreground,
-        borderRadius: BorderRadius.circular(8),
         // The platform is the first thing the card names: a step above the
         // chips under it.
         textStyle: theme.typography.labelStrong,
-        iconSize: 18,
+        iconSize: theme.sizes.iconSm,
         gap: DsSpace.s6,
       ),
     );
   }
 }
 
-/// The broadcast's exception in one pill over a cover: a recording, the only
-/// state a feed cannot take for granted.
+/// The broadcast's exception in one pill over a cover or beside a list row's
+/// meta line: a recording, the only state a feed cannot take for granted.
 final class _StatePill extends StatelessWidget {
-  const _StatePill({required this.text, this.compact = false});
+  const _StatePill({required this.text});
 
   /// What the pill says: 回放.
   final String text;
-
-  /// The smaller shape a list row's meta line uses.
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -648,12 +853,10 @@ final class _StatePill extends StatelessWidget {
       label: Text(text),
       dot: false,
       style: DsBadgeStyle(
-        height: compact ? 18 : 20,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        background: const Color(0x8C000000),
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6),
+        background: OnVideoColors.coverMark,
         foreground: OnVideoColors.foreground,
-        borderRadius: BorderRadius.circular(6),
-        textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, fontSize: compact ? 10 : null),
+        textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

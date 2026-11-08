@@ -19,5 +19,6 @@
   "roomsEmptyTitle": "No live rooms in this area right now",
   "roomsEmptyDescription": "Try another area, or come back later.",
   "backToBrowse": "Back to browsing",
+  "areaCount": "{count: int} categories",
   "hiddenUnplayable": "{count: int} streams that cannot play here are hidden (paid, password, app only…)"
 }

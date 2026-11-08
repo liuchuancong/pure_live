@@ -194,7 +194,7 @@ final class LiveAlertWatchFile {
       await temporary.rename(file.path);
     } on Object {
       try {
-        unawaited(temporary.delete());
+        await temporary.delete();
       } on FileSystemException {
         // Gone already.
       }
@@ -205,7 +205,9 @@ final class LiveAlertWatchFile {
   /// Removes the state (the switch turned off).
   Future<void> clear() async {
     try {
-      unawaited(file.delete());
+      // The delete's error surfaces asynchronously, so the try only sees it
+      // through the await.
+      await file.delete();
     } on FileSystemException {
       // Gone already.
     }

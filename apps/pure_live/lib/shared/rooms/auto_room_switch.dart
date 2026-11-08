@@ -91,11 +91,11 @@ final class AutoRoomSwitch {
   /// The followed rooms, in storage order.
   final List<LiveRoom> Function() followsOf;
 
-  /// Whether [candidate] is still followed right now; a list read from a
+  /// Whether `candidate` is still followed right now; a list read from a
   /// moment ago is not enough, an unfollowed room must not be opened.
   final bool Function(LiveRoom candidate) isFollowed;
 
-  /// Reads the platform's current detail for [candidate]; null (or a throw
+  /// Reads the platform's current detail for `candidate`; null (or a throw
   /// other than [TimeoutException]) means this candidate failed and the next
   /// one may be tried. The scheduler applies [lookupTimeout] itself.
   final Future<LiveRoom?> Function(LiveRoom candidate) lookupRoom;

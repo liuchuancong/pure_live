@@ -4,7 +4,6 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart' show VodChapter, VodSeekPreview;
 import 'package:media_core/media_core.dart' show BufferRange;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
-import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// What a gesture on the picture is doing, named by the chip it answers with.

@@ -217,7 +217,7 @@ final class _VodFeedView extends ConsumerWidget {
       emptyIcon: DsIcons.film,
       emptyTitle: t.common.empty,
       emptyDescription: t.vod.noResultsDescription,
-      itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video)),
+      itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video), preview: true),
     );
   }
 }

@@ -17,11 +17,11 @@ final class TvPhoneServer {
   /// Starts serving [form] (or [text] under [title]); [address] and [bind]
   /// are for tests. [doneText] is the page shown after a form is sent.
   static Future<TvPhoneServer> start({
+    required String doneText,
+    required String htmlTitle,
     PhoneInputRequest? form,
     String? text,
     String title = '',
-    required String doneText,
-    required String htmlTitle,
     String? address,
     InternetAddress? bind,
   }) async {

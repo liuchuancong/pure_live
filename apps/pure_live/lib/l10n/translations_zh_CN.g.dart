@@ -482,6 +482,9 @@ class Translations$areas$zh_CN {
 	/// zh-CN: '返回浏览'
 	String get backToBrowse => '返回浏览';
 
+	/// zh-CN: '{count: int} 个分区'
+	String areaCount({required int count}) => '${count} 个分区';
+
 	/// zh-CN: '已隐藏 {count: int} 个不能播放的直播（付费、加密、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个不能播放的直播（付费、加密、仅限 App 等）';
 }
@@ -5555,6 +5558,15 @@ class Translations$popular$zh_CN {
 
 	/// zh-CN: '返回浏览'
 	String get backToBrowse => '返回浏览';
+
+	/// zh-CN: '推荐直播'
+	String get feedTitle => '推荐直播';
+
+	/// zh-CN: '{count: int} 个直播'
+	String feedCount({required int count}) => '${count} 个直播';
+
+	/// zh-CN: '{count: int}+ 个直播'
+	String feedCountMore({required int count}) => '${count}+ 个直播';
 
 	/// zh-CN: '已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）';
@@ -13592,6 +13604,12 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '第 {index: String} 话'
 	String episodeNo({required String index}) => '第 ${index} 话';
+
+	/// zh-CN: '播放列表'
+	String get partsPlaylist => '播放列表';
+
+	/// zh-CN: '共 {count: int} 个'
+	String partsCount({required int count}) => '共 ${count} 个';
 }
 
 // Path: wallpaper
@@ -14533,6 +14551,7 @@ extension on Translations {
 			'areas.roomsEmptyTitle' => '这个分区暂时没有直播间',
 			'areas.roomsEmptyDescription' => '换个分区，或稍后再来看看。',
 			'areas.backToBrowse' => '返回浏览',
+			'areas.areaCount' => ({required int count}) => '${count} 个分区',
 			'areas.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个不能播放的直播（付费、加密、仅限 App 等）',
 			'backup.title' => '备份与恢复',
 			'backup.localSection' => '本地备份',
@@ -14911,9 +14930,9 @@ extension on Translations {
 			'common.back' => '后退',
 			'common.forward' => '前进',
 			'common.searchHint' => '搜索房间或主播',
-			'common.switchModule' => '切换内容类型',
 			_ => null,
 		} ?? switch (path) {
+			'common.switchModule' => '切换内容类型',
 			'common.openNavigation' => '打开导航',
 			'common.refreshFailed' => '刷新失败',
 			'common.refresh' => '刷新',
@@ -15425,9 +15444,9 @@ extension on Translations {
 			'iptv.searchSources' => '搜索名称或地址…',
 			'iptv.noChannelMatch' => '没有匹配的频道',
 			'iptv.noSourceMatch' => '没有匹配的来源',
-			'iptv.sourceCount' => ({required int count}) => '共 ${count} 项',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.sourceCount' => ({required int count}) => '共 ${count} 项',
 			'iptv.colChannel' => '频道',
 			'iptv.colGroup' => '分组',
 			'iptv.colNow' => '正在播出',
@@ -15939,9 +15958,9 @@ extension on Translations {
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
 			'music.localRescan' => '重新扫描',
 			'music.localFolders' => '音乐文件夹',
-			'music.localRemoveFolder' => '移除文件夹',
 			_ => null,
 		} ?? switch (path) {
+			'music.localRemoveFolder' => '移除文件夹',
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
 			'music.localEmptyDescription' => '下载的歌会自己进到这个列表；要放本机已有的文件，添加一个存放音频的文件夹。',
@@ -16345,6 +16364,9 @@ extension on Translations {
 			'popular.nextPage' => '下一页',
 			'popular.inlineAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”',
 			'popular.backToBrowse' => '返回浏览',
+			'popular.feedTitle' => '推荐直播',
+			'popular.feedCount' => ({required int count}) => '${count} 个直播',
+			'popular.feedCountMore' => ({required int count}) => '${count}+ 个直播',
 			'popular.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
@@ -16450,12 +16472,12 @@ extension on Translations {
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
@@ -16964,12 +16986,12 @@ extension on Translations {
 			'search.partialFailureScope' => '调整范围',
 			'search.webView2MissingTitle' => '缺少内嵌网页组件',
 			'search.webView2MissingBody' => '当前 Windows 没有 WebView2，网页搜索可以改用系统浏览器，或先安装 WebView2。',
+			_ => null,
+		} ?? switch (path) {
 			'search.webView2Download' => '下载 WebView2',
 			'search.webVersion' => '打开网页版',
 			'search.webVersionTitle' => '这里没有内置列表',
 			'search.webVersionDescription' => '可以在应用内打开该平台的网页版查看直播间。',
-			_ => null,
-		} ?? switch (path) {
 			'search.coverageShortLiveOnly' => '只能搜到正在直播的房间',
 			'search.coverageShortLiveAndOffline' => '能搜到直播中和部分未开播的房间',
 			'search.coverageShortChannelLookup' => '只能用频道链接或频道号查找',
@@ -17478,12 +17500,12 @@ extension on Translations {
 			'settings.textScaleDescription' => '按比例缩放全应用文字；100% 为原始大小。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheDescription' => '图片按用途分别缓存，容量、策略与清理。',
 			'settings.cacheSize' => '当前缓存大小',
 			'settings.cacheRefresh' => '刷新',
 			'settings.cacheClear' => '清除缓存',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheClearDesc' => '删除所有已缓存的封面、头像与站点图标。',
 			'settings.cacheCleared' => '缓存已清除',
 			'settings.cacheLimit' => '最大缓存容量',
@@ -17992,12 +18014,12 @@ extension on Translations {
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadDelete' => '删除',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
 			'settings.downloadClearFinished' => '清除已完成',
@@ -18506,12 +18528,12 @@ extension on Translations {
 			'settings.lanSyncConflicts' => ({required int count}) => '${count} 个冲突待处理',
 			'settings.lanSyncKeepLocal' => '保留本机',
 			'settings.lanSyncKeepRemote' => '采用对方',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncConflictResolved' => '冲突已处理',
 			'settings.lanSyncConflictOutdated' => '本机数据刚变过，请重新查看后再决定',
 			'settings.navMusicInterface' => '界面与列表',
 			'settings.musicInterfaceDescription' => '列表行、来源与不喜欢的显示方式。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusicStorage' => '存储与重置',
 			'settings.musicStorageDescription' => '缓存清理与恢复默认。',
 			'settings.navBackgroundGuide' => '后台播放引导',
@@ -19010,6 +19032,8 @@ extension on Translations {
 			'vod.share' => '分享',
 			'vod.linkCopied' => '链接已复制',
 			'vod.episodeNo' => ({required String index}) => '第 ${index} 话',
+			'vod.partsPlaylist' => '播放列表',
+			'vod.partsCount' => ({required int count}) => '共 ${count} 个',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',
@@ -19018,14 +19042,14 @@ extension on Translations {
 			'wallpaper.fetchFailed' => '这张图没有取到',
 			'wallpaper.unsupported' => '图源返回了无法显示的图片格式',
 			'wallpaper.previewDisplay' => '显示设置',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.previewVideoNote' => '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。',
 			'wallpaper.previewTitle' => '随机图片预览',
 			'wallpaper.applied' => '已应用为背景',
 			'wallpaper.sourceLabel' => '来源',
 			'wallpaper.retry' => '重试',
 			'wallpaper.groupBing' => '必应壁纸',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceBingBiturl' => '必应随机Biturl',
 			'wallpaper.sourceBingJasonZeng' => '必应随机Jason Zeng',
 			'wallpaper.sourceBingUapi' => '必应随机UAPI',
