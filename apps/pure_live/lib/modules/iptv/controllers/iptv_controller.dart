@@ -44,6 +44,7 @@ final iptvImporterProvider = Provider<IptvImporter?>((ref) {
     library: library,
     fetch: iptvFetcherFor(http, userAgent: userAgent),
     fetchBytes: iptvBytesFetcherFor(http, userAgent: userAgent),
+    log: appLog.forCategory('iptv.import'),
   );
 });
 

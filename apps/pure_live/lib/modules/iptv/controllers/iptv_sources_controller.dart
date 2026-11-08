@@ -2,6 +2,8 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
+import 'package:live_log/live_log.dart' show LogLevel;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 
@@ -68,12 +70,32 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
     }
     state = _with(importing: true);
     try {
-      return await importer.importPlaylistFromUrl(url: url, name: name, confirmReplace: confirmReplace);
-    } on Object catch (error) {
+      final result = await importer.importPlaylistFromUrl(url: url, name: name, confirmReplace: confirmReplace);
+      _logVerdict('import', url.toString(), result);
+      return result;
+    } on Object catch (error, stack) {
+      appLog
+          .forCategory('iptv.playlist')
+          .error('playlist import threw', fields: {'url': url.host}, error: error, stackTrace: stack);
       return IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(importing: false);
     }
+  }
+
+  /// One line per import or sync verdict: every failure the toast reports
+  /// says why in the log, status and cause together.
+  void _logVerdict(String op, String source, IptvImportResult result) {
+    final log = appLog.forCategory('iptv.playlist');
+    if (result.isImported) {
+      log.info('playlist $op imported', fields: {'source': source, 'channels': result.channels, 'issues': result.issues.length});
+      return;
+    }
+    if (result.status == IptvImportStatus.cancelled) return;
+    log.warning(
+      'playlist $op failed',
+      fields: {'source': source, 'status': result.status.name, if (result.error != null) 'error': '${result.error}'},
+    );
   }
 
   /// Imports playlist [text] under [name]; [url] records where a download
@@ -91,8 +113,13 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
     }
     state = _with(importing: true);
     try {
-      return await importer.importPlaylistText(text: text, name: name, url: url, confirmReplace: confirmReplace);
-    } on Object catch (error) {
+      final result = await importer.importPlaylistText(text: text, name: name, url: url, confirmReplace: confirmReplace);
+      _logVerdict('import', name, result);
+      return result;
+    } on Object catch (error, stack) {
+      appLog
+          .forCategory('iptv.playlist')
+          .error('playlist import threw', fields: {'name': name}, error: error, stackTrace: stack);
       return IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(importing: false);
@@ -107,8 +134,13 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
     if (importer == null || state.busy.contains(key)) return null;
     state = _with(busy: {...state.busy, key});
     try {
-      return await importer.syncPlaylist(playlist);
-    } on Object catch (error) {
+      final result = await importer.syncPlaylist(playlist);
+      _logVerdict('sync', playlist.url ?? playlist.name, result);
+      return result;
+    } on Object catch (error, stack) {
+      appLog
+          .forCategory('iptv.playlist')
+          .error('playlist sync threw', fields: {'name': playlist.name}, error: error, stackTrace: stack);
       return IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(busy: {...state.busy}..remove(key));
@@ -124,7 +156,10 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
     state = _with(busy: {...state.busy, key});
     try {
       return await importer.deletePlaylist(playlist);
-    } on Object {
+    } on Object catch (error) {
+      appLog
+          .forCategory('iptv.playlist')
+          .log(LogLevel.warning, 'playlist delete failed', fields: {'name': playlist.name, 'error': '$error'});
       return false;
     } finally {
       if (ref.mounted) state = _with(busy: {...state.busy}..remove(key));
@@ -178,6 +213,7 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
       if (ref.mounted) state = _with(syncAll: (done: done, total: total));
     }
     if (ref.mounted) state = _with(dropSyncAll: true);
+    appLog.forCategory('iptv.playlist').info('sync all finished', fields: {'total': total, 'failed': failed});
     return (total: total, failed: failed);
   }
 

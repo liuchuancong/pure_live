@@ -5,6 +5,7 @@ import 'package:live_iptv/src/import/iptv_import_result.dart';
 import 'package:live_iptv/src/library/iptv_library/iptv_library.dart';
 import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/playlist/playlist.dart';
+import 'package:live_log/live_log.dart' show LiveLog, LogLevel;
 
 /// Downloads a playlist or guide.
 ///
@@ -49,8 +50,16 @@ typedef IptvReplaceConfirm = FutureOr<bool> Function(String name);
 /// not grow without bound.
 final class IptvImporter {
   /// An importer over [library]; [fetch] downloads remote sources and
-  /// [fetchBytes] remote guides.
-  new({required this.library, required this.fetch, this.fetchBytes});
+  /// [fetchBytes] remote guides. [log] is the owner's category view — every
+  /// verdict this importer answers (the statuses the UI words) and every
+  /// storage failure it absorbs lands there.
+  // A private named parameter cannot be an initializing formal; the field
+  // stays private so the verdict logging never leaks into the seam's API.
+  // ignore: prefer_initializing_formals
+  new({required this.library, required this.fetch, this.fetchBytes, LiveLog? log}) : _log = log;
+
+  /// The verdict log; null keeps the importer quiet.
+  final LiveLog? _log;
 
   /// The library every import writes to.
   final IptvLibrary library;
@@ -104,10 +113,19 @@ final class IptvImporter {
     final String text;
     try {
       text = await fetch(url, headers: headers);
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      _log?.forCategory('playlist').log(
+        LogLevel.warning,
+        'playlist download failed',
+        fields: {'op': 'import', 'host': url.host, 'error': '$error'},
+        error: error,
+        stackTrace: stack,
+      );
       return IptvImportResult(IptvImportStatus.networkFailed, error: error);
     }
-    return await _import(text: text, name: name, url: url.toString(), confirmReplace: confirmReplace, force: force);
+    final result = await _import(text: text, name: name, url: url.toString(), confirmReplace: confirmReplace, force: force);
+    _logVerdict('import', url.toString(), name, result);
+    return result;
   });
 
   /// Re-downloads [playlist] from the address it was imported from.
@@ -134,11 +152,22 @@ final class IptvImporter {
     final String text;
     try {
       text = await fetch(uri);
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      _log?.forCategory('playlist').log(
+        LogLevel.warning,
+        'playlist download failed',
+        fields: {'op': 'sync', 'host': uri.host, 'error': '$error'},
+        error: error,
+        stackTrace: stack,
+      );
       return IptvImportResult(IptvImportStatus.networkFailed, error: error);
     }
     final result = parsePlaylistResult(text);
     if (result.entries.isEmpty) {
+      _log?.forCategory('playlist').warning('playlist sync answered no channels', fields: {
+        'name': current.name,
+        'host': uri.host,
+      });
       return IptvImportResult(
         IptvImportStatus.invalid,
         issues: result.issues,
@@ -148,9 +177,12 @@ final class IptvImporter {
     if (result.truncated) {
       // A cut-off download must not replace a working playlist: the stored
       // one is the only complete copy the user has.
+      _log?.forCategory('playlist').warning('playlist sync was cut off', fields: {'name': current.name, 'host': uri.host});
       return IptvImportResult(IptvImportStatus.invalid, issues: result.issues, error: 'the download was cut off');
     }
-    return await _write(result, name: current.name, replaceId: current.id, url: url);
+    final written = await _write(result, name: current.name, replaceId: current.id, url: url);
+    _logVerdict('sync', current.url ?? current.name, current.name, written);
+    return written;
   });
 
   /// Deletes the playlist [expected], if it is still the record on screen.
@@ -232,9 +264,37 @@ final class IptvImporter {
         channels: written.channels,
         issues: result.issues,
       );
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      _log?.forCategory('playlist').error(
+        'playlist write failed',
+        fields: {'name': name},
+        error: error,
+        stackTrace: stack,
+      );
       return IptvImportResult(IptvImportStatus.failed, issues: result.issues, error: error);
     }
+  }
+
+  /// One line per verdict: the statuses the UI words, with the cause the
+  /// toast cannot hold.
+  void _logVerdict(String op, String source, String name, IptvImportResult result) {
+    final log = _log;
+    if (log == null) return;
+    if (result.isImported) {
+      log.info('imported', fields: {
+        'op': op,
+        'source': source,
+        'name': name,
+        'channels': result.channels,
+        'issues': result.issues.length,
+      });
+      return;
+    }
+    if (result.status == IptvImportStatus.cancelled) return;
+    log.warning(
+      'failed',
+      fields: {'op': op, 'source': source, 'name': name, 'status': result.status.name, 'error': '${result.error}'},
+    );
   }
 
   // Guides -------------------------------------------------------------------
@@ -282,16 +342,30 @@ final class IptvImporter {
       bytes = await _downloadGuideBytes(url, headers);
     } on _NoBytesFetcher catch (error) {
       return IptvImportResult(IptvImportStatus.networkFailed, error: error);
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      _log?.forCategory('guide').log(
+        LogLevel.warning,
+        'guide download failed',
+        fields: {'op': 'import', 'host': url.host, 'error': '$error'},
+        error: error,
+        stackTrace: stack,
+      );
       return IptvImportResult(IptvImportStatus.networkFailed, error: error);
     }
     final String text;
     try {
       text = decodeGuideBytes(bytes);
-    } on FormatException catch (error) {
+    } on FormatException catch (error, stack) {
+      _log?.forCategory('guide').log(
+        LogLevel.warning,
+        'guide decode failed',
+        fields: {'op': 'import', 'host': url.host, 'error': '$error'},
+        error: error,
+        stackTrace: stack,
+      );
       return IptvImportResult(IptvImportStatus.invalid, error: error);
     }
-    return await _importGuide(
+    final result = await _importGuide(
       text: text,
       name: name,
       source: url.toString(),
@@ -299,6 +373,8 @@ final class IptvImporter {
       expected: null,
       confirmReplace: confirmReplace,
     );
+    _logVerdict('import', url.toString(), name, result);
+    return result;
   });
 
   /// Re-reads the stored guide [source] from the address it was imported
@@ -406,9 +482,11 @@ final class IptvImporter {
     try {
       parsed = parseGuide(text);
     } on FormatException catch (error) {
+      _log?.forCategory('guide').log(LogLevel.warning, 'guide parse failed', fields: {'name': name}, error: error);
       return IptvImportResult(IptvImportStatus.invalid, error: error);
     }
     if (parsed.isEmpty) {
+      _log?.forCategory('guide').warning('the guide answered nothing readable', fields: {'name': name});
       return IptvImportResult(IptvImportStatus.unsupportedFormat, error: 'no channels and no programmes were read');
     }
     final cleanName = name.trim();
@@ -460,8 +538,19 @@ final class IptvImporter {
         duplicates: matched.skip(1).toList(),
       );
       await library.pruneProgrammes(moment.subtract(programmeRetention));
+      _log?.forCategory('guide').info('guide stored', fields: {
+        'name': cleanName,
+        'channels': parsed.channels.length,
+        'programmes': parsed.programmes.length,
+      });
       return IptvImportResult(IptvImportStatus.imported, id: id, channels: parsed.channels.length);
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      _log?.forCategory('guide').error(
+        'guide write failed',
+        fields: {'name': cleanName},
+        error: error,
+        stackTrace: stack,
+      );
       return IptvImportResult(IptvImportStatus.failed, error: error);
     }
   }

@@ -206,9 +206,14 @@ final class AccountsController extends Notifier<AccountsState> {
       if (auth == null) continue;
       try {
         await auth.applyCredential(credential);
-      } on Object {
+      } on Object catch (error) {
         // A credential the site now refuses (a stale cookie) stays stored;
-        // the next sign-in replaces it.
+        // the next sign-in replaces it. A failure here is a silent logout,
+        // so the viewer at least sees it in the log.
+        appLog.forCategory('account').warning(
+          'credential apply failed; the site carried on anonymously',
+          fields: {'site': credential.siteId, 'error': '$error'},
+        );
       }
     }
   }

@@ -20,6 +20,7 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         PcmFrame,
         kMpvAudioBackendId;
 import 'package:pure_live/app/app.dart' show playerKernelProvider, selectedModuleProvider;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
@@ -1189,6 +1190,13 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
       return;
     }
+
+    // The engine's own error is the only record of what died; say it here,
+    // once per track, before the skip logic moves the queue along.
+    appLog.forCategory('music.playback').warning(
+      'the engine errored on a track',
+      fields: {'track': track.title, 'error': '${next.error}'},
+    );
 
     if (!ref.read(musicPlaybackSettingsProvider).skipOnError) {
       return;

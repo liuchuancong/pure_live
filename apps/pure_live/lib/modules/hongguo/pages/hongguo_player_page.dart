@@ -414,6 +414,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           : episodes.firstWhere((episode) => episode.vid == widget.episodeVid, orElse: () => episodes.first);
       await _openEpisode(chosen, resume: _resumeSeconds ?? resume?.seconds);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.play')
+          .warning('playback step failed', fields: {'error': '$error'});
       if (!mounted || _disposed) return;
       setState(() {
         _loading = false;
@@ -525,6 +528,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         _error = null;
       });
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.play')
+          .warning('playback step failed', fields: {'error': '$error'});
       if (!mounted || _disposed) return;
       // The handle may still hold the previous episode; it is not the
       // episode this page now names, so it goes rather than playing on
@@ -841,6 +847,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     try {
       playing ? await handle.pause() : await handle.play();
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.play')
+          .warning('playback step failed', fields: {'error': '$error'});
       if (mounted) setState(() => _error = '$error');
     }
   }
@@ -851,6 +860,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     try {
       await handle.seek(Duration(milliseconds: (seconds * 1000).round()));
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.play')
+          .warning('playback step failed', fields: {'error': '$error'});
       if (mounted) setState(() => _error = '$error');
     }
   }

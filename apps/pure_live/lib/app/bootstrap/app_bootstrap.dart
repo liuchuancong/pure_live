@@ -6,7 +6,7 @@ import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
-import 'package:live_storage/live_storage.dart' show StorageBootstrap, StoragePathProvider, StoragePrefs;
+import 'package:live_storage/live_storage.dart' show StorageBootstrap, StoragePathProvider, StoragePrefs, storageLog;
 import 'package:pure_live/app/bootstrap/cache_migration.dart' show migrateLegacyImageCache;
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show AppProxyHttpOverrides;
 import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
@@ -129,6 +129,7 @@ Future<Boot> bootstrap() async {
         pathProvider: StoragePathProvider(resolver: () async => storagePaths.data.path),
       );
       await storageBootstrap.initialize();
+      storageLog = appLog.forCategory('storage');
       await StoragePrefs.init();
       // The viewer's own folder choices, read once here: the log tree is
       // pointed at the folder in force, and the cache manager reads the same

@@ -7,7 +7,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart'
     show BackupDocumentEmpty, BackupRecordingsBusy, BackupRestoreBusy, backupSummaryProvider;
@@ -186,6 +186,9 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
                     showDsToast(context: context, title: t.backup.webdavTestOk, status: DsStatus.success);
                   }
                 } on Object catch (error) {
+      appLog
+          .forCategory('backup.webdav')
+          .warning('webdav operation failed', fields: {'error': '$error'});
                   if (context.mounted) {
                     showDsToast(context: context, title: _messageOf(error), status: DsStatus.danger);
                   }
@@ -384,6 +387,9 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
         _loading = false;
       });
     } on Object catch (error) {
+      appLog
+          .forCategory('backup.webdav')
+          .warning('webdav operation failed', fields: {'error': '$error'});
       if (!mounted || epoch != _epoch) return;
       setState(() {
         _error = error;
@@ -423,6 +429,9 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
     try {
       await work(client);
     } on Object catch (error) {
+      appLog
+          .forCategory('backup.webdav')
+          .warning('webdav operation failed', fields: {'error': '$error'});
       if (mounted) _toast(_messageOf(error), status: DsStatus.danger);
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -547,6 +556,9 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
       if (mounted) _toast(t.backup.restoreEmptyDocument, status: DsStatus.danger);
       return;
     } on Object catch (error) {
+      appLog
+          .forCategory('backup.webdav')
+          .warning('webdav operation failed', fields: {'error': '$error'});
       if (mounted) _toast(_messageOf(error), status: DsStatus.danger);
       return;
     }
@@ -561,6 +573,9 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
     try {
       return await (await _ensureClient())?.readFile(entry.path);
     } on Object catch (error) {
+      appLog
+          .forCategory('backup.webdav')
+          .warning('webdav operation failed', fields: {'error': '$error'});
       if (mounted) _toast(_messageOf(error), status: DsStatus.danger);
       return null;
     } finally {

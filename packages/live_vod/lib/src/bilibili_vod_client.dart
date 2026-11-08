@@ -1,4 +1,5 @@
 import 'dart:convert' show jsonDecode;
+import 'package:live_log/live_log.dart' show LiveLog;
 
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse;
 import 'package:live_vod/src/bilibili_wbi.dart';
@@ -17,10 +18,15 @@ export 'package:live_vod/src/vod_models.dart';
 /// separately for the music mode.
 final class BilibiliVodClient {
   /// A client over [http].
-  new(this.http, {this.userAgent = _defaultUserAgent, this.cookie = ''});
+  // A private named parameter cannot be an initializing formal.
+  // ignore: prefer_initializing_formals
+  new(this.http, {this.userAgent = _defaultUserAgent, this.cookie = '', LiveLog? log}) : _log = log;
 
   /// The transport.
   final LiveHttp http;
+
+  /// The API verdicts' log; null keeps the client quiet.
+  final LiveLog? _log;
 
   /// The browser string the endpoints expect.
   final String userAgent;
@@ -1467,22 +1473,32 @@ final class BilibiliVodClient {
 
   Map<String, Object?> _body(LiveResponse response) {
     if (response.statusCode != 200) {
+      _log?.forCategory('api').warning('the endpoint answered http error', fields: {
+        'status': response.statusCode,
+      });
       throw VodFailure('HTTP ${response.statusCode}', statusCode: response.statusCode);
     }
     final text = response.text;
     final decoded = _tryDecode(text);
     if (decoded is! Map<String, Object?>) {
+      _log?.forCategory('api').warning('the endpoint answered something that is not JSON');
       throw const VodFailure('the source answered something that is not JSON');
     }
     final code = _intOf(decoded['code']) ?? 0;
     if (code != 0) {
-      throw VodFailure('${decoded['message'] ?? 'code $code'}');
+      final message = '${decoded['message'] ?? 'code $code'}';
+      _log?.forCategory('api').warning('the endpoint answered a business error', fields: {
+        'code': code,
+        'message': message,
+      });
+      throw VodFailure(message);
     }
     // A code that says OK and carries a voucher is the endpoint asking for a
     // risk-control round it did not get; the failure that follows a silent
     // short ladder reads as the account's own limit, which is the wrong story.
     final data = decoded['data'];
     if (data is Map && data['v_voucher'] != null) {
+      _log?.forCategory('api').warning('the endpoint asked for risk control (v_voucher)');
       throw const VodFailure('the endpoint asked this request to prove itself first');
     }
     return decoded;

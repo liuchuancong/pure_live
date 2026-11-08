@@ -18,6 +18,7 @@ import 'package:multiview_desktop/multiview_desktop.dart'
         WindowOptions,
         runMultiApp;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/app/logging/provider_log_observer.dart' show LogProviderObserver;
 import 'package:pure_live/l10n/translations.dart' show TranslationProvider;
 import 'package:pure_live/modules/live/favorites/alerts/live_alert_background.dart' show initializeLiveAlertBackground;
 
@@ -64,6 +65,7 @@ void _launch(Boot boot) {
     runApp(
       TranslationProvider(
         child: ProviderScope(
+          observers: [LogProviderObserver()],
           overrides: [
             platformRuntimeProvider.overrideWithValue(runtime),
             storagePathsProvider.overrideWithValue(boot.storagePaths!),
@@ -94,6 +96,7 @@ void _runDesktop(Boot boot) {
     ),
   );
   final container = ProviderContainer(
+    observers: [LogProviderObserver()],
     overrides: [
       platformRuntimeProvider.overrideWithValue(runtime),
       storagePathsProvider.overrideWithValue(boot.storagePaths!),

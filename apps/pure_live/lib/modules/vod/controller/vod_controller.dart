@@ -250,7 +250,7 @@ final vodClientProvider = Provider<BilibiliVodClient>((ref) {
   final cookie = credential == null
       ? ''
       : credential.cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
-  return BilibiliVodClient(http, cookie: cookie);
+  return BilibiliVodClient(http, cookie: cookie, log: appLog.forCategory('vod.api'));
 });
 
 /// The vod page's state.

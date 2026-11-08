@@ -2,7 +2,9 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
+import 'package:live_log/live_log.dart' show LogLevel;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart'
     show iptvImporterProvider, iptvLibraryProvider;
 
@@ -92,12 +94,16 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     try {
       final cleanName = name.trim().isEmpty ? uri.host : name.trim();
       result = await importer.importGuideFromUrl(url: uri, name: cleanName, confirmReplace: confirmReplace);
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      appLog
+          .forCategory('iptv.epg')
+          .error('guide import threw', fields: {'url': uri.host}, error: error, stackTrace: stack);
       if (ref.mounted) state = _with(error: error);
       return IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(importing: false);
     }
+    _logVerdict('import', uri.toString(), result);
     // The guide is stored; the matching and the choice are improvements on
     // top of a landed import, and a failure there must not call the import
     // itself failed — the screen already says the guide arrived, and the
@@ -116,11 +122,15 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     IptvImportResult? result;
     try {
       result = await importer.syncGuide(source);
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      appLog
+          .forCategory('iptv.epg')
+          .error('guide sync threw', fields: {'source': source.name}, error: error, stackTrace: stack);
       result = IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(busy: {...state.busy}..remove(key));
     }
+    _logVerdict('sync', source.source, result);
     await _afterImport(result, sourceId: source.id);
     return result;
   }
@@ -140,8 +150,13 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
       // guide in use; fall back to what just landed.
       final active = _active;
       if (active == null || library?.guideSource(active) == null) await _choose(id);
-    } on Object {
+    } on Object catch (error) {
       // The guide itself is stored; this half runs again on the next sync.
+      // A landing whose matching failed reads as “导入成功却没节目”, so the
+      // cause belongs in the log, not just on the screen.
+      appLog
+          .forCategory('iptv.epg')
+          .warning('import landed but matching failed', fields: {'id': id, 'error': '$error'});
     }
   }
 
@@ -153,8 +168,11 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     if (importer != null) return importer;
     try {
       await ref.read(iptvLibraryProvider.future).timeout(const Duration(seconds: 15));
-    } on Object {
-      // The store never opened; the read below answers null all the same.
+    } on Object catch (error) {
+      appLog.forCategory('iptv.epg').warning(
+        'the channel library never opened while an import waited',
+        fields: {'error': '$error'},
+      );
     }
     return _importer();
   }
@@ -174,11 +192,30 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
         await _choose(remaining.isEmpty ? null : remaining.first.id);
       }
       return true;
-    } on Object {
+    } on Object catch (error) {
+      appLog
+          .forCategory('iptv.epg')
+          .log(LogLevel.warning, 'guide delete failed', fields: {'source': expected.name, 'error': '$error'});
       return false;
     } finally {
       if (ref.mounted) state = _with(busy: {...state.busy}..remove(key));
     }
+  }
+
+  /// One line per import or sync verdict: every failure the toast reports
+  /// says why in the log, status and cause together.
+  void _logVerdict(String op, String source, IptvImportResult? result) {
+    final log = appLog.forCategory('iptv.epg');
+    if (result == null) return;
+    if (result.isImported) {
+      log.info('guide $op imported', fields: {'source': source, 'channels': result.channels, 'issues': result.issues.length});
+      return;
+    }
+    if (result.status == IptvImportStatus.cancelled) return;
+    log.warning(
+      'guide $op failed',
+      fields: {'source': source, 'status': result.status.name, if (result.error != null) 'error': '${result.error}'},
+    );
   }
 
   /// Turns [source]'s automatic refresh on or off. The flag is the

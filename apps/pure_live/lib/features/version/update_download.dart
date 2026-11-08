@@ -8,6 +8,7 @@ import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest, LiveStr
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart'
     show appPathsProvider, networkFactoryProvider;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/version/release_builds.dart' show ReleaseBuild, formatReleaseSize;
 import 'package:pure_live/l10n/translations.dart';
@@ -119,6 +120,9 @@ final class _UpdateDownloadDialogState extends ConsumerState<UpdateDownloadDialo
       _savedPath = target.path;
       _setPhase(UpdateDownloadPhase.done);
     } on Object catch (error) {
+      appLog
+          .forCategory('version.download')
+          .warning('update download failed', fields: {'error': '$error'});
       await _discard(part);
       if (_cancelled) {
         _setPhase(UpdateDownloadPhase.cancelled);

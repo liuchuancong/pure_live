@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/version/app_version.dart';
 import 'package:pure_live/features/version/update_feed.dart';
@@ -37,6 +36,9 @@ final class VersionCheckController extends Notifier<VersionCheck> {
         installed: installed.version,
       );
     } on Object catch (error) {
+      appLog
+          .forCategory('version')
+          .warning('update check failed', fields: {'error': '$error'});
       if (!ref.mounted) return;
       state = (
         checking: false,

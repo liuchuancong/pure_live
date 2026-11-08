@@ -18,7 +18,6 @@ import 'package:live_sites/live_sites.dart'
 import 'package:media_core/media_core.dart';
 import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart';
 import 'package:path/path.dart' as p;
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
@@ -687,12 +686,18 @@ final class RecorderEngine {
           headers: _sourceHeaders(line),
         ),
       );
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
       await session.quiet();
       _sessions.remove(task.id);
       await releaseRecordingClaim(session.claim);
       unawaited(manager.dispose());
       await repo.setEnded(task.id, RecordingTaskState.failed, errorText: _errorOf(error));
+      appLog.forCategory('recorder').error(
+        'capture start failed',
+        fields: {'task': task.id, 'platform': task.platform, 'room': task.roomId},
+        error: error,
+        stackTrace: stack,
+      );
       return 'cannot start: ${_errorOf(error)}';
     }
 
@@ -910,7 +915,10 @@ final class RecorderEngine {
     RecordingResult result;
     try {
       result = await session.manager.stop();
-    } on Object catch (error) {
+    } on Object catch (error, stack) {
+      appLog
+          .forCategory('recorder')
+          .error('capture stop failed', fields: {'task': session.task.id}, error: error, stackTrace: stack);
       await _endAs(session, failed: true, errorText: _errorOf(error));
       return 'cannot stop: ${_errorOf(error)}';
     }
@@ -948,6 +956,16 @@ final class RecorderEngine {
     await session.quiet();
     final check = session.backend.lastCheck;
     final usable = state.status == RecordingStatus.completed && (check?.isUsable ?? true);
+    // The take ended without the viewer's hand — a stream that gave up, an
+    // input that ran out. This line is the only honest record of it.
+    appLog.forCategory('recorder').warning('capture ended on its own', fields: {
+      'task': taskId,
+      'status': state.status.name,
+      'usable': usable,
+      'bytes': state.bytesWritten,
+      'durationMs': state.duration.inMilliseconds,
+      if (state.error != null) 'error': _errorOf(state.error!),
+    });
     await _persist(
       session,
       success: usable,
@@ -1201,8 +1219,13 @@ final class RecorderEngine {
         try {
           joinResult = await target.join(onProgress: onProgress, onExecution: onExecution);
           if (joinResult != null && joinResult.success && joinResult.bytesWritten > 0) joined = joinResult;
-        } on Object {
-          // A join that could not run leaves the segments as the recording.
+        } on Object catch (error, stack) {
+          // A join that could not run leaves the segments as the recording —
+          // but the failure belongs in the log, or a "为什么是一堆分段"的
+          // 问题永远没有答案。
+          appLog
+              .forCategory('recorder.finalize')
+              .error('segment join failed', fields: {'task': target.taskId}, error: error, stackTrace: stack);
         }
         _finalizeExecutions.remove(target.taskId);
         if (joined == null) {

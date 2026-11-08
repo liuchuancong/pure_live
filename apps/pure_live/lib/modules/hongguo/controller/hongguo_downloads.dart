@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
-
 import 'package:pure_live/app/app.dart' show networkFactoryProvider;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
     show hongguoClientProvider, hongguoPickRendition;
@@ -483,6 +483,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       _pump();
       return (outcome: HongguoDownloadEnqueue.queued, error: null);
     } on Object catch (failure) {
+      appLog
+          .forCategory('hongguo.download')
+          .warning('download step failed', fields: {'error': '$failure'});
       return (outcome: HongguoDownloadEnqueue.failed, error: '$failure');
     }
   }
@@ -816,6 +819,9 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       await scratch.rename(target.path);
       _replace(item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.done));
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.download')
+          .error('download write failed', fields: {'error': '$error'});
       if (error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.failed, error: '$error');
         _replace(item);

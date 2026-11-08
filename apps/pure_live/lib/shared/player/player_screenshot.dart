@@ -1,7 +1,9 @@
 import 'dart:io' show Directory, File;
 
+import 'package:live_log/live_log.dart' show LogLevel;
 import 'package:media_core/media_core.dart'
     show PlayerHandle, PlayerHandleLifecycle, PlayerScreenshot, ScreenshotOptions, ScreenshotWriter;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 
 /// Saves the frame a player is showing into [folder] and answers the file it
 /// wrote, or null when nothing landed.
@@ -27,9 +29,17 @@ Future<File?> capturePlayerFrame(PlayerHandle handle, Directory folder, {require
           '${prefix}_${_stamp(capture.capturedAt ?? DateTime.now())}.${capture.format.fileExtension}',
     );
     return File(await writer.save(shot));
-  } on Object {
+  } on Object catch (error, stack) {
     // A capture that throws or a folder that refuses the write both answer "no
-    // file"; the caller's toast then says the capture did not land.
+    // file"; the caller's toast then says the capture did not land — and the
+    // log keeps the cause the toast cannot hold.
+    appLog.forCategory('player.screenshot').log(
+      LogLevel.warning,
+      'screenshot failed',
+      fields: {'prefix': prefix},
+      error: error,
+      stackTrace: stack,
+    );
     return null;
   }
 }

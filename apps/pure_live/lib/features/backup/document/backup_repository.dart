@@ -3,6 +3,7 @@ import 'dart:async' show Completer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvKeys;
 import 'package:live_storage/live_storage.dart';
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_settings.dart';
 import 'package:pure_live/features/backup/document/restore_preview.dart';
@@ -406,14 +407,23 @@ final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
   try {
     iptv = await StorageStores.instance.openStore(IptvKeys.table);
     multiview = (await ref.watch(multiviewRepositoryProvider.future)).store;
-  } on Object {
-    // A store that did not open is simply not offered.
+  } on Object catch (error) {
+    // A store that did not open is simply not offered — but the viewer
+    // should know their backup is missing a section.
+    appLog.forCategory('backup').warning(
+      'a store did not open; the backup will be missing it',
+      fields: {'error': '$error'},
+    );
   }
   SecretStore? secrets;
   try {
     secrets = await ref.watch(appSecretStoreProvider.future);
-  } on Object {
+  } on Object catch (error) {
     // No vault on this platform: the secrets section is simply not offered.
+    appLog.forCategory('backup').warning(
+      'the secret vault did not open; secrets are not backed up',
+      fields: {'error': '$error'},
+    );
   }
   return BackupRepository(
     follows: follows,

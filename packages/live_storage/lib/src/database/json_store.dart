@@ -2,8 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:live_log/live_log.dart' show LiveLog;
 
 import 'package:live_storage/src/database/storage_database.dart';
+
+/// The log view the storage layer speaks through; the app's boot points it
+/// at its own tree, so the storage's decode failures land in the same
+/// console, ring and file as everything else. Null keeps the layer quiet.
+LiveLog? storageLog;
 
 /// A namespaced, keyed JSON document store.
 ///
@@ -182,7 +188,19 @@ final class LocalJsonStore implements JsonStore {
               ..orderBy([(table) => OrderingTerm.asc(table.createdAt), (table) => OrderingTerm.asc(table.key)]))
             .get();
     for (final row in rows) {
-      final value = jsonDecode(row.valueJson);
+      final Object? value;
+      try {
+        value = jsonDecode(row.valueJson);
+      } on FormatException catch (error) {
+        // One corrupted row used to take the whole namespace down — every
+        // page reading it showed 打开失败 with no cause anywhere. Skip the
+        // row and name it, so the rest of the namespace survives.
+        storageLog?.warning(
+          'a stored row failed to decode; the namespace keeps the rest',
+          fields: {'namespace': namespace, 'key': row.key, 'error': '$error'},
+        );
+        continue;
+      }
       _values[row.key] = value;
       _createdAt[row.key] = row.createdAt;
       if (row.createdAt > _lastStamp) _lastStamp = row.createdAt;

@@ -14,6 +14,7 @@ environment:
 
 dependencies:
   drift: ^2.35.3
+  live_log:
   path: ^1.9.0
 
 dev_dependencies:

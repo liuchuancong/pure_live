@@ -20,6 +20,7 @@ import 'package:live_device/live_device.dart'
         ScreenBrightnessScope,
         ScreenBrightnessService,
         ScreenOrientationService;
+import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
@@ -61,6 +62,8 @@ final class VodVideoPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<VodVideoPage> createState() => _VodVideoPageState();
 }
+
+final LiveLog vodLog = appLog.forCategory('vod.play');
 
 final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAware, WidgetsBindingObserver {
   /// The tier a part opens with before the station's own preference is read
@@ -388,7 +391,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (ref.read(vodPlaybackSettingsProvider).apiType == VodApiType.app && appClient != null) {
         try {
           detail = await appClient.detail(bvid: widget.bvid);
-        } on Object {
+        } on Object catch (error) {
+          // The app service refusing a detail is routine (an unlogged session,
+          // a gRPC tier the web still serves): say which door answered.
+          vodLog.info('detail fell back to the web api', fields: {'bvid': widget.bvid, 'error': '$error'});
           detail = await client.detail(widget.bvid);
         }
       } else {
@@ -401,6 +407,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       });
       unawaited(_loadRelated(client));
       if (detail.parts.isEmpty) {
+        vodLog.warning('the archive carries no part', fields: {'bvid': widget.bvid});
         setState(() => _error = context.t.vod.openFailed);
         return;
       }
@@ -411,6 +418,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _resumeSeconds = saved != null && saved.cid == part.cid ? saved.seconds : null;
       await _openPart(part);
     } on Object catch (error) {
+      vodLog.warning(
+        'detail load failed',
+        fields: {'bvid': widget.bvid, 'error': error is VodFailure ? error.message : '$error'},
+      );
       if (!mounted) return;
       setState(() {
         _loading = false;

@@ -16,6 +16,7 @@ environment:
 dependencies:
   built_collection: ^5.1.2 # 不可变集合
   built_value: ^8.13.0 # 不可变模型
+  live_log:
   live_net:
   live_sites:
   live_storage:

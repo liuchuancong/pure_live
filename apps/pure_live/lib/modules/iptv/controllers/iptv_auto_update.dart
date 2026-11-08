@@ -3,6 +3,7 @@ import 'dart:async' show Timer, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show EpgSourceX;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
@@ -170,7 +171,15 @@ final class IptvAutoUpdater {
       for (final source in due) {
         if (!_ref.mounted) return;
         _attempted[source.id] = DateTime.now();
-        await controller.syncSource(source);
+        final result = await controller.syncSource(source);
+        // A background round nobody watches: the verdict belongs in the log,
+        // because the screen never shows this run.
+        if (result != null && !result.isImported) {
+          appLog.forCategory('iptv.epg').warning(
+            'background guide sync failed',
+            fields: {'source': source.name, 'status': result.status.name, 'error': '${result.error}'},
+          );
+        }
         // A manual round started meanwhile takes the rest of the queue.
         if (_ref.read(iptvSourcesProvider).syncAll != null) break;
       }

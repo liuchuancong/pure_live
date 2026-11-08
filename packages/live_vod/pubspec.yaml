@@ -11,6 +11,7 @@ dependencies:
   crypto: ^3.0.6
   fixnum: ^1.1.1
   grpc: ^5.2.0
+  live_log:
   live_net:
   protobuf: ^6.1.0
 

@@ -5,6 +5,7 @@ import 'package:fjs/fjs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/music/controller/lx_script_prelude.dart' show lxScriptPrelude;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show MusicCustomSource, musicSourcesProvider;
@@ -209,6 +210,9 @@ final class LxScriptRuntime {
     try {
       await _ensureLib();
     } on Object catch (failure) {
+      appLog
+          .forCategory('music.script')
+          .warning('script runtime step failed', fields: {'error': '$failure'});
       _errors = ['fjs: $failure'];
       _loaded = true;
       return;
@@ -232,6 +236,9 @@ final class LxScriptRuntime {
         loaded.add(instance);
         if (instance.error != null) errors.add('${source.name}: ${instance.error}');
       } on Object catch (failure) {
+      appLog
+          .forCategory('music.script')
+          .warning('script runtime step failed', fields: {'error': '$failure'});
         errors.add('${source.name}: $failure');
       }
     }
@@ -282,6 +289,9 @@ final class LxScriptRuntime {
         if (!instance.ready.isCompleted) instance.ready.complete();
       }
     } on Object catch (failure) {
+      appLog
+          .forCategory('music.script')
+          .warning('script runtime step failed', fields: {'error': '$failure'});
       instance.error ??= '$failure';
       if (!instance.ready.isCompleted) instance.ready.complete();
     }

@@ -395,12 +395,17 @@ final class RecordingLiveMonitor {
         if (site == null) continue;
         try {
           await engine.start(task, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());
-        } on Object {
-          // A start that throws leaves the task for the next check.
+        } on Object catch (error, stack) {
+          appLog
+              .forCategory('recorder.monitor')
+              .error('auto-record start threw', fields: {'task': task.id}, error: error, stackTrace: stack);
         }
       }
-    } on Object {
+    } on Object catch (error, stack) {
       // A failing check must never stop the clock; the next tick tries again.
+      appLog
+          .forCategory('recorder.monitor')
+          .error('recording monitor check failed', error: error, stackTrace: stack);
     } finally {
       _checking = false;
     }

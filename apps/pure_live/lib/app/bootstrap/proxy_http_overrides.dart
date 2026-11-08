@@ -1,6 +1,7 @@
 import 'dart:io' show HttpClient, HttpClientBasicCredentials, HttpOverrides, SecurityContext;
 
 import 'package:live_net/live_net.dart' show HttpProxyRoute, ProxyRoute;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 
 /// What the process's HTTP clients should do about a proxy, answered per
 /// client creation.
@@ -47,8 +48,13 @@ final class AppProxyHttpOverrides extends HttpOverrides {
             );
           }
         }
-      } on Object {
-        // A failing lookup must not take the request down with it.
+      } on Object catch (error) {
+        // A failing lookup must not take the request down with it — but the
+        // request will go out direct, and the viewer should know why.
+        appLog.forCategory('network.proxy').warning(
+          'proxy lookup failed; requests fall back to direct',
+          fields: {'error': '$error'},
+        );
       }
     }
     return client;

@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-
 import 'package:pure_live/app/app.dart'
     show appProxyEndpoint, networkFactoryProvider, proxySettingsProvider, systemProxyProvider;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart' show hongguoFailureText;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart'
@@ -77,6 +77,9 @@ final class HongguoAccountController extends Notifier<HongguoAccountState> {
       final profile = await ref.read(hongguoAccountClientProvider).profile(credentials);
       state = HongguoAccountState(credentials: credentials, profile: profile);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       if (error is HongguoAccountFailure && error.message.contains('重新登录')) {
         await signOut();
         state = HongguoAccountState(error: hongguoFailureText(error));
@@ -101,6 +104,9 @@ final class HongguoAccountController extends Notifier<HongguoAccountState> {
         // A closed store loses the login; the next sign-in writes again.
       }
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = HongguoAccountState(error: hongguoFailureText(error));
     }
   }
@@ -151,6 +157,9 @@ final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, 
       final qr = await _login!.qr();
       state = (qr: qr, polling: false, error: null);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = (qr: null, polling: false, error: error is HongguoLoginFailure ? error.message : '$error');
     }
   }
@@ -163,6 +172,9 @@ final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, 
       state = (qr: null, polling: false, error: null);
       return sent;
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       final message = error is HongguoLoginFailure ? error.message : '$error';
       state = (qr: null, polling: false, error: message);
       throw HongguoLoginFailure(message);
@@ -181,6 +193,9 @@ final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, 
       if (identical(_login, login)) _login = null;
       state = (qr: null, polling: false, error: null);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       final message = error is HongguoLoginFailure ? error.message : '$error';
       state = (qr: null, polling: false, error: message);
       throw HongguoLoginFailure(message);
@@ -205,6 +220,9 @@ final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, 
       state = (qr: null, polling: false, error: null);
       return true;
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = (qr: state.qr, polling: false, error: error is HongguoLoginFailure ? error.message : '$error');
       return true;
     }
@@ -244,6 +262,9 @@ final class HongguoAccountFavoritesController extends Notifier<HongguoAccountLis
       final items = await ref.read(hongguoAccountClientProvider).favorites(credentials);
       state = (items: items, loading: false, error: null);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = (items: state.items, loading: false, error: hongguoFailureText(error));
     }
   }
@@ -284,6 +305,9 @@ final class HongguoAccountHistoryController extends Notifier<HongguoAccountListS
       final items = await ref.read(hongguoAccountClientProvider).history(credentials);
       state = (items: items, loading: false, error: null);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = (items: state.items, loading: false, error: hongguoFailureText(error));
     }
   }
@@ -322,6 +346,9 @@ final class HongguoReservationsController extends Notifier<HongguoReservationsSt
       final upcoming = await client.reservations(credentials, online: false);
       state = (online: online, upcoming: upcoming, loading: false, error: null);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = (online: state.online, upcoming: state.upcoming, loading: false, error: hongguoFailureText(error));
     }
   }
@@ -379,6 +406,9 @@ final class HongguoHomeController extends Notifier<HongguoHomeState> {
       final items = await feed.page(genre);
       state = (genre: genre, items: keep ? [...state.items, ...items] : items, loading: false, error: null);
     } on Object catch (error) {
+      appLog
+          .forCategory('hongguo.account')
+          .warning('account operation failed', fields: {'error': '$error'});
       state = (
         genre: genre,
         items: state.items,
