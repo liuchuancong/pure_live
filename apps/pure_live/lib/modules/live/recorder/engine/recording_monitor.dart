@@ -105,8 +105,11 @@ final class RecordingLiveMonitor {
         await Future<void>.delayed(const Duration(milliseconds: 300));
         if (_ref.mounted) unawaited(_tick(force: true));
       }
-    } on Object {
+    } on Object catch (error) {
       // A store that cannot open leaves the tasks as they were.
+      appLog
+          .forCategory('recorder.monitor')
+          .warning('recording store failed to open', fields: {'error': '$error'});
     }
   }
 
@@ -128,8 +131,11 @@ final class RecordingLiveMonitor {
         if (live) continue;
         await repository.finishPostProcessing(task.id, expectedStartedAt: task.startedAt, warning: 'stale');
       }
-    } on Object {
+    } on Object catch (error) {
       // A store that cannot open leaves the flags for the next start.
+      appLog
+          .forCategory('recorder.monitor')
+          .warning('post-processing store failed to open', fields: {'error': '$error'});
     }
   }
 
@@ -254,8 +260,11 @@ final class RecordingLiveMonitor {
       if (task.isWithinSchedule(now)) continue;
       try {
         await engine.stop(task.id);
-      } on Object {
+      } on Object catch (error) {
         // The next tick tries again; a failed stop never blocks the clock.
+        appLog
+            .forCategory('recorder.monitor')
+            .warning('scheduled stop failed', fields: {'task': task.id, 'error': '$error'});
       }
     }
   }

@@ -789,8 +789,12 @@ final class RecorderEngine {
       session
         ..chat = writer
         .._chatTicker = Timer.periodic(_kChatFlush, (_) => unawaited(writer.flush().catchError((Object _) {})));
-    } on Object {
-      // A chat file that cannot be opened never affects the video.
+    } on Object catch (error) {
+      // A chat file that cannot be opened never affects the video — but the
+      // take's chat sidecar silently missing is worth a line in the log.
+      appLog
+          .forCategory('recorder.chat')
+          .warning('chat bypass file failed to open', fields: {'error': '$error'});
     } finally {
       session.chatOpening = false;
     }
