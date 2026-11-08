@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:live_storage/src/database/json_store.dart' show storageLog;
 import 'package:live_storage/src/prefs/storage_prefs.dart';
+
 
 // The factories keep the monolith's bridge-shaped signatures, so the
 // fallback boolean stays positional.
@@ -95,8 +97,13 @@ PrefValue<T> prefObject<T>(
   if (json != null && json.isNotEmpty) {
     try {
       initial = fromJson(Map<String, Object?>.from(jsonDecode(json) as Map));
-    } on Object {
-      // A corrupt document keeps the fallback.
+    } on Object catch (error) {
+      // A corrupt document keeps the fallback — but the viewer should know
+      // their stored value was thrown away.
+      storageLog?.warning(
+        'a stored preference failed to decode; the default takes over',
+        fields: {'key': key, 'error': '$error'},
+      );
     }
   }
 

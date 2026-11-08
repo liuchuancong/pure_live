@@ -367,6 +367,9 @@ final class DouyuSite implements LiveSite {
         }
       } on DouyuFailure {
         // Keep the current cookie; the request may go out as a guest.
+        // A renewal that fails once is routine; a pattern of them means the
+        // credential is dead and the site runs without its badge — the
+        // viewer sees the badge missing but the stream keeps playing.
       } finally {
         _renewal = null;
       }
