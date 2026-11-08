@@ -1,3 +1,4 @@
+import 'package:live_log/live_log.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
@@ -87,6 +88,9 @@ import 'package:live_websocket/live_websocket.dart' show exactWebSocketConnect;
 /// sign-in-only directory, exactly as before.
 List<LiveSite> createBuiltInLiveSites({
   LiveHttp? http,
+  // The sites' own log view: every adapter that opts in writes its verdicts
+  // and failures here. Null keeps the sites quiet — the tests rely on it.
+  LiveLog? log,
   // Kick's API host refuses Flutter's TLS fingerprint; the app hands a
   // native Windows channel here (null elsewhere, which leaves Kick on the
   // shared transport and off the host's platform lists).

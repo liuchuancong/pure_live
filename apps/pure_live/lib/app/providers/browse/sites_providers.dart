@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/webview_guest.dart' show WebViewXiaohongshuGuest;
 
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/network/network_providers.dart'
     show networkFactoryProvider, proxySettingsProvider;
 import 'package:pure_live/app/providers/network/winhttp_live_http.dart' show WinHttpLiveHttp;
@@ -36,6 +37,7 @@ final sitesProvider = Provider<LiveSiteRegistry>((ref) {
       : null;
   return LiveSiteRegistry(
     createBuiltInLiveSites(
+      log: appLog.forCategory('sites'),
       http: http,
       kickHttp: kickHttp,
       xiaohongshuGuest: xiaohongshuGuest,

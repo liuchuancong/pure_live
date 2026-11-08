@@ -22,6 +22,7 @@ dependencies:
     sdk: flutter
   fpdart: ^1.2.0
   hls: 1.0.0
+  live_log:
   live_net:
   live_websocket:
   meta: ^1.19.0
