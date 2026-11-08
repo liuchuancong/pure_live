@@ -3,7 +3,6 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
 
 /// The preference the viewer's 不喜欢 rules are kept under.
