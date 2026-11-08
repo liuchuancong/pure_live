@@ -1,4 +1,5 @@
-import 'dart:developer' as developer show log;
+import 'package:live_log/live_log.dart' show LogLevel;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 
 import 'package:webview_all/webview_all.dart';
 
@@ -52,12 +53,12 @@ Future<void> clearBilibiliWebCookies() async {
         await manager.setCookie(WebViewCookie(name: cookie.name, value: '', domain: cookie.domain, path: cookie.path));
       }
     } on Object catch (error, stack) {
-      developer.log(
-        'Clearing the bilibili web cookies of ${url.host} failed',
-        name: 'AccountPage',
-        error: error,
-        stackTrace: stack,
-      );
+      appLog
+          .forCategory('account')
+          .log(LogLevel.warning, 'clearing the bilibili web cookies failed', fields: {
+            'host': url.host,
+            'error': '$error',
+          }, error: error, stackTrace: stack);
     }
   }
 }
@@ -79,12 +80,12 @@ Future<String> readBilibiliWebCookieHeader() async {
         fields.add('$name=${cookie.value}');
       }
     } on Object catch (error, stack) {
-      developer.log(
-        'Reading the bilibili web cookies of ${url.host} failed',
-        name: 'AccountPage',
-        error: error,
-        stackTrace: stack,
-      );
+      appLog
+          .forCategory('account')
+          .log(LogLevel.warning, 'reading the bilibili web cookies failed', fields: {
+            'host': url.host,
+            'error': '$error',
+          }, error: error, stackTrace: stack);
     }
   }
   return fields.join('; ');

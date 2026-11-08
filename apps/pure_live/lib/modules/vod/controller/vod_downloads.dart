@@ -5,7 +5,6 @@ import 'dart:io' show Directory, File, FileMode, HttpClient, HttpException, IOSi
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
-
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_download.dart' show freeDownloadFile, vodDownloadFileName;

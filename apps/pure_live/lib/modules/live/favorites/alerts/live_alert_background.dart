@@ -3,7 +3,7 @@ import 'dart:io' show File, Platform;
 
 import 'package:live_net/live_net.dart' show DioFactory;
 import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomProvider, LiveSiteRegistry, createBuiltInLiveSites;
-
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/user_notification_providers.dart'
     show enableUserNotifications, postLiveAlert;
 import 'package:pure_live/features/settings/browse/live_alert_settings.dart' show kLiveAlertCheckInterval;
@@ -45,8 +45,12 @@ Future<void> initializeLiveAlertBackground() async {
   if (!Platform.isAndroid) return;
   try {
     await Workmanager().initialize(liveAlertCallbackDispatcher);
-  } on Object {
+  } on Object catch (error) {
     // The in-app watcher still covers the room checks while the app runs.
+    appLog.forCategory('alerts').warning(
+      'WorkManager init failed; background alerts will not run',
+      fields: {'error': '$error'},
+    );
   }
 }
 

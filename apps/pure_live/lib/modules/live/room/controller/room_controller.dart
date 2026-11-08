@@ -1707,8 +1707,12 @@ final class RoomController extends Notifier<RoomState> {
     if (session == null) return;
     try {
       await session.connect();
-    } on Object {
-      // The next room open retries; background return is not a failure path.
+    } on Object catch (error) {
+      // The next room open retries; background return is not a failure path
+      // — but a pattern of these means the danmaku is permanently broken.
+      appLog
+          .forCategory('room.chat')
+          .warning('background danmaku reconnect failed', fields: {'error': '$error'});
     }
   }
 

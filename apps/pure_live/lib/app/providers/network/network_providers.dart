@@ -220,9 +220,12 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
       } else {
         await vault.set(kAppProxySecretRef, password);
       }
-    } on Object {
+    } on Object catch (error) {
       // A locked keychain loses the secret; the endpoint still routes, only
       // without a credential, and the row says so when it is read back empty.
+      appLog
+          .forCategory('network.proxy')
+          .warning('proxy credential write failed; requests will 407', fields: {'error': '$error'});
     }
   }
 

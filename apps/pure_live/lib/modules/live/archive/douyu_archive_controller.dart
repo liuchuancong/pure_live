@@ -15,7 +15,7 @@ import 'package:media_core/media_core.dart'
         SourceId,
         SourceProtocol,
         SourceType;
-
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/modules/live/archive/archive_playback.dart';
 import 'package:pure_live/modules/live/archive/archive_progress.dart';
 
@@ -243,7 +243,8 @@ final class DouyuArchiveController extends ArchivePlaybackController {
       if (!_current(generation)) return;
       segments = values;
       notifyListeners();
-    } on Object {
+    } on Object catch (error) {
+      appLog.forCategory('douyu.archive').warning('archive read failed', fields: {'error': '$error'});
       // The recording itself remains playable if its companion list fails.
     }
   }
