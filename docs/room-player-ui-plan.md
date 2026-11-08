@@ -475,3 +475,66 @@ A1–A8、B1–B7 共 15 项的代码与静态验证均已完成，表内没有�
 - 门禁：`tool/check_responsive.ps1` passed；`tool/check_prefs_manifest.ps1` passed（368 prefs / 353 backup / 132 invalidations）；`tool/check_settings_ia.ps1` passed（75 sections / 61 pages / 305 hits）。
 - 复验：`dart analyze lib` → 0 issues；`flutter test test/live test/app` → 103 passed；`flutter test test/music` → 113 passed；`flutter build bundle` → exit 0（增量缓存命中，`kernel_blob.bin` 仍是 10:52，与无源码改动一致）。
 - 阻塞项不变：候选 1（B6 频谱离屏 tap，方案已定为 `music_spectrum.dart` 内按 `TickerMode.of(context)` 退订/重订，需用户一句放行）、候选 2（B5 队列行位置键，维持 watch）、15 项真机/联网运行期验收（观感、手感、TV 焦点顺序、真实超宽源、联网结果、各后端 PCM 采样与设备上报；本会话无 GUI）。
+
+## E. 直播间画面浮流（2026-11-09 指令：参考直播客户端截图排版优化直播间显示，方案经确认）
+
+参考图（KPL 转播裁切）借三件事：视频满屏且控制条常隐；聊天以纯文本竖流叠在画面一角（白字带阴影、无气泡无玻璃、新推旧）；流只占小角不另开列。底部赞助条是转播内容，不移植。现状缺口：聊天只有整列磨砂玻璃一种重形态，飞弹幕是滚动引擎不能当可读聊天流。
+
+| 项 | 内容 | 依据 | 状态 |
+| --- | --- | --- | --- |
+| E1 | 画面浮流组件 `room_chat_stream.dart`：纯文本竖流、白字黑阴影、无气泡、`IgnorePointer` 不抢手势；只载聊天与醒目留言（礼物/通知/回放留在面板）；新行淡入、被推行淡出；表情 span 与面板同源（`chatWordSpans` 移入 `room_emotes.dart`） | §16、§13 | ✅ 2026-11-09 |
+| E2 | 设置两行：聊天形态（侧栏默认／画面浮流）＋浮流位置（四角、默认右上；侧栏形态下位置行可见但禁用）；新键 `danmaku.chatMode`/`danmaku.chatStreamCorner` 同步备份与设置刷新清单；复用 `chatNames`/`chatListFontSize`，不另堆设置 | §10.4 | ✅ 2026-11-09 |
+| E3 | 宽屏玻璃房间接管：视频恒满铺，浮流浮角；右上按钮开完整玻璃列（`chatColumn` 与列模式共用同一份玻璃/拖缝/关闭），列开浮流让位；折叠开关照常隐藏浮流 | §8.3、§10.4 | ✅ 2026-11-09 |
+| E4 | 沉浸式/全屏抽屉关闭时显示浮流（endInset 36 让右缘抽屉 tab）；竖屏全屏以浮流为聊天（该形态本无侧栏） | §8.3 | ✅ 2026-11-09 |
+| E5 | 窄屏堆叠、竖屏三停 sheet、手机横屏、TV 保持现状（视频非整窗或无指针，面板是主阅读区）；浮流让位统计面板 | §10.5 | ✅ 2026-11-09 |
+
+### E1–E5（2026-11-09 01:20）
+
+- 文件：`modules/live/room/chat/room_chat_stream.dart`（新：`RoomChatStream` + `chatStreamWidth`）；`chat/room_emotes.dart`（`chatWordSpans` 与图集/平台表情组件自 `room_chat.dart` 移入，单一来源）；`chat/room_chat.dart`（调用改名、私有表情机制移出、删两个随之无用 import）；`features/settings/danmaku/chat_display_settings.dart`（`ChatMode`/`ChatStreamCorner` 两枚举两 provider）；`features/settings/panes/danmaku_panes.dart`（排版组两行，位置行 `onChanged: null` 禁用）；`modules/live/room/page/room_page.dart`（宽屏分支抽 `chatColumn` 闭包＋流分支、沉浸式与竖屏全屏挂流）；`features/backup/document/backup_settings.dart` 与 `app/providers/settings/settings_refresh.dart`（清单各 +2）；`l10n/messages/settings/settings_{zh-CN,en}.i18n.json`（10 键/语言）。
+- 推导：流宽 `min(0.6w, clamp(0.32w, 160, 380))`；区域高 ≤ 自由画面一半；容量按两行槽（`fontPx*3+4`）推，不写死行数；上下避让 52/56 与统计层同一式子（8+32+12 / 8+32+8+唤醒带）；字号复用聊天列表字号，跟随主题时取 18（飞弹幕默认同档）；名字开关复用 `chatNames`，关掉即参考图纯内容形态。
+- 让位链：统计面板开 → 流不画；宽屏/沉浸式玻璃列开 → 流不画；折叠开关 → 流不画；TV → 流不启用。流在 `PlayerSurface.overlay` 插槽（画面之上、控制条/选择器之下），不随控制条隐藏。
+- 验证：`dart analyze lib` → 0 issues；`flutter build bundle --target-platform windows-x64` → exit 0（kernel_blob 01:16 真实重编译；默认 android-arm 目标需从 GitHub 拉 libmpv .so，本机网络不可达，与代码无关）；`flutter test test/live test/app` → 220 passed；`tool/check_settings_ia.ps1` → passed（427 hits）；`tool/check_responsive.ps1` → passed；`tool/check_prefs_manifest.ps1` **未过**——漂移点全部在他会话模块（archive/browse/shield/music/recorder/search/vod 的未备份键与未刷新 provider），本批两键两 provider 不在名单；`dart format -l 120` 仅 room_page 一处重排。
+- 未验证：真窗目视——白字在明亮画面上的对比、顶栏渐变是否压住流首行、淡入淡出跟手度、竖屏全屏 160 px 宽的密度、沉浸式 36 px 让位是否够；宽屏流模式开/关玻璃列与流让位的联动；触屏版设置行禁用态观感。
+
+### E 段运行期验收清单（本会话无 GUI，需真窗走查）
+
+| # | 看什么 | 期望 | 不合格时改哪里 |
+| --- | --- | --- | --- |
+| Q26 | 宽屏流模式 | 视频满铺、流默认右上纯文本白字阴影；右上按钮开玻璃列，列开流消失、关列流回来 | `room_page.dart` 流分支 |
+| Q27 | 流与控制条 | 条唤醒后右上簇不压展开按钮（48 px 预留）；流首行不被顶栏渐变埋住（52 px 避让） | `topBarEndInset` / `RoomChatStream.topInset` |
+| Q28 | 沉浸式流 | 抽屉关时流在且不压右缘 tab（36 px）；开抽屉流让位 | `endInset: 36` |
+| Q29 | 竖屏全屏 | 流是唯一聊天，宽 ≤ 屏幕 60%；统计面板开流让位 | `streamActive` |
+| Q30 | 设置行 | 侧栏形态下浮流位置行可见但禁用；切流后启用且即时生效；两键随备份恢复 | `DanmakuDisplayPane` |
+| Q31 | 流可读性 | 表情与面板一致（`chatWordSpans` 单源）；关用户名即纯内容参考形态；新行淡入、被推行淡出 | `room_chat_stream.dart` |
+
+## F. 房间信息收进 Windows 标题栏（2026-11-09 指令：「不好看我想信息在windows的titlebar上」；**已被 G 回退取代**）
+
+用户嫌方案B「应用名条＋画面玻璃页眉」两条栏不好看，要求房间信息上标题栏。曾落地高页头承载身份，但用户再反馈「太丑、标题栏太高」，G 已回退本段：删除 `_AnchorChip`/`_RoomCaptionIdentity`、`_roomAppBar` 中部还原 `_RoomHeader`、`glassChrome` 还原不含 `drawsCaptionControls` 条件。下方为历史记录。
+
+| 项 | 内容 | 依据 | 状态 |
+| --- | --- | --- | --- |
+| F1 | `glassChrome` 增加 `!drawsCaptionControls` 条件 | §8.3、§10.4 | 回退（G 取代） |
+| F2 | 宽屏三分支玻璃页眉包 `if (glassChrome)` | §10.4 | 保留（G 仍用） |
+| F3 | `_AnchorChip`＋`_RoomCaptionIdentity` 进 `_roomAppBar` | §16、§10.4 | 回退（删除） |
+
+### F1–F3（2026-11-09 01:44）
+
+- 文件：`modules/live/room/page/room_page.dart`（`glassChrome` 条件、三处页眉门控、`_AnchorChip`/`_RoomCaptionIdentity` 新组件、`_roomAppBar` 中部改 `_RoomCaptionIdentity`）。无新增偏好键、无 l10n 新增（在线数复用 `room.onlineViewers`）。
+- 验证：`dart analyze lib/modules/live/room` → 0；`flutter build bundle --target-platform windows-x64` → exit 0（kernel_blob 01:44）；`flutter test test/live test/app` → 220 passed；`tool/check_responsive.ps1` → passed；`dart format -l 120` 仅 room_page。
+- 未验证：真窗目视——Windows 标题栏 64px 高在 840–1000 宽时主播名片＋标题＋关注＋⋮＋三键的挤压、昵称/标题截断点、拖拽带命中（名片与三键各自让位）、浅色主题名片直播环对比；macOS 回退玻璃形态未实测。
+
+## G. 宽屏固定可隐藏弹幕列＋标题左上＋矮标题栏（2026-11-09 指令：「太丑了 标题栏太高…右边要固定的能隐藏的弹幕列表…标题放到视频左上角」）
+
+回退 F 的高页头。Windows/Linux 宽屏（`fixedChat = glassChrome && drawsCaptionControls`）改为并排双栏：左画面（标题玻璃 `_RoomGlassHeader` 在左上＋右上一枚固定/隐藏切换钮），右一条**固定、可隐藏**的实色弹幕列（`RoomChatPanel` 不透明，宽 `chatPanelWidth`，`chatCollapsed` 隐藏后画面占满整行）。窗口只留路由的标准 44px 应用名条（`glassChrome=true`→`roomPageOwnChromeProvider=false`），不再用承载信息的高页头。macOS/其余桌面保持方案B 浮层；沉浸式/竖屏全屏仍用 E 浮流；TV/窄屏不变。
+
+| 项 | 内容 | 依据 | 状态 |
+| --- | --- | --- | --- |
+| G1 | 回退 F：删 `_AnchorChip`/`_RoomCaptionIdentity`，`_roomAppBar` 中部还原 `_RoomHeader`，`glassChrome` 还原 | §8.3 | ✅ 2026-11-09 |
+| G2 | `fixedChat` 并排双栏：左画面左上标题玻璃＋右上切换钮，右固定可隐藏实色弹幕列；隐藏后画面占满 | §10.4、§8.3 | ✅ 2026-11-09 |
+| G3 | 标题栏降回标准 44px 应用名条（路由 `WindowCaptionBar`），信息回画面左上 | §10.4 | ✅ 2026-11-09 |
+
+### G1–G3（2026-11-09 01:57）
+
+- 文件：`modules/live/room/page/room_page.dart`（`fixedChat` 定义、宽屏并排分支、回退 F 组件）。无新增偏好键、无 l10n 改动（切换钮复用 `room.expandChat`/`collapseChat`）。
+- 验证：`dart analyze lib/modules/live/room` → 0；`flutter build bundle --target-platform windows-x64` → exit 0（kernel_blob 01:57）；`flutter test test/live test/app` → 220 passed；`tool/check_responsive.ps1` → passed；`dart format -l 120` 无改动。
+- 未验证：真窗目视——固定列与画面并排的比例（840–960 窄宽屏下画面地板）、左上标题玻璃与右上切换钮在控制条唤醒时的让位、隐藏列后画面占满的过渡、实色列在浅色/深色主题的对比；macOS 浮层形态未实测。

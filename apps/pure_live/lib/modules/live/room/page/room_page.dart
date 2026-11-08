@@ -20,6 +20,7 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
+import 'package:pure_live/modules/live/room/chat/room_chat_stream.dart' show RoomChatStream;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
@@ -1065,9 +1066,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // window over the app, so this page keeps the layout it had.
     final ownsWindow = presentationController.modeOwnsWindow(presentation);
     // 方案B 沉浸全宽：宽屏桌面房间不再有独立的页头——窗口即播放器，
-    // 标题、返回与主播名片是画面上的玻璃浮层，弹幕栏是右缘可折叠的玻璃
+    // 标题、返回与主播名片是画面左上的玻璃浮层，弹幕栏是右缘可折叠的玻璃
     // 抽屉。TV 房间保持自己的页头与双栏（遥控没有指针去唤醒浮层）。
+    // 页头折走后路由补一条标准高度的应用名条（44px），不再用承载房间信息
+    // 的高页头——信息回到画面左上，标题栏只留窗口 chrome。
     final glassChrome = wideWindow && !tv && !ownsWindow;
+    // 自绘窗口三键的桌面（Windows/Linux）：右侧要一条「固定、可隐藏」的
+    // 弹幕列（与画面并排，不浮在画上），标题仍在画面左上。其余桌面保持
+    // 方案B 的浮层抽屉。
+    final fixedChat = glassChrome && WindowChromeState.drawsCaptionControls;
     // The glass room folds the app bar away, so it no longer draws the
     // window's own chrome: publish the fact so the route shows the caption
     // strip (drag band and the three buttons) instead of losing them.
@@ -1183,12 +1190,24 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       });
     }
     final chatCollapsed = ref.watch(chatCollapsedProvider);
+    // The reference-layout stream: plain talk over the picture. It is the
+    // glance presentation of the full-bleed layouts only — the stacked and
+    // sheet rooms keep their panel — and it yields to the stats panel, to
+    // the fold switch and to the TV's own two-column room.
+    final chatMode = ref.watch(chatModeProvider);
+    final streamActive = chatMode == ChatMode.stream && !tv && !ref.watch(playerStatsVisibleProvider);
+    final streamVisible = streamActive && !chatCollapsed;
 
     /// The picture surface, with the theatre's chat handed in as a page layer
     /// when the layout has one: the surface draws its own bars and catalogues
     /// above that layer. [onTitle] is the sideways phone's: the strip names the
     /// room where its card used to, and the name opens the details.
-    Widget playerWith({Widget? overlay, double bottomInset = 0, VoidCallback? onTitle, double topBarEndInset = DsSpace.s12}) => PlayerSurface(
+    Widget playerWith({
+      Widget? overlay,
+      double bottomInset = 0,
+      VoidCallback? onTitle,
+      double topBarEndInset = DsSpace.s12,
+    }) => PlayerSurface(
       key: _playerKey,
       roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
@@ -1240,7 +1259,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     );
 
     final body = _portraitFullscreen
-        ? _buildPortraitFullscreen(context, playerWith(), canSwipeRooms: swipeSwitch && mobile)
+        ? _buildPortraitFullscreen(
+            context,
+            // The portrait full screen has no column of its own: the stream
+            // is the chat there, unless the stats panel owns the corner.
+            playerWith(overlay: streamActive ? const Positioned.fill(child: RoomChatStream()) : null),
+            canSwipeRooms: swipeSwitch && mobile,
+          )
         : LayoutBuilder(
             builder: (context, constraints) {
               if (landscapePhone) {
@@ -1366,15 +1391,144 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               void toggleChat() {
                 unawaited(ref.read(chatCollapsedProvider.notifier).set(value: !chatCollapsed));
               }
+
+              // The full chat column as a floating layer: the column mode's
+              // expanded room and the stream mode's on-demand column draw
+              // the same glass, seam and close verb.
+              Widget chatColumn({required VoidCallback onClose}) => PositionedDirectional(
+                top: 0,
+                bottom: 0,
+                end: 0,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ChatSplitter(
+                      width: chatWidth,
+                      minWidth: kChatPanelWidthMin,
+                      maxWidth: maxChatWidth,
+                      onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
+                      onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
+                      onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
+                      label: t.room.resizeChat,
+                      keyboard: !tv,
+                      onDark: true,
+                    ),
+                    SizedBox(
+                      width: chatWidth,
+                      child: RoomGlassCard(
+                        child: Stack(
+                          children: [
+                            const Positioned.fill(child: RoomChatPanel(translucent: true)),
+                            PositionedDirectional(
+                              top: DsSpace.s6,
+                              end: DsSpace.s6,
+                              child: DsButton.icon(
+                                variant: DsButtonVariant.ghost,
+                                size: DsSize.sm,
+                                onPressed: onClose,
+                                icon: const DsIcon(DsIcons.panelRightClose),
+                                semanticLabel: t.room.collapseChat,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              // Windows/Linux：右侧一条「固定、可隐藏」的弹幕列，与画面并排
+              // 而非浮在画上；标题玻璃仍在画面左上，窗口只留标准高度的应用
+              // 名条。隐藏列后画面占满整行，右上同一枚按钮再唤回。
+              if (fixedChat) {
+                return ColoredBox(
+                  color: kPlayerStageColor,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: playerWith(
+                          topBarEndInset: DsSpace.s8 + 32 + DsSpace.s8,
+                          overlay: Stack(
+                            children: [
+                              PositionedDirectional(
+                                top: DsSpace.s12,
+                                start: DsSpace.s12,
+                                child: _RoomGlassHeader(room: room, onLeave: leave),
+                              ),
+                              PositionedDirectional(
+                                top: DsSpace.s8,
+                                end: DsSpace.s8,
+                                child: DsButton.icon(
+                                  variant: DsButtonVariant.secondary,
+                                  size: DsSize.sm,
+                                  onPressed: toggleChat,
+                                  icon: DsIcon(chatCollapsed ? DsIcons.panelRightOpen : DsIcons.panelRightClose),
+                                  semanticLabel: chatCollapsed ? t.room.expandChat : t.room.collapseChat,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (!chatCollapsed) ...[
+                        const DsDivider.vertical(),
+                        SizedBox(width: chatWidth, child: const RoomChatPanel()),
+                      ],
+                    ],
+                  ),
+                );
+              }
+              // The reference layout: the picture owns the window and the
+              // talk floats over it as a plain stream; the full column is
+              // one button away, and the stream yields while it is open.
+              if (chatMode == ChatMode.stream && !tv) {
+                final columnOpen = _immersiveChatOpen;
+                return ColoredBox(
+                  color: kPlayerStageColor,
+                  child: playerWith(
+                    // While the column is away the open button keeps the
+                    // top strip's cluster out of its corner.
+                    topBarEndInset: columnOpen ? chatWidth + DsSpace.s12 : DsSpace.s8 + 32 + DsSpace.s8,
+                    overlay: Stack(
+                      children: [
+                        if (streamVisible && !columnOpen) const Positioned.fill(child: RoomChatStream()),
+                        if (columnOpen) chatColumn(onClose: () => _setImmersiveChatOpen(false)),
+                        if (glassChrome)
+                          PositionedDirectional(
+                            top: DsSpace.s12,
+                            start: DsSpace.s12,
+                            child: _RoomGlassHeader(room: room, onLeave: leave),
+                          ),
+                        if (!columnOpen)
+                          PositionedDirectional(
+                            top: DsSpace.s8,
+                            end: DsSpace.s8,
+                            child: DsButton.icon(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => _setImmersiveChatOpen(true),
+                              icon: const DsIcon(DsIcons.panelRightOpen),
+                              semanticLabel: t.room.expandChat,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }
               if (chatCollapsed) {
                 return Stack(
                   children: [
-                    Positioned.fill(child: ColoredBox(color: kPlayerStageColor, child: playerWith())),
-                    PositionedDirectional(
-                      top: DsSpace.s12,
-                      start: DsSpace.s12,
-                      child: _RoomGlassHeader(room: room, onLeave: leave),
+                    Positioned.fill(
+                      child: ColoredBox(color: kPlayerStageColor, child: playerWith()),
                     ),
+                    if (glassChrome)
+                      PositionedDirectional(
+                        top: DsSpace.s12,
+                        start: DsSpace.s12,
+                        child: _RoomGlassHeader(room: room, onLeave: leave),
+                      ),
                     PositionedDirectional(
                       top: DsSpace.s8,
                       end: DsSpace.s8,
@@ -1395,54 +1549,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   topBarEndInset: chatWidth + DsSpace.s12,
                   overlay: Stack(
                     children: [
-                      PositionedDirectional(
-                        top: 0,
-                        bottom: 0,
-                        end: 0,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ChatSplitter(
-                              width: chatWidth,
-                              minWidth: kChatPanelWidthMin,
-                              maxWidth: maxChatWidth,
-                              onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
-                              onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
-                              onReset: () =>
-                                  unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
-                              label: t.room.resizeChat,
-                              keyboard: !tv,
-                              onDark: true,
-                            ),
-                            SizedBox(
-                              width: chatWidth,
-                              child: RoomGlassCard(
-                                child: Stack(
-                                  children: [
-                                    const Positioned.fill(child: RoomChatPanel(translucent: true)),
-                                    PositionedDirectional(
-                                      top: DsSpace.s6,
-                                      end: DsSpace.s6,
-                                      child: DsButton.icon(
-                                        variant: DsButtonVariant.ghost,
-                                        size: DsSize.sm,
-                                        onPressed: toggleChat,
-                                        icon: const DsIcon(DsIcons.panelRightClose),
-                                        semanticLabel: t.room.collapseChat,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                      chatColumn(onClose: toggleChat),
+                      if (glassChrome)
+                        PositionedDirectional(
+                          top: DsSpace.s12,
+                          start: DsSpace.s12,
+                          child: _RoomGlassHeader(room: room, onLeave: leave),
                         ),
-                      ),
-                      PositionedDirectional(
-                        top: DsSpace.s12,
-                        start: DsSpace.s12,
-                        child: _RoomGlassHeader(room: room, onLeave: leave),
-                      ),
                     ],
                   ),
                 ),
@@ -1473,7 +1586,18 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         child: ColoredBox(
           color: kPlayerStageColor,
           child: ownsWindow
-              ? Scaffold(backgroundColor: kPlayerStageColor, body: _immersiveChatDrawer(playerWith()))
+              ? Scaffold(
+                  backgroundColor: kPlayerStageColor,
+                  body: _immersiveChatDrawer(
+                    playerWith(
+                      // The drawer's tab lives on the end edge; the stream
+                      // keeps clear of it while the drawer is away.
+                      overlay: streamVisible && !_immersiveChatOpen
+                          ? const Positioned.fill(child: RoomChatStream(endInset: 36))
+                          : null,
+                    ),
+                  ),
+                )
               : Scaffold(
                   // The portrait full-screen surface is the page's own way of
                   // filling the window: it keeps its black stage and drops the
@@ -2137,10 +2261,7 @@ final class _RoomGlassHeader extends ConsumerWidget {
                       padding: const EdgeInsetsDirectional.only(start: 10, end: 8),
                       child: ColoredBox(
                         color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : OnVideoColors.clear,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
-                          child: child,
-                        ),
+                        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8), child: child),
                       ),
                     ),
                     child: const DsIcon(DsIcons.chevronLeft, size: 16, color: ink),
@@ -2215,10 +2336,8 @@ final class _RoomGlassHeader extends ConsumerWidget {
                     DsPressable(
                       semanticLabel: followed ? t.room.unfollow : t.room.follow,
                       onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
-                      builder: (context, states, child) => Opacity(
-                        opacity: states.contains(WidgetState.hovered) ? 0.92 : 1,
-                        child: child,
-                      ),
+                      builder: (context, states, child) =>
+                          Opacity(opacity: states.contains(WidgetState.hovered) ? 0.92 : 1, child: child),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s5),
                         decoration: BoxDecoration(

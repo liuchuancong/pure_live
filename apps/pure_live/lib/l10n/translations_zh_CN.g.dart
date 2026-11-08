@@ -11289,6 +11289,36 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '宽屏布局下的宽度。'
 	String get chatPanelWidthDesc => '宽屏布局下的宽度。';
 
+	/// zh-CN: '聊天形态'
+	String get chatPresentation => '聊天形态';
+
+	/// zh-CN: '侧栏是完整聊天面板；画面浮流把纯文本聊天叠在画面上，宽屏与全屏生效。'
+	String get chatPresentationDesc => '侧栏是完整聊天面板；画面浮流把纯文本聊天叠在画面上，宽屏与全屏生效。';
+
+	/// zh-CN: '侧栏'
+	String get chatPresentationColumn => '侧栏';
+
+	/// zh-CN: '画面浮流'
+	String get chatPresentationStream => '画面浮流';
+
+	/// zh-CN: '浮流位置'
+	String get chatStreamCorner => '浮流位置';
+
+	/// zh-CN: '浮流停在画面的哪个角落；侧栏形态下不可调。'
+	String get chatStreamCornerDesc => '浮流停在画面的哪个角落；侧栏形态下不可调。';
+
+	/// zh-CN: '右上'
+	String get chatStreamCornerTopRight => '右上';
+
+	/// zh-CN: '右下'
+	String get chatStreamCornerBottomRight => '右下';
+
+	/// zh-CN: '左上'
+	String get chatStreamCornerTopLeft => '左上';
+
+	/// zh-CN: '左下'
+	String get chatStreamCornerBottomLeft => '左下';
+
 	/// zh-CN: 'Twitch 目录语言'
 	String get twitchLanguages => 'Twitch 目录语言';
 
@@ -18270,6 +18300,16 @@ extension on Translations {
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
 			'settings.chatPanelWidthDesc' => '宽屏布局下的宽度。',
+			'settings.chatPresentation' => '聊天形态',
+			'settings.chatPresentationDesc' => '侧栏是完整聊天面板；画面浮流把纯文本聊天叠在画面上，宽屏与全屏生效。',
+			'settings.chatPresentationColumn' => '侧栏',
+			'settings.chatPresentationStream' => '画面浮流',
+			'settings.chatStreamCorner' => '浮流位置',
+			'settings.chatStreamCornerDesc' => '浮流停在画面的哪个角落；侧栏形态下不可调。',
+			'settings.chatStreamCornerTopRight' => '右上',
+			'settings.chatStreamCornerBottomRight' => '右下',
+			'settings.chatStreamCornerTopLeft' => '左上',
+			'settings.chatStreamCornerBottomLeft' => '左下',
 			'settings.twitchLanguages' => 'Twitch 目录语言',
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
@@ -18518,6 +18558,8 @@ extension on Translations {
 			'settings.lanSyncScopeSecretsOff' => '要同步凭据，先在「备份与恢复」里打开「包含账号凭据」。',
 			'settings.lanSyncConflictPolicyDesc' => '两台设备改了同一项时，自动保留哪一方；无法自动判定的会列在下方等你决定。',
 			'settings.lanSyncGrants' => '授权',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncGrantsTitle' => ({required String name}) => '「${name}」的授权',
 			'settings.lanSyncGrantsIntro' => '按内容决定这台设备能从本机读取什么、能改动本机的什么。',
 			'settings.lanSyncGrantAll' => '全部允许',
@@ -18528,8 +18570,6 @@ extension on Translations {
 			'settings.lanSyncConflicts' => ({required int count}) => '${count} 个冲突待处理',
 			'settings.lanSyncKeepLocal' => '保留本机',
 			'settings.lanSyncKeepRemote' => '采用对方',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncConflictResolved' => '冲突已处理',
 			'settings.lanSyncConflictOutdated' => '本机数据刚变过，请重新查看后再决定',
 			'settings.navMusicInterface' => '界面与列表',
@@ -19032,6 +19072,8 @@ extension on Translations {
 			'vod.share' => '分享',
 			'vod.linkCopied' => '链接已复制',
 			'vod.episodeNo' => ({required String index}) => '第 ${index} 话',
+			_ => null,
+		} ?? switch (path) {
 			'vod.partsPlaylist' => '播放列表',
 			'vod.partsCount' => ({required int count}) => '共 ${count} 个',
 			'wallpaper.title' => '随机图源',
@@ -19042,8 +19084,6 @@ extension on Translations {
 			'wallpaper.fetchFailed' => '这张图没有取到',
 			'wallpaper.unsupported' => '图源返回了无法显示的图片格式',
 			'wallpaper.previewDisplay' => '显示设置',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.previewVideoNote' => '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。',
 			'wallpaper.previewTitle' => '随机图片预览',
 			'wallpaper.applied' => '已应用为背景',

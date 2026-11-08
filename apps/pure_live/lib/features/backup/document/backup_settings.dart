@@ -239,6 +239,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.list.lineSpacing', BackupPrefKind.string),
   ('danmaku.chatPanelWidth', BackupPrefKind.floating),
   ('danmaku.chatCollapsed', BackupPrefKind.boolean),
+  ('danmaku.chatMode', BackupPrefKind.string),
+  ('danmaku.chatStreamCorner', BackupPrefKind.string),
   ('danmaku.interaction.tap', BackupPrefKind.boolean),
   ('danmaku.interaction.longPress', BackupPrefKind.boolean),
   ('danmaku.holdOnPress', BackupPrefKind.boolean),

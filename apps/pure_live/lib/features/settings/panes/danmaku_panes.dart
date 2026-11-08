@@ -9,14 +9,18 @@ import 'package:media_core_danmaku/media_core_danmaku.dart'
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
     show
+        ChatMode,
+        ChatStreamCorner,
         chatAvatarsProvider,
         chatGiftValueInYuanProvider,
         chatGiftsAboveTierProvider,
         chatListFontSizeProvider,
         chatListLineSpacingProvider,
+        chatModeProvider,
         chatNamesProvider,
         chatPanelWidthProvider,
         chatShowGiftsProvider,
+        chatStreamCornerProvider,
         kChatPanelWidthMax,
         kChatPanelWidthMin;
 import 'package:pure_live/features/settings/danmaku/danmaku_fixed_providers.dart'
@@ -938,6 +942,7 @@ final class DanmakuDisplayPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final showGifts = ref.watch(chatShowGiftsProvider);
+    final chatMode = ref.watch(chatModeProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -1008,6 +1013,34 @@ final class DanmakuDisplayPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.chatListLayoutGroup),
           children: [
+            SettingsChoiceRow<ChatMode>(
+              leading: const DsIcon(DsIcons.messageSquare),
+              title: t.settings.chatPresentation,
+              description: t.settings.chatPresentationDesc,
+              value: chatMode,
+              options: [
+                DsSelectOption(value: ChatMode.column, label: t.settings.chatPresentationColumn),
+                DsSelectOption(value: ChatMode.stream, label: t.settings.chatPresentationStream),
+              ],
+              onChanged: (value) => unawaited(ref.read(chatModeProvider.notifier).set(value)),
+            ),
+            // The corner only means something while the stream is the
+            // presentation; the row stays visible and disabled otherwise.
+            SettingsChoiceRow<ChatStreamCorner>(
+              leading: const DsIcon(DsIcons.pictureInPicture2),
+              title: t.settings.chatStreamCorner,
+              description: t.settings.chatStreamCornerDesc,
+              value: ref.watch(chatStreamCornerProvider),
+              options: [
+                DsSelectOption(value: ChatStreamCorner.topRight, label: t.settings.chatStreamCornerTopRight),
+                DsSelectOption(value: ChatStreamCorner.bottomRight, label: t.settings.chatStreamCornerBottomRight),
+                DsSelectOption(value: ChatStreamCorner.topLeft, label: t.settings.chatStreamCornerTopLeft),
+                DsSelectOption(value: ChatStreamCorner.bottomLeft, label: t.settings.chatStreamCornerBottomLeft),
+              ],
+              onChanged: chatMode == ChatMode.stream
+                  ? (value) => unawaited(ref.read(chatStreamCornerProvider.notifier).set(value))
+                  : null,
+            ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.caseSensitive),
               title: t.settings.chatListFontSize,

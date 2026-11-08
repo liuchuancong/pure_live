@@ -1,9 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -16,7 +14,8 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/modules/live/room/chat/paid_banner.dart';
-import 'package:pure_live/modules/live/room/chat/room_chat_memory.dart' show RoomChatListMemory, roomChatListMemoryProvider;
+import 'package:pure_live/modules/live/room/chat/room_chat_memory.dart'
+    show RoomChatListMemory, roomChatListMemoryProvider;
 import 'package:pure_live/modules/live/room/chat/room_emotes.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
@@ -308,9 +307,8 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
     // the feed added or dropped since is applied at once below (the
     // reference's B09 c4: the offset is not left to the page storage, which
     // keys by place in the tree).
-    final restore = _memory.paused &&
-        _memory.roomKey.isNotEmpty &&
-        _memory.roomKey == ref.read(roomProvider).room?.identityKey;
+    final restore =
+        _memory.paused && _memory.roomKey.isNotEmpty && _memory.roomKey == ref.read(roomProvider).room?.identityKey;
     if (restore) {
       _following = false;
       _shown = _memory.shown;
@@ -407,7 +405,10 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
       // removalsSince).
       final tests = _chat.removalsSince(_removals) ?? const [];
       _removals = _chat.removals;
-      shown = [for (final line in shown) if (!tests.any((test) => test(line))) line];
+      shown = [
+        for (final line in shown)
+          if (!tests.any((test) => test(line))) line,
+      ];
     }
     // A merged gift shows its new count where it stood (the reference's
     // D07.1); a combo's replace is not an arrival.
@@ -992,7 +993,7 @@ final class _ChatLine extends ConsumerWidget {
                           text: '[${t.room.replayed}] ',
                           style: nameStyle.copyWith(color: colors.textSubtle),
                         ),
-                      ..._wordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
+                      ...chatWordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
                     ],
                   ),
                 ),
@@ -1327,116 +1328,6 @@ final class _BadgeImage extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A line's words with the platform's emoticons drawn as themselves: the
-/// flying layer's own catalogue (its keys are the emoticons' message texts,
-/// "[抠鼻]") regex-cut out of the words and painted from the bundled atlas.
-/// A catalogue that hasn't loaded — or a word it doesn't know — stays text,
-/// exactly as written.
-List<InlineSpan> _wordSpans(String words, TextStyle style, double emojiSize, {Iterable<LiveEmote> emotes = const []}) {
-  final atlas = EmojiAtlas.instance;
-  final regex = atlas.regex;
-  if (regex == null || !regex.hasMatch(words)) return _plainSpans(words, style, emojiSize, emotes);
-  final spans = <InlineSpan>[];
-  var last = 0;
-  for (final match in regex.allMatches(words)) {
-    final key = match[0]!;
-    final info = atlas.find(key);
-    final image = info == null ? null : atlas.image(info.id);
-    final src = image == null ? null : atlas.getSrcRect(key);
-    // A match without a picture is left in the running text: the next
-    // flush writes it out as written - and the platform's own emoticon table
-    // gets its chance on it there.
-    if (image == null || src == null) continue;
-    if (match.start > last) spans.addAll(_plainSpans(words.substring(last, match.start), style, emojiSize, emotes));
-    spans.add(
-      WidgetSpan(
-        alignment: PlaceholderAlignment.middle,
-        child: _AtlasEmoji(image: image, src: src, size: emojiSize),
-      ),
-    );
-    last = match.end;
-  }
-  if (last < words.length) spans.addAll(_plainSpans(words.substring(last), style, emojiSize, emotes));
-  return spans;
-}
-
-/// The words the atlas did not draw, with the platform's own emoticons in
-/// place: four platforms hand their pictures over inside the message (Bilibili
-/// a whole-line sticker or an inline `[dog]`, ChZZK a `{:이모티콘:}`, Kuaishou a
-/// `[…]`, YouTube a custom-emoji shortcut), and the bundled sheet cannot cover
-/// what a site adds on its own. Without a picture for the code the words stay
-/// exactly as written.
-List<InlineSpan> _plainSpans(String run, TextStyle style, double emojiSize, Iterable<LiveEmote> emotes) {
-  if (run.isEmpty) return const [];
-  if (emotes.isEmpty) return [TextSpan(text: run, style: style)];
-  final pieces = splitPlatformEmotes(run, emotes);
-  if (pieces.length == 1 && pieces.single.emoteUrl == null) return [TextSpan(text: run, style: style)];
-  return [
-    for (final piece in pieces)
-      if (piece.emoteUrl case final String url)
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: _PlatformEmote(code: piece.text, url: url, size: emojiSize, style: style),
-        )
-      else
-        TextSpan(text: piece.text, style: style),
-  ];
-}
-
-/// One emoticon the platform supplied: its own picture at the chat line's
-/// size, and its code as written when the picture cannot be had - the line
-/// then reads exactly as it did before the platform's table was ever read.
-final class _PlatformEmote extends StatelessWidget {
-  const _PlatformEmote({required this.code, required this.url, required this.size, required this.style});
-
-  final String code;
-  final String url;
-  final double size;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 1),
-    child: Image(
-      image: cachedImage(url, policy: ImageCachePolicies.chatEmote, height: size.round()),
-      height: size,
-      errorBuilder: (context, error, stackTrace) => Text(code, style: style),
-    ),
-  );
-}
-
-/// One emoticon of the bundled atlas: a rect of the sheet the flying layer
-/// already decoded, painted at the chat line's own size.
-final class _AtlasEmoji extends StatelessWidget {
-  const _AtlasEmoji({required this.image, required this.src, required this.size});
-
-  final ui.Image image;
-  final Rect src;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    // A hair of air on each side, so a run of emoticons reads as a run and
-    // not one pasted strip.
-    padding: const EdgeInsets.symmetric(horizontal: 1),
-    child: CustomPaint(size: Size.square(size), painter: _AtlasEmojiPainter(this)),
-  );
-}
-
-final class _AtlasEmojiPainter extends CustomPainter {
-  _AtlasEmojiPainter(this.emoji);
-
-  final _AtlasEmoji emoji;
-
-  @override
-  void paint(Canvas canvas, Size size) =>
-      canvas.drawImageRect(emoji.image, emoji.src, Offset.zero & size, Paint()..filterQuality = FilterQuality.medium);
-
-  @override
-  bool shouldRepaint(_AtlasEmojiPainter old) =>
-      old.emoji.image != emoji.image || old.emoji.src != emoji.src || old.emoji.size != emoji.size;
 }
 
 /// A gift's picture at its line's text size, with the generic gift mark

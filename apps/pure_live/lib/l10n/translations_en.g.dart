@@ -3913,6 +3913,16 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get chatListSpacingLoose => 'Loose';
 	@override String get chatPanelWidth => 'Panel width';
 	@override String get chatPanelWidthDesc => 'Its width in the wide layout.';
+	@override String get chatPresentation => 'Chat presentation';
+	@override String get chatPresentationDesc => 'The column is the full chat panel; the stream floats plain talk over the picture, in wide and fullscreen layouts.';
+	@override String get chatPresentationColumn => 'Side column';
+	@override String get chatPresentationStream => 'On-picture stream';
+	@override String get chatStreamCorner => 'Stream corner';
+	@override String get chatStreamCornerDesc => 'Which corner of the picture the stream keeps to; fixed while the column is in use.';
+	@override String get chatStreamCornerTopRight => 'Top right';
+	@override String get chatStreamCornerBottomRight => 'Bottom right';
+	@override String get chatStreamCornerTopLeft => 'Top left';
+	@override String get chatStreamCornerBottomLeft => 'Bottom left';
 	@override String get twitchLanguages => 'Twitch directory languages';
 	@override String get twitchLanguagesDesc => 'Show only streams in the chosen languages; none selected shows every language.';
 	@override String get twitchAllLanguages => 'All languages';
@@ -8863,6 +8873,16 @@ extension on TranslationsEn {
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
 			'settings.chatPanelWidthDesc' => 'Its width in the wide layout.',
+			'settings.chatPresentation' => 'Chat presentation',
+			'settings.chatPresentationDesc' => 'The column is the full chat panel; the stream floats plain talk over the picture, in wide and fullscreen layouts.',
+			'settings.chatPresentationColumn' => 'Side column',
+			'settings.chatPresentationStream' => 'On-picture stream',
+			'settings.chatStreamCorner' => 'Stream corner',
+			'settings.chatStreamCornerDesc' => 'Which corner of the picture the stream keeps to; fixed while the column is in use.',
+			'settings.chatStreamCornerTopRight' => 'Top right',
+			'settings.chatStreamCornerBottomRight' => 'Bottom right',
+			'settings.chatStreamCornerTopLeft' => 'Top left',
+			'settings.chatStreamCornerBottomLeft' => 'Bottom left',
 			'settings.twitchLanguages' => 'Twitch directory languages',
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
@@ -9111,6 +9131,8 @@ extension on TranslationsEn {
 			'settings.lanSyncScopeSecretsOff' => 'To sync credentials, turn on “Include account credentials” under Backup and restore first.',
 			'settings.lanSyncConflictPolicyDesc' => 'Which side wins when both devices changed the same item; what cannot be decided automatically is listed below for you.',
 			'settings.lanSyncGrants' => 'Grants',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncGrantsTitle' => ({required String name}) => 'Grants for “${name}”',
 			'settings.lanSyncGrantsIntro' => 'Per content, whether this device may read it from here and change it here.',
 			'settings.lanSyncGrantAll' => 'Allow all',
@@ -9121,8 +9143,6 @@ extension on TranslationsEn {
 			'settings.lanSyncConflicts' => ({required int count}) => '${count} conflicts to settle',
 			'settings.lanSyncKeepLocal' => 'Keep mine',
 			'settings.lanSyncKeepRemote' => 'Take theirs',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncConflictResolved' => 'Conflict settled',
 			'settings.lanSyncConflictOutdated' => 'This device\'s copy just changed; review it and decide again',
 			'settings.navMusicInterface' => 'Interface & lists',
@@ -9625,6 +9645,8 @@ extension on TranslationsEn {
 			'vod.share' => 'Share',
 			'vod.linkCopied' => 'Link copied',
 			'vod.episodeNo' => ({required String index}) => 'EP ${index}',
+			_ => null,
+		} ?? switch (path) {
 			'vod.partsPlaylist' => 'Playlist',
 			'vod.partsCount' => ({required int count}) => '${count} parts',
 			'wallpaper.title' => 'Random pictures',
@@ -9635,8 +9657,6 @@ extension on TranslationsEn {
 			'wallpaper.fetchFailed' => 'This picture did not arrive',
 			'wallpaper.unsupported' => 'The source returned an unsupported image format',
 			'wallpaper.previewTitle' => 'Random picture preview',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.previewDisplay' => 'Display',
 			'wallpaper.previewVideoNote' => 'An applied wallpaper keeps looping muted; play, pause and sound here are for the preview only.',
 			'wallpaper.applied' => 'Applied as the background',
