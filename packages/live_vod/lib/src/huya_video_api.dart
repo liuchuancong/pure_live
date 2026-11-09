@@ -137,13 +137,58 @@ final class HuyaVideoShelf {
   final List<HuyaVideo> videos;
 }
 
+/// One promotional banner the home carries above its shelves. The station
+/// ships the art and a link; the link is a play page, a channel or nothing,
+/// and only a resolved [videoId] opens the player.
+final class HuyaBanner {
+  /// A banner.
+  const new({required this.title, required this.cover, this.videoId = ''});
+
+  /// The promotion's caption.
+  final String title;
+
+  /// The wide art.
+  final String cover;
+
+  /// The video the banner leads to, empty when it names none.
+  final String videoId;
+}
+
+/// One channel the home's 热门频道 rail recommends: the game's own art, name
+/// and the listing it walks into.
+final class HuyaHomeChannel {
+  /// A recommended channel.
+  const new({required this.name, required this.cover, required this.channelId, this.setId = 0});
+
+  /// The channel's display name.
+  final String name;
+
+  /// The channel's square art.
+  final String cover;
+
+  /// The listing the chip walks into.
+  final String channelId;
+
+  /// The group the channel sits in, for the walk.
+  final int setId;
+}
+
 /// The station's home as one answer.
 final class HuyaVideoHome {
   /// The home.
-  const new({required this.shelves});
+  const new({required this.shelves, this.banners = const [], this.channels = const [], this.recommended = const []});
 
   /// The shelves, top to bottom.
   final List<HuyaVideoShelf> shelves;
+
+  /// The promotional banners above the shelves.
+  final List<HuyaBanner> banners;
+
+  /// The 热门频道 the home recommends, in the station's order.
+  final List<HuyaHomeChannel> channels;
+
+  /// The videos the home puts beside its banner, best first.
+  final List<HuyaVideo> recommended;
 }
 
 /// The order a listing walks in, as the station's own path segment.
@@ -435,6 +480,27 @@ final class HuyaVideoApi {
     return parseSearch((await _send(uri)).text);
   }
 
+  /// The words the station completes a partial [word] to, for the search
+  /// field's autocomplete; empty when it offers none.
+  Future<List<String>> suggest(String word) async {
+    final trimmed = word.trim();
+    if (trimmed.isEmpty || trimmed.length > 64) {
+      throw const VodFailure('the word is not one the station completes');
+    }
+    final uri = Uri.https('search.cdn.huya.com', '/', {
+      'm': 'Search',
+      'do': 'getSearchContent',
+      'q': trimmed,
+      'uid': '0',
+      'v': '4',
+      'typ': '-7',
+      'livestate': '0',
+      'start': '0',
+      'rows': '20',
+    });
+    return parseSuggest((await _send(uri)).text);
+  }
+
   /// One video's own page, from the answer the site's own player asks for.
   Future<HuyaVideoDetail> detail(String id) async {
     if (!_videoId.hasMatch(id)) {
@@ -479,7 +545,49 @@ final class HuyaVideoApi {
         ),
       );
     }
-    return HuyaVideoHome(shelves: List<HuyaVideoShelf>.unmodifiable(shelves));
+    final banners = <HuyaBanner>[];
+    for (final row in HuyaSsr.rows(root['bannerList'])) {
+      final item = HuyaSsr.record(row);
+      final cover = HuyaSsr.image(item?['cover']);
+      if (item == null || cover.isEmpty) continue;
+      final own = HuyaSsr.integer(item['vid']) ?? 0;
+      final videoId = own > 0 ? '$own' : _playVid(HuyaSsr.text(item['url']));
+      banners.add(HuyaBanner(title: _text(item['title']), cover: cover, videoId: videoId));
+    }
+    final channels = <HuyaHomeChannel>[];
+    final seenChannels = <String>{};
+    for (final row in HuyaSsr.rows(root['recommendChannelList'])) {
+      final item = HuyaSsr.record(row);
+      if (item == null) continue;
+      final name = _text(item['title']);
+      final entries = HuyaSsr.rows(HuyaSsr.value(item['channelItemList']));
+      final channel = entries.isEmpty ? null : HuyaSsr.record(entries.first);
+      final channelId = channel == null ? '' : HuyaSsr.text(channel['id']).trim();
+      if (name.isEmpty || channelId.isEmpty || !_channelId.hasMatch(channelId) || !seenChannels.add(channelId)) {
+        continue;
+      }
+      channels.add(
+        HuyaHomeChannel(
+          name: name,
+          cover: HuyaSsr.image(item['cover']),
+          channelId: channelId,
+          setId: HuyaSsr.integer(item['setId']) ?? 0,
+        ),
+      );
+    }
+    return HuyaVideoHome(
+      shelves: List<HuyaVideoShelf>.unmodifiable(shelves),
+      banners: List<HuyaBanner>.unmodifiable(banners),
+      channels: List<HuyaHomeChannel>.unmodifiable(channels),
+      recommended: _videos(HuyaSsr.rows(HuyaSsr.value(root['recommendVideoList']))),
+    );
+  }
+
+  /// The video a banner's `…/play/<vid>.html` link leads to, or the empty
+  /// string when the link names none the station would recognise.
+  static String _playVid(String url) {
+    final vid = RegExp('/play/([1-9][0-9]{0,18})').firstMatch(url)?.group(1) ?? '';
+    return _videoId.hasMatch(vid) ? vid : '';
   }
 
   /// The station's channel groups, in its own order.
@@ -593,6 +701,29 @@ final class HuyaVideoApi {
       videos: List<HuyaVideo>.unmodifiable(videos),
       total: HuyaSsr.integer(block?['numFound']) ?? 0,
     );
+  }
+
+  /// The autocomplete bucket's words: `response["1024"].docs[].associate_word`,
+  /// deduplicated in the station's order.
+  static List<String> parseSuggest(String body) {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw const VodFailure('the suggest answer is not JSON the station sends');
+    }
+    final root = HuyaSsr.record(decoded);
+    final status = HuyaSsr.integer(HuyaSsr.record(root?['responseHeader'])?['status']);
+    if (root == null || status == null || status < 0) {
+      throw const VodFailure('the suggest index refused the word');
+    }
+    final block = HuyaSsr.record(HuyaSsr.record(root['response'])?['1024']);
+    final words = <String>[];
+    for (final row in HuyaSsr.rows(block?['docs'])) {
+      final word = _text(row['associate_word']);
+      if (word.isNotEmpty && !words.contains(word)) words.add(word);
+    }
+    return List<String>.unmodifiable(words);
   }
 
   /// One video's detail answer: the video, its renditions and its tags.

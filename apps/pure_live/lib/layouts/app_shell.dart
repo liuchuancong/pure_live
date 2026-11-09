@@ -344,6 +344,12 @@ final class _AppShellState extends ConsumerState<AppShell> {
       NavigationItem.vodRegions,
       NavigationItem.vodPgc,
     ],
+    AppModule.huya => const [
+      NavigationItem.huyaHome,
+      NavigationItem.huyaChannels,
+      NavigationItem.huyaRank,
+      NavigationItem.huyaSearch,
+    ],
     AppModule.music => const [
       NavigationItem.musicRecommend,
       NavigationItem.music,

@@ -49,6 +49,28 @@ window.HNF_GLOBAL_INIT = {
       {"id": "all", "name": "全部视频"}, {"id": "bad id!", "name": "坏"}
     ]}}
   ],
+  "bannerList": [
+    {"title":"心之钢","cover":"https:\u002F\u002Fv-huya-pic.huya.com\u002Fb.jpg","vid":0,"setId":0,
+     "url":"https:\u002F\u002Fv.huya.com\u002Fplay\u002F938645084.html"},
+    {"title":"直取","cover":"https:\u002F\u002Fv-huya-pic.huya.com\u002Fc.jpg","vid":1132205036},
+    {"title":"无图","cover":"","vid":0,"url":""}
+  ],
+  "recommendChannelList": [
+    {"title":"王者荣耀","cover":"https:\u002F\u002Fv-huya-pic.huya.com\u002Fwz.png","setId":15,
+     "channelItemList":{"_bValue":0,"value":[{"id":"vhuyawzry","name":"王者荣耀"}]}},
+    {"title":"英雄联盟","cover":"https:\u002F\u002Fv-huya-pic.huya.com\u002Flol.png","setId":13,
+     "channelItemList":{"_bValue":0,"value":[{"id":"vhuyalol","name":"英雄联盟"}]}},
+    {"title":"重复","cover":"","setId":15,
+     "channelItemList":{"_bValue":0,"value":[{"id":"vhuyawzry","name":"王者荣耀"}]}}
+  ],
+  "recommendVideoList": {"_bValue": 0, "value": [
+    {"vid": 1131111111, "videoTitle": "推荐一", "duration": "05:00",
+     "covers": {"cover640": "https://v-huya-img2.msstatic.com/r1.jpg"}, "playNums": 10,
+     "userInfo": {"uid": 7, "userNick": "n7"}},
+    {"vid": 1131111112, "videoTitle": "推荐二", "duration": "06:00",
+     "covers": {"cover640": "https://v-huya-img2.msstatic.com/r2.jpg"}, "playNums": 20,
+     "userInfo": {"uid": 8, "userNick": "n8"}}
+  ]},
   "channelInfo": {"channelId": "all", "setId": 3, "orderType": 1, "pageIndex": 2, "channelName": "全部视频", "categoryTitle": "手机游戏"},
   "videoData": {
     "respHeader": {"code": 0, "msg": ""},
@@ -158,6 +180,14 @@ const String _search = '''
 ]}}}
 ''';
 
+const String _suggest = '''
+{"responseHeader":{"status":0},"response":{"1024":{"numFound":3,"start":0,"docs":[
+  {"associate_id":0,"associate_word":"王者荣耀","word_type":0},
+  {"associate_id":0,"associate_word":"王者荣耀 直播","word_type":0},
+  {"associate_id":0,"associate_word":"王者荣耀","word_type":0}
+]}}}
+''';
+
 void main() {
   final root = HuyaSsr.parse(_page);
 
@@ -190,6 +220,33 @@ void main() {
     expect(video.playCount, 30057);
     expect(video.uploaderId, '1571877666');
     expect(video.uploaderName, '赛事');
+  });
+
+  test('the home reads its banners and its recommended channels', () {
+    final home = HuyaVideoApi.parseHome(root);
+    // Two banners answer: the url-linked one and the one carrying its own
+    // vid; the cover-less banner is not a banner.
+    expect(home.banners, hasLength(2));
+    expect(home.banners.first.videoId, '938645084');
+    expect(home.banners.first.title, '心之钢');
+    expect(home.banners.last.videoId, '1132205036');
+    // The rail keeps the station order and drops the channel it has seen.
+    expect(home.channels.map((channel) => channel.channelId), ['vhuyawzry', 'vhuyalol']);
+    expect(home.channels.first.name, '王者荣耀');
+    expect(home.channels.first.setId, 15);
+    expect(home.channels.first.cover, 'https://v-huya-pic.huya.com/wz.png');
+    // The videos beside the banner come back as rows the hero can render.
+    expect(home.recommended.map((video) => video.id), ['1131111111', '1131111112']);
+    expect(home.recommended.first.title, '推荐一');
+  });
+
+  test('the suggest bucket folds its words and drops the repeat', () {
+    expect(HuyaVideoApi.parseSuggest(_suggest), ['王者荣耀', '王者荣耀 直播']);
+    expect(
+      () => HuyaVideoApi.parseSuggest('{"responseHeader":{"status":-1},"response":{}}'),
+      throwsA(isA<VodFailure>()),
+    );
+    expect(() => HuyaVideoApi.parseSuggest('not json'), throwsA(isA<VodFailure>()));
   });
 
   test('the groups keep the station order and drop channel ids its paths reject', () {

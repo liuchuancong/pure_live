@@ -81,9 +81,23 @@ enum NavigationItem {
   /// tasks on their lanes and the files they land in.
   vodDownloads(DsIcons.download),
 
-  /// The Huya video site's own entry: its home shelves, its channel listings
-  /// and its boards.
-  huyaVideo(DsIcons.play),
+  /// The Huya station's home shelves.
+  huyaHome(DsIcons.home),
+
+  /// The Huya station's channel directory.
+  huyaChannels(DsIcons.layoutList),
+
+  /// The Huya station's material library (its own web surface).
+  huyaMaterial(DsIcons.folderOpen),
+
+  /// The Huya station's live portal (its own web surface).
+  huyaLive(DsIcons.tv),
+
+  /// The Huya station's ranking boards.
+  huyaRank(DsIcons.trophy),
+
+  /// The Huya station's search.
+  huyaSearch(DsIcons.search),
 
   /// The IPTV module's playlists and guide sources.
   iptvSources(DsIcons.radioTower),
@@ -182,7 +196,12 @@ enum NavigationItem {
     NavigationItem.vodPersonal => t.vod.personal,
     NavigationItem.vodLive => t.vod.live,
     NavigationItem.vodDownloads => t.navigation.vodDownloads,
-    NavigationItem.huyaVideo => t.vod.huya,
+    NavigationItem.huyaHome => t.huya.home,
+    NavigationItem.huyaChannels => t.huya.channels,
+    NavigationItem.huyaMaterial => t.huya.material,
+    NavigationItem.huyaLive => t.huya.liveTab,
+    NavigationItem.huyaRank => t.huya.rank,
+    NavigationItem.huyaSearch => t.huya.search,
     NavigationItem.iptvSources => t.navigation.iptvSources,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvFavorites => t.iptv.favouritesTitle,

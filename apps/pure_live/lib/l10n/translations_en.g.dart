@@ -46,6 +46,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$favorites$en favorites = _Translations$favorites$en._(_root);
 	@override late final _Translations$history$en history = _Translations$history$en._(_root);
 	@override late final _Translations$hongguo$en hongguo = _Translations$hongguo$en._(_root);
+	@override late final _Translations$huya$en huya = _Translations$huya$en._(_root);
 	@override late final _Translations$iptv$en iptv = _Translations$iptv$en._(_root);
 	@override late final _Translations$multiview$en multiview = _Translations$multiview$en._(_root);
 	@override late final _Translations$music$en music = _Translations$music$en._(_root);
@@ -492,6 +493,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get downloadRemoveFromList => 'Remove from list';
 	@override String get pipUnavailable => 'Picture-in-picture is not available for this device or player engine.';
 	@override String get moduleHongguo => 'Hongguo Drama';
+	@override String get moduleHuya => 'Huya Video';
 	@override String previewCount({required int count}) => '${count} items';
 	@override String get previewPrevious => 'Previous';
 	@override String get previewNext => 'Next';
@@ -897,6 +899,51 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String reservationsUpcomingCount({required int count}) => '${count} to air';
 	@override String get searchSuggestions => 'Suggestions';
 	@override String episodeNo({required int index}) => 'Ep. ${index}';
+}
+
+// Path: huya
+class _Translations$huya$en extends Translations$huya$zh_CN {
+	_Translations$huya$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get home => 'Home';
+	@override String get browse => 'Browse';
+	@override String get channels => 'Channels';
+	@override String get rank => 'Rankings';
+	@override String get searchHint => 'Search Huya videos';
+	@override String get orderHot => 'Hot';
+	@override String get orderNew => 'Newest';
+	@override String get orderMost => 'Most played';
+	@override String get more => 'View all';
+	@override String get related => 'Related videos';
+	@override String get live => 'Live';
+	@override String searchResults({required int count, required String word}) => '${count} videos for “${word}”';
+	@override String get searchEmpty => 'No videos found';
+	@override String get searchEmptyDescription => 'Try another word.';
+	@override String get backToBrowse => 'Back to browse';
+	@override String rankUpdated({required String time}) => 'Updated ${time}';
+	@override String get homeEmpty => 'Nothing on the home page right now.';
+	@override String get quality => 'Quality';
+	@override String get speed => 'Speed';
+	@override String get errorTitle => 'The videos did not load';
+	@override String get noResultsDescription => 'Try another keyword.';
+	@override String get views => 'Views';
+	@override String get videoCount => 'Videos';
+	@override String get fans => 'Followers';
+	@override String get sort => 'Sort';
+	@override String get emptyDescription => 'This channel has no videos right now.';
+	@override String get tabVideos => 'Videos';
+	@override String get tabReplays => 'Live replays';
+	@override String get replayEmpty => 'No live replays yet';
+	@override String get hotChannels => 'Popular channels';
+	@override String get suggestTitle => 'Try these';
+	@override String get search => 'Search';
+	@override String get material => 'Material';
+	@override String get liveTab => 'Live';
+	@override String get recommend => 'Recommended';
+	@override String get exchange => 'New batch';
 }
 
 // Path: iptv
@@ -4721,28 +4768,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String episodeNo({required String index}) => 'EP ${index}';
 	@override String get partsPlaylist => 'Playlist';
 	@override String partsCount({required int count}) => '${count} parts';
-	@override String get huya => 'Huya Video';
-	@override String get huyaHome => 'Home';
-	@override String get huyaBrowse => 'Browse';
-	@override String get huyaRank => 'Rankings';
-	@override String get huyaSearchHint => 'Search Huya videos';
-	@override String get huyaAll => 'All';
-	@override String get huyaOrderHot => 'Hot';
-	@override String get huyaOrderNew => 'Newest';
-	@override String get huyaOrderMost => 'Most played';
-	@override String get huyaChannels => 'Channels';
-	@override String get huyaMore => 'View all';
-	@override String get huyaRelated => 'Related videos';
-	@override String get huyaUploaderVideos => 'Their videos';
-	@override String get huyaLive => 'Live';
-	@override String huyaSearchResults({required int count, required String word}) => '${count} videos for “${word}”';
-	@override String get huyaSearchEmpty => 'No videos found';
-	@override String get huyaSearchEmptyDescription => 'Try another word.';
-	@override String get huyaBackToBrowse => 'Back to browse';
-	@override String huyaRankUpdated({required String time}) => 'Updated ${time}';
-	@override String get huyaHomeEmpty => 'Nothing on the home page right now.';
-	@override String get huyaQuality => 'Quality';
-	@override String get huyaSpeed => 'Speed';
 }
 
 // Path: wallpaper
@@ -5588,6 +5613,7 @@ extension on TranslationsEn {
 			'common.downloadRemoveFromList' => 'Remove from list',
 			'common.pipUnavailable' => 'Picture-in-picture is not available for this device or player engine.',
 			'common.moduleHongguo' => 'Hongguo Drama',
+			'common.moduleHuya' => 'Huya Video',
 			'common.previewCount' => ({required int count}) => '${count} items',
 			'common.previewPrevious' => 'Previous',
 			'common.previewNext' => 'Next',
@@ -5966,6 +5992,42 @@ extension on TranslationsEn {
 			'hongguo.reservationsUpcomingCount' => ({required int count}) => '${count} to air',
 			'hongguo.searchSuggestions' => 'Suggestions',
 			'hongguo.episodeNo' => ({required int index}) => 'Ep. ${index}',
+			'huya.home' => 'Home',
+			'huya.browse' => 'Browse',
+			'huya.channels' => 'Channels',
+			'huya.rank' => 'Rankings',
+			'huya.searchHint' => 'Search Huya videos',
+			'huya.orderHot' => 'Hot',
+			'huya.orderNew' => 'Newest',
+			'huya.orderMost' => 'Most played',
+			'huya.more' => 'View all',
+			'huya.related' => 'Related videos',
+			'huya.live' => 'Live',
+			'huya.searchResults' => ({required int count, required String word}) => '${count} videos for “${word}”',
+			'huya.searchEmpty' => 'No videos found',
+			'huya.searchEmptyDescription' => 'Try another word.',
+			'huya.backToBrowse' => 'Back to browse',
+			'huya.rankUpdated' => ({required String time}) => 'Updated ${time}',
+			'huya.homeEmpty' => 'Nothing on the home page right now.',
+			'huya.quality' => 'Quality',
+			'huya.speed' => 'Speed',
+			'huya.errorTitle' => 'The videos did not load',
+			'huya.noResultsDescription' => 'Try another keyword.',
+			'huya.views' => 'Views',
+			'huya.videoCount' => 'Videos',
+			'huya.fans' => 'Followers',
+			'huya.sort' => 'Sort',
+			'huya.emptyDescription' => 'This channel has no videos right now.',
+			'huya.tabVideos' => 'Videos',
+			'huya.tabReplays' => 'Live replays',
+			'huya.replayEmpty' => 'No live replays yet',
+			'huya.hotChannels' => 'Popular channels',
+			'huya.suggestTitle' => 'Try these',
+			'huya.search' => 'Search',
+			'huya.material' => 'Material',
+			'huya.liveTab' => 'Live',
+			'huya.recommend' => 'Recommended',
+			'huya.exchange' => 'New batch',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -6032,6 +6094,8 @@ extension on TranslationsEn {
 			'iptv.importInvalid' => 'The content is not a valid playlist',
 			'iptv.importNameRequired' => 'Enter a playlist name',
 			'iptv.importNetworkFailed' => 'The network request failed; check the address or proxy',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importPlaylist' => 'Import playlist',
 			'iptv.importPlaylistDescription' => 'M3U/M3U8/TXT from a URL, a file or pasted text.',
 			'iptv.importSkipped' => ({required String name, required int count}) => 'Imported “${name}”, skipped ${count}',
@@ -6069,8 +6133,6 @@ extension on TranslationsEn {
 			'iptv.searchSources' => 'Search names or addresses…',
 			'iptv.noChannelMatch' => 'No channels match',
 			'iptv.noSourceMatch' => 'No sources match',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.sourceCount' => ({required int count}) => '${count} items',
 			'iptv.colChannel' => 'Channel',
 			'iptv.colGroup' => 'Group',
@@ -6546,6 +6608,8 @@ extension on TranslationsEn {
 			'music.downloadIncludeTranslation' => 'Include the translation',
 			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
 			'music.downloadIncludeRomanization' => 'Include the romanization',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadIncludeRomanizationDesc' => 'Write the romanization into the downloaded lyric file and embedded tag.',
 			'music.downloadWriteLyric' => 'Save a lyric file',
 			'music.downloadWriteLyricDesc' => 'Write a sibling .lrc next to the audio file.',
@@ -6583,8 +6647,6 @@ extension on TranslationsEn {
 			'music.localFiles' => ({required Object count}) => '${count} files',
 			'music.localRescan' => 'Scan again',
 			'music.localFolders' => 'Music folders',
-			_ => null,
-		} ?? switch (path) {
 			'music.localRemoveFolder' => 'Remove the folder',
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
@@ -7060,6 +7122,8 @@ extension on TranslationsEn {
 			'recorder.warningJoinFailed' => 'Join failed; the segments are kept in the folder',
 			'recorder.warningTranscodeFailed' => 'Transcode failed; the untranscoded MP4 is kept',
 			'recorder.warningFinalizeFailed' => 'Post-processing failed; the recording files are kept',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.warningStaleProcessing' => 'The last join/transcode did not finish; check the task folder',
 			'recorder.warningDiskLow' => 'Free space ran low and the recording stopped; the segments are kept',
 			'recorder.warningCanceled' => 'Post-processing was cancelled; the recording files are kept',
@@ -7097,8 +7161,6 @@ extension on TranslationsEn {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
@@ -7574,6 +7636,8 @@ extension on TranslationsEn {
 			'search.webSearchSelectPlatform' => 'Choose a platform before searching the web',
 			'search.webSearchUnavailable' => 'This platform has no web search',
 			'search.webSearchUnsupportedTitle' => 'The in-app web view is unavailable here',
+			_ => null,
+		} ?? switch (path) {
 			'search.webSearchUnsupportedDescription' => 'Open this search in the system browser instead.',
 			'search.webSearchOpenExternal' => 'Open in browser',
 			'search.webSearchExternalFailed' => 'Could not open the system browser',
@@ -7611,8 +7675,6 @@ extension on TranslationsEn {
 			'search.partialFailureScope' => 'Adjust scope',
 			'search.webView2MissingTitle' => 'WebView2 is missing',
 			'search.webView2MissingBody' => 'This Windows has no WebView2; open the web search in the system browser, or install WebView2 first.',
-			_ => null,
-		} ?? switch (path) {
 			'search.webView2Download' => 'Download WebView2',
 			'search.webVersion' => 'Open web version',
 			'search.webVersionTitle' => 'No in-app list here',
@@ -8088,6 +8150,8 @@ extension on TranslationsEn {
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
 			'settings.fontManagerDownloadAndUse' => 'Download and use',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerDownloading' => ({required Object percent}) => 'Downloading ${percent}%',
 			'settings.fontManagerDownloadFailed' => 'Download failed',
 			'settings.fontManagerDownloaded' => 'Downloaded',
@@ -8125,8 +8189,6 @@ extension on TranslationsEn {
 			'settings.textScaleDescription' => 'Scales all text in the app; 100% is the original size.',
 			'settings.backHome' => 'Back to app',
 			'settings.navCache' => 'Cache',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheDescription' => 'Images cached by purpose, with capacity, freshness and cleanup.',
 			'settings.cacheSize' => 'Current cache size',
 			'settings.cacheRefresh' => 'Refresh',
@@ -8602,6 +8664,8 @@ extension on TranslationsEn {
 			'settings.updateAvailable' => ({required Object version}) => 'Version ${version} is available',
 			'settings.upToDate' => 'Up to date',
 			'settings.updateCheckFailed' => 'The update check failed',
+			_ => null,
+		} ?? switch (path) {
 			'settings.viewUpdate' => 'View update',
 			'settings.updatePanelTitle' => 'Update',
 			'settings.updateBuild' => ({required Object build}) => 'Build ${build}',
@@ -8639,8 +8703,6 @@ extension on TranslationsEn {
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
@@ -9116,6 +9178,8 @@ extension on TranslationsEn {
 			'settings.lanSyncPairAccepted' => 'Paired',
 			'settings.lanSyncPairRejected' => 'Pairing declined',
 			'settings.lanSyncPairExpired' => 'The pairing request expired; start again.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncPairMismatch' => 'The two devices derived different keys; pairing ended. The network may have an intruder.',
 			'settings.lanSyncPairCountdown' => ({required int seconds}) => 'Expires in ${seconds} s',
 			'settings.lanSyncTrustError' => 'This device\'s identity does not match the pairing record; the connection was refused.',
@@ -9153,8 +9217,6 @@ extension on TranslationsEn {
 			'settings.lanSyncScopeSecretsOff' => 'To sync credentials, turn on “Include account credentials” under Backup and restore first.',
 			'settings.lanSyncConflictPolicyDesc' => 'Which side wins when both devices changed the same item; what cannot be decided automatically is listed below for you.',
 			'settings.lanSyncGrants' => 'Grants',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncGrantsTitle' => ({required String name}) => 'Grants for “${name}”',
 			'settings.lanSyncGrantsIntro' => 'Per content, whether this device may read it from here and change it here.',
 			'settings.lanSyncGrantAll' => 'Allow all',
@@ -9630,6 +9692,8 @@ extension on TranslationsEn {
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
 			'vod.downloadClearFinished' => 'Clear finished',
+			_ => null,
+		} ?? switch (path) {
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',
 			'vod.downloadFilterEmpty' => 'Nothing under this filter',
@@ -9667,32 +9731,8 @@ extension on TranslationsEn {
 			'vod.share' => 'Share',
 			'vod.linkCopied' => 'Link copied',
 			'vod.episodeNo' => ({required String index}) => 'EP ${index}',
-			_ => null,
-		} ?? switch (path) {
 			'vod.partsPlaylist' => 'Playlist',
 			'vod.partsCount' => ({required int count}) => '${count} parts',
-			'vod.huya' => 'Huya Video',
-			'vod.huyaHome' => 'Home',
-			'vod.huyaBrowse' => 'Browse',
-			'vod.huyaRank' => 'Rankings',
-			'vod.huyaSearchHint' => 'Search Huya videos',
-			'vod.huyaAll' => 'All',
-			'vod.huyaOrderHot' => 'Hot',
-			'vod.huyaOrderNew' => 'Newest',
-			'vod.huyaOrderMost' => 'Most played',
-			'vod.huyaChannels' => 'Channels',
-			'vod.huyaMore' => 'View all',
-			'vod.huyaRelated' => 'Related videos',
-			'vod.huyaUploaderVideos' => 'Their videos',
-			'vod.huyaLive' => 'Live',
-			'vod.huyaSearchResults' => ({required int count, required String word}) => '${count} videos for “${word}”',
-			'vod.huyaSearchEmpty' => 'No videos found',
-			'vod.huyaSearchEmptyDescription' => 'Try another word.',
-			'vod.huyaBackToBrowse' => 'Back to browse',
-			'vod.huyaRankUpdated' => ({required String time}) => 'Updated ${time}',
-			'vod.huyaHomeEmpty' => 'Nothing on the home page right now.',
-			'vod.huyaQuality' => 'Quality',
-			'vod.huyaSpeed' => 'Speed',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

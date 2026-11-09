@@ -605,3 +605,157 @@ final class HuyaUploaderController extends Notifier<HuyaUploaderState> {
 
 /// One uploader's page.
 final huyaUploaderProvider = NotifierProvider<HuyaUploaderController, HuyaUploaderState>(HuyaUploaderController.new);
+
+/// The station's live-record archive, over the same shared transport: the
+/// uploader page's 直播回放 tab reads it, and a replay opens through the
+/// video player the same way an uploaded video does.
+final huyaArchiveApiProvider = Provider<HuyaArchiveApi>((ref) {
+  final http = ref.watch(networkFactoryProvider).create(profile: ClientProfile.api);
+  return HuyaArchiveApi(http);
+});
+
+/// One uploader's live replays, paged apart from their uploaded videos.
+final class HuyaReplayState {
+  /// A replay page.
+  const new({
+    this.uid = '',
+    this.videos = const <HuyaArchiveVideo>[],
+    this.page = 0,
+    this.hasMore = false,
+    this.loaded = false,
+    this.loading = false,
+    this.error,
+  });
+
+  /// The uploader the replays belong to.
+  final String uid;
+
+  /// The recordings, newest first.
+  final List<HuyaArchiveVideo> videos;
+
+  /// The last page read.
+  final int page;
+
+  /// Whether another page follows.
+  final bool hasMore;
+
+  /// Whether the first page answered.
+  final bool loaded;
+
+  /// Whether a page is in flight.
+  final bool loading;
+
+  /// The last failure.
+  final VodFailure? error;
+}
+
+/// One uploader's live replays.
+final class HuyaReplayController extends Notifier<HuyaReplayState> {
+  @override
+  HuyaReplayState build() => const HuyaReplayState();
+
+  /// Opens [uid]'s replays; another uid starts them over.
+  Future<void> open(String uid) async {
+    if (state.uid == uid && (state.loaded || state.loading)) return;
+    state = HuyaReplayState(uid: uid, loading: true);
+    await _load(uid, 1);
+  }
+
+  /// Reads the next page.
+  Future<void> loadMore() async {
+    if (state.loading || !state.hasMore) return;
+    await _load(state.uid, state.page + 1);
+  }
+
+  Future<void> _load(String uid, int page) async {
+    try {
+      final answer = await ref.read(huyaArchiveApiProvider).list(uid, page: page);
+      if (!ref.mounted || state.uid != uid) return;
+      final List<HuyaArchiveVideo> merged;
+      if (page == 1) {
+        merged = [...answer.videos];
+      } else {
+        merged = [...state.videos];
+        final seen = {for (final video in merged) video.id};
+        merged.addAll(answer.videos.where((video) => seen.add(video.id)));
+      }
+      state = HuyaReplayState(
+        uid: uid,
+        videos: List<HuyaArchiveVideo>.unmodifiable(merged),
+        page: page,
+        hasMore: answer.hasMore,
+        loaded: true,
+      );
+    } on Object catch (failure) {
+      if (!ref.mounted || state.uid != uid) return;
+      state = HuyaReplayState(uid: uid, videos: state.videos, page: state.page, loaded: true, error: _failure(failure));
+    }
+  }
+}
+
+/// One uploader's live replays.
+final huyaReplayProvider = NotifierProvider<HuyaReplayController, HuyaReplayState>(HuyaReplayController.new);
+
+/// The words the station completes a search to, read once per partial word.
+final FutureProviderFamily<List<String>, String> huyaSearchSuggestProvider = FutureProvider.family<List<String>, String>(
+  (ref, word) => ref.watch(huyaVideoApiProvider).suggest(word),
+);
+
+/// One fresh batch of a game's hot videos, for the home's 换一批. The station's
+/// own 换一批 rides its WebSocket recommendation service, which an anonymous
+/// HTTP client cannot reach; the same effect is drawn from the game's hot
+/// listing, one page per batch, wrapping to the first page at the end.
+final class HuyaBatchState {
+  /// A batch.
+  const new({this.channelId = '', this.videos = const <HuyaVideo>[], this.page = 0, this.loading = false, this.error});
+
+  /// The channel the batch belongs to.
+  final String channelId;
+
+  /// The videos in the batch.
+  final List<HuyaVideo> videos;
+
+  /// The listing page the batch came from; 0 before the first exchange.
+  final int page;
+
+  /// Whether an exchange is in flight.
+  final bool loading;
+
+  /// The last failure.
+  final VodFailure? error;
+}
+
+/// Exchanges one game's home feed for a fresh batch of its hot videos.
+final class HuyaBatchController extends Notifier<HuyaBatchState> {
+  @override
+  HuyaBatchState build() => const HuyaBatchState();
+
+  /// Reads the next batch for [channelId]; another channel starts at page one.
+  Future<void> exchange({required String channelId, required int setId}) async {
+    if (channelId.isEmpty || state.loading) return;
+    final sameChannel = state.channelId == channelId;
+    final kept = sameChannel ? state.videos : const <HuyaVideo>[];
+    final keptPage = sameChannel ? state.page : 0;
+    final start = keptPage + 1;
+    state = HuyaBatchState(channelId: channelId, videos: kept, page: keptPage, loading: true);
+    try {
+      final api = ref.read(huyaVideoApiProvider);
+      var answer = await api.list(channelId: channelId, setId: setId, page: start);
+      if (answer.videos.isEmpty && start > 1) {
+        answer = await api.list(channelId: channelId, setId: setId);
+      }
+      if (!ref.mounted || state.channelId != channelId) return;
+      state = HuyaBatchState(
+        channelId: channelId,
+        videos: List<HuyaVideo>.unmodifiable(answer.videos),
+        page: answer.page,
+      );
+    } on Object catch (failure) {
+      if (!ref.mounted || state.channelId != channelId) return;
+      state = HuyaBatchState(channelId: channelId, videos: kept, page: keptPage, error: _failure(failure));
+    }
+  }
+}
+
+/// The home's current exchanged batch.
+final huyaBatchProvider = NotifierProvider<HuyaBatchController, HuyaBatchState>(HuyaBatchController.new);

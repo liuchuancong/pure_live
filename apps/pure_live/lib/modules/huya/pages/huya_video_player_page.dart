@@ -11,10 +11,9 @@ import 'package:media_core/media_core.dart'
     show MediaPlayerView, PlayerConfig, PlayerHandle, PlayerHandlePlayback, PlayerKernel, PlayerTransportState;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/huya/controller/huya_video.dart';
+import 'package:pure_live/modules/huya/controller/huya_video_playback.dart';
 import 'package:pure_live/modules/live/archive/archive_progress.dart';
-import 'package:pure_live/modules/vod/controller/huya_video.dart';
-import 'package:pure_live/modules/vod/controller/huya_video_playback.dart';
-import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice, vodQualityProvider;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart' show VodGestureKind, VodGestureTip, VodSeekBar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDurationText;
@@ -89,7 +88,6 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         session: handle,
         detail: detail,
         progress: ArchiveProgress(),
-        maxHeight: _maxHeight(ref.read(vodQualityProvider)),
       );
       setState(() {});
       await _controller!.open(widget.id);
@@ -265,7 +263,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PageHeader(title: video?.title ?? context.t.vod.huya),
+            PageHeader(title: video?.title ?? context.t.common.moduleHuya),
             Expanded(
               child: failed ? _Failure(error: detail.error, onRetry: _retry) : _body(context, detail.value),
             ),
@@ -442,7 +440,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                 const Spacer(),
                 if (controller.qualities.length > 1)
                   DsMenuAnchor(
-                    semanticLabel: t.vod.huyaQuality,
+                    semanticLabel: t.huya.quality,
                     align: DsAlign.end,
                     items: [
                       for (final quality in controller.qualities)
@@ -457,12 +455,12 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                       onPressed: menu.toggle,
                       child: Text(
                         controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
-                            t.vod.huyaQuality,
+                            t.huya.quality,
                       ),
                     ),
                   ),
                 DsMenuAnchor(
-                  semanticLabel: t.vod.huyaSpeed,
+                  semanticLabel: t.huya.speed,
                   align: DsAlign.end,
                   items: [
                     for (final rate in const [0.5, 0.75, 1.0, 1.25, 1.5, 2.0])
@@ -502,7 +500,7 @@ final class _Info extends StatelessWidget {
     final brief = detail?.video.brief ?? video.brief;
     final tags = detail?.tags ?? const <String>[];
     final lines = [
-      if (video.playCount > 0) '${AudienceFormat.format(video.playCount)} ${t.vod.views}',
+      if (video.playCount > 0) '${AudienceFormat.format(video.playCount)} ${t.huya.views}',
       if (video.publishedAt case final at?) _date(at),
     ];
     return Column(
@@ -529,7 +527,7 @@ final class _Info extends StatelessWidget {
                   GestureDetector(
                     onTap: video.uploaderId.isEmpty ? null : () => onUploader(video.uploaderId),
                     child: Text(
-                      video.uploaderName.isEmpty ? t.vod.huya : video.uploaderName,
+                      video.uploaderName.isEmpty ? t.common.moduleHuya : video.uploaderName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.bodyStrong.copyWith(
@@ -590,7 +588,7 @@ final class _Related extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-        Text(t.vod.huyaRelated, style: theme.typography.title.copyWith(color: colors.text)),
+        Text(t.huya.related, style: theme.typography.title.copyWith(color: colors.text)),
         if (videos.isEmpty && loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: DsSpace.s16),
@@ -616,22 +614,13 @@ final class _Failure extends StatelessWidget {
     return Center(
       child: DsEmptyState(
         icon: const DsIcon(DsIcons.film),
-        title: Text(t.vod.errorTitle),
-        description: Text(error?.toString() ?? t.vod.noResultsDescription),
+        title: Text(t.huya.errorTitle),
+        description: Text(error?.toString() ?? t.huya.noResultsDescription),
         actions: [DsButton(variant: DsButtonVariant.secondary, onPressed: onRetry, child: Text(t.common.retry))],
       ),
     );
   }
 }
-
-/// The starts' tallest rendition, from the module's one starting-quality
-/// preference: the station's ladder speaks pixels where Bilibili speaks qn.
-int _maxHeight(VodQualityChoice choice) => switch (choice) {
-  VodQualityChoice.p720 => 720,
-  VodQualityChoice.p1080 || VodQualityChoice.p1080Plus || VodQualityChoice.p1080P60 => 1080,
-  VodQualityChoice.p4k || VodQualityChoice.pHdr || VodQualityChoice.pDolby => 2160,
-  VodQualityChoice.p8k => 4320,
-};
 
 /// The stand-in listenable the stage builds with before the controller
 /// exists: never notifies, so the first frame is a dark stage and nothing

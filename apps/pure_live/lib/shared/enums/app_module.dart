@@ -16,6 +16,9 @@ enum AppModule {
   /// Video on demand (bilibili and friends).
   vod(DsIcons.film, Color(0xFFFB7299)),
 
+  /// The Huya video site, its own module beside the Bilibili station.
+  huya(DsIcons.play, Color(0xFFFF9600)),
+
   /// The music module.
   music(DsIcons.music, Color(0xFFFF9F2E)),
 
@@ -36,6 +39,7 @@ enum AppModule {
     AppModule.live => t.common.moduleLive,
     AppModule.iptv => t.common.moduleIptv,
     AppModule.vod => t.common.moduleVod,
+    AppModule.huya => t.common.moduleHuya,
     AppModule.music => t.common.moduleMusic,
     AppModule.hongguo => t.common.moduleHongguo,
   };

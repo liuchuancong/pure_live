@@ -6,9 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/vod/controller/huya_video.dart';
-import 'package:pure_live/modules/vod/widgets/huya_widgets.dart';
-import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
+import 'package:pure_live/layouts/page_head_actions.dart' show publishPageHeadActions;
+import 'package:pure_live/layouts/page_layout_scope.dart' show PageLayoutScope;
+import 'package:pure_live/modules/huya/controller/huya_video.dart';
+import 'package:pure_live/modules/huya/widgets/huya_widgets.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The station's three surfaces: its home shelves, the channel listings and
@@ -17,17 +18,18 @@ enum HuyaView {
   /// The home's shelves.
   home,
 
-  /// The channel listings.
-  browse,
+  /// The channel directory.
+  channels,
 
   /// The boards.
   rank;
 
-  /// The view's words.
-  String label(Translations t) => switch (this) {
-    HuyaView.home => t.vod.huyaHome,
-    HuyaView.browse => t.vod.huyaBrowse,
-    HuyaView.rank => t.vod.huyaRank,
+  /// The menu entry that opens this view: the rail's row the page stands in
+  /// for, and the owner the shell shows this page's verbs under.
+  NavigationItem get entry => switch (this) {
+    HuyaView.home => NavigationItem.huyaHome,
+    HuyaView.channels => NavigationItem.huyaChannels,
+    HuyaView.rank => NavigationItem.huyaRank,
   };
 }
 
@@ -49,6 +51,14 @@ final class _HuyaVideoPageState extends ConsumerState<HuyaVideoPage> {
   final Map<HuyaView, ScrollController> _scrolls = {};
 
   @override
+  void didUpdateWidget(HuyaVideoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The shell keeps this state while the rail moves between the module's
+    // entries, so a new entry moves the page to its view.
+    if (widget.view != _view) setState(() => _view = widget.view);
+  }
+
+  @override
   void dispose() {
     for (final controller in _scrolls.values) {
       controller.dispose();
@@ -59,12 +69,6 @@ final class _HuyaVideoPageState extends ConsumerState<HuyaVideoPage> {
 
   ScrollController _scrollOf(HuyaView view) => _scrolls.putIfAbsent(view, ScrollController.new);
 
-  void _select(HuyaView view) {
-    ref.read(huyaInlineSearchProvider.notifier).clear();
-    if (view == _view) return;
-    setState(() => _view = view);
-  }
-
   void _openVideo(String id) {
     if (id.isEmpty) return;
     unawaited(context.push('/huya/$id'));
@@ -74,7 +78,7 @@ final class _HuyaVideoPageState extends ConsumerState<HuyaVideoPage> {
     switch (_view) {
       case HuyaView.home:
         await ref.read(huyaVideoHomeProvider.notifier).refresh();
-      case HuyaView.browse:
+      case HuyaView.channels:
         await ref.read(huyaBrowseProvider.notifier).refresh();
       case HuyaView.rank:
         await ref.read(huyaRankProvider.notifier).refresh();
@@ -85,109 +89,159 @@ final class _HuyaVideoPageState extends ConsumerState<HuyaVideoPage> {
   Widget build(BuildContext context) {
     final t = context.t;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final word = ref.watch(huyaInlineSearchProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: VodFeedToolbar(
-            owner: NavigationItem.huyaVideo,
-            tabs: DsTabs<HuyaView>(
-              value: _view,
-              onChanged: _select,
-              style: kVodFeedTabsStyle,
-              tabs: [for (final view in HuyaView.values) DsTab(value: view, label: Text(view.label(t)))],
-            ),
-            showLayout: false,
-            onRefresh: _refresh,
-          ),
+        Builder(
+          builder: (context) {
+            final narrow = PageLayoutScope.isNarrow(context);
+            final refresh = DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              semanticLabel: t.common.refresh,
+              onPressed: () => unawaited(_refresh()),
+              icon: const DsIcon(DsIcons.refreshCw, size: 16),
+            );
+            // The rail is the view switcher now, so the page wears no tab row
+            // of its own — only its reload. A narrow page hands it to the
+            // shell's head under the entry that opened it; a wide one wears it
+            // at its own top, the feeds' measure.
+            if (narrow) {
+              publishPageHeadActions(context, ref, widget.view.entry, [refresh]);
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+              child: SizedBox(height: 44, child: Row(children: [const Spacer(), refresh])),
+            );
+          },
         ),
         Expanded(
-          child: word == null
-              ? switch (_view) {
-                  HuyaView.home => _HomeView(
-                    scrollController: _scrollOf(HuyaView.home),
-                    onOpen: _openVideo,
-                    onMore: (channelId) {
-                      _select(HuyaView.browse);
-                      unawaited(ref.read(huyaBrowseProvider.notifier).walkInto(channelId));
-                    },
-                  ),
-                  HuyaView.browse => _BrowseView(scrollController: _scrollOf(HuyaView.browse), onOpen: _openVideo),
-                  HuyaView.rank => _RankView(scrollController: _scrollOf(HuyaView.rank), onOpen: _openVideo),
-                }
-              : _SearchView(word: word, onOpen: _openVideo),
+          child: switch (_view) {
+            HuyaView.home => _HomeView(scrollController: _scrollOf(HuyaView.home), onOpen: _openVideo),
+            HuyaView.channels => _ChannelsView(scrollController: _scrollOf(HuyaView.channels), onOpen: _openVideo),
+            HuyaView.rank => _RankView(scrollController: _scrollOf(HuyaView.rank), onOpen: _openVideo),
+          },
         ),
       ],
     );
   }
 }
 
-/// The station's home: one shelf per channel the station picked, each with
-/// the way into its whole listing.
-final class _HomeView extends ConsumerWidget {
-  const _HomeView({required this.scrollController, required this.onOpen, required this.onMore});
+/// The station's home: a 游戏分类 tab strip over one card feed — the module's
+/// 热门, read the way the live module reads its popular page. 推荐 is the
+/// station's recommended videos merged with its shelves; a game tab narrows
+/// the feed to that shelf.
+final class _HomeView extends ConsumerStatefulWidget {
+  const _HomeView({required this.scrollController, required this.onOpen});
 
   final ScrollController scrollController;
   final ValueChanged<String> onOpen;
-  final ValueChanged<String> onMore;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HomeView> createState() => _HomeViewState();
+}
+
+final class _HomeViewState extends ConsumerState<_HomeView> {
+  /// The selected 专区's index; null is 推荐, the whole home feed.
+  int? _shelf;
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final state = ref.watch(huyaVideoHomeProvider);
     final controller = ref.read(huyaVideoHomeProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) unawaited(controller.open());
+      if (mounted) unawaited(controller.open());
     });
-    if (state.home == null) {
-      if (state.error case final error?) {
-        return Center(
-          child: DsEmptyState(
-            icon: const DsIcon(DsIcons.film),
-            title: Text(t.vod.errorTitle),
-            description: Text(error.message),
-            actions: [
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                onPressed: () => unawaited(controller.refresh()),
-                child: Text(t.common.retry),
+    final home = state.home;
+    final batch = ref.watch(huyaBatchProvider);
+    final batchController = ref.read(huyaBatchProvider.notifier);
+    final shelves = home?.shelves ?? const <HuyaVideoShelf>[];
+    final selected = (_shelf != null && _shelf! >= 0 && _shelf! < shelves.length) ? _shelf : null;
+    final shelf = selected == null ? null : shelves[selected];
+    final List<HuyaVideo> videos;
+    if (shelf == null) {
+      final seen = <String>{};
+      videos = <HuyaVideo>[
+        if (home != null)
+          for (final video in [...home.recommended, for (final item in home.shelves) ...item.videos])
+            if (seen.add(video.id)) video,
+      ];
+    } else if (batch.channelId == shelf.channelId && batch.videos.isNotEmpty) {
+      videos = batch.videos;
+    } else {
+      videos = shelf.videos;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (shelves.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+            child: SizedBox(
+              height: 40,
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: shelves.length + 1,
+                      separatorBuilder: (context, index) => const SizedBox(width: DsSpace.s8),
+                      itemBuilder: (context, index) {
+                        final recommend = index == 0;
+                        final chosen = recommend ? selected == null : selected == index - 1;
+                        return DsChip(
+                          label: Text(recommend ? t.huya.recommend : shelves[index - 1].title),
+                          selected: chosen,
+                          onChanged: (on) {
+                            if (on) setState(() => _shelf = recommend ? null : index - 1);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  // 换一批 belongs to a game's tab: 推荐 has no channel to draw
+                  // a batch from.
+                  if (shelf != null && shelf.channelId.isNotEmpty)
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: batch.loading
+                          ? null
+                          : () => unawaited(batchController.exchange(channelId: shelf.channelId, setId: shelf.setId)),
+                      leading: const DsIcon(DsIcons.refreshCw, size: 16),
+                      child: Text(t.huya.exchange),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
-        );
-      }
-      return const Center(child: DsSpinner());
-    }
-    final shelves = state.home!.shelves;
-    if (shelves.isEmpty) {
-      return Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.film), title: Text(t.vod.huyaHomeEmpty)),
-      );
-    }
-    return ListView.separated(
-      controller: scrollController,
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
-      itemCount: shelves.length,
-      separatorBuilder: (context, index) => const SizedBox(height: DsSpace.s24),
-      itemBuilder: (context, index) {
-        final shelf = shelves[index];
-        return HuyaShelf(
-          shelf: shelf,
-          onOpen: onOpen,
-          onMore: shelf.channelId.isEmpty ? null : () => onMore(shelf.channelId),
-        );
-      },
+        Expanded(
+          child: HuyaVideoGrid(
+            scrollController: widget.scrollController,
+            videos: videos,
+            loading: state.loading || (home == null && state.error == null) || (batch.loading && videos.isEmpty),
+            hasMore: false,
+            onLoadMore: () async {},
+            onOpen: widget.onOpen,
+            error: state.error?.message,
+            onRetry: () => unawaited(controller.refresh()),
+            onRefresh: controller.refresh,
+            emptyTitle: t.huya.homeEmpty,
+          ),
+        ),
+      ],
     );
   }
 }
 
 /// The station's listings: the group strip, the group's own channels and the
 /// order, over the paged card grid.
-final class _BrowseView extends ConsumerWidget {
-  const _BrowseView({required this.scrollController, required this.onOpen});
+final class _ChannelsView extends ConsumerWidget {
+  const _ChannelsView({required this.scrollController, required this.onOpen});
 
   final ScrollController scrollController;
   final ValueChanged<String> onOpen;
@@ -206,7 +260,7 @@ final class _BrowseView extends ConsumerWidget {
         return Center(
           child: DsEmptyState(
             icon: const DsIcon(DsIcons.layoutList),
-            title: Text(t.vod.errorTitle),
+            title: Text(t.huya.errorTitle),
             description: Text(error.message),
             actions: [
               DsButton(
@@ -265,7 +319,7 @@ final class _BrowseView extends ConsumerWidget {
               ),
               DsSegmentedControl<HuyaVideoOrder>(
                 value: state.order,
-                semanticLabel: t.vod.sort,
+                semanticLabel: t.huya.sort,
                 segments: [
                   for (final order in HuyaVideoOrder.values)
                     DsSegment(value: order, label: Text(huyaOrderLabel(t, order))),
@@ -286,7 +340,7 @@ final class _BrowseView extends ConsumerWidget {
             error: list.error?.message,
             onRetry: () => unawaited(controller.refresh()),
             onRefresh: controller.refresh,
-            emptyDescription: t.vod.regionEmptyDescription,
+            emptyDescription: t.huya.emptyDescription,
           ),
         ),
       ],
@@ -317,7 +371,7 @@ final class _RankView extends ConsumerWidget {
         return Center(
           child: DsEmptyState(
             icon: const DsIcon(DsIcons.trophy),
-            title: Text(t.vod.errorTitle),
+            title: Text(t.huya.errorTitle),
             description: Text(error.message),
             actions: [
               DsButton(
@@ -346,7 +400,7 @@ final class _RankView extends ConsumerWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, 0),
             child: Text(
-              t.vod.huyaRankUpdated(time: _stamp(updated)),
+              t.huya.rankUpdated(time: _stamp(updated)),
               style: theme.typography.caption.copyWith(color: colors.textMuted),
             ),
           ),
@@ -369,62 +423,11 @@ final class _RankView extends ConsumerWidget {
   }
 }
 
-/// The answer to the shell's search field: the word as a callout with the way
-/// back to the station's own content, over the result grid.
-final class _SearchView extends ConsumerWidget {
-  const _SearchView({required this.word, required this.onOpen});
-
-  final String word;
-  final ValueChanged<String> onOpen;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final state = ref.watch(huyaSearchProvider);
-    final controller = ref.read(huyaSearchProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted && state.query != word) unawaited(controller.search(word));
-    });
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
-          child: DsAlert(
-            title: Text(t.vod.huyaSearchResults(count: state.total, word: word)),
-            action: DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              onPressed: () => ref.read(huyaInlineSearchProvider.notifier).clear(),
-              leading: const DsIcon(DsIcons.x, size: 14),
-              child: Text(t.vod.huyaBackToBrowse),
-            ),
-          ),
-        ),
-        Expanded(
-          child: HuyaVideoGrid(
-            videos: state.videos,
-            loading: state.loading,
-            hasMore: false,
-            onLoadMore: () async {},
-            onOpen: onOpen,
-            error: state.error?.message,
-            onRetry: () => unawaited(controller.search(word)),
-            emptyTitle: t.vod.huyaSearchEmpty,
-            emptyDescription: t.vod.huyaSearchEmptyDescription,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// One order's words.
 String huyaOrderLabel(Translations t, HuyaVideoOrder order) => switch (order) {
-  HuyaVideoOrder.hot => t.vod.huyaOrderHot,
-  HuyaVideoOrder.new_ => t.vod.huyaOrderNew,
-  HuyaVideoOrder.most => t.vod.huyaOrderMost,
+  HuyaVideoOrder.hot => t.huya.orderHot,
+  HuyaVideoOrder.new_ => t.huya.orderNew,
+  HuyaVideoOrder.most => t.huya.orderMost,
 };
 
 /// A wall clock the station prints, as the board's own line reads it.

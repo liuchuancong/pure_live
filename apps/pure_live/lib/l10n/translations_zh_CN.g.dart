@@ -48,6 +48,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$favorites$zh_CN favorites = Translations$favorites$zh_CN.internal(_root);
 	late final Translations$history$zh_CN history = Translations$history$zh_CN.internal(_root);
 	late final Translations$hongguo$zh_CN hongguo = Translations$hongguo$zh_CN.internal(_root);
+	late final Translations$huya$zh_CN huya = Translations$huya$zh_CN.internal(_root);
 	late final Translations$iptv$zh_CN iptv = Translations$iptv$zh_CN.internal(_root);
 	late final Translations$multiview$zh_CN multiview = Translations$multiview$zh_CN.internal(_root);
 	late final Translations$music$zh_CN music = Translations$music$zh_CN.internal(_root);
@@ -1278,6 +1279,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '红果短剧'
 	String get moduleHongguo => '红果短剧';
 
+	/// zh-CN: '虎牙视频'
+	String get moduleHuya => '虎牙视频';
+
 	/// zh-CN: '共 {count: int} 项'
 	String previewCount({required int count}) => '共 ${count} 项';
 
@@ -2438,6 +2442,123 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '第 {index: int} 话'
 	String episodeNo({required int index}) => '第 ${index} 话';
+}
+
+// Path: huya
+class Translations$huya$zh_CN {
+	Translations$huya$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '首页'
+	String get home => '首页';
+
+	/// zh-CN: '分类'
+	String get browse => '分类';
+
+	/// zh-CN: '频道'
+	String get channels => '频道';
+
+	/// zh-CN: '排行榜'
+	String get rank => '排行榜';
+
+	/// zh-CN: '搜索虎牙视频'
+	String get searchHint => '搜索虎牙视频';
+
+	/// zh-CN: '最热'
+	String get orderHot => '最热';
+
+	/// zh-CN: '最新'
+	String get orderNew => '最新';
+
+	/// zh-CN: '最多播放'
+	String get orderMost => '最多播放';
+
+	/// zh-CN: '查看全部'
+	String get more => '查看全部';
+
+	/// zh-CN: '相关视频'
+	String get related => '相关视频';
+
+	/// zh-CN: '直播中'
+	String get live => '直播中';
+
+	/// zh-CN: '找到 {count: int} 个与“{word: String}”相关的视频'
+	String searchResults({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频';
+
+	/// zh-CN: '没有找到相关视频'
+	String get searchEmpty => '没有找到相关视频';
+
+	/// zh-CN: '换个关键词再试试。'
+	String get searchEmptyDescription => '换个关键词再试试。';
+
+	/// zh-CN: '返回浏览'
+	String get backToBrowse => '返回浏览';
+
+	/// zh-CN: '更新于 {time: String}'
+	String rankUpdated({required String time}) => '更新于 ${time}';
+
+	/// zh-CN: '首页暂时没有内容。'
+	String get homeEmpty => '首页暂时没有内容。';
+
+	/// zh-CN: '清晰度'
+	String get quality => '清晰度';
+
+	/// zh-CN: '倍速'
+	String get speed => '倍速';
+
+	/// zh-CN: '视频没有加载出来'
+	String get errorTitle => '视频没有加载出来';
+
+	/// zh-CN: '换个关键词再试试。'
+	String get noResultsDescription => '换个关键词再试试。';
+
+	/// zh-CN: '播放'
+	String get views => '播放';
+
+	/// zh-CN: '视频'
+	String get videoCount => '视频';
+
+	/// zh-CN: '粉丝'
+	String get fans => '粉丝';
+
+	/// zh-CN: '排序'
+	String get sort => '排序';
+
+	/// zh-CN: '这个频道暂时没有视频。'
+	String get emptyDescription => '这个频道暂时没有视频。';
+
+	/// zh-CN: '视频'
+	String get tabVideos => '视频';
+
+	/// zh-CN: '直播回放'
+	String get tabReplays => '直播回放';
+
+	/// zh-CN: 'TA 还没有直播回放'
+	String get replayEmpty => 'TA 还没有直播回放';
+
+	/// zh-CN: '热门频道'
+	String get hotChannels => '热门频道';
+
+	/// zh-CN: '试试这些'
+	String get suggestTitle => '试试这些';
+
+	/// zh-CN: '搜索'
+	String get search => '搜索';
+
+	/// zh-CN: '素材库'
+	String get material => '素材库';
+
+	/// zh-CN: '直播'
+	String get liveTab => '直播';
+
+	/// zh-CN: '推荐'
+	String get recommend => '推荐';
+
+	/// zh-CN: '换一批'
+	String get exchange => '换一批';
 }
 
 // Path: iptv
@@ -13640,72 +13761,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '共 {count: int} 个'
 	String partsCount({required int count}) => '共 ${count} 个';
-
-	/// zh-CN: '虎牙视频'
-	String get huya => '虎牙视频';
-
-	/// zh-CN: '首页'
-	String get huyaHome => '首页';
-
-	/// zh-CN: '分类'
-	String get huyaBrowse => '分类';
-
-	/// zh-CN: '排行'
-	String get huyaRank => '排行';
-
-	/// zh-CN: '搜索虎牙视频'
-	String get huyaSearchHint => '搜索虎牙视频';
-
-	/// zh-CN: '全部'
-	String get huyaAll => '全部';
-
-	/// zh-CN: '最热'
-	String get huyaOrderHot => '最热';
-
-	/// zh-CN: '最新'
-	String get huyaOrderNew => '最新';
-
-	/// zh-CN: '最多播放'
-	String get huyaOrderMost => '最多播放';
-
-	/// zh-CN: '频道'
-	String get huyaChannels => '频道';
-
-	/// zh-CN: '查看全部'
-	String get huyaMore => '查看全部';
-
-	/// zh-CN: '相关视频'
-	String get huyaRelated => '相关视频';
-
-	/// zh-CN: 'TA 的视频'
-	String get huyaUploaderVideos => 'TA 的视频';
-
-	/// zh-CN: '直播中'
-	String get huyaLive => '直播中';
-
-	/// zh-CN: '找到 {count: int} 个与“{word: String}”相关的视频'
-	String huyaSearchResults({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频';
-
-	/// zh-CN: '没有找到相关视频'
-	String get huyaSearchEmpty => '没有找到相关视频';
-
-	/// zh-CN: '换个关键词再试试。'
-	String get huyaSearchEmptyDescription => '换个关键词再试试。';
-
-	/// zh-CN: '返回浏览'
-	String get huyaBackToBrowse => '返回浏览';
-
-	/// zh-CN: '更新于 {time: String}'
-	String huyaRankUpdated({required String time}) => '更新于 ${time}';
-
-	/// zh-CN: '首页暂时没有内容。'
-	String get huyaHomeEmpty => '首页暂时没有内容。';
-
-	/// zh-CN: '清晰度'
-	String get huyaQuality => '清晰度';
-
-	/// zh-CN: '倍速'
-	String get huyaSpeed => '倍速';
 }
 
 // Path: wallpaper
@@ -15059,6 +15114,7 @@ extension on Translations {
 			'common.downloadRemoveFromList' => '从列表移除',
 			'common.pipUnavailable' => '当前设备或播放内核无法进入画中画。',
 			'common.moduleHongguo' => '红果短剧',
+			'common.moduleHuya' => '虎牙视频',
 			'common.previewCount' => ({required int count}) => '共 ${count} 项',
 			'common.previewPrevious' => '上一项',
 			'common.previewNext' => '下一项',
@@ -15437,6 +15493,42 @@ extension on Translations {
 			'hongguo.reservationsUpcomingCount' => ({required int count}) => '${count} 部待播',
 			'hongguo.searchSuggestions' => '搜索建议',
 			'hongguo.episodeNo' => ({required int index}) => '第 ${index} 话',
+			'huya.home' => '首页',
+			'huya.browse' => '分类',
+			'huya.channels' => '频道',
+			'huya.rank' => '排行榜',
+			'huya.searchHint' => '搜索虎牙视频',
+			'huya.orderHot' => '最热',
+			'huya.orderNew' => '最新',
+			'huya.orderMost' => '最多播放',
+			'huya.more' => '查看全部',
+			'huya.related' => '相关视频',
+			'huya.live' => '直播中',
+			'huya.searchResults' => ({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频',
+			'huya.searchEmpty' => '没有找到相关视频',
+			'huya.searchEmptyDescription' => '换个关键词再试试。',
+			'huya.backToBrowse' => '返回浏览',
+			'huya.rankUpdated' => ({required String time}) => '更新于 ${time}',
+			'huya.homeEmpty' => '首页暂时没有内容。',
+			'huya.quality' => '清晰度',
+			'huya.speed' => '倍速',
+			'huya.errorTitle' => '视频没有加载出来',
+			'huya.noResultsDescription' => '换个关键词再试试。',
+			'huya.views' => '播放',
+			'huya.videoCount' => '视频',
+			'huya.fans' => '粉丝',
+			'huya.sort' => '排序',
+			'huya.emptyDescription' => '这个频道暂时没有视频。',
+			'huya.tabVideos' => '视频',
+			'huya.tabReplays' => '直播回放',
+			'huya.replayEmpty' => 'TA 还没有直播回放',
+			'huya.hotChannels' => '热门频道',
+			'huya.suggestTitle' => '试试这些',
+			'huya.search' => '搜索',
+			'huya.material' => '素材库',
+			'huya.liveTab' => '直播',
+			'huya.recommend' => '推荐',
+			'huya.exchange' => '换一批',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -15503,6 +15595,8 @@ extension on Translations {
 			'iptv.importInvalid' => '内容不是有效的播放列表',
 			'iptv.importNameRequired' => '请输入播放列表名称',
 			'iptv.importNetworkFailed' => '网络请求失败，请检查地址或代理',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importPlaylist' => '导入播放列表',
 			'iptv.importPlaylistDescription' => '支持 M3U/M3U8/TXT 地址、文件或粘贴的文本。',
 			'iptv.importSkipped' => ({required String name, required int count}) => '已导入“${name}”，跳过 ${count} 项',
@@ -15540,8 +15634,6 @@ extension on Translations {
 			'iptv.searchSources' => '搜索名称或地址…',
 			'iptv.noChannelMatch' => '没有匹配的频道',
 			'iptv.noSourceMatch' => '没有匹配的来源',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.sourceCount' => ({required int count}) => '共 ${count} 项',
 			'iptv.colChannel' => '频道',
 			'iptv.colGroup' => '分组',
@@ -16017,6 +16109,8 @@ extension on Translations {
 			'music.downloadIncludeTranslation' => '歌词包含翻译',
 			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
 			'music.downloadIncludeRomanization' => '歌词包含音译',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadIncludeRomanizationDesc' => '下载的歌词文件与内嵌歌词一并写入音译。',
 			'music.downloadWriteLyric' => '保存歌词文件',
 			'music.downloadWriteLyricDesc' => '在音频文件旁写一个同名 .lrc。',
@@ -16054,8 +16148,6 @@ extension on Translations {
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
 			'music.localRescan' => '重新扫描',
 			'music.localFolders' => '音乐文件夹',
-			_ => null,
-		} ?? switch (path) {
 			'music.localRemoveFolder' => '移除文件夹',
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
@@ -16531,6 +16623,8 @@ extension on Translations {
 			'recorder.stateProcessing' => '处理中',
 			'recorder.warningJoinFailed' => '合并失败，已保留分段；可打开文件夹检查',
 			'recorder.warningTranscodeFailed' => '转码失败，已保留未转码的 MP4',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.warningFinalizeFailed' => '收尾处理失败，录制文件已保留',
 			'recorder.warningStaleProcessing' => '上次合并/转码未完成，请检查任务目录',
 			'recorder.warningDiskLow' => '磁盘余量不足，已停止录制；分段已保留',
@@ -16568,8 +16662,6 @@ extension on Translations {
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
@@ -17045,6 +17137,8 @@ extension on Translations {
 			'search.webSearchSelectPlatform' => '先选择一个平台再网页搜索',
 			'search.webSearchUnavailable' => '该平台没有网页搜索',
 			'search.webSearchUnsupportedTitle' => '当前平台不支持内嵌网页',
+			_ => null,
+		} ?? switch (path) {
 			'search.webSearchUnsupportedDescription' => '可以在系统浏览器中打开这个搜索页。',
 			'search.webSearchOpenExternal' => '在浏览器中打开',
 			'search.webSearchExternalFailed' => '无法打开系统浏览器',
@@ -17082,8 +17176,6 @@ extension on Translations {
 			'search.partialFailureScope' => '调整范围',
 			'search.webView2MissingTitle' => '缺少内嵌网页组件',
 			'search.webView2MissingBody' => '当前 Windows 没有 WebView2，网页搜索可以改用系统浏览器，或先安装 WebView2。',
-			_ => null,
-		} ?? switch (path) {
 			'search.webView2Download' => '下载 WebView2',
 			'search.webVersion' => '打开网页版',
 			'search.webVersionTitle' => '这里没有内置列表',
@@ -17559,6 +17651,8 @@ extension on Translations {
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
 			'settings.fontManagerDownloadAndUse' => '下载并使用',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerDownloading' => ({required Object percent}) => '下载中 ${percent}%',
 			'settings.fontManagerDownloadFailed' => '下载失败',
 			'settings.fontManagerDownloaded' => '已下载',
@@ -17596,8 +17690,6 @@ extension on Translations {
 			'settings.textScaleDescription' => '按比例缩放全应用文字；100% 为原始大小。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheDescription' => '图片按用途分别缓存，容量、策略与清理。',
 			'settings.cacheSize' => '当前缓存大小',
 			'settings.cacheRefresh' => '刷新',
@@ -18073,6 +18165,8 @@ extension on Translations {
 			'settings.updateAvailable' => ({required Object version}) => '可更新到 ${version}',
 			'settings.upToDate' => '已是最新版本',
 			'settings.updateCheckFailed' => '检查更新失败',
+			_ => null,
+		} ?? switch (path) {
 			'settings.viewUpdate' => '查看更新',
 			'settings.updatePanelTitle' => '版本更新',
 			'settings.updateBuild' => ({required Object build}) => '构建 ${build}',
@@ -18110,8 +18204,6 @@ extension on Translations {
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
@@ -18587,6 +18679,8 @@ extension on Translations {
 			'settings.lanSyncPairAccepted' => '已配对',
 			'settings.lanSyncPairRejected' => '已拒绝配对',
 			'settings.lanSyncPairExpired' => '配对请求已过期，请重新发起',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncPairMismatch' => '两台设备密钥不一致，配对已终止。该网络可能存在中间人。',
 			'settings.lanSyncPairCountdown' => ({required int seconds}) => '${seconds} 秒后过期',
 			'settings.lanSyncTrustError' => '这台设备的身份与配对记录不符，已拒绝连接。',
@@ -18624,8 +18718,6 @@ extension on Translations {
 			'settings.lanSyncScopeSecretsOff' => '要同步凭据，先在「备份与恢复」里打开「包含账号凭据」。',
 			'settings.lanSyncConflictPolicyDesc' => '两台设备改了同一项时，自动保留哪一方；无法自动判定的会列在下方等你决定。',
 			'settings.lanSyncGrants' => '授权',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncGrantsTitle' => ({required String name}) => '「${name}」的授权',
 			'settings.lanSyncGrantsIntro' => '按内容决定这台设备能从本机读取什么、能改动本机的什么。',
 			'settings.lanSyncGrantAll' => '全部允许',
@@ -19101,6 +19193,8 @@ extension on Translations {
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
 			'vod.downloadClearFinished' => '清除已完成',
+			_ => null,
+		} ?? switch (path) {
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',
 			'vod.downloadFilterEmpty' => '这个筛选下没有任务',
@@ -19138,32 +19232,8 @@ extension on Translations {
 			'vod.share' => '分享',
 			'vod.linkCopied' => '链接已复制',
 			'vod.episodeNo' => ({required String index}) => '第 ${index} 话',
-			_ => null,
-		} ?? switch (path) {
 			'vod.partsPlaylist' => '播放列表',
 			'vod.partsCount' => ({required int count}) => '共 ${count} 个',
-			'vod.huya' => '虎牙视频',
-			'vod.huyaHome' => '首页',
-			'vod.huyaBrowse' => '分类',
-			'vod.huyaRank' => '排行',
-			'vod.huyaSearchHint' => '搜索虎牙视频',
-			'vod.huyaAll' => '全部',
-			'vod.huyaOrderHot' => '最热',
-			'vod.huyaOrderNew' => '最新',
-			'vod.huyaOrderMost' => '最多播放',
-			'vod.huyaChannels' => '频道',
-			'vod.huyaMore' => '查看全部',
-			'vod.huyaRelated' => '相关视频',
-			'vod.huyaUploaderVideos' => 'TA 的视频',
-			'vod.huyaLive' => '直播中',
-			'vod.huyaSearchResults' => ({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频',
-			'vod.huyaSearchEmpty' => '没有找到相关视频',
-			'vod.huyaSearchEmptyDescription' => '换个关键词再试试。',
-			'vod.huyaBackToBrowse' => '返回浏览',
-			'vod.huyaRankUpdated' => ({required String time}) => '更新于 ${time}',
-			'vod.huyaHomeEmpty' => '首页暂时没有内容。',
-			'vod.huyaQuality' => '清晰度',
-			'vod.huyaSpeed' => '倍速',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

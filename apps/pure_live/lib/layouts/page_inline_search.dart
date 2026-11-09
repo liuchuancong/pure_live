@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
+import 'package:pure_live/modules/huya/controller/huya_video.dart' show huyaInlineSearchProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -11,7 +12,6 @@ import 'package:pure_live/modules/live/multiview/multiview.dart' show multiviewS
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
-import 'package:pure_live/modules/vod/controller/huya_video.dart' show huyaInlineSearchProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -74,16 +74,21 @@ PageInlineSearch? pageInlineSearch(
     case AppModule.vod:
       // The station's own search page answers; it has its own field.
       if (page == NavigationItem.vodSearch) return null;
-      // The Huya page searches its own site in place, over whichever shelf,
-      // listing or board is on screen.
-      if (page == NavigationItem.huyaVideo) {
-        return (hint: t.vod.huyaSearchHint, take: (word) => ref.read(huyaInlineSearchProvider.notifier).hand(word));
-      }
       return (
         hint: t.vod.searchHint,
         take: (word) {
           ref.read(vodPendingSearchProvider.notifier).hand(word);
           openPage(NavigationItem.vodSearch);
+        },
+      );
+    case AppModule.huya:
+      // The station's own search page answers; it has its own field.
+      if (page == NavigationItem.huyaSearch) return null;
+      return (
+        hint: t.huya.searchHint,
+        take: (word) {
+          ref.read(huyaInlineSearchProvider.notifier).hand(word);
+          openPage(NavigationItem.huyaSearch);
         },
       );
     case AppModule.music:

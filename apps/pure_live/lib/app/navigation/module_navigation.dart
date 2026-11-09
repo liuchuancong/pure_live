@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart' show Widget;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart';
+import 'package:pure_live/modules/huya/huya.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -158,17 +159,11 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   ),
   AppModule.vod: ModuleNavigation(
     // The station's rail in the house measure — content first, tools under:
-    // 主页 / 分区 / 影视 / 直播, then the second video site, then 搜索 / 个人.
+    // 主页 / 分区 / 影视 / 直播, then 搜索 / 个人.
     // (The reference lists 搜索 first; every module here puts its surfaces
     // ahead of its tools.)
     menu: [
-      [
-        NavigationItem.vod,
-        NavigationItem.vodRegions,
-        NavigationItem.vodPgc,
-        NavigationItem.vodLive,
-        NavigationItem.huyaVideo,
-      ],
+      [NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc, NavigationItem.vodLive],
       [NavigationItem.vodSearch, NavigationItem.vodPersonal, NavigationItem.vodDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.vod,
@@ -183,6 +178,28 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
       _systemGroup,
       _aboutGroup,
     ],
+  ),
+  AppModule.huya: ModuleNavigation(
+    // The station's own header, entry for entry: 首页 · 频道 · 素材库 · 直播 ·
+    // 排行榜, then its search and the log console. The first four are the
+    // site's top bar; 素材库 and 直播 open the station's own web pages in the
+    // in-app view, because neither is an anonymously readable listing.
+    menu: [
+      [
+        NavigationItem.huyaHome,
+        NavigationItem.huyaChannels,
+        NavigationItem.huyaMaterial,
+        NavigationItem.huyaLive,
+        NavigationItem.huyaRank,
+      ],
+      [NavigationItem.huyaSearch, NavigationItem.logs],
+    ],
+    landing: NavigationItem.huyaHome,
+    // Huya shares the app-wide groups only. The Bilibili station's account and
+    // playback pages are not this module's, and Huya has no settings page of
+    // its own yet — its player opens at the station's rendition ladder and the
+    // viewer switches quality in the player's own menu.
+    settingsGroups: [_sharedAppearanceGroup, _sharedPlaybackGroup, _systemGroup, _aboutGroup],
   ),
   AppModule.music: ModuleNavigation(
     // Two blocks above the tools: what the source suggests — 推荐 and 精选 —
@@ -290,7 +307,12 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.vodSearch: VodSearchPage.new,
   NavigationItem.vodPersonal: VodPersonalPage.new,
   NavigationItem.vodDownloads: VodDownloadsPage.new,
-  NavigationItem.huyaVideo: HuyaVideoPage.new,
+  NavigationItem.huyaHome: HuyaVideoPage.new,
+  NavigationItem.huyaChannels: () => const HuyaVideoPage(view: HuyaView.channels),
+  NavigationItem.huyaRank: () => const HuyaVideoPage(view: HuyaView.rank),
+  NavigationItem.huyaMaterial: HuyaMaterialPage.new,
+  NavigationItem.huyaLive: HuyaLivePage.new,
+  NavigationItem.huyaSearch: HuyaSearchPage.new,
   NavigationItem.musicRecommend: () => const MusicPage(view: MusicView.recommend),
   NavigationItem.musicFeatured: () => const MusicPage(view: MusicView.featured),
   NavigationItem.music: MusicPage.new,

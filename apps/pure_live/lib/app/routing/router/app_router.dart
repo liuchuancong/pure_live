@@ -17,6 +17,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPlayerPage, HongguoSeriesPage;
+import 'package:pure_live/modules/huya/huya.dart' show HuyaUploaderPage, HuyaVideoPlayerPage;
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/archive/archive_catalog_page.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
@@ -691,10 +692,7 @@ final class _PlayerWindowChrome extends ConsumerWidget {
         // and the PiP surface carries its own strip of controls.
         mode == PresentationMode.pip ||
         pageImmersive;
-    // The page can also fold its own header away (the immersive full-bleed
-    // room); it then hands the window strip back through this flag.
-    final selfChrome =
-        drawsOwnChrome && ref.watch(roomPageOwnChromeProvider) && WindowChromeState.drawsCaptionControls;
+    final selfChrome = drawsOwnChrome && WindowChromeState.drawsCaptionControls;
     return WindowChromeFrame(enabled: !immersive && !selfChrome, child: child);
   }
 }
