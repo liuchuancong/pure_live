@@ -2533,8 +2533,8 @@ class Translations$huya$zh_CN {
 	/// zh-CN: '视频'
 	String get tabVideos => '视频';
 
-	/// zh-CN: '直播回放'
-	String get tabReplays => '直播回放';
+	/// zh-CN: '直播录像'
+	String get tabReplays => '直播录像';
 
 	/// zh-CN: 'TA 还没有直播回放'
 	String get replayEmpty => 'TA 还没有直播回放';
@@ -2559,6 +2559,15 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '换一批'
 	String get exchange => '换一批';
+
+	/// zh-CN: '主页'
+	String get profileHome => '主页';
+
+	/// zh-CN: '热门推荐'
+	String get hotRecommend => '热门推荐';
+
+	/// zh-CN: '精彩视频'
+	String get greatVideos => '精彩视频';
 }
 
 // Path: iptv
@@ -7290,6 +7299,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '直播中'
 	String get switchLive => '直播中';
+
+	/// zh-CN: '粉丝'
+	String get followers => '粉丝';
 
 	/// zh-CN: '切换为网格'
 	String get switchShowGrid => '切换为网格';
@@ -15520,7 +15532,7 @@ extension on Translations {
 			'huya.sort' => '排序',
 			'huya.emptyDescription' => '这个频道暂时没有视频。',
 			'huya.tabVideos' => '视频',
-			'huya.tabReplays' => '直播回放',
+			'huya.tabReplays' => '直播录像',
 			'huya.replayEmpty' => 'TA 还没有直播回放',
 			'huya.hotChannels' => '热门频道',
 			'huya.suggestTitle' => '试试这些',
@@ -15529,6 +15541,9 @@ extension on Translations {
 			'huya.liveTab' => '直播',
 			'huya.recommend' => '推荐',
 			'huya.exchange' => '换一批',
+			'huya.profileHome' => '主页',
+			'huya.hotRecommend' => '热门推荐',
+			'huya.greatVideos' => '精彩视频',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -15592,11 +15607,11 @@ extension on Translations {
 			'iptv.importFromUrl' => '订阅地址',
 			'iptv.importGuide' => '导入节目单',
 			'iptv.importGuideDescription' => '支持 XMLTV 地址或文件；导入后会下载节目。',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importInvalid' => '内容不是有效的播放列表',
 			'iptv.importNameRequired' => '请输入播放列表名称',
 			'iptv.importNetworkFailed' => '网络请求失败，请检查地址或代理',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importPlaylist' => '导入播放列表',
 			'iptv.importPlaylistDescription' => '支持 M3U/M3U8/TXT 地址、文件或粘贴的文本。',
 			'iptv.importSkipped' => ({required String name, required int count}) => '已导入“${name}”，跳过 ${count} 项',
@@ -16106,11 +16121,11 @@ extension on Translations {
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
 			'music.downloadEmbedLyric' => '嵌入歌词',
 			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadIncludeTranslation' => '歌词包含翻译',
 			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
 			'music.downloadIncludeRomanization' => '歌词包含音译',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadIncludeRomanizationDesc' => '下载的歌词文件与内嵌歌词一并写入音译。',
 			'music.downloadWriteLyric' => '保存歌词文件',
 			'music.downloadWriteLyricDesc' => '在音频文件旁写一个同名 .lrc。',
@@ -16620,11 +16635,11 @@ extension on Translations {
 			'recorder.emptyFilterTitle' => ({required String status}) => '“${status}”里还没有任务',
 			'recorder.stateWaiting' => '等待开播',
 			'recorder.stateSaved' => '已保存',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.stateProcessing' => '处理中',
 			'recorder.warningJoinFailed' => '合并失败，已保留分段；可打开文件夹检查',
 			'recorder.warningTranscodeFailed' => '转码失败，已保留未转码的 MP4',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.warningFinalizeFailed' => '收尾处理失败，录制文件已保留',
 			'recorder.warningStaleProcessing' => '上次合并/转码未完成，请检查任务目录',
 			'recorder.warningDiskLow' => '磁盘余量不足，已停止录制；分段已保留',
@@ -17085,6 +17100,7 @@ extension on Translations {
 			'room.switchReplays' => '关注回放',
 			'room.switchEmpty' => '没有可切换的直播间',
 			'room.switchLive' => '直播中',
+			'room.followers' => '粉丝',
 			'room.switchShowGrid' => '切换为网格',
 			'room.switchShowList' => '切换为列表',
 			'room.cookieRefused' => '平台拒绝了存下的 Cookie，已改为匿名继续；请到账号页重新填写',
@@ -17133,12 +17149,12 @@ extension on Translations {
 			'search.historyTitle' => '搜索历史',
 			'search.clearHistory' => '清空',
 			'search.webSearch' => '网页搜索',
+			_ => null,
+		} ?? switch (path) {
 			'search.webSearchTitle' => '网页搜索',
 			'search.webSearchSelectPlatform' => '先选择一个平台再网页搜索',
 			'search.webSearchUnavailable' => '该平台没有网页搜索',
 			'search.webSearchUnsupportedTitle' => '当前平台不支持内嵌网页',
-			_ => null,
-		} ?? switch (path) {
 			'search.webSearchUnsupportedDescription' => '可以在系统浏览器中打开这个搜索页。',
 			'search.webSearchOpenExternal' => '在浏览器中打开',
 			'search.webSearchExternalFailed' => '无法打开系统浏览器',
@@ -17647,12 +17663,12 @@ extension on Translations {
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
 			'settings.fontManagerDownloadAndUse' => '下载并使用',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerDownloading' => ({required Object percent}) => '下载中 ${percent}%',
 			'settings.fontManagerDownloadFailed' => '下载失败',
 			'settings.fontManagerDownloaded' => '已下载',
@@ -18161,12 +18177,12 @@ extension on Translations {
 			'settings.backgroundGlassSurfaceDescription' => '卡片、列表与输入框底色。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.checkingUpdate' => '正在检查更新…',
 			'settings.updateAvailable' => ({required Object version}) => '可更新到 ${version}',
 			'settings.upToDate' => '已是最新版本',
 			'settings.updateCheckFailed' => '检查更新失败',
-			_ => null,
-		} ?? switch (path) {
 			'settings.viewUpdate' => '查看更新',
 			'settings.updatePanelTitle' => '版本更新',
 			'settings.updateBuild' => ({required Object build}) => '构建 ${build}',
@@ -18675,12 +18691,12 @@ extension on Translations {
 			'settings.lanSyncPairIntro' => '请核对两台设备显示的数字是否一致，然后双方都点确认。',
 			'settings.lanSyncPairFrom' => ({required Object name}) => '来自「${name}」的配对请求',
 			'settings.lanSyncPairConfirm' => '数字一致，确认',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncPairReject' => '不一致，拒绝',
 			'settings.lanSyncPairAccepted' => '已配对',
 			'settings.lanSyncPairRejected' => '已拒绝配对',
 			'settings.lanSyncPairExpired' => '配对请求已过期，请重新发起',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncPairMismatch' => '两台设备密钥不一致，配对已终止。该网络可能存在中间人。',
 			'settings.lanSyncPairCountdown' => ({required int seconds}) => '${seconds} 秒后过期',
 			'settings.lanSyncTrustError' => '这台设备的身份与配对记录不符，已拒绝连接。',
@@ -19189,12 +19205,12 @@ extension on Translations {
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
 			'vod.downloadRetryDelay' => '重试间隔',
 			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadManagerTitle' => '下载管理',
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
 			'vod.downloadClearFinished' => '清除已完成',
-			_ => null,
-		} ?? switch (path) {
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',
 			'vod.downloadFilterEmpty' => '这个筛选下没有任务',

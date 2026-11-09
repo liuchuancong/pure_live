@@ -944,6 +944,9 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get liveTab => 'Live';
 	@override String get recommend => 'Recommended';
 	@override String get exchange => 'New batch';
+	@override String get profileHome => 'Home';
+	@override String get hotRecommend => 'Top picks';
+	@override String get greatVideos => 'Highlights';
 }
 
 // Path: iptv
@@ -2575,6 +2578,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get switchReplays => 'Followed replays';
 	@override String get switchEmpty => 'No rooms to switch to';
 	@override String get switchLive => 'Live';
+	@override String get followers => 'Followers';
 	@override String get switchShowGrid => 'Show as grid';
 	@override String get switchShowList => 'Show as list';
 	@override String get cookieRefused => 'The platform refused the stored cookie and plays on anonymously; renew it on the account page';
@@ -6028,6 +6032,9 @@ extension on TranslationsEn {
 			'huya.liveTab' => 'Live',
 			'huya.recommend' => 'Recommended',
 			'huya.exchange' => 'New batch',
+			'huya.profileHome' => 'Home',
+			'huya.hotRecommend' => 'Top picks',
+			'huya.greatVideos' => 'Highlights',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -6091,11 +6098,11 @@ extension on TranslationsEn {
 			'iptv.importFromUrl' => 'From URL',
 			'iptv.importGuide' => 'Import guide',
 			'iptv.importGuideDescription' => 'XMLTV URLs or files; the guide is downloaded after import.',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importInvalid' => 'The content is not a valid playlist',
 			'iptv.importNameRequired' => 'Enter a playlist name',
 			'iptv.importNetworkFailed' => 'The network request failed; check the address or proxy',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importPlaylist' => 'Import playlist',
 			'iptv.importPlaylistDescription' => 'M3U/M3U8/TXT from a URL, a file or pasted text.',
 			'iptv.importSkipped' => ({required String name, required int count}) => 'Imported “${name}”, skipped ${count}',
@@ -6605,11 +6612,11 @@ extension on TranslationsEn {
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
 			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadIncludeTranslation' => 'Include the translation',
 			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
 			'music.downloadIncludeRomanization' => 'Include the romanization',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadIncludeRomanizationDesc' => 'Write the romanization into the downloaded lyric file and embedded tag.',
 			'music.downloadWriteLyric' => 'Save a lyric file',
 			'music.downloadWriteLyricDesc' => 'Write a sibling .lrc next to the audio file.',
@@ -7119,11 +7126,11 @@ extension on TranslationsEn {
 			'recorder.emptyFilterTitle' => ({required String status}) => 'No tasks in “${status}” yet',
 			'recorder.stateWaiting' => 'Waiting for live',
 			'recorder.stateProcessing' => 'Processing',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.warningJoinFailed' => 'Join failed; the segments are kept in the folder',
 			'recorder.warningTranscodeFailed' => 'Transcode failed; the untranscoded MP4 is kept',
 			'recorder.warningFinalizeFailed' => 'Post-processing failed; the recording files are kept',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.warningStaleProcessing' => 'The last join/transcode did not finish; check the task folder',
 			'recorder.warningDiskLow' => 'Free space ran low and the recording stopped; the segments are kept',
 			'recorder.warningCanceled' => 'Post-processing was cancelled; the recording files are kept',
@@ -7584,6 +7591,7 @@ extension on TranslationsEn {
 			'room.switchReplays' => 'Followed replays',
 			'room.switchEmpty' => 'No rooms to switch to',
 			'room.switchLive' => 'Live',
+			'room.followers' => 'Followers',
 			'room.switchShowGrid' => 'Show as grid',
 			'room.switchShowList' => 'Show as list',
 			'room.cookieRefused' => 'The platform refused the stored cookie and plays on anonymously; renew it on the account page',
@@ -7632,12 +7640,12 @@ extension on TranslationsEn {
 			'search.historyTitle' => 'Search history',
 			'search.clearHistory' => 'Clear',
 			'search.webSearch' => 'Web search',
+			_ => null,
+		} ?? switch (path) {
 			'search.webSearchTitle' => 'Web search',
 			'search.webSearchSelectPlatform' => 'Choose a platform before searching the web',
 			'search.webSearchUnavailable' => 'This platform has no web search',
 			'search.webSearchUnsupportedTitle' => 'The in-app web view is unavailable here',
-			_ => null,
-		} ?? switch (path) {
 			'search.webSearchUnsupportedDescription' => 'Open this search in the system browser instead.',
 			'search.webSearchOpenExternal' => 'Open in browser',
 			'search.webSearchExternalFailed' => 'Could not open the system browser',
@@ -8146,12 +8154,12 @@ extension on TranslationsEn {
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
 			'settings.fontManagerDownloadAndUse' => 'Download and use',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerDownloading' => ({required Object percent}) => 'Downloading ${percent}%',
 			'settings.fontManagerDownloadFailed' => 'Download failed',
 			'settings.fontManagerDownloaded' => 'Downloaded',
@@ -8660,12 +8668,12 @@ extension on TranslationsEn {
 			'settings.backgroundGlassSurfaceDescription' => 'Fill for cards, lists and text fields.',
 			'settings.checkUpdate' => 'Check for updates',
 			'settings.checkUpdateDesc' => 'Reads the newest version from the project’s releases.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.checkingUpdate' => 'Checking for updates…',
 			'settings.updateAvailable' => ({required Object version}) => 'Version ${version} is available',
 			'settings.upToDate' => 'Up to date',
 			'settings.updateCheckFailed' => 'The update check failed',
-			_ => null,
-		} ?? switch (path) {
 			'settings.viewUpdate' => 'View update',
 			'settings.updatePanelTitle' => 'Update',
 			'settings.updateBuild' => ({required Object build}) => 'Build ${build}',
@@ -9174,12 +9182,12 @@ extension on TranslationsEn {
 			'settings.lanSyncPairIntro' => 'Check that both screens show the same number, then confirm on both.',
 			'settings.lanSyncPairFrom' => ({required Object name}) => 'Pairing request from “${name}”',
 			'settings.lanSyncPairConfirm' => 'Numbers match, confirm',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncPairReject' => 'Different, reject',
 			'settings.lanSyncPairAccepted' => 'Paired',
 			'settings.lanSyncPairRejected' => 'Pairing declined',
 			'settings.lanSyncPairExpired' => 'The pairing request expired; start again.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncPairMismatch' => 'The two devices derived different keys; pairing ended. The network may have an intruder.',
 			'settings.lanSyncPairCountdown' => ({required int seconds}) => 'Expires in ${seconds} s',
 			'settings.lanSyncTrustError' => 'This device\'s identity does not match the pairing record; the connection was refused.',
@@ -9688,12 +9696,12 @@ extension on TranslationsEn {
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
 			'vod.downloadRetryDelay' => 'Retry interval',
 			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadManagerTitle' => 'Downloads',
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
 			'vod.downloadClearFinished' => 'Clear finished',
-			_ => null,
-		} ?? switch (path) {
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',
 			'vod.downloadFilterEmpty' => 'Nothing under this filter',

@@ -34,5 +34,8 @@
   "material": "Material",
   "liveTab": "Live",
   "recommend": "Recommended",
-  "exchange": "New batch"
+  "exchange": "New batch",
+  "profileHome": "Home",
+  "hotRecommend": "Top picks",
+  "greatVideos": "Highlights"
 }

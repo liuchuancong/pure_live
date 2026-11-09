@@ -342,13 +342,22 @@ final class HuyaUploader {
 /// One page of an uploader's videos.
 final class HuyaUploaderFeed {
   /// A page.
-  const new({required this.uploader, required this.videos, required this.page, required this.hasMore});
+  const new({
+    required this.uploader,
+    required this.videos,
+    required this.page,
+    required this.hasMore,
+    this.recommended = const [],
+  });
 
   /// The uploader the page belongs to.
   final HuyaUploader uploader;
 
   /// The rows, newest first.
   final List<HuyaVideo> videos;
+
+  /// The videos the station recommends for the uploader's 主页, best first.
+  final List<HuyaVideo> recommended;
 
   /// The page the answer names.
   final int page;
@@ -805,6 +814,16 @@ final class HuyaVideoApi {
       final video = _videoFrom(row);
       if (video != null && seen.add(video.id)) videos.add(video);
     }
+    final recommendRows = HuyaSsr.rows(
+      HuyaSsr.value(HuyaSsr.record(root['userPageRecommendVideoRsp'])?['videoDataList']),
+    );
+    final recommended = <HuyaVideo>[];
+    for (final row in recommendRows) {
+      final video = _videoFrom(row);
+      if (video != null && !seen.contains(video.id) && recommended.every((item) => item.id != video.id)) {
+        recommended.add(video);
+      }
+    }
     final total = HuyaSsr.integer(info['videoNum']) ?? 0;
     return HuyaUploaderFeed(
       uploader: HuyaUploader(
@@ -819,6 +838,7 @@ final class HuyaVideoApi {
         roomId: HuyaSsr.integer(info['roomId']) ?? 0,
       ),
       videos: List<HuyaVideo>.unmodifiable(videos),
+      recommended: List<HuyaVideo>.unmodifiable(recommended),
       page: page,
       hasMore: videos.isNotEmpty && page * uploadPageSize < total,
     );

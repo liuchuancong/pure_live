@@ -514,6 +514,7 @@ final class HuyaUploaderState {
     this.uid = '',
     this.uploader,
     this.videos = const <HuyaVideo>[],
+    this.recommended = const <HuyaVideo>[],
     this.nextPage = 1,
     this.hasMore = true,
     this.loading = false,
@@ -528,6 +529,9 @@ final class HuyaUploaderState {
 
   /// The rows, newest first.
   final List<HuyaVideo> videos;
+
+  /// The videos the station recommends for the uploader's 主页.
+  final List<HuyaVideo> recommended;
 
   /// The next page the page asks.
   final int nextPage;
@@ -570,6 +574,7 @@ final class HuyaUploaderController extends Notifier<HuyaUploaderState> {
       uid: uid,
       uploader: state.uploader,
       videos: state.videos,
+      recommended: state.recommended,
       nextPage: state.nextPage,
       hasMore: state.hasMore,
       loading: true,
@@ -586,6 +591,7 @@ final class HuyaUploaderController extends Notifier<HuyaUploaderState> {
         uid: uid,
         uploader: answer.uploader,
         videos: List<HuyaVideo>.unmodifiable(merged),
+        recommended: page == 1 ? List<HuyaVideo>.unmodifiable(answer.recommended) : state.recommended,
         nextPage: answer.page + 1,
         hasMore: answer.hasMore,
       );
@@ -595,6 +601,7 @@ final class HuyaUploaderController extends Notifier<HuyaUploaderState> {
         uid: uid,
         uploader: state.uploader,
         videos: state.videos,
+        recommended: state.recommended,
         nextPage: state.nextPage,
         hasMore: false,
         error: _failure(failure),

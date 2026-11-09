@@ -121,6 +121,13 @@ window.HNF_GLOBAL_INIT = {
     "vid": 1132205037, "videoTitle": "页内",
     "userInfo": {"uid": 1239539066562, "userNick": "英雄联盟赛事菌"}
   }]}, "total": 785},
+  "userPageRecommendVideoRsp": {"respHeader": {"code": 0}, "videoDataList": {"_bValue": 0, "value": [{
+    "vid": 1132205999, "videoTitle": "热门一",
+    "userInfo": {"uid": 1239539066562, "userNick": "英雄联盟赛事菌"}
+  }, {
+    "vid": 1132205037, "videoTitle": "页内",
+    "userInfo": {"uid": 1239539066562, "userNick": "英雄联盟赛事菌"}
+  }]}},
   "userPageLiveRecordVideoRsp": {"respHeader": {"code": 0}, "videoDataList": {"_bValue": 0, "value": [{
     "videoData": {
       "vid": 1131962968, "videoTitle": "回放 &amp; 一", "duration": "01:02:03",
@@ -299,6 +306,8 @@ void main() {
     expect(page.uploader.isLiving, isTrue);
     expect(page.uploader.roomId, 88);
     expect(page.videos.single.id, '1132205037');
+    // 热门推荐 keeps only the row the video list does not already carry.
+    expect(page.recommended.map((video) => video.id), ['1132205999']);
     expect(page.hasMore, isTrue);
   });
 

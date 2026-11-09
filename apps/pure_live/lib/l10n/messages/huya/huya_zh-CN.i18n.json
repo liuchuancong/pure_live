@@ -26,7 +26,7 @@
   "sort": "排序",
   "emptyDescription": "这个频道暂时没有视频。",
   "tabVideos": "视频",
-  "tabReplays": "直播回放",
+  "tabReplays": "直播录像",
   "replayEmpty": "TA 还没有直播回放",
   "hotChannels": "热门频道",
   "suggestTitle": "试试这些",
@@ -34,5 +34,8 @@
   "material": "素材库",
   "liveTab": "直播",
   "recommend": "推荐",
-  "exchange": "换一批"
+  "exchange": "换一批",
+  "profileHome": "主页",
+  "hotRecommend": "热门推荐",
+  "greatVideos": "精彩视频"
 }
