@@ -4721,6 +4721,28 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String episodeNo({required String index}) => 'EP ${index}';
 	@override String get partsPlaylist => 'Playlist';
 	@override String partsCount({required int count}) => '${count} parts';
+	@override String get huya => 'Huya Video';
+	@override String get huyaHome => 'Home';
+	@override String get huyaBrowse => 'Browse';
+	@override String get huyaRank => 'Rankings';
+	@override String get huyaSearchHint => 'Search Huya videos';
+	@override String get huyaAll => 'All';
+	@override String get huyaOrderHot => 'Hot';
+	@override String get huyaOrderNew => 'Newest';
+	@override String get huyaOrderMost => 'Most played';
+	@override String get huyaChannels => 'Channels';
+	@override String get huyaMore => 'View all';
+	@override String get huyaRelated => 'Related videos';
+	@override String get huyaUploaderVideos => 'Their videos';
+	@override String get huyaLive => 'Live';
+	@override String huyaSearchResults({required int count, required String word}) => '${count} videos for “${word}”';
+	@override String get huyaSearchEmpty => 'No videos found';
+	@override String get huyaSearchEmptyDescription => 'Try another word.';
+	@override String get huyaBackToBrowse => 'Back to browse';
+	@override String huyaRankUpdated({required String time}) => 'Updated ${time}';
+	@override String get huyaHomeEmpty => 'Nothing on the home page right now.';
+	@override String get huyaQuality => 'Quality';
+	@override String get huyaSpeed => 'Speed';
 }
 
 // Path: wallpaper
@@ -9649,6 +9671,28 @@ extension on TranslationsEn {
 		} ?? switch (path) {
 			'vod.partsPlaylist' => 'Playlist',
 			'vod.partsCount' => ({required int count}) => '${count} parts',
+			'vod.huya' => 'Huya Video',
+			'vod.huyaHome' => 'Home',
+			'vod.huyaBrowse' => 'Browse',
+			'vod.huyaRank' => 'Rankings',
+			'vod.huyaSearchHint' => 'Search Huya videos',
+			'vod.huyaAll' => 'All',
+			'vod.huyaOrderHot' => 'Hot',
+			'vod.huyaOrderNew' => 'Newest',
+			'vod.huyaOrderMost' => 'Most played',
+			'vod.huyaChannels' => 'Channels',
+			'vod.huyaMore' => 'View all',
+			'vod.huyaRelated' => 'Related videos',
+			'vod.huyaUploaderVideos' => 'Their videos',
+			'vod.huyaLive' => 'Live',
+			'vod.huyaSearchResults' => ({required int count, required String word}) => '${count} videos for “${word}”',
+			'vod.huyaSearchEmpty' => 'No videos found',
+			'vod.huyaSearchEmptyDescription' => 'Try another word.',
+			'vod.huyaBackToBrowse' => 'Back to browse',
+			'vod.huyaRankUpdated' => ({required String time}) => 'Updated ${time}',
+			'vod.huyaHomeEmpty' => 'Nothing on the home page right now.',
+			'vod.huyaQuality' => 'Quality',
+			'vod.huyaSpeed' => 'Speed',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

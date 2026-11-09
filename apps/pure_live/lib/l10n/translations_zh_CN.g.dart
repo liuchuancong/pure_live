@@ -13640,6 +13640,72 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '共 {count: int} 个'
 	String partsCount({required int count}) => '共 ${count} 个';
+
+	/// zh-CN: '虎牙视频'
+	String get huya => '虎牙视频';
+
+	/// zh-CN: '首页'
+	String get huyaHome => '首页';
+
+	/// zh-CN: '分类'
+	String get huyaBrowse => '分类';
+
+	/// zh-CN: '排行'
+	String get huyaRank => '排行';
+
+	/// zh-CN: '搜索虎牙视频'
+	String get huyaSearchHint => '搜索虎牙视频';
+
+	/// zh-CN: '全部'
+	String get huyaAll => '全部';
+
+	/// zh-CN: '最热'
+	String get huyaOrderHot => '最热';
+
+	/// zh-CN: '最新'
+	String get huyaOrderNew => '最新';
+
+	/// zh-CN: '最多播放'
+	String get huyaOrderMost => '最多播放';
+
+	/// zh-CN: '频道'
+	String get huyaChannels => '频道';
+
+	/// zh-CN: '查看全部'
+	String get huyaMore => '查看全部';
+
+	/// zh-CN: '相关视频'
+	String get huyaRelated => '相关视频';
+
+	/// zh-CN: 'TA 的视频'
+	String get huyaUploaderVideos => 'TA 的视频';
+
+	/// zh-CN: '直播中'
+	String get huyaLive => '直播中';
+
+	/// zh-CN: '找到 {count: int} 个与“{word: String}”相关的视频'
+	String huyaSearchResults({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频';
+
+	/// zh-CN: '没有找到相关视频'
+	String get huyaSearchEmpty => '没有找到相关视频';
+
+	/// zh-CN: '换个关键词再试试。'
+	String get huyaSearchEmptyDescription => '换个关键词再试试。';
+
+	/// zh-CN: '返回浏览'
+	String get huyaBackToBrowse => '返回浏览';
+
+	/// zh-CN: '更新于 {time: String}'
+	String huyaRankUpdated({required String time}) => '更新于 ${time}';
+
+	/// zh-CN: '首页暂时没有内容。'
+	String get huyaHomeEmpty => '首页暂时没有内容。';
+
+	/// zh-CN: '清晰度'
+	String get huyaQuality => '清晰度';
+
+	/// zh-CN: '倍速'
+	String get huyaSpeed => '倍速';
 }
 
 // Path: wallpaper
@@ -19076,6 +19142,28 @@ extension on Translations {
 		} ?? switch (path) {
 			'vod.partsPlaylist' => '播放列表',
 			'vod.partsCount' => ({required int count}) => '共 ${count} 个',
+			'vod.huya' => '虎牙视频',
+			'vod.huyaHome' => '首页',
+			'vod.huyaBrowse' => '分类',
+			'vod.huyaRank' => '排行',
+			'vod.huyaSearchHint' => '搜索虎牙视频',
+			'vod.huyaAll' => '全部',
+			'vod.huyaOrderHot' => '最热',
+			'vod.huyaOrderNew' => '最新',
+			'vod.huyaOrderMost' => '最多播放',
+			'vod.huyaChannels' => '频道',
+			'vod.huyaMore' => '查看全部',
+			'vod.huyaRelated' => '相关视频',
+			'vod.huyaUploaderVideos' => 'TA 的视频',
+			'vod.huyaLive' => '直播中',
+			'vod.huyaSearchResults' => ({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频',
+			'vod.huyaSearchEmpty' => '没有找到相关视频',
+			'vod.huyaSearchEmptyDescription' => '换个关键词再试试。',
+			'vod.huyaBackToBrowse' => '返回浏览',
+			'vod.huyaRankUpdated' => ({required String time}) => '更新于 ${time}',
+			'vod.huyaHomeEmpty' => '首页暂时没有内容。',
+			'vod.huyaQuality' => '清晰度',
+			'vod.huyaSpeed' => '倍速',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

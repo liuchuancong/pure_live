@@ -81,6 +81,10 @@ enum NavigationItem {
   /// tasks on their lanes and the files they land in.
   vodDownloads(DsIcons.download),
 
+  /// The Huya video site's own entry: its home shelves, its channel listings
+  /// and its boards.
+  huyaVideo(DsIcons.play),
+
   /// The IPTV module's playlists and guide sources.
   iptvSources(DsIcons.radioTower),
 
@@ -178,6 +182,7 @@ enum NavigationItem {
     NavigationItem.vodPersonal => t.vod.personal,
     NavigationItem.vodLive => t.vod.live,
     NavigationItem.vodDownloads => t.navigation.vodDownloads,
+    NavigationItem.huyaVideo => t.vod.huya,
     NavigationItem.iptvSources => t.navigation.iptvSources,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvFavorites => t.iptv.favouritesTitle,

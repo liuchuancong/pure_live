@@ -552,6 +552,16 @@ GoRouter buildAppRouter({
         path: RouteNames.vodVideo,
         builder: (context, state) => _PlayerWindowChrome(child: VodVideoPage(bvid: state.pathParameters['bvid']!)),
       ),
+      // The Huya site's own pages: one video (the picture, its gestures and
+      // the station's rail beside it) and one uploader's list.
+      GoRoute(
+        path: RouteNames.huyaVideo,
+        builder: (context, state) => _PlayerWindowChrome(child: HuyaVideoPlayerPage(id: state.pathParameters['vid']!)),
+      ),
+      GoRoute(
+        path: RouteNames.huyaUploader,
+        builder: (context, state) => WindowChromeFrame(child: HuyaUploaderPage(uid: state.pathParameters['uid']!)),
+      ),
       GoRoute(
         path: RouteNames.musicPlayer,
         builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),

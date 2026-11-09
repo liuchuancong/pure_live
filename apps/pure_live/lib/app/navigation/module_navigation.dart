@@ -158,10 +158,17 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   ),
   AppModule.vod: ModuleNavigation(
     // The station's rail in the house measure — content first, tools under:
-    // 主页 / 分区 / 影视 / 直播, then 搜索 / 个人. (The reference lists
-    // 搜索 first; every module here puts its surfaces ahead of its tools.)
+    // 主页 / 分区 / 影视 / 直播, then the second video site, then 搜索 / 个人.
+    // (The reference lists 搜索 first; every module here puts its surfaces
+    // ahead of its tools.)
     menu: [
-      [NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc, NavigationItem.vodLive],
+      [
+        NavigationItem.vod,
+        NavigationItem.vodRegions,
+        NavigationItem.vodPgc,
+        NavigationItem.vodLive,
+        NavigationItem.huyaVideo,
+      ],
       [NavigationItem.vodSearch, NavigationItem.vodPersonal, NavigationItem.vodDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.vod,
@@ -283,6 +290,7 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.vodSearch: VodSearchPage.new,
   NavigationItem.vodPersonal: VodPersonalPage.new,
   NavigationItem.vodDownloads: VodDownloadsPage.new,
+  NavigationItem.huyaVideo: HuyaVideoPage.new,
   NavigationItem.musicRecommend: () => const MusicPage(view: MusicView.recommend),
   NavigationItem.musicFeatured: () => const MusicPage(view: MusicView.featured),
   NavigationItem.music: MusicPage.new,

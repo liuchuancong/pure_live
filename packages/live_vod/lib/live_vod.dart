@@ -11,6 +11,8 @@ export 'src/douyu_replay.dart';
 export 'src/douyu_sign.dart';
 export 'src/douyu_timeline.dart';
 export 'src/huya_replay.dart';
+export 'src/huya_ssr.dart';
+export 'src/huya_video_api.dart';
 export 'src/lyric_lookup.dart';
 export 'src/lyric_query.dart';
 export 'src/play_queue.dart';

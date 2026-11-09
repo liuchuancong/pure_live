@@ -56,6 +56,13 @@ abstract final class RouteNames {
   /// One cinema title's page (its blurb, episodes and player).
   static const String vodSeason = '/vod/season/:seasonId';
 
+  /// One Huya video's own page, pushed on the root navigator above the
+  /// shell: the site's cards open it.
+  static const String huyaVideo = '/huya/:vid';
+
+  /// One Huya uploader's page.
+  static const String huyaUploader = '/huya/u/:uid';
+
   /// A creator's replay catalog, pushed on the root navigator above the
   /// shell; the invoking room's arguments object rides in as `extra`.
   static const String archive = '/archives';
