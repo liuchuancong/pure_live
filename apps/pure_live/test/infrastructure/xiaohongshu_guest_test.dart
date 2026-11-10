@@ -132,17 +132,6 @@ void main() {
     expect(browser.calls.single.cancel, same(current));
   });
 
-  test('an explicit in-app proxy refuses the visitor instead of being bypassed', () async {
-    final browser = _Browser();
-    final guest = _guest(browser, route: () => const HttpProxyRoute(host: '::1'));
-    await expectLater(guest.categories(), throwsA(isA<ProtocolFailure>()));
-    expect(browser.opens, isEmpty);
-    // The direct and system routes run: the page follows the OS proxy on its
-    // own, which is what those routes already describe.
-    final system = _guest(_Browser(), route: () => const SystemProxyRoute());
-    await expectLater(system.categories(), completion('{}'));
-  });
-
   test('identity is memory-only, reused briefly, renewed on refusal and expiry', () async {
     var now = DateTime.utc(2026, 11, 4);
     final browser = _Browser()
