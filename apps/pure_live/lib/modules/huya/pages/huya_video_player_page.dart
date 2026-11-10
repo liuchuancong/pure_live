@@ -14,9 +14,10 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/huya/controller/huya_video.dart';
 import 'package:pure_live/modules/huya/controller/huya_video_playback.dart';
 import 'package:pure_live/modules/live/archive/archive_progress.dart';
+import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart' show VodGestureKind, VodGestureTip, VodSeekBar;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDurationText;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// One Huya video: the picture the station's own player would show, the
@@ -39,6 +40,14 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   HuyaVideoPlaybackController? _controller;
   bool _disposed = false;
   bool _startFailed = false;
+
+  /// Whether the wide layout's information column stands; closing it hands
+  /// the window to the picture, the room's cinema half, and the door at the
+  /// edge brings it back.
+  bool _columnOpen = true;
+
+  /// The page's own mute, the bar button's state; the slider speaks past it.
+  bool _muted = false;
 
   /// What the last gesture did, in the chip over the picture.
   VodGestureKind? _tipKind;
@@ -274,9 +283,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   }
 
   Widget _body(BuildContext context, HuyaVideoDetail? detail) {
+    final t = context.t;
     final related = ref.watch(huyaRelatedProvider(widget.id));
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final width = MediaQuery.sizeOf(context).width;
+    final inset = LiveWindow.pageInset(width);
+    final wide = LiveWindow.isExpanded(width);
     final radius = BorderRadius.circular(DsTheme.of(context).radii.card);
     final video = detail?.video;
     final info = _Info(video: video, detail: detail, onUploader: _openUploader);
@@ -303,43 +314,74 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         ),
       );
     }
-    return Padding(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s16,
+    // The wide page is the room's split, not a dashboard: the picture owns
+    // one full-height stage, and the information column beside it drags on
+    // the same seam the room's chat drags on, remembering its width, and
+    // closes into a cinema the edge door reopens.
+    final columnWidth = ref.watch(huyaVideoColumnWidthProvider);
+    final columnMax = (width - kHuyaStageFloor).clamp(kHuyaVideoColumnMin, kHuyaVideoColumnMax);
+    final tv = PlayerBarTier.tvOf(context);
+    final column = SizedBox(
+      width: columnWidth,
+      child: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s24),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s20, children: [info, rail]),
+      ),
+    );
+    final stage = Expanded(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s8,
-              children: [
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: ClipRRect(borderRadius: radius, child: _stage(context)),
-                    ),
-                  ),
-                ),
-                _bar(context),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(child: _stage(context)),
+              _bar(context),
+            ],
           ),
-          SizedBox(
-            width: 380,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: DsSpace.s24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s20,
-                children: [info, rail],
-              ),
-            ),
-          ),
+          if (!_columnOpen) _ColumnDoor(onOpen: () => setState(() => _columnOpen = true)),
         ],
       ),
     );
+    return Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(inset, DsSpace.s8, inset, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          stage,
+          if (_columnOpen) ...[
+            ChatSplitter(
+              width: columnWidth.clamp(kHuyaVideoColumnMin, columnMax),
+              minWidth: kHuyaVideoColumnMin,
+              maxWidth: columnMax,
+              onResize: ref.read(huyaVideoColumnWidthProvider.notifier).preview,
+              onResizeEnd: (value) => unawaited(ref.read(huyaVideoColumnWidthProvider.notifier).set(value)),
+              onReset: () => unawaited(ref.read(huyaVideoColumnWidthProvider.notifier).set(kHuyaVideoColumnDefault)),
+              label: t.huya.infoColumn,
+              keyboard: !tv,
+            ),
+            column,
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// The page's own mute; the slider un-mutes by speaking.
+  Future<void> _toggleMute() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final next = !_muted;
+    setState(() => _muted = next);
+    await handle.setMute(muted: next);
+  }
+
+  Future<void> _setVolume(double value) async {
+    final handle = _handle;
+    if (handle == null) return;
+    if (_muted) setState(() => _muted = false);
+    await handle.setVolume(value);
   }
 
   /// The picture and its overlays: a dark stage while the handle arrives, a
@@ -356,7 +398,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         return Stack(
           fit: StackFit.expand,
           children: [
-            const ColoredBox(color: Color(0xFF000000)),
+            const ColoredBox(color: OnVideoColors.ground),
             if (handle != null) MediaPlayerView(handle: handle),
             Positioned.fill(
               child: VodPictureGestures(
@@ -433,6 +475,23 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                   autofocus: tv,
                   onPressed: () => unawaited(controller.togglePlayPause()),
                 ),
+                // The bar owns the sound the way the live room's does: the
+                // mute button and the slider beside it, the slider speaking
+                // past a mute.
+                PlayerBarButton(
+                  label: _muted ? t.room.unmute : t.room.mute,
+                  iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
+                  onPressed: () => unawaited(_toggleMute()),
+                ),
+                if (MediaQuery.sizeOf(context).width >= LiveWindow.form)
+                  SizedBox(
+                    width: 120,
+                    child: DsSlider(
+                      value: handle.volume,
+                      onChanged: (value) => unawaited(_setVolume(value)),
+                      semanticLabel: t.room.volume,
+                    ),
+                  ),
                 Text(
                   '${vodDurationText(position)} / ${vodDurationText(total)}',
                   style: DsTheme.of(context).typography.numeric(DsTheme.of(context).typography.caption),
@@ -501,7 +560,7 @@ final class _Info extends StatelessWidget {
     final tags = detail?.tags ?? const <String>[];
     final lines = [
       if (video.playCount > 0) '${AudienceFormat.format(video.playCount)} ${t.huya.views}',
-      if (video.publishedAt case final at?) _date(at),
+      if (video.publishedAt case final at?) vodDateText(at),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -565,9 +624,6 @@ final class _Info extends StatelessWidget {
       ],
     );
   }
-
-  static String _date(DateTime at) =>
-      '${at.year}-${at.month.toString().padLeft(2, '0')}-${at.day.toString().padLeft(2, '0')}';
 }
 
 /// What the station puts beside the video: one row each, the same shape the
@@ -627,4 +683,60 @@ final class _Failure extends StatelessWidget {
 /// more.
 final class _Idle extends ChangeNotifier {
   new();
+}
+
+/// The door a closed information column leaves at the stage's end edge: a
+/// narrow upright tab, the room's immersive drawer door read on the video
+/// page. The chevron points the way the column will come back from.
+final class _ColumnDoor extends StatelessWidget {
+  const _ColumnDoor({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return PositionedDirectional(
+      top: 0,
+      bottom: 0,
+      end: 0,
+      child: DsTooltip(
+        message: t.huya.infoColumnShow,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpen,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface.withValues(alpha: 0.92),
+                border: BorderDirectional(start: BorderSide(color: colors.border)),
+              ),
+              child: SizedBox(
+                width: 28,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
+                    RotatedBox(
+                      quarterTurns: 1,
+                      child: Text(
+                        t.huya.infoColumn,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.small.copyWith(color: colors.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

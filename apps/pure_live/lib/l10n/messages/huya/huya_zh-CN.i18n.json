@@ -37,5 +37,8 @@
   "exchange": "换一批",
   "profileHome": "主页",
   "hotRecommend": "热门推荐",
-  "greatVideos": "精彩视频"
+  "greatVideos": "精彩视频",
+  "headVideos": "{count:int} 个视频",
+  "infoColumn": "信息栏",
+  "infoColumnShow": "展开信息栏"
 }

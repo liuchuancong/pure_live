@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_net/live_net.dart' show ClientProfile;
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 
@@ -119,6 +120,9 @@ final class HuyaBrowseState {
   /// The listing on screen's state.
   HuyaListState get current => lists[request.key] ?? _emptyList;
 
+  /// The state of [request]'s listing, blank when it has not walked yet.
+  HuyaListState listingFor(HuyaListRequest request) => lists[request.key] ?? _emptyList;
+
   /// A copy with the named fields replaced.
   HuyaBrowseState copyWith({
     List<HuyaChannelGroup>? groups,
@@ -222,6 +226,22 @@ final class HuyaBrowseController extends Notifier<HuyaBrowseState> {
     final current = state.current;
     if (current.loading || !current.hasMore) return;
     await _load(state.request, current.nextPage);
+  }
+
+  /// Loads the first page of [request]'s listing when it has none — the home
+  /// shelf that shares a channel with the browse page walks its own state
+  /// here, so the two surfaces cache one accumulation.
+  Future<void> openListing(HuyaListRequest request) async {
+    final current = state.lists[request.key] ?? _emptyList;
+    if (current.videos.isNotEmpty || current.loading) return;
+    await _load(request, 1);
+  }
+
+  /// Loads the next page of [request]'s listing, whoever is asking.
+  Future<void> loadListing(HuyaListRequest request) async {
+    final current = state.lists[request.key] ?? _emptyList;
+    if (current.loading || !current.hasMore) return;
+    await _load(request, current.nextPage);
   }
 
   /// Reloads the listing on screen from its first page.
@@ -654,6 +674,20 @@ final class HuyaReplayState {
 
   /// The last failure.
   final VodFailure? error;
+
+  /// The recordings as the grid's video rows, so a replay opens through the
+  /// same page an uploaded video does.
+  List<HuyaVideo> get videoRows => [
+    for (final record in videos)
+      HuyaVideo(
+        id: record.id,
+        title: record.title,
+        cover: record.cover,
+        duration: record.duration,
+        uploaderId: record.authorId,
+        uploaderName: record.authorName,
+      ),
+  ];
 }
 
 /// One uploader's live replays.
@@ -704,9 +738,8 @@ final class HuyaReplayController extends Notifier<HuyaReplayState> {
 final huyaReplayProvider = NotifierProvider<HuyaReplayController, HuyaReplayState>(HuyaReplayController.new);
 
 /// The words the station completes a search to, read once per partial word.
-final FutureProviderFamily<List<String>, String> huyaSearchSuggestProvider = FutureProvider.family<List<String>, String>(
-  (ref, word) => ref.watch(huyaVideoApiProvider).suggest(word),
-);
+final FutureProviderFamily<List<String>, String> huyaSearchSuggestProvider =
+    FutureProvider.family<List<String>, String>((ref, word) => ref.watch(huyaVideoApiProvider).suggest(word));
 
 /// One fresh batch of a game's hot videos, for the home's 换一批. The station's
 /// own 换一批 rides its WebSocket recommendation service, which an anonymous
@@ -766,3 +799,55 @@ final class HuyaBatchController extends Notifier<HuyaBatchState> {
 
 /// The home's current exchanged batch.
 final huyaBatchProvider = NotifierProvider<HuyaBatchController, HuyaBatchState>(HuyaBatchController.new);
+
+/// How narrow and how wide the player page's information column may be
+/// dragged, and where it starts — the room's chat column measures, applied
+/// to the video page's own column.
+const double kHuyaVideoColumnMin = 320;
+const double kHuyaVideoColumnMax = 520;
+const double kHuyaVideoColumnDefault = 380;
+
+/// The stage's own floor: however wide the window, the picture keeps at
+/// least this much before the information column takes its share — the
+/// room's chat column rule over the video page.
+const double kHuyaStageFloor = 420;
+
+const String _kVideoColumnWidthKey = 'huya.videoColumnWidth';
+
+/// The player page's information column width: the seam's drags land here,
+/// live through [preview], stored through [set], so the next video opens at
+/// the width the viewer left.
+base class HuyaVideoColumnWidthController extends Notifier<double> {
+  @override
+  double build() {
+    try {
+      return (StoragePrefs.getDouble(_kVideoColumnWidthKey) ?? kHuyaVideoColumnDefault).clamp(
+        kHuyaVideoColumnMin,
+        kHuyaVideoColumnMax,
+      );
+    } on Object {
+      return kHuyaVideoColumnDefault;
+    }
+  }
+
+  /// The width while the seam is being dragged — shown, not stored.
+  void preview(double value) {
+    state = value.clamp(kHuyaVideoColumnMin, kHuyaVideoColumnMax);
+  }
+
+  /// The width a drag ended on — shown and stored.
+  Future<void> set(double value) async {
+    final next = value.clamp(kHuyaVideoColumnMin, kHuyaVideoColumnMax);
+    state = next;
+    try {
+      await StoragePrefs.setDouble(_kVideoColumnWidthKey, next);
+    } on Object {
+      // The width is a preference; a closed store loses it.
+    }
+  }
+}
+
+/// The video page's information column width.
+final huyaVideoColumnWidthProvider = NotifierProvider<HuyaVideoColumnWidthController, double>(
+  HuyaVideoColumnWidthController.new,
+);

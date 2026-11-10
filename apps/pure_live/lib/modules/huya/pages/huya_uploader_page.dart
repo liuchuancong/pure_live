@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
-import 'package:live_vod/live_vod.dart' show HuyaUploader, HuyaVideo;
+import 'package:live_vod/live_vod.dart' show HuyaUploader;
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/huya/controller/huya_video.dart';
@@ -121,19 +121,11 @@ final class _HuyaUploaderPageState extends ConsumerState<HuyaUploaderPage> {
                 ),
                 _UploaderTab.videos =>
                   uploader == null && state.error != null
-                      ? Center(
-                          child: DsEmptyState(
-                            icon: const DsIcon(DsIcons.circleUser),
-                            title: Text(t.huya.errorTitle),
-                            description: Text(state.error!.message),
-                            actions: [
-                              DsButton(
-                                variant: DsButtonVariant.secondary,
-                                onPressed: () => unawaited(controller.refresh()),
-                                child: Text(t.common.retry),
-                              ),
-                            ],
-                          ),
+                      ? HuyaLoadPanes(
+                          loading: false,
+                          error: state.error!.message,
+                          onRetry: () => unawaited(controller.refresh()),
+                          icon: DsIcons.circleUser,
                         )
                       : HuyaVideoGrid(
                           scrollController: _videos,
@@ -148,17 +140,7 @@ final class _HuyaUploaderPageState extends ConsumerState<HuyaUploaderPage> {
                         ),
                 _UploaderTab.replays => HuyaVideoGrid(
                   scrollController: _replays,
-                  videos: [
-                    for (final record in replay.videos)
-                      HuyaVideo(
-                        id: record.id,
-                        title: record.title,
-                        cover: record.cover,
-                        duration: record.duration,
-                        uploaderId: record.authorId,
-                        uploaderName: record.authorName,
-                      ),
-                  ],
+                  videos: replay.videoRows,
                   loading: replay.loading,
                   hasMore: replay.hasMore,
                   onLoadMore: replayController.loadMore,
@@ -203,14 +185,10 @@ final class _HomeTab extends ConsumerWidget {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final uploader = state.uploader;
     if (uploader == null && state.error != null) {
-      return Center(
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.circleUser),
-          title: Text(t.huya.errorTitle),
-          description: Text(state.error!.message),
-          actions: [DsButton(variant: DsButtonVariant.secondary, onPressed: onRetry, child: Text(t.common.retry))],
-        ),
-      );
+      return HuyaLoadPanes(loading: false, error: state.error!.message, onRetry: onRetry, icon: DsIcons.circleUser);
+    }
+    if (uploader == null) {
+      return const Center(child: DsSpinner());
     }
     final recommended = state.recommended;
     final videos = state.videos;
@@ -295,7 +273,7 @@ final class _HomeTab extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
             child: Center(child: DsSpinner()),
           )
-        else if (videos.isEmpty && uploader != null)
+        else if (videos.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: DsSpace.s24),
             child: Center(

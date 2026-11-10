@@ -30,7 +30,8 @@ final class HuyaLivePage extends StatelessWidget {
   const HuyaLivePage({super.key});
 
   @override
-  Widget build(BuildContext context) => _HuyaWebView(uri: Uri.https('www.huya.com', '/'), title: context.t.huya.liveTab);
+  Widget build(BuildContext context) =>
+      _HuyaWebView(uri: Uri.https('www.huya.com', '/'), title: context.t.huya.liveTab);
 }
 
 /// The desktop user agent: the station serves its full page to a desktop

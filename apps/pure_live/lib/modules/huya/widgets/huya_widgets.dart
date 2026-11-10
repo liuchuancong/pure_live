@@ -10,6 +10,44 @@ import 'package:pure_live/shared/shared.dart';
 /// One card in a Huya grid, with the stand it holds on a board.
 typedef HuyaCard = ({VodVideo video, int rank});
 
+/// The module's one in-place state pane: the spinner a first read waits
+/// under, or the failure with its way back in. Every surface the grid does
+/// not own — a strip that has not arrived, an uploader's page — shows its
+/// wait and its failure through this, so the wording and the retry stay one
+/// shape module-wide.
+final class HuyaLoadPanes extends StatelessWidget {
+  /// The pane for [loading] or [error]; [error] wins.
+  const HuyaLoadPanes({required this.loading, required this.onRetry, this.error, this.icon = DsIcons.film, super.key});
+
+  /// Whether the first read is in flight.
+  final bool loading;
+
+  /// The failure's message, when there is one.
+  final String? error;
+
+  /// Reads again after a failure.
+  final VoidCallback onRetry;
+
+  /// The pane's glyph, the surface's own.
+  final DsIconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    if (error case final message?) {
+      return Center(
+        child: DsEmptyState(
+          icon: DsIcon(icon),
+          title: Text(t.huya.errorTitle),
+          description: Text(message),
+          actions: [DsButton(variant: DsButtonVariant.secondary, onPressed: onRetry, child: Text(t.common.retry))],
+        ),
+      );
+    }
+    return const Center(child: DsSpinner());
+  }
+}
+
 /// One page of the station's videos as the shared card grid: the viewer's
 /// own card/list layout and spacing, the board's stand over the cover when
 /// [ranked], and the grid's own skeletons, footer and empty state.
