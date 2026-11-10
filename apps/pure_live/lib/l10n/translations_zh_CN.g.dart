@@ -2568,6 +2568,15 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '精彩视频'
 	String get greatVideos => '精彩视频';
+
+	/// zh-CN: '{count:int} 个视频'
+	String headVideos({required int count}) => '${count} 个视频';
+
+	/// zh-CN: '信息栏'
+	String get infoColumn => '信息栏';
+
+	/// zh-CN: '展开信息栏'
+	String get infoColumnShow => '展开信息栏';
 }
 
 // Path: iptv
@@ -3219,6 +3228,378 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '下一频道'
 	String get nextChannel => '下一频道';
+
+	/// zh-CN: '导入来源'
+	String get importPageTitle => '导入来源';
+
+	/// zh-CN: '播放列表'
+	String get importKindPlaylist => '播放列表';
+
+	/// zh-CN: '节目单'
+	String get importKindGuide => '节目单';
+
+	/// zh-CN: '来源'
+	String get importStepSource => '来源';
+
+	/// zh-CN: '预览'
+	String get importStepPreview => '预览';
+
+	/// zh-CN: '完成'
+	String get importStepDone => '完成';
+
+	/// zh-CN: '链接'
+	String get importOriginLink => '链接';
+
+	/// zh-CN: '粘贴文本'
+	String get importOriginText => '粘贴文本';
+
+	/// zh-CN: '本地文件'
+	String get importOriginFile => '本地文件';
+
+	/// zh-CN: '推荐源'
+	String get importOriginPreset => '推荐源';
+
+	/// zh-CN: '扫码推送'
+	String get importOriginScan => '扫码推送';
+
+	/// zh-CN: 'Xtream 账号'
+	String get importOriginXtream => 'Xtream 账号';
+
+	/// zh-CN: '剪贴板里有可用的链接或列表内容'
+	String get importClipboardFound => '剪贴板里有可用的链接或列表内容';
+
+	/// zh-CN: '一键填入'
+	String get importClipboardUse => '一键填入';
+
+	/// zh-CN: '在手机上填写名称和地址，推送后会直接进入预览。'
+	String get importScanHint => '在手机上填写名称和地址，推送后会直接进入预览。';
+
+	/// zh-CN: '在手机上填写'
+	String get importScanAction => '在手机上填写';
+
+	/// zh-CN: '已收到推送，请检查下面的内容'
+	String get importScanReceived => '已收到推送，请检查下面的内容';
+
+	/// zh-CN: '服务器地址'
+	String get importXtreamServer => '服务器地址';
+
+	/// zh-CN: 'http://example.tv:8080'
+	String get importXtreamServerHint => 'http://example.tv:8080';
+
+	/// zh-CN: '用户名'
+	String get importXtreamUser => '用户名';
+
+	/// zh-CN: '密码'
+	String get importXtreamPassword => '密码';
+
+	/// zh-CN: '登录后按订阅地址导入直播频道；密码会包含在生成的地址里。'
+	String get importXtreamNote => '登录后按订阅地址导入直播频道；密码会包含在生成的地址里。';
+
+	/// zh-CN: '账号有效：到期 {date}，同时播放 {active}/{max}'
+	String importXtreamAccountOk({required Object date, required Object active, required Object max}) => '账号有效：到期 ${date}，同时播放 ${active}/${max}';
+
+	/// zh-CN: '订阅已到期（{date}）'
+	String importXtreamAccountExpired({required Object date}) => '订阅已到期（${date}）';
+
+	/// zh-CN: '服务器拒绝了这组账号密码'
+	String get importXtreamAccountBad => '服务器拒绝了这组账号密码';
+
+	/// zh-CN: '无法连接面板，仍可尝试导入'
+	String get importXtreamCheckFailed => '无法连接面板，仍可尝试导入';
+
+	/// zh-CN: '推荐源'
+	String get presetSectionTitle => '推荐源';
+
+	/// zh-CN: '没有可推荐的来源'
+	String get presetEmpty => '没有可推荐的来源';
+
+	/// zh-CN: '已添加'
+	String get presetAddedTag => '已添加';
+
+	/// zh-CN: '内置'
+	String get presetBuiltinTag => '内置';
+
+	/// zh-CN: '时效'
+	String get presetShortLivedTag => '时效';
+
+	/// zh-CN: '添加'
+	String get presetAddAction => '添加';
+
+	/// zh-CN: '查看频道'
+	String get presetOpenAction => '查看频道';
+
+	/// zh-CN: '已添加“{name}”'
+	String presetAddedToast({required Object name}) => '已添加“${name}”';
+
+	/// zh-CN: '恢复默认源'
+	String get presetRestore => '恢复默认源';
+
+	/// zh-CN: '默认源已恢复，可在推荐源里重新添加'
+	String get presetRestored => '默认源已恢复，可在推荐源里重新添加';
+
+	/// zh-CN: '预览：{name}'
+	String previewOf({required Object name}) => '预览：${name}';
+
+	/// zh-CN: '频道'
+	String get previewChannels => '频道';
+
+	/// zh-CN: '分组'
+	String get previewGroups => '分组';
+
+	/// zh-CN: '多线路'
+	String get previewLines => '多线路';
+
+	/// zh-CN: '跳过行'
+	String get previewIssues => '跳过行';
+
+	/// zh-CN: '格式'
+	String get previewFormat => '格式';
+
+	/// zh-CN: '编码'
+	String get previewEncoding => '编码';
+
+	/// zh-CN: '支持回看'
+	String get previewCatchup => '支持回看';
+
+	/// zh-CN: '无回看'
+	String get previewNoCatchup => '无回看';
+
+	/// zh-CN: '发现节目单：{name}'
+	String previewGuideFound({required Object name}) => '发现节目单：${name}';
+
+	/// zh-CN: '同时添加这份节目单'
+	String get previewGuideAttach => '同时添加这份节目单';
+
+	/// zh-CN: '选择要显示的分组（不选的导入后隐藏，可随时恢复）'
+	String get previewGroupPick => '选择要显示的分组（不选的导入后隐藏，可随时恢复）';
+
+	/// zh-CN: '全选'
+	String get previewGroupAll => '全选';
+
+	/// zh-CN: '全不选'
+	String get previewGroupNone => '全不选';
+
+	/// zh-CN: '频道样例'
+	String get previewSamples => '频道样例';
+
+	/// zh-CN: '跳过的行'
+	String get previewIssueList => '跳过的行';
+
+	/// zh-CN: '复制明细'
+	String get previewCopyIssues => '复制明细';
+
+	/// zh-CN: '明细已复制'
+	String get previewCopied => '明细已复制';
+
+	/// zh-CN: '{channels: int} 个频道台 · {programmes: int} 条节目'
+	String previewGuideChannels({required int channels, required int programmes}) => '${channels} 个频道台 · ${programmes} 条节目';
+
+	/// zh-CN: '覆盖 {start} 至 {end}'
+	String previewGuideWindow({required Object start, required Object end}) => '覆盖 ${start} 至 ${end}';
+
+	/// zh-CN: '可匹配本库 {count: int} 个频道'
+	String previewGuideMatched({required int count}) => '可匹配本库 ${count} 个频道';
+
+	/// zh-CN: '匹配不到本库的任何频道，建议换一份'
+	String get previewGuideNoMatch => '匹配不到本库的任何频道，建议换一份';
+
+	/// zh-CN: '这份节目单已停更：所有节目都停在 {end} 之前，导入后也不会有当前节目'
+	String previewGuideStale({required Object end}) => '这份节目单已停更：所有节目都停在 ${end} 之前，导入后也不会有当前节目';
+
+	/// zh-CN: '这个地址已经导入过，将更新“{name}”'
+	String previewUrlClash({required Object name}) => '这个地址已经导入过，将更新“${name}”';
+
+	/// zh-CN: '名称“{name}”已被其他来源使用'
+	String previewNameTaken({required Object name}) => '名称“${name}”已被其他来源使用';
+
+	/// zh-CN: 'GBK（已自动识别）'
+	String get previewEncodingGbk => 'GBK（已自动识别）';
+
+	/// zh-CN: 'UTF-8'
+	String get previewEncodingUtf8 => 'UTF-8';
+
+	/// zh-CN: 'UTF-16'
+	String get previewEncodingUtf16 => 'UTF-16';
+
+	/// zh-CN: '导入完成'
+	String get resultImported => '导入完成';
+
+	/// zh-CN: '共 {count: int} 个频道'
+	String resultChannels({required int count}) => '共 ${count} 个频道';
+
+	/// zh-CN: '新增 {count: int}'
+	String resultAdded({required int count}) => '新增 ${count}';
+
+	/// zh-CN: '更新 {count: int}'
+	String resultUpdated({required int count}) => '更新 ${count}';
+
+	/// zh-CN: '移除 {count: int}'
+	String resultRemoved({required int count}) => '移除 ${count}';
+
+	/// zh-CN: '跳过 {count: int} 行'
+	String resultSkipped({required int count}) => '跳过 ${count} 行';
+
+	/// zh-CN: '节目单“{name}”已挂接'
+	String resultGuideAttached({required Object name}) => '节目单“${name}”已挂接';
+
+	/// zh-CN: '查看频道'
+	String get resultOpenChannels => '查看频道';
+
+	/// zh-CN: '继续导入'
+	String get resultImportAnother => '继续导入';
+
+	/// zh-CN: '复制详情'
+	String get resultCopyDetail => '复制详情';
+
+	/// zh-CN: '服务器返回错误（HTTP {code: int}）'
+	String failureHttpStatus({required int code}) => '服务器返回错误（HTTP ${code}）';
+
+	/// zh-CN: '连接超时，服务器没有及时响应'
+	String get failureTimeout => '连接超时，服务器没有及时响应';
+
+	/// zh-CN: '无法连接服务器，请检查地址和网络'
+	String get failureUnreachable => '无法连接服务器，请检查地址和网络';
+
+	/// zh-CN: '安全连接建立失败'
+	String get failureTls => '安全连接建立失败';
+
+	/// zh-CN: '返回的是网页而不是播放列表，请检查链接（GitHub 请用 raw 地址）'
+	String get failureWebPage => '返回的是网页而不是播放列表，请检查链接（GitHub 请用 raw 地址）';
+
+	/// zh-CN: '这是节目单文件，请在“节目单”页签导入'
+	String get failureGuideFile => '这是节目单文件，请在“节目单”页签导入';
+
+	/// zh-CN: '没有读到任何频道，请确认内容是 M3U/TXT 播放列表'
+	String get failureNoChannels => '没有读到任何频道，请确认内容是 M3U/TXT 播放列表';
+
+	/// zh-CN: '内容不完整（下载被截断），请重试'
+	String get failureTruncated => '内容不完整（下载被截断），请重试';
+
+	/// zh-CN: '文件无法读取，或不是支持的文本编码'
+	String get failureUnreadable => '文件无法读取，或不是支持的文本编码';
+
+	/// zh-CN: '该名称已被其他来源使用'
+	String get failureNameTaken => '该名称已被其他来源使用';
+
+	/// zh-CN: '保存失败，请重试'
+	String get failureStorage => '保存失败，请重试';
+
+	/// zh-CN: '将移除仅属于它的 {channels: int} 个频道（其中 {favourites: int} 个已收藏）'
+	String deleteImpactNote({required int channels, required int favourites}) => '将移除仅属于它的 ${channels} 个频道（其中 ${favourites} 个已收藏）';
+
+	/// zh-CN: '它的频道都被其他来源共享，删除后仍会保留'
+	String get deleteImpactNone => '它的频道都被其他来源共享，删除后仍会保留';
+
+	/// zh-CN: '这是内置推荐源，删除后不会自动恢复；可在“推荐源”里重新添加。'
+	String get deletePresetNote => '这是内置推荐源，删除后不会自动恢复；可在“推荐源”里重新添加。';
+
+	/// zh-CN: '内置'
+	String get sourceBuiltinTag => '内置';
+
+	/// zh-CN: '节目单×{count: int}'
+	String playlistGuideTag({required int count}) => '节目单×${count}';
+
+	/// zh-CN: '开始使用 IPTV'
+	String get emptyStartTitle => '开始使用 IPTV';
+
+	/// zh-CN: '添加一个推荐源即可开箱即看，或从地址、文件导入你自己的列表。'
+	String get emptyStartDescription => '添加一个推荐源即可开箱即看，或从地址、文件导入你自己的列表。';
+
+	/// zh-CN: '添加推荐源'
+	String get emptyStartPresetAction => '添加推荐源';
+
+	/// zh-CN: '导入来源'
+	String get emptyStartImportAction => '导入来源';
+
+	/// zh-CN: 'M3U/TXT 订阅地址，可随时同步'
+	String get importOriginLinkDesc => 'M3U/TXT 订阅地址，可随时同步';
+
+	/// zh-CN: '直接粘贴列表内容'
+	String get importOriginTextDesc => '直接粘贴列表内容';
+
+	/// zh-CN: '选择本机的 m3u/m3u8/txt 文件'
+	String get importOriginFileDesc => '选择本机的 m3u/m3u8/txt 文件';
+
+	/// zh-CN: '精选的公开直播源'
+	String get importOriginPresetDesc => '精选的公开直播源';
+
+	/// zh-CN: '用手机填写地址并推送到这里'
+	String get importOriginScanDesc => '用手机填写地址并推送到这里';
+
+	/// zh-CN: '用面板地址和账号导入直播频道'
+	String get importOriginXtreamDesc => '用面板地址和账号导入直播频道';
+
+	/// zh-CN: 'XMLTV/JSON 地址，可自动更新'
+	String get importGuideOriginLinkDesc => 'XMLTV/JSON 地址，可自动更新';
+
+	/// zh-CN: '选择本机的 xml/xml.gz/json 文件'
+	String get importGuideOriginFileDesc => '选择本机的 xml/xml.gz/json 文件';
+
+	/// zh-CN: 'GitHub 页面链接会自动换成原始文件地址，并走你设置的 GitHub 加速。'
+	String get importLinkHint => 'GitHub 页面链接会自动换成原始文件地址，并走你设置的 GitHub 加速。';
+
+	/// zh-CN: '支持 .m3u .m3u8 .txt；UTF-8、GBK、UTF-16 编码自动识别'
+	String get importFileFormats => '支持 .m3u .m3u8 .txt；UTF-8、GBK、UTF-16 编码自动识别';
+
+	/// zh-CN: '支持 .xml .xml.gz .json'
+	String get importGuideFileFormats => '支持 .xml .xml.gz .json';
+
+	/// zh-CN: '选择文件'
+	String get importFileAction => '选择文件';
+
+	/// zh-CN: '预览'
+	String get importPreviewAction => '预览';
+
+	/// zh-CN: '导入 {count: int} 个频道'
+	String importCommitAction({required int count}) => '导入 ${count} 个频道';
+
+	/// zh-CN: '导入节目单'
+	String get importCommitGuideAction => '导入节目单';
+
+	/// zh-CN: '返回修改'
+	String get importBackAction => '返回修改';
+
+	/// zh-CN: '重试'
+	String get importRetry => '重试';
+
+	/// zh-CN: '完成'
+	String get importDone => '完成';
+
+	/// zh-CN: '改为导入节目单'
+	String get importSwitchToGuide => '改为导入节目单';
+
+	/// zh-CN: '检查账号'
+	String get importXtreamCheck => '检查账号';
+
+	/// zh-CN: '先预览，再导入'
+	String get previewIdleTitle => '先预览，再导入';
+
+	/// zh-CN: '选择来源后点“预览”，会先列出将要导入的频道、分组和问题；确认后才写入频道库。'
+	String get previewIdleBody => '选择来源后点“预览”，会先列出将要导入的频道、分组和问题；确认后才写入频道库。';
+
+	/// zh-CN: '正在读取来源…'
+	String get previewReading => '正在读取来源…';
+
+	/// zh-CN: '正在导入…'
+	String get previewWriting => '正在导入…';
+
+	/// zh-CN: '名称'
+	String get previewName => '名称';
+
+	/// zh-CN: '{count: int} 条线路'
+	String previewLinesCount({required int count}) => '${count} 条线路';
+
+	/// zh-CN: '另有 {count: int} 个频道'
+	String previewMore({required int count}) => '另有 ${count} 个频道';
+
+	/// zh-CN: '替换已有的“{name}”'
+	String nameClashReplace({required Object name}) => '替换已有的“${name}”';
+
+	/// zh-CN: '另存为“{name}”'
+	String nameClashRename({required Object name}) => '另存为“${name}”';
+
+	/// zh-CN: '{name} 节目单'
+	String guideNameOf({required Object name}) => '${name} 节目单';
 }
 
 // Path: multiview
@@ -6700,14 +7081,23 @@ class Translations$room$zh_CN {
 	/// zh-CN: '已关注'
 	String get unfollow => '已关注';
 
+	/// zh-CN: '不再关注'
+	String get unfollowAction => '不再关注';
+
+	/// zh-CN: '不再关注 {name} 的直播间？'
+	String unfollowConfirm({required Object name}) => '不再关注 ${name} 的直播间？';
+
+	/// zh-CN: '播放设置'
+	String get playerSettings => '播放设置';
+
 	/// zh-CN: '画质'
 	String get quality => '画质';
 
 	/// zh-CN: '线路'
 	String get lineLabel => '线路';
 
-	/// zh-CN: '线路 {n}'
-	String line({required Object n}) => '线路 ${n}';
+	/// zh-CN: '线路{n}'
+	String line({required Object n}) => '线路${n}';
 
 	/// zh-CN: '播放'
 	String get play => '播放';
@@ -6753,6 +7143,12 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '发送失败'
 	String get sendFailed => '发送失败';
+
+	/// zh-CN: '表情'
+	String get emotes => '表情';
+
+	/// zh-CN: '这个房间还没出现过表情'
+	String get emotesEmpty => '这个房间还没出现过表情';
 
 	/// zh-CN: '进入全屏'
 	String get fullscreenOn => '进入全屏';
@@ -6927,6 +7323,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '录制操作失败'
 	String get recordFailed => '录制操作失败';
+
+	/// zh-CN: '设置'
+	String get tabSettings => '设置';
 
 	/// zh-CN: '录制'
 	String get tabRecording => '录制';
@@ -7288,6 +7687,21 @@ class Translations$room$zh_CN {
 	/// zh-CN: '关注在播'
 	String get switchOnAir => '关注在播';
 
+	/// zh-CN: '来源列表'
+	String get switchSource => '来源列表';
+
+	/// zh-CN: '搜索'
+	String get switchSearch => '搜索';
+
+	/// zh-CN: '观看'
+	String get statViewers => '观看';
+
+	/// zh-CN: '已开播'
+	String get statOnAir => '已开播';
+
+	/// zh-CN: '已观看'
+	String get statWatched => '已观看';
+
 	/// zh-CN: '观看记录'
 	String get switchHistory => '观看记录';
 
@@ -7336,9 +7750,6 @@ class Translations$room$zh_CN {
 	/// zh-CN: '超聊'
 	String get tabSuperChats => '超聊';
 
-	/// zh-CN: '设置'
-	String get tabSettings => '设置';
-
 	/// zh-CN: '屏蔽'
 	String get tabShield => '屏蔽';
 
@@ -7386,6 +7797,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '分段'
 	String get replayParts => '分段';
+
+	/// zh-CN: '收起/展开聊天栏'
+	String get shortcutChatColumn => '收起/展开聊天栏';
 }
 
 // Path: search
@@ -15544,6 +15958,9 @@ extension on Translations {
 			'huya.profileHome' => '主页',
 			'huya.hotRecommend' => '热门推荐',
 			'huya.greatVideos' => '精彩视频',
+			'huya.headVideos' => ({required int count}) => '${count} 个视频',
+			'huya.infoColumn' => '信息栏',
+			'huya.infoColumnShow' => '展开信息栏',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -15604,11 +16021,11 @@ extension on Translations {
 			'iptv.importFormat' => '不支持的文件格式',
 			'iptv.importFromFile' => '从文件',
 			'iptv.importFromText' => '粘贴文本',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importFromUrl' => '订阅地址',
 			'iptv.importGuide' => '导入节目单',
 			'iptv.importGuideDescription' => '支持 XMLTV 地址或文件；导入后会下载节目。',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importInvalid' => '内容不是有效的播放列表',
 			'iptv.importNameRequired' => '请输入播放列表名称',
 			'iptv.importNetworkFailed' => '网络请求失败，请检查地址或代理',
@@ -15760,6 +16177,130 @@ extension on Translations {
 			'iptv.recentRecords' => ({required int count}) => '${count} 条记录',
 			'iptv.previousChannel' => '上一频道',
 			'iptv.nextChannel' => '下一频道',
+			'iptv.importPageTitle' => '导入来源',
+			'iptv.importKindPlaylist' => '播放列表',
+			'iptv.importKindGuide' => '节目单',
+			'iptv.importStepSource' => '来源',
+			'iptv.importStepPreview' => '预览',
+			'iptv.importStepDone' => '完成',
+			'iptv.importOriginLink' => '链接',
+			'iptv.importOriginText' => '粘贴文本',
+			'iptv.importOriginFile' => '本地文件',
+			'iptv.importOriginPreset' => '推荐源',
+			'iptv.importOriginScan' => '扫码推送',
+			'iptv.importOriginXtream' => 'Xtream 账号',
+			'iptv.importClipboardFound' => '剪贴板里有可用的链接或列表内容',
+			'iptv.importClipboardUse' => '一键填入',
+			'iptv.importScanHint' => '在手机上填写名称和地址，推送后会直接进入预览。',
+			'iptv.importScanAction' => '在手机上填写',
+			'iptv.importScanReceived' => '已收到推送，请检查下面的内容',
+			'iptv.importXtreamServer' => '服务器地址',
+			'iptv.importXtreamServerHint' => 'http://example.tv:8080',
+			'iptv.importXtreamUser' => '用户名',
+			'iptv.importXtreamPassword' => '密码',
+			'iptv.importXtreamNote' => '登录后按订阅地址导入直播频道；密码会包含在生成的地址里。',
+			'iptv.importXtreamAccountOk' => ({required Object date, required Object active, required Object max}) => '账号有效：到期 ${date}，同时播放 ${active}/${max}',
+			'iptv.importXtreamAccountExpired' => ({required Object date}) => '订阅已到期（${date}）',
+			'iptv.importXtreamAccountBad' => '服务器拒绝了这组账号密码',
+			'iptv.importXtreamCheckFailed' => '无法连接面板，仍可尝试导入',
+			'iptv.presetSectionTitle' => '推荐源',
+			'iptv.presetEmpty' => '没有可推荐的来源',
+			'iptv.presetAddedTag' => '已添加',
+			'iptv.presetBuiltinTag' => '内置',
+			'iptv.presetShortLivedTag' => '时效',
+			'iptv.presetAddAction' => '添加',
+			'iptv.presetOpenAction' => '查看频道',
+			'iptv.presetAddedToast' => ({required Object name}) => '已添加“${name}”',
+			'iptv.presetRestore' => '恢复默认源',
+			'iptv.presetRestored' => '默认源已恢复，可在推荐源里重新添加',
+			'iptv.previewOf' => ({required Object name}) => '预览：${name}',
+			'iptv.previewChannels' => '频道',
+			'iptv.previewGroups' => '分组',
+			'iptv.previewLines' => '多线路',
+			'iptv.previewIssues' => '跳过行',
+			'iptv.previewFormat' => '格式',
+			'iptv.previewEncoding' => '编码',
+			'iptv.previewCatchup' => '支持回看',
+			'iptv.previewNoCatchup' => '无回看',
+			'iptv.previewGuideFound' => ({required Object name}) => '发现节目单：${name}',
+			'iptv.previewGuideAttach' => '同时添加这份节目单',
+			'iptv.previewGroupPick' => '选择要显示的分组（不选的导入后隐藏，可随时恢复）',
+			'iptv.previewGroupAll' => '全选',
+			'iptv.previewGroupNone' => '全不选',
+			'iptv.previewSamples' => '频道样例',
+			'iptv.previewIssueList' => '跳过的行',
+			'iptv.previewCopyIssues' => '复制明细',
+			'iptv.previewCopied' => '明细已复制',
+			'iptv.previewGuideChannels' => ({required int channels, required int programmes}) => '${channels} 个频道台 · ${programmes} 条节目',
+			'iptv.previewGuideWindow' => ({required Object start, required Object end}) => '覆盖 ${start} 至 ${end}',
+			'iptv.previewGuideMatched' => ({required int count}) => '可匹配本库 ${count} 个频道',
+			'iptv.previewGuideNoMatch' => '匹配不到本库的任何频道，建议换一份',
+			'iptv.previewGuideStale' => ({required Object end}) => '这份节目单已停更：所有节目都停在 ${end} 之前，导入后也不会有当前节目',
+			'iptv.previewUrlClash' => ({required Object name}) => '这个地址已经导入过，将更新“${name}”',
+			'iptv.previewNameTaken' => ({required Object name}) => '名称“${name}”已被其他来源使用',
+			'iptv.previewEncodingGbk' => 'GBK（已自动识别）',
+			'iptv.previewEncodingUtf8' => 'UTF-8',
+			'iptv.previewEncodingUtf16' => 'UTF-16',
+			'iptv.resultImported' => '导入完成',
+			'iptv.resultChannels' => ({required int count}) => '共 ${count} 个频道',
+			'iptv.resultAdded' => ({required int count}) => '新增 ${count}',
+			'iptv.resultUpdated' => ({required int count}) => '更新 ${count}',
+			'iptv.resultRemoved' => ({required int count}) => '移除 ${count}',
+			'iptv.resultSkipped' => ({required int count}) => '跳过 ${count} 行',
+			'iptv.resultGuideAttached' => ({required Object name}) => '节目单“${name}”已挂接',
+			'iptv.resultOpenChannels' => '查看频道',
+			'iptv.resultImportAnother' => '继续导入',
+			'iptv.resultCopyDetail' => '复制详情',
+			'iptv.failureHttpStatus' => ({required int code}) => '服务器返回错误（HTTP ${code}）',
+			'iptv.failureTimeout' => '连接超时，服务器没有及时响应',
+			'iptv.failureUnreachable' => '无法连接服务器，请检查地址和网络',
+			'iptv.failureTls' => '安全连接建立失败',
+			'iptv.failureWebPage' => '返回的是网页而不是播放列表，请检查链接（GitHub 请用 raw 地址）',
+			'iptv.failureGuideFile' => '这是节目单文件，请在“节目单”页签导入',
+			'iptv.failureNoChannels' => '没有读到任何频道，请确认内容是 M3U/TXT 播放列表',
+			'iptv.failureTruncated' => '内容不完整（下载被截断），请重试',
+			'iptv.failureUnreadable' => '文件无法读取，或不是支持的文本编码',
+			'iptv.failureNameTaken' => '该名称已被其他来源使用',
+			'iptv.failureStorage' => '保存失败，请重试',
+			'iptv.deleteImpactNote' => ({required int channels, required int favourites}) => '将移除仅属于它的 ${channels} 个频道（其中 ${favourites} 个已收藏）',
+			'iptv.deleteImpactNone' => '它的频道都被其他来源共享，删除后仍会保留',
+			'iptv.deletePresetNote' => '这是内置推荐源，删除后不会自动恢复；可在“推荐源”里重新添加。',
+			'iptv.sourceBuiltinTag' => '内置',
+			'iptv.playlistGuideTag' => ({required int count}) => '节目单×${count}',
+			'iptv.emptyStartTitle' => '开始使用 IPTV',
+			'iptv.emptyStartDescription' => '添加一个推荐源即可开箱即看，或从地址、文件导入你自己的列表。',
+			'iptv.emptyStartPresetAction' => '添加推荐源',
+			'iptv.emptyStartImportAction' => '导入来源',
+			'iptv.importOriginLinkDesc' => 'M3U/TXT 订阅地址，可随时同步',
+			'iptv.importOriginTextDesc' => '直接粘贴列表内容',
+			'iptv.importOriginFileDesc' => '选择本机的 m3u/m3u8/txt 文件',
+			'iptv.importOriginPresetDesc' => '精选的公开直播源',
+			'iptv.importOriginScanDesc' => '用手机填写地址并推送到这里',
+			'iptv.importOriginXtreamDesc' => '用面板地址和账号导入直播频道',
+			'iptv.importGuideOriginLinkDesc' => 'XMLTV/JSON 地址，可自动更新',
+			'iptv.importGuideOriginFileDesc' => '选择本机的 xml/xml.gz/json 文件',
+			'iptv.importLinkHint' => 'GitHub 页面链接会自动换成原始文件地址，并走你设置的 GitHub 加速。',
+			'iptv.importFileFormats' => '支持 .m3u .m3u8 .txt；UTF-8、GBK、UTF-16 编码自动识别',
+			'iptv.importGuideFileFormats' => '支持 .xml .xml.gz .json',
+			'iptv.importFileAction' => '选择文件',
+			'iptv.importPreviewAction' => '预览',
+			'iptv.importCommitAction' => ({required int count}) => '导入 ${count} 个频道',
+			'iptv.importCommitGuideAction' => '导入节目单',
+			'iptv.importBackAction' => '返回修改',
+			'iptv.importRetry' => '重试',
+			'iptv.importDone' => '完成',
+			'iptv.importSwitchToGuide' => '改为导入节目单',
+			'iptv.importXtreamCheck' => '检查账号',
+			'iptv.previewIdleTitle' => '先预览，再导入',
+			'iptv.previewIdleBody' => '选择来源后点“预览”，会先列出将要导入的频道、分组和问题；确认后才写入频道库。',
+			'iptv.previewReading' => '正在读取来源…',
+			'iptv.previewWriting' => '正在导入…',
+			'iptv.previewName' => '名称',
+			'iptv.previewLinesCount' => ({required int count}) => '${count} 条线路',
+			'iptv.previewMore' => ({required int count}) => '另有 ${count} 个频道',
+			'iptv.nameClashReplace' => ({required Object name}) => '替换已有的“${name}”',
+			'iptv.nameClashRename' => ({required Object name}) => '另存为“${name}”',
+			'iptv.guideNameOf' => ({required Object name}) => '${name} 节目单',
 			'multiview.layoutLabel' => '布局',
 			'multiview.pickRoom' => '选择房间',
 			'multiview.openRoom' => '进入直播间',
@@ -15994,6 +16535,8 @@ extension on Translations {
 			'music.songDetailArtist' => '歌手',
 			'music.songDetailAlbum' => '专辑',
 			'music.songDetailDuration' => '时长',
+			_ => null,
+		} ?? switch (path) {
 			'music.songDetailQualities' => '可播档位',
 			'music.songDetailSource' => '来源',
 			'music.songDetailPath' => '文件',
@@ -16121,8 +16664,6 @@ extension on Translations {
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
 			'music.downloadEmbedLyric' => '嵌入歌词',
 			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadIncludeTranslation' => '歌词包含翻译',
 			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
 			'music.downloadIncludeRomanization' => '歌词包含音译',
@@ -16508,6 +17049,8 @@ extension on Translations {
 			'music.albumTotalDuration' => ({required int count}) => '约 ${count} 分钟',
 			'music.audioCacheTitle' => '音乐音频缓存',
 			'music.audioCacheDesc' => '听过的歌留在本地，源链接过期也能继续播',
+			_ => null,
+		} ?? switch (path) {
 			'music.audioCacheOff' => '关闭',
 			'music.audioCacheClear' => '清空音频缓存',
 			'music.audioCacheCleared' => '音频缓存已清空',
@@ -16635,8 +17178,6 @@ extension on Translations {
 			'recorder.emptyFilterTitle' => ({required String status}) => '“${status}”里还没有任务',
 			'recorder.stateWaiting' => '等待开播',
 			'recorder.stateSaved' => '已保存',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.stateProcessing' => '处理中',
 			'recorder.warningJoinFailed' => '合并失败，已保留分段；可打开文件夹检查',
 			'recorder.warningTranscodeFailed' => '转码失败，已保留未转码的 MP4',
@@ -16900,9 +17441,12 @@ extension on Translations {
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
+			'room.unfollowAction' => '不再关注',
+			'room.unfollowConfirm' => ({required Object name}) => '不再关注 ${name} 的直播间？',
+			'room.playerSettings' => '播放设置',
 			'room.quality' => '画质',
 			'room.lineLabel' => '线路',
-			'room.line' => ({required Object n}) => '线路 ${n}',
+			'room.line' => ({required Object n}) => '线路${n}',
 			'room.play' => '播放',
 			'room.pause' => '暂停',
 			'room.noChat' => '还没有弹幕',
@@ -16918,6 +17462,8 @@ extension on Translations {
 			'room.sendHint' => '发个弹幕见证当下',
 			'room.send' => '发送',
 			'room.sendFailed' => '发送失败',
+			'room.emotes' => '表情',
+			'room.emotesEmpty' => '这个房间还没出现过表情',
 			'room.fullscreenOn' => '进入全屏',
 			'room.fullscreenOff' => '退出全屏',
 			'room.lockControls' => '锁定控件',
@@ -16976,6 +17522,7 @@ extension on Translations {
 			'room.recordStarted' => '开始录制',
 			'room.recordStopped' => '录制已停止',
 			'room.recordFailed' => '录制操作失败',
+			'room.tabSettings' => '设置',
 			'room.tabRecording' => '录制',
 			'room.recordSegment' => ({required int index, required int minutes}) => '第 ${index} 段 · 每 ${minutes} 分钟一段',
 			'room.recordSize' => ({required String size}) => '已录 ${size}',
@@ -17016,6 +17563,8 @@ extension on Translations {
 			'room.superChatEmpty' => '暂无超级聊天',
 			'room.superChatFailed' => '超级聊天加载失败',
 			'room.superChatCardMembership' => '会员',
+			_ => null,
+		} ?? switch (path) {
 			'room.superChatCardSubscription' => '订阅',
 			'room.onlineViewers' => '在线',
 			'room.popularity' => '热度',
@@ -17096,6 +17645,11 @@ extension on Translations {
 			'room.keyEscape' => 'Esc',
 			'room.switchRoom' => '切换直播间',
 			'room.switchOnAir' => '关注在播',
+			'room.switchSource' => '来源列表',
+			'room.switchSearch' => '搜索',
+			'room.statViewers' => '观看',
+			'room.statOnAir' => '已开播',
+			'room.statWatched' => '已观看',
 			'room.switchHistory' => '观看记录',
 			'room.switchReplays' => '关注回放',
 			'room.switchEmpty' => '没有可切换的直播间',
@@ -17112,7 +17666,6 @@ extension on Translations {
 			'room.autoRoomSwitchStopped' => '关注列表里没有能自动换的直播间了',
 			'room.onAirFor' => ({required String time}) => '已直播 ${time}',
 			'room.tabSuperChats' => '超聊',
-			'room.tabSettings' => '设置',
 			'room.tabShield' => '屏蔽',
 			'room.newMessagesBelow' => '以下为新消息',
 			'room.newMessagesCount' => ({required Object count}) => '${count} 条新消息',
@@ -17129,6 +17682,7 @@ extension on Translations {
 			'room.replayQuality' => '画质',
 			'room.replayRate' => '倍速',
 			'room.replayParts' => '分段',
+			'room.shortcutChatColumn' => '收起/展开聊天栏',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -17149,8 +17703,6 @@ extension on Translations {
 			'search.historyTitle' => '搜索历史',
 			'search.clearHistory' => '清空',
 			'search.webSearch' => '网页搜索',
-			_ => null,
-		} ?? switch (path) {
 			'search.webSearchTitle' => '网页搜索',
 			'search.webSearchSelectPlatform' => '先选择一个平台再网页搜索',
 			'search.webSearchUnavailable' => '该平台没有网页搜索',
@@ -17525,6 +18077,8 @@ extension on Translations {
 			'settings.styleLetterSpacing' => '文字间距',
 			'settings.styleLetterSpacingDesc' => '字符之间额外增加的间距，单位像素。',
 			'settings.styleWeightThin' => '极细',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleWeightExtraLight' => '很细',
 			'settings.styleWeightLight' => '偏细',
 			'settings.styleWeightNormal' => '正常',
@@ -17663,8 +18217,6 @@ extension on Translations {
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
@@ -18039,6 +18591,8 @@ extension on Translations {
 			'settings.qualityAuto' => '自动（站点默认）',
 			'settings.qualityOriginal' => '原画',
 			'settings.qualityBluRay8M' => '蓝光 8M',
+			_ => null,
+		} ?? switch (path) {
 			'settings.qualityBluRay4M' => '蓝光 4M',
 			'settings.qualityBluRay' => '蓝光',
 			'settings.qualityUltra' => '超清',
@@ -18177,8 +18731,6 @@ extension on Translations {
 			'settings.backgroundGlassSurfaceDescription' => '卡片、列表与输入框底色。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.checkingUpdate' => '正在检查更新…',
 			'settings.updateAvailable' => ({required Object version}) => '可更新到 ${version}',
 			'settings.upToDate' => '已是最新版本',
@@ -18553,6 +19105,8 @@ extension on Translations {
 			'settings.hongguoInterfaceDesc' => '海报卡片上显示哪些信息。',
 			'settings.hongguoDanmakuDesc' => '弹幕开关与字号、透明度、速度、密度。',
 			'settings.hongguoDeviceDesc' => '本机注册的设备身份，可在这里重置。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoQuality' => '默认清晰度',
 			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
 			'settings.hongguoCardVisibleContent' => '卡片显示内容',
@@ -18691,8 +19245,6 @@ extension on Translations {
 			'settings.lanSyncPairIntro' => '请核对两台设备显示的数字是否一致，然后双方都点确认。',
 			'settings.lanSyncPairFrom' => ({required Object name}) => '来自「${name}」的配对请求',
 			'settings.lanSyncPairConfirm' => '数字一致，确认',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncPairReject' => '不一致，拒绝',
 			'settings.lanSyncPairAccepted' => '已配对',
 			'settings.lanSyncPairRejected' => '已拒绝配对',
@@ -19067,6 +19619,8 @@ extension on Translations {
 			'vod.score' => '评分',
 			'vod.danmakuOn' => '显示弹幕',
 			'vod.danmakuOff' => '隐藏弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
@@ -19205,8 +19759,6 @@ extension on Translations {
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
 			'vod.downloadRetryDelay' => '重试间隔',
 			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadManagerTitle' => '下载管理',
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',

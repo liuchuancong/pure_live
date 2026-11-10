@@ -947,6 +947,9 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get profileHome => 'Home';
 	@override String get hotRecommend => 'Top picks';
 	@override String get greatVideos => 'Highlights';
+	@override String headVideos({required int count}) => '${count} videos';
+	@override String get infoColumn => 'Info column';
+	@override String get infoColumnShow => 'Show the info column';
 }
 
 // Path: iptv
@@ -1170,6 +1173,130 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String recentRecords({required int count}) => '${count} records';
 	@override String get previousChannel => 'Previous channel';
 	@override String get nextChannel => 'Next channel';
+	@override String get importPageTitle => 'Add a source';
+	@override String get importKindPlaylist => 'Playlist';
+	@override String get importKindGuide => 'Guide';
+	@override String get importStepSource => 'Source';
+	@override String get importStepPreview => 'Preview';
+	@override String get importStepDone => 'Done';
+	@override String get importOriginLink => 'Link';
+	@override String get importOriginText => 'Paste text';
+	@override String get importOriginFile => 'Local file';
+	@override String get importOriginPreset => 'Recommended';
+	@override String get importOriginScan => 'From phone';
+	@override String get importOriginXtream => 'Xtream account';
+	@override String get importClipboardFound => 'The clipboard holds a link or a list';
+	@override String get importClipboardUse => 'Use it';
+	@override String get importScanHint => 'Fill in the name and the link on a phone; the preview opens as soon as it arrives.';
+	@override String get importScanAction => 'Fill in on a phone';
+	@override String get importScanReceived => 'Received from the phone — check it below';
+	@override String get importXtreamServer => 'Server address';
+	@override String get importXtreamServerHint => 'http://example.tv:8080';
+	@override String get importXtreamUser => 'User name';
+	@override String get importXtreamPassword => 'Password';
+	@override String get importXtreamNote => 'The live channels are imported from the account\'s playlist address; the password is part of that address.';
+	@override String importXtreamAccountOk({required Object date, required Object active, required Object max}) => 'Account active: expires ${date}, streams ${active}/${max}';
+	@override String importXtreamAccountExpired({required Object date}) => 'The subscription expired (${date})';
+	@override String get importXtreamAccountBad => 'The server rejected these credentials';
+	@override String get importXtreamCheckFailed => 'The panel could not be checked; importing may still work';
+	@override String get presetSectionTitle => 'Recommended sources';
+	@override String get presetEmpty => 'No sources to recommend';
+	@override String get presetAddedTag => 'Added';
+	@override String get presetBuiltinTag => 'Built-in';
+	@override String get presetShortLivedTag => 'Expiring links';
+	@override String get presetAddAction => 'Add';
+	@override String get presetOpenAction => 'Open channels';
+	@override String presetAddedToast({required Object name}) => 'Added “${name}”';
+	@override String get presetRestore => 'Restore default sources';
+	@override String get presetRestored => 'Default sources restored; add them again from Recommended';
+	@override String previewOf({required Object name}) => 'Preview: ${name}';
+	@override String get previewChannels => 'Channels';
+	@override String get previewGroups => 'Groups';
+	@override String get previewLines => 'Multi-line';
+	@override String get previewIssues => 'Skipped';
+	@override String get previewFormat => 'Format';
+	@override String get previewEncoding => 'Encoding';
+	@override String get previewCatchup => 'Replay';
+	@override String get previewNoCatchup => 'No replay';
+	@override String previewGuideFound({required Object name}) => 'Guide found: ${name}';
+	@override String get previewGuideAttach => 'Add this guide too';
+	@override String get previewGroupPick => 'Choose the groups to show (the others are hidden after the import, and can be shown again)';
+	@override String get previewGroupAll => 'All';
+	@override String get previewGroupNone => 'None';
+	@override String get previewSamples => 'Sample channels';
+	@override String get previewIssueList => 'Skipped lines';
+	@override String get previewCopyIssues => 'Copy details';
+	@override String get previewCopied => 'Details copied';
+	@override String previewGuideChannels({required int channels, required int programmes}) => '${channels} channels · ${programmes} programmes';
+	@override String previewGuideWindow({required Object start, required Object end}) => 'From ${start} to ${end}';
+	@override String previewGuideMatched({required int count}) => 'Matches ${count} of your channels';
+	@override String get previewGuideNoMatch => 'Matches none of your channels; try another guide';
+	@override String previewGuideStale({required Object end}) => 'This guide has stopped updating: every programme ends before ${end}, so nothing will be on air';
+	@override String previewUrlClash({required Object name}) => 'This address is already imported; “${name}” will be updated';
+	@override String previewNameTaken({required Object name}) => '“${name}” is already another source\'s name';
+	@override String get previewEncodingGbk => 'GBK (detected)';
+	@override String get previewEncodingUtf8 => 'UTF-8';
+	@override String get previewEncodingUtf16 => 'UTF-16';
+	@override String get resultImported => 'Imported';
+	@override String resultChannels({required int count}) => '${count} channels';
+	@override String resultAdded({required int count}) => '${count} new';
+	@override String resultUpdated({required int count}) => '${count} updated';
+	@override String resultRemoved({required int count}) => '${count} removed';
+	@override String resultSkipped({required int count}) => '${count} lines skipped';
+	@override String resultGuideAttached({required Object name}) => 'Guide “${name}” attached';
+	@override String get resultOpenChannels => 'Open channels';
+	@override String get resultImportAnother => 'Import another';
+	@override String get resultCopyDetail => 'Copy details';
+	@override String failureHttpStatus({required int code}) => 'The server answered with an error (HTTP ${code})';
+	@override String get failureTimeout => 'The server did not answer in time';
+	@override String get failureUnreachable => 'The server could not be reached; check the address and the network';
+	@override String get failureTls => 'The secure connection failed';
+	@override String get failureWebPage => 'A web page came back instead of a playlist; check the link (use the raw address on GitHub)';
+	@override String get failureGuideFile => 'This is a guide; import it under the Guide tab';
+	@override String get failureNoChannels => 'No channels were read; make sure this is an M3U/TXT playlist';
+	@override String get failureTruncated => 'The content is incomplete (the download was cut off); try again';
+	@override String get failureUnreadable => 'The file cannot be read, or its text encoding is not supported';
+	@override String get failureNameTaken => 'That name belongs to another source';
+	@override String get failureStorage => 'Saving failed; try again';
+	@override String deleteImpactNote({required int channels, required int favourites}) => 'The ${channels} channels only it lists go with it (${favourites} of them favourites)';
+	@override String get deleteImpactNone => 'Its channels are shared with other sources and stay';
+	@override String get deletePresetNote => 'This is a built-in source; it is not re-added automatically. Add it again from Recommended.';
+	@override String get sourceBuiltinTag => 'Built-in';
+	@override String playlistGuideTag({required int count}) => 'Guide ×${count}';
+	@override String get emptyStartTitle => 'Start with IPTV';
+	@override String get emptyStartDescription => 'Add a recommended source to start watching, or import your own list from an address or a file.';
+	@override String get emptyStartPresetAction => 'Add recommended source';
+	@override String get emptyStartImportAction => 'Add a source';
+	@override String get importOriginLinkDesc => 'An M3U/TXT address that can sync any time';
+	@override String get importOriginTextDesc => 'Paste the list itself';
+	@override String get importOriginFileDesc => 'Pick an m3u/m3u8/txt file on this device';
+	@override String get importOriginPresetDesc => 'Curated public sources';
+	@override String get importOriginScanDesc => 'Type the address on a phone and send it here';
+	@override String get importOriginXtreamDesc => 'Import live channels with a panel address and account';
+	@override String get importGuideOriginLinkDesc => 'An XMLTV/JSON address that can update itself';
+	@override String get importGuideOriginFileDesc => 'Pick an xml/xml.gz/json file on this device';
+	@override String get importLinkHint => 'GitHub page links become their raw file address and go through your GitHub accelerator.';
+	@override String get importFileFormats => '.m3u .m3u8 .txt; UTF-8, GBK and UTF-16 are detected';
+	@override String get importGuideFileFormats => '.xml .xml.gz .json';
+	@override String get importFileAction => 'Choose a file';
+	@override String get importPreviewAction => 'Preview';
+	@override String importCommitAction({required int count}) => 'Import ${count} channels';
+	@override String get importCommitGuideAction => 'Import guide';
+	@override String get importBackAction => 'Back';
+	@override String get importRetry => 'Retry';
+	@override String get importDone => 'Done';
+	@override String get importSwitchToGuide => 'Import as a guide';
+	@override String get importXtreamCheck => 'Check account';
+	@override String get previewIdleTitle => 'Preview first, then import';
+	@override String get previewIdleBody => 'Choose a source and press Preview: the channels, groups and problems are listed first, and nothing is written until you confirm.';
+	@override String get previewReading => 'Reading the source…';
+	@override String get previewWriting => 'Importing…';
+	@override String get previewName => 'Name';
+	@override String previewLinesCount({required int count}) => '${count} lines';
+	@override String previewMore({required int count}) => '${count} more channels';
+	@override String nameClashReplace({required Object name}) => 'Replace the existing “${name}”';
+	@override String nameClashRename({required Object name}) => 'Save as “${name}”';
+	@override String guideNameOf({required Object name}) => '${name} guide';
 }
 
 // Path: multiview
@@ -2378,6 +2505,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get opening => 'Opening the room';
 	@override String get follow => 'Follow';
 	@override String get unfollow => 'Following';
+	@override String get unfollowAction => 'Unfollow';
+	@override String unfollowConfirm({required Object name}) => 'Unfollow ${name}\'s room?';
+	@override String get playerSettings => 'Playback settings';
 	@override String get quality => 'Quality';
 	@override String get lineLabel => 'Line';
 	@override String line({required Object n}) => 'Line ${n}';
@@ -2396,6 +2526,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get sendHint => 'Say something';
 	@override String get send => 'Send';
 	@override String get sendFailed => 'The message failed to send';
+	@override String get emotes => 'Emotes';
+	@override String get emotesEmpty => 'No emoticons seen in this room yet';
 	@override String get fullscreenOn => 'Enter fullscreen';
 	@override String get fullscreenOff => 'Leave fullscreen';
 	@override String get lockControls => 'Lock the controls';
@@ -2454,6 +2586,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get recordStarted => 'Recording started';
 	@override String get recordStopped => 'Recording stopped';
 	@override String get recordFailed => 'The recording action failed';
+	@override String get tabSettings => 'Settings';
 	@override String get tabRecording => 'Recording';
 	@override String recordSegment({required int index, required int minutes}) => 'Segment ${index} · one every ${minutes} min';
 	@override String recordSize({required String size}) => '${size} recorded';
@@ -2574,6 +2707,11 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get keyEscape => 'Esc';
 	@override String get switchRoom => 'Switch room';
 	@override String get switchOnAir => 'Followed · live';
+	@override String get switchSource => 'Source list';
+	@override String get switchSearch => 'Search';
+	@override String get statViewers => 'Viewers';
+	@override String get statOnAir => 'On air';
+	@override String get statWatched => 'Watched';
 	@override String get switchHistory => 'Watch history';
 	@override String get switchReplays => 'Followed replays';
 	@override String get switchEmpty => 'No rooms to switch to';
@@ -2590,7 +2728,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get autoRoomSwitchStopped => 'No live room left to switch to in the follows';
 	@override String onAirFor({required String time}) => 'On air ${time}';
 	@override String get tabSuperChats => 'Chats';
-	@override String get tabSettings => 'Settings';
 	@override String get tabShield => 'Shield';
 	@override String get newMessagesBelow => 'New messages below';
 	@override String newMessagesCount({required Object count}) => '${count} new messages';
@@ -2607,6 +2744,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get replayQuality => 'Quality';
 	@override String get replayRate => 'Speed';
 	@override String get replayParts => 'Parts';
+	@override String get shortcutChatColumn => 'Fold/unfold the chat column';
 }
 
 // Path: search
@@ -6035,6 +6173,9 @@ extension on TranslationsEn {
 			'huya.profileHome' => 'Home',
 			'huya.hotRecommend' => 'Top picks',
 			'huya.greatVideos' => 'Highlights',
+			'huya.headVideos' => ({required int count}) => '${count} videos',
+			'huya.infoColumn' => 'Info column',
+			'huya.infoColumnShow' => 'Show the info column',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -6095,11 +6236,11 @@ extension on TranslationsEn {
 			'iptv.importFormat' => 'Unsupported file format',
 			'iptv.importFromFile' => 'From file',
 			'iptv.importFromText' => 'Paste text',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importFromUrl' => 'From URL',
 			'iptv.importGuide' => 'Import guide',
 			'iptv.importGuideDescription' => 'XMLTV URLs or files; the guide is downloaded after import.',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importInvalid' => 'The content is not a valid playlist',
 			'iptv.importNameRequired' => 'Enter a playlist name',
 			'iptv.importNetworkFailed' => 'The network request failed; check the address or proxy',
@@ -6251,6 +6392,130 @@ extension on TranslationsEn {
 			'iptv.recentRecords' => ({required int count}) => '${count} records',
 			'iptv.previousChannel' => 'Previous channel',
 			'iptv.nextChannel' => 'Next channel',
+			'iptv.importPageTitle' => 'Add a source',
+			'iptv.importKindPlaylist' => 'Playlist',
+			'iptv.importKindGuide' => 'Guide',
+			'iptv.importStepSource' => 'Source',
+			'iptv.importStepPreview' => 'Preview',
+			'iptv.importStepDone' => 'Done',
+			'iptv.importOriginLink' => 'Link',
+			'iptv.importOriginText' => 'Paste text',
+			'iptv.importOriginFile' => 'Local file',
+			'iptv.importOriginPreset' => 'Recommended',
+			'iptv.importOriginScan' => 'From phone',
+			'iptv.importOriginXtream' => 'Xtream account',
+			'iptv.importClipboardFound' => 'The clipboard holds a link or a list',
+			'iptv.importClipboardUse' => 'Use it',
+			'iptv.importScanHint' => 'Fill in the name and the link on a phone; the preview opens as soon as it arrives.',
+			'iptv.importScanAction' => 'Fill in on a phone',
+			'iptv.importScanReceived' => 'Received from the phone — check it below',
+			'iptv.importXtreamServer' => 'Server address',
+			'iptv.importXtreamServerHint' => 'http://example.tv:8080',
+			'iptv.importXtreamUser' => 'User name',
+			'iptv.importXtreamPassword' => 'Password',
+			'iptv.importXtreamNote' => 'The live channels are imported from the account\'s playlist address; the password is part of that address.',
+			'iptv.importXtreamAccountOk' => ({required Object date, required Object active, required Object max}) => 'Account active: expires ${date}, streams ${active}/${max}',
+			'iptv.importXtreamAccountExpired' => ({required Object date}) => 'The subscription expired (${date})',
+			'iptv.importXtreamAccountBad' => 'The server rejected these credentials',
+			'iptv.importXtreamCheckFailed' => 'The panel could not be checked; importing may still work',
+			'iptv.presetSectionTitle' => 'Recommended sources',
+			'iptv.presetEmpty' => 'No sources to recommend',
+			'iptv.presetAddedTag' => 'Added',
+			'iptv.presetBuiltinTag' => 'Built-in',
+			'iptv.presetShortLivedTag' => 'Expiring links',
+			'iptv.presetAddAction' => 'Add',
+			'iptv.presetOpenAction' => 'Open channels',
+			'iptv.presetAddedToast' => ({required Object name}) => 'Added “${name}”',
+			'iptv.presetRestore' => 'Restore default sources',
+			'iptv.presetRestored' => 'Default sources restored; add them again from Recommended',
+			'iptv.previewOf' => ({required Object name}) => 'Preview: ${name}',
+			'iptv.previewChannels' => 'Channels',
+			'iptv.previewGroups' => 'Groups',
+			'iptv.previewLines' => 'Multi-line',
+			'iptv.previewIssues' => 'Skipped',
+			'iptv.previewFormat' => 'Format',
+			'iptv.previewEncoding' => 'Encoding',
+			'iptv.previewCatchup' => 'Replay',
+			'iptv.previewNoCatchup' => 'No replay',
+			'iptv.previewGuideFound' => ({required Object name}) => 'Guide found: ${name}',
+			'iptv.previewGuideAttach' => 'Add this guide too',
+			'iptv.previewGroupPick' => 'Choose the groups to show (the others are hidden after the import, and can be shown again)',
+			'iptv.previewGroupAll' => 'All',
+			'iptv.previewGroupNone' => 'None',
+			'iptv.previewSamples' => 'Sample channels',
+			'iptv.previewIssueList' => 'Skipped lines',
+			'iptv.previewCopyIssues' => 'Copy details',
+			'iptv.previewCopied' => 'Details copied',
+			'iptv.previewGuideChannels' => ({required int channels, required int programmes}) => '${channels} channels · ${programmes} programmes',
+			'iptv.previewGuideWindow' => ({required Object start, required Object end}) => 'From ${start} to ${end}',
+			'iptv.previewGuideMatched' => ({required int count}) => 'Matches ${count} of your channels',
+			'iptv.previewGuideNoMatch' => 'Matches none of your channels; try another guide',
+			'iptv.previewGuideStale' => ({required Object end}) => 'This guide has stopped updating: every programme ends before ${end}, so nothing will be on air',
+			'iptv.previewUrlClash' => ({required Object name}) => 'This address is already imported; “${name}” will be updated',
+			'iptv.previewNameTaken' => ({required Object name}) => '“${name}” is already another source\'s name',
+			'iptv.previewEncodingGbk' => 'GBK (detected)',
+			'iptv.previewEncodingUtf8' => 'UTF-8',
+			'iptv.previewEncodingUtf16' => 'UTF-16',
+			'iptv.resultImported' => 'Imported',
+			'iptv.resultChannels' => ({required int count}) => '${count} channels',
+			'iptv.resultAdded' => ({required int count}) => '${count} new',
+			'iptv.resultUpdated' => ({required int count}) => '${count} updated',
+			'iptv.resultRemoved' => ({required int count}) => '${count} removed',
+			'iptv.resultSkipped' => ({required int count}) => '${count} lines skipped',
+			'iptv.resultGuideAttached' => ({required Object name}) => 'Guide “${name}” attached',
+			'iptv.resultOpenChannels' => 'Open channels',
+			'iptv.resultImportAnother' => 'Import another',
+			'iptv.resultCopyDetail' => 'Copy details',
+			'iptv.failureHttpStatus' => ({required int code}) => 'The server answered with an error (HTTP ${code})',
+			'iptv.failureTimeout' => 'The server did not answer in time',
+			'iptv.failureUnreachable' => 'The server could not be reached; check the address and the network',
+			'iptv.failureTls' => 'The secure connection failed',
+			'iptv.failureWebPage' => 'A web page came back instead of a playlist; check the link (use the raw address on GitHub)',
+			'iptv.failureGuideFile' => 'This is a guide; import it under the Guide tab',
+			'iptv.failureNoChannels' => 'No channels were read; make sure this is an M3U/TXT playlist',
+			'iptv.failureTruncated' => 'The content is incomplete (the download was cut off); try again',
+			'iptv.failureUnreadable' => 'The file cannot be read, or its text encoding is not supported',
+			'iptv.failureNameTaken' => 'That name belongs to another source',
+			'iptv.failureStorage' => 'Saving failed; try again',
+			'iptv.deleteImpactNote' => ({required int channels, required int favourites}) => 'The ${channels} channels only it lists go with it (${favourites} of them favourites)',
+			'iptv.deleteImpactNone' => 'Its channels are shared with other sources and stay',
+			'iptv.deletePresetNote' => 'This is a built-in source; it is not re-added automatically. Add it again from Recommended.',
+			'iptv.sourceBuiltinTag' => 'Built-in',
+			'iptv.playlistGuideTag' => ({required int count}) => 'Guide ×${count}',
+			'iptv.emptyStartTitle' => 'Start with IPTV',
+			'iptv.emptyStartDescription' => 'Add a recommended source to start watching, or import your own list from an address or a file.',
+			'iptv.emptyStartPresetAction' => 'Add recommended source',
+			'iptv.emptyStartImportAction' => 'Add a source',
+			'iptv.importOriginLinkDesc' => 'An M3U/TXT address that can sync any time',
+			'iptv.importOriginTextDesc' => 'Paste the list itself',
+			'iptv.importOriginFileDesc' => 'Pick an m3u/m3u8/txt file on this device',
+			'iptv.importOriginPresetDesc' => 'Curated public sources',
+			'iptv.importOriginScanDesc' => 'Type the address on a phone and send it here',
+			'iptv.importOriginXtreamDesc' => 'Import live channels with a panel address and account',
+			'iptv.importGuideOriginLinkDesc' => 'An XMLTV/JSON address that can update itself',
+			'iptv.importGuideOriginFileDesc' => 'Pick an xml/xml.gz/json file on this device',
+			'iptv.importLinkHint' => 'GitHub page links become their raw file address and go through your GitHub accelerator.',
+			'iptv.importFileFormats' => '.m3u .m3u8 .txt; UTF-8, GBK and UTF-16 are detected',
+			'iptv.importGuideFileFormats' => '.xml .xml.gz .json',
+			'iptv.importFileAction' => 'Choose a file',
+			'iptv.importPreviewAction' => 'Preview',
+			'iptv.importCommitAction' => ({required int count}) => 'Import ${count} channels',
+			'iptv.importCommitGuideAction' => 'Import guide',
+			'iptv.importBackAction' => 'Back',
+			'iptv.importRetry' => 'Retry',
+			'iptv.importDone' => 'Done',
+			'iptv.importSwitchToGuide' => 'Import as a guide',
+			'iptv.importXtreamCheck' => 'Check account',
+			'iptv.previewIdleTitle' => 'Preview first, then import',
+			'iptv.previewIdleBody' => 'Choose a source and press Preview: the channels, groups and problems are listed first, and nothing is written until you confirm.',
+			'iptv.previewReading' => 'Reading the source…',
+			'iptv.previewWriting' => 'Importing…',
+			'iptv.previewName' => 'Name',
+			'iptv.previewLinesCount' => ({required int count}) => '${count} lines',
+			'iptv.previewMore' => ({required int count}) => '${count} more channels',
+			'iptv.nameClashReplace' => ({required Object name}) => 'Replace the existing “${name}”',
+			'iptv.nameClashRename' => ({required Object name}) => 'Save as “${name}”',
+			'iptv.guideNameOf' => ({required Object name}) => '${name} guide',
 			'multiview.layoutLabel' => 'Layout',
 			'multiview.pickRoom' => 'Pick a room',
 			'multiview.openRoom' => 'Open room',
@@ -6485,6 +6750,8 @@ extension on TranslationsEn {
 			'music.songDetailArtist' => 'Artist',
 			'music.songDetailAlbum' => 'Album',
 			'music.songDetailDuration' => 'Duration',
+			_ => null,
+		} ?? switch (path) {
 			'music.songDetailQualities' => 'Available tiers',
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
@@ -6612,8 +6879,6 @@ extension on TranslationsEn {
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
 			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadIncludeTranslation' => 'Include the translation',
 			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
 			'music.downloadIncludeRomanization' => 'Include the romanization',
@@ -6999,6 +7264,8 @@ extension on TranslationsEn {
 			'music.albumTotalDuration' => ({required Object count}) => 'About ${count} min',
 			'music.audioCacheTitle' => 'Audio cache',
 			'music.audioCacheDesc' => 'Songs you have played stay on disk and keep playing when their CDN link expires',
+			_ => null,
+		} ?? switch (path) {
 			'music.audioCacheOff' => 'Off',
 			'music.audioCacheClear' => 'Clear the audio cache',
 			'music.audioCacheCleared' => 'Audio cache cleared',
@@ -7126,8 +7393,6 @@ extension on TranslationsEn {
 			'recorder.emptyFilterTitle' => ({required String status}) => 'No tasks in “${status}” yet',
 			'recorder.stateWaiting' => 'Waiting for live',
 			'recorder.stateProcessing' => 'Processing',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.warningJoinFailed' => 'Join failed; the segments are kept in the folder',
 			'recorder.warningTranscodeFailed' => 'Transcode failed; the untranscoded MP4 is kept',
 			'recorder.warningFinalizeFailed' => 'Post-processing failed; the recording files are kept',
@@ -7391,6 +7656,9 @@ extension on TranslationsEn {
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
+			'room.unfollowAction' => 'Unfollow',
+			'room.unfollowConfirm' => ({required Object name}) => 'Unfollow ${name}\'s room?',
+			'room.playerSettings' => 'Playback settings',
 			'room.quality' => 'Quality',
 			'room.lineLabel' => 'Line',
 			'room.line' => ({required Object n}) => 'Line ${n}',
@@ -7409,6 +7677,8 @@ extension on TranslationsEn {
 			'room.sendHint' => 'Say something',
 			'room.send' => 'Send',
 			'room.sendFailed' => 'The message failed to send',
+			'room.emotes' => 'Emotes',
+			'room.emotesEmpty' => 'No emoticons seen in this room yet',
 			'room.fullscreenOn' => 'Enter fullscreen',
 			'room.fullscreenOff' => 'Leave fullscreen',
 			'room.lockControls' => 'Lock the controls',
@@ -7467,6 +7737,7 @@ extension on TranslationsEn {
 			'room.recordStarted' => 'Recording started',
 			'room.recordStopped' => 'Recording stopped',
 			'room.recordFailed' => 'The recording action failed',
+			'room.tabSettings' => 'Settings',
 			'room.tabRecording' => 'Recording',
 			'room.recordSegment' => ({required int index, required int minutes}) => 'Segment ${index} · one every ${minutes} min',
 			'room.recordSize' => ({required String size}) => '${size} recorded',
@@ -7507,6 +7778,8 @@ extension on TranslationsEn {
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'The super chats did not load',
 			'room.superChatCardMembership' => 'Membership',
+			_ => null,
+		} ?? switch (path) {
 			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
@@ -7587,6 +7860,11 @@ extension on TranslationsEn {
 			'room.keyEscape' => 'Esc',
 			'room.switchRoom' => 'Switch room',
 			'room.switchOnAir' => 'Followed · live',
+			'room.switchSource' => 'Source list',
+			'room.switchSearch' => 'Search',
+			'room.statViewers' => 'Viewers',
+			'room.statOnAir' => 'On air',
+			'room.statWatched' => 'Watched',
 			'room.switchHistory' => 'Watch history',
 			'room.switchReplays' => 'Followed replays',
 			'room.switchEmpty' => 'No rooms to switch to',
@@ -7603,7 +7881,6 @@ extension on TranslationsEn {
 			'room.autoRoomSwitchStopped' => 'No live room left to switch to in the follows',
 			'room.onAirFor' => ({required String time}) => 'On air ${time}',
 			'room.tabSuperChats' => 'Chats',
-			'room.tabSettings' => 'Settings',
 			'room.tabShield' => 'Shield',
 			'room.newMessagesBelow' => 'New messages below',
 			'room.newMessagesCount' => ({required Object count}) => '${count} new messages',
@@ -7620,6 +7897,7 @@ extension on TranslationsEn {
 			'room.replayQuality' => 'Quality',
 			'room.replayRate' => 'Speed',
 			'room.replayParts' => 'Parts',
+			'room.shortcutChatColumn' => 'Fold/unfold the chat column',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -7640,8 +7918,6 @@ extension on TranslationsEn {
 			'search.historyTitle' => 'Search history',
 			'search.clearHistory' => 'Clear',
 			'search.webSearch' => 'Web search',
-			_ => null,
-		} ?? switch (path) {
 			'search.webSearchTitle' => 'Web search',
 			'search.webSearchSelectPlatform' => 'Choose a platform before searching the web',
 			'search.webSearchUnavailable' => 'This platform has no web search',
@@ -8016,6 +8292,8 @@ extension on TranslationsEn {
 			'settings.styleLetterSpacing' => 'Letter spacing',
 			'settings.styleLetterSpacingDesc' => 'Extra space added between characters, in pixels.',
 			'settings.styleWeightThin' => 'Thin',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleWeightExtraLight' => 'Extra Light',
 			'settings.styleWeightLight' => 'Light',
 			'settings.styleWeightNormal' => 'Normal',
@@ -8154,8 +8432,6 @@ extension on TranslationsEn {
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
@@ -8530,6 +8806,8 @@ extension on TranslationsEn {
 			'settings.qualityAuto' => 'Automatic (site default)',
 			'settings.qualityOriginal' => 'Original',
 			'settings.qualityBluRay8M' => 'Blu-ray 8M',
+			_ => null,
+		} ?? switch (path) {
 			'settings.qualityBluRay4M' => 'Blu-ray 4M',
 			'settings.qualityBluRay' => 'Blu-ray',
 			'settings.qualityUltra' => 'Ultra HD',
@@ -8668,8 +8946,6 @@ extension on TranslationsEn {
 			'settings.backgroundGlassSurfaceDescription' => 'Fill for cards, lists and text fields.',
 			'settings.checkUpdate' => 'Check for updates',
 			'settings.checkUpdateDesc' => 'Reads the newest version from the project’s releases.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.checkingUpdate' => 'Checking for updates…',
 			'settings.updateAvailable' => ({required Object version}) => 'Version ${version} is available',
 			'settings.upToDate' => 'Up to date',
@@ -9044,6 +9320,8 @@ extension on TranslationsEn {
 			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
 			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
 			'settings.hongguoDeviceDesc' => 'The device identity this install registered; reset it here.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
 			'settings.hongguoCardVisibleContent' => 'Card visible content',
@@ -9182,8 +9460,6 @@ extension on TranslationsEn {
 			'settings.lanSyncPairIntro' => 'Check that both screens show the same number, then confirm on both.',
 			'settings.lanSyncPairFrom' => ({required Object name}) => 'Pairing request from “${name}”',
 			'settings.lanSyncPairConfirm' => 'Numbers match, confirm',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncPairReject' => 'Different, reject',
 			'settings.lanSyncPairAccepted' => 'Paired',
 			'settings.lanSyncPairRejected' => 'Pairing declined',
@@ -9558,6 +9834,8 @@ extension on TranslationsEn {
 			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',
+			_ => null,
+		} ?? switch (path) {
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
@@ -9696,8 +9974,6 @@ extension on TranslationsEn {
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
 			'vod.downloadRetryDelay' => 'Retry interval',
 			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadManagerTitle' => 'Downloads',
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
