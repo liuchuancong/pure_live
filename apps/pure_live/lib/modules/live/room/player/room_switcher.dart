@@ -10,35 +10,14 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
-import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
+import 'package:pure_live/modules/live/search/search_controller.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// The switcher's groups, in the reference's order minus the source list:
-/// the followed rooms on air, the watch history and followed replays.
-enum RoomSwitchGroup { onAir, history, replays }
-
-/// The rooms each group offers, the current room left out.
-({List<LiveRoom> onAir, List<LiveRoom> history, List<LiveRoom> replays}) roomSwitcherLists({
-  required List<LiveRoom> follows,
-  required List<LiveRoom> history,
-  required LiveRoom current,
-}) {
-  bool other(LiveRoom room) => room.ref.identityKey != current.ref.identityKey;
-  return (
-    onAir: [
-      for (final room in follows)
-        if (room.broadcast.isLiveNow && other(room)) room,
-    ],
-    history: [
-      for (final room in history)
-        if (other(room)) room,
-    ],
-    replays: [
-      for (final room in follows)
-        if (room.broadcast.isRecord && other(room)) room,
-    ],
-  );
-}
+/// The switcher's three sources: the followed rooms on air, the list this
+/// room was opened from (hot, an area, …), and a search across every enabled
+/// platform. The source group only appears when the room came from a list.
+enum RoomSwitchGroup { follows, source, search }
 
 /// The portrait fullscreen's swipe list: followed rooms on air, or the
 /// history when none is on. The current room stays in the list so its
@@ -60,8 +39,9 @@ List<LiveRoom> roomSwipeList({
 }
 
 /// Opens the room switcher over [current]: the followed rooms on air, the
-/// watch history and followed replays, in the grid or list style. A pick
-/// replaces the room page, so going back does not return to the old room.
+/// source list the room was opened from, and a search across every enabled
+/// platform. A pick replaces the room page, so going back does not return to
+/// the old room.
 Future<void> showRoomSwitcher(BuildContext context, {required LiveRoom current}) => showDsDialog<void>(
   context: context,
   builder: (context) => _RoomSwitcherDialog(current: current),
@@ -78,6 +58,24 @@ final class _RoomSwitcherDialog extends ConsumerStatefulWidget {
 
 final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> {
   RoomSwitchGroup? _group;
+  late final TextEditingController _field = TextEditingController();
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _field.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  // The search runs across every enabled platform at once: a word typed here
+  // is a room to find, not a platform to browse.
+  void _runSearch(String word) {
+    final query = word.trim();
+    if (query.isEmpty) return;
+    ref.read(searchSiteIdProvider.notifier).selected = kSearchAllPlatforms;
+    unawaited(ref.read(searchProvider.notifier).search(query));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,33 +83,84 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final follows = ref.watch(followsProvider).rooms;
-    final history = [for (final (room, _) in ref.watch(historyProvider).records) room];
-    final lists = roomSwitcherLists(follows: follows, history: history, current: widget.current);
-    final firstNonEmpty = lists.onAir.isNotEmpty
-        ? RoomSwitchGroup.onAir
-        : lists.history.isNotEmpty
-        ? RoomSwitchGroup.history
-        : RoomSwitchGroup.replays;
-    final group = _group ?? firstNonEmpty;
-    final rooms = switch (group) {
-      RoomSwitchGroup.onAir => lists.onAir,
-      RoomSwitchGroup.history => lists.history,
-      RoomSwitchGroup.replays => lists.replays,
-    };
+    final playlist = ref.watch(roomPlaylistProvider);
+    bool other(LiveRoom room) => room.ref.identityKey != widget.current.ref.identityKey;
+    final followsList = [
+      for (final room in follows)
+        if (room.broadcast.isLiveNow && other(room)) room,
+    ];
+    final sourceList = [
+      for (final room in playlist?.rooms ?? const <LiveRoom>[])
+        if (other(room)) room,
+    ];
+    final groups = [RoomSwitchGroup.follows, if (sourceList.isNotEmpty) RoomSwitchGroup.source, RoomSwitchGroup.search];
+    final group = _group != null && groups.contains(_group) ? _group! : groups.first;
     final layout = ref.watch(roomSwitcherLayoutProvider);
+    final search = ref.watch(searchProvider);
     final screen = MediaQuery.sizeOf(context);
     final dialogWidth = math.max(280, math.min(720, screen.width - 32)).toDouble();
     final dialogHeight = math.max(260, math.min(480, screen.height - 160)).toDouble();
-    final counts = {
-      RoomSwitchGroup.onAir: lists.onAir.length,
-      RoomSwitchGroup.history: lists.history.length,
-      RoomSwitchGroup.replays: lists.replays.length,
-    };
+    final counts = {RoomSwitchGroup.follows: followsList.length, RoomSwitchGroup.source: sourceList.length};
     String label(RoomSwitchGroup value) => switch (value) {
-      RoomSwitchGroup.onAir => t.room.switchOnAir,
-      RoomSwitchGroup.history => t.room.switchHistory,
-      RoomSwitchGroup.replays => t.room.switchReplays,
+      RoomSwitchGroup.follows => t.room.switchOnAir,
+      RoomSwitchGroup.source => t.room.switchSource,
+      RoomSwitchGroup.search => t.room.switchSearch,
     };
+
+    final listRooms = switch (group) {
+      RoomSwitchGroup.follows => followsList,
+      RoomSwitchGroup.source => sourceList,
+      RoomSwitchGroup.search => const <LiveRoom>[],
+    };
+    Widget body() {
+      if (group == RoomSwitchGroup.search) {
+        return PagedCardGrid<LiveRoom>(
+          scrollController: _scroll,
+          items: search.rooms,
+          hasMore: search.hasMore,
+          isLoading: search.loading,
+          onLoadMore: ref.read(searchProvider.notifier).loadMore,
+          layout: CardLayout.list,
+          listMatchesGridWidth: true,
+          listMainAxisExtent: kRoomCardListDesignHeight,
+          listItemBuilder: (context, room) => _SwitcherRow(room: room, onPressed: () => _open(room)),
+          crossSpacing: DsSpace.s8,
+          mainSpacing: DsSpace.s8,
+          padding: const EdgeInsets.all(DsSpace.s4),
+          error: search.error?.message,
+          onRetry: () => unawaited(ref.read(searchProvider.notifier).retry()),
+          emptyIcon: DsIcons.searchX,
+          emptyTitle: t.search.noResultsTitle,
+          itemBuilder: (context, room) => _SwitcherCard(room: room, onPressed: () => _open(room)),
+        );
+      }
+      if (listRooms.isEmpty) {
+        return Center(
+          child: Text(t.room.switchEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
+        );
+      }
+      return layout == RoomSwitcherLayout.grid
+          ? GridView.builder(
+              padding: const EdgeInsets.all(DsSpace.s4),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 224,
+                mainAxisExtent: 164,
+                crossAxisSpacing: DsSpace.s8,
+                mainAxisSpacing: DsSpace.s8,
+              ),
+              itemCount: listRooms.length,
+              itemBuilder: (context, index) =>
+                  _SwitcherCard(room: listRooms[index], onPressed: () => _open(listRooms[index])),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(DsSpace.s4),
+              itemCount: listRooms.length,
+              separatorBuilder: (_, _) => DsLine(color: colors.border),
+              itemBuilder: (context, index) =>
+                  _SwitcherRow(room: listRooms[index], onPressed: () => _open(listRooms[index])),
+            );
+    }
+
     return DsDialog(
       title: Text(t.room.switchRoom),
       description: SizedBox(
@@ -128,52 +177,39 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
                     value: group,
                     semanticLabel: t.room.switchRoom,
                     options: [
-                      for (final value in RoomSwitchGroup.values)
-                        DsChipOption(value: value, label: Text('${label(value)} ${counts[value]}')),
+                      for (final value in groups)
+                        DsChipOption(
+                          value: value,
+                          label: Text(counts.containsKey(value) ? '${label(value)} ${counts[value]}' : label(value)),
+                        ),
                     ],
                     onChanged: (value) => setState(() => _group = value),
                   ),
                 ),
-                const SizedBox(width: DsSpace.s8),
-                DsButton.icon(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  semanticLabel: layout == RoomSwitcherLayout.grid ? t.room.switchShowList : t.room.switchShowGrid,
-                  onPressed: () => unawaited(
-                    ref
-                        .read(roomSwitcherLayoutProvider.notifier)
-                        .set(layout == RoomSwitcherLayout.grid ? RoomSwitcherLayout.list : RoomSwitcherLayout.grid),
+                if (group != RoomSwitchGroup.search) ...[
+                  const SizedBox(width: DsSpace.s8),
+                  DsButton.icon(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    semanticLabel: layout == RoomSwitcherLayout.grid ? t.room.switchShowList : t.room.switchShowGrid,
+                    onPressed: () => unawaited(
+                      ref
+                          .read(roomSwitcherLayoutProvider.notifier)
+                          .set(layout == RoomSwitcherLayout.grid ? RoomSwitcherLayout.list : RoomSwitcherLayout.grid),
+                    ),
+                    icon: DsIcon(layout == RoomSwitcherLayout.grid ? DsIcons.list : DsIcons.layoutGrid, size: 16),
                   ),
-                  icon: DsIcon(layout == RoomSwitcherLayout.grid ? DsIcons.list : DsIcons.layoutGrid, size: 16),
-                ),
+                ],
               ],
             ),
-            Expanded(
-              child: rooms.isEmpty
-                  ? Center(
-                      child: Text(t.room.switchEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
-                    )
-                  : layout == RoomSwitcherLayout.grid
-                  ? GridView.builder(
-                      padding: const EdgeInsets.all(DsSpace.s4),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 224,
-                        mainAxisExtent: 164,
-                        crossAxisSpacing: DsSpace.s8,
-                        mainAxisSpacing: DsSpace.s8,
-                      ),
-                      itemCount: rooms.length,
-                      itemBuilder: (context, index) =>
-                          _SwitcherCard(room: rooms[index], onPressed: () => _open(rooms[index])),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(DsSpace.s4),
-                      itemCount: rooms.length,
-                      separatorBuilder: (_, _) => DsLine(color: colors.border),
-                      itemBuilder: (context, index) =>
-                          _SwitcherRow(room: rooms[index], onPressed: () => _open(rooms[index])),
-                    ),
-            ),
+            if (group == RoomSwitchGroup.search)
+              DsSearchField(
+                controller: _field,
+                autofocus: true,
+                placeholder: t.common.searchHint,
+                onSubmitted: _runSearch,
+              ),
+            Expanded(child: body()),
           ],
         ),
       ),

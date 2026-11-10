@@ -20,6 +20,31 @@ Future<void> loadEmojiAtlas() {
 
 Future<void>? _pending;
 
+Future<List<String>>? _codesPending;
+
+/// The atlas's own emoticon texts ("[微笑]"), in manifest order: what a
+/// composer's emote panel offers from the bundled sheet. Reading the codes
+/// shares the manifest with the loader above but not its memo, so a panel
+/// can be read before the sheet has finished decoding without dragging the
+/// decode along.
+Future<List<String>> emojiAtlasCodes() {
+  return _codesPending ??= _codes();
+}
+
+Future<List<String>> _codes() async {
+  try {
+    final raw = await rootBundle.loadString(_manifestAsset);
+    final manifest = jsonDecode(raw) as Map<String, dynamic>;
+    final rectsJson = manifest['rects'];
+    if (rectsJson is! Map<String, dynamic>) return const [];
+    return [for (final key in rectsJson.keys) key];
+  } on Object {
+    // The codes are an enhancement's index: without them the panel offers
+    // only what the room itself has used.
+    return const [];
+  }
+}
+
 const String _manifestAsset = 'packages/live_sites/assets/emo/atlas/atlas.json';
 
 Future<void> _load() async {

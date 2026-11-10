@@ -23,6 +23,7 @@ import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/shared/player/emoji_atlas_loader.dart' show emojiAtlasCodes;
 import 'package:pure_live/shared/shared.dart';
 
 /// The room's chat column: five tabs — the danmaku list with its composer, the
@@ -31,6 +32,40 @@ import 'package:pure_live/shared/shared.dart';
 /// panel's own state; a narrow column scrolls its bar rather than cutting a
 /// label.
 enum _ChatTab { danmaku, superChats, recording, settings, shield }
+
+/// The chat panel's settings body, asked for from outside the panel.
+///
+/// The picture bar's gear raises the ask instead of walking to the settings
+/// center: the settings change where the viewer already is. One ask is one
+/// bump of the counter; the panel reads it in its build — including the
+/// build that follows the page opening the column for it — so an ask is
+/// answered even when the panel was folded away at the moment it arrived.
+final roomChatSettingsAskProvider = NotifierProvider<_ChatSettingsAskController, int>(_ChatSettingsAskController.new);
+
+/// Owns the ask counter.
+final class _ChatSettingsAskController extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  /// Raises one ask.
+  void ask() => state++;
+}
+
+/// The emoticons this room's talk has actually used: the platforms hand
+/// their tables over inside the messages, so the composer's panel reads
+/// what the column has seen instead of fetching a table of its own. First
+/// sight wins a code's place; the picture travels with it.
+final chatSeenEmotesProvider = Provider<List<LiveEmote>>((ref) {
+  final seen = <String, String>{};
+  for (final message in ref.watch(roomChatProvider)) {
+    for (final emote in message.emotes) {
+      final code = emote.code.trim();
+      if (code.isEmpty || emote.url.trim().isEmpty) continue;
+      seen.putIfAbsent(code, () => emote.url.trim());
+    }
+  }
+  return [for (final entry in seen.entries) LiveEmote.of(code: entry.key, url: entry.value)];
+});
 
 /// The chat column under (or beside) the picture.
 final class RoomChatPanel extends ConsumerStatefulWidget {
@@ -69,6 +104,10 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
   /// What the chat tab holds that the viewer has not seen, worn as its badge.
   int _unread = 0;
 
+  /// The ask counter this panel has already answered; a fresh panel (the page
+  /// just unfolded the column for the ask) answers the standing one on build.
+  int _handledAsk = 0;
+
   /// Arrivals while the viewer is on another tab. The panel counts them, not the
   /// list, which is disposed the moment another tab is picked — a count kept
   /// there would reset at exactly the moment it matters.
@@ -84,6 +123,29 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     setState(() => _unread = unseen);
   }
 
+  /// Picks a tab, or arms one of the row-end verbs: leaving the danmaku tab
+  /// marks what the viewer had read, arriving at it clears the badge.
+  void _select(_ChatTab value) {
+    setState(() => _openTab(value));
+  }
+
+  /// The tab bookkeeping of [_select] without the setState: an outside ask
+  /// arrives *through* this panel's rebuild, so its fields move inside the
+  /// build that reads them.
+  void _openTab(_ChatTab value) {
+    if (value == _ChatTab.danmaku) {
+      // Coming to the tab is reading it: the badge counts what the
+      // viewer left behind, not what they are looking at.
+      _lastReadId = null;
+      _unread = 0;
+    } else if (_tab == _ChatTab.danmaku) {
+      final chat = ref.read(roomChatProvider);
+      _lastReadId = chat.isEmpty ? null : chat.last.messageId;
+      _unread = 0;
+    }
+    _tab = value;
+  }
+
   static int _after(List<LiveMessage> chat, String mark) {
     final index = chat.lastIndexWhere((line) => line.messageId == mark);
     return index < 0 ? chat.length : chat.length - index - 1;
@@ -96,7 +158,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // The super chat tab stays for every room, as the reference's chat
     // panel does, because a membership or a subscription can arrive where
     // the platform keeps no board.
-    final tab = _tab;
     ref.listen(roomChatProvider, _chatArrived);
     final fill = widget.translucent ? OnVideoColors.clear : colors.surface;
     if (widget.feedOnly) {
@@ -114,35 +175,39 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
       );
     }
     final board = ref.watch(roomSuperChatsProvider);
+    // An ask from outside — the picture bar's gear — lands here. The page
+    // makes the chat face visible on its own listen; this panel, which may
+    // only now be coming up (a folded column mounts fresh), answers the ask
+    // in this build, before the body switch reads the tab.
+    final ask = ref.watch(roomChatSettingsAskProvider);
+    if (ask != _handledAsk) {
+      _handledAsk = ask;
+      _openTab(_ChatTab.settings);
+    }
+    final tab = _tab;
     return ColoredBox(
       color: fill,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // The talk's two tabs carry the words; the room's errands (the
+          // recording, the reading and the shield) are verbs, not reading
+          // material, so they sit at the row's end as buttons and only take
+          // the body while pressed — the words come back with one press on a
+          // tab.
           DsTabs<_ChatTab>(
             value: tab,
-            onChanged: (value) => setState(() {
-              if (value == _ChatTab.danmaku) {
-                // Coming to the tab is reading it: the badge counts what the
-                // viewer left behind, not what they are looking at.
-                _lastReadId = null;
-                _unread = 0;
-              } else if (tab == _ChatTab.danmaku) {
-                final chat = ref.read(roomChatProvider);
-                _lastReadId = chat.isEmpty ? null : chat.last.messageId;
-                _unread = 0;
-              }
-              _tab = value;
-            }),
+            onChanged: _select,
             semanticLabel: t.room.chatTitle,
             tabs: [
-              DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList), count: _unread == 0 ? null : _unread),
+              DsTab(
+                value: _ChatTab.danmaku,
+                label: Text(t.room.danmakuList),
+                count: _unread == 0 ? null : _unread,
+              ),
               DsTab(
                 value: _ChatTab.superChats,
                 label: Text(t.room.tabSuperChats),
-                // The board's own size rather than a count of unread: a paid
-                // message is shown for its own minutes, so the number answers
-                // "how many are pinned here", which is what the tab then lists.
                 count: board.messages.isEmpty ? null : board.messages.length,
               ),
               DsTab(value: _ChatTab.recording, label: Text(t.room.tabRecording)),
@@ -621,6 +686,10 @@ final class _ChatComposer extends ConsumerStatefulWidget {
 final class _ChatComposerState extends ConsumerState<_ChatComposer> {
   final TextEditingController _field = TextEditingController();
 
+  /// The emote panel: open until the viewer closes it — a picker that shut
+  /// itself after every face would make a run of them impossible.
+  bool _emotesOpen = false;
+
   @override
   void dispose() {
     _field.dispose();
@@ -640,22 +709,49 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
           children: [
-            Expanded(
-              child: DsTextField(
-                controller: _field,
-                clearable: true,
-                placeholder: t.room.sendHint,
-                onSubmitted: (word) => unawaited(_send(word)),
-                style: DsTextFieldStyle(borderRadius: BorderRadius.circular(DsRadii.pill)),
-              ),
+            if (_emotesOpen) _EmotePanel(onPick: _insertEmote),
+            Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: DsTextField(
+                    controller: _field,
+                    clearable: true,
+                    placeholder: t.room.sendHint,
+                    onSubmitted: (word) => unawaited(_send(word)),
+                    style: DsTextFieldStyle(borderRadius: BorderRadius.circular(DsRadii.pill)),
+                  ),
+                ),
+                DsButton.icon(
+                  variant: _emotesOpen ? DsButtonVariant.secondary : DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  semanticLabel: t.room.emotes,
+                  onPressed: () => setState(() => _emotesOpen = !_emotesOpen),
+                  icon: const DsIcon(DsIcons.smile, size: 16),
+                ),
+                DsButton(onPressed: () => unawaited(_send(_field.text)), child: Text(t.room.send)),
+              ],
             ),
-            DsButton(onPressed: () => unawaited(_send(_field.text)), child: Text(t.room.send)),
           ],
         ),
       ),
+    );
+  }
+
+  /// Puts an emote's code where the caret is — or at the line's end when the
+  /// field has no say about a caret — and leaves the typing position there.
+  void _insertEmote(String code) {
+    final text = _field.text;
+    final selection = _field.selection;
+    final start = selection.start < 0 || selection.start > text.length ? text.length : selection.start;
+    final end = selection.end < 0 || selection.end > text.length ? text.length : selection.end;
+    _field.value = TextEditingValue(
+      text: text.replaceRange(start, end, code),
+      selection: TextSelection.collapsed(offset: start + code.length),
     );
   }
 
@@ -668,6 +764,96 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
     } else {
       showDsToast(context: context, title: context.t.room.sendFailed);
     }
+  }
+}
+
+/// The composer's emote panel: this room's own emoticons first (what the talk
+/// has already used), then the bundled sheet's, every face drawn through the
+/// same parser the lines use — one the chat cannot draw is one the panel does
+/// not offer. A pick puts its code in the field and the panel stays up.
+final class _EmotePanel extends ConsumerStatefulWidget {
+  const _EmotePanel({required this.onPick});
+
+  final ValueChanged<String> onPick;
+
+  @override
+  ConsumerState<_EmotePanel> createState() => _EmotePanelState();
+}
+
+final class _EmotePanelState extends ConsumerState<_EmotePanel> {
+  /// The bundled sheet's emoticon texts; read once, after the first build.
+  List<String> _atlasCodes = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      emojiAtlasCodes().then((codes) {
+        if (mounted) setState(() => _atlasCodes = codes);
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final emotes = ref.watch(chatSeenEmotesProvider);
+    final faces = [for (final emote in emotes) emote.code, ..._atlasCodes];
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 180),
+      padding: const EdgeInsets.all(DsSpace.s8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        border: Border.all(color: colors.border),
+      ),
+      child: faces.isEmpty
+          ? Center(
+              child: Text(t.room.emotesEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+            )
+          : SingleChildScrollView(
+              child: Wrap(
+                spacing: DsSpace.s4,
+                runSpacing: DsSpace.s4,
+                children: [for (final code in faces) _EmoteTile(code: code, emotes: emotes, onPick: widget.onPick)],
+              ),
+            ),
+    );
+  }
+}
+
+/// One face the panel offers: the emoticon drawn at the line's own size, its
+/// code the pick.
+final class _EmoteTile extends StatelessWidget {
+  const _EmoteTile({required this.code, required this.emotes, required this.onPick});
+
+  final String code;
+  final List<LiveEmote> emotes;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsPressable(
+      semanticLabel: code,
+      onPressed: () => onPick(code),
+      builder: (context, states, _) => Container(
+        height: 40,
+        width: 48,
+        alignment: Alignment.center,
+        decoration: DsBoxDecoration(
+          color: states.contains(WidgetState.hovered) || states.contains(WidgetState.focused) ? colors.hover : null,
+          borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+        ),
+        child: RichText(
+          maxLines: 1,
+          text: TextSpan(children: chatWordSpans(code, theme.typography.caption, 22, emotes: emotes)),
+        ),
+      ),
+    );
   }
 }
 
@@ -1379,6 +1565,13 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
           label: Text(t.room.danmakuOn),
           description: Text(t.room.danmakuSettingsDesc),
         ),
+        const SizedBox(height: DsSpace.s16),
+        // The display body itself, the settings center's own pane: one source
+        // of rows, so the column edits the very same preferences the settings
+        // page does and both read back the same live state — the lines change
+        // while the room keeps playing. The row widgets already answer a
+        // narrow pane, dropping their wide controls under their labels.
+        const DanmakuDisplayPane(),
         const SizedBox(height: DsSpace.s16),
         DsListSection(
           children: [

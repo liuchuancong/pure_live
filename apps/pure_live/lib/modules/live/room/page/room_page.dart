@@ -18,16 +18,14 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
-import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
+import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel, roomChatSettingsAskProvider;
 import 'package:pure_live/modules/live/room/chat/room_chat_stream.dart' show RoomChatStream;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
-    show PlayerSurface, kPlayerStageColor, toggleRoomPip, toggleRoomRecording;
+    show PlayerSurface, kPlayerStageColor;
 import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
-import 'package:pure_live/modules/live/room/page/room_details.dart'
-    show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom;
+import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
 import 'package:pure_live/modules/live/room/page/room_glass_card.dart';
 import 'package:pure_live/modules/live/room/page/room_orientation.dart'
     show
@@ -57,7 +55,6 @@ import 'package:pure_live/modules/live/room/player/room_playlist.dart'
     show RoomPlaylistController, roomPlaylistProvider;
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart';
-import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart' show showRoomDirectLinks;
 import 'package:pure_live/shared/navigation/room_seed.dart' show takeRoomSeed;
 import 'package:pure_live/shared/shared.dart';
 
@@ -90,6 +87,10 @@ final class RoomPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<RoomPage> createState() => _RoomPageState();
 }
+
+/// The width the room's wide arrangements start at; the chat column's
+/// toggle and the `T` key answer to the same measure.
+const double kRoomWideBreakpoint = 840;
 
 final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingObserver, RouteAware {
   Timer? _slowTimer;
@@ -151,6 +152,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// when the pointer leaves it (or the tab is tapped again).
   bool _immersiveChatOpen = false;
 
+  /// The drawer's grace after the pointer leaves: it closes when the pointer
+  /// has stayed away this long, so a stray exit on the way back to the talk
+  /// does not slam the drawer shut mid-read.
+  Timer? _immersiveChatGrace;
+
   /// Whether a room switch from the portrait full screen is in flight; the
   /// page keeps its surface while the next room opens on the same controller.
   bool _switchingPortraitRoom = false;
@@ -202,7 +208,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   /// The room's width at which the chat moves beside the picture (the
   /// reference's `wide` layout).
-  static const double _wideBreakpoint = 840;
+  static const double _wideBreakpoint = kRoomWideBreakpoint;
 
   /// Windows shorter than this are a phone held sideways, whatever their width
   /// (the reference's compact height, which wins over its wide breakpoint):
@@ -221,7 +227,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   static const double _wideStageFloor = 420;
 
   /// The strips the picture's own top bar and control bar take at its edges.
-  /// The theatre's glass column starts and ends clear of them, so neither the
+  /// The TV's glass column starts and ends clear of them, so neither the
   /// bars nor what rises from them (a picker's catalogue) ever lands on the
   /// chat's words.
   ///
@@ -401,7 +407,19 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// Opens or closes the immersive layout's chat drawer.
   void _setImmersiveChatOpen(bool value) {
     if (_immersiveChatOpen == value) return;
+    _immersiveChatGrace?.cancel();
+    _immersiveChatGrace = null;
     setState(() => _immersiveChatOpen = value);
+  }
+
+  /// The pointer left the open drawer: its close waits out the grace, and a
+  /// return inside it cancels the wait.
+  void _scheduleImmersiveChatClose() {
+    if (!_immersiveChatOpen) return;
+    _immersiveChatGrace?.cancel();
+    _immersiveChatGrace = Timer(const Duration(milliseconds: 800), () {
+      if (mounted && _immersiveChatOpen) setState(() => _immersiveChatOpen = false);
+    });
   }
 
   /// The immersive layout: the picture fills the window and the chat lives on
@@ -409,15 +427,19 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// that slides over the picture, and it closes when the pointer leaves it.
   /// A fullscreen room keeps every control the inline room has; the drawer is
   /// only how the chat reaches them.
+  /// Whether the window can host the drawer's minimum width beside the
+  /// picture. A desktop PiP window cannot, and keeps only the picture:
+  /// no tab, no drawer, and the stream keeps its full bleed.
+  bool get _immersiveChatFits => MediaQuery.sizeOf(context).width * 0.6 >= kChatPanelWidthMin;
+
   Widget _immersiveChatDrawer(Widget player) {
     final t = context.t;
     final room = ref.watch(roomProvider);
     final colors = DsTheme.of(context).colors;
-    final width = MediaQuery.sizeOf(context).width;
-    final chatWidth = ref
-        .watch(chatPanelWidthProvider)
-        .clamp(kChatPanelWidthMin, math.min(kChatPanelWidthMax, width * 0.6))
-        .toDouble();
+    final maxChatWidth = math.min(kChatPanelWidthMax, MediaQuery.sizeOf(context).width * 0.6);
+    // A window too narrow for the minimum drawer never summons it.
+    if (maxChatWidth < kChatPanelWidthMin) return player;
+    final chatWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, maxChatWidth);
     return Stack(
       children: [
         Positioned.fill(child: player),
@@ -426,7 +448,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
           bottom: 0,
           end: 0,
           child: MouseRegion(
-            onExit: _immersiveChatOpen ? (_) => _setImmersiveChatOpen(false) : null,
+            onEnter: (_) => _immersiveChatGrace?.cancel(),
+            onExit: _immersiveChatOpen ? (_) => _scheduleImmersiveChatClose() : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
@@ -553,6 +576,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   void dispose() {
+    _immersiveChatGrace?.cancel();
     playbackRemote.unregister(_remoteTarget);
     // The page may be destroyed while it fills the window; the next route
     // must get its window strip back.
@@ -1035,13 +1059,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
     final tv = formFactor == FormFactor.tv;
     final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
-    // The theatre is the wide room's arrangement, and this route owns the
-    // window, so the page's own width is the measure its layout will take.
+    // The wide room fills the route, and this route can own the window, so
+    // the page's own width is the measure its layout will take.
     final windowSize = MediaQuery.sizeOf(context);
     // A phone or tablet held sideways in a short window takes the landscape
     // arrangement before any width is asked: the reference's compact height
     // wins over its wide breakpoint, so a sideways phone never gets the
-    // desktop split (and its theatre) or the stacked column. A desktop window
+    // desktop split or the stacked column. A desktop window
     // as short keeps the layout its width gives it. The window's shape decides,
     // not the stream's: a portrait source sideways is still a short window.
     final landscapePhone =
@@ -1051,10 +1075,16 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         windowSize.width >= LiveWindow.compact;
     final wideWindow = !landscapePhone && windowSize.width >= _wideBreakpoint;
 
-    /// 影院模式并入抽屉：开影院即收起弹幕栏，画面即全部。再按一次展开
-    /// 的入口在抽屉折叠后的右上按钮。
-    void toggleTheater() {
-      unawaited(ref.read(chatCollapsedProvider.notifier).set(value: true));
+    /// T 键与栏上按钮共用：宽屏把聊天列收起/展开——收起时回到列（必要时
+    /// 从弹幕流切回），开着时收起。一个方向一对动作，不再是单程门。
+    void toggleChatColumn() {
+      final opening = ref.read(chatModeProvider) != ChatMode.column || ref.read(chatCollapsedProvider);
+      if (opening) {
+        unawaited(ref.read(chatModeProvider.notifier).set(ChatMode.column));
+        unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
+      } else {
+        unawaited(ref.read(chatCollapsedProvider.notifier).set(value: true));
+      }
     }
 
     _watchSlow(room);
@@ -1065,22 +1095,34 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // lay out the bare picture. A phone's picture-in-picture is the system's
     // window over the app, so this page keeps the layout it had.
     final ownsWindow = presentationController.modeOwnsWindow(presentation);
-    // 方案B 沉浸全宽：宽屏桌面房间不再有独立的页头——窗口即播放器，
-    // 标题、返回与主播名片是画面左上的玻璃浮层，弹幕栏是右缘可折叠的玻璃
-    // 抽屉。TV 房间保持自己的页头与双栏（遥控没有指针去唤醒浮层）。
-    // 页头折走后路由补一条标准高度的应用名条（44px），不再用承载房间信息
-    // 的高页头——信息回到画面左上，标题栏只留窗口 chrome。
-    final glassChrome = wideWindow && !tv && !ownsWindow;
-    // 自绘窗口三键的桌面（Windows/Linux）：右侧要一条「固定、可隐藏」的
-    // 弹幕列（与画面并排，不浮在画上），标题仍在画面左上。其余桌面保持
-    // 方案B 的浮层抽屉。
-    final fixedChat = glassChrome && WindowChromeState.drawsCaptionControls;
-    // The glass room folds the app bar away, so it no longer draws the
-    // window's own chrome: publish the fact so the route shows the caption
-    // strip (drag band and the three buttons) instead of losing them.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(roomPageOwnChromeProvider.notifier).set(value: !glassChrome);
-    });
+
+    /// The picture bar's gear asks the chat panel for its settings body. The
+    /// panel answers on its own build; the page's part of the ask is making
+    /// the chat face visible first — a folded column or a stream gives way to
+    /// the column, the immersive room slides its drawer out, the TV's
+    /// floating column unfolds. The stacked rooms carry the panel always, so
+    /// a narrow window has nothing to open.
+    void revealChatPanel() {
+      if (ownsWindow || _portraitFullscreen) {
+        if (_immersiveChatFits) _setImmersiveChatOpen(true);
+        return;
+      }
+      if (tv) {
+        if (ref.read(chatCollapsedProvider)) {
+          unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
+        }
+        return;
+      }
+      if (!wideWindow) return;
+      if (ref.read(chatModeProvider) != ChatMode.column) {
+        unawaited(ref.read(chatModeProvider.notifier).set(ChatMode.column));
+      }
+      if (ref.read(chatCollapsedProvider)) {
+        unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
+      }
+    }
+
+    ref.listen(roomChatSettingsAskProvider, (_, _) => revealChatPanel());
 
     /// The back arrow and Escape: leave the presentation mode while one
     /// holds the page, otherwise leave the room — where "leave" is the
@@ -1141,12 +1183,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // One table feeds the keys this page answers to and the `?` help sheet:
     // a line the sheet shows is a key that works. Its conditions are the
     // same ones the verbs run under — a TV remote keeps the arrows on focus,
-    // a narrow window has no theatre, and a backend without a capture route
-    // has no frame to save.
+    // a narrow window has no chat column to fold, and a backend without a
+    // capture route has no frame to save.
     final shortcuts = roomShortcutBindings(
       t,
       tv: tv,
-      theater: wideWindow,
+      chatColumn: wideWindow,
       canCaptureScreenshot: room.handle?.canCaptureScreenshot ?? false,
     );
     VoidCallback shortcutAction(RoomShortcutAction action) => switch (action) {
@@ -1158,7 +1200,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       RoomShortcutAction.leave => leave,
       RoomShortcutAction.volumeUp => () => nudgeVolume(volumeStep),
       RoomShortcutAction.volumeDown => () => nudgeVolume(-volumeStep),
-      RoomShortcutAction.theater => toggleTheater,
+      RoomShortcutAction.chatColumn => toggleChatColumn,
       // The two verbs a viewer reaches for when a stream misbehaves: the
       // numbers behind it, and a frame of it.
       RoomShortcutAction.stats => () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
@@ -1198,10 +1240,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final streamActive = chatMode == ChatMode.stream && !tv && !ref.watch(playerStatsVisibleProvider);
     final streamVisible = streamActive && !chatCollapsed;
 
-    /// The picture surface, with the theatre's chat handed in as a page layer
-    /// when the layout has one: the surface draws its own bars and catalogues
-    /// above that layer. [onTitle] is the sideways phone's: the strip names the
-    /// room where its card used to, and the name opens the details.
+    /// The picture surface, with the layout's own chat (the TV's glass
+    /// column, the stream over the picture) handed in as a page layer: the
+    /// surface draws its own bars and catalogues above that layer. [onTitle]
+    /// is the sideways phone's: the strip names the room where its card used
+    /// to, and the name opens the details.
     Widget playerWith({
       Widget? overlay,
       double bottomInset = 0,
@@ -1242,19 +1285,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       bottomInset: bottomInset,
       // A presentation mode that owns the window has no chat to float, and a
       // narrow page stacks it under the picture.
-      roomMenu: roomMenuItems(
-        context,
-        ref,
-        room,
-        onClose: leave,
-        shortcuts: shortcuts,
-        // The player pill's menu is the immersive room's door: the page's
-        // own header card, follow pill and chat tabs are folded away there,
-        // so the menu keeps those — and sheds the verbs the strip and the
-        // bar still carry on their own.
-        immersive: true,
-      ),
-      glassHeader: glassChrome,
+      roomMenu: roomMenuItems(context, ref, room, shortcuts: shortcuts),
       topBarEndInset: topBarEndInset,
     );
 
@@ -1373,16 +1404,59 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     picture,
-                    _RoomHero(room: room),
+                    const _ChatRoomHeader(hoverStats: false),
                     const Expanded(child: RoomChatPanel()),
                   ],
                 );
               }
-              // 方案B 沉浸全宽：窗口即播放器。舞台铺满整个页面，标题、
-              // 返回与主播名片是画面左上的玻璃浮层（见 _RoomGlassHeader），
-              // 弹幕栏是右缘可折叠的玻璃抽屉——折叠后只剩画面和一个展开
-              // 按钮。原「双卡片画布」与「影院模式」并入这里：折叠抽屉即
-              // 是影院。抽屉的宽度仍是弹幕设置自己的（拖缝可调）。
+              // 宽屏桌面：像直播站本站一样的满铺排版。画面贴边占满内容区，
+              // 聊天列沿右缘（宽度由聊天设置保管，可拖可折），房间的事实在
+              // 顶上的应用栏（返回、标题、关注与房间菜单）；弹幕流模式或
+              // 收起的聊天列让画面独占整行。
+              if (!tv) {
+                final columnMaxWidth = math.max(
+                  kChatPanelWidthMin,
+                  math.min(kChatPanelWidthMax, constraints.maxWidth - _wideStageFloor),
+                );
+                final columnWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, columnMaxWidth);
+                // A room that owns the window (window fullscreen) fills it with
+                // the picture alone — no docked chat column.
+                final columnOpen = !ownsWindow && chatMode == ChatMode.column && !chatCollapsed;
+                // The wide room reads like the live sites: the picture fills the
+                // content area edge to edge, the chat down the right, and the
+                // room's facts ride the bar above — no card, no inset. The chat
+                // column folds and unfolds from the bar's toggle only; the
+                // picture keeps no floating sidebar button of its own.
+                final stage = ColoredBox(
+                  color: kPlayerStageColor,
+                  child: playerWith(
+                    overlay: !columnOpen && streamVisible ? const Positioned.fill(child: RoomChatStream()) : null,
+                  ),
+                );
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: stage),
+                    if (columnOpen) ...[
+                      Container(width: 1, color: colors.border),
+                      SizedBox(
+                        width: columnWidth,
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _ChatRoomHeader(),
+                            Expanded(child: RoomChatPanel()),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              }
+              // TV 房间保持满铺舞台与浮动玻璃列：遥控没有指针去唤卡片，
+              // 双栏卡片是给有指针的桌面准备的。标题玻璃是画面左上的浮层，
+              // 弹幕列是右缘可折叠的浮层——折叠后只剩画面和一个展开按钮，
+              // 即影院。列宽仍是弹幕设置自己的。
               final maxChatWidth = math.max(
                 kChatPanelWidthMin,
                 math.min(kChatPanelWidthMax, constraints.maxWidth - _wideStageFloor),
@@ -1392,9 +1466,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 unawaited(ref.read(chatCollapsedProvider.notifier).set(value: !chatCollapsed));
               }
 
-              // The full chat column as a floating layer: the column mode's
-              // expanded room and the stream mode's on-demand column draw
-              // the same glass, seam and close verb.
+              // The full chat column as a floating layer over the TV's stage:
+              // the glass, the seam and the close verb.
               Widget chatColumn({required VoidCallback onClose}) => PositionedDirectional(
                 top: 0,
                 bottom: 0,
@@ -1437,98 +1510,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   ],
                 ),
               );
-              // Windows/Linux：右侧一条「固定、可隐藏」的弹幕列，与画面并排
-              // 而非浮在画上；标题玻璃仍在画面左上，窗口只留标准高度的应用
-              // 名条。隐藏列后画面占满整行，右上同一枚按钮再唤回。
-              if (fixedChat) {
-                return ColoredBox(
-                  color: kPlayerStageColor,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: playerWith(
-                          topBarEndInset: DsSpace.s8 + 32 + DsSpace.s8,
-                          overlay: Stack(
-                            children: [
-                              PositionedDirectional(
-                                top: DsSpace.s12,
-                                start: DsSpace.s12,
-                                child: _RoomGlassHeader(room: room, onLeave: leave),
-                              ),
-                              PositionedDirectional(
-                                top: DsSpace.s8,
-                                end: DsSpace.s8,
-                                child: DsButton.icon(
-                                  variant: DsButtonVariant.secondary,
-                                  size: DsSize.sm,
-                                  onPressed: toggleChat,
-                                  icon: DsIcon(chatCollapsed ? DsIcons.panelRightOpen : DsIcons.panelRightClose),
-                                  semanticLabel: chatCollapsed ? t.room.expandChat : t.room.collapseChat,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (!chatCollapsed) ...[
-                        const DsDivider.vertical(),
-                        SizedBox(width: chatWidth, child: const RoomChatPanel()),
-                      ],
-                    ],
-                  ),
-                );
-              }
-              // The reference layout: the picture owns the window and the
-              // talk floats over it as a plain stream; the full column is
-              // one button away, and the stream yields while it is open.
-              if (chatMode == ChatMode.stream && !tv) {
-                final columnOpen = _immersiveChatOpen;
-                return ColoredBox(
-                  color: kPlayerStageColor,
-                  child: playerWith(
-                    // While the column is away the open button keeps the
-                    // top strip's cluster out of its corner.
-                    topBarEndInset: columnOpen ? chatWidth + DsSpace.s12 : DsSpace.s8 + 32 + DsSpace.s8,
-                    overlay: Stack(
-                      children: [
-                        if (streamVisible && !columnOpen) const Positioned.fill(child: RoomChatStream()),
-                        if (columnOpen) chatColumn(onClose: () => _setImmersiveChatOpen(false)),
-                        if (glassChrome)
-                          PositionedDirectional(
-                            top: DsSpace.s12,
-                            start: DsSpace.s12,
-                            child: _RoomGlassHeader(room: room, onLeave: leave),
-                          ),
-                        if (!columnOpen)
-                          PositionedDirectional(
-                            top: DsSpace.s8,
-                            end: DsSpace.s8,
-                            child: DsButton.icon(
-                              variant: DsButtonVariant.secondary,
-                              size: DsSize.sm,
-                              onPressed: () => _setImmersiveChatOpen(true),
-                              icon: const DsIcon(DsIcons.panelRightOpen),
-                              semanticLabel: t.room.expandChat,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }
               if (chatCollapsed) {
                 return Stack(
                   children: [
                     Positioned.fill(
                       child: ColoredBox(color: kPlayerStageColor, child: playerWith()),
                     ),
-                    if (glassChrome)
-                      PositionedDirectional(
-                        top: DsSpace.s12,
-                        start: DsSpace.s12,
-                        child: _RoomGlassHeader(room: room, onLeave: leave),
-                      ),
                     PositionedDirectional(
                       top: DsSpace.s8,
                       end: DsSpace.s8,
@@ -1547,17 +1534,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 color: kPlayerStageColor,
                 child: playerWith(
                   topBarEndInset: chatWidth + DsSpace.s12,
-                  overlay: Stack(
-                    children: [
-                      chatColumn(onClose: toggleChat),
-                      if (glassChrome)
-                        PositionedDirectional(
-                          top: DsSpace.s12,
-                          start: DsSpace.s12,
-                          child: _RoomGlassHeader(room: room, onLeave: leave),
-                        ),
-                    ],
-                  ),
+                  overlay: chatColumn(onClose: toggleChat),
                 ),
               );
             },
@@ -1593,7 +1570,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                       // The drawer's tab lives on the end edge; the stream
                       // keeps clear of it while the drawer is away.
                       overlay: streamVisible && !_immersiveChatOpen
-                          ? const Positioned.fill(child: RoomChatStream(endInset: 36))
+                          ? Positioned.fill(child: RoomChatStream(endInset: _immersiveChatFits ? 36 : 0))
                           : null,
                     ),
                   ),
@@ -1603,7 +1580,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   // filling the window: it keeps its black stage and drops the
                   // app bar with it, so no header survives into the mode.
                   backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
-                  appBar: _portraitFullscreen || glassChrome
+                  appBar: _portraitFullscreen
                       ? null
                       : _roomAppBar(context, colors: colors, ownChrome: ownChrome, shortcuts: shortcuts, leave: leave),
                   body: _portraitFullscreen ? body : SafeArea(child: body),
@@ -1640,13 +1617,12 @@ PreferredSizeWidget _roomAppBar(
 }) {
   final t = context.t;
   final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
-  // The bar grows on a wide window to carry the two-line title; the caption
-  // buttons fill whatever height it has, so their hover reaches both edges.
-  // A short area (a phone held sideways, a split screen) takes the compact
-  // toolbar so the picture keeps its room.
-  final height = wide ? 64.0 : WindowClassScope.toolbarHeightOf(context);
+  // The bar is a single line now (the anchor's identity), so it stays short;
+  // the caption controls ride at a modest height instead of the old two-line
+  // 64, which made the close button read as a slab.
+  final height = wide ? 40.0 : WindowClassScope.toolbarHeightOf(context);
   final leading = DsButton.icon(
-    variant: DsButtonVariant.secondary,
+    variant: DsButtonVariant.ghost,
     size: DsSize.sm,
     onPressed: leave,
     icon: const DsIcon(DsIcons.chevronLeft, size: 20),
@@ -1667,22 +1643,22 @@ PreferredSizeWidget _roomAppBar(
     // The whole middle band is the window's handle, not just the two lines of
     // text: a Column sized to its own words leaves the space beside them inert,
     // and a viewer reaching for "the title bar" grabs that space. The buttons
-    // keep their own taps — the band only claims a drag.
+    // keep their own taps — the band only claims a drag; the title itself keeps
+    // its press for the room's details.
     title: ownChrome
         ? const SizedBox(
             width: double.infinity,
-            child: WindowDragArea(
-              child: Align(alignment: AlignmentDirectional.centerStart, child: _RoomHeader()),
-            ),
+            child: WindowDragArea(child: _RoomTitleBar()),
           )
-        : const _RoomHeader(),
+        : const _RoomTitleBar(),
     actions: [
-      const _FollowPill(),
-      _RoomMenu(onClose: leave, shortcuts: shortcuts),
+      const _ChatColumnToggle(),
+      const SizedBox(width: DsSpace.s4),
+      _RoomMenu(shortcuts: shortcuts),
       if (ownChrome) ...[
         const SizedBox(width: DsSpace.s8),
         const SizedBox(height: 20, child: DsDivider.vertical()),
-        WindowCaptionControls(height: height),
+        const WindowCaptionControls(height: 36),
       ],
       const SizedBox(width: DsSpace.s4),
     ],
@@ -1750,55 +1726,166 @@ final class _PortraitSwipeHintState extends State<_PortraitSwipeHint> {
   }
 }
 
-final class _RoomHeader extends ConsumerWidget {
-  const _RoomHeader();
+/// The wide bar's document title: the room's name with a caret, the way a
+/// window titles what it shows. The anchor and the facts live elsewhere.
+final class _RoomTitleBar extends ConsumerWidget {
+  const _RoomTitleBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
+    final t = context.t;
     final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final detail = ref.watch(roomProvider.select((room) => room.room));
-    if (detail == null) {
-      return const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s3,
-        children: [DsSkeleton(width: 180, height: 15), DsSkeleton(width: 120, height: 12)],
-      );
-    }
-    final site = ref.watch(sitesProvider).all.where((site) => site.manifest.id == detail.ref.platform).firstOrNull;
-    final platform = site == null ? detail.ref.platform : localizedSiteName(site);
-    final area = (detail.area?.areaName ?? '').trim();
-    final icon = localizedSiteIcon(site, size: 14);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        Text(
-          detail.content.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.title.copyWith(color: colors.text),
+    if (detail == null) return const DsSkeleton(width: 220, height: 15);
+    return DsPressable(
+      semanticLabel: t.room.detailsHint,
+      onPressed: () => unawaited(showRoomDetails(context)),
+      builder: (context, states, child) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: states.contains(WidgetState.hovered) ? colors.hover : OnVideoColors.clear,
+          borderRadius: BorderRadius.circular(theme.radii.control(theme.sizes.sm)),
         ),
-        Row(
+        child: child,
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s4, DsSpace.s4, DsSpace.s8, DsSpace.s4),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: DsSpace.s4,
           children: [
-            ?icon,
             Flexible(
               child: Text(
-                area.isEmpty ? platform : '$platform · $area',
+                detail.content.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                style: theme.typography.bodyStrong.copyWith(color: colors.text),
               ),
             ),
+            DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
           ],
         ),
-      ],
+      ),
     );
   }
+}
+
+/// The room's identity header: the anchor's card — avatar in its live ring,
+/// the name, the platform and area, and the follow pill. It sits at the head of
+/// the wide chat column and, on a phone, under the picture.
+///
+/// The three figures (viewers, on air, watched) are not a permanent row: the
+/// header keeps one line so the talk gets the height. A pointer hovering the
+/// header gets them in a tooltip; a phone reads them in the room details.
+final class _ChatRoomHeader extends ConsumerWidget {
+  const _ChatRoomHeader({this.hoverStats = true});
+
+  /// Whether the pointer may reveal the three figures. False where the header
+  /// is the phone's compact card and the numbers live in the details panel.
+  final bool hoverStats;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final detail = ref.watch(roomProvider.select((room) => room.room));
+    if (detail == null) {
+      // The detail hasn't landed: the header keeps its footprint with the
+      // quiet blocks the identity strip rests on — a blank strip would jump
+      // when the facts arrive.
+      return ColoredBox(
+        color: colors.surface,
+        child: const Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              DsSkeleton.circle(size: 40),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [DsSkeleton(width: 160, height: 15), DsSkeleton(width: 90, height: 12)],
+              ),
+              Spacer(),
+              DsSkeleton.block(width: 64, height: 28),
+            ],
+          ),
+        ),
+      );
+    }
+    final anchor = (detail.anchor?.name ?? '').trim();
+    final name = anchor.isEmpty ? detail.content.title : anchor;
+    final avatar = (detail.anchor?.avatarUrl ?? detail.content.coverUrl).trim();
+    final live = detail.broadcast.isLiveNow;
+    final site = ref.watch(sitesProvider).all.where((site) => site.manifest.id == detail.ref.platform).firstOrNull;
+    final platform = site == null ? detail.ref.platform : localizedSiteName(site);
+    final area = (detail.area?.areaName ?? '').trim();
+    final where = [platform, if (area.isNotEmpty) area].join(' · ');
+    final caption = theme.typography.caption.copyWith(color: colors.textMuted);
+    final header = DsPressable(
+      semanticLabel: t.room.detailsHint,
+      onPressed: () => unawaited(showRoomDetails(context)),
+      builder: (context, states, child) =>
+          ColoredBox(color: states.contains(WidgetState.hovered) ? colors.hover : colors.surface, child: child),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+        child: Row(
+          spacing: DsSpace.s12,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
+              child: DsAvatar(
+                initials: avatarInitials(name),
+                image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+                size: DsSize.md,
+                semanticLabel: name,
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                  ),
+                  if (where.isNotEmpty) Text(where, maxLines: 1, overflow: TextOverflow.ellipsis, style: caption),
+                ],
+              ),
+            ),
+            const _FollowPill(),
+          ],
+        ),
+      ),
+    );
+    if (!hoverStats) return header;
+    final online = detail.audience.onlineViewers ?? detail.audience.totalViewers;
+    final started = detail.broadcast.startedAt;
+    final watchStarted = ref.watch(roomProvider.select((room) => room.watchStartedAt));
+    final figures = <String>[
+      if (online != null) '${t.room.statViewers} ${AudienceFormat.format(online)}',
+      if (started != null) '${t.room.statOnAir} ${_roomClock(started)}',
+      '${t.room.statWatched} ${_roomClock(watchStarted)}',
+    ].join('\n');
+    return DsTooltip(message: figures, side: DsSide.bottom, child: header);
+  }
+}
+
+/// A running clock for the header's hover figures, without a ticking widget:
+/// the header rebuilds on the room's own updates, and a hover snapshot is
+/// enough for a number that is not the thing being watched.
+String _roomClock(DateTime since) {
+  final elapsed = DateTime.now().difference(since);
+  String two(int value) => value.toString().padLeft(2, '0');
+  if (elapsed.isNegative) return '00:00:00';
+  return '${two(elapsed.inHours)}:${two(elapsed.inMinutes.remainder(60))}:${two(elapsed.inSeconds.remainder(60))}';
 }
 
 /// The follow action in the app bar: a labelled pill on a wide window, the
@@ -1823,7 +1910,7 @@ final class _FollowPill extends ConsumerWidget {
       child: DsButton(
         variant: followed ? DsButtonVariant.secondary : DsButtonVariant.primary,
         size: DsSize.sm,
-        onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
+        onPressed: () => unawaited(toggleRoomFollow(context, ref)),
         leading: DsIcon(followed ? DsIcons.heart : DsIcons.heartCrack, size: theme.sizes.iconSm),
         child: Text(followed ? t.room.unfollow : t.room.follow),
       ),
@@ -1831,306 +1918,133 @@ final class _FollowPill extends ConsumerWidget {
   }
 }
 
-/// Steps the picture's fit to its next choice and names it: the menu row's
-/// verb, where the bar once carried a chip for it. One preference, a handful
-/// of words, so cycling with a toast beats a dialog for a control this small.
-Future<void> _cyclePictureFit(BuildContext context, WidgetRef ref) async {
-  final t = context.t;
-  final settings = ref.read(playbackSettingsProvider);
-  final next = PlaybackFit.values[(settings.fit.index + 1) % PlaybackFit.values.length];
-  await ref.read(playbackSettingsProvider.notifier).setFit(next);
-  if (!context.mounted) return;
-  showDsToast(context: context, title: fitLabels(t)[next.index]);
+/// Shows or folds the chat column from the room bar — the live sites' panel
+/// verb, beside share and more. Only the wide room has a column to fold.
+final class _ChatColumnToggle extends ConsumerWidget {
+  const _ChatColumnToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The column exists wherever the wide layout does (840 and up), not only
+    // past the sidebar breakpoint: a viewer who folded the chat at 900 must
+    // still be able to unfold it at 900.
+    if (MediaQuery.sizeOf(context).width < kRoomWideBreakpoint) return const SizedBox.shrink();
+    final open = ref.watch(chatModeProvider) == ChatMode.column && !ref.watch(chatCollapsedProvider);
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
+      child: DsButton.icon(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: open ? context.t.room.collapseChat : context.t.room.expandChat,
+        onPressed: () {
+          if (open) {
+            unawaited(ref.read(chatCollapsedProvider.notifier).set(value: true));
+          } else {
+            unawaited(ref.read(chatModeProvider.notifier).set(ChatMode.column));
+            unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
+          }
+        },
+        icon: DsIcon(open ? DsIcons.panelRightClose : DsIcons.panelRightOpen),
+      ),
+    );
+  }
 }
 
-/// The room's own actions, in one list.
+/// The room's own actions, in one small list.
 ///
-/// The page header's ⋮ and the player's overlay ⋮ show the same menu: in
-/// fullscreen there is no header, and a room action that disappeared with the
-/// chrome would be a control the viewer has to leave fullscreen to reach.
-/// The room's overflow menu, built for the mode that opens it: [immersive]
-/// marks the fullscreen player's pill, where the page's own doors (the header
-/// card, the follow pill, the chat column's tabs) are gone or folded away.
-///
-/// The rule is one of non-duplication: a verb the page already carries in
-/// this mode — the strip's record, small-window, cast and screenshot, the
-/// bar's danmaku settings, the header's details and follow — is the page's,
-/// not the menu's. The menu keeps what has no door outside it, which in the
-/// fullscreen mode is also the door back to the room's facts and its follow.
+/// The page header's ⋮ and the fullscreen strip's ⋮ open the same five rows —
+/// switch, refresh, sleep, a window of its own, the keyboard help — so a room
+/// action never disappears with the page chrome. Everything else lives where
+/// its object lives: details on the header, playback in the player settings,
+/// picture verbs on the picture.
 List<Widget> roomMenuItems(
   BuildContext context,
   WidgetRef ref,
   RoomState room, {
-  required VoidCallback onClose,
   required List<RoomShortcutBinding> shortcuts,
-  bool? theater,
-  VoidCallback? onTheater,
-  bool immersive = false,
 }) {
   final t = context.t;
   final detail = room.room;
-  final link = detail == null ? '' : roomLinkOf(detail);
-  final existing = detail == null
-      ? null
-      : ref
-            .watch(recordingTasksProvider)
-            .tasks
-            .where((task) => task.id == '${detail.ref.platform}:${detail.ref.roomId}')
-            .firstOrNull;
-  final waiting = existing?.state == RecordingTaskState.waiting;
-  final recording = existing?.state == RecordingTaskState.recording;
-  // The follow verb's state, read the way the header's pill reads it: the menu
-  // carries the same single switch, so the two can never disagree about whether
-  // this room is followed.
-  final followed =
-      detail != null &&
-      ref.watch(
-        followsRoomProvider.select(
-          (follows) => follows.any((candidate) => candidate.ref.identityKey == detail.ref.identityKey),
-        ),
-      );
-  final pipOn = ref.watch(roomPresentationProvider) == PresentationMode.pip;
-  // Whether this host can put the room in a window of its own: a desktop shell
-  // that runs secondary windows, the viewer's rooms-in-windows habit left on,
-  // and a page that is not itself one of those windows — raising the window the
-  // room already lives in would be a verb that does nothing.
+  final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
+  final sleepRunning = sleepMinutes != null;
+  // A desktop shell that runs secondary windows and has the viewer's
+  // rooms-in-windows habit on: the room can move into a window of its own.
+  // Raising the window the room already lives in would be a verb that does
+  // nothing, so a room window itself does not offer it.
   final offersRoomWindow =
       ref.read(roomLeaveProvider) == null &&
       ref.watch(secondaryWindowsProvider) != null &&
       ref.watch(roomWindowsProvider) &&
       ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;
-  final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
-  final sleepRunning = sleepMinutes != null;
-  final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
-  final external =
-      detail != null &&
-      ((detail.links.webUrl?.trim().isNotEmpty ?? false) || (detail.links.appUrl?.trim().isNotEmpty ?? false));
-  // Whether this room's site can answer for its own stream address: a row that
-  // only ever says "no link available" is a door to a wall, so the tool's own
-  // capability check decides whether the menu carries it.
-  final directLinks =
-      detail != null &&
-      ref.read(sitesProvider).getById(detail.ref.platform)?.capability<LivePlaybackProvider>() != null;
-  // Four sections, each a kind of errand, so the list reads as a place to look
-  // rather than a pile: the room and its facts; what the picture does (record,
-  // small window, cast, framing, capture, the scheduled capture, the numbers on
-  // the stream); keeping it running and passing it on; and finally the keys and
-  // the way out. A section that has no eligible row disappears, and the
-  // divider with it — two hairlines in a row read as a bug.
-  // Where the strip's own cluster shows: at this width the picture's verbs
-  // (record, small window, cast) ride the strip above the bar, and the menu
-  // does not repeat them. Below it the strip folds the cluster away and the
-  // menu keeps the doors — a phone and a narrow window walk through here.
-  final stripHasCluster = MediaQuery.sizeOf(context).width >= 720;
-  final sections = <List<Widget>>[
-    [
-      // The room's facts: on the page they are the header card's own press,
-      // which is gone once the picture owns the window — exactly when this
-      // door matters.
-      if (immersive)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.info),
-          label: Text(t.room.details),
-          onPressed: () => unawaited(showRoomDetails(context)),
-        ),
-      if (detail != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.arrowLeftRight),
-          label: Text(t.room.switchRoom),
-          onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
-        ),
-      // The follow pill sits in the page header; fullscreen has no header,
-      // and the menu is where following keeps its door.
-      if (detail != null && immersive)
-        DsMenuItem(
-          leading: DsIcon(followed ? DsIcons.heart : DsIcons.heartCrack),
-          label: Text(followed ? t.room.unfollow : t.room.follow),
-          onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
-        ),
-    ],
-    [
-      // Record, small window and cast ride the strip's own cluster wherever
-      // the strip has room for it; the menu keeps them only where the strip
-      // let them go. The scheduled capture keeps its place: an offline
-      // room's arm-for-later is a plan, not a strip verb.
-      if (!stripHasCluster && (line != null || recording))
-        DsMenuItem(
-          leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc),
-          label: Text(recording ? t.room.stopRecording : t.room.record),
-          onPressed: () => unawaited(toggleRoomRecording(context, ref)),
-        ),
-      if (!stripHasCluster && room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.pictureInPicture),
-          label: Text(pipOn ? t.room.pipOff : t.room.pipOn),
-          onPressed: () => unawaited(toggleRoomPip(context, ref)),
-        ),
-      // The room in a window of its own: the desktop's way to watch two rooms
-      // at once, and the list the room came from goes with it so the new
-      // window's portrait swipe has the same neighbours. A room that already
-      // has its window is raised to the front rather than opened twice.
-      if (detail != null && offersRoomWindow)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.appWindow),
-          label: Text(t.room.openInNewWindow),
-          onPressed: () => unawaited(
-            openRoom(
-              context,
-              platform: detail.ref.platform,
-              roomId: detail.ref.roomId,
-              room: detail,
-              playlist: ref.read(roomPlaylistProvider)?.rooms,
-            ),
-          ),
-        ),
-      if (!stripHasCluster && line != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.cast),
-          label: Text(t.room.cast),
-          onPressed: () => unawaited(showCastDialog(context, line: line, title: detail?.content.title)),
-        ),
-      if (detail != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.rectangleVertical),
-          label: Text(t.room.orientation),
-          onPressed: () => unawaited(
-            showRoomOrientationDialog(
-              context,
-              detail,
-              detected: room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
-            ),
-          ),
-        ),
-      // The picture's fit, cycled from the menu: the bar keeps to the two
-      // choices the stream offers, so the way the frame meets its box lives
-      // here — one press steps contain → cover → … and names the new fit.
+  final items = <Widget>[
+    if (detail != null)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.arrowLeftRight),
+        label: Text(t.room.switchRoom),
+        onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
+      ),
+    DsMenuItem(
+      leading: const DsIcon(DsIcons.refreshCw),
+      label: Text(t.room.refreshRoom),
+      onPressed: () => unawaited(ref.read(roomProvider.notifier).refreshRoom()),
+    ),
+    const DsMenuDivider(),
+    DsMenuItem(
+      leading: DsIcon(sleepRunning ? DsIcons.timer : DsIcons.moon),
+      label: Text(sleepRunning ? '${t.room.sleep} · ${asmrSleepDurationLabel(sleepMinutes)}' : t.room.sleep),
+      onPressed: () => unawaited(showRoomSleepTimer(context)),
+    ),
+    if (detail != null)
       DsMenuItem(
         leading: const DsIcon(DsIcons.aspectRatio),
-        label: Text(t.settings.fit),
-        onPressed: () => unawaited(_cyclePictureFit(context, ref)),
+        label: Text(t.room.orientation),
+        onPressed: () => unawaited(
+          showRoomOrientationDialog(
+            context,
+            detail,
+            detected: room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
+          ),
+        ),
       ),
-      // The theatre's own verb: the page decides where it exists (wide, not
-      // owning the window), and the menu is where it lives now that the bar
-      // keeps to the reference's arrangement.
-      if (onTheater != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.layoutHeaderSidebarRight),
-          label: Text(theater == true ? t.room.theaterOff : t.room.theaterOn),
-          onPressed: onTheater,
-        ),
-      // Only where a capture has a route: a backend without one would offer
-      // a button that always answers "nothing". The strip's camera carries
-      // the verb on the page; fullscreen has no strip camera, so here is
-      // where the fullscreen viewer reaches it.
-      if (immersive && (room.handle?.canCaptureScreenshot ?? false))
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.camera),
-          label: Text(t.room.screenshot),
-          onPressed: () => unawaited(takeRoomScreenshot(context, ref, room.handle!)),
-        ),
-      // The bar below carries this verb only where it has room for a text
-      // button beside the transport, so on a phone and in a narrow window the
-      // mode a viewer reaches for on a metered connection had no way in at all.
-      // Switching it is safe with nothing loaded, so the row needs no gate.
+    DsMenuItem(
+      leading: const DsIcon(DsIcons.activity),
+      label: Text(t.room.statsToggle),
+      checked: ref.watch(playerStatsVisibleProvider),
+      onPressed: () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+    ),
+    if (detail != null && offersRoomWindow)
       DsMenuItem(
-        leading: DsIcon(room.audioOnly ? DsIcons.video : DsIcons.headphones),
-        label: Text(room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode),
-        checked: room.audioOnly,
-        onPressed: () => unawaited(ref.read(roomProvider.notifier).setAudioOnly(value: !room.audioOnly)),
-      ),
-      if (detail != null && waiting)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.clock),
-          label: Text(t.room.autoRecordOff),
-          onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
-        )
-      else if (detail != null && !detail.broadcast.isLiveNow && existing?.state != RecordingTaskState.recording)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.clock),
-          label: Text(t.room.autoRecordOn),
-          onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
+        leading: const DsIcon(DsIcons.appWindow),
+        label: Text(t.room.openInNewWindow),
+        onPressed: () => unawaited(
+          openRoom(
+            context,
+            platform: detail.ref.platform,
+            roomId: detail.ref.roomId,
+            room: detail,
+            playlist: ref.read(roomPlaylistProvider)?.rooms,
+          ),
         ),
-      // The chip that carries this sits in the page header, and the header is
-      // gone the moment the picture owns the window — which is exactly when a
-      // viewer is most likely to want the room to stop on its own.
+      ),
+    if (shortcuts.any((binding) => binding.action == RoomShortcutAction.help)) ...[
+      const DsMenuDivider(),
       DsMenuItem(
-        leading: DsIcon(sleepRunning ? DsIcons.timer : DsIcons.moon),
-        label: Text(sleepRunning ? '${t.room.sleep} · ${asmrSleepDurationLabel(sleepMinutes)}' : t.room.sleep),
-        onPressed: () => unawaited(showRoomSleepTimer(context)),
+        leading: const DsIcon(DsIcons.keyboard),
+        label: Text(t.room.shortcutsHelp),
+        onPressed: () => unawaited(showRoomShortcuts(context, shortcuts)),
       ),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.activity),
-        label: Text(t.room.statsToggle),
-        onPressed: () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
-      ),
-    ],
-    [
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.refreshCw),
-        label: Text(t.room.refreshRoom),
-        onPressed: () => unawaited(ref.read(roomProvider.notifier).refreshRoom()),
-      ),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.undo),
-        label: Text(t.common.retry),
-        onPressed: () => unawaited(ref.read(roomProvider.notifier).retry()),
-      ),
-      // The room's own stream address, with each line's URL copyable — the
-      // link tool and the room cards already open this dialog; the room that
-      // is playing was the one place that never offered it.
-      if (directLinks)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.link2),
-          label: Text(t.toolbox.linkDirect),
-          onPressed: () => unawaited(showRoomDirectLinks(context, ref, detail)),
-        ),
-      if (detail != null)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.share),
-          label: Text(t.room.share),
-          onPressed: () => unawaited(shareRoom(context, detail)),
-        ),
-      if (detail != null && external)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.room.openExternal),
-          onPressed: () => unawaited(openRoomExternally(context, detail)),
-        ),
-      if (detail != null && link.isNotEmpty)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.link),
-          label: Text(t.room.copyLink),
-          onPressed: () => unawaited(copyRoomLink(context, detail)),
-        ),
-    ],
-    [
-      // The same sheet `?` opens. The binding table decides whether this room
-      // has keys to explain at all (a TV remote has none).
-      if (shortcuts.any((binding) => binding.action == RoomShortcutAction.help))
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.keyboard),
-          label: Text(t.room.shortcutsHelp),
-          onPressed: () => unawaited(showRoomShortcuts(context, shortcuts)),
-        ),
-      DsMenuItem(leading: const DsIcon(DsIcons.x), label: Text(t.common.close), destructive: true, onPressed: onClose),
     ],
   ];
-  final items = <Widget>[];
-  for (final section in sections) {
-    if (section.isEmpty) continue;
-    if (items.isNotEmpty) items.add(const DsMenuDivider());
-    items.addAll(section);
-  }
   return items;
 }
 
-/// The room's overflow menu: its details, a light refresh, passing the room
-/// on (share, the platform's own page, its link), a playback retry and the
-/// way out. The player's own bar keeps the picture and stream actions.
+/// The room's overflow menu: switch, refresh, sleep, a window of its own and
+/// the keyboard help. Everything else lives where its object lives — details
+/// on the header, playback in the player settings, picture verbs on the
+/// picture — so the menu stays five rows and never grows with the window.
 final class _RoomMenu extends ConsumerWidget {
-  const _RoomMenu({required this.onClose, required this.shortcuts});
+  const _RoomMenu({required this.shortcuts});
 
-  final VoidCallback onClose;
   final List<RoomShortcutBinding> shortcuts;
 
   @override
@@ -2141,65 +2055,17 @@ final class _RoomMenu extends ConsumerWidget {
       padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
       child: DsMenuAnchor(
         semanticLabel: t.common.more,
-        items: roomMenuItems(context, ref, room, onClose: onClose, shortcuts: shortcuts),
+        items: roomMenuItems(context, ref, room, shortcuts: shortcuts),
         builder: (context, controller, _) => DsButton.icon(
-          variant: DsButtonVariant.ghost,
+          variant: DsButtonVariant.secondary,
           size: DsSize.sm,
           semanticLabel: t.common.more,
           onPressed: controller.toggle,
-          icon: const DsIcon(DsIcons.ellipsis),
+          icon: const DsIcon(DsIcons.ellipsisVertical),
         ),
       ),
     );
   }
-}
-
-/// Adds the room to the live check, or takes it out.
-///
-/// A waiting task is what the monitor polls; turning the check on here matches
-/// the reference, where "Record when live" opens the live check as it adds the
-/// room.
-Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom detail, RecordingTask? task) async {
-  final t = context.t;
-  final tasks = ref.read(recordingTasksProvider.notifier);
-  if (task?.state == RecordingTaskState.waiting) {
-    await tasks.remove(task!.id);
-    if (!context.mounted) return;
-    showDsToast(context: context, title: t.room.autoRecordRemoved, status: DsStatus.success);
-    return;
-  }
-  if (!ref.read(recordingTasksProvider).ready) {
-    showDsToast(context: context, title: t.room.autoRecordFailed, status: DsStatus.danger);
-    return;
-  }
-  final settings = ref.read(recordingSettingsProvider);
-  if (!settings.schedule.pollingEnabled) {
-    ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
-  }
-  final now = DateTime.now().toUtc();
-  final waiting = task == null
-      ? RecordingTask(
-          id: '${detail.ref.platform}:${detail.ref.roomId}',
-          platform: detail.ref.platform,
-          roomId: detail.ref.roomId,
-          roomTitle: detail.content.title,
-          quality: settings.defaultQuality,
-          state: RecordingTaskState.waiting,
-          startedAt: now,
-        )
-      : task.copyWith(
-          roomTitle: detail.content.title,
-          quality: settings.defaultQuality,
-          state: RecordingTaskState.waiting,
-          startedAt: now,
-        );
-  await tasks.add(waiting);
-  if (!context.mounted) return;
-  showDsToast(
-    context: context,
-    title: t.room.autoRecordArmed(seconds: settings.schedule.liveCheckSeconds),
-    status: DsStatus.success,
-  );
 }
 
 /// The room's own card, the reference's `RoomInfoBar` grown up: the
@@ -2211,169 +2077,6 @@ Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom det
 /// on a wide window, never over the picture itself. A phone held sideways has
 /// no column with room for it, so there its name folds into the picture's
 /// strip instead, and that name takes the card's press.
-/// 方案B的玻璃页眉：两枚胶囊浮在画面左上——「返回 · 标题」与主播
-/// 名片（头像、昵称、在线人数、关注）。名片按下打开直播间详情，关注
-/// 按下即关注；行的显隐跟控制条一起，由表面自己唤醒。
-final class _RoomGlassHeader extends ConsumerWidget {
-  const _RoomGlassHeader({required this.room, required this.onLeave});
-
-  final RoomState room;
-
-  /// 离开房间：返回胶囊的手势。
-  final VoidCallback onLeave;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final detail = room.room;
-    final title = detail?.content.title ?? '';
-    final name = (detail?.anchor?.name ?? '').trim();
-    final avatar = (detail?.anchor?.avatarUrl ?? '').trim();
-    final online = detail?.audience.onlineViewers ?? detail?.audience.totalViewers;
-    final followed =
-        detail != null &&
-        ref.watch(
-          followsRoomProvider.select(
-            (follows) => follows.any((candidate) => candidate.ref.identityKey == detail.ref.identityKey),
-          ),
-        );
-    const ink = OnVideoColors.foreground;
-    const inkMuted = OnVideoColors.inkMuted;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s8,
-      children: [
-        // 返回与标题：一枚胶囊，返回是胶囊的左半，标题随宽度截断。
-        PlayerGlassPill(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: SizedBox(
-              height: 36,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DsPressable(
-                    semanticLabel: t.common.back,
-                    onPressed: onLeave,
-                    builder: (context, states, child) => Padding(
-                      padding: const EdgeInsetsDirectional.only(start: 10, end: 8),
-                      child: ColoredBox(
-                        color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : OnVideoColors.clear,
-                        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8), child: child),
-                      ),
-                    ),
-                    child: const DsIcon(DsIcons.chevronLeft, size: 16, color: ink),
-                  ),
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.only(end: DsSpace.s12),
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(color: ink, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // 主播名片：头像（直播中带红圈）、昵称、在线人数，尾随关注胶囊；
-        // 按名片本体打开直播间详情——原头部卡片的手势挪到这里。
-        if (detail != null)
-          PlayerGlassPill(
-            child: DsPressable(
-              semanticLabel: t.room.detailsHint,
-              onPressed: () => unawaited(showRoomDetails(context)),
-              builder: (context, states, child) => ColoredBox(
-                color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : OnVideoColors.clear,
-                child: child,
-              ),
-              child: Padding(
-                padding: const EdgeInsetsDirectional.only(start: 6, top: 5, end: 8, bottom: 5),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: detail.broadcast.isLiveNow ? OnVideoColors.signal : OnVideoColors.inkMuted,
-                          width: 1.6,
-                        ),
-                      ),
-                      child: DsAvatar(
-                        initials: avatarInitials(name.isEmpty ? title : name),
-                        image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-                        size: DsSize.sm,
-                        semanticLabel: name,
-                      ),
-                    ),
-                    const SizedBox(width: DsSpace.s8),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: ink, fontWeight: FontWeight.w600),
-                        ),
-                        if (online != null)
-                          Text(
-                            '${AudienceFormat.format(online)} 观看',
-                            style: theme.typography.numeric(theme.typography.caption.copyWith(color: inkMuted)),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: DsSpace.s12),
-                    DsPressable(
-                      semanticLabel: followed ? t.room.unfollow : t.room.follow,
-                      onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
-                      builder: (context, states, child) =>
-                          Opacity(opacity: states.contains(WidgetState.hovered) ? 0.92 : 1, child: child),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s5),
-                        decoration: BoxDecoration(
-                          color: followed ? OnVideoColors.panel : colors.accent,
-                          borderRadius: BorderRadius.circular(DsRadii.pill),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: DsSpace.s4,
-                          children: [
-                            DsIcon(
-                              followed ? DsIcons.heart : DsIcons.heartPlus,
-                              size: 12,
-                              color: OnVideoColors.foreground,
-                            ),
-                            Text(
-                              followed ? t.room.unfollow : t.room.follow,
-                              style: theme.typography.caption.copyWith(
-                                color: OnVideoColors.foreground,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 final class _RoomHero extends ConsumerWidget {
   const _RoomHero({required this.room});
 
@@ -2471,9 +2174,7 @@ final class _RoomHero extends ConsumerWidget {
                               style: theme.typography.title.copyWith(color: colors.text),
                             ),
                           ),
-                          if (live)
-                            const _LiveBadge()
-                          else if (replay)
+                          if (replay)
                             // The same word the details panel says for the
                             // same fact: this room plays a recording.
                             DsBadge(dot: false, label: Text(t.favorites.statusReplay), status: DsStatus.info),
@@ -2493,6 +2194,15 @@ final class _RoomHero extends ConsumerWidget {
                         ),
                     ],
                   ),
+                ),
+                // The card's press opens the details; the chevron at its end
+                // edge says so where a pointer looks for a way in — and it
+                // points the way the sheet will come: in from the end edge on
+                // a wide window, up from the bottom on a narrow one.
+                DsIcon(
+                  MediaQuery.sizeOf(context).width >= kDsPanelBreakpoint ? DsIcons.chevronRight : DsIcons.chevronDown,
+                  size: theme.sizes.iconSm,
+                  color: colors.textSubtle,
                 ),
               ],
             ),
@@ -2557,40 +2267,8 @@ final class _ElapsedState extends State<_Elapsed> {
     final hours = elapsed.inHours;
     final minutes = elapsed.inMinutes.remainder(60);
     final seconds = elapsed.inSeconds.remainder(60);
-    return Text(context.t.room.onAirFor(time: '${two(hours)}:${two(minutes)}:${two(seconds)}'), style: widget.style);
-  }
-}
-
-/// The live pill: the red dot and the word, over the hero's wash.
-final class _LiveBadge extends StatelessWidget {
-  const _LiveBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final t = context.t;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 1),
-      decoration: BoxDecoration(
-        color: OnVideoColors.signal.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(DsRadii.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s3,
-        children: [
-          Container(
-            width: 4,
-            height: 4,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: OnVideoColors.foreground),
-          ),
-          Text(
-            t.favorites.statusLiveNow,
-            style: theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
+    final time = '${two(hours)}:${two(minutes)}:${two(seconds)}';
+    return Text(context.t.room.onAirFor(time: time), style: widget.style);
   }
 }
 
@@ -2607,45 +2285,38 @@ final class _SleepChip extends ConsumerWidget {
     final t = context.t;
     final running = timer.minutes != null;
     final label = running ? asmrSleepDurationLabel(timer.minutes!) : t.room.sleep;
-    return DsMenuAnchor(
+    // The same sheet the room's menu opens (the shared minute list inside),
+    // not a menu of its own: the chip is a second door to one panel, and two
+    // sets of minutes could never agree for long.
+    return DsPressable(
       semanticLabel: t.room.sleep,
-      builder: (context, controller, child) => DsPressable(
-        semanticLabel: t.room.sleep,
-        onPressed: controller.toggle,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Container(
-            height: theme.sizes.sm,
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
-            decoration: DsBoxDecoration(
-              color: running
-                  ? theme.selectedFill
-                  : hovered
-                  ? colors.hover
-                  : null,
-              borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s4,
-              children: [
-                DsIcon(
-                  DsIcons.moon,
-                  size: theme.sizes.iconSm,
-                  color: running ? theme.onSelectedFill : colors.textMuted,
-                ),
-                Text(
-                  label,
-                  style: theme.typography.caption.copyWith(color: running ? theme.onSelectedFill : colors.textMuted),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-      // The shared list, so the room's own menu and this chip can never offer
-      // two different sets of minutes.
-      items: roomSleepTimerChoices(context, ref),
+      onPressed: () => unawaited(showRoomSleepTimer(context)),
+      builder: (context, states, _) {
+        final hovered = states.contains(WidgetState.hovered);
+        return Container(
+          height: theme.sizes.sm,
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+          decoration: DsBoxDecoration(
+            color: running
+                ? theme.selectedFill
+                : hovered || states.contains(WidgetState.focused)
+                ? colors.hover
+                : null,
+            borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              DsIcon(DsIcons.moon, size: theme.sizes.iconSm, color: running ? theme.onSelectedFill : colors.textMuted),
+              Text(
+                label,
+                style: theme.typography.caption.copyWith(color: running ? theme.onSelectedFill : colors.textMuted),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

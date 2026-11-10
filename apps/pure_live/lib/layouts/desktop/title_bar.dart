@@ -10,8 +10,9 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// The height of the title bar: the drag band and the caption row.
-const double kTitleBarHeight = 44;
+/// The height of the title bar: the drag band and the caption row. Kept short
+/// so the window chrome reads as a slim strip on every page, not a tall band.
+const double kTitleBarHeight = 36;
 
 /// The strip above every route: at its left corner the app icon that
 /// hovers into the sidebar toggle, the back and forward arrows, then the

@@ -5,7 +5,18 @@ import 'package:pure_live/l10n/translations.dart';
 
 /// What a room key does. The page maps each one to its own controllers; the
 /// table below only names the verb.
-enum RoomShortcutAction { playPause, fullscreen, leave, volumeUp, volumeDown, theater, stats, screenshot, retry, help }
+enum RoomShortcutAction {
+  playPause,
+  fullscreen,
+  leave,
+  volumeUp,
+  volumeDown,
+  chatColumn,
+  stats,
+  screenshot,
+  retry,
+  help,
+}
 
 /// One key the room answers to: the verb, the activators that fire it, and the
 /// line the help sheet shows for it.
@@ -27,12 +38,12 @@ final class RoomShortcutBinding {
 /// The room's keys and its help sheet read this one table, so a line the
 /// sheet shows is a key the page answers. The conditions are the ones the
 /// actions run under: a TV remote keeps the arrows on focus, a narrow window
-/// has no theatre, and a backend without a capture route has no frame to
-/// save.
+/// has no chat column to fold, and a backend without a capture route has no
+/// frame to save.
 List<RoomShortcutBinding> roomShortcutBindings(
   Translations t, {
   required bool tv,
-  required bool theater,
+  required bool chatColumn,
   required bool canCaptureScreenshot,
 }) => [
   RoomShortcutBinding(
@@ -62,11 +73,11 @@ List<RoomShortcutBinding> roomShortcutBindings(
       label: t.room.shortcutVolumeDown,
     ),
   ],
-  if (theater)
+  if (chatColumn)
     RoomShortcutBinding(
-      action: RoomShortcutAction.theater,
+      action: RoomShortcutAction.chatColumn,
       keys: const [SingleActivator(LogicalKeyboardKey.keyT)],
-      label: t.room.theaterOn,
+      label: t.room.shortcutChatColumn,
     ),
   RoomShortcutBinding(
     action: RoomShortcutAction.stats,

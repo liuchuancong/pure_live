@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
@@ -73,24 +74,30 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
               .where((candidate) => candidate.id == '${room.ref.platform}:${room.ref.roomId}')
               .firstOrNull;
     final recording = task != null && task.state == RecordingTaskState.recording;
+    final waiting = task?.state == RecordingTaskState.waiting;
     _syncTicker(running: recording);
 
     if (task == null) {
-      return Center(
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.disc),
-          title: Text(t.room.recordIdle),
-          actions: [
-            DsButton(
-              variant: DsButtonVariant.primary,
-              size: DsSize.sm,
-              leading: const DsIcon(DsIcons.disc, size: 15),
-              onPressed: _toggle,
-              child: Text(t.room.recordStarted),
-            ),
-            _centreButton(t),
-          ],
-        ),
+      return ListView(
+        padding: const EdgeInsets.all(DsSpace.s16),
+        children: [
+          _autoRecordSwitch(room: room, task: task, waiting: waiting),
+          const SizedBox(height: DsSpace.s32),
+          DsEmptyState(
+            icon: const DsIcon(DsIcons.disc),
+            title: Text(t.room.recordIdle),
+            actions: [
+              DsButton(
+                variant: DsButtonVariant.primary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.disc, size: 15),
+                onPressed: _toggle,
+                child: Text(t.room.recordStarted),
+              ),
+              _centreButton(t),
+            ],
+          ),
+        ],
       );
     }
 
@@ -110,6 +117,8 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
     return ListView(
       padding: const EdgeInsets.all(DsSpace.s16),
       children: [
+        _autoRecordSwitch(room: room, task: task, waiting: waiting),
+        const SizedBox(height: DsSpace.s16),
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: DsBadge(dot: recording, label: Text(word), status: tone),
@@ -174,11 +183,81 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
 
   /// The centre still exists for what a single room's panel cannot show — the
   /// queue, the schedule, the finished files — said as one quiet line, not as
-  /// the panel's only door.
+  /// the panel's only door. A push, not a `go`: the room stays under it, and
+  /// the way back is the panel's own.
   Widget _centreButton(Translations t) => DsButton(
     variant: DsButtonVariant.ghost,
     size: DsSize.sm,
-    onPressed: () => context.go(RouteNames.recorder),
+    onPressed: () => unawaited(context.push(RouteNames.recorder)),
     child: Text(t.navigation.record),
+  );
+
+  /// The room's schedule verb, where the room's takes are managed: arming the
+  /// live check for this room is a recording errand, not a room-menu row.
+  Widget _autoRecordSwitch({required LiveRoom? room, required RecordingTask? task, required bool waiting}) {
+    if (room == null) return const SizedBox.shrink();
+    final t = context.t;
+    final recording = task?.state == RecordingTaskState.recording;
+    final seconds = ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds;
+    return DsSwitch(
+      value: waiting,
+      onChanged: recording ? null : (_) => unawaited(toggleRoomAutoRecord(context, ref, room, task)),
+      label: Text(t.room.autoRecordOn),
+      description: waiting ? Text(t.room.autoRecordArmed(seconds: seconds)) : null,
+    );
+  }
+}
+
+/// Adds the room to the live check, or takes it out.
+///
+/// A waiting task is what the monitor polls; turning the check on here matches
+/// the reference, where "Record when live" opens the live check as it adds the
+/// room.
+Future<void> toggleRoomAutoRecord(
+  BuildContext context,
+  WidgetRef ref,
+  LiveRoom detail,
+  RecordingTask? task,
+) async {
+  final t = context.t;
+  final tasks = ref.read(recordingTasksProvider.notifier);
+  if (task?.state == RecordingTaskState.recording) return;
+  if (task?.state == RecordingTaskState.waiting) {
+    await tasks.remove(task!.id);
+    if (!context.mounted) return;
+    showDsToast(context: context, title: t.room.autoRecordRemoved, status: DsStatus.success);
+    return;
+  }
+  if (!ref.read(recordingTasksProvider).ready) {
+    showDsToast(context: context, title: t.room.autoRecordFailed, status: DsStatus.danger);
+    return;
+  }
+  final settings = ref.read(recordingSettingsProvider);
+  if (!settings.schedule.pollingEnabled) {
+    ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
+  }
+  final now = DateTime.now().toUtc();
+  final waiting = task == null
+      ? RecordingTask(
+          id: '${detail.ref.platform}:${detail.ref.roomId}',
+          platform: detail.ref.platform,
+          roomId: detail.ref.roomId,
+          roomTitle: detail.content.title,
+          quality: settings.defaultQuality,
+          state: RecordingTaskState.waiting,
+          startedAt: now,
+        )
+      : task.copyWith(
+          roomTitle: detail.content.title,
+          quality: settings.defaultQuality,
+          state: RecordingTaskState.waiting,
+          startedAt: now,
+        );
+  await tasks.add(waiting);
+  if (!context.mounted) return;
+  showDsToast(
+    context: context,
+    title: t.room.autoRecordArmed(seconds: settings.schedule.liveCheckSeconds),
+    status: DsStatus.success,
   );
 }

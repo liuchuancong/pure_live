@@ -11,7 +11,8 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
-import 'package:pure_live/modules/live/room/controller/room_open_timing.dart' show RoomOpenProxy;
+import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
+import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart' show showRoomDirectLinks;
 import 'package:pure_live/shared/shared.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
@@ -26,7 +27,8 @@ final class RoomDetailsPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
-    final room = ref.watch(roomProvider).room;
+    final state = ref.watch(roomProvider);
+    final room = state.room;
     if (room == null) {
       return const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,6 +45,8 @@ final class RoomDetailsPanel extends ConsumerWidget {
     final introduction = room.content.introduction?.trim() ?? '';
     final link = roomLinkOf(room);
     final external = room.links.webUrl?.trim().isNotEmpty == true || room.links.appUrl?.trim().isNotEmpty == true;
+    final directLinks =
+        ref.read(sitesProvider).getById(room.ref.platform)?.capability<LivePlaybackProvider>() != null;
     final platform = _platformName(ref, room);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -52,7 +56,7 @@ final class RoomDetailsPanel extends ConsumerWidget {
         _State(room: room),
         if (title.isNotEmpty) Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
         _Figures(room: room),
-        const _OpenStages(),
+        _SessionFigures(room: room, watchStarted: state.watchStartedAt),
         if (notice.isNotEmpty) _TextSection(label: t.room.notice, text: notice),
         if (introduction.isNotEmpty && introduction != notice)
           _TextSection(label: t.room.introduction, text: introduction),
@@ -91,6 +95,13 @@ final class RoomDetailsPanel extends ConsumerWidget {
                 leading: const DsIcon(DsIcons.externalLink, size: 16),
                 onPressed: () => unawaited(openRoomExternally(context, room)),
                 child: Text(t.room.openIn(platform: platform)),
+              ),
+            if (directLinks)
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                leading: const DsIcon(DsIcons.link2, size: 16),
+                onPressed: () => unawaited(showRoomDirectLinks(context, ref, room)),
+                child: Text(t.toolbox.linkDirect),
               ),
           ],
         ),
@@ -164,7 +175,7 @@ final class _DetailsFollow extends ConsumerWidget {
     return DsButton(
       variant: followed ? DsButtonVariant.secondary : DsButtonVariant.primary,
       size: DsSize.sm,
-      onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
+      onPressed: () => unawaited(toggleRoomFollow(context, ref)),
       leading: DsIcon(followed ? DsIcons.heart : DsIcons.heartCrack, size: 16),
       child: Text(followed ? t.room.unfollow : t.room.follow),
     );
@@ -256,79 +267,47 @@ final class _Figures extends StatelessWidget {
   }
 }
 
-/// How the last entry into this room went, stage by stage.
-///
-/// The room writes a `room-open` line to the log when an entry ends; these are
-/// the same numbers where a viewer can actually read them, because "it opens
-/// slowly" is four different faults and only the numbers say which. A stage the
-/// entry never reached is left out rather than shown as a zero: zero reads as
-/// "that step was fast" when it means "we never got there".
-final class _OpenStages extends ConsumerWidget {
-  const _OpenStages();
+/// The three numbers the chat header used to carry: viewers, how long the
+/// room has been on the air, and how long this visit has watched. The header
+/// keeps one line now; a phone finds these here, and a pointer finds them on
+/// the header's hover card.
+final class _SessionFigures extends StatelessWidget {
+  const _SessionFigures({required this.room, required this.watchStarted});
+
+  final LiveRoom room;
+  final DateTime watchStarted;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final record = ref.watch(roomOpenRecordProvider);
-    if (record == null) return const SizedBox.shrink();
+  Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final rows = [
-      for (final stage in record.stages)
-        if (stage.took case final took?) (_stageLabel(t, stage.name), took.inMilliseconds),
-    ];
-    return DsListSection(
-      header: Text(
-        '${t.room.openStages} · ${t.room.openStagesTotal(value: record.total.inMilliseconds)}'
-        ' · ${_proxyLabel(t, record.proxy)}',
-      ),
+    final online = room.audience.onlineViewers ?? room.audience.totalViewers;
+    final caption = theme.typography.caption.copyWith(color: colors.textSubtle);
+    final value = theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted));
+    Widget cell(String label, String figure) => Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s4,
+      children: [Text(label, style: caption), Text(figure, style: value)],
+    );
+    return Wrap(
+      spacing: DsSpace.s16,
+      runSpacing: DsSpace.s6,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s4,
-            children: [
-              for (final (label, milliseconds) in rows)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    Text(
-                      t.room.openStageValue(value: milliseconds),
-                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text)),
-                    ),
-                  ],
-                ),
-              if (record.failed)
-                Text(t.room.openStagesFailed, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-            ],
-          ),
-        ),
+        cell(t.room.statViewers, online == null ? '—' : AudienceFormat.format(online)),
+        cell(t.room.statOnAir, _durationText(room.broadcast.startedAt)),
+        cell(t.room.statWatched, _durationText(watchStarted)),
       ],
     );
   }
+}
 
-  /// The way out's name in the viewer's language. A stage the entry never
-  /// reached is left out, so the header stays one line of facts.
-  static String _proxyLabel(Translations t, RoomOpenProxy proxy) => switch (proxy) {
-    RoomOpenProxy.direct => t.settings.proxyModeOff,
-    RoomOpenProxy.system => t.settings.proxyModeSystem,
-    RoomOpenProxy.manual => t.settings.proxyModeManual,
-  };
-
-  /// The stage's name in the viewer's language. A key with no row here shows
-  /// its own name rather than being labelled as some other stage.
-  static String _stageLabel(Translations t, String name) => switch (name) {
-    'detail' => t.room.openStageDetail,
-    'qualities' => t.room.openStageQualities,
-    'lines' => t.room.openStageLines,
-    'request' => t.room.openStageRequest,
-    'firstFrame' => t.room.openStageFirstFrame,
-    'playing' => t.room.openStagePlaying,
-    'chat' => t.room.openStageChat,
-    _ => name,
-  };
+String _durationText(DateTime? since) {
+  if (since == null) return '—';
+  final elapsed = DateTime.now().difference(since);
+  if (elapsed.isNegative) return '00:00:00';
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(elapsed.inHours)}:${two(elapsed.inMinutes.remainder(60))}:${two(elapsed.inSeconds.remainder(60))}';
 }
 
 /// Notice or introduction: a titled card whose text wraps in full.

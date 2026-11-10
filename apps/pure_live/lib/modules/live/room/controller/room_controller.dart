@@ -1431,12 +1431,8 @@ final class RoomController extends Notifier<RoomState> {
           .log(
             manual ? live_log.LogLevel.warning : live_log.LogLevel.debug,
             'refresh read failed',
-            fields: {
-            'site': platform,
-            'room': roomId,
-            'manual': manual,
-            'message': error.message,
-          });
+            fields: {'site': platform, 'room': roomId, 'manual': manual, 'message': error.message},
+          );
       if (manual) state = _with(error: error.message);
     }, (fresh) => state = _with(room: room.mergedWith(fresh)));
   }
@@ -1710,9 +1706,7 @@ final class RoomController extends Notifier<RoomState> {
     } on Object catch (error) {
       // The next room open retries; background return is not a failure path
       // — but a pattern of these means the danmaku is permanently broken.
-      appLog
-          .forCategory('room.chat')
-          .warning('background danmaku reconnect failed', fields: {'error': '$error'});
+      appLog.forCategory('room.chat').warning('background danmaku reconnect failed', fields: {'error': '$error'});
     }
   }
 
@@ -1752,10 +1746,12 @@ final class RoomController extends Notifier<RoomState> {
       if (recordQuality != null && capability != null) {
         final answer = await capability.getLines(room: room, quality: recordQuality);
         answer.match(
-          (error) => appLog.forCategory('recorder').warning(
-            'recording quality lines failed',
-            fields: {'site': room.ref.platform, 'room': room.ref.roomId, 'quality': recordQuality?.label},
-          ),
+          (error) => appLog
+              .forCategory('recorder')
+              .warning(
+                'recording quality lines failed',
+                fields: {'site': room.ref.platform, 'room': room.ref.roomId, 'quality': recordQuality?.label},
+              ),
           (lines) {
             if (lines.isNotEmpty) recordLine = lines.first;
           },
@@ -1861,7 +1857,11 @@ final class RoomController extends Notifier<RoomState> {
   Future<List<LivePlayLine>> _ingested(LiveRoom room, List<LivePlayLine> lines) async {
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
-    final session = await startLiveIngest(proxyRoute: () => ref.read(appProxyRouteProvider), site: site, line: lines.first);
+    final session = await startLiveIngest(
+      proxyRoute: () => ref.read(appProxyRouteProvider),
+      site: site,
+      line: lines.first,
+    );
     if (session == null) return lines;
     final previous = _ingest;
     _ingest = session;
@@ -1933,16 +1933,18 @@ final class RoomController extends Notifier<RoomState> {
         // stream it was serving keeps playing, and the engine's own recovery
         // owns what happens next.
         if (state.handle == null) _recordAutoSwitchVerdict(error);
-        appLog.forCategory('room').warning(
-          'plan read failed',
-          fields: {
-            'site': room.ref.platform,
-            'room': room.ref.roomId,
-            'quality': _wantedQuality?.label,
-            'committed': state.handle != null,
-            'message': error.message,
-          },
-        );
+        appLog
+            .forCategory('room')
+            .warning(
+              'plan read failed',
+              fields: {
+                'site': room.ref.platform,
+                'room': room.ref.roomId,
+                'quality': _wantedQuality?.label,
+                'committed': state.handle != null,
+                'message': error.message,
+              },
+            );
         state = _with(error: error.message);
         _reportOpenTiming(failed: true);
       }
@@ -1956,11 +1958,12 @@ final class RoomController extends Notifier<RoomState> {
       if (state.handle == null) {
         _autoSwitchUnavailable = true;
       }
-      appLog.forCategory('room').warning('the platform served no lines', fields: {
-        'site': room.ref.platform,
-        'room': room.ref.roomId,
-        'quality': _wantedQuality?.label,
-      });
+      appLog
+          .forCategory('room')
+          .warning(
+            'the platform served no lines',
+            fields: {'site': room.ref.platform, 'room': room.ref.roomId, 'quality': _wantedQuality?.label},
+          );
       state = _with(lines: const [], error: 'the room has nothing to play');
       _reportOpenTiming(failed: true);
       return;
@@ -1972,12 +1975,14 @@ final class RoomController extends Notifier<RoomState> {
     try {
       lines = await _ingested(room, resolvedLines);
     } on Object catch (error, stack) {
-      appLog.forCategory('room').error(
-        'ingest relay failed',
-        fields: {'site': room.ref.platform, 'room': room.ref.roomId},
-        error: error,
-        stackTrace: stack,
-      );
+      appLog
+          .forCategory('room')
+          .error(
+            'ingest relay failed',
+            fields: {'site': room.ref.platform, 'room': room.ref.roomId},
+            error: error,
+            stackTrace: stack,
+          );
       if (epoch == _openEpoch) {
         state = _with(error: '$error');
         _reportOpenTiming(failed: true);
@@ -2022,16 +2027,18 @@ final class RoomController extends Notifier<RoomState> {
       // The engine's own reading of what died: a network-kind failure keeps
       // probing in the playback session and never reaches the scheduler.
       _autoSwitchPlayerFailure = failure;
-      appLog.forCategory('room.player').warning(
-        'playback failure',
-        fields: {
-          'code': failure.code.name,
-          'message': failure.message,
-          'site': state.room?.ref.platform,
-          'room': state.room?.ref.roomId,
-          'line': state.lineIndex,
-        },
-      );
+      appLog
+          .forCategory('room.player')
+          .warning(
+            'playback failure',
+            fields: {
+              'code': failure.code.name,
+              'message': failure.message,
+              'site': state.room?.ref.platform,
+              'room': state.room?.ref.roomId,
+              'line': state.lineIndex,
+            },
+          );
       state = _with(error: failure.message ?? failure.code.name);
       _reportOpenTiming(failed: true);
     });
@@ -2319,11 +2326,12 @@ final class RoomController extends Notifier<RoomState> {
       // The old chat is still up at this point, so the room does not lose
       // its voice; but the new credentials were refused, and the column must
       // say that rather than go quiet on a stale connection.
-      appLog.forCategory('room.chat').warning('danmaku reconnect refused', fields: {
-        'site': room.ref.platform,
-        'room': room.ref.roomId,
-        'message': error.message,
-      });
+      appLog
+          .forCategory('room.chat')
+          .warning(
+            'danmaku reconnect refused',
+            fields: {'site': room.ref.platform, 'room': room.ref.roomId, 'message': error.message},
+          );
       if (_danmakuCurrent(epoch, room)) _setChat(RoomChatStatus.failed, error: error.message);
       return null;
     }, (created) => created);
@@ -2599,17 +2607,15 @@ final class RoomController extends Notifier<RoomState> {
     final board = ref.read(roomSuperChatsProvider.notifier)..beginLoad();
     final answer = await capability.getSuperChatMessages(room: room);
     if (!ref.mounted || state.room?.ref != room.ref) return;
-    answer.match(
-      (error) {
-        appLog.forCategory('room').warning('super chats read failed', fields: {
-          'site': room.ref.platform,
-          'room': room.ref.roomId,
-          'message': error.message,
-        });
-        board.fail(error.message);
-      },
-      board.addAll,
-    );
+    answer.match((error) {
+      appLog
+          .forCategory('room')
+          .warning(
+            'super chats read failed',
+            fields: {'site': room.ref.platform, 'room': room.ref.roomId, 'message': error.message},
+          );
+      board.fail(error.message);
+    }, board.addAll);
   }
 
   /// Whether the reference's content blocks drop [message]: emoticon-only
