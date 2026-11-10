@@ -8,10 +8,12 @@ import 'package:live_iptv/src/model/model.dart';
 /// wrong programme list is worse than none, because it looks right.
 ///
 /// The steps, in order: the channel's `tvg-id` equals a guide channel id
-/// (case-insensitive); the channel's own id equals a guide id (older
-/// playlists carry the guide id there); the normalized name equals a guide
-/// name exactly; or one normalized name contains the other. Every step
-/// requires its answer to be unique.
+/// (case-insensitive); its `tvg-name` equals a guide channel id or, once
+/// normalized, a guide name (the key the Chinese guides list channels under,
+/// where the display name carries a suffix); the channel's own id equals a
+/// guide id (older playlists carry the guide id there); the normalized name
+/// equals a guide name exactly; or one normalized name contains the other.
+/// Every step requires its answer to be unique.
 class GuideIndex {
   /// An index over the channels of one guide source.
   new(Iterable<EpgChannel> channels) {
@@ -47,6 +49,13 @@ class GuideIndex {
     final byTvgId = tvgId == null ? null : _byId[tvgId];
     if (byTvgId != null) {
       return _unique(byTvgId);
+    }
+    final tvgName = channel.entry.tvgName?.trim() ?? '';
+    if (tvgName.isNotEmpty) {
+      final byTvgName = _byId[tvgName.toLowerCase()] ?? _byName[_name(tvgName)];
+      if (byTvgName != null) {
+        return _unique(byTvgName);
+      }
     }
     final legacy = _byId[channel.id.trim().toLowerCase()];
     if (legacy != null) {
@@ -112,7 +121,9 @@ class GuideIndex {
     if (old?.epgChannelKey == key && old?.epgSourceId == sourceId) {
       continue;
     }
-    upserts.add(EpgMapping.of(channelId: channel.id, playlistId: playlistId, epgChannelKey: key, epgSourceId: sourceId));
+    upserts.add(
+      EpgMapping.of(channelId: channel.id, playlistId: playlistId, epgChannelKey: key, epgSourceId: sourceId),
+    );
   }
   final deletes = [
     for (final old in previous)
@@ -152,6 +163,14 @@ String? resolveGuideChannel({
   if (tvgId != null && tvgId.isNotEmpty) {
     for (final guide in guideChannels) {
       if (guide.channelId.trim().toLowerCase() == tvgId) {
+        return guide.key;
+      }
+    }
+  }
+  final tvgName = channel.entry.tvgName?.trim().toLowerCase();
+  if (tvgName != null && tvgName.isNotEmpty) {
+    for (final guide in guideChannels) {
+      if (guide.channelId.trim().toLowerCase() == tvgName) {
         return guide.key;
       }
     }

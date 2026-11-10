@@ -7,6 +7,7 @@ import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
     show iptvUserAgentProvider, normalizedIptvUserAgent;
+import 'package:pure_live/modules/iptv/data/iptv_fetch_routes.dart' show routedIptvBytesFetcher, routedIptvFetcher;
 
 /// The IPTV library over its shared JSON store (one namespace, one process).
 ///
@@ -27,10 +28,13 @@ final iptvLibraryProvider = FutureProvider<IptvLibrary>((ref) async {
 /// The importer every playlist and guide write goes through, over the open
 /// library.
 ///
-/// Its two download seams ride the app's shared transport, so an IPTV
-/// download honours the network settings (proxy, cookies) exactly as the
-/// rest of the app does. Null while the library is still opening — an
-/// import cannot land before the store it writes to exists.
+/// Its download seams ride the app's shared transport, so an IPTV download
+/// honours the network settings (proxy, cookies) exactly as the rest of the
+/// app does, and a GitHub-hosted list goes through the viewer's GitHub
+/// accelerator (`iptvDownloadCandidates`). Playlists are read as bytes, so a
+/// GBK list or a gzipped one arrives as the text it is. Null while the
+/// library is still opening — an import cannot land before the store it
+/// writes to exists.
 final iptvImporterProvider = Provider<IptvImporter?>((ref) {
   final library = ref.watch(iptvLibraryProvider).value;
   if (library == null) return null;
@@ -40,13 +44,41 @@ final iptvImporterProvider = Provider<IptvImporter?>((ref) {
   // The viewer's override applies to playlist and guide downloads; a change
   // rebuilds the importer, so the next import uses the new value.
   final userAgent = normalizedIptvUserAgent(ref.watch(iptvUserAgentProvider));
+  // The mirror choice is read at download time rather than watched: a
+  // mirror list refreshing in the background must not rebuild the importer
+  // under an import that is still running on it.
+  var mirrors = ref.read(githubMirrorProvider);
+  ref.listen(githubMirrorProvider, (_, next) => mirrors = next);
+  GithubMirrorState currentMirrors() => mirrors;
   return IptvImporter(
     library: library,
-    fetch: iptvFetcherFor(http, userAgent: userAgent),
-    fetchBytes: iptvBytesFetcherFor(http, userAgent: userAgent),
+    fetch: routedIptvFetcher(iptvFetcherFor(http, userAgent: userAgent), currentMirrors),
+    fetchBytes: routedIptvBytesFetcher(iptvBytesFetcherFor(http, userAgent: userAgent), currentMirrors),
+    fetchPlaylistBytes: routedIptvBytesFetcher(
+      iptvBytesFetcherFor(http, timeout: iptvFetchDefaultTimeout, limit: iptvPlaylistByteLimit, userAgent: userAgent),
+      currentMirrors,
+    ),
     log: appLog.forCategory('iptv.import'),
   );
 });
+
+/// The importer once the library has opened, waiting for it a while: an
+/// import screen can open while the store is still reading its documents,
+/// and an import pressed in that window must not fail on the spot.
+Future<IptvImporter?> readyIptvImporter(Ref ref) async {
+  final importer = ref.read(iptvImporterProvider);
+  if (importer != null) return importer;
+  try {
+    await ref.read(iptvLibraryProvider.future).timeout(const Duration(seconds: 15));
+  } on Object catch (error) {
+    appLog
+        .forCategory('iptv.import')
+        .warning('the channel library never opened while an import waited', fields: {'error': '$error'});
+  }
+  // The explicit type stops the async body's `FutureOr` context from being
+  // inferred into the read.
+  return ref.read<IptvImporter?>(iptvImporterProvider);
+}
 
 /// Whether [playlist] was imported from a web address, so a sync has
 /// something to download again. Local files and pasted text record no

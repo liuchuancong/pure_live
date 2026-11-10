@@ -20,7 +20,28 @@ List<IptvEntry> parsePlaylist(String text, {IptvPlaylistFormat? format}) =>
 /// `#EXTINF` never got its URL was cut off mid-download (truncated) and must
 /// not replace a good saved one, while one with a handful of unparsable
 /// lines imports fine and just says so.
+///
+/// Markup is answered before either parser runs: a web page read as a text
+/// list turns every line with a comma into a "channel", and the import would
+/// then save the error page a dead link answered with.
 PlaylistParseResult parsePlaylistResult(String text, {IptvPlaylistFormat? format}) {
+  if (format == null) {
+    final markup = detectMarkup(text);
+    if (markup != null) {
+      return PlaylistParseResult(
+        entries: const [],
+        markup: markup,
+        issues: [
+          PlaylistIssue(
+            0,
+            markup == PlaylistMarkup.guide
+                ? 'the text is a programme guide, not a playlist'
+                : 'the text is a web page, not a playlist',
+          ),
+        ],
+      );
+    }
+  }
   final actual = format ?? detectPlaylistFormat(text);
   return switch (actual) {
     IptvPlaylistFormat.m3u => parseM3uResult(text),

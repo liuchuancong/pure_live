@@ -334,7 +334,6 @@ final class _AppShellState extends ConsumerState<AppShell> {
       (widget.homeMenuItems.isEmpty ? kHomeMenuItems : widget.homeMenuItems).take(_kMaxBottomTabs).toList(),
     AppModule.iptv => const [
       NavigationItem.channels,
-      NavigationItem.iptvFavorites,
       NavigationItem.iptvRecent,
       NavigationItem.iptvGuide,
     ],

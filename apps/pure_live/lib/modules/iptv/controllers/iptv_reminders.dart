@@ -93,9 +93,6 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
     return stored;
   }
 
-  /// Every reminder, soonest first.
-  List<IptvReminder> get reminders => state;
-
   /// Whether the programme starting at [start] on [channelId] already has a
   /// reminder.
   bool contains(String channelId, DateTime start) => state.any((reminder) => reminder.isFor(channelId, start));
@@ -122,14 +119,6 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
     await _save();
     _arm();
     return !exists;
-  }
-
-  /// Drops every reminder.
-  Future<void> clear() async {
-    state = const [];
-    _timer?.cancel();
-    _timer = null;
-    await _save();
   }
 
   void _arm() {

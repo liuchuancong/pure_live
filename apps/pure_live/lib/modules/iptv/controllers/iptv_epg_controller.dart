@@ -6,7 +6,7 @@ import 'package:live_log/live_log.dart' show LogLevel;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart'
-    show iptvImporterProvider, iptvLibraryProvider;
+    show iptvImporterProvider, iptvLibraryProvider, readyIptvImporter;
 
 /// The preference the chosen guide source is kept under.
 const String _activeGuidePref = 'iptv.guide.active';
@@ -71,43 +71,48 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     return state;
   }
 
-  /// Imports the guide at [url]. An empty [name] falls back to the
-  /// address's host, so the source list always has something to show.
-  ///
-  /// [confirmReplace] is the screen's question when the name already
-  /// exists; a sync of one stored source never asks.
-  Future<IptvImportResult> importFromUrl({
-    required String url,
-    String name = '',
-    IptvReplaceConfirm? confirmReplace,
-  }) async {
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null || !_isHttp(uri)) {
-      return IptvImportResult(IptvImportStatus.unsupportedFormat);
+  /// Downloads the guide at [url] and judges it against the library,
+  /// writing nothing.
+  Future<IptvGuidePreview> previewUrl(Uri url) async {
+    final importer = await readyIptvImporter(ref);
+    if (importer == null) {
+      return IptvGuidePreview.failed(IptvImportResult(IptvImportStatus.failed), source: '$url');
     }
-    final importer = await _readyImporter();
+    return await importer.previewGuideFromUrl(url);
+  }
+
+  /// Decodes and judges a picked guide file's [bytes]; [source] is the
+  /// file's path, kept so the source list can say where it came from.
+  Future<IptvGuidePreview> previewBytes(List<int> bytes, {required String source}) async {
+    final importer = await readyIptvImporter(ref);
+    if (importer == null) {
+      return IptvGuidePreview.failed(IptvImportResult(IptvImportStatus.failed), source: source);
+    }
+    return importer.previewGuideBytes(bytes, source: source);
+  }
+
+  /// Writes [preview] under [name] (taking over the guides of that name when
+  /// [replace]), then matches the channels to it and makes it the guide in
+  /// use when none is.
+  Future<IptvImportResult> commitPreview(IptvGuidePreview preview, {required String name, bool replace = false}) async {
+    final importer = await readyIptvImporter(ref);
     if (importer == null || state.importing) {
       return IptvImportResult(IptvImportStatus.failed);
     }
     state = _with(importing: true, dropError: true);
     final IptvImportResult result;
     try {
-      final cleanName = name.trim().isEmpty ? uri.host : name.trim();
-      result = await importer.importGuideFromUrl(url: uri, name: cleanName, confirmReplace: confirmReplace);
+      result = await importer.commitGuidePreview(preview, name: name, replace: replace);
     } on Object catch (error, stack) {
       appLog
           .forCategory('iptv.epg')
-          .error('guide import threw', fields: {'url': uri.host}, error: error, stackTrace: stack);
+          .error('guide import threw', fields: {'name': name}, error: error, stackTrace: stack);
       if (ref.mounted) state = _with(error: error);
       return IptvImportResult(IptvImportStatus.failed, error: error);
     } finally {
       if (ref.mounted) state = _with(importing: false);
     }
-    _logVerdict('import', uri.toString(), result);
-    // The guide is stored; the matching and the choice are improvements on
-    // top of a landed import, and a failure there must not call the import
-    // itself failed — the screen already says the guide arrived, and the
-    // matcher runs again on the next sync.
+    _logVerdict('import', preview.source, result);
     await _afterImport(result);
     return result;
   }
@@ -116,7 +121,7 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
   /// when there is no importer or the source is already busy.
   Future<IptvImportResult?> syncSource(EpgSource source) async {
     final key = _keyOf(source);
-    final importer = await _readyImporter();
+    final importer = await readyIptvImporter(ref);
     if (importer == null || state.busy.contains(key)) return null;
     state = _with(busy: {...state.busy, key});
     IptvImportResult? result;
@@ -160,23 +165,6 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     }
   }
 
-  /// The importer, waiting briefly for the library that builds it: the
-  /// import dialog opens while the store may still be reading its documents,
-  /// and an import pressed in that window fails on the spot if nobody waits.
-  Future<IptvImporter?> _readyImporter() async {
-    final importer = _importer();
-    if (importer != null) return importer;
-    try {
-      await ref.read(iptvLibraryProvider.future).timeout(const Duration(seconds: 15));
-    } on Object catch (error) {
-      appLog.forCategory('iptv.epg').warning(
-        'the channel library never opened while an import waited',
-        fields: {'error': '$error'},
-      );
-    }
-    return _importer();
-  }
-
   /// Deletes [expected] with its channels, programmes and mappings; when it
   /// was the guide in use, the first remaining source takes over.
   Future<bool> deleteSource(EpgSource expected) async {
@@ -208,7 +196,10 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     final log = appLog.forCategory('iptv.epg');
     if (result == null) return;
     if (result.isImported) {
-      log.info('guide $op imported', fields: {'source': source, 'channels': result.channels, 'issues': result.issues.length});
+      log.info(
+        'guide $op imported',
+        fields: {'source': source, 'channels': result.channels, 'issues': result.issues.length},
+      );
       return;
     }
     if (result.status == IptvImportStatus.cancelled) return;
@@ -247,8 +238,6 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
   IptvImporter? _importer() => ref.read(iptvImporterProvider);
 
   static String _keyOf(EpgSource source) => 'g:${source.id}';
-
-  static bool _isHttp(Uri uri) => (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
 
   /// Writes [id] as the active guide and mirrors the choice.
   Future<void> _choose(String? id) async {

@@ -2,10 +2,11 @@
 ///
 /// One public unit per folder, as in `src/model/`: the format detection
 /// (`playlist_format/`), the two readers (`m3u_parser/`, `txt_parser/`), the
-/// dispatcher that picks between them (`playlist_parser/`), and the line
-/// shape they share (`playlist_line/`). `playlist_parse_result.dart` stays a
-/// file of its own because its two types — the result and one issue — are a
-/// pair no reader can use without the other.
+/// dispatcher that picks between them (`playlist_parser/`), the line shape
+/// they share (`playlist_line/`), and the byte decoding every list and guide
+/// goes through before it is text (`text_decode/`). `playlist_parse_result.dart`
+/// stays a file of its own because its types — the result, its header and one
+/// issue — are a set no reader can use apart.
 ///
 /// Both readers are tolerant by design: a malformed line drops only itself,
 /// never the whole playlist, and what they could not read comes back as
@@ -18,4 +19,5 @@ export 'playlist_format/playlist_format.dart';
 export 'playlist_line/playlist_line.dart';
 export 'playlist_parse_result.dart';
 export 'playlist_parser/playlist_parser.dart';
+export 'text_decode/text_decode.dart';
 export 'txt_parser/txt_parser.dart';

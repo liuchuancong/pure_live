@@ -105,9 +105,6 @@ enum NavigationItem {
   /// The IPTV module's programme guide, the reference's 节目单 surface.
   iptvGuide(DsIcons.calendarClock),
 
-  /// The IPTV module's favourite channels, the reference's 收藏.
-  iptvFavorites(DsIcons.heart),
-
   /// The IPTV module's watch history, the reference's 最近观看.
   iptvRecent(DsIcons.history),
 
@@ -204,7 +201,6 @@ enum NavigationItem {
     NavigationItem.huyaSearch => t.huya.search,
     NavigationItem.iptvSources => t.navigation.iptvSources,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
-    NavigationItem.iptvFavorites => t.iptv.favouritesTitle,
     NavigationItem.iptvRecent => t.iptv.recentTitle,
     NavigationItem.musicRecommend => t.navigation.musicRecommend,
     NavigationItem.musicFeatured => t.navigation.musicFeatured,

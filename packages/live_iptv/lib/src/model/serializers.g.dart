@@ -17,6 +17,10 @@ Serializers _$serializers =
           ..add(IptvGroup.serializer)
           ..add(IptvPlaylist.serializer)
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltMap, const [
               const FullType(String),
               const FullType(String),
@@ -26,6 +30,10 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltSet, const [const FullType(String)]),
+            () => SetBuilder<String>(),
           ))
         .build();
 

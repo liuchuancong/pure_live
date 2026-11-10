@@ -96,23 +96,61 @@ dependencies:
 
   # 播放内核（github liuchuancong/media_core，整仓同 pin a682384f；升级=换 ref 再 pub get）
   pip_kit: ^1.0.2 # iOS 系统画中画（media_core_pip 的 iOS 通路，抬起屏上的 AVPlayerLayer）
-  media_core: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 播放器内核
-  media_core_logging: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_logging, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 内核日志中枢（MediaCoreLog，桥进 live_log）
-  media_core_live: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_live, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 直播恢复编排（线路×引擎扫描）
-  media_core_ingest: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_ingest, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 回环转封装/逐段还原
-  media_core_media_kit: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_media_kit, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # mpv 后端
-  media_core_ijk_player: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_ijk_player, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # Android/iOS 内核
-  media_core_better_player: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_better_player, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # Android/iOS 内核
-  media_core_danmaku: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_danmaku, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 弹幕管线（过滤/摄录）
-  media_core_recording_ffmpeg: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_recording_ffmpeg, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # FFmpeg 录制后端
-  media_core_presentation: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_presentation, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 呈现驱动
-  media_core_audio: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_audio, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 音乐播放（队列/歌词/后台）
-  media_core_mpv_audio: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_mpv_audio, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 音乐引擎（mpv_audio_kit：PCM/FFT tap、类型化效果、媒体会话）
-  media_core_fullscreen: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_fullscreen, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 全屏驱动
-  media_core_pip: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_pip, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 画中画驱动
-  media_core_cast_dlna: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_cast_dlna, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # DLNA 投屏后端
-  media_core_mediasession: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_mediasession, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 媒体会话通知
-  media_core_notify: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_notify, ref: a682384ff91e9fb63efa53566751da13fc6b7534}} # 用户通知
+  media_core: { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core, ref: a682384ff91e9fb63efa53566751da13fc6b7534 } } # 播放器内核
+  media_core_logging: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_logging, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 内核日志中枢（MediaCoreLog，桥进 live_log）
+  media_core_live: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_live, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 直播恢复编排（线路×引擎扫描）
+  media_core_ingest: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_ingest, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 回环转封装/逐段还原
+  media_core_media_kit: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_media_kit, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # mpv 后端
+  media_core_ijk_player: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_ijk_player, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # Android/iOS 内核
+  media_core_better_player: {
+      git:
+        { url: https://github.com/liuchuancong/media_core, path: packages/media_core_better_player, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # Android/iOS 内核
+  media_core_danmaku: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_danmaku, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 弹幕管线（过滤/摄录）
+  media_core_recording_ffmpeg: {
+      git:
+        {
+          url: https://github.com/liuchuancong/media_core,
+          path: packages/media_core_recording_ffmpeg,
+          ref: a682384ff91e9fb63efa53566751da13fc6b7534,
+        },
+    } # FFmpeg 录制后端
+  media_core_presentation: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_presentation, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 呈现驱动
+  media_core_audio: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_audio, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 音乐播放（队列/歌词/后台）
+  media_core_mpv_audio: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_mpv_audio, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 音乐引擎（mpv_audio_kit：PCM/FFT tap、类型化效果、媒体会话）
+  media_core_fullscreen: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_fullscreen, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 全屏驱动
+  media_core_pip: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_pip, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 画中画驱动
+  media_core_cast_dlna: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_cast_dlna, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # DLNA 投屏后端
+  media_core_mediasession: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_mediasession, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 媒体会话通知
+  media_core_notify: {
+      git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_notify, ref: a682384ff91e9fb63efa53566751da13fc6b7534 },
+    } # 用户通知
   workmanager: ^0.9.0 # Android 后台周期任务（开播提醒后台 check）
 
   responsive_breakpoints: ^1.0.3

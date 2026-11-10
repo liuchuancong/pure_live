@@ -42,6 +42,11 @@ class _$IptvChannelSerializer implements StructuredSerializer<IptvChannel> {
         object.position,
         specifiedType: const FullType(int),
       ),
+      'sources',
+      serializers.serialize(
+        object.sources,
+        specifiedType: const FullType(BuiltSet, const [const FullType(String)]),
+      ),
     ];
     Object? value;
     value = object.number;
@@ -122,6 +127,17 @@ class _$IptvChannelSerializer implements StructuredSerializer<IptvChannel> {
             specifiedType: const FullType(int),
           ) as int?;
           break;
+        case 'sources':
+          result.sources.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltSet, const [
+                    const FullType(String),
+                  ]),
+                )!
+                as BuiltSet<Object?>,
+          );
+          break;
       }
     }
 
@@ -144,6 +160,8 @@ class _$IptvChannel extends IptvChannel {
   final int position;
   @override
   final int? number;
+  @override
+  final BuiltSet<String> sources;
 
   factory _$IptvChannel([void Function(IptvChannelBuilder)? updates]) =>
       (IptvChannelBuilder()..update(updates))._build();
@@ -156,6 +174,7 @@ class _$IptvChannel extends IptvChannel {
     required this.pinned,
     required this.position,
     this.number,
+    required this.sources,
   }) : super._();
   @override
   IptvChannel rebuild(void Function(IptvChannelBuilder) updates) =>
@@ -174,7 +193,8 @@ class _$IptvChannel extends IptvChannel {
         hidden == other.hidden &&
         pinned == other.pinned &&
         position == other.position &&
-        number == other.number;
+        number == other.number &&
+        sources == other.sources;
   }
 
   @override
@@ -187,6 +207,7 @@ class _$IptvChannel extends IptvChannel {
     _$hash = $jc(_$hash, pinned.hashCode);
     _$hash = $jc(_$hash, position.hashCode);
     _$hash = $jc(_$hash, number.hashCode);
+    _$hash = $jc(_$hash, sources.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -200,7 +221,8 @@ class _$IptvChannel extends IptvChannel {
           ..add('hidden', hidden)
           ..add('pinned', pinned)
           ..add('position', position)
-          ..add('number', number))
+          ..add('number', number)
+          ..add('sources', sources))
         .toString();
   }
 }
@@ -236,6 +258,10 @@ class IptvChannelBuilder implements Builder<IptvChannel, IptvChannelBuilder> {
   int? get number => _$this._number;
   set number(int? number) => _$this._number = number;
 
+  SetBuilder<String>? _sources;
+  SetBuilder<String> get sources => _$this._sources ??= SetBuilder<String>();
+  set sources(SetBuilder<String>? sources) => _$this._sources = sources;
+
   IptvChannelBuilder() {
     IptvChannel._initialize(this);
   }
@@ -250,6 +276,7 @@ class IptvChannelBuilder implements Builder<IptvChannel, IptvChannelBuilder> {
       _pinned = $v.pinned;
       _position = $v.position;
       _number = $v.number;
+      _sources = $v.sources.toBuilder();
       _$v = null;
     }
     return this;
@@ -297,12 +324,16 @@ class IptvChannelBuilder implements Builder<IptvChannel, IptvChannelBuilder> {
               'position',
             ),
             number: number,
+            sources: sources.build(),
           );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'entry';
         entry.build();
+
+        _$failedField = 'sources';
+        sources.build();
       } catch (e) {
         throw BuiltValueNestedFieldError(
           r'IptvChannel',

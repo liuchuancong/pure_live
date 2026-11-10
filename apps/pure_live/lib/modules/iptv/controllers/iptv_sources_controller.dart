@@ -22,9 +22,10 @@ typedef IptvSourcesState = ({
 IptvSourcesState _initial() =>
     (ready: false, importing: false, playlists: const [], channelCount: 0, busy: const {}, syncAll: null);
 
-/// The playlist half of the IPTV source manager: importing a playlist
-/// (URL, local file or pasted text), syncing one from its address, deleting
-/// one, and the "sync all" round that walks every network source.
+/// The playlist half of the IPTV source manager: previewing and importing a
+/// playlist (address, local file or pasted text), syncing one from its
+/// address, deleting one, and the "sync all" round that walks every network
+/// source.
 ///
 /// Every write goes through [IptvImporter], so a name clash is asked about
 /// rather than silently overwritten and channels keep their ids (and the
@@ -55,66 +56,54 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
     return state;
   }
 
-  /// Imports a playlist downloaded from [url] under [name].
-  ///
-  /// [confirmReplace] is the screen's question when [name] already exists;
-  /// without an answer the importer writes nothing.
-  Future<IptvImportResult> importPlaylistUrl({
-    required Uri url,
+  /// Downloads [url] and judges it, writing nothing.
+  Future<IptvPlaylistPreview> previewUrl(Uri url) async {
+    final importer = await readyIptvImporter(ref);
+    if (importer == null) {
+      return IptvPlaylistPreview.failed(IptvImportResult(IptvImportStatus.failed), url: '$url');
+    }
+    return await importer.previewPlaylistFromUrl(url);
+  }
+
+  /// Judges pasted [text], writing nothing.
+  Future<IptvPlaylistPreview> previewText(String text) async {
+    final importer = await readyIptvImporter(ref);
+    if (importer == null) {
+      return IptvPlaylistPreview.failed(IptvImportResult(IptvImportStatus.failed));
+    }
+    return importer.previewPlaylistText(text);
+  }
+
+  /// Decodes and judges a picked file's [bytes], writing nothing.
+  Future<IptvPlaylistPreview> previewBytes(List<int> bytes) async {
+    final importer = await readyIptvImporter(ref);
+    if (importer == null) {
+      return IptvPlaylistPreview.failed(IptvImportResult(IptvImportStatus.failed));
+    }
+    return importer.previewPlaylistBytes(bytes);
+  }
+
+  /// Writes [preview] under [name] — replacing [replaceId] when given — and
+  /// hides [hiddenGroups] once it is in.
+  Future<IptvImportResult> commitPreview(
+    IptvPlaylistPreview preview, {
     required String name,
-    IptvReplaceConfirm? confirmReplace,
+    String? replaceId,
+    Set<String> hiddenGroups = const {},
   }) async {
-    final importer = _importer();
+    final importer = await readyIptvImporter(ref);
     if (importer == null || state.importing) {
       return IptvImportResult(IptvImportStatus.failed);
     }
     state = _with(importing: true);
     try {
-      final result = await importer.importPlaylistFromUrl(url: url, name: name, confirmReplace: confirmReplace);
-      _logVerdict('import', url.toString(), result);
-      return result;
-    } on Object catch (error, stack) {
-      appLog
-          .forCategory('iptv.playlist')
-          .error('playlist import threw', fields: {'url': url.host}, error: error, stackTrace: stack);
-      return IptvImportResult(IptvImportStatus.failed, error: error);
-    } finally {
-      if (ref.mounted) state = _with(importing: false);
-    }
-  }
-
-  /// One line per import or sync verdict: every failure the toast reports
-  /// says why in the log, status and cause together.
-  void _logVerdict(String op, String source, IptvImportResult result) {
-    final log = appLog.forCategory('iptv.playlist');
-    if (result.isImported) {
-      log.info('playlist $op imported', fields: {'source': source, 'channels': result.channels, 'issues': result.issues.length});
-      return;
-    }
-    if (result.status == IptvImportStatus.cancelled) return;
-    log.warning(
-      'playlist $op failed',
-      fields: {'source': source, 'status': result.status.name, if (result.error != null) 'error': '${result.error}'},
-    );
-  }
-
-  /// Imports playlist [text] under [name]; [url] records where a download
-  /// came from, so [syncPlaylist] can re-read it later. Pasted and local
-  /// text records none.
-  Future<IptvImportResult> importPlaylistText({
-    required String text,
-    required String name,
-    String? url,
-    IptvReplaceConfirm? confirmReplace,
-  }) async {
-    final importer = _importer();
-    if (importer == null || state.importing) {
-      return IptvImportResult(IptvImportStatus.failed);
-    }
-    state = _with(importing: true);
-    try {
-      final result = await importer.importPlaylistText(text: text, name: name, url: url, confirmReplace: confirmReplace);
-      _logVerdict('import', name, result);
+      final result = await importer.commitPlaylistPreview(
+        preview,
+        name: name,
+        replaceId: replaceId,
+        hiddenGroups: hiddenGroups,
+      );
+      _logVerdict('import', preview.url ?? name, result);
       return result;
     } on Object catch (error, stack) {
       appLog
@@ -126,10 +115,39 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
     }
   }
 
+  /// One line per import or sync verdict: every failure the toast reports
+  /// says why in the log, status and cause together.
+  void _logVerdict(String op, String source, IptvImportResult result) {
+    final log = appLog.forCategory('iptv.playlist');
+    if (result.isImported) {
+      log.info(
+        'playlist $op imported',
+        fields: {
+          'source': source,
+          'channels': result.channels,
+          'added': result.added,
+          'removed': result.removed,
+          'issues': result.issues.length,
+        },
+      );
+      return;
+    }
+    if (result.status == IptvImportStatus.cancelled) return;
+    log.warning(
+      'playlist $op failed',
+      fields: {
+        'source': source,
+        'status': result.status.name,
+        if (result.failure != null) 'failure': result.failure!.name,
+        if (result.error != null) 'error': '${result.error}',
+      },
+    );
+  }
+
   /// Re-downloads [playlist] from the address it was imported from; null
   /// when there is no importer or this source is already busy.
   Future<IptvImportResult?> syncPlaylist(IptvPlaylist playlist) async {
-    final importer = _importer();
+    final importer = await readyIptvImporter(ref);
     final key = _keyOf(playlist);
     if (importer == null || state.busy.contains(key)) return null;
     state = _with(busy: {...state.busy, key});
@@ -146,6 +164,10 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
       if (ref.mounted) state = _with(busy: {...state.busy}..remove(key));
     }
   }
+
+  /// What deleting [playlist] would take with it, for the confirmation.
+  ({int channels, int favourites}) deletionImpact(IptvPlaylist playlist) =>
+      _library()?.deletionImpact(playlist.id) ?? (channels: 0, favourites: 0);
 
   /// Deletes [playlist], if it is still the record on screen; answers
   /// whether it was removed.

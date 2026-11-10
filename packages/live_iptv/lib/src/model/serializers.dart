@@ -13,19 +13,10 @@ import 'package:live_iptv/src/model/iptv_playlist/iptv_playlist.dart';
 part 'serializers.g.dart';
 
 /// The model layer's serialization table: every persisted model registers
-/// here, and the plugin defines the wire format — `DateTime` as ISO-8601
-/// text, the same spelling the retired json_serializable converters wrote,
-/// so records stored by the previous generation read back unchanged.
-@SerializersFor([
-  IptvEntry,
-  IptvChannel,
-  IptvGroup,
-  IptvPlaylist,
-  EpgChannel,
-  EpgMapping,
-  EpgProgramme,
-  EpgSource,
-])
-final Serializers serializers = (_$serializers.toBuilder()
-      ..addPlugin(StandardJsonPlugin()))
-    .build();
+/// here, and the plugin defines the wire format — `DateTime` as UTC
+/// microseconds-since-epoch integers (built_value's `DateTimeSerializer`
+/// refuses a local instant and answers `int` back, so older ISO-text rows
+/// cannot load through this table). Records live as local dates in memory;
+/// `StorageIptvStore` is where the two clocks meet.
+@SerializersFor([IptvEntry, IptvChannel, IptvGroup, IptvPlaylist, EpgChannel, EpgMapping, EpgProgramme, EpgSource])
+final Serializers serializers = (_$serializers.toBuilder()..addPlugin(StandardJsonPlugin())).build();

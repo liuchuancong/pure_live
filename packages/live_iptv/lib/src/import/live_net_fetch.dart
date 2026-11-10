@@ -7,6 +7,7 @@
 library;
 
 import 'package:live_iptv/src/import/iptv_importer.dart';
+import 'package:live_iptv/src/playlist/text_decode/text_decode.dart';
 import 'package:live_net/live_net.dart';
 
 /// How long one playlist download may take before it is called dead.
@@ -29,12 +30,19 @@ const Duration iptvGuideFetchTimeout = Duration(seconds: 90);
 /// (a video, a disk image) rather than a guide that got big.
 const int iptvGuideByteLimit = 64 * 1024 * 1024;
 
+/// How much of a playlist is read before it is refused: the largest public
+/// lists (every channel of every country) are a few MiB, so 32 MiB is a
+/// wrong address — a stream opened as a list — rather than a list.
+const int iptvPlaylistByteLimit = 32 * 1024 * 1024;
+
 /// An [IptvFetcher] that reads [http] as text.
 ///
-/// The charset comes from the response's `content-type`, which matters: a
-/// guide served as `charset=gbk` decoded as UTF-8 turns every Chinese
-/// channel name into replacement characters, and the importer would then
-/// match nothing and quietly store a guide of question marks.
+/// The bytes are decoded by [decodeIptvText] with the response's
+/// `content-type` charset as the hint, which matters: a list served as
+/// `charset=gbk` — or saved as GBK and served with no charset at all —
+/// decoded as UTF-8 turns every Chinese channel name into replacement
+/// characters, and a guide read that way matches nothing and quietly
+/// stores a guide of question marks.
 IptvFetcher iptvFetcherFor(
   LiveHttp http, {
   Duration timeout = iptvFetchDefaultTimeout,
@@ -47,7 +55,7 @@ IptvFetcher iptvFetcherFor(
   if (!_isOk(response.statusCode)) {
     throw HttpStatusFailure(statusCode: response.statusCode, url: url);
   }
-  return response.text;
+  return decodeIptvText(response.bodyBytes, charset: charsetOfContentType(response.headers['content-type'])).text;
 };
 
 /// An [IptvBytesFetcher] that reads [http] as bytes, for gzipped guides.

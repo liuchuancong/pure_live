@@ -1,6 +1,7 @@
 // The named factories spell their class name; the `new` shorthand
 // cannot carry per-constructor documentation.
 // ignore_for_file: unnecessary_type_name_in_constructor
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:live_iptv/src/model/iptv_entry/iptv_entry.dart';
@@ -21,6 +22,13 @@ part 'iptv_channel.g.dart';
 /// channel one, and an unnumbered channel sorts *after* the numbered ones
 /// — the alternative, inventing a number for everything, would overwrite
 /// the numbers the user typed with ones the importer guessed.
+///
+/// [sources] names the playlists that list the channel. Channels are shared
+/// between playlists by URL, so one channel can be claimed by several; a
+/// playlist that stops listing it gives up its claim, and a channel nobody
+/// claims any more leaves the library with the last playlist that had it.
+/// An empty set is a channel stored before claims were recorded: nothing is
+/// known about its owner, so nothing removes it on a guess.
 abstract class IptvChannel implements Built<IptvChannel, IptvChannelBuilder> {
   /// Builds from a builder [updates] callback — the codegen entry.
   factory IptvChannel([void Function(IptvChannelBuilder)? updates]) = _$IptvChannel;
@@ -34,6 +42,7 @@ abstract class IptvChannel implements Built<IptvChannel, IptvChannelBuilder> {
     bool pinned = false,
     int position = 0,
     int? number,
+    Iterable<String> sources = const <String>[],
   }) => IptvChannel(
     (b) => b
       ..id = id
@@ -42,21 +51,22 @@ abstract class IptvChannel implements Built<IptvChannel, IptvChannelBuilder> {
       ..hidden = hidden
       ..pinned = pinned
       ..position = position
-      ..number = number,
+      ..number = number
+      ..sources.replace(sources),
   );
 
   IptvChannel._();
 
   /// Restores a channel from JSON.
-  factory IptvChannel.fromJson(Map<String, Object?> json) =>
-      serializers.deserializeWith(IptvChannel.serializer, json)!;
+  factory IptvChannel.fromJson(Map<String, Object?> json) => serializers.deserializeWith(IptvChannel.serializer, json)!;
 
   @BuiltValueHook(initializeBuilder: true)
   static void _initialize(IptvChannelBuilder b) => b
     ..favorite = false
     ..hidden = false
     ..pinned = false
-    ..position = 0;
+    ..position = 0
+    ..sources.replace(const <String>[]);
 
   /// The serializer built_value registers in [serializers].
   static Serializer<IptvChannel> get serializer => _$iptvChannelSerializer;
@@ -82,6 +92,16 @@ abstract class IptvChannel implements Built<IptvChannel, IptvChannelBuilder> {
 
   /// The remote-control number, when the user gave the channel one.
   int? get number;
+
+  /// The ids of the playlists that list this channel; empty for a channel
+  /// stored before claims were recorded.
+  BuiltSet<String> get sources;
+
+  /// Every address of the channel: the primary first, then the fallbacks.
+  Iterable<String> get urls sync* {
+    yield entry.url;
+    yield* entry.alternatives;
+  }
 
   /// Serializes this channel for the store.
   Map<String, Object?> toJson() => serializers.serializeWith(IptvChannel.serializer, this)! as Map<String, Object?>;

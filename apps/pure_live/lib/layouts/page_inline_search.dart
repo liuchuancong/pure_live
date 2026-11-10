@@ -68,7 +68,7 @@ PageInlineSearch? pageInlineSearch(
     case AppModule.iptv:
       // The channel pages search their channels in place; the sources and the
       // rest have no list of channels to narrow.
-      const searchable = {NavigationItem.channels, NavigationItem.iptvFavorites, NavigationItem.iptvGuide};
+      const searchable = {NavigationItem.channels, NavigationItem.iptvGuide};
       if (!searchable.contains(page)) return null;
       return (hint: t.iptv.searchChannels, take: (word) => ref.read(iptvSearchHandoffProvider.notifier).hand(word));
     case AppModule.vod:

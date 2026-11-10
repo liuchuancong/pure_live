@@ -5,6 +5,7 @@ import 'package:live_iptv/live_iptv.dart' show EpgSourceX;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 
@@ -108,13 +109,15 @@ final class IptvAutoSyncController extends Notifier<bool> {
 /// The launch auto-sync switch.
 final iptvAutoSyncProvider = NotifierProvider<IptvAutoSyncController, bool>(IptvAutoSyncController.new);
 
-/// Keeps the network guides that asked for automatic updates current.
+/// Keeps the network playlists, and the network guides that asked for
+/// automatic updates, current.
 ///
-/// Every minute it looks for a remote guide whose `autoUpdate` flag is on
-/// and whose last refresh is older than the chosen interval, then syncs it
-/// through the guide controller — one at a time, never over a manual round.
-/// A failed attempt is not retried until the interval has passed again, so
-/// a dead address cannot hit the network once a minute.
+/// Every minute it looks for a remote playlist imported longer ago than the
+/// chosen interval, and a remote guide whose `autoUpdate` flag is on and
+/// whose last refresh is older than it, then syncs them through their
+/// controllers — one at a time, never over a manual round. A failed attempt
+/// is not retried until the interval has passed again, so a dead address
+/// cannot hit the network once a minute.
 ///
 /// The app starts this once at boot; the timer belongs to the process, not
 /// to a page, so changing tabs does not stop the schedule. A mobile
@@ -160,13 +163,33 @@ final class IptvAutoUpdater {
     }
     final interval = _ref.read(iptvUpdateIntervalProvider).duration;
     final now = DateTime.now();
+    final duePlaylists = [
+      for (final playlist in sources.playlists)
+        if (iptvPlaylistIsRemote(playlist) && _isDue('p:${playlist.id}', playlist.importedAt, interval, now)) playlist,
+    ];
     final due = [
       for (final source in epg.sources)
         if (source.isRemote && source.autoUpdate && _isDue(source.id, source.lastRefresh, interval, now)) source,
     ];
-    if (due.isEmpty) return;
+    if (due.isEmpty && duePlaylists.isEmpty) return;
     _running = true;
     try {
+      final playlists = _ref.read(iptvSourcesProvider.notifier);
+      for (final playlist in duePlaylists) {
+        if (!_ref.mounted) return;
+        _attempted['p:${playlist.id}'] = DateTime.now();
+        final result = await playlists.syncPlaylist(playlist);
+        if (result != null && !result.isImported) {
+          appLog
+              .forCategory('iptv.playlist')
+              .warning(
+                'background playlist sync failed',
+                fields: {'playlist': playlist.name, 'status': result.status.name, 'error': '${result.error}'},
+              );
+        }
+        // A manual round started meanwhile takes the rest of the queue.
+        if (_ref.read(iptvSourcesProvider).syncAll != null) return;
+      }
       final controller = _ref.read(iptvEpgProvider.notifier);
       for (final source in due) {
         if (!_ref.mounted) return;
@@ -175,10 +198,12 @@ final class IptvAutoUpdater {
         // A background round nobody watches: the verdict belongs in the log,
         // because the screen never shows this run.
         if (result != null && !result.isImported) {
-          appLog.forCategory('iptv.epg').warning(
-            'background guide sync failed',
-            fields: {'source': source.name, 'status': result.status.name, 'error': '${result.error}'},
-          );
+          appLog
+              .forCategory('iptv.epg')
+              .warning(
+                'background guide sync failed',
+                fields: {'source': source.name, 'status': result.status.name, 'error': '${result.error}'},
+              );
         }
         // A manual round started meanwhile takes the rest of the queue.
         if (_ref.read(iptvSourcesProvider).syncAll != null) break;

@@ -1,6 +1,7 @@
 // The named factories spell their class name; the `new` shorthand
 // cannot carry per-constructor documentation.
 // ignore_for_file: unnecessary_type_name_in_constructor
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:live_iptv/src/model/serializers.dart';
@@ -20,13 +21,15 @@ abstract class IptvPlaylist implements Built<IptvPlaylist, IptvPlaylistBuilder> 
     required DateTime importedAt,
     String? url,
     int channelCount = 0,
+    List<String> guideUrls = const <String>[],
   }) => IptvPlaylist(
     (b) => b
       ..id = id
       ..name = name
       ..importedAt = importedAt
       ..url = url
-      ..channelCount = channelCount,
+      ..channelCount = channelCount
+      ..guideUrls.replace(guideUrls),
   );
 
   IptvPlaylist._();
@@ -36,7 +39,9 @@ abstract class IptvPlaylist implements Built<IptvPlaylist, IptvPlaylistBuilder> 
       serializers.deserializeWith(IptvPlaylist.serializer, json)!;
 
   @BuiltValueHook(initializeBuilder: true)
-  static void _initialize(IptvPlaylistBuilder b) => b..channelCount = 0;
+  static void _initialize(IptvPlaylistBuilder b) => b
+    ..channelCount = 0
+    ..guideUrls.replace(const <String>[]);
 
   /// The serializer built_value registers in [serializers].
   static Serializer<IptvPlaylist> get serializer => _$iptvPlaylistSerializer;
@@ -55,6 +60,11 @@ abstract class IptvPlaylist implements Built<IptvPlaylist, IptvPlaylistBuilder> 
 
   /// How many channels the last import produced.
   int get channelCount;
+
+  /// The guide addresses the playlist's own header declared (`x-tvg-url`,
+  /// `url-tvg`), in the order it listed them: the first is the provider's
+  /// choice, the rest its mirrors.
+  BuiltList<String> get guideUrls;
 
   /// Serializes this playlist for the store.
   Map<String, Object?> toJson() => serializers.serializeWith(IptvPlaylist.serializer, this)! as Map<String, Object?>;

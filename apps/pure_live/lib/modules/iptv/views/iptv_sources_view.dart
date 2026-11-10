@@ -10,9 +10,10 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_presets_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
-import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart'
-    show iptvImportFailureText, runIptvGuideImport, runIptvPlaylistImport;
+import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport, runIptvPlaylistImport;
+import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart' show iptvImportFailureWords;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
@@ -101,7 +102,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (result.isImported) {
       _toast(t.iptv.synced(name: playlist.name));
     } else {
-      _toast(t.iptv.syncFailed(name: playlist.name), description: iptvImportFailureText(result, t), danger: true);
+      _toast(t.iptv.syncFailed(name: playlist.name), description: iptvImportFailureWords(result, t), danger: true);
     }
   }
 
@@ -112,7 +113,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (result.isImported) {
       _toast(t.iptv.synced(name: source.name));
     } else {
-      _toast(t.iptv.syncFailed(name: source.name), description: iptvImportFailureText(result, t), danger: true);
+      _toast(t.iptv.syncFailed(name: source.name), description: iptvImportFailureWords(result, t), danger: true);
     }
   }
 
@@ -120,10 +121,22 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
 
   Future<void> _deletePlaylist(IptvPlaylist playlist) async {
     final t = context.t;
+    final impact = ref.read(iptvSourcesProvider.notifier).deletionImpact(playlist);
+    final presets = ref.read(iptvPresetsProvider);
+    final presetId = presets.added.entries.where((entry) => entry.value == playlist.id).firstOrNull?.key;
     final confirmed = await showDsConfirm(
       context: context,
       title: t.iptv.deletePlaylistTitle,
-      description: t.iptv.deletePlaylistMessage(name: playlist.name, count: playlist.channelCount),
+      // The confirmation says what goes with the record before the stars go,
+      // and a built-in source says it will not come back on its own.
+      description: [
+        t.iptv.deletePlaylistMessage(name: playlist.name, count: playlist.channelCount),
+        if (impact.channels > 0)
+          t.iptv.deleteImpactNote(channels: impact.channels, favourites: impact.favourites)
+        else
+          t.iptv.deleteImpactNone,
+        if (presetId != null) t.iptv.deletePresetNote,
+      ].join('\n'),
       confirmLabel: t.iptv.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -132,6 +145,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (!confirmed || !mounted) return;
     final deleted = await ref.read(iptvSourcesProvider.notifier).deletePlaylist(playlist);
     if (!mounted) return;
+    if (deleted && presetId != null) ref.read(iptvPresetsProvider.notifier).forget(presetId);
     _toast(deleted ? t.iptv.deleted(name: playlist.name) : t.iptv.sourceChanged, danger: !deleted);
   }
 
@@ -378,6 +392,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
                 blocked: settingsBlocked,
                 sourceBusy: sources.busy,
                 guideBusy: epg.busy,
+                presetPlaylists: ref.watch(iptvPresetsProvider.select((state) => state.added.values.toSet())),
                 syncPlaylist: (playlist) => unawaited(_syncPlaylist(playlist)),
                 syncGuide: (source) => unawaited(_syncGuide(source)),
                 deletePlaylist: (playlist) => unawaited(_deletePlaylist(playlist)),
@@ -897,6 +912,7 @@ final class _SourcesActions {
     required this.deletePlaylist,
     required this.deleteGuide,
     required this.autoUpdate,
+    this.presetPlaylists = const {},
   });
 
   final String? activeId;
@@ -911,6 +927,12 @@ final class _SourcesActions {
   // The switch reports its own on/off; a named flag would only rename it.
   // ignore: avoid_positional_boolean_parameters
   final void Function(EpgSource source, bool value) autoUpdate;
+
+  /// The ids of the playlists a recommended source became.
+  final Set<String> presetPlaylists;
+
+  /// Whether [item] is a playlist a recommended source became.
+  bool isPreset(Object item) => item is IptvPlaylist && presetPlaylists.contains(item.id);
 
   static String rowKey(Object item) => item is IptvPlaylist ? 'p:${item.id}' : 'g:${(item as EpgSource).id}';
 
@@ -1119,6 +1141,13 @@ final class _SourceNameCell extends StatelessWidget {
               label: Text(remote ? t.iptv.networkTag : t.iptv.localTag),
               icon: DsIcon(remote ? DsIcons.globe : DsIcons.fileText, size: 12),
             ),
+            if (actions.isPreset(item))
+              DsBadge(
+                dot: false,
+                status: DsStatus.success,
+                label: Text(t.iptv.sourceBuiltinTag),
+                icon: const DsIcon(DsIcons.sparkles, size: 12),
+              ),
             if (actions.isInUse(item)) DsBadge(dot: false, label: Text(t.iptv.inUse), status: DsStatus.info),
           ],
         ),

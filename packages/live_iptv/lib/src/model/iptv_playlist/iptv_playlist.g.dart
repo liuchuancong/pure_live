@@ -35,6 +35,13 @@ class _$IptvPlaylistSerializer implements StructuredSerializer<IptvPlaylist> {
         object.channelCount,
         specifiedType: const FullType(int),
       ),
+      'guideUrls',
+      serializers.serialize(
+        object.guideUrls,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(String),
+        ]),
+      ),
     ];
     Object? value;
     value = object.url;
@@ -100,6 +107,17 @@ class _$IptvPlaylistSerializer implements StructuredSerializer<IptvPlaylist> {
                   )!
                   as int;
           break;
+        case 'guideUrls':
+          result.guideUrls.replace(
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(String),
+                  ]),
+                )!
+                as BuiltList<Object?>,
+          );
+          break;
       }
     }
 
@@ -118,6 +136,8 @@ class _$IptvPlaylist extends IptvPlaylist {
   final String? url;
   @override
   final int channelCount;
+  @override
+  final BuiltList<String> guideUrls;
 
   factory _$IptvPlaylist([void Function(IptvPlaylistBuilder)? updates]) =>
       (IptvPlaylistBuilder()..update(updates))._build();
@@ -128,6 +148,7 @@ class _$IptvPlaylist extends IptvPlaylist {
     required this.importedAt,
     this.url,
     required this.channelCount,
+    required this.guideUrls,
   }) : super._();
   @override
   IptvPlaylist rebuild(void Function(IptvPlaylistBuilder) updates) =>
@@ -144,7 +165,8 @@ class _$IptvPlaylist extends IptvPlaylist {
         name == other.name &&
         importedAt == other.importedAt &&
         url == other.url &&
-        channelCount == other.channelCount;
+        channelCount == other.channelCount &&
+        guideUrls == other.guideUrls;
   }
 
   @override
@@ -155,6 +177,7 @@ class _$IptvPlaylist extends IptvPlaylist {
     _$hash = $jc(_$hash, importedAt.hashCode);
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, channelCount.hashCode);
+    _$hash = $jc(_$hash, guideUrls.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -166,7 +189,8 @@ class _$IptvPlaylist extends IptvPlaylist {
           ..add('name', name)
           ..add('importedAt', importedAt)
           ..add('url', url)
-          ..add('channelCount', channelCount))
+          ..add('channelCount', channelCount)
+          ..add('guideUrls', guideUrls))
         .toString();
   }
 }
@@ -195,6 +219,12 @@ class IptvPlaylistBuilder
   int? get channelCount => _$this._channelCount;
   set channelCount(int? channelCount) => _$this._channelCount = channelCount;
 
+  ListBuilder<String>? _guideUrls;
+  ListBuilder<String> get guideUrls =>
+      _$this._guideUrls ??= ListBuilder<String>();
+  set guideUrls(ListBuilder<String>? guideUrls) =>
+      _$this._guideUrls = guideUrls;
+
   IptvPlaylistBuilder() {
     IptvPlaylist._initialize(this);
   }
@@ -207,6 +237,7 @@ class IptvPlaylistBuilder
       _importedAt = $v.importedAt;
       _url = $v.url;
       _channelCount = $v.channelCount;
+      _guideUrls = $v.guideUrls.toBuilder();
       _$v = null;
     }
     return this;
@@ -226,27 +257,48 @@ class IptvPlaylistBuilder
   IptvPlaylist build() => _build();
 
   _$IptvPlaylist _build() {
-    final _$result =
-        _$v ??
-        _$IptvPlaylist._(
-          id: BuiltValueNullFieldError.checkNotNull(id, r'IptvPlaylist', 'id'),
-          name: BuiltValueNullFieldError.checkNotNull(
-            name,
-            r'IptvPlaylist',
-            'name',
-          ),
-          importedAt: BuiltValueNullFieldError.checkNotNull(
-            importedAt,
-            r'IptvPlaylist',
-            'importedAt',
-          ),
-          url: url,
-          channelCount: BuiltValueNullFieldError.checkNotNull(
-            channelCount,
-            r'IptvPlaylist',
-            'channelCount',
-          ),
+    _$IptvPlaylist _$result;
+    try {
+      _$result =
+          _$v ??
+          _$IptvPlaylist._(
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'IptvPlaylist',
+              'id',
+            ),
+            name: BuiltValueNullFieldError.checkNotNull(
+              name,
+              r'IptvPlaylist',
+              'name',
+            ),
+            importedAt: BuiltValueNullFieldError.checkNotNull(
+              importedAt,
+              r'IptvPlaylist',
+              'importedAt',
+            ),
+            url: url,
+            channelCount: BuiltValueNullFieldError.checkNotNull(
+              channelCount,
+              r'IptvPlaylist',
+              'channelCount',
+            ),
+            guideUrls: guideUrls.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'guideUrls';
+        guideUrls.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(
+          r'IptvPlaylist',
+          _$failedField,
+          e.toString(),
         );
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

@@ -72,6 +72,27 @@ final class XtreamSource {
   }
 
   /// The parsed [url], judged rather than trusted.
+  /// The account's live list as a playlist address: `get.php` with
+  /// `type=m3u_plus`, the M3U every Xtream Codes panel serves its catalogue
+  /// as, with HLS addresses ([output]) for the reason [liveStreamUrl] gives.
+  ///
+  /// The list is an address like any other, so it imports, syncs and
+  /// survives a backup the way every playlist does. The panel lists its
+  /// films and series in it too; [isXtreamLiveEntry] tells the importer which
+  /// rows are live. Throws a [FormatException] when [url] is not an http(s)
+  /// address.
+  Uri playlistUrl({String output = 'm3u8'}) {
+    final base = _base;
+    return Uri(
+      scheme: base.scheme,
+      userInfo: base.userInfo,
+      host: base.host,
+      port: base.hasPort ? base.port : null,
+      path: '${_directory(base)}get.php',
+      queryParameters: {'username': username.trim(), 'password': password.trim(), 'type': 'm3u_plus', 'output': output},
+    );
+  }
+
   Uri get _base {
     final parsed = Uri.parse(url.trim());
     if ((parsed.scheme != 'http' && parsed.scheme != 'https') || parsed.host.isEmpty) {
@@ -99,4 +120,25 @@ final class XtreamSource {
 
   @override
   String toString() => 'XtreamSource($url, user: $username)'; // the password stays out of logs.
+}
+
+/// Whether [url] is an Xtream Codes panel's playlist address
+/// ([XtreamSource.playlistUrl]): `get.php` with an account in its query.
+bool isXtreamPlaylistUrl(Uri url) {
+  if (!url.path.endsWith('get.php')) {
+    return false;
+  }
+  final query = url.queryParameters;
+  return (query['username'] ?? '').isNotEmpty && (query['password'] ?? '').isNotEmpty;
+}
+
+/// Whether [url], a row of an Xtream Codes M3U, is a live channel.
+///
+/// The panels file their films under `/movie/` and their episodes under
+/// `/series/`; everything else they list is live. A live library of fifty
+/// thousand film rows is a library nobody can zap through, so the importer
+/// keeps the live rows of an Xtream list and leaves the rest to the panel.
+bool isXtreamLiveEntry(String url) {
+  final segments = Uri.tryParse(url)?.pathSegments ?? const <String>[];
+  return !segments.contains('movie') && !segments.contains('series');
 }

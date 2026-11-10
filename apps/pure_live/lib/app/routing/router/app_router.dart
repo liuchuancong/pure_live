@@ -530,6 +530,17 @@ GoRouter buildAppRouter({
         ),
       ),
       GoRoute(
+        path: RouteNames.iptvImport,
+        builder: (context, state) => WindowChromeFrame(
+          child: IptvImportPage(
+            launch: switch (state.extra) {
+              final IptvImportLaunch launch => launch,
+              _ => const IptvImportLaunch(),
+            },
+          ),
+        ),
+      ),
+      GoRoute(
         path: RouteNames.webSearch,
         builder: (context, state) => WindowChromeFrame(
           child: WebSearchPage(

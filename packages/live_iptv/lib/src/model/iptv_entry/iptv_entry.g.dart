@@ -58,6 +58,14 @@ class _$IptvEntrySerializer implements StructuredSerializer<IptvEntry> {
           serializers.serialize(value, specifiedType: const FullType(String)),
         );
     }
+    value = object.tvgName;
+    if (value != null) {
+      result
+        ..add('tvgName')
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
+    }
     value = object.tvgLogo;
     if (value != null) {
       result
@@ -141,6 +149,12 @@ class _$IptvEntrySerializer implements StructuredSerializer<IptvEntry> {
             specifiedType: const FullType(String),
           ) as String?;
           break;
+        case 'tvgName':
+          result.tvgName = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
+          break;
         case 'tvgLogo':
           result.tvgLogo = serializers.deserialize(
             value,
@@ -210,6 +224,8 @@ class _$IptvEntry extends IptvEntry {
   @override
   final String? tvgId;
   @override
+  final String? tvgName;
+  @override
   final String? tvgLogo;
   @override
   final int? channelNumber;
@@ -232,6 +248,7 @@ class _$IptvEntry extends IptvEntry {
     required this.url,
     this.group,
     this.tvgId,
+    this.tvgName,
     this.tvgLogo,
     this.channelNumber,
     required this.headers,
@@ -255,6 +272,7 @@ class _$IptvEntry extends IptvEntry {
         url == other.url &&
         group == other.group &&
         tvgId == other.tvgId &&
+        tvgName == other.tvgName &&
         tvgLogo == other.tvgLogo &&
         channelNumber == other.channelNumber &&
         headers == other.headers &&
@@ -271,6 +289,7 @@ class _$IptvEntry extends IptvEntry {
     _$hash = $jc(_$hash, url.hashCode);
     _$hash = $jc(_$hash, group.hashCode);
     _$hash = $jc(_$hash, tvgId.hashCode);
+    _$hash = $jc(_$hash, tvgName.hashCode);
     _$hash = $jc(_$hash, tvgLogo.hashCode);
     _$hash = $jc(_$hash, channelNumber.hashCode);
     _$hash = $jc(_$hash, headers.hashCode);
@@ -289,6 +308,7 @@ class _$IptvEntry extends IptvEntry {
           ..add('url', url)
           ..add('group', group)
           ..add('tvgId', tvgId)
+          ..add('tvgName', tvgName)
           ..add('tvgLogo', tvgLogo)
           ..add('channelNumber', channelNumber)
           ..add('headers', headers)
@@ -318,6 +338,10 @@ class IptvEntryBuilder implements Builder<IptvEntry, IptvEntryBuilder> {
   String? _tvgId;
   String? get tvgId => _$this._tvgId;
   set tvgId(String? tvgId) => _$this._tvgId = tvgId;
+
+  String? _tvgName;
+  String? get tvgName => _$this._tvgName;
+  set tvgName(String? tvgName) => _$this._tvgName = tvgName;
 
   String? _tvgLogo;
   String? get tvgLogo => _$this._tvgLogo;
@@ -363,6 +387,7 @@ class IptvEntryBuilder implements Builder<IptvEntry, IptvEntryBuilder> {
       _url = $v.url;
       _group = $v.group;
       _tvgId = $v.tvgId;
+      _tvgName = $v.tvgName;
       _tvgLogo = $v.tvgLogo;
       _channelNumber = $v.channelNumber;
       _headers = $v.headers.toBuilder();
@@ -406,6 +431,7 @@ class IptvEntryBuilder implements Builder<IptvEntry, IptvEntryBuilder> {
             ),
             group: group,
             tvgId: tvgId,
+            tvgName: tvgName,
             tvgLogo: tvgLogo,
             channelNumber: channelNumber,
             headers: headers.build(),

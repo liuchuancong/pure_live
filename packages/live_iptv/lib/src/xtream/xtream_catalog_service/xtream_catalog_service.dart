@@ -59,6 +59,38 @@ final class XtreamCatalogService {
     return channels;
   }
 
+  /// The account [source] signs in with, as the panel describes it.
+  ///
+  /// What a viewer wants to know before importing a paid list: whether the
+  /// password is right, whether the subscription has run out, and how many
+  /// screens it allows. A rejected account throws, as [fetchChannels] does;
+  /// an account the panel answers for comes back whatever its state, so the
+  /// screen can say "expired" rather than "failed".
+  Future<XtreamAccount> fetchAccount(XtreamSource source) async {
+    final text = await _fetch(source.playerApi());
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(text);
+    } on FormatException catch (error) {
+      throw FormatException('the player API answered no JSON: ${error.message}', source.url);
+    }
+    if (decoded case {'user_info': final Object? userInfo} when userInfo is Map) {
+      if (_denied(userInfo['auth'])) {
+        throw FormatException('the server rejected these credentials', source.url);
+      }
+      final expiry = int.tryParse(_text(userInfo['exp_date']) ?? '');
+      return XtreamAccount(
+        status: _text(userInfo['status']),
+        expiresAt: expiry == null || expiry <= 0
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(expiry * 1000, isUtc: true),
+        maxConnections: int.tryParse(_text(userInfo['max_connections']) ?? ''),
+        activeConnections: int.tryParse(_text(userInfo['active_cons']) ?? ''),
+      );
+    }
+    throw FormatException('the player API answered no account', source.url);
+  }
+
   /// `action=get_live_streams` as the list it must be.
   Future<List<Object?>> _streamList(XtreamSource source) async {
     final text = await _fetch(source.playerApi(action: 'get_live_streams'));
@@ -145,5 +177,34 @@ final class XtreamCatalogService {
   String? _text(Object? value) {
     final text = value?.toString().trim() ?? '';
     return text.isEmpty ? null : text;
+  }
+}
+
+/// An Xtream Codes account as its panel describes it.
+final class XtreamAccount {
+  /// An account.
+  const new({this.status, this.expiresAt, this.maxConnections, this.activeConnections});
+
+  /// The panel's word for the account (`Active`, `Expired`, `Banned`, …).
+  final String? status;
+
+  /// When the subscription ends; null for one that does not.
+  final DateTime? expiresAt;
+
+  /// How many streams the account may play at once.
+  final int? maxConnections;
+
+  /// How many it is playing now.
+  final int? activeConnections;
+
+  /// Whether the panel says the account plays: its status is `Active` (or
+  /// unstated) and it has not run out.
+  bool isActive({DateTime? now}) {
+    final word = status?.trim().toLowerCase();
+    if (word != null && word.isNotEmpty && word != 'active') {
+      return false;
+    }
+    final end = expiresAt;
+    return end == null || end.isAfter(now ?? DateTime.now());
   }
 }

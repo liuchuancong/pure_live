@@ -28,6 +28,7 @@ abstract class IptvEntry implements Built<IptvEntry, IptvEntryBuilder> {
     required String url,
     String? group,
     String? tvgId,
+    String? tvgName,
     String? tvgLogo,
     int? channelNumber,
     Map<String, String> headers = const <String, String>{},
@@ -41,6 +42,7 @@ abstract class IptvEntry implements Built<IptvEntry, IptvEntryBuilder> {
       ..url = url
       ..group = group
       ..tvgId = tvgId
+      ..tvgName = tvgName
       ..tvgLogo = tvgLogo
       ..channelNumber = channelNumber
       ..headers.replace(headers)
@@ -74,6 +76,10 @@ abstract class IptvEntry implements Built<IptvEntry, IptvEntryBuilder> {
 
   /// The guide id the playlist declared (`tvg-id`).
   String? get tvgId;
+
+  /// The guide name the playlist declared (`tvg-name`): the key many guides
+  /// list a channel under when the display name carries a suffix.
+  String? get tvgName;
 
   /// The logo the playlist declared (`tvg-logo`).
   String? get tvgLogo;

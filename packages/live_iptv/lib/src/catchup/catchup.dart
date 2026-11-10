@@ -250,6 +250,11 @@ String _expandTemplate(
   final duration = stopUtc.difference(startUtc).inSeconds;
   final offset = _nonNegativeOffset(nowUtc, startUtc);
   var result = template;
+  // APTV's spelling, which the Chinese lists write in their header:
+  // `${(b)yyyyMMddHHmmss}` for the start and `${(e)…}` for the end, in the
+  // viewer's local time — the clock those providers' archives are kept on.
+  result = _replaceLocalPattern(result, 'b', start.toLocal());
+  result = _replaceLocalPattern(result, 'e', stop.toLocal());
   result = _replaceFormatted(result, 'utc', startUtc);
   result = _replaceFormatted(result, 'start', startUtc, dollar: true);
   result = _replaceFormatted(result, 'utcend', stopUtc);
@@ -374,6 +379,26 @@ String _replaceFormatted(String input, String token, DateTime value, {bool dolla
   return input.replaceAllMapped(pattern, (match) {
     final fields = _fields(value);
     return match.group(1)!.split('').map((part) => fields[part] ?? part).join();
+  });
+}
+
+/// Expands `${(token)pattern}` (and `{(token)pattern}`) with [value] in a
+/// Java-style date pattern: `yyyy` `MM` `dd` `HH` `mm` `ss`, and the
+/// two-letter year `yy`; anything else in the pattern is kept as written.
+String _replaceLocalPattern(String input, String token, DateTime value) {
+  final escaped = RegExp.escape(token);
+  final pattern = RegExp(r'\$?\{\(' + escaped + r'\)([^}]+)\}');
+  String two(int number) => number.toString().padLeft(2, '0');
+  return input.replaceAllMapped(pattern, (match) {
+    return match
+        .group(1)!
+        .replaceAll('yyyy', value.year.toString().padLeft(4, '0'))
+        .replaceAll('yy', two(value.year % 100))
+        .replaceAll('MM', two(value.month))
+        .replaceAll('dd', two(value.day))
+        .replaceAll('HH', two(value.hour))
+        .replaceAll('mm', two(value.minute))
+        .replaceAll('ss', two(value.second));
   });
 }
 

@@ -139,10 +139,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],
   ),
   AppModule.iptv: ModuleNavigation(
-    // The reference's home order: 直播 first, then the collected channels and
-    // the recent ones; the module's own sources sit under them.
+    // The reference's home order: 直播 first, then the recent ones; the
+    // module's own sources sit under them. Favourites are not a rail entry:
+    // the channels surface's own 全部/收藏 switch covers them, and a second
+    // entry opening the same page only overlapped the first in the rail.
     menu: [
-      [NavigationItem.channels, NavigationItem.iptvFavorites, NavigationItem.iptvRecent],
+      [NavigationItem.channels, NavigationItem.iptvRecent],
       [NavigationItem.iptvGuide, NavigationItem.iptvSources, NavigationItem.record, NavigationItem.logs],
     ],
     landing: NavigationItem.channels,
@@ -211,7 +213,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // a menu row: its only door is the settings group's 音效 page.
     menu: [
       [NavigationItem.musicRecommend, NavigationItem.musicFeatured, NavigationItem.music],
-      [NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary, NavigationItem.musicLocal],
+      [
+        NavigationItem.musicSonglist,
+        NavigationItem.musicToplist,
+        NavigationItem.musicLibrary,
+        NavigationItem.musicLocal,
+      ],
       [
         NavigationItem.musicDownloads,
         // The shared tree's console sits with the module's own tools. Settings
@@ -297,8 +304,6 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.channels: () => const IptvPage(owner: NavigationItem.channels),
   NavigationItem.iptvGuide: IptvGuidePage.new,
   NavigationItem.iptvSources: () => const IptvPage(owner: NavigationItem.iptvSources, initialView: IptvView.sources),
-  NavigationItem.iptvFavorites: () =>
-      const IptvPage(owner: NavigationItem.iptvFavorites, initialScope: IptvChannelScope.favourites),
   NavigationItem.iptvRecent: IptvRecentPage.new,
   NavigationItem.vod: VodPage.new,
   NavigationItem.vodLive: VodLivePage.new,

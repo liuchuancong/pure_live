@@ -12,12 +12,13 @@ import 'package:live_storage/live_storage.dart';
 /// The user's IPTV library: imported playlists and the channels they
 /// yielded, with favourites and ordering.
 ///
-/// Importing reconciles channels by URL: channels that already exist
-/// (same URL) keep their channel id and the user's favourite/hidden/
-/// position flags; new URLs are appended; channels the new playlist no
-/// longer carries are dropped only when `removeMissing` is true — the
-/// default keeps them, because a temporarily unavailable source must not
-/// delete the user's list.
+/// Importing reconciles channels by address: channels that already exist
+/// (any of their lines matches) keep their channel id and the user's
+/// favourite/hidden/position flags; new addresses are appended. Every
+/// channel records the playlists that list it, so a sync can drop what its
+/// playlist stopped listing (`removeMissing`) and a delete can take the
+/// channels only that playlist had — without touching what another playlist
+/// still lists.
 final class IptvLibrary {
   /// A library over [store].
   new(this.store);
@@ -149,6 +150,57 @@ final class IptvLibrary {
     _groups = await store.loadGroups();
     _health = _indexHealth(await store.loadLineHealth());
     _external ??= store.changes.listen((_) => _storeChanged());
+    await _adoptUnclaimedChannels();
+  }
+
+  /// Gives the channels stored before claims were recorded an owner where
+  /// the library can tell, after dropping the claims of playlists that no
+  /// longer exist.
+  ///
+  /// A claim outlives its playlist when the playlist records are replaced
+  /// underneath the channels — a LAN sync or a restore brings another
+  /// device's records, with their own ids — and a claim nobody can delete
+  /// would keep its channel forever. With the stale claims gone: one
+  /// playlist is the only owner the unclaimed can have; none means they are
+  /// what the old delete left behind (it removed the record and kept its
+  /// channels), so they go — except the favourites, the viewer's own word;
+  /// several leave them alone, and the next sync of each playlist claims
+  /// what it lists.
+  Future<void> _adoptUnclaimedChannels() async {
+    final known = {for (final playlist in _playlists) playlist.id};
+    var changed = false;
+    var channels = [
+      for (final channel in _channels)
+        if (channel.sources.every(known.contains))
+          channel
+        else
+          () {
+            changed = true;
+            return channel.rebuild((b) => b..sources.removeWhere((id) => !known.contains(id)));
+          }(),
+    ];
+    if (channels.any((channel) => channel.sources.isEmpty)) {
+      if (_playlists.length == 1) {
+        final only = _playlists.single.id;
+        channels = [
+          for (final channel in channels)
+            if (channel.sources.isEmpty) channel.rebuild((b) => b..sources.add(only)) else channel,
+        ];
+        changed = true;
+      } else if (_playlists.isEmpty) {
+        final kept = [
+          for (final channel in channels)
+            if (channel.sources.isNotEmpty || channel.favorite) channel,
+        ];
+        changed = changed || kept.length != channels.length;
+        channels = kept;
+      }
+    }
+    if (!changed) {
+      return;
+    }
+    _channels = channels;
+    await _commitWith(() => store.saveChannels(_channels));
   }
 
   /// The guide source [id], or null.
@@ -403,11 +455,20 @@ final class IptvLibrary {
   /// Imports a parsed playlist, replacing the record named [replaceId] when
   /// given.
   ///
-  /// The channels are reconciled by URL exactly as [importFromText] does —
-  /// the user's favourites, hidden flags and ordering survive a re-import —
-  /// and the playlist record is updated in place when it is a replacement,
-  /// so a room that points at a channel id keeps working across a sync.
-  Future<({String id, int channels, int added, int updated})> importResult(
+  /// Channels are reconciled by address: an entry whose primary or fallback
+  /// line is a stored channel's is that channel, so the user's favourites,
+  /// hidden flags, numbers and ordering survive a re-import — even when the
+  /// provider swapped which line it lists first — and the playlist record is
+  /// updated in place when it is a replacement, so a room that points at a
+  /// channel id keeps working across a sync.
+  ///
+  /// The playlist claims every channel it lists ([IptvChannel.sources]).
+  /// With [removeMissing], a channel it claimed before and no longer lists
+  /// gives up its claim, and one nobody else claims leaves the library —
+  /// unless the viewer favourited it: a provider that drops a channel for a
+  /// night must not take the star with it, so a favourite keeps its claim
+  /// until it is unfavourited or its playlist is deleted.
+  Future<({String id, int channels, int added, int updated, int removed})> importResult(
     PlaylistParseResult result, {
     required String name,
     String? url,
@@ -418,7 +479,34 @@ final class IptvLibrary {
     if (entries.isEmpty) {
       throw const StorageValidationException('playlist has no channels');
     }
-    final byUrl = {for (final channel in _channels) channel.entry.url: channel};
+    final existing = replaceId == null ? null : _playlistById(replaceId);
+    final stamp = DateTime.now().microsecondsSinceEpoch;
+    final id = existing?.id ?? 'p$stamp';
+    // Every stored address points at its channel; a channel's primary line
+    // outranks another channel's fallback that happens to share it.
+    final byUrl = <String, IptvChannel>{};
+    for (final channel in _channels) {
+      for (final address in channel.entry.alternatives) {
+        byUrl.putIfAbsent(address, () => channel);
+      }
+    }
+    for (final channel in _channels) {
+      byUrl[channel.entry.url] = channel;
+    }
+    // A source that signs its addresses (a token, a timestamp in the query)
+    // hands out new ones on every download, so an address match finds none
+    // of its channels again. Within the playlist's own channels the group
+    // and the name are what the provider keeps stable, and they are the
+    // second key: without it every sync of such a source would re-create
+    // its whole line-up and drop the stars, numbers and order on it.
+    final byName = <String, IptvChannel>{};
+    if (existing != null) {
+      for (final channel in _channels) {
+        if (channel.sources.contains(id)) {
+          byName.putIfAbsent(_identityOf(channel.entry), () => channel);
+        }
+      }
+    }
     var nextPosition = _channels.isEmpty
         ? 0
         : _channels.map((channel) => channel.position).reduce((a, b) => a > b ? a : b) + 1;
@@ -427,59 +515,114 @@ final class IptvLibrary {
     // numbered three channels out of two hundred is not, and adopting them
     // would push the other one hundred and ninety-seven behind them.
     final adoptNumbers = _providerNumbersComplete(entries);
-    final seenUrls = <String>{};
-    final reconciled = <IptvChannel>[];
-    var added = 0;
-    var updated = 0;
+    final matched = <String, IptvChannel>{};
+    final fresh = <IptvChannel>[];
     for (final entry in entries) {
-      seenUrls.add(entry.url);
-      final existing = byUrl[entry.url];
-      if (existing != null) {
-        reconciled.add(existing.rebuild((b) => b..entry.replace(entry)));
-        updated++;
+      IptvChannel? hit;
+      for (final address in [entry.url, ...entry.alternatives]) {
+        final candidate = byUrl[address];
+        // Two entries never become one channel: the second one that points
+        // at an already-matched channel is a channel of its own.
+        if (candidate != null && !matched.containsKey(candidate.id)) {
+          hit = candidate;
+          break;
+        }
+      }
+      if (hit == null) {
+        final candidate = byName[_identityOf(entry)];
+        if (candidate != null && !matched.containsKey(candidate.id)) {
+          hit = candidate;
+        }
+      }
+      if (hit != null) {
+        matched[hit.id] = hit.rebuild(
+          (b) => b
+            ..entry.replace(entry)
+            ..sources.add(id),
+        );
       } else {
-        reconciled.add(
+        fresh.add(
           IptvChannel.of(
-            id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
+            id: 'c${stamp}_${fresh.length}',
             entry: entry,
             position: nextPosition++,
             number: adoptNumbers ? entry.channelNumber : null,
+            sources: [id],
           ),
         );
-        added++;
       }
     }
-    if (!removeMissing) {
-      for (final channel in _channels) {
-        if (!seenUrls.contains(channel.entry.url)) {
-          reconciled.add(channel);
+    var removed = 0;
+    final next = <IptvChannel>[];
+    for (final channel in _channels) {
+      final reconciled = matched[channel.id];
+      if (reconciled != null) {
+        next.add(reconciled);
+        continue;
+      }
+      if (removeMissing && channel.sources.contains(id)) {
+        if (channel.sources.length > 1) {
+          next.add(channel.rebuild((b) => b..sources.remove(id)));
+        } else if (channel.favorite) {
+          next.add(channel);
+        } else {
+          removed++;
         }
+        continue;
       }
+      next.add(channel);
     }
-    _channels = reconciled;
-    final existing = replaceId == null ? null : _playlistById(replaceId);
-    final id = existing?.id ?? 'p${DateTime.now().microsecondsSinceEpoch}';
+    next.addAll(fresh);
     final record = IptvPlaylist.of(
       id: id,
       name: name,
       importedAt: DateTime.now(),
       url: url ?? existing?.url,
       channelCount: entries.length,
+      guideUrls: result.header.guideUrls,
     );
-    _playlists = [
-      for (final playlist in _playlists)
-        if (playlist.id != id) playlist,
-      record,
-    ];
-    await store.saveChannels(_channels);
-    await store.savePlaylists(_playlists);
-    _changes.add(null);
-    return (id: id, channels: entries.length, added: added, updated: updated);
+    _channels = next;
+    _playlists = existing == null
+        ? [..._playlists, record]
+        : [
+            for (final playlist in _playlists)
+              if (playlist.id == id) record else playlist,
+          ];
+    await _commitWith(() async {
+      await store.saveChannels(_channels);
+      await store.savePlaylists(_playlists);
+    });
+    return (id: id, channels: entries.length, added: fresh.length, updated: matched.length, removed: removed);
   }
 
   IptvPlaylist? _playlistById(String id) {
     for (final playlist in _playlists) {
       if (playlist.id == id) {
+        return playlist;
+      }
+    }
+    return null;
+  }
+
+  /// The group-and-name identity of [entry] inside one playlist, matched
+  /// the way the parser folds repeats.
+  static String _identityOf(IptvEntry entry) {
+    final group = (entry.group ?? '').trim().toLowerCase();
+    final name = entry.name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    return '$group\u0000$name';
+  }
+
+  /// The playlist whose stored address is [url] (compared trimmed), or null.
+  ///
+  /// The importer asks this before it adds a second record for an address
+  /// the user already has: what they meant is almost always "update it".
+  IptvPlaylist? playlistWithUrl(String url) {
+    final wanted = url.trim();
+    if (wanted.isEmpty) {
+      return null;
+    }
+    for (final playlist in _playlists) {
+      if ((playlist.url ?? '').trim() == wanted) {
         return playlist;
       }
     }
@@ -494,69 +637,63 @@ final class IptvLibrary {
   /// [importResult] instead — this method keeps its original shape for the
   /// call sites that only wanted the count.
   Future<int> importFromText(String text, {required String name, String? url, bool removeMissing = false}) async {
-    final entries = parsePlaylist(text);
-    if (entries.isEmpty) {
-      throw const StorageValidationException('playlist has no channels');
-    }
-    final byUrl = {for (final channel in _channels) channel.entry.url: channel};
-    var nextPosition = _channels.isEmpty
-        ? 0
-        : _channels.map((channel) => channel.position).reduce((a, b) => a > b ? a : b) + 1;
-    final adoptNumbers = _providerNumbersComplete(entries);
-    final seenUrls = <String>{};
-    final reconciled = <IptvChannel>[];
-    for (final entry in entries) {
-      seenUrls.add(entry.url);
-      final existing = byUrl[entry.url];
-      if (existing != null) {
-        // Keep the user's flags; refresh the parsed fields.
-        reconciled.add(existing.rebuild((b) => b..entry.replace(entry)));
-      } else {
-        reconciled.add(
-          IptvChannel.of(
-            id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
-            entry: entry,
-            position: nextPosition++,
-            number: adoptNumbers ? entry.channelNumber : null,
-          ),
-        );
-      }
-    }
-    if (!removeMissing) {
-      for (final channel in _channels) {
-        if (!seenUrls.contains(channel.entry.url)) {
-          reconciled.add(channel);
+    final written = await importResult(parsePlaylistResult(text), name: name, url: url, removeMissing: removeMissing);
+    return written.channels;
+  }
+
+  /// What deleting the playlist [id] would take with it: the channels only
+  /// it lists, and how many of those the viewer favourited.
+  ///
+  /// The confirmation asks before the stars go, rather than after.
+  ({int channels, int favourites}) deletionImpact(String id) {
+    final lastPlaylist = _playlists.length == 1 && _playlists.single.id == id;
+    var channels = 0;
+    var favourites = 0;
+    for (final channel in _channels) {
+      if (_leavesWith(channel, id, lastPlaylist: lastPlaylist)) {
+        channels++;
+        if (channel.favorite) {
+          favourites++;
         }
       }
     }
-    _channels = reconciled;
-    _playlists = [
-      ..._playlists,
-      IptvPlaylist.of(
-        id: 'p${DateTime.now().microsecondsSinceEpoch}',
-        name: name,
-        importedAt: DateTime.now(),
-        url: url,
-        channelCount: entries.length,
-      ),
-    ];
-    await store.saveChannels(_channels);
-    await store.savePlaylists(_playlists);
-    _changes.add(null);
-    return entries.length;
+    return (channels: channels, favourites: favourites);
   }
 
-  /// Removes the playlist record [id] and, when it was the last one holding
-  /// them, the channels only it carried.
+  /// Whether [channel] leaves the library when the playlist [id] does.
+  bool _leavesWith(IptvChannel channel, String id, {required bool lastPlaylist}) {
+    if (channel.sources.contains(id)) {
+      return channel.sources.length == 1;
+    }
+    // A channel stored before claims were kept has no owner on record; when
+    // the last playlist goes it can only have been that playlist's.
+    return channel.sources.isEmpty && lastPlaylist;
+  }
+
+  /// Removes the playlist record [id] with the channels only it carried, and
+  /// answers how many channels went.
   ///
   /// Channels are shared between playlists by URL, so deleting a source may
-  /// leave channels another source still lists: those stay, and only the
-  /// ones nothing else claims go with it.
-  Future<void> deletePlaylist(String id) async {
+  /// leave channels another source still lists: those stay, giving up only
+  /// this playlist's claim.
+  Future<int> deletePlaylist(String id) async {
     final record = _playlistById(id);
     if (record == null) {
-      return;
+      return 0;
     }
+    final lastPlaylist = _playlists.length == 1;
+    var removed = 0;
+    final kept = <IptvChannel>[];
+    for (final channel in _channels) {
+      if (_leavesWith(channel, id, lastPlaylist: lastPlaylist)) {
+        removed++;
+      } else if (channel.sources.contains(id)) {
+        kept.add(channel.rebuild((b) => b..sources.remove(id)));
+      } else {
+        kept.add(channel);
+      }
+    }
+    _channels = kept;
     _playlists = [
       for (final playlist in _playlists)
         if (playlist.id != id) playlist,
@@ -567,16 +704,20 @@ final class IptvLibrary {
       for (final mapping in _mappings)
         if (mapping.playlistId != id) mapping,
     ];
-    await store.savePlaylists(_playlists);
-    await store.saveGuideMappings(_mappings);
-    _changes.add(null);
+    await _commitWith(() async {
+      await store.saveChannels(_channels);
+      await store.savePlaylists(_playlists);
+      await store.saveGuideMappings(_mappings);
+    });
+    return removed;
   }
 
   /// The playlist held at [id], or null.
   IptvPlaylist? playlistById(String id) => _playlistById(id);
 
   /// Toggles the favourite flag of [id].
-  Future<void> toggleFavorite(String id) => _update(id, (channel) => channel.rebuild((b) => b..favorite = !channel.favorite));
+  Future<void> toggleFavorite(String id) =>
+      _update(id, (channel) => channel.rebuild((b) => b..favorite = !channel.favorite));
 
   /// Toggles the hidden flag of [id].
   Future<void> toggleHidden(String id) => _update(id, (channel) => channel.rebuild((b) => b..hidden = !channel.hidden));
@@ -1117,11 +1258,15 @@ final class IptvLibrary {
     _changes.add(null);
   }
 
-  Future<void> _commit() async {
+  Future<void> _commit() => _commitWith(() => store.saveChannels(_channels));
+
+  /// Runs [writes] as one commit: the store's change echo of them is not
+  /// taken for another writer's, and listeners hear once they all landed.
+  Future<void> _commitWith(Future<void> Function() writes) async {
     _writing = true;
     _revision++;
     try {
-      await store.saveChannels(_channels);
+      await writes();
     } finally {
       _writing = false;
     }

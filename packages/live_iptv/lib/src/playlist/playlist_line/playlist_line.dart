@@ -29,3 +29,20 @@
   }
   return (url: url, headers: headers);
 }
+
+/// Whether [value] looks like a playback address.
+///
+/// A scheme is required (http, https, rtmp, rtsp, udp, file all carry
+/// `://`), and a protocol-relative address is accepted because some
+/// playlists write them. Everything else — a note, a name, a comment that
+/// lost its `#`, a line of the web page a dead link answered with — is not
+/// something any player can open, and importing it as a channel hides the
+/// fact that the line was broken.
+bool looksLikePlaybackUrl(String value) {
+  final text = value.trim();
+  if (text.startsWith('//')) {
+    return text.length > 2;
+  }
+  final scheme = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*://\S').firstMatch(text);
+  return scheme != null;
+}

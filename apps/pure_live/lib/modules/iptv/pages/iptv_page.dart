@@ -14,11 +14,16 @@ import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_presets_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
+import 'package:pure_live/modules/iptv/data/iptv_preset.dart' show IptvPreset;
+import 'package:pure_live/modules/iptv/data/iptv_preset_catalog.dart' show builtinIptvPresets;
 import 'package:pure_live/modules/iptv/views/iptv_channel_preview.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart';
+import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart' show iptvImportFailureWords;
+import 'package:pure_live/modules/iptv/views/iptv_import_source_pane.dart' show IptvPresetCard;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
 import 'package:pure_live/modules/iptv/views/iptv_sources_view.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -100,11 +105,39 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     // post-frame take catches one handed as the page arrives.
     ref.listenManual(iptvSearchHandoffProvider, (_, _) => _takeHandoff());
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+    // Arriving on the module is when the preset layer acts: the first visit
+    // adds the default source, signed lists whose links went stale are
+    // re-read, and the recommended catalogue is refreshed from its feed.
+    // Each runs off the frame and none of them blocks the page.
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_arrive()));
     _slotRefresh = Timer.periodic(_slotRefreshInterval, (_) {
       // A tick queued as the page leaves must not reach a defunct ref.
       if (!mounted) return;
       ref.read(iptvChannelsProvider.notifier).refreshSlots();
     });
+  }
+
+  /// The preset layer's work on arrival, once the library is open.
+  Future<void> _arrive() async {
+    try {
+      await ref.read(iptvLibraryProvider.future);
+    } on Object {
+      return;
+    }
+    if (!mounted) return;
+    final presets = ref.read(iptvPresetsProvider.notifier);
+    unawaited(presets.refreshFeed());
+    if (!ref.read(iptvPresetsProvider).onboarded) {
+      // An existing library is the viewer's own choice already; only an
+      // empty one is given the default.
+      final library = ref.read(iptvLibraryProvider).value;
+      if (library != null && library.playlists.isEmpty) {
+        await presets.onboard();
+      } else {
+        presets.skipOnboarding();
+      }
+    }
+    if (mounted) unawaited(presets.refreshStale());
   }
 
   /// Moves the handed word into the channel search: the field reads it and
@@ -352,26 +385,12 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     final channels = widget.channels;
     if (!channels.ready) {
       return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
     }
     if (channels.libraryCount == 0) {
-      return Center(
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.antenna),
-          title: Text(t.iptv.emptyTitle),
-          description: Text(t.iptv.emptyDescription),
-          actions: [
-            DsButton(
-              onPressed: () => unawaited(runIptvPlaylistImport(context)),
-              leading: const DsIcon(DsIcons.plus, size: 16),
-              child: Text(t.iptv.importPlaylist),
-            ),
-          ],
-        ),
-      );
+      return const _StartView();
     }
     final sources = ref.watch(iptvSourcesProvider);
     final epg = ref.watch(iptvEpgProvider);
@@ -818,5 +837,161 @@ final class _FavoriteCell extends StatelessWidget {
       onPressed: onPressed,
       color: favorite ? DsTheme.colorsOf(context).accent : null,
     );
+  }
+}
+
+/// The channels surface of an empty library: what the module is for, the
+/// recommended sources one tap away, and the way to bring one's own list.
+///
+/// The first visit adds the default source by itself; this is what a viewer
+/// sees while that runs, when it could not (no network), and after they
+/// removed every source — never a dead end with a lone import button.
+final class _StartView extends ConsumerWidget {
+  const _StartView();
+
+  Future<void> _add(BuildContext context, WidgetRef ref, IptvPreset preset) async {
+    final t = context.t;
+    final result = await ref.read(iptvPresetsProvider.notifier).add(preset);
+    if (!context.mounted) return;
+    if (result.isImported) {
+      showDsToast(
+        context: context,
+        status: DsStatus.success,
+        title: t.iptv.presetAddedToast(name: preset.nameIn(currentLanguageTag())),
+      );
+      if (result.id != null) unawaited(ref.read(iptvPresetsProvider.notifier).attachGuide(result.id!, preset: preset));
+      return;
+    }
+    if (result.status == IptvImportStatus.cancelled) return;
+    showDsToast(context: context, status: DsStatus.danger, title: iptvImportFailureWords(result, t));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final presets = ref.watch(iptvPresetsProvider);
+    final controller = ref.read(iptvPresetsProvider.notifier);
+    final tag = currentLanguageTag();
+    final busy = presets.adding != null;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final inset = LiveWindow.pageInset(width);
+        final columns = width >= LiveWindow.expanded ? 3 : (width >= LiveWindow.compact ? 2 : 1);
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s24, inset, DsSpace.s32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: LiveWindow.content),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s20,
+                children: [
+                  Row(
+                    spacing: DsSpace.s16,
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
+                        child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: DsSpace.s4,
+                          children: [
+                            Text(t.iptv.emptyStartTitle, style: theme.typography.title.copyWith(color: colors.text)),
+                            Text(
+                              t.iptv.emptyStartDescription,
+                              style: theme.typography.body.copyWith(color: colors.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (busy) const DsProgressBar(),
+                  Text(t.iptv.presetSectionTitle, style: theme.typography.labelStrong.copyWith(color: colors.text)),
+                  if (presets.presets.isEmpty)
+                    Text(t.iptv.presetEmpty, style: theme.typography.body.copyWith(color: colors.textMuted))
+                  else
+                    _Grid(
+                      columns: columns,
+                      children: [
+                        for (final preset in presets.presets)
+                          IptvPresetCard(
+                            preset: preset,
+                            languageTag: tag,
+                            added: controller.playlistOf(preset) != null,
+                            builtin: builtinIptvPresets.any((entry) => entry.id == preset.id),
+                            actionLabel: presets.adding == preset.id ? t.iptv.previewReading : null,
+                            onPressed: busy ? null : () => unawaited(_add(context, ref, preset)),
+                          ),
+                      ],
+                    ),
+                  Wrap(
+                    spacing: DsSpace.s8,
+                    runSpacing: DsSpace.s8,
+                    children: [
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        onPressed: busy ? null : () => unawaited(runIptvPlaylistImport(context)),
+                        leading: const DsIcon(DsIcons.plus, size: 16),
+                        child: Text(t.iptv.emptyStartImportAction),
+                      ),
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        onPressed: busy ? null : () => unawaited(runIptvGuideImport(context)),
+                        leading: const DsIcon(DsIcons.calendarClock, size: 16),
+                        child: Text(t.iptv.importGuide),
+                      ),
+                      if (presets.deleted.isNotEmpty)
+                        DsButton(
+                          variant: DsButtonVariant.ghost,
+                          onPressed: busy ? null : controller.restoreDefaults,
+                          leading: const DsIcon(DsIcons.rotateCcw, size: 16),
+                          child: Text(t.iptv.presetRestore),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// [children] in rows of [columns], each row as tall as its tallest card.
+final class _Grid extends StatelessWidget {
+  const _Grid({required this.columns, required this.children});
+
+  final int columns;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var start = 0; start < children.length; start += columns) {
+      final row = children.sublist(start, (start + columns).clamp(0, children.length));
+      rows.add(
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s12,
+            children: [
+              for (final child in row) Expanded(child: child),
+              for (var i = row.length; i < columns; i++) const Expanded(child: SizedBox.shrink()),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s12, children: rows);
   }
 }

@@ -45,6 +45,11 @@ abstract final class RouteNames {
   /// One IPTV channel's player, pushed on the root navigator.
   static const String iptvPlay = '/iptv/play/:channelId';
 
+  /// The IPTV import page — playlist or guide, link, text, file, preset,
+  /// phone or Xtream account — pushed on the root navigator; the launch
+  /// (kind, origin, preset, link) rides in as `extra`.
+  static const String iptvImport = '/iptv/import';
+
   /// A platform's web-search page, pushed on the root navigator; the
   /// search request rides in as `extra`.
   static const String webSearch = '/web-search';

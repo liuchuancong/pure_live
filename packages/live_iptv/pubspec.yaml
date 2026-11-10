@@ -16,6 +16,7 @@ environment:
 dependencies:
   built_collection: ^5.1.2 # 不可变集合
   built_value: ^8.13.0 # 不可变模型
+  fast_gbk: ^1.0.0 # GBK 解码(记事本 ANSI 存的中文列表/节目单)
   live_log:
   live_net:
   live_sites:
