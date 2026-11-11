@@ -12,7 +12,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
-    show PlatformBatteryService, PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
+    show PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
 import 'package:live_sites/live_sites.dart'
     show LivePlayLine, LiveRoom, LiveRoomRefIdentity, LiveStreamCodec, LiveStreamFormat;
 import 'package:media_core/media_core.dart';
@@ -30,6 +30,7 @@ import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show take
 import 'package:pure_live/modules/live/room/page/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
 import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomDetails;
+import 'package:pure_live/modules/live/room/player/room_switcher.dart' show showRoomSwitcher;
 // The replay bar's clock words: the one duration formatter the app keeps
 // ("12:34" or "1:02:03"), the same the vod player's own bar reads.
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
@@ -412,7 +413,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
       final value = capabilities.canRead ? await _screenBrightness.getBrightness(scope: scope) : null;
       if (!mounted) return;
       setState(() {
-        _brightnessWritable = capabilities.canOfferBrightnessControl;
+        final desktop =
+            defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux;
+        _brightnessWritable = !desktop && capabilities.canOfferBrightnessControl;
         _brightnessScope = scope;
         if (value != null) _brightness = value.clamp(0, 100);
       });
@@ -480,6 +485,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final wasClosed = _openPicker == null;
     setState(() => _openPicker = picker);
     if (wasClosed) _setPanelOpen(true);
+  }
+
+  /// The visible button a catalogue opens from: quality and line have no
+  /// button of their own on a narrow strip, so their card opens over fit.
+  GlobalKey _pickerAnchor(_Picker picker) {
+    final own = _pickerAnchors[picker]!;
+    if (own.currentContext != null) return own;
+    return _pickerAnchors[_Picker.fit]!;
   }
 
   void _hidePicker() {
@@ -891,6 +904,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(roomStreamPickerAskProvider, (_, _) {
+      final picked = ref.read(roomStreamPickerAskProvider.notifier).last;
+      if (picked == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _togglePicker(picked == RoomStreamPicker.quality ? _Picker.quality : _Picker.line);
+      });
+    });
     final room = widget.roomState;
     // A local for the room itself: a record field is not promotable, and the
     // picture states need to know the cover's owner is there.
@@ -1161,13 +1182,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       ),
                     ),
                   if (_volumeHud case final volume?)
-                    PositionedDirectional(
-                      end: DsSpace.s20,
-                      top: 0,
-                      bottom: 0,
-                      // The glyph names the figure, so a drag on the left half never
-                      // reads as the volume it is not.
-                      child: PlayerVolumeHud(value: volume, icon: _hudIsBrightness ? DsIcons.sun : null),
+                    Positioned.fill(
+                      child: Center(
+                        // The glyph names the figure, so a drag on the left half
+                        // never reads as the volume it is not.
+                        child: PlayerVolumeHud(value: volume, icon: _hudIsBrightness ? DsIcons.sun : null),
+                      ),
                     ),
                   if (picture.kind != RoomPictureKind.none)
                     Stack(
@@ -1275,9 +1295,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       child: PlayerGlassPill(
                         child: RecordingIndicator(
                           startedAt: liveCapture?.startedAt,
-                          figures: liveCapture == null || liveCapture.bytes <= 0
-                              ? null
-                              : formatRecordingBytes(liveCapture.bytes),
                           label: context.t.room.stopRecording,
                           tv: widget.tv,
                           // Locked, it is a mark and not a switch: the figures
@@ -1318,11 +1335,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             onWake: _wake,
                             onDanmakuSettings: _toggleDanmakuSettings,
                             danmakuSettingsAnchor: _danmakuSettingsAnchor,
-                            streamPickers: ({required labelled}) => _StreamPickerRow(
+                            streamPickers: ({required labelled, required fitOnly}) => _StreamPickerRow(
                               room: room,
                               open: _openPicker,
                               anchors: _pickerAnchors,
                               labelled: labelled,
+                              fitOnly: fitOnly,
                               onToggle: _togglePicker,
                             ),
                             autofocusPlay: widget.autofocusFirstControl,
@@ -1371,7 +1389,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                               child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _hidePicker),
                             ),
                             PlayerPanelHost(
-                              anchorKey: _pickerAnchors[picker]!,
+                              anchorKey: _pickerAnchor(picker),
                               barKey: _barKey,
                               width: _panelWidth(picker),
                               child: _pickerPanel(context.t, picker),
@@ -1385,10 +1403,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _closeDanmakuSettings,
-                            ),
+                            child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _closeDanmakuSettings),
                           ),
                           PlayerPanelHost(
                             anchorKey: _danmakuSettingsAnchor,
@@ -1399,17 +1414,16 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                               width: 280,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    DsSpace.s12,
-                                    0,
-                                    DsSpace.s12,
-                                    DsSpace.s6,
-                                  ),
+                                  padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s6),
                                   child: _DanmakuSettingsControls(
                                     onWake: _wake,
                                     onAdvanced: () {
                                       _closeDanmakuSettings();
-                                      openSettingsChild(context, ref, SettingsSection.danmaku);
+                                      unawaited(
+                                        context.push(
+                                          SettingsSectionRoute(section: SettingsSection.danmaku.name).location,
+                                        ),
+                                      );
                                     },
                                   ),
                                 ),
@@ -1632,6 +1646,7 @@ final class _StreamPickerRow extends ConsumerWidget {
     required this.open,
     required this.anchors,
     required this.labelled,
+    required this.fitOnly,
     required this.onToggle,
   });
 
@@ -1645,6 +1660,9 @@ final class _StreamPickerRow extends ConsumerWidget {
 
   /// Whether the current choice's words fit beside the glyph.
   final bool labelled;
+
+  /// A narrow strip keeps only the picture's fit; quality and line are in More.
+  final bool fitOnly;
 
   final ValueChanged<_Picker> onToggle;
 
@@ -1661,7 +1679,7 @@ final class _StreamPickerRow extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: tv ? DsSpace.s8 : DsSpace.s4,
       children: [
-        if (room.qualities.isNotEmpty && quality != null)
+        if (!fitOnly && room.qualities.isNotEmpty && quality != null)
           _button(
             context,
             picker: _Picker.quality,
@@ -1669,7 +1687,7 @@ final class _StreamPickerRow extends ConsumerWidget {
             label: quality.displayLabel,
             semanticLabel: t.room.quality,
           ),
-        if (line != null && lines.length > 1)
+        if (!fitOnly && line != null)
           _button(
             context,
             picker: _Picker.line,
@@ -1825,6 +1843,29 @@ final class _PlayerTopBar extends ConsumerStatefulWidget {
   ConsumerState<_PlayerTopBar> createState() => _PlayerTopBarState();
 }
 
+/// A catalogue a narrow page's More menu can ask the picture surface to open.
+enum RoomStreamPicker { quality, line }
+
+/// The ask raised by the room's More menu when quality or line moves there on
+/// a narrow strip.
+final roomStreamPickerAskProvider = NotifierProvider<_RoomStreamPickerAskController, int>(
+  _RoomStreamPickerAskController.new,
+);
+
+final class _RoomStreamPickerAskController extends Notifier<int> {
+  RoomStreamPicker? _last;
+
+  @override
+  int build() => 0;
+
+  RoomStreamPicker? get last => _last;
+
+  void ask(RoomStreamPicker picker) {
+    _last = picker;
+    state++;
+  }
+}
+
 /// The catalogues the control bar offers: the stream's quality and the line
 /// behind it. The picture's fit is the page's menu row, not a catalogue.
 enum _Picker { quality, line, fit }
@@ -1896,6 +1937,18 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                   ),
                 ),
               );
+        // A narrow strip keeps only PiP; a running take moves under the
+        // More pill, where its duration does not crowd the picture verbs.
+        final menuColumn = narrow && widget.identity
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: DsSpace.s4,
+                children: [
+                  menuPill,
+                  _NarrowRecordingUnderMenu(room: widget.room),
+                ],
+              )
+            : menuPill;
         final capture = widget.room.handle;
         final audioPill = PlayerGlassPill(
           child: PlayerBarButton(
@@ -1956,7 +2009,6 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                     onPressed: widget.onLeave,
                   ),
                 ),
-              if (widget.fullscreen) const _PlayerClockBattery(),
               // The strip's left is the anchor's identity and the follow verb —
               // a fullscreen room's only follow surface, its column folded away.
               // A press on the name opens the details where the strip stands in
@@ -1997,12 +2049,25 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
                     ),
                   ),
                 ),
+              // The room switcher sits with the picture verbs on a wide strip;
+              // a narrow one keeps the menu and PiP only.
+              if (!narrow && widget.room.room != null)
+                PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: DsIcons.arrowLeftRight,
+                    label: t.room.switchRoom,
+                    onPressed: () {
+                      widget.onWake();
+                      unawaited(showRoomSwitcher(context, current: widget.room.room!));
+                    },
+                  ),
+                ),
               // The sound mode and a frame copy keep their own controls; the
               // strip stays one control per function.
               ?screenshotPill,
               audioPill,
               cluster,
-              menuPill,
+              menuColumn,
             ],
           ),
         );
@@ -2137,11 +2202,7 @@ final class _AnchorFollowChip extends ConsumerWidget {
 /// leaving the bar, and the switch's letter reads at every tier the bar is
 /// drawn at.
 final class _DanmakuBarCluster extends ConsumerWidget {
-  const _DanmakuBarCluster({
-    required this.onWake,
-    this.onSettings,
-    this.settingsAnchor,
-  });
+  const _DanmakuBarCluster({required this.onWake, this.onSettings, this.settingsAnchor});
 
   /// Resets the bar's auto-hide timer after a press.
   final VoidCallback onWake;
@@ -2273,64 +2334,61 @@ final class _DanmakuSettingsControls extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-            sliderRow(
-              label: t.settings.styleArea,
-              value: '${(style.area * 100).round()}%',
-              current: style.area,
-              min: DanmakuStyleRange.areaMin,
-              max: DanmakuStyleRange.areaMax,
-              divisions: DanmakuStyleRange.areaDivisions,
-              onChanged: (value) => unawaited(controller.setArea(value)),
+        sliderRow(
+          label: t.settings.styleArea,
+          value: '${(style.area * 100).round()}%',
+          current: style.area,
+          min: DanmakuStyleRange.areaMin,
+          max: DanmakuStyleRange.areaMax,
+          divisions: DanmakuStyleRange.areaDivisions,
+          onChanged: (value) => unawaited(controller.setArea(value)),
+        ),
+        sliderRow(
+          label: t.settings.styleFontSize,
+          value: '${style.fontSize.toStringAsFixed(0)} px',
+          current: style.fontSize,
+          min: DanmakuStyleRange.fontSizeMin,
+          max: DanmakuStyleRange.fontSizeMax,
+          onChanged: (value) => unawaited(controller.setFontSize(value)),
+        ),
+        sliderRow(
+          label: t.settings.styleOpacity,
+          value: '${(style.opacity * 100).round()}%',
+          current: style.opacity,
+          min: DanmakuStyleRange.opacityMin,
+          max: DanmakuStyleRange.opacityMax,
+          onChanged: (value) => unawaited(controller.setOpacity(value)),
+        ),
+        sliderRow(
+          label: t.settings.styleSpeed,
+          value: '${style.baseSpeed.round()} px/s',
+          current: style.baseSpeed,
+          min: DanmakuStyleRange.speedMin,
+          max: DanmakuStyleRange.speedMax,
+          onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
+        ),
+        Container(height: 1, color: OnVideoColors.inkHover),
+        DsPressable(
+          semanticLabel: t.settings.styleAdvanced,
+          onPressed: onAdvanced,
+          builder: (context, states, _) => Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
+            decoration: DsBoxDecoration(
+              color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : null,
+              borderRadius: BorderRadius.circular(6),
             ),
-            sliderRow(
-              label: t.settings.styleFontSize,
-              value: '${style.fontSize.toStringAsFixed(0)} px',
-              current: style.fontSize,
-              min: DanmakuStyleRange.fontSizeMin,
-              max: DanmakuStyleRange.fontSizeMax,
-              onChanged: (value) => unawaited(controller.setFontSize(value)),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                const DsIcon(DsIcons.settings2, size: 15, color: _onVideoMuted),
+                Text(t.settings.styleAdvanced, style: theme.typography.caption.copyWith(color: _onVideo)),
+                const Spacer(),
+                const DsIcon(DsIcons.chevronRight, size: 14, color: _onVideoMuted),
+              ],
             ),
-            sliderRow(
-              label: t.settings.styleOpacity,
-              value: '${(style.opacity * 100).round()}%',
-              current: style.opacity,
-              min: DanmakuStyleRange.opacityMin,
-              max: DanmakuStyleRange.opacityMax,
-              onChanged: (value) => unawaited(controller.setOpacity(value)),
-            ),
-            sliderRow(
-              label: t.settings.styleSpeed,
-              value: '${style.baseSpeed.round()} px/s',
-              current: style.baseSpeed,
-              min: DanmakuStyleRange.speedMin,
-              max: DanmakuStyleRange.speedMax,
-              onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
-            ),
-            Container(height: 1, color: OnVideoColors.inkHover),
-            DsPressable(
-              semanticLabel: t.settings.styleAdvanced,
-              onPressed: onAdvanced,
-              builder: (context, states, _) => Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
-                decoration: DsBoxDecoration(
-                  color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : null,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    const DsIcon(DsIcons.settings2, size: 15, color: _onVideoMuted),
-                    Text(
-                      t.settings.styleAdvanced,
-                      style: theme.typography.caption.copyWith(color: _onVideo),
-                    ),
-                    const Spacer(),
-                    const DsIcon(DsIcons.chevronRight, size: 14, color: _onVideoMuted),
-                  ],
-                ),
-              ),
-            ),
+          ),
+        ),
       ],
     );
   }
@@ -2381,6 +2439,29 @@ Future<void> toggleRoomPip(BuildContext context, WidgetRef ref) async {
 /// A running capture replaces its own button with the breathing indicator, so
 /// the strip never shows two red things for one fact and the elapsed count sits
 /// where the viewer already looks for the room's state.
+/// The duration of a narrow strip's running take, under its More pill.
+///
+/// The take no longer says its byte count on the picture; the time is enough
+/// to know it is still moving, and a press still stops it.
+final class _NarrowRecordingUnderMenu extends ConsumerWidget {
+  const _NarrowRecordingUnderMenu({required this.room});
+
+  final RoomState room;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
+    if (task?.state != RecordingTaskState.recording) return const SizedBox.shrink();
+    return PlayerGlassPill(
+      child: RecordingIndicator(
+        startedAt: task!.startedAt,
+        label: context.t.room.stopRecording,
+        onStop: () => unawaited(toggleRoomRecording(context, ref)),
+      ),
+    );
+  }
+}
+
 final class _PresentationCluster extends ConsumerWidget {
   const _PresentationCluster({required this.room, required this.onWake, required this.narrow, this.split = false});
 
@@ -2431,8 +2512,8 @@ final class _PresentationCluster extends ConsumerWidget {
     // What the strip has room for. A narrow tier with nothing running shows no
     // cluster at all — an empty glass pill would be a hole in the strip — and a
     // word is wider than the icon it replaces, so it waits for room.
-    final showRecord = recording || (!narrow && (line != null || pendingWord != null));
-    final showPip = !narrow && pipAvailable;
+    final showRecord = !narrow && (recording || line != null || pendingWord != null);
+    final showPip = pipAvailable;
     // Casting needs a stream to cast at, and the narrow tier has no room for
     // the verb: the line is what the picker is aimed at.
     final castLine = narrow ? null : line;
@@ -2460,7 +2541,6 @@ final class _PresentationCluster extends ConsumerWidget {
           if (recording && task != null)
             RecordingIndicator(
               startedAt: task.startedAt,
-              figures: task.bytes <= 0 ? null : formatRecordingBytes(task.bytes),
               tv: tv,
               label: t.room.stopRecording,
               onStop: () {
@@ -2506,7 +2586,6 @@ final class _PresentationCluster extends ConsumerWidget {
               // The take's size beside its clock: a growing number is the only
               // proof that a capture is still writing, and the engine's own
               // progress write is what makes it move once a second.
-              figures: task == null || !recording || task.bytes <= 0 ? null : formatRecordingBytes(task.bytes),
               word: pendingWord,
               // The TV tier grows every control on the bar; the indicator is
               // one of them, or it reads as a smudge from the sofa (§10.5).
@@ -2582,104 +2661,6 @@ String? _lineDetail(LivePlayLine line) {
   return codec.isEmpty ? format : '$format · $codec';
 }
 
-/// The clock and the battery of a fullscreen strip (the reference's
-/// `PlayerClock` and `PlayerBattery`, beside its back button).
-///
-/// Fullscreen has no system bar to read: how late it is, and on a phone how
-/// long the picture has left before the battery gives out, are questions a
-/// tray answers everywhere else. The clock redraws when the minute turns and
-/// nothing else; the battery is read once and then every minute, and a machine
-/// that reports no battery at all — a desktop answers `-1` — draws no figure,
-/// rather than a 0 a viewer would read as a laptop about to die.
-final class _PlayerClockBattery extends StatefulWidget {
-  const _PlayerClockBattery();
-
-  @override
-  State<_PlayerClockBattery> createState() => _PlayerClockBatteryState();
-}
-
-final class _PlayerClockBatteryState extends State<_PlayerClockBattery> {
-  static const PlatformBatteryService _battery = PlatformBatteryService();
-
-  DateTime _now = DateTime.now();
-  int? _level;
-  Timer? _minute;
-  Timer? _poll;
-
-  @override
-  void initState() {
-    super.initState();
-    _scheduleClock();
-    unawaited(_readBattery());
-    _poll = Timer.periodic(const Duration(minutes: 1), (_) => unawaited(_readBattery()));
-  }
-
-  /// Fires on the minute's turn, not 60 s after the strip opened: a timer
-  /// started at 21:04:30 would otherwise still say 21:05 half a minute into
-  /// the next one.
-  void _scheduleClock() {
-    final now = DateTime.now();
-    final next = DateTime(now.year, now.month, now.day, now.hour, now.minute + 1);
-    _minute = Timer(next.difference(now) + const Duration(milliseconds: 50), () {
-      if (!mounted) return;
-      setState(() => _now = DateTime.now());
-      _scheduleClock();
-    });
-  }
-
-  Future<void> _readBattery() async {
-    try {
-      final level = await _battery.readLevel();
-      if (!mounted || level < 0) return;
-      setState(() => _level = level);
-    } on Object {
-      // A platform that will not answer the call gets no figure, not a zero.
-    }
-  }
-
-  @override
-  void dispose() {
-    _minute?.cancel();
-    _poll?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final figure = theme.typography
-        .numeric(theme.typography.caption)
-        .copyWith(color: _onVideo, fontWeight: FontWeight.w600);
-    final level = _level;
-    String two(int value) => value.toString().padLeft(2, '0');
-    return PlayerGlassPill(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s6,
-          children: [
-            Text('${two(_now.hour)}:${two(_now.minute)}', style: figure),
-            if (level != null) ...[
-              DsIcon(_batteryGlyph(level), size: 14, color: _onVideo),
-              Text('$level%', style: figure),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The case that fits the reading: the figure carries the number, so the
-/// glyph only has to say how near either end of it the battery stands.
-DsIconData _batteryGlyph(int level) => switch (level) {
-  <= 10 => DsIcons.batteryEmpty,
-  <= 25 => DsIcons.batteryLow,
-  <= 75 => DsIcons.batteryMedium,
-  _ => DsIcons.batteryHigh,
-};
-
 /// The compact window's strip.
 ///
 /// A small window has no native caption, so this row carries every window
@@ -2701,7 +2682,6 @@ final class _PipBar extends ConsumerWidget {
     final controller = ref.read(roomProvider.notifier);
     final window = ref.read(windowsPipWindowProvider);
     final playing = room.playback.playing;
-    final muted = controller.muted;
     final anchor = (room.room?.anchor?.name ?? '').trim();
     final caption = anchor.isEmpty ? (room.room?.content.title ?? '') : anchor;
     // A capture keeps breathing in the small window too: shrinking the picture
@@ -2762,11 +2742,6 @@ final class _PipBar extends ConsumerWidget {
             iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
             label: playing ? t.room.pause : t.room.play,
             onPressed: () => unawaited(controller.togglePlayPause()),
-          ),
-          _PipButton(
-            iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-            label: muted ? t.room.unmute : t.room.mute,
-            onPressed: () => unawaited(controller.setMuted(value: !muted)),
           ),
           _PipButton(icon: DsIcons.expand, label: t.room.pipOff, onPressed: onRestore),
           _PipButton(icon: DsIcons.x, label: t.common.close, onPressed: onClose),
@@ -2860,7 +2835,7 @@ final class _ControlBar extends ConsumerStatefulWidget {
   /// leaves little room for words beside the glyph, and words chosen from the
   /// window's size overflowed the strip. `labelled` says whether the current
   /// choice's words fit beside the glyph.
-  final Widget Function({required bool labelled})? streamPickers;
+  final Widget Function({required bool labelled, required bool fitOnly})? streamPickers;
 
   /// Focuses the play button when it first builds (the TV room's start).
   final bool autofocusPlay;
@@ -2909,8 +2884,6 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
     final playing = room.playback.playing;
     // The state echo of a mute switch rebuilds this bar, so the icon reads
     // fresh without its own stream.
-    final muted = controller.muted;
-    final immersive = presentationController.modeOwnsWindow(presentation);
     final tv = PlayerBarTier.tvOf(context);
     // The replay's surface: a room the platform labels a recording, or a
     // room that is not on air whose loaded media reports a length (a VOD
@@ -2994,62 +2967,38 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   ],
                 )
               : null;
-          final bar = Row(
-            // A TV bar spaces its controls wider: the remote jumps
-            // between them, and a distant viewer needs the separation.
-            spacing: tv ? DsSpace.s8 : DsSpace.s4,
-            children: [
-              PlayerBarButton(
-                iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
-                label: playing ? t.room.pause : t.room.play,
-                autofocus: widget.autofocusPlay,
-                onPressed: () {
-                  widget.onWake();
-                  unawaited(controller.togglePlayPause());
-                },
-              ),
-              // Reload the stream beside play; the volume lives on the wheel,
-              // the mute is the one sound verb the wheel cannot spell. A narrow
-              // bar leaves the retry to the error card and `R`.
-              if (wide)
-                PlayerBarButton(
-                  icon: DsIcons.refreshCw,
-                  label: t.common.retry,
-                  onPressed: () {
-                    widget.onWake();
-                    unawaited(controller.retry());
-                  },
-                ),
-              PlayerBarButton(
-                iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
-                label: muted ? t.room.unmute : t.room.mute,
-                onPressed: () {
-                  widget.onWake();
-                  unawaited(controller.setMuted(value: !muted));
-                },
-              ),
-              // The flying danmaku's switch rides with the transport on the
-              // left; the recording state lives on the strip above and in the
-              // persistent pill, not twice on this bar.
-              if (!crowded && !pip)
-                _DanmakuBarCluster(
+          final play = PlayerBarButton(
+            iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+            label: playing ? t.room.pause : t.room.play,
+            autofocus: widget.autofocusPlay,
+            onPressed: () {
+              widget.onWake();
+              unawaited(controller.togglePlayPause());
+            },
+          );
+          final retry = PlayerBarButton(
+            icon: DsIcons.refreshCw,
+            label: t.common.retry,
+            onPressed: () {
+              widget.onWake();
+              unawaited(controller.retry());
+            },
+          );
+          final danmaku = !crowded && !pip
+              ? _DanmakuBarCluster(
                   onWake: widget.onWake,
                   onSettings: widget.onDanmakuSettings,
                   settingsAnchor: widget.danmakuSettingsAnchor,
-                ),
-              const Spacer(),
-              if (!crowded) const _BarDivider(),
-              // -- What is playing: the stream's own catalogues, each its own
-              // control with its current value in words (1080P / 线路1 / 适应).
-              // The words fold back to glyphs once the bar is too narrow to
-              // carry them beside the transport without overflowing.
-              if (!pip) ?widget.streamPickers?.call(labelled: constraints.maxWidth >= 600),
-              // -- The window verbs, then the way out of the picture's box.
-              if (!pip && player != null && wide)
-                PlayerBarButton(
-                  iconAsset: presentation == PresentationMode.windowFullscreen
-                      ? 'assets/icons/fullscreen-exit.svg'
-                      : 'assets/icons/fullscreen-enter.svg',
+                )
+              : null;
+          // The bar sits beside the chat column, so its own width can be much
+          // smaller than the window. The window decides whether all three
+          // catalogues fit; the bar must not silently downgrade to fit-only.
+          final compactPickers = MediaQuery.sizeOf(context).width < 600;
+          final pickers = !pip ? widget.streamPickers?.call(labelled: true, fitOnly: compactPickers) : null;
+          final windowButton = !pip && player != null && wide
+              ? PlayerBarButton(
+                  icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.room.windowFullscreenOff
                       : t.room.windowFullscreenOn,
@@ -3058,33 +3007,37 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                     widget.onWake();
                     unawaited(presentationController.toggleWindowFullscreen(player));
                   },
-                ),
-              if (wide &&
-                  !pip &&
-                  widget.canEnterPortraitFullscreen &&
-                  !widget.portraitFullscreen &&
-                  presentation == PresentationMode.normal)
-                PlayerBarButton(
-                  icon: DsIcons.rectangleVertical,
-                  label: t.room.portraitFullscreen,
-                  onPressed: () {
-                    widget.onWake();
-                    widget.onPortraitFullscreen?.call();
-                  },
-                ),
-              // The bar's own reading order as the reference draws it:
-              // transport, the stream's catalogues, the danmaku pair, then
-              // the two ways out of the box.
-              if (!pip && player != null)
-                PlayerBarButton(
-                  icon: immersive ? DsIcons.minimize : DsIcons.maximize,
-                  label: immersive ? t.room.fullscreenOff : t.room.fullscreenOn,
-                  selected: immersive,
+                )
+              : null;
+          final fullscreenButton = !pip && player != null
+              ? PlayerBarButton(
+                  icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+                  label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+                  selected: presentation == PresentationMode.fullscreen,
                   onPressed: () {
                     widget.onWake();
                     unawaited(presentationController.toggleFullscreen(player));
                   },
-                ),
+                )
+              : null;
+          final bar = Row(
+            spacing: tv ? DsSpace.s8 : DsSpace.s4,
+            children: [
+              play,
+              retry,
+              ?danmaku,
+              if (pickers != null)
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: pickers),
+                  ),
+                )
+              else
+                const Spacer(),
+              if (!crowded) const _BarDivider(),
+              ?windowButton,
+              ?fullscreenButton,
             ],
           );
           // The timeline rides over the buttons, the vod bar's own order —

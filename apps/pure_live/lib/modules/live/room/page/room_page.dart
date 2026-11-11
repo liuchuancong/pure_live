@@ -20,8 +20,7 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
-import 'package:pure_live/modules/live/room/page/player_surface.dart'
-    show PlayerSurface, kPlayerStageColor, toggleRoomPip;
+import 'package:pure_live/modules/live/room/page/player_surface.dart' show PlayerSurface, RoomStreamPicker, kPlayerStageColor, roomStreamPickerAskProvider;
 import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
 import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
 import 'package:pure_live/modules/live/room/page/room_frame.dart' show kRoomFrameRatioMax, kRoomFrameRatioMin;
@@ -1115,12 +1114,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       // focus ring, since the remote has no pointer and the viewer sits back.
       tv: tv,
       portraitFullscreen: _portraitFullscreen,
-      canEnterPortraitFullscreen: pictureRatio < 1,
-      onPortraitFullscreen: () => _setPortraitFullscreen(true),
-      onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchRoomByStep : null,
       // The swipe up from the portrait full screen's bottom band, back to the
       // panel: a touch screen's gesture, where the surface is the whole of it.
-      onPortraitRestore: _portraitFullscreen && mobile ? () => _setPortraitFullscreen(false) : null,
       onTitle: onTitle,
       // The room's own framing, not only the source's: a portrait frame the
       // viewer chose sits over the room's art too, a landscape one keeps the
@@ -1180,30 +1175,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     // Pulling the sheet past its lowest stop is the handle's own
                     // way into the portrait full screen, by hand: a phone's,
                     // where that full screen exists.
-                    onPortraitFullscreen: mobile ? () => _setPortraitFullscreen(true) : null,
                     picture: ColoredBox(
                       color: kPlayerStageColor,
                       child: playerWith(bottomInset: _panelCover),
                     ),
-                    // A thumb gets the way into the room's own full screen, which
-                    // is what the bar's entry costs at this width — the bar hides
-                    // it below its own floor. A pointer gets the grip that says
-                    // the sheet holds.
-                    handle: mobile
-                        ? DsButton(
-                            variant: DsButtonVariant.ghost,
-                            size: DsSize.xs,
-                            onPressed: () => _setPortraitFullscreen(true),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              spacing: DsSpace.s4,
-                              children: [
-                                const DsIcon(DsIcons.rectangleVertical, size: 14),
-                                Text(t.room.portraitFullscreen),
-                              ],
-                            ),
-                          )
-                        : null,
                     pill: DsButton(
                       variant: DsButtonVariant.ghost,
                       size: DsSize.xs,
@@ -1746,7 +1721,6 @@ List<Widget> roomMenuItems(
 }) {
   final t = context.t;
   final detail = room.room;
-  final presentation = ref.watch(roomPresentationProvider);
   final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
   final sleepRunning = sleepMinutes != null;
   // A desktop shell that runs secondary windows and has the viewer's
@@ -1758,6 +1732,8 @@ List<Widget> roomMenuItems(
       ref.watch(secondaryWindowsProvider) != null &&
       ref.watch(roomWindowsProvider) &&
       ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;
+  // A narrow picture keeps only fit on the bar; these two move here.
+  final compact = MediaQuery.sizeOf(context).width < 600;
   final items = <Widget>[
     if (detail != null)
       DsMenuItem(
@@ -1765,19 +1741,21 @@ List<Widget> roomMenuItems(
         label: Text(t.room.switchRoom),
         onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
       ),
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.refreshCw),
-      label: Text(t.room.refreshRoom),
-      onPressed: () => unawaited(ref.read(roomProvider.notifier).refreshRoom()),
-    ),
+    if (compact && room.qualities.isNotEmpty)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.monitor),
+        label: Text(room.quality?.displayLabel ?? t.room.quality),
+        onPressed: () => ref.read(roomStreamPickerAskProvider.notifier).ask(RoomStreamPicker.quality),
+      ),
+    if (compact && room.lines.isNotEmpty)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.route),
+        label: Text(t.room.line(n: room.lineIndex + 1)),
+        onPressed: () => ref.read(roomStreamPickerAskProvider.notifier).ask(RoomStreamPicker.line),
+      ),
+
     // The strip folds these away on a narrow picture; the menu keeps them
     // reachable there, and everywhere else they ride along for free.
-    if (room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.pictureInPicture2),
-        label: Text(presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn),
-        onPressed: () => unawaited(toggleRoomPip(context, ref)),
-      ),
     if (room.lines.isNotEmpty)
       DsMenuItem(
         leading: const DsIcon(DsIcons.cast),

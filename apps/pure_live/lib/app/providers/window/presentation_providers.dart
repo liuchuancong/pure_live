@@ -235,6 +235,11 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// dead `Ref` throws, so the objects the exit needs are held here instead,
   /// and every state write below checks `ref.mounted` first.
   PresentationDriverChain? _chain;
+
+  /// Where leaving the current nested mode goes. Fullscreen remembers the
+  /// window-fullscreen it came from; PiP remembers the fullscreen it came
+  /// from, so either exit lands on the mode the viewer was already in.
+  PresentationMode _returnMode = PresentationMode.normal;
   FullscreenDriver? _fullscreenDriver;
   PipDriver? _pipDriver;
 
@@ -309,8 +314,14 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// buttons only; neither exits the other as a side effect.
   Future<void> toggleFullscreen(PlayerId player) async {
     if (state == PresentationMode.fullscreen) {
-      await _exitMode(player);
+      await _exitTo(
+        _returnMode == PresentationMode.windowFullscreen ? PresentationMode.windowFullscreen : PresentationMode.normal,
+        player,
+      );
     } else {
+      _returnMode = state == PresentationMode.windowFullscreen
+          ? PresentationMode.windowFullscreen
+          : PresentationMode.normal;
       await _apply(player, PresentationMode.fullscreen);
     }
   }
@@ -321,8 +332,9 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// leaves it.
   Future<void> toggleWindowFullscreen(PlayerId player) async {
     if (state == PresentationMode.windowFullscreen) {
-      await _exitMode(player);
+      await _exitTo(PresentationMode.normal, player);
     } else {
+      _returnMode = PresentationMode.normal;
       await _apply(player, PresentationMode.windowFullscreen);
     }
   }
@@ -335,8 +347,19 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// so instead of leaving a control that does nothing.
   Future<bool> togglePip(PlayerId player) {
     if (!pipAvailable) return Future<bool>.value(false);
-    if (state == PresentationMode.pip) return _exitMode(player);
+    if (state == PresentationMode.pip) {
+      return _exitTo(_returnMode, player);
+    }
+    _returnMode = state;
     return _apply(player, PresentationMode.pip);
+  }
+
+  /// Leaves the active mode back to the mode it was opened from, or to the
+  /// normal page when that mode cannot be restored.
+  Future<bool> _exitTo(PresentationMode target, PlayerId player) async {
+    if (target == PresentationMode.normal) return await _exitMode(player);
+    if (await _apply(player, target)) return true;
+    return await _exitMode(player);
   }
 
   /// Leaves the active mode. A phone's picture-in-picture window is the

@@ -2402,9 +2402,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // then the system fullscreen the phone turns for.
                   if (_desktop && presentation != PresentationMode.pip)
                     PlayerBarButton(
-                      iconAsset: presentation == PresentationMode.windowFullscreen
-                          ? 'assets/icons/fullscreen-exit.svg'
-                          : 'assets/icons/fullscreen-enter.svg',
+                      icon: presentation == PresentationMode.windowFullscreen
+                          ? DsIcons.copy
+                          : DsIcons.square,
                       label: presentation == PresentationMode.windowFullscreen
                           ? t.room.windowFullscreenOff
                           : t.room.windowFullscreenOn,
@@ -2418,8 +2418,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     ),
                   if (presentation != PresentationMode.pip)
                     PlayerBarButton(
-                      icon: immersive ? DsIcons.minimize2 : DsIcons.maximize,
-                      label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
+                      icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+                      label: presentation == PresentationMode.fullscreen ? t.vod.exitFullscreen : t.vod.fullscreen,
                       onPressed: handle == null
                           ? null
                           : () {

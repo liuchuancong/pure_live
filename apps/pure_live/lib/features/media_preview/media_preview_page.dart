@@ -1431,15 +1431,15 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       // the way back out of whichever mode is active.
       if (_desktop)
         PlayerBarButton(
-          icon: windowFullscreen ? DsIcons.shrink : DsIcons.expand,
+          icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
           label: windowFullscreen ? t.room.windowFullscreenOff : t.room.windowFullscreenOn,
           selected: windowFullscreen,
           onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
         ),
       PlayerBarButton(
-        icon: immersive ? DsIcons.minimize : DsIcons.maximize,
-        label: immersive ? t.room.fullscreenOff : t.room.fullscreenOn,
-        selected: immersive,
+        icon: presentation == PresentationMode.fullscreen ? DsIcons.minimize : DsIcons.maximize,
+        label: presentation == PresentationMode.fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
+        selected: presentation == PresentationMode.fullscreen,
         onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
       ),
     ];
