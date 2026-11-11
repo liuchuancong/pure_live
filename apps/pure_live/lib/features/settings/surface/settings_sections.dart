@@ -416,7 +416,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   // the tab a deep link opens and the section it names are one and the same.
   SettingsSection.musicLyric => const [SettingsSection.musicDesktopLyric],
   SettingsSection.nav => const [SettingsSection.navHomeMenu, SettingsSection.navToolOrder],
-  SettingsSection.danmaku => const [SettingsSection.danmakuDisplay, SettingsSection.shield],
+  SettingsSection.danmaku => const [SettingsSection.shield],
   SettingsSection.kernel => const [SettingsSection.kernelAdvanced, SettingsSection.playerGuide],
   SettingsSection.iptv => const [
     SettingsSection.iptvBrowse,

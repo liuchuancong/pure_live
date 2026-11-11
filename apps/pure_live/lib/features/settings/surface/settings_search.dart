@@ -273,31 +273,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.danmaku, s.stylePictureCache, 'picture image cache 图片 缓存 弹幕'),
     _hit(SettingsSection.danmaku, s.styleTextCache, 'text paragraph cache 文字 排版 缓存 弹幕'),
     _hit(SettingsSection.danmaku, s.styleRasterCache, 'raster cache memory budget mb 光栅 缓存 显存 上限 弹幕'),
-    _hit(SettingsSection.danmakuDisplay, s.chatShowNames, 'chat names user sender chat list 聊天 用户名 发送者'),
-    _hit(
-      SettingsSection.danmaku,
-      s.danmakuShowGifts,
-      'flying gifts picture valuable precious combo gift 飞行 礼物 画面 连击 值钱 弹幕',
-    ),
-    _hit(SettingsSection.danmakuDisplay, s.chatShowGifts, 'gift gifts chat list present 礼物 聊天 列表 显示'),
-    _hit(
-      SettingsSection.danmakuDisplay,
-      s.chatGiftsAboveTier,
-      'valuable gifts chat list cheap free combo filter 礼物 值钱 聊天 列表 便宜 免费 连击 过滤',
-    ),
-    _hit(
-      SettingsSection.danmakuDisplay,
-      s.chatGiftValueInYuan,
-      'gift value yuan price currency convert chat list 礼物 价值 元 换算 金额 聊天 列表',
-    ),
-    _hit(
-      SettingsSection.danmakuDisplay,
-      s.superChatIncludesMembership,
-      'super chat membership guard subscription bilibili youtube twitch 醒目留言 超级聊天 上舰 会员 订阅 舰长',
-    ),
-    _hit(SettingsSection.danmakuDisplay, s.chatListFontSize, 'chat list font size 聊天 列表 字号 大小'),
-    _hit(SettingsSection.danmakuDisplay, s.chatListLineSpacing, 'chat list line spacing 聊天 列表 行距'),
-    _hit(SettingsSection.danmakuDisplay, s.chatPanelWidth, 'chat panel width side list 聊天 面板 宽度 侧栏'),
     _hit(
       SettingsSection.danmaku,
       s.pipDanmakuScaleAuto,

@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -17,8 +17,13 @@ import 'package:pure_live/shared/shared.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
-/// The details panel's content; the page's info strip and menu open it
-/// through the room panel bus (`../panels/room_panel.dart`).
+/// The room's details: who is streaming, what is on, the numbers, the room's
+/// own facts, and the ways to pass it on.
+///
+/// The panel is a reading page, not a settings list: one continuous card holds
+/// the hero, the title and state, the figures, the notice, the introduction and
+/// the room facts; the verbs live in the panel's fixed footer. One surface, so
+/// the pieces read as a profile rather than a pile of fragments.
 final class RoomDetailsPanel extends ConsumerWidget {
   /// The panel's content.
   const RoomDetailsPanel({super.key});
@@ -26,91 +31,115 @@ final class RoomDetailsPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
     final state = ref.watch(roomProvider);
     final room = state.room;
     if (room == null) {
       return const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
+        spacing: DsSpace.s16,
         children: [
-          DsSkeleton(width: 220, height: 40),
-          DsSkeleton(width: 320, height: 16),
-          DsSkeleton(width: 260, height: 16),
+          Row(
+            spacing: DsSpace.s12,
+            children: [
+              DsSkeleton.circle(size: 44),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s6,
+                  children: [DsSkeleton(width: 150, height: 16), DsSkeleton(width: 100, height: 11)],
+                ),
+              ),
+            ],
+          ),
+          DsSkeleton(width: 260, height: 22),
+          DsSkeleton(width: 280, height: 64),
+          DsSkeleton(width: 280, height: 88),
         ],
       );
     }
-    final title = room.content.title.trim();
     final notice = room.content.notice?.trim() ?? '';
     final introduction = room.content.introduction?.trim() ?? '';
     final link = roomLinkOf(room);
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final platform = _platformName(ref, room);
     final external = room.links.webUrl?.trim().isNotEmpty == true || room.links.appUrl?.trim().isNotEmpty == true;
     final directLinks =
         ref.read(sitesProvider).getById(room.ref.platform)?.capability<LivePlaybackProvider>() != null;
-    final platform = _platformName(ref, room);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        _Streamer(room: room, platform: platform),
-        _State(room: room),
-        if (title.isNotEmpty) Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
-        _Figures(room: room),
-        _SessionFigures(room: room, watchStarted: state.watchStartedAt),
-        if (notice.isNotEmpty) _TextSection(label: t.room.notice, text: notice),
-        if (introduction.isNotEmpty && introduction != notice)
-          _TextSection(label: t.room.introduction, text: introduction),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s4,
-          children: [
-            _CopyRow(
-              icon: DsIcons.hash,
-              label: t.room.roomNumber,
-              value: room.ref.roomId,
-              onCopy: () => unawaited(copyRoomValue(context, room.ref.roomId)),
+    final mobile =
+        !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+    final opensApp = mobile && (room.links.appUrl?.trim().isNotEmpty ?? false);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        border: Border.all(color: colors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Hero(child: _Streamer(room: room, platform: platform)),
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s12,
+              children: [
+                _TitleBlock(room: room, watchStarted: state.watchStartedAt),
+                if (notice.isNotEmpty) _InfoText(label: t.room.notice, text: notice, emphasis: true),
+                if (introduction.isNotEmpty && introduction != notice)
+                  _InfoText(label: t.room.introduction, text: introduction),
+                _RoomInfo(
+                  room: room,
+                  link: link,
+                  onCopy: (label, value) => unawaited(copyRoomValue(context, value)),
+                ),
+                const DsDivider(),
+                _Actions(
+                  opensApp: opensApp,
+                  external: external,
+                  directLinks: directLinks,
+                  onShare: () => unawaited(shareRoom(context, room)),
+                  onOpen: () => unawaited(openRoomExternally(context, room)),
+                  onDirectLinks: () => unawaited(showRoomDirectLinks(context, ref, room)),
+                ),
+              ],
             ),
-            if (link.isNotEmpty)
-              _CopyRow(
-                icon: DsIcons.link,
-                label: t.room.link,
-                value: _withoutScheme(link),
-                onCopy: () => unawaited(copyRoomValue(context, link)),
-              ),
-          ],
-        ),
-        Wrap(
-          spacing: DsSpace.s8,
-          runSpacing: DsSpace.s8,
-          children: [
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              leading: const DsIcon(DsIcons.share, size: 16),
-              onPressed: () => unawaited(shareRoom(context, room)),
-              child: Text(t.room.share),
-            ),
-            if (external)
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                leading: const DsIcon(DsIcons.externalLink, size: 16),
-                onPressed: () => unawaited(openRoomExternally(context, room)),
-                child: Text(t.room.openIn(platform: platform)),
-              ),
-            if (directLinks)
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                leading: const DsIcon(DsIcons.link2, size: 16),
-                onPressed: () => unawaited(showRoomDirectLinks(context, ref, room)),
-                child: Text(t.toolbox.linkDirect),
-              ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// The streamer, the platform and the area, with the follow action.
+/// The details card's soft header: an accent wash that marks the identity
+/// block without opening a second surface.
+final class _Hero extends StatelessWidget {
+  const _Hero({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
+          colors: [colors.accent.withValues(alpha: 0.14), colors.accent.withValues(alpha: 0.02)],
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// The streamer's hero: avatar in its live ring, the name and where the room
+/// lives, and the one follow verb. This is the panel's anchor, so it stays at
+/// the top and keeps the numbers out of its line.
 final class _Streamer extends ConsumerWidget {
   const _Streamer({required this.room, required this.platform});
 
@@ -125,14 +154,19 @@ final class _Streamer extends ConsumerWidget {
     final name = anchorName.isEmpty ? room.content.title : anchorName;
     final avatar = (room.anchor?.avatarUrl ?? room.content.coverUrl).trim();
     final area = (room.area?.areaName ?? '').trim();
+    final live = room.broadcast.isLiveNow;
     return Row(
       spacing: DsSpace.s12,
       children: [
-        DsAvatar(
-          initials: avatarInitials(name),
-          image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-          size: DsSize.md,
-          semanticLabel: name,
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
+          child: DsAvatar(
+            initials: avatarInitials(name),
+            image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+            size: DsSize.lg,
+            semanticLabel: name,
+          ),
         ),
         Expanded(
           child: Column(
@@ -143,7 +177,7 @@ final class _Streamer extends ConsumerWidget {
                 name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.typography.heading.copyWith(color: colors.text),
+                style: theme.typography.bodyStrong.copyWith(color: colors.text),
               ),
               Text(
                 area.isEmpty ? platform : '$platform · $area',
@@ -160,7 +194,7 @@ final class _Streamer extends ConsumerWidget {
   }
 }
 
-/// The follow action of the details panel, in step with the app bar's.
+/// Follow, in step with the header's pill and the room bar's empty slot.
 final class _DetailsFollow extends ConsumerWidget {
   const _DetailsFollow({required this.room});
 
@@ -182,44 +216,91 @@ final class _DetailsFollow extends ConsumerWidget {
   }
 }
 
-/// The room's state: live, replay or offline, and when it started.
-final class _State extends StatelessWidget {
-  const _State({required this.room});
+/// The title and the room's current state. The on-air facts are one badge —
+/// status, running time and start clock — and the visit's watch time is the
+/// next badge, so the two clocks never read as one undifferentiated line.
+final class _TitleBlock extends StatelessWidget {
+  const _TitleBlock({required this.room, required this.watchStarted});
 
   final LiveRoom room;
+  final DateTime watchStarted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final title = room.content.title.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s6,
+      children: [
+        if (title.isNotEmpty)
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.title.copyWith(color: colors.text, fontWeight: FontWeight.w600, fontSize: 18),
+          ),
+        _StateBadges(room: room, watchStarted: watchStarted),
+      ],
+    );
+  }
+}
+
+/// The two badges: the broadcast's own state with its running time and start
+/// clock on the first line, the visit's watched time on the second, and any
+/// restriction after them. A timer keeps the two durations moving.
+final class _StateBadges extends StatefulWidget {
+  const _StateBadges({required this.room, required this.watchStarted});
+
+  final LiveRoom room;
+  final DateTime watchStarted;
+
+  @override
+  State<_StateBadges> createState() => _StateBadgesState();
+}
+
+final class _StateBadgesState extends State<_StateBadges> {
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
+    final room = widget.room;
     final startedAt = room.broadcast.startedAt;
-    final (label, status) = switch (room.broadcast.effectiveLiveStatus) {
+    final status = room.broadcast.effectiveLiveStatus;
+    final (label, tone) = switch (status) {
       LiveStatus.live => (t.favorites.statusLiveNow, DsStatus.danger),
       LiveStatus.replay => (t.favorites.statusReplay, DsStatus.info),
       _ => (t.favorites.statusOfflineNow, DsStatus.neutral),
     };
+    final onAir = startedAt == null
+        ? label
+        : '$label ${_durationText(startedAt)} · ${t.room.startedAt(time: _startedClock(startedAt))}';
     return Wrap(
-      spacing: DsSpace.s8,
-      runSpacing: DsSpace.s4,
-      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: DsSpace.s6,
+      runSpacing: DsSpace.s6,
       children: [
-        DsBadge(dot: false, label: Text(label), status: status),
-        if (startedAt != null)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s4,
-            children: [
-              DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-              Text(
-                t.room.startedAt(time: _startedClock(startedAt)),
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            ],
-          ),
+        DsBadge(dot: status == LiveStatus.live, label: Text(onAir), status: tone),
+        DsBadge(
+          label: Text('${t.room.statWatched} ${_durationText(widget.watchStarted)}'),
+        ),
         if (room.broadcast.isRestricted)
           DsBadge(
-            dot: false,
             label: Text(_restrictionLabel(t, room.broadcast.effectiveRestriction)),
             status: DsStatus.danger,
           ),
@@ -228,134 +309,197 @@ final class _State extends StatelessWidget {
   }
 }
 
-/// The figures the room's source gave, each named for what it means.
-final class _Figures extends StatelessWidget {
-  const _Figures({required this.room});
+/// The room's own facts — its number and its link, each one line with its
+/// copy verb. The broadcast's state is the badge over the title's line, not
+/// a fact repeated here.
+final class _RoomInfo extends StatelessWidget {
+  const _RoomInfo({required this.room, required this.link, required this.onCopy});
 
   final LiveRoom room;
+  final String link;
+  final void Function(String label, String value) onCopy;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final figures = <(DsIconData, String, int)>[
-      if (room.audience.onlineViewers case final value?) (DsIcons.eye, t.room.onlineViewers, value),
-      if (room.audience.popularity case final value?) (DsIcons.flame, t.room.popularity, value),
-      if (room.audience.totalViewers case final value?) (DsIcons.users, t.room.totalViewers, value),
+    final facts = <(String, String)>[
+      (t.room.roomNumber, room.ref.roomId),
+      if (link.isNotEmpty) (t.room.link, _withoutScheme(link)),
     ];
-    if (figures.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: DsSpace.s16,
-      runSpacing: DsSpace.s6,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
       children: [
-        for (final (icon, label, value) in figures)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s4,
-            children: [
-              DsIcon(icon, size: theme.sizes.iconXs, color: colors.textSubtle),
-              Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-              Text(
-                AudienceFormat.format(value),
-                style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-              ),
-            ],
-          ),
+        for (final (label, value) in facts)
+          _FactCell(label: label, value: value, onCopy: () => onCopy(label, value)),
       ],
     );
   }
 }
 
-/// The three numbers the chat header used to carry: viewers, how long the
-/// room has been on the air, and how long this visit has watched. The header
-/// keeps one line now; a phone finds these here, and a pointer finds them on
-/// the header's hover card.
-final class _SessionFigures extends StatelessWidget {
-  const _SessionFigures({required this.room, required this.watchStarted});
-
-  final LiveRoom room;
-  final DateTime watchStarted;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final online = room.audience.onlineViewers ?? room.audience.totalViewers;
-    final caption = theme.typography.caption.copyWith(color: colors.textSubtle);
-    final value = theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted));
-    Widget cell(String label, String figure) => Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s4,
-      children: [Text(label, style: caption), Text(figure, style: value)],
-    );
-    return Wrap(
-      spacing: DsSpace.s16,
-      runSpacing: DsSpace.s6,
-      children: [
-        cell(t.room.statViewers, online == null ? '—' : AudienceFormat.format(online)),
-        cell(t.room.statOnAir, _durationText(room.broadcast.startedAt)),
-        cell(t.room.statWatched, _durationText(watchStarted)),
-      ],
-    );
-  }
-}
-
-String _durationText(DateTime? since) {
-  if (since == null) return '—';
-  final elapsed = DateTime.now().difference(since);
-  if (elapsed.isNegative) return '00:00:00';
-  String two(int value) => value.toString().padLeft(2, '0');
-  return '${two(elapsed.inHours)}:${two(elapsed.inMinutes.remainder(60))}:${two(elapsed.inSeconds.remainder(60))}';
-}
-
-/// Notice or introduction: a titled card whose text wraps in full.
-final class _TextSection extends StatelessWidget {
-  const _TextSection({required this.label, required this.text});
+/// One fact: a small caption over its value, with the copy verb only where
+/// there is something worth copying.
+final class _FactCell extends StatelessWidget {
+  const _FactCell({required this.label, required this.value, this.onCopy});
 
   final String label;
-  final String text;
+  final String value;
+  final VoidCallback? onCopy;
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
+    final t = context.t;
     final theme = DsTheme.of(context);
-    return DsListSection(
-      header: Text(label),
+    final colors = DsTheme.colorsOf(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s4,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
-          child: Text(text, style: theme.typography.body.copyWith(color: colors.textMuted)),
+        Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+        Row(
+          spacing: DsSpace.s4,
+          children: [
+            Expanded(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.text),
+              ),
+            ),
+            if (onCopy != null)
+              DsTooltip(
+                message: '${t.room.copy} $label',
+                child: DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.xs,
+                  semanticLabel: '${t.room.copy} $label',
+                  onPressed: onCopy,
+                  icon: const DsIcon(DsIcons.copy, size: 13),
+                ),
+              ),
+          ],
         ),
       ],
     );
   }
 }
 
-/// One copyable fact: its name, its value and a copy button.
-final class _CopyRow extends StatelessWidget {
-  const _CopyRow({required this.icon, required this.label, required this.value, required this.onCopy});
+/// Notice or introduction, as a quiet reading block rather than a settings
+/// section: the notice takes the accent edge, the introduction stays neutral.
+/// Long copy folds to two lines; the expand verb keeps the panel one screen.
+final class _InfoText extends StatefulWidget {
+  const _InfoText({required this.label, required this.text, this.emphasis = false});
 
-  final DsIconData icon;
   final String label;
-  final String value;
-  final VoidCallback onCopy;
+  final String text;
+  final bool emphasis;
+
+  @override
+  State<_InfoText> createState() => _InfoTextState();
+}
+
+final class _InfoTextState extends State<_InfoText> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsListRow(
-      leading: DsIcon(icon),
-      title: Text(label),
-      description: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: DsButton.icon(
-        variant: DsButtonVariant.ghost,
-        size: DsSize.sm,
-        semanticLabel: '${t.room.copy} $label',
-        onPressed: onCopy,
-        icon: const DsIcon(DsIcons.copy, size: 16),
-      ),
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final style = theme.typography.body.copyWith(color: colors.textMuted, height: 1.6);
+    final leading = widget.emphasis ? DsSpace.s12 : 0.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: 2,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth - leading);
+        final canExpand = painter.didExceedMaxLines;
+        return Container(
+          padding: EdgeInsetsDirectional.only(start: leading),
+          decoration: widget.emphasis
+              ? BoxDecoration(border: Border(left: BorderSide(color: colors.accent, width: 3)))
+              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s4,
+            children: [
+              Text(
+                widget.label,
+                style: theme.typography.caption.copyWith(
+                  color: widget.emphasis ? colors.text : colors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                widget.text,
+                maxLines: _expanded ? null : 2,
+                overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                style: style,
+              ),
+              if (canExpand)
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.xs,
+                  onPressed: () => setState(() => _expanded = !_expanded),
+                  child: Text(_expanded ? t.room.collapse : t.room.expand),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The panel's verbs: share, open where the platform shows it, and the stream's
+/// own address. One equal-width tile each, so the row reads as a group rather
+/// than three buttons that happened to land together.
+final class _Actions extends StatelessWidget {
+  const _Actions({
+    required this.opensApp,
+    required this.external,
+    required this.directLinks,
+    required this.onShare,
+    required this.onOpen,
+    required this.onDirectLinks,
+  });
+
+  final bool opensApp;
+  final bool external;
+  final bool directLinks;
+  final VoidCallback onShare;
+  final VoidCallback onOpen;
+  final VoidCallback onDirectLinks;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    Widget button(DsIconData icon, String label, VoidCallback onPressed) => DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: DsIcon(icon, size: 15),
+      onPressed: onPressed,
+      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+    );
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        Expanded(child: button(DsIcons.share2, t.room.share, onShare)),
+        if (external)
+          Expanded(
+            child: button(
+              DsIcons.externalLink,
+              opensApp ? t.room.openApp : t.room.openWeb,
+              onOpen,
+            ),
+          ),
+        if (directLinks)
+          Expanded(child: button(DsIcons.link2, t.toolbox.linkDirect, onDirectLinks)),
+      ],
     );
   }
 }
@@ -450,6 +594,14 @@ String _startedClock(DateTime startedAt) {
 }
 
 String _withoutScheme(String link) => link.replaceFirst(RegExp('^https?://'), '');
+
+String _durationText(DateTime? since) {
+  if (since == null) return '—';
+  final elapsed = DateTime.now().difference(since);
+  if (elapsed.isNegative) return '00:00:00';
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(elapsed.inHours)}:${two(elapsed.inMinutes.remainder(60))}:${two(elapsed.inSeconds.remainder(60))}';
+}
 
 /// What keeps the room from playing, in the viewer's language.
 String _restrictionLabel(Translations t, LiveRestriction restriction) => switch (restriction) {

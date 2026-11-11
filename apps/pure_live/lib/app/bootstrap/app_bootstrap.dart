@@ -131,6 +131,13 @@ Future<Boot> bootstrap() async {
       await storageBootstrap.initialize();
       storageLog = appLog.forCategory('storage');
       await StoragePrefs.init();
+      // Per-room picture orientation is gone: the stream geometry frames the
+      // picture now. Drop the dead key so an old choice cannot linger in the
+      // preference store or ride along in a backup.
+      unawaited(StoragePrefs.remove('room.orientation').catchError((Object _) => false));
+  // Chat avatars are gone; the list is text-only now.
+  unawaited(StoragePrefs.remove('danmaku.chatAvatars').catchError((Object _) => false));
+  unawaited(StoragePrefs.remove('danmaku.giftValueInYuan').catchError((Object _) => false));
       // The viewer's own folder choices, read once here: the log tree is
       // pointed at the folder in force, and the cache manager reads the same
       // choice through its provider on the first frame.

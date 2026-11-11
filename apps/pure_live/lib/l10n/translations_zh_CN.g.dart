@@ -7303,6 +7303,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '进入直播间'
 	String get openRoom => '进入直播间';
 
+	/// zh-CN: '复制昵称'
+	String get copyName => '复制昵称';
+
 	/// zh-CN: '复制房间链接'
 	String get copyLink => '复制房间链接';
 
@@ -7369,6 +7372,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '简介'
 	String get introduction => '简介';
 
+	/// zh-CN: '展开'
+	String get expand => '展开';
+
+	/// zh-CN: '收起'
+	String get collapse => '收起';
+
 	/// zh-CN: '房间号'
 	String get roomNumber => '房间号';
 
@@ -7389,6 +7398,12 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '分享失败'
 	String get shareFailed => '分享失败';
+
+	/// zh-CN: '打开APP'
+	String get openApp => '打开APP';
+
+	/// zh-CN: '打开网页'
+	String get openWeb => '打开网页';
 
 	/// zh-CN: '在 {platform} 打开'
 	String openIn({required Object platform}) => '在 ${platform} 打开';
@@ -7435,14 +7450,14 @@ class Translations$room$zh_CN {
 	/// zh-CN: '屏蔽列表'
 	String get blockList => '屏蔽列表';
 
-	/// zh-CN: '超级聊天'
-	String get superChats => '超级聊天';
+	/// zh-CN: '醒目留言'
+	String get superChats => '醒目留言';
 
-	/// zh-CN: '暂无超级聊天'
-	String get superChatEmpty => '暂无超级聊天';
+	/// zh-CN: '暂无醒目留言'
+	String get superChatEmpty => '暂无醒目留言';
 
-	/// zh-CN: '超级聊天加载失败'
-	String get superChatFailed => '超级聊天加载失败';
+	/// zh-CN: '醒目留言加载失败'
+	String get superChatFailed => '醒目留言加载失败';
 
 	/// zh-CN: '会员'
 	String get superChatCardMembership => '会员';
@@ -7500,30 +7515,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '暂时无法播放'
 	String get restrictionUnplayable => '暂时无法播放';
-
-	/// zh-CN: '画面方向'
-	String get orientation => '画面方向';
-
-	/// zh-CN: '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。'
-	String get orientationHint => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。';
-
-	/// zh-CN: '这是一路超宽画面：可以按原比例铺满宽度，或沿用带上下留边的默认画框，也可以固定为竖屏或横屏。'
-	String get orientationHintWide => '这是一路超宽画面：可以按原比例铺满宽度，或沿用带上下留边的默认画框，也可以固定为竖屏或横屏。';
-
-	/// zh-CN: '自动'
-	String get orientationAutomatic => '自动';
-
-	/// zh-CN: '竖屏'
-	String get orientationPortrait => '竖屏';
-
-	/// zh-CN: '横屏'
-	String get orientationLandscape => '横屏';
-
-	/// zh-CN: '铺满宽度'
-	String get orientationFillWidth => '铺满宽度';
-
-	/// zh-CN: '画面方向已更新'
-	String get orientationUpdated => '画面方向已更新';
 
 	/// zh-CN: '竖屏全屏'
 	String get portraitFullscreen => '竖屏全屏';
@@ -7747,8 +7738,8 @@ class Translations$room$zh_CN {
 	/// zh-CN: '已直播 {time: String}'
 	String onAirFor({required String time}) => '已直播 ${time}';
 
-	/// zh-CN: '超聊'
-	String get tabSuperChats => '超聊';
+	/// zh-CN: '醒目留言'
+	String get tabSuperChats => '醒目留言';
 
 	/// zh-CN: '屏蔽'
 	String get tabShield => '屏蔽';
@@ -8965,6 +8956,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '固定弹幕'
 	String get danmakuFixedGroup => '固定弹幕';
 
+	/// zh-CN: '聊天列表已固定'
+	String get chatListFixedTitle => '聊天列表已固定';
+
+	/// zh-CN: '显示用户名和礼物，会员进醒目留言；侧栏、14 px、标准行距、360 px。'
+	String get chatListFixedDesc => '显示用户名和礼物，会员进醒目留言；侧栏、14 px、标准行距、360 px。';
+
 	/// zh-CN: '聊天列表内容'
 	String get chatListGroup => '聊天列表内容';
 
@@ -8979,6 +8976,21 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。'
 	String get danmakuFontManagerDescription => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。';
+
+	/// zh-CN: '弹幕密度'
+	String get styleDensity => '弹幕密度';
+
+	/// zh-CN: '正常'
+	String get styleDensityNormal => '正常';
+
+	/// zh-CN: '较多'
+	String get styleDensityMore => '较多';
+
+	/// zh-CN: '重叠'
+	String get styleDensityOverlap => '重叠';
+
+	/// zh-CN: '高级设置'
+	String get styleAdvanced => '高级设置';
 
 	/// zh-CN: '大小'
 	String get styleFontSize => '大小';
@@ -11797,12 +11809,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭后只显示内容。'
 	String get chatShowNamesDesc => '关闭后只显示内容。';
 
-	/// zh-CN: '显示头像'
-	String get chatShowAvatars => '显示头像';
-
-	/// zh-CN: '平台没给头像时用名字首字占位。'
-	String get chatShowAvatarsDesc => '平台没给头像时用名字首字占位。';
-
 	/// zh-CN: '文字大小'
 	String get chatListFontSize => '文字大小';
 
@@ -11976,12 +11982,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '免费与小额礼物不显示，连击达标才显示。'
 	String get chatGiftsAboveTierDesc => '免费与小额礼物不显示，连击达标才显示。';
-
-	/// zh-CN: '折算成元'
-	String get chatGiftValueInYuan => '折算成元';
-
-	/// zh-CN: '按平台比例折算，外币不换算。'
-	String get chatGiftValueInYuanDesc => '按平台比例折算，外币不换算。';
 
 	/// zh-CN: '会员进醒目留言'
 	String get superChatIncludesMembership => '会员进醒目留言';
@@ -17515,6 +17515,7 @@ extension on Translations {
 			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
+			'room.copyName' => '复制昵称',
 			'room.copyLink' => '复制房间链接',
 			'room.linkCopied' => '链接已复制',
 			'room.record' => '录制',
@@ -17537,6 +17538,8 @@ extension on Translations {
 			'room.detailsHint' => '查看直播间详情',
 			'room.notice' => '公告',
 			'room.introduction' => '简介',
+			'room.expand' => '展开',
+			'room.collapse' => '收起',
 			'room.roomNumber' => '房间号',
 			'room.link' => '链接',
 			'room.copy' => '复制',
@@ -17544,6 +17547,8 @@ extension on Translations {
 			'room.replayed' => '之前发的',
 			'room.share' => '分享',
 			'room.shareFailed' => '分享失败',
+			'room.openApp' => '打开APP',
+			'room.openWeb' => '打开网页',
 			'room.openIn' => ({required Object platform}) => '在 ${platform} 打开',
 			'room.openUnavailable' => '该平台没有提供可打开的链接',
 			'room.openFailed' => '无法打开链接',
@@ -17558,13 +17563,13 @@ extension on Translations {
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
 			'room.danmakuSettings' => '弹幕设置',
-			'room.blockList' => '屏蔽列表',
-			'room.superChats' => '超级聊天',
-			'room.superChatEmpty' => '暂无超级聊天',
-			'room.superChatFailed' => '超级聊天加载失败',
-			'room.superChatCardMembership' => '会员',
 			_ => null,
 		} ?? switch (path) {
+			'room.blockList' => '屏蔽列表',
+			'room.superChats' => '醒目留言',
+			'room.superChatEmpty' => '暂无醒目留言',
+			'room.superChatFailed' => '醒目留言加载失败',
+			'room.superChatCardMembership' => '会员',
 			'room.superChatCardSubscription' => '订阅',
 			'room.onlineViewers' => '在线',
 			'room.popularity' => '热度',
@@ -17583,14 +17588,6 @@ extension on Translations {
 			'room.restrictionPassword' => '需要密码',
 			'room.restrictionAdult' => '年龄限制',
 			'room.restrictionUnplayable' => '暂时无法播放',
-			'room.orientation' => '画面方向',
-			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
-			'room.orientationHintWide' => '这是一路超宽画面：可以按原比例铺满宽度，或沿用带上下留边的默认画框，也可以固定为竖屏或横屏。',
-			'room.orientationAutomatic' => '自动',
-			'room.orientationPortrait' => '竖屏',
-			'room.orientationLandscape' => '横屏',
-			'room.orientationFillWidth' => '铺满宽度',
-			'room.orientationUpdated' => '画面方向已更新',
 			'room.portraitFullscreen' => '竖屏全屏',
 			'room.portraitFullscreenExit' => '退出竖屏全屏',
 			'room.portraitSwipeHint' => '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间',
@@ -17665,7 +17662,7 @@ extension on Translations {
 			'room.autoRoomSwitched' => ({required Object name}) => '当前房间不可看，已自动换到 ${name} 的直播间',
 			'room.autoRoomSwitchStopped' => '关注列表里没有能自动换的直播间了',
 			'room.onAirFor' => ({required String time}) => '已直播 ${time}',
-			'room.tabSuperChats' => '超聊',
+			'room.tabSuperChats' => '醒目留言',
 			'room.tabShield' => '屏蔽',
 			'room.newMessagesBelow' => '以下为新消息',
 			'room.newMessagesCount' => ({required Object count}) => '${count} 条新消息',
@@ -18065,20 +18062,27 @@ extension on Translations {
 			'settings.danmakuColorHue' => '色相',
 			'settings.danmakuColorSaturation' => '饱和度与明度',
 			'settings.danmakuFixedGroup' => '固定弹幕',
+			'settings.chatListFixedTitle' => '聊天列表已固定',
+			'settings.chatListFixedDesc' => '显示用户名和礼物，会员进醒目留言；侧栏、14 px、标准行距、360 px。',
 			'settings.chatListGroup' => '聊天列表内容',
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
 			'settings.danmakuFontDescription' => '仅用于画面弹幕，聊天列表沿用界面字体。',
 			'settings.danmakuFontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。',
+			'settings.styleDensity' => '弹幕密度',
+			'settings.styleDensityNormal' => '正常',
+			'settings.styleDensityMore' => '较多',
+			'settings.styleDensityOverlap' => '重叠',
+			'settings.styleAdvanced' => '高级设置',
 			'settings.styleFontSize' => '大小',
 			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			'settings.styleFontWeight' => '粗细',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleFontWeightDesc' => '字形的粗细；400 为常规，700 为加粗。',
 			'settings.styleLetterSpacing' => '文字间距',
 			'settings.styleLetterSpacingDesc' => '字符之间额外增加的间距，单位像素。',
 			'settings.styleWeightThin' => '极细',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleWeightExtraLight' => '很细',
 			'settings.styleWeightLight' => '偏细',
 			'settings.styleWeightNormal' => '正常',
@@ -18587,12 +18591,12 @@ extension on Translations {
 			'settings.preferredQuality' => '首选画质',
 			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferredQualityCellularDesc' => '移动数据下的清晰度；Wi-Fi 与有线沿用上面的首选。',
 			'settings.qualityAuto' => '自动（站点默认）',
 			'settings.qualityOriginal' => '原画',
 			'settings.qualityBluRay8M' => '蓝光 8M',
-			_ => null,
-		} ?? switch (path) {
 			'settings.qualityBluRay4M' => '蓝光 4M',
 			'settings.qualityBluRay' => '蓝光',
 			'settings.qualityUltra' => '超清',
@@ -19013,8 +19017,6 @@ extension on Translations {
 			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
-			'settings.chatShowAvatars' => '显示头像',
-			'settings.chatShowAvatarsDesc' => '平台没给头像时用名字首字占位。',
 			'settings.chatListFontSize' => '文字大小',
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
@@ -19073,8 +19075,6 @@ extension on Translations {
 			'settings.chatShowGiftsDesc' => '礼物作为独立一行出现。',
 			'settings.chatGiftsAboveTier' => '只显示贵重礼物',
 			'settings.chatGiftsAboveTierDesc' => '免费与小额礼物不显示，连击达标才显示。',
-			'settings.chatGiftValueInYuan' => '折算成元',
-			'settings.chatGiftValueInYuanDesc' => '按平台比例折算，外币不换算。',
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
 			'settings.danmakuShowGifts' => '显示礼物',

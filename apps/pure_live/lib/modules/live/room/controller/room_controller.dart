@@ -1150,24 +1150,9 @@ final class RoomController extends Notifier<RoomState> {
         _pipeline?.removeKeyword(word);
       }
     });
-    ref.listen(chatShowGiftsProvider, (previous, next) {
-      if (previous == next) return;
-      _pipeline?.setChatGifts(enabled: next);
-      if (!next) ref.read(roomChatProvider.notifier).removeGifts();
-    });
-    ref.listen(chatGiftsAboveTierProvider, (previous, next) {
-      if (previous == next) return;
-      final pipeline = _pipeline;
-      if (pipeline != null) pipeline.chatAboveTier = next;
-      if (next) ref.read(roomChatProvider.notifier).removeNormalTierGifts();
-    });
     ref.listen(danmakuShowGiftsProvider, (previous, next) {
       if (previous == next) return;
       _pipeline?.setFlyGifts(enabled: next);
-    });
-    ref.listen(superChatIncludesMembershipProvider, (previous, next) {
-      if (previous == next) return;
-      if (!next) ref.read(roomSuperChatsProvider.notifier).removeMembershipCards();
     });
     ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
       if (previous == next) return;
@@ -2384,8 +2369,8 @@ final class RoomController extends Notifier<RoomState> {
     // flies and lands in the chat list at once.
     final pipeline = RoomDanmakuPipeline(
       ref.read(roomChatProvider.notifier).add,
-      showChatGifts: () => ref.read(chatShowGiftsProvider),
-      chatGiftsAboveTier: () => ref.read(chatGiftsAboveTierProvider),
+      showChatGifts: () => true,
+      chatGiftsAboveTier: () => false,
       showFlyGifts: () => ref.read(danmakuShowGiftsProvider),
       streamer: () => room.anchor?.name ?? '',
       shield: ref.read(shieldRulesProvider),
@@ -2589,7 +2574,6 @@ final class RoomController extends Notifier<RoomState> {
       board.add(message.payload! as LiveSuperChatMessage);
       return;
     }
-    if (!ref.read(superChatIncludesMembershipProvider)) return;
     final card = membershipCard(message, platform: state.room?.ref.platform ?? '', now: DateTime.now());
     if (card != null) board.add(card);
   }

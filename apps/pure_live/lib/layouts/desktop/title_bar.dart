@@ -75,6 +75,7 @@ final class WindowTitleBar extends ConsumerWidget {
                     child: WindowCaptionButton(
                       semanticLabel: t.common.back,
                       icon: DsIcons.arrowLeft,
+                      size: kTitleBarHeight,
                       enabled: canBack,
                       onPressed: onBack,
                     ),
@@ -85,6 +86,7 @@ final class WindowTitleBar extends ConsumerWidget {
                     child: WindowCaptionButton(
                       semanticLabel: t.common.forward,
                       icon: DsIcons.arrowRight,
+                      size: kTitleBarHeight,
                       enabled: canForward,
                       onPressed: onForward,
                     ),
@@ -114,9 +116,10 @@ final class WindowTitleBar extends ConsumerWidget {
                   semanticLabel: t.common.newWindow,
                   tooltip: t.common.newWindow,
                   shortcut: mac ? '⌘N' : 'Ctrl N',
+                  size: kTitleBarHeight,
                   onPressed: () => unawaited(openAppWindow(context)),
                 ),
-                const ThemeModeToggle(),
+                const ThemeModeToggle(size: kTitleBarHeight),
                 if (WindowChromeState.drawsCaptionControls) ...[
                   Container(
                     width: 1,
@@ -124,7 +127,7 @@ final class WindowTitleBar extends ConsumerWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     color: colors.border,
                   ),
-                  const WindowCaptionControls(),
+                  const WindowCaptionControls(height: kTitleBarHeight),
                 ],
               ],
             );
@@ -209,10 +212,10 @@ final class WindowCaptionBar extends ConsumerWidget {
                 ),
               ),
             ),
-            const ThemeModeToggle(),
+            const ThemeModeToggle(size: kTitleBarHeight),
             if (WindowChromeState.drawsCaptionControls) ...[
               Container(width: 1, height: 20, margin: const EdgeInsets.symmetric(horizontal: 4), color: colors.border),
-              const WindowCaptionControls(),
+              const WindowCaptionControls(height: kTitleBarHeight),
             ],
           ],
         ),
@@ -247,17 +250,24 @@ final class _SidebarToggleButton extends ConsumerWidget {
           builder: (context, states, _) {
             final hovered = states.contains(WidgetState.hovered);
             final pressed = states.contains(WidgetState.pressed);
-            return ColoredBox(
-              color: pressed
-                  ? colors.press
-                  : hovered
-                  ? colors.hover
-                  : const Color(0x00000000),
-              child: Center(
-                child: DsIcon(
-                  hovered ? (expanded ? DsIcons.panelLeftClose : DsIcons.panelLeftOpen) : DsIcons.tv,
-                  size: 16,
-                  color: colors.text,
+            final background = pressed
+                ? colors.press
+                : hovered
+                ? colors.hover
+                : null;
+            return Padding(
+              padding: const EdgeInsets.all(DsSpace.s4),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: background,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: DsIcon(
+                    hovered ? (expanded ? DsIcons.panelLeftClose : DsIcons.panelLeftOpen) : DsIcons.tv,
+                    size: 16,
+                    color: colors.text,
+                  ),
                 ),
               ),
             );

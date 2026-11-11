@@ -527,6 +527,15 @@ class DanmakuStyleController extends Notifier<DanmakuStyle> {
   /// same-screen ceiling.
   Future<void> setMassMode({required bool value}) => _write(_next(massMode: value));
 
+  /// Applies a density preset in one write: normal and more cap the same-screen
+  /// lines, overlap turns on mass mode.
+  Future<void> setDensity({required bool massMode, required int maxVisibleCount}) => _write(
+    _next(
+      massMode: massMode,
+      maxVisibleCount: maxVisibleCount.clamp(DanmakuStyleRange.maxVisibleMin, DanmakuStyleRange.maxVisibleMax),
+    ),
+  );
+
   /// Moves a lane's height, writing through.
   Future<void> setTrackHeight(double value) =>
       _write(_next(trackHeight: value.clamp(DanmakuStyleRange.trackHeightMin, DanmakuStyleRange.trackHeightMax)));

@@ -140,12 +140,12 @@ final class RouteCaptionTail extends StatelessWidget {
 /// desktop that draws its own caption; the plain [child] elsewhere.
 Widget routeCaptionTitle(Widget child) => WindowChromeState.drawsCaptionControls ? WindowDragArea(child: child) : child;
 
-/// One caption button: a hover fill, the danger tint on close, and the label
-/// a screen reader reads.
+/// One caption button: a small rounded hover, the panel close button's own
+/// proportions, and the label a screen reader reads.
 ///
 /// Shared by the caption triple and by the trail arrows in the strip, so the
-/// two never drift apart. A square [size] makes the button fill the height of
-/// the bar it sits in.
+/// two never drift apart. A square [size] is the hit area; the hover fill sits
+/// inset from it, with the same 6 px corners as the panel's close button.
 final class WindowCaptionButton extends ConsumerWidget {
   /// A caption button [size] logical pixels square.
   const WindowCaptionButton({
@@ -175,7 +175,7 @@ final class WindowCaptionButton extends ConsumerWidget {
   /// say.
   final bool enabled;
 
-  /// Paints the close button's fill in the danger colour.
+  /// Paints the close button red under the pointer, with a white glyph.
   final bool danger;
 
   /// The glyph's colour; the theme's text when null.
@@ -193,22 +193,26 @@ final class WindowCaptionButton extends ConsumerWidget {
         builder: (context, states, _) {
           final hovered = states.contains(WidgetState.hovered);
           final pressed = states.contains(WidgetState.pressed);
-          Color? background;
-          if (enabled) {
-            if (danger && hovered) {
-              background = colors.danger.fill;
-            } else if (hovered || pressed) {
-              background = pressed ? colors.press : colors.hover;
-            }
-          }
-          return ColoredBox(
-            color: background ?? const Color(0x00000000),
-            child: Center(
-              child: DsIcon(
-                icon,
-                size: 14,
-                color: enabled ? ink ?? colors.text : ink?.withValues(alpha: 0.5) ?? colors.textSubtle,
+          final hot = enabled && (hovered || pressed);
+          final dangerFill = danger && hot;
+          final background = dangerFill
+              ? (pressed ? colors.danger.fillPress : colors.danger.fill)
+              : hot
+              ? (pressed ? colors.press : colors.hover)
+              : null;
+          final glyph = dangerFill
+              ? colors.danger.onFill
+              : enabled
+              ? ink ?? colors.text
+              : ink?.withValues(alpha: 0.5) ?? colors.textSubtle;
+          return Padding(
+            padding: const EdgeInsets.all(DsSpace.s4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(6),
               ),
+              child: Center(child: DsIcon(icon, size: 16, color: glyph)),
             ),
           );
         },

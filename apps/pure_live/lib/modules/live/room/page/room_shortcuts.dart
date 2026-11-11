@@ -12,7 +12,6 @@ enum RoomShortcutAction {
   volumeUp,
   volumeDown,
   chatColumn,
-  stats,
   screenshot,
   retry,
   help,
@@ -79,11 +78,6 @@ List<RoomShortcutBinding> roomShortcutBindings(
       keys: const [SingleActivator(LogicalKeyboardKey.keyT)],
       label: t.room.shortcutChatColumn,
     ),
-  RoomShortcutBinding(
-    action: RoomShortcutAction.stats,
-    keys: const [SingleActivator(LogicalKeyboardKey.keyI)],
-    label: t.room.statsToggle,
-  ),
   if (!tv && canCaptureScreenshot)
     RoomShortcutBinding(
       action: RoomShortcutAction.screenshot,

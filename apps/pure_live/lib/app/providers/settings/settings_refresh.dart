@@ -36,7 +36,6 @@ import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/areas/controllers/areas_controller.dart' show areaLayoutProvider;
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/search/search_scope.dart' show searchExcludedProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
@@ -78,10 +77,8 @@ final List<ProviderOrFamily> kSettingsProviders = [
   danmakuHoldProvider,
   danmakuRepeatProvider,
   chatNamesProvider,
-  chatAvatarsProvider,
   chatShowGiftsProvider,
   chatGiftsAboveTierProvider,
-  chatGiftValueInYuanProvider,
   superChatIncludesMembershipProvider,
   danmakuShowGiftsProvider,
   detectClipboardRoomsProvider,
@@ -94,7 +91,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   floatingWindowSettingsProvider,
   shieldRulesProvider,
   danmakuFilterProvider,
-  roomOrientationChoicesProvider,
   browseLayoutProvider,
   browseSettingsProvider,
   roomCardSettingsProvider,

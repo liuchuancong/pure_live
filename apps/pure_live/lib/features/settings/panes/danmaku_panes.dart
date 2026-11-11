@@ -7,22 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart'
     show BarrageItemMapper, DanmakuColor, DanmakuMessage, DanmakuMessageType, DanmakuPlacement, DanmakuStyle;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
-    show
-        ChatMode,
-        ChatStreamCorner,
-        chatAvatarsProvider,
-        chatGiftValueInYuanProvider,
-        chatGiftsAboveTierProvider,
-        chatListFontSizeProvider,
-        chatListLineSpacingProvider,
-        chatModeProvider,
-        chatNamesProvider,
-        chatPanelWidthProvider,
-        chatShowGiftsProvider,
-        chatStreamCornerProvider,
-        kChatPanelWidthMax,
-        kChatPanelWidthMin;
 import 'package:pure_live/features/settings/danmaku/danmaku_fixed_providers.dart'
     show
         danmakuFixedBottomProvider,
@@ -31,11 +15,9 @@ import 'package:pure_live/features/settings/danmaku/danmaku_fixed_providers.dart
         kDanmakuFixedDurationMax,
         kDanmakuFixedDurationMin;
 import 'package:pure_live/features/settings/danmaku/danmaku_hold_provider.dart' show danmakuHoldProvider;
-import 'package:pure_live/features/settings/danmaku/danmaku_show_gifts_provider.dart' show danmakuShowGiftsProvider;
 // The app's DanmakuStyle record and media_core's per-message override share a
 // name; the engine's one is the one this page builds sample messages with.
 import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart' hide DanmakuStyle;
-import 'package:pure_live/features/settings/danmaku/super_chat_settings.dart' show superChatIncludesMembershipProvider;
 import 'package:pure_live/features/settings/dialogs/color_picker.dart' show ColorDot, colorPickerHexLabel;
 import 'package:pure_live/features/settings/dialogs/danmaku_color_dialog.dart' show showDanmakuColorDialog;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart' show fontFamilyLabel, showFontManagerPage;
@@ -44,7 +26,7 @@ import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection, settingsChildrenOf;
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/shield.dart' show ShieldPane;
 import 'package:pure_live/shared/danmaku/danmaku.dart' show DanmakuSaveFormatsSection;
@@ -55,9 +37,6 @@ import 'package:pure_live/shared/player/barrage_config.dart' show playerBarrageC
 enum DanmakuTab {
   /// The flying layer: the sample, the interaction and the save formats.
   look,
-
-  /// The chat list beside the picture.
-  list,
 
   /// The face the danmaku draws in.
   font,
@@ -92,7 +71,6 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
   /// segment with it instead of leaving a tab that opens nothing.
   static const List<(DanmakuTab, SettingsSection?)> _segments = [
     (DanmakuTab.look, null),
-    (DanmakuTab.list, SettingsSection.danmakuDisplay),
     (DanmakuTab.font, null),
     (DanmakuTab.shield, SettingsSection.shield),
   ];
@@ -108,14 +86,12 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
 
   static String _segmentLabel(Translations t, DanmakuTab tab) => switch (tab) {
     DanmakuTab.look => t.settings.navDanmaku,
-    DanmakuTab.list => t.settings.danmakuList,
     DanmakuTab.font => t.settings.danmakuFont,
     DanmakuTab.shield => t.shield.title,
   };
 
   static DsIconData _segmentIcon(DanmakuTab tab) => switch (tab) {
     DanmakuTab.look => DsIcons.captions,
-    DanmakuTab.list => DsIcons.list,
     DanmakuTab.font => DsIcons.type,
     DanmakuTab.shield => DsIcons.shield,
   };
@@ -163,7 +139,6 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
         ),
         switch (tab) {
           DanmakuTab.look => _look(context),
-          DanmakuTab.list => const DanmakuDisplayPane(),
           DanmakuTab.font => _font(context),
           DanmakuTab.shield => const ShieldPane(),
         },
@@ -266,6 +241,10 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
   /// The category shown in the sidebar.
   _StyleSection _section = _StyleSection.text;
 
+  /// Whether the full bench of style knobs is out. The common controls stay
+  /// above it; the engineering knobs only appear when asked for.
+  bool _advanced = false;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -273,48 +252,96 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        // The way back out of any wrong turn sits at the very top as a
-        // button, not as one more row to scroll past: the viewer who came
-        // here to undo a change finds it without looking.
-        Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            leading: const DsIcon(DsIcons.rotateCw, size: 16),
-            onPressed: _resetAll,
-            child: Text(t.settings.styleReset),
-          ),
+        _coreSection(context),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.settings2),
+              title: Text(t.settings.styleAdvanced),
+              showChevron: true,
+              onPressed: () => setState(() => _advanced = !_advanced),
+            ),
+          ],
         ),
-        // Five names do not fit a narrow sidebar on one line: the control
-        // scrolls sideways instead of squeezing its own segments.
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DsSegmentedControl<_StyleSection>(
-              value: _section,
-              semanticLabel: t.settings.danmakuStyleGroup,
-              segments: [
-                DsSegment(value: _StyleSection.text, label: Text(t.settings.danmakuSectionText)),
-                DsSegment(value: _StyleSection.effects, label: Text(t.settings.danmakuSectionEffects)),
-                DsSegment(value: _StyleSection.layout, label: Text(t.settings.danmakuSectionLayout)),
-                DsSegment(value: _StyleSection.performance, label: Text(t.settings.danmakuSectionPerformance)),
-                DsSegment(value: _StyleSection.mini, label: Text(t.settings.danmakuSectionMini)),
-              ],
-              onChanged: (value) => setState(() => _section = value),
+        if (_advanced) ...[
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.rotateCw, size: 16),
+              onPressed: _resetAll,
+              child: Text(t.settings.styleReset),
             ),
           ),
-        ),
-        switch (_section) {
-          _StyleSection.text => _textSection(context),
-          _StyleSection.effects => _effectsSection(context),
-          _StyleSection.layout => _layoutSection(context),
-          _StyleSection.performance => _performanceSection(context),
-          _StyleSection.mini => _miniSection(context),
-        },
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DsSegmentedControl<_StyleSection>(
+                value: _section,
+                semanticLabel: t.settings.danmakuStyleGroup,
+                segments: [
+                  DsSegment(value: _StyleSection.text, label: Text(t.settings.danmakuSectionText)),
+                  DsSegment(value: _StyleSection.effects, label: Text(t.settings.danmakuSectionEffects)),
+                  DsSegment(value: _StyleSection.layout, label: Text(t.settings.danmakuSectionLayout)),
+                  DsSegment(value: _StyleSection.performance, label: Text(t.settings.danmakuSectionPerformance)),
+                  DsSegment(value: _StyleSection.mini, label: Text(t.settings.danmakuSectionMini)),
+                ],
+                onChanged: (value) => setState(() => _section = value),
+              ),
+            ),
+          ),
+          switch (_section) {
+            _StyleSection.text => _textSection(context),
+            _StyleSection.effects => _effectsSection(context),
+            _StyleSection.layout => _layoutSection(context),
+            _StyleSection.performance => _performanceSection(context),
+            _StyleSection.mini => _miniSection(context),
+          },
+        ],
       ],
     );
+  }
+
+  /// The five controls most viewers touch: where the layer flies, how dense it
+  /// is, how opaque, how large and how fast. Everything else waits behind the
+  /// advanced row.
+  Widget _coreSection(BuildContext context) {
+    final t = context.t;
+    final style = ref.watch(danmakuStyleProvider);
+    final controller = ref.read(danmakuStyleProvider.notifier);
+    final density = style.massMode ? 2 : (style.maxVisibleCount > 60 ? 1 : 0);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.layers),
+          title: t.settings.styleDensity,
+          controlWidth: 220,
+          control: DsSegmentedControl<int>(
+            value: density,
+            semanticLabel: t.settings.styleDensity,
+            segments: [
+              DsSegment(value: 0, label: Text(t.settings.styleDensityNormal)),
+              DsSegment(value: 1, label: Text(t.settings.styleDensityMore)),
+              DsSegment(value: 2, label: Text(t.settings.styleDensityOverlap)),
+            ],
+            onChanged: (value) => unawaited(_setDensity(controller, value)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _setDensity(DanmakuStyleController controller, int value) async {
+    switch (value) {
+      case 2:
+        await controller.setDensity(massMode: true, maxVisibleCount: 120);
+      case 1:
+        await controller.setDensity(massMode: false, maxVisibleCount: 80);
+      default:
+        await controller.setDensity(massMode: false, maxVisibleCount: 48);
+    }
   }
 
   /// Restores every knob the flying layer owns, whichever category shows it.
@@ -527,14 +554,6 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             ),
           ),
         ],
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.gift),
-          title: t.settings.danmakuShowGifts,
-          control: DsSwitch(
-            value: ref.watch(danmakuShowGiftsProvider),
-            onChanged: (value) => unawaited(ref.read(danmakuShowGiftsProvider.notifier).set(value: value)),
-          ),
-        ),
       ],
     );
   }
@@ -929,164 +948,6 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
   Future<void> _pickColor({required int initial, required ValueChanged<int> onPicked}) async {
     final picked = await showDanmakuColorDialog(context, initial: initial);
     if (picked != null) onPicked(picked);
-  }
-}
-
-/// The chat list beside the picture: whose name shows, what the list keeps,
-/// and how the lines are set.
-final class DanmakuDisplayPane extends ConsumerWidget {
-  /// The pane.
-  const DanmakuDisplayPane({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final showGifts = ref.watch(chatShowGiftsProvider);
-    final chatMode = ref.watch(chatModeProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        DsListSection(
-          header: Text(t.settings.chatListGroup),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.userRound),
-              title: t.settings.chatShowNames,
-              description: t.settings.chatShowNamesDesc,
-              control: DsSwitch(
-                value: ref.watch(chatNamesProvider),
-                onChanged: (value) => unawaited(ref.read(chatNamesProvider.notifier).set(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.circleUser),
-              title: t.settings.chatShowAvatars,
-              description: t.settings.chatShowAvatarsDesc,
-              control: DsSwitch(
-                value: ref.watch(chatAvatarsProvider),
-                onChanged: (value) => unawaited(ref.read(chatAvatarsProvider.notifier).set(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gift),
-              title: t.settings.chatShowGifts,
-              description: t.settings.chatShowGiftsDesc,
-              control: DsSwitch(
-                value: showGifts,
-                onChanged: (value) => unawaited(ref.read(chatShowGiftsProvider.notifier).set(value: value)),
-              ),
-            ),
-            // The gift rows' own filters exist only while gift lines do.
-            if (showGifts) ...[
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.coins),
-                title: t.settings.chatGiftsAboveTier,
-                description: t.settings.chatGiftsAboveTierDesc,
-                control: DsSwitch(
-                  value: ref.watch(chatGiftsAboveTierProvider),
-                  onChanged: (value) => unawaited(ref.read(chatGiftsAboveTierProvider.notifier).set(value: value)),
-                ),
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.banknote),
-                title: t.settings.chatGiftValueInYuan,
-                description: t.settings.chatGiftValueInYuanDesc,
-                control: DsSwitch(
-                  value: ref.watch(chatGiftValueInYuanProvider),
-                  onChanged: (value) => unawaited(ref.read(chatGiftValueInYuanProvider.notifier).set(value: value)),
-                ),
-              ),
-            ],
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.rocket),
-              title: t.settings.superChatIncludesMembership,
-              description: t.settings.superChatIncludesMembershipDesc,
-              control: DsSwitch(
-                value: ref.watch(superChatIncludesMembershipProvider),
-                onChanged: (value) =>
-                    unawaited(ref.read(superChatIncludesMembershipProvider.notifier).set(value: value)),
-              ),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.settings.chatListLayoutGroup),
-          children: [
-            SettingsChoiceRow<ChatMode>(
-              leading: const DsIcon(DsIcons.messageSquare),
-              title: t.settings.chatPresentation,
-              description: t.settings.chatPresentationDesc,
-              value: chatMode,
-              options: [
-                DsSelectOption(value: ChatMode.column, label: t.settings.chatPresentationColumn),
-                DsSelectOption(value: ChatMode.stream, label: t.settings.chatPresentationStream),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatModeProvider.notifier).set(value)),
-            ),
-            // The corner only means something while the stream is the
-            // presentation; the row stays visible and disabled otherwise.
-            SettingsChoiceRow<ChatStreamCorner>(
-              leading: const DsIcon(DsIcons.pictureInPicture2),
-              title: t.settings.chatStreamCorner,
-              description: t.settings.chatStreamCornerDesc,
-              value: ref.watch(chatStreamCornerProvider),
-              options: [
-                DsSelectOption(value: ChatStreamCorner.topRight, label: t.settings.chatStreamCornerTopRight),
-                DsSelectOption(value: ChatStreamCorner.bottomRight, label: t.settings.chatStreamCornerBottomRight),
-                DsSelectOption(value: ChatStreamCorner.topLeft, label: t.settings.chatStreamCornerTopLeft),
-                DsSelectOption(value: ChatStreamCorner.bottomLeft, label: t.settings.chatStreamCornerBottomLeft),
-              ],
-              onChanged: chatMode == ChatMode.stream
-                  ? (value) => unawaited(ref.read(chatStreamCornerProvider.notifier).set(value))
-                  : null,
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.caseSensitive),
-              title: t.settings.chatListFontSize,
-              description: t.settings.chatListFontSizeDesc,
-              value: ref.watch(chatListFontSizeProvider),
-              options: [
-                DsSelectOption(value: 0, label: t.settings.chatListFollowTheme),
-                for (final size in const [12, 14, 16, 18, 20, 22])
-                  DsSelectOption(
-                    value: size,
-                    label: t.settings.chatListFontSizeValue(size: size),
-                  ),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatListFontSizeProvider.notifier).set(value)),
-            ),
-            SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.moveVertical),
-              title: t.settings.chatListLineSpacing,
-              description: t.settings.chatListLineSpacingDesc,
-              value: ref.watch(chatListLineSpacingProvider),
-              options: [
-                DsSelectOption(value: 'compact', label: t.settings.chatListSpacingCompact),
-                DsSelectOption(value: 'standard', label: t.settings.chatListSpacingStandard),
-                DsSelectOption(value: 'loose', label: t.settings.chatListSpacingLoose),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatListLineSpacingProvider.notifier).set(value)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.panelRight),
-              title: t.settings.chatPanelWidth,
-              description: t.settings.chatPanelWidthDesc,
-              detail: Text('${ref.watch(chatPanelWidthProvider).round()} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: ref.watch(chatPanelWidthProvider),
-                min: kChatPanelWidthMin,
-                max: kChatPanelWidthMax,
-                divisions: ((kChatPanelWidthMax - kChatPanelWidthMin) / 20).round(),
-                onChanged: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
-                semanticLabel: t.settings.chatPanelWidth,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }
 

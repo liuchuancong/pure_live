@@ -14,7 +14,6 @@ export 'controller/room_open_timing.dart';
 export 'page/audio_only_cover.dart';
 export 'page/player_surface.dart';
 export 'page/room_details.dart';
-export 'page/room_orientation.dart';
 export 'page/room_page.dart';
 export 'page/room_refresh_rate.dart';
 export 'page/room_status.dart';

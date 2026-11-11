@@ -2579,6 +2579,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get offlineReason => 'The live picture appears here when the room goes live';
 	@override String get detailFailed => 'The room details did not load';
 	@override String get openRoom => 'Open the room';
+	@override String get copyName => 'Copy name';
 	@override String get copyLink => 'Copy room link';
 	@override String get linkCopied => 'Link copied';
 	@override String get record => 'Record';
@@ -2601,6 +2602,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get detailsHint => 'View room details';
 	@override String get notice => 'Notice';
 	@override String get introduction => 'About';
+	@override String get expand => 'Expand';
+	@override String get collapse => 'Collapse';
 	@override String get roomNumber => 'Room ID';
 	@override String get link => 'Link';
 	@override String get copy => 'Copy';
@@ -2608,6 +2611,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get replayed => 'sent before';
 	@override String get share => 'Share';
 	@override String get shareFailed => 'The share failed';
+	@override String get openApp => 'Open app';
+	@override String get openWeb => 'Open web';
 	@override String openIn({required Object platform}) => 'Open in ${platform}';
 	@override String get openUnavailable => 'This platform offers no link to open';
 	@override String get openFailed => 'The link could not be opened';
@@ -2623,9 +2628,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get keywordBlocked => 'The keyword is blocked';
 	@override String get danmakuSettings => 'Danmaku settings';
 	@override String get blockList => 'Block list';
-	@override String get superChats => 'Super chats';
+	@override String get superChats => 'Super chat';
 	@override String get superChatEmpty => 'No super chats now';
-	@override String get superChatFailed => 'The super chats did not load';
+	@override String get superChatFailed => 'Super chats did not load';
 	@override String get superChatCardMembership => 'Membership';
 	@override String get superChatCardSubscription => 'Subscription';
 	@override String get onlineViewers => 'Live viewers';
@@ -2645,14 +2650,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get restrictionPassword => 'Password required';
 	@override String get restrictionAdult => 'Age restricted';
 	@override String get restrictionUnplayable => 'Not playable now';
-	@override String get orientation => 'Picture orientation';
-	@override String get orientationHint => 'Follow the picture’s own shape, or fix this room to portrait or landscape.';
-	@override String get orientationHintWide => 'This picture is ultra-wide: fill the width at its own ratio, keep the default frame with its bars, or fix this room to portrait or landscape.';
-	@override String get orientationAutomatic => 'Automatic';
-	@override String get orientationPortrait => 'Portrait';
-	@override String get orientationLandscape => 'Landscape';
-	@override String get orientationFillWidth => 'Fill width';
-	@override String get orientationUpdated => 'Picture orientation updated';
 	@override String get portraitFullscreen => 'Portrait full screen';
 	@override String get portraitFullscreenExit => 'Exit portrait full screen';
 	@override String get portraitSwipeHint => 'In the portrait full screen · swipe up or down for another room';
@@ -2727,7 +2724,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String autoRoomSwitched({required Object name}) => 'This room cannot be watched — switched to ${name}';
 	@override String get autoRoomSwitchStopped => 'No live room left to switch to in the follows';
 	@override String onAirFor({required String time}) => 'On air ${time}';
-	@override String get tabSuperChats => 'Chats';
+	@override String get tabSuperChats => 'Super chat';
 	@override String get tabShield => 'Shield';
 	@override String get newMessagesBelow => 'New messages below';
 	@override String newMessagesCount({required Object count}) => '${count} new messages';
@@ -3145,11 +3142,18 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuColorHue => 'Hue';
 	@override String get danmakuColorSaturation => 'Saturation and brightness';
 	@override String get danmakuFixedGroup => 'Pinned danmaku';
+	@override String get chatListFixedTitle => 'Chat list is fixed';
+	@override String get chatListFixedDesc => 'Names and gifts show, memberships go to super chat; side column, 14 px, standard spacing, 360 px.';
 	@override String get chatListGroup => 'Chat list content';
 	@override String get chatListLayoutGroup => 'Chat list layout';
 	@override String get danmakuFont => 'Danmaku font';
 	@override String get danmakuFontDescription => 'For flying danmaku only; the chat list keeps the UI font.';
 	@override String get danmakuFontManagerDescription => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.';
+	@override String get styleDensity => 'Density';
+	@override String get styleDensityNormal => 'Normal';
+	@override String get styleDensityMore => 'More';
+	@override String get styleDensityOverlap => 'Overlap';
+	@override String get styleAdvanced => 'Advanced';
 	@override String get styleFontSize => 'Size';
 	@override String get styleFontSizeDesc => 'Font size of a flying danmaku, in pixels.';
 	@override String get styleFontWeight => 'Weight';
@@ -4089,8 +4093,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFolderPermissionHint => 'The chosen folder is not writable. Grant storage access, or use the default folder.';
 	@override String get chatShowNames => 'Show names';
 	@override String get chatShowNamesDesc => 'Off shows the message only.';
-	@override String get chatShowAvatars => 'Show avatars';
-	@override String get chatShowAvatarsDesc => 'A sender with no picture wears their initial instead.';
 	@override String get chatListFontSize => 'Text size';
 	@override String get chatListFontSizeDesc => 'Follow theme keeps it in step.';
 	@override String get chatListFollowTheme => 'Follow theme';
@@ -4149,8 +4151,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get chatShowGiftsDesc => 'Gifts appear as their own lines.';
 	@override String get chatGiftsAboveTier => 'Valuable gifts only';
 	@override String get chatGiftsAboveTierDesc => 'Free and small gifts stay out; a combo shows once it adds up.';
-	@override String get chatGiftValueInYuan => 'Values in yuan';
-	@override String get chatGiftValueInYuanDesc => 'Converted at the platform rate; foreign currencies stay.';
 	@override String get superChatIncludesMembership => 'Memberships as cards';
 	@override String get superChatIncludesMembershipDesc => 'Subscriptions get a card too; the chat list stays.';
 	@override String get danmakuShowGifts => 'Show gifts';
@@ -7730,6 +7730,7 @@ extension on TranslationsEn {
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
+			'room.copyName' => 'Copy name',
 			'room.copyLink' => 'Copy room link',
 			'room.linkCopied' => 'Link copied',
 			'room.record' => 'Record',
@@ -7752,6 +7753,8 @@ extension on TranslationsEn {
 			'room.detailsHint' => 'View room details',
 			'room.notice' => 'Notice',
 			'room.introduction' => 'About',
+			'room.expand' => 'Expand',
+			'room.collapse' => 'Collapse',
 			'room.roomNumber' => 'Room ID',
 			'room.link' => 'Link',
 			'room.copy' => 'Copy',
@@ -7759,6 +7762,8 @@ extension on TranslationsEn {
 			'room.replayed' => 'sent before',
 			'room.share' => 'Share',
 			'room.shareFailed' => 'The share failed',
+			'room.openApp' => 'Open app',
+			'room.openWeb' => 'Open web',
 			'room.openIn' => ({required Object platform}) => 'Open in ${platform}',
 			'room.openUnavailable' => 'This platform offers no link to open',
 			'room.openFailed' => 'The link could not be opened',
@@ -7773,13 +7778,13 @@ extension on TranslationsEn {
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
 			'room.danmakuSettings' => 'Danmaku settings',
-			'room.blockList' => 'Block list',
-			'room.superChats' => 'Super chats',
-			'room.superChatEmpty' => 'No super chats now',
-			'room.superChatFailed' => 'The super chats did not load',
-			'room.superChatCardMembership' => 'Membership',
 			_ => null,
 		} ?? switch (path) {
+			'room.blockList' => 'Block list',
+			'room.superChats' => 'Super chat',
+			'room.superChatEmpty' => 'No super chats now',
+			'room.superChatFailed' => 'Super chats did not load',
+			'room.superChatCardMembership' => 'Membership',
 			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
@@ -7798,14 +7803,6 @@ extension on TranslationsEn {
 			'room.restrictionPassword' => 'Password required',
 			'room.restrictionAdult' => 'Age restricted',
 			'room.restrictionUnplayable' => 'Not playable now',
-			'room.orientation' => 'Picture orientation',
-			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
-			'room.orientationHintWide' => 'This picture is ultra-wide: fill the width at its own ratio, keep the default frame with its bars, or fix this room to portrait or landscape.',
-			'room.orientationAutomatic' => 'Automatic',
-			'room.orientationPortrait' => 'Portrait',
-			'room.orientationLandscape' => 'Landscape',
-			'room.orientationFillWidth' => 'Fill width',
-			'room.orientationUpdated' => 'Picture orientation updated',
 			'room.portraitFullscreen' => 'Portrait full screen',
 			'room.portraitFullscreenExit' => 'Exit portrait full screen',
 			'room.portraitSwipeHint' => 'In the portrait full screen · swipe up or down for another room',
@@ -7880,7 +7877,7 @@ extension on TranslationsEn {
 			'room.autoRoomSwitched' => ({required Object name}) => 'This room cannot be watched — switched to ${name}',
 			'room.autoRoomSwitchStopped' => 'No live room left to switch to in the follows',
 			'room.onAirFor' => ({required String time}) => 'On air ${time}',
-			'room.tabSuperChats' => 'Chats',
+			'room.tabSuperChats' => 'Super chat',
 			'room.tabShield' => 'Shield',
 			'room.newMessagesBelow' => 'New messages below',
 			'room.newMessagesCount' => ({required Object count}) => '${count} new messages',
@@ -8280,20 +8277,27 @@ extension on TranslationsEn {
 			'settings.danmakuColorHue' => 'Hue',
 			'settings.danmakuColorSaturation' => 'Saturation and brightness',
 			'settings.danmakuFixedGroup' => 'Pinned danmaku',
+			'settings.chatListFixedTitle' => 'Chat list is fixed',
+			'settings.chatListFixedDesc' => 'Names and gifts show, memberships go to super chat; side column, 14 px, standard spacing, 360 px.',
 			'settings.chatListGroup' => 'Chat list content',
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
 			'settings.danmakuFontDescription' => 'For flying danmaku only; the chat list keeps the UI font.',
 			'settings.danmakuFontManagerDescription' => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.',
+			'settings.styleDensity' => 'Density',
+			'settings.styleDensityNormal' => 'Normal',
+			'settings.styleDensityMore' => 'More',
+			'settings.styleDensityOverlap' => 'Overlap',
+			'settings.styleAdvanced' => 'Advanced',
 			'settings.styleFontSize' => 'Size',
 			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
 			'settings.styleFontWeight' => 'Weight',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleFontWeightDesc' => 'How thick the glyphs are; 400 is regular and 700 is bold.',
 			'settings.styleLetterSpacing' => 'Letter spacing',
 			'settings.styleLetterSpacingDesc' => 'Extra space added between characters, in pixels.',
 			'settings.styleWeightThin' => 'Thin',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleWeightExtraLight' => 'Extra Light',
 			'settings.styleWeightLight' => 'Light',
 			'settings.styleWeightNormal' => 'Normal',
@@ -8802,12 +8806,12 @@ extension on TranslationsEn {
 			'settings.preferredQuality' => 'Preferred quality',
 			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferredQualityCellularDesc' => 'Quality on mobile data; Wi-Fi and wired keep the default above.',
 			'settings.qualityAuto' => 'Automatic (site default)',
 			'settings.qualityOriginal' => 'Original',
 			'settings.qualityBluRay8M' => 'Blu-ray 8M',
-			_ => null,
-		} ?? switch (path) {
 			'settings.qualityBluRay4M' => 'Blu-ray 4M',
 			'settings.qualityBluRay' => 'Blu-ray',
 			'settings.qualityUltra' => 'Ultra HD',
@@ -9228,8 +9232,6 @@ extension on TranslationsEn {
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
-			'settings.chatShowAvatars' => 'Show avatars',
-			'settings.chatShowAvatarsDesc' => 'A sender with no picture wears their initial instead.',
 			'settings.chatListFontSize' => 'Text size',
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
 			'settings.chatListFollowTheme' => 'Follow theme',
@@ -9288,8 +9290,6 @@ extension on TranslationsEn {
 			'settings.chatShowGiftsDesc' => 'Gifts appear as their own lines.',
 			'settings.chatGiftsAboveTier' => 'Valuable gifts only',
 			'settings.chatGiftsAboveTierDesc' => 'Free and small gifts stay out; a combo shows once it adds up.',
-			'settings.chatGiftValueInYuan' => 'Values in yuan',
-			'settings.chatGiftValueInYuanDesc' => 'Converted at the platform rate; foreign currencies stay.',
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
 			'settings.danmakuShowGifts' => 'Show gifts',

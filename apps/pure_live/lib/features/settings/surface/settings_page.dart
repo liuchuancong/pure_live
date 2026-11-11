@@ -493,7 +493,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.fontDanmaku => const FontManagerPage(danmaku: true),
       // The merged page's categories keep their own deep links: a stored link
       // or a search hit opens the page on the matching segment.
-      SettingsSection.danmakuDisplay => const DanmakuPane(initialTab: DanmakuTab.list),
+      SettingsSection.danmakuDisplay => const DanmakuPane(),
       SettingsSection.shield => const DanmakuPane(initialTab: DanmakuTab.shield),
       SettingsSection.recording => const RecordingPane(),
       SettingsSection.quality ||

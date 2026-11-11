@@ -8,7 +8,7 @@ import 'package:live_storage/live_storage.dart';
 /// adds a pref adds it here and every older backup keeps restoring (the
 /// document's `settings` section is read per key, absent keys stay
 /// untouched). The danmaku shield, playback, IPTV, recording, follow tags
-/// and per-room orientation all carry their prefs here.
+/// all carry their prefs here.
 enum BackupPrefKind {
   /// A string value.
   string,
@@ -229,10 +229,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.pip.autoScale', BackupPrefKind.boolean),
   ('danmaku.pip.scale', BackupPrefKind.floating),
   ('danmaku.chatNames', BackupPrefKind.boolean),
-  ('danmaku.chatAvatars', BackupPrefKind.boolean),
   ('danmaku.showChatGifts', BackupPrefKind.boolean),
   ('danmaku.chatGiftsAboveTier', BackupPrefKind.boolean),
-  ('danmaku.giftValueInYuan', BackupPrefKind.boolean),
   ('danmaku.superChatIncludesMembership', BackupPrefKind.boolean),
   ('danmaku.showGifts', BackupPrefKind.boolean),
   ('danmaku.list.fontSize', BackupPrefKind.integer),
@@ -332,9 +330,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('recorder.maxCheckSeconds', BackupPrefKind.integer),
   ('recorder.autoStartOnBoot', BackupPrefKind.boolean),
   ('recorder.pollingEnabled', BackupPrefKind.boolean),
-  // Local follow tags and per-room picture orientation.
+  // Local follow tags.
   ('follow.tags', BackupPrefKind.string),
-  ('room.orientation', BackupPrefKind.string),
   // The default Bilibili quality number and the station's playback choices.
   ('vod.quality.qn', BackupPrefKind.integer),
   ('vod.playback.speed', BackupPrefKind.floating),

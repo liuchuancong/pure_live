@@ -68,18 +68,26 @@ final class ChromeIconButton extends StatelessWidget {
         builder: (context, states, _) {
           final hovered = states.contains(WidgetState.hovered);
           final pressed = states.contains(WidgetState.pressed);
-          Color? background;
-          if (enabled) {
-            if (danger && hovered) {
-              background = colors.danger.fill;
-            } else if (hovered || pressed) {
-              background = pressed ? colors.press : colors.hover;
-            }
-          }
-          return ColoredBox(
-            color: background ?? const Color(0x00000000),
-            child: Center(
-              child: DsIcon(icon, size: iconSize, color: enabled ? colors.text : colors.textSubtle),
+          final hot = enabled && (hovered || pressed);
+          final dangerFill = danger && hot;
+          final background = dangerFill
+              ? (pressed ? colors.danger.fillPress : colors.danger.fill)
+              : hot
+              ? (pressed ? colors.press : colors.hover)
+              : null;
+          final glyph = dangerFill
+              ? colors.danger.onFill
+              : enabled
+              ? colors.text
+              : colors.textSubtle;
+          return Padding(
+            padding: const EdgeInsets.all(DsSpace.s4),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(child: DsIcon(icon, size: iconSize, color: glyph)),
             ),
           );
         },

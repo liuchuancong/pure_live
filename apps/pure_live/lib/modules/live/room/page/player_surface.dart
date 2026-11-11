@@ -22,7 +22,6 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart' show openArchives;
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/modules/live/room/chat/room_chat.dart' show roomChatSettingsAskProvider;
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
@@ -164,6 +163,7 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.ambient = false,
     this.overlay,
     this.bottomInset = 0,
+    this.controlBarEndInset = 0,
     this.topBarEndInset = DsSpace.s12,
     super.key,
   });
@@ -248,6 +248,12 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// not the buttons, so the control row never jitters along with a finger.
   final double bottomInset;
 
+  /// How much of the picture's right edge a page layer covers: the theatre
+  /// column and the immersive drawer ride over the frame's end, so the control
+  /// bar stops short of them instead of drawing its scrim and buttons under a
+  /// panel that hides them.
+  final double controlBarEndInset;
+
   /// A page layer over the picture and under the surface's own controls: a
   /// layout that floats its chat over the frame hands it in here, so the
   /// stream's pickers, the bars and the statistics still draw above it.
@@ -278,6 +284,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   /// A stream picker panel is open over the picture: the bars stay while it
   /// is, or the panel would vanish under the pointer that is using it.
   bool _panelOpen = false;
+
+  /// The video-area danmaku settings are out; the bar's auto-hide waits while
+  /// they are.
+  bool _danmakuSettingsOpen = false;
+
+  /// The gear's box; [PlayerPanelHost] hangs the panel above it exactly as the
+  /// quality catalogue hangs above its own button.
+  final GlobalKey _danmakuSettingsAnchor = GlobalKey(debugLabel: 'danmaku-settings-anchor');
 
   /// The TV room switch's debounce: a held Up or Down adds its step to
   /// [_switchStep], and only when the remote has been quiet for the window
@@ -572,9 +586,30 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     }
   }
 
+  /// Opens or closes the video-area danmaku panel; the bars stay up while it
+  /// is out.
+  void _toggleDanmakuSettings() {
+    if (!_danmakuSettingsOpen) _hidePicker();
+    final opening = !_danmakuSettingsOpen;
+    setState(() {
+      _danmakuSettingsOpen = opening;
+      if (opening) {
+        _controlsVisible = true;
+        _hideTimer?.cancel();
+      }
+    });
+    if (!opening) _scheduleHide();
+  }
+
+  void _closeDanmakuSettings() {
+    if (!_danmakuSettingsOpen) return;
+    setState(() => _danmakuSettingsOpen = false);
+    _scheduleHide();
+  }
+
   void _scheduleHide() {
     _hideTimer?.cancel();
-    if (_panelOpen) return;
+    if (_panelOpen || _danmakuSettingsOpen) return;
     if (!widget.roomState.playback.playing) return;
     // A TV room keeps its bars: with no pointer there is no way to wake a
     // hidden bar, and the focused control would go with it.
@@ -919,9 +954,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
       // An open picker panel is a layer the remote's back peels first: the
       // route only pops when no panel is open. The dialogs above the room
       // pop on their own and never reach this.
-      canPop: !_panelOpen,
+      canPop: !_panelOpen && !_danmakuSettingsOpen,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _hidePicker();
+        if (didPop) return;
+        if (_danmakuSettingsOpen) {
+          _closeDanmakuSettings();
+        } else {
+          _hidePicker();
+        }
       },
       child: PlayerBarTier(
         tv: widget.tv,
@@ -1262,7 +1302,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     Positioned(
                       bottom: widget.bottomInset,
                       left: 0,
-                      right: 0,
+                      right: widget.controlBarEndInset,
                       child: MouseRegion(
                         onEnter: (_) => _hideTimer?.cancel(),
                         onExit: (_) => _scheduleHide(),
@@ -1276,6 +1316,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             handle: handle,
                             transport: transport,
                             onWake: _wake,
+                            onDanmakuSettings: _toggleDanmakuSettings,
+                            danmakuSettingsAnchor: _danmakuSettingsAnchor,
                             streamPickers: ({required labelled}) => _StreamPickerRow(
                               room: room,
                               open: _openPicker,
@@ -1299,28 +1341,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     Positioned(
                       bottom: widget.bottomInset,
                       left: 0,
-                      right: 0,
+                      right: widget.controlBarEndInset,
                       child: _RestoreSwipe(
                         onRestore: widget.onPortraitRestore,
                         child: _IdleWakeStrip(onWake: _wake),
                       ),
-                    ),
-                  // The stream's own numbers when the viewer asked for them: a small
-                  // glass panel under the top bar, over the picture and out of the
-                  // buttons' way.
-                  if (handle != null &&
-                      picture.kind == RoomPictureKind.none &&
-                      !_locked &&
-                      ref.watch(playerStatsVisibleProvider))
-                    PositionedDirectional(
-                      // The strip's own height, from the same tier that sizes it:
-                      // 8 of padding, the control, 12 below it. A literal here sat
-                      // under the strip the moment the TV tier grew the controls.
-                      top: showBar && !mini
-                          ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s12
-                          : DsSpace.s12,
-                      end: widget.topBarEndInset,
-                      child: PlayerStatsOverlay(handle: handle),
                     ),
                   // The open catalogue, above the bar that raised it. The layer
                   // is the panel's own modal: the keyboard lands on it (Escape
@@ -1353,6 +1378,45 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  if (_danmakuSettingsOpen)
+                    Positioned.fill(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _closeDanmakuSettings,
+                            ),
+                          ),
+                          PlayerPanelHost(
+                            anchorKey: _danmakuSettingsAnchor,
+                            barKey: _barKey,
+                            width: 280,
+                            child: PlayerOverlayPanel(
+                              title: context.t.settings.navDanmaku,
+                              width: 280,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    DsSpace.s12,
+                                    0,
+                                    DsSpace.s12,
+                                    DsSpace.s6,
+                                  ),
+                                  child: _DanmakuSettingsControls(
+                                    onWake: _wake,
+                                    onAdvanced: () {
+                                      _closeDanmakuSettings();
+                                      openSettingsChild(context, ref, SettingsSection.danmaku);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   // The lock, on the picture's right edge (the reference's
@@ -1808,7 +1872,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
     // The wide chat column's own header carries the follow pill; wherever
     // that header stands, the picture's chip would be a second door to the
     // same verb — the chip is for the column that is not there.
-    final columnCarriesFollow = ref.watch(chatModeProvider) == ChatMode.column && !ref.watch(chatCollapsedProvider);
+    final columnCarriesFollow = !ref.watch(chatCollapsedProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         // The same floor the control bar uses for its medium tier: below it a
@@ -2073,14 +2137,20 @@ final class _AnchorFollowChip extends ConsumerWidget {
 /// leaving the bar, and the switch's letter reads at every tier the bar is
 /// drawn at.
 final class _DanmakuBarCluster extends ConsumerWidget {
-  const _DanmakuBarCluster({required this.onWake, this.showSettings = true});
+  const _DanmakuBarCluster({
+    required this.onWake,
+    this.onSettings,
+    this.settingsAnchor,
+  });
 
   /// Resets the bar's auto-hide timer after a press.
   final VoidCallback onWake;
 
-  /// Whether the gear rides beside the switch. A narrow bar leaves it to the
-  /// chat column's own settings tab.
-  final bool showSettings;
+  /// Opens the video-area settings panel; null leaves the gear inert.
+  final VoidCallback? onSettings;
+
+  /// The gear's box, for the panel host that hangs the settings above it.
+  final GlobalKey? settingsAnchor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2126,18 +2196,141 @@ final class _DanmakuBarCluster extends ConsumerWidget {
             },
           ),
         ),
-        if (showSettings)
-          PlayerBarButton(
-            iconAsset: 'assets/icons/danmaku-settings.svg',
-            label: t.settings.navDanmaku,
-            onPressed: () {
-              onWake();
-              // The ask, not a route: the chat panel carries the display
-              // settings as its own tab, and the page opens the door its host
-              // has — the folded column, the stream, the immersive drawer.
-              ref.read(roomChatSettingsAskProvider.notifier).ask();
-            },
-          ),
+        PlayerBarButton(
+          key: settingsAnchor,
+          iconAsset: 'assets/icons/danmaku-settings.svg',
+          label: t.settings.navDanmaku,
+          onPressed: () {
+            onWake();
+            onSettings?.call();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// The compact video-area controls: display area, font size, opacity and
+/// speed. Everything else waits behind [onAdvanced].
+final class _DanmakuSettingsControls extends ConsumerWidget {
+  const _DanmakuSettingsControls({required this.onWake, required this.onAdvanced});
+
+  final VoidCallback onWake;
+  final VoidCallback onAdvanced;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final style = ref.watch(danmakuStyleProvider);
+    final controller = ref.read(danmakuStyleProvider.notifier);
+    final labelStyle = theme.typography.caption.copyWith(color: _onVideoMuted);
+    final valueStyle = theme.typography.caption.copyWith(color: _onVideo);
+    final sliderStyle = DsSliderStyle(
+      trackColor: OnVideoColors.inkHover,
+      fillColor: colors.accent,
+      thumbColor: colors.accent,
+      tickColor: OnVideoColors.inkMuted,
+      tickFilledColor: colors.accent,
+    );
+    Widget sliderRow({
+      required String label,
+      required String value,
+      required double current,
+      required double min,
+      required double max,
+      required ValueChanged<double> onChanged,
+      int? divisions,
+      String Function(double)? formatter,
+    }) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s4,
+      children: [
+        Row(
+          children: [
+            Text(label, style: labelStyle),
+            const Spacer(),
+            Text(value, style: valueStyle),
+          ],
+        ),
+        DsSlider(
+          value: current,
+          min: min,
+          max: max,
+          divisions: divisions,
+          semanticLabel: label,
+          semanticFormatter: formatter,
+          style: sliderStyle,
+          onChanged: (next) {
+            onWake();
+            onChanged(next);
+          },
+        ),
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s12,
+      children: [
+            sliderRow(
+              label: t.settings.styleArea,
+              value: '${(style.area * 100).round()}%',
+              current: style.area,
+              min: DanmakuStyleRange.areaMin,
+              max: DanmakuStyleRange.areaMax,
+              divisions: DanmakuStyleRange.areaDivisions,
+              onChanged: (value) => unawaited(controller.setArea(value)),
+            ),
+            sliderRow(
+              label: t.settings.styleFontSize,
+              value: '${style.fontSize.toStringAsFixed(0)} px',
+              current: style.fontSize,
+              min: DanmakuStyleRange.fontSizeMin,
+              max: DanmakuStyleRange.fontSizeMax,
+              onChanged: (value) => unawaited(controller.setFontSize(value)),
+            ),
+            sliderRow(
+              label: t.settings.styleOpacity,
+              value: '${(style.opacity * 100).round()}%',
+              current: style.opacity,
+              min: DanmakuStyleRange.opacityMin,
+              max: DanmakuStyleRange.opacityMax,
+              onChanged: (value) => unawaited(controller.setOpacity(value)),
+            ),
+            sliderRow(
+              label: t.settings.styleSpeed,
+              value: '${style.baseSpeed.round()} px/s',
+              current: style.baseSpeed,
+              min: DanmakuStyleRange.speedMin,
+              max: DanmakuStyleRange.speedMax,
+              onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
+            ),
+            Container(height: 1, color: OnVideoColors.inkHover),
+            DsPressable(
+              semanticLabel: t.settings.styleAdvanced,
+              onPressed: onAdvanced,
+              builder: (context, states, _) => Container(
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
+                decoration: DsBoxDecoration(
+                  color: states.contains(WidgetState.hovered) ? OnVideoColors.inkHover : null,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    const DsIcon(DsIcons.settings2, size: 15, color: _onVideoMuted),
+                    Text(
+                      t.settings.styleAdvanced,
+                      style: theme.typography.caption.copyWith(color: _onVideo),
+                    ),
+                    const Spacer(),
+                    const DsIcon(DsIcons.chevronRight, size: 14, color: _onVideoMuted),
+                  ],
+                ),
+              ),
+            ),
       ],
     );
   }
@@ -2635,6 +2828,8 @@ final class _ControlBar extends ConsumerStatefulWidget {
     required this.handle,
     required this.transport,
     required this.onWake,
+    this.onDanmakuSettings,
+    this.danmakuSettingsAnchor,
     this.streamPickers,
     this.autofocusPlay = false,
     this.canEnterPortraitFullscreen = false,
@@ -2650,6 +2845,12 @@ final class _ControlBar extends ConsumerStatefulWidget {
 
   /// Resets the bar's auto-hide timer after an interaction.
   final VoidCallback onWake;
+
+  /// Opens the video-area danmaku settings panel.
+  final VoidCallback? onDanmakuSettings;
+
+  /// The gear's box, for the panel host that hangs the settings above it.
+  final GlobalKey? danmakuSettingsAnchor;
 
   /// The stream's own catalogues (quality, line), placed beside the
   /// transport where a viewer looks for them.
@@ -2830,12 +3031,19 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               // The flying danmaku's switch rides with the transport on the
               // left; the recording state lives on the strip above and in the
               // persistent pill, not twice on this bar.
-              if (!crowded && !pip) _DanmakuBarCluster(onWake: widget.onWake, showSettings: wide),
+              if (!crowded && !pip)
+                _DanmakuBarCluster(
+                  onWake: widget.onWake,
+                  onSettings: widget.onDanmakuSettings,
+                  settingsAnchor: widget.danmakuSettingsAnchor,
+                ),
               const Spacer(),
               if (!crowded) const _BarDivider(),
               // -- What is playing: the stream's own catalogues, each its own
               // control with its current value in words (1080P / 线路1 / 适应).
-              if (!pip) ?widget.streamPickers?.call(labelled: true),
+              // The words fold back to glyphs once the bar is too narrow to
+              // carry them beside the transport without overflowing.
+              if (!pip) ?widget.streamPickers?.call(labelled: constraints.maxWidth >= 600),
               // -- The window verbs, then the way out of the picture's box.
               if (!pip && player != null && wide)
                 PlayerBarButton(

@@ -18,23 +18,14 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
-import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel, roomChatSettingsAskProvider;
-import 'package:pure_live/modules/live/room/chat/room_chat_stream.dart' show RoomChatStream;
+import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
-import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
     show PlayerSurface, kPlayerStageColor, toggleRoomPip;
 import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
 import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
+import 'package:pure_live/modules/live/room/page/room_frame.dart' show kRoomFrameRatioMax, kRoomFrameRatioMin;
 import 'package:pure_live/modules/live/room/page/room_glass_card.dart';
-import 'package:pure_live/modules/live/room/page/room_orientation.dart'
-    show
-        RoomOrientation,
-        kRoomFrameRatioMax,
-        kRoomFrameRatioMin,
-        roomFramedRatio,
-        roomOrientationProvider,
-        showRoomOrientationDialog;
 import 'package:pure_live/modules/live/room/page/room_refresh_rate.dart' show roomRefreshRateProvider;
 import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show takeRoomScreenshot;
 import 'package:pure_live/modules/live/room/page/room_shortcuts.dart'
@@ -145,17 +136,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   /// Whether the page is showing its portrait full-screen surface.
   bool _portraitFullscreen = false;
-
-  /// Whether the immersive layout's chat drawer is slid out. The drawer is
-  /// the chat's home once the picture owns the window: a glass column that
-  /// slides over the picture's end edge from a tab on that edge, and closes
-  /// when the pointer leaves it (or the tab is tapped again).
-  bool _immersiveChatOpen = false;
-
-  /// The drawer's grace after the pointer leaves: it closes when the pointer
-  /// has stayed away this long, so a stray exit on the way back to the talk
-  /// does not slam the drawer shut mid-read.
-  Timer? _immersiveChatGrace;
 
   /// Whether a room switch from the portrait full screen is in flight; the
   /// page keeps its surface while the next room opens on the same controller.
@@ -404,115 +384,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
   }
 
-  /// Opens or closes the immersive layout's chat drawer.
-  void _setImmersiveChatOpen(bool value) {
-    if (_immersiveChatOpen == value) return;
-    _immersiveChatGrace?.cancel();
-    _immersiveChatGrace = null;
-    setState(() => _immersiveChatOpen = value);
-  }
-
-  /// The pointer left the open drawer: its close waits out the grace, and a
-  /// return inside it cancels the wait.
-  void _scheduleImmersiveChatClose() {
-    if (!_immersiveChatOpen) return;
-    _immersiveChatGrace?.cancel();
-    _immersiveChatGrace = Timer(const Duration(milliseconds: 800), () {
-      if (mounted && _immersiveChatOpen) setState(() => _immersiveChatOpen = false);
-    });
-  }
-
-  /// The immersive layout: the picture fills the window and the chat lives on
-  /// a glass drawer at the picture's end edge — a tab to summon it, a column
-  /// that slides over the picture, and it closes when the pointer leaves it.
-  /// A fullscreen room keeps every control the inline room has; the drawer is
-  /// only how the chat reaches them.
-  /// Whether the window can host the drawer's minimum width beside the
-  /// picture. A desktop PiP window cannot, and keeps only the picture:
-  /// no tab, no drawer, and the stream keeps its full bleed.
-  bool get _immersiveChatFits => MediaQuery.sizeOf(context).width * 0.6 >= kChatPanelWidthMin;
-
-  Widget _immersiveChatDrawer(Widget player) {
-    final t = context.t;
-    final room = ref.watch(roomProvider);
-    final colors = DsTheme.of(context).colors;
-    final maxChatWidth = math.min(kChatPanelWidthMax, MediaQuery.sizeOf(context).width * 0.6);
-    // A window too narrow for the minimum drawer never summons it.
-    if (maxChatWidth < kChatPanelWidthMin) return player;
-    final chatWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, maxChatWidth);
-    return Stack(
-      children: [
-        Positioned.fill(child: player),
-        PositionedDirectional(
-          top: 0,
-          bottom: 0,
-          end: 0,
-          child: MouseRegion(
-            onEnter: (_) => _immersiveChatGrace?.cancel(),
-            onExit: _immersiveChatOpen ? (_) => _scheduleImmersiveChatClose() : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              width: _immersiveChatOpen ? chatWidth : 28,
-              child: _immersiveChatOpen
-                  ? RoomGlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: _RoomHero(room: room)),
-                              Padding(
-                                padding: const EdgeInsets.all(DsSpace.s4),
-                                child: DsButton.icon(
-                                  variant: DsButtonVariant.ghost,
-                                  size: DsSize.sm,
-                                  onPressed: () => _setImmersiveChatOpen(false),
-                                  icon: const DsIcon(DsIcons.panelRightClose),
-                                  semanticLabel: t.room.collapseChat,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Expanded(child: RoomChatPanel(translucent: true)),
-                        ],
-                      ),
-                    )
-                  : Center(
-                      child: MouseRegion(
-                        onEnter: (_) => _setImmersiveChatOpen(true),
-                        child: GestureDetector(
-                          onTap: () => _setImmersiveChatOpen(true),
-                          child: RoomGlassCard(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  DsIcon(DsIcons.chevronLeft, size: 14, color: colors.text),
-                                  for (final rune in t.room.chatDrawerLabel.runes)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 1),
-                                      child: Text(
-                                        String.fromCharCode(rune),
-                                        style: DsTheme.of(context).typography.caption.copyWith(color: colors.text),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Shows or leaves the portrait full-screen surface and publishes it: the
   /// route's chrome hides the window strip while this page owns the window,
   /// exactly as it does for fullscreen, and the page's own layout is the only
@@ -576,7 +447,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   void dispose() {
-    _immersiveChatGrace?.cancel();
     playbackRemote.unregister(_remoteTarget);
     // The page may be destroyed while it fills the window; the next route
     // must get its window strip back.
@@ -927,12 +797,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     );
   }
 
+  /// The picture's frame, from the engine's own geometry: the stream reports
+  /// its shape, so the room no longer keeps a per-room manual orientation to
+  /// fight it. The clamp keeps an absurd report from taking the whole stage.
   double _pictureRatio(RoomState room) {
     final detected = room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
     final ratio = detected <= 0 || !detected.isFinite ? 16 / 9 : detected;
-    final key = room.room?.ref.identityKey;
-    final orientation = key == null ? RoomOrientation.automatic : ref.watch(roomOrientationProvider(key));
-    return roomFramedRatio(orientation, detected: ratio);
+    return ratio.clamp(kRoomFrameRatioMin, kRoomFrameRatioMax);
   }
 
   /// The portrait fullscreen's vertical swipe: +1 for the next room in the
@@ -1078,9 +949,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     /// T 键与栏上按钮共用：宽屏把聊天列收起/展开——收起时回到列（必要时
     /// 从弹幕流切回），开着时收起。一个方向一对动作，不再是单程门。
     void toggleChatColumn() {
-      final opening = ref.read(chatModeProvider) != ChatMode.column || ref.read(chatCollapsedProvider);
+      final opening = ref.read(chatCollapsedProvider);
       if (opening) {
-        unawaited(ref.read(chatModeProvider.notifier).set(ChatMode.column));
         unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
       } else {
         unawaited(ref.read(chatCollapsedProvider.notifier).set(value: true));
@@ -1102,28 +972,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     /// the column, the immersive room slides its drawer out, the TV's
     /// floating column unfolds. The stacked rooms carry the panel always, so
     /// a narrow window has nothing to open.
-    void revealChatPanel() {
-      if (ownsWindow || _portraitFullscreen) {
-        if (_immersiveChatFits) _setImmersiveChatOpen(true);
-        return;
-      }
-      if (tv) {
-        if (ref.read(chatCollapsedProvider)) {
-          unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
-        }
-        return;
-      }
-      if (!wideWindow) return;
-      if (ref.read(chatModeProvider) != ChatMode.column) {
-        unawaited(ref.read(chatModeProvider.notifier).set(ChatMode.column));
-      }
-      if (ref.read(chatCollapsedProvider)) {
-        unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
-      }
-    }
-
-    ref.listen(roomChatSettingsAskProvider, (_, _) => revealChatPanel());
-
     /// The back arrow and Escape: leave the presentation mode while one
     /// holds the page, otherwise leave the room — where "leave" is the
     /// host's verb: a route pop in the app, a window close in a room window.
@@ -1201,9 +1049,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       RoomShortcutAction.volumeUp => () => nudgeVolume(volumeStep),
       RoomShortcutAction.volumeDown => () => nudgeVolume(-volumeStep),
       RoomShortcutAction.chatColumn => toggleChatColumn,
-      // The two verbs a viewer reaches for when a stream misbehaves: the
-      // numbers behind it, and a frame of it.
-      RoomShortcutAction.stats => () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+      // A frame of the stream, for when it misbehaves.
       RoomShortcutAction.screenshot => () {
         final handle = ref.read(roomProvider).handle;
         if (handle == null || !handle.canCaptureScreenshot) return;
@@ -1234,11 +1080,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final chatCollapsed = ref.watch(chatCollapsedProvider);
     // The reference-layout stream: plain talk over the picture. It is the
     // glance presentation of the full-bleed layouts only — the stacked and
-    // sheet rooms keep their panel — and it yields to the stats panel, to
-    // the fold switch and to the TV's own two-column room.
-    final chatMode = ref.watch(chatModeProvider);
-    final streamActive = chatMode == ChatMode.stream && !tv && !ref.watch(playerStatsVisibleProvider);
-    final streamVisible = streamActive && !chatCollapsed;
+    // sheet rooms keep their panel — and it yields to the fold switch and to
+    // the TV's own two-column room.
+    // The chat is always the side column now; the stream presentation and
+    // its settings are gone.
 
     /// The picture surface, with the layout's own chat (the TV's glass
     /// column, the stream over the picture) handed in as a page layer: the
@@ -1248,6 +1093,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     Widget playerWith({
       Widget? overlay,
       double bottomInset = 0,
+      double controlBarEndInset = 0,
       VoidCallback? onTitle,
       double topBarEndInset = DsSpace.s12,
     }) => PlayerSurface(
@@ -1283,6 +1129,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       ambient: pictureRatio < 1 || _portraitFullscreen,
       overlay: overlay,
       bottomInset: bottomInset,
+      controlBarEndInset: controlBarEndInset,
       // A presentation mode that owns the window has no chat to float, and a
       // narrow page stacks it under the picture.
       roomMenu: roomMenuItems(context, ref, room, shortcuts: shortcuts),
@@ -1294,7 +1141,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
             context,
             // The portrait full screen has no column of its own: the stream
             // is the chat there, unless the stats panel owns the corner.
-            playerWith(overlay: streamActive ? const Positioned.fill(child: RoomChatStream()) : null),
+            playerWith(),
             canSwipeRooms: swipeSwitch && mobile,
           )
         : LayoutBuilder(
@@ -1418,21 +1265,16 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   kChatPanelWidthMin,
                   math.min(kChatPanelWidthMax, constraints.maxWidth - _wideStageFloor),
                 );
-                final columnWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, columnMaxWidth);
+                final columnWidth = kChatPanelWidthFixed.clamp(kChatPanelWidthMin, columnMaxWidth);
                 // A room that owns the window (window fullscreen) fills it with
                 // the picture alone — no docked chat column.
-                final columnOpen = !ownsWindow && chatMode == ChatMode.column && !chatCollapsed;
+                final columnOpen = !ownsWindow && !chatCollapsed;
                 // The wide room reads like the live sites: the picture fills the
                 // content area edge to edge, the chat down the right, and the
                 // room's facts ride the bar above — no card, no inset. The chat
                 // column folds and unfolds from the bar's toggle only; the
                 // picture keeps no floating sidebar button of its own.
-                final stage = ColoredBox(
-                  color: kPlayerStageColor,
-                  child: playerWith(
-                    overlay: !columnOpen && streamVisible ? const Positioned.fill(child: RoomChatStream()) : null,
-                  ),
-                );
+                final stage = ColoredBox(color: kPlayerStageColor, child: playerWith());
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1461,53 +1303,32 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 kChatPanelWidthMin,
                 math.min(kChatPanelWidthMax, constraints.maxWidth - _wideStageFloor),
               );
-              final chatWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, maxChatWidth);
+              final chatWidth = kChatPanelWidthFixed.clamp(kChatPanelWidthMin, maxChatWidth);
               void toggleChat() {
                 unawaited(ref.read(chatCollapsedProvider.notifier).set(value: !chatCollapsed));
               }
 
               // The full chat column as a floating layer over the TV's stage:
-              // the glass, the seam and the close verb.
+              // the glass, with the close verb at the tab row's end where it
+              // cannot cover the last tab.
               Widget chatColumn({required VoidCallback onClose}) => PositionedDirectional(
                 top: 0,
                 bottom: 0,
                 end: 0,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ChatSplitter(
-                      width: chatWidth,
-                      minWidth: kChatPanelWidthMin,
-                      maxWidth: maxChatWidth,
-                      onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
-                      onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
-                      onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
-                      label: t.room.resizeChat,
-                      keyboard: !tv,
-                      onDark: true,
-                    ),
-                    SizedBox(
-                      width: chatWidth,
-                      child: RoomGlassCard(
-                        child: Stack(
-                          children: [
-                            const Positioned.fill(child: RoomChatPanel(translucent: true)),
-                            PositionedDirectional(
-                              top: DsSpace.s6,
-                              end: DsSpace.s6,
-                              child: DsButton.icon(
-                                variant: DsButtonVariant.ghost,
-                                size: DsSize.sm,
-                                onPressed: onClose,
-                                icon: const DsIcon(DsIcons.panelRightClose),
-                                semanticLabel: t.room.collapseChat,
-                              ),
-                            ),
-                          ],
-                        ),
+                child: SizedBox(
+                  width: chatWidth,
+                  child: RoomGlassCard(
+                    child: RoomChatPanel(
+                      translucent: true,
+                      trailing: DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: onClose,
+                        icon: const DsIcon(DsIcons.panelRightClose),
+                        semanticLabel: t.room.collapseChat,
                       ),
                     ),
-                  ],
+                  ),
                 ),
               );
               if (chatCollapsed) {
@@ -1534,6 +1355,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 color: kPlayerStageColor,
                 child: playerWith(
                   topBarEndInset: chatWidth + DsSpace.s12,
+                  // The bar stops where the glass column begins: its scrim and
+                  // buttons would otherwise draw over the column's composer.
+                  controlBarEndInset: chatWidth,
                   overlay: chatColumn(onClose: toggleChat),
                 ),
               );
@@ -1563,18 +1387,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         child: ColoredBox(
           color: kPlayerStageColor,
           child: ownsWindow
-              ? Scaffold(
-                  backgroundColor: kPlayerStageColor,
-                  body: _immersiveChatDrawer(
-                    playerWith(
-                      // The drawer's tab lives on the end edge; the stream
-                      // keeps clear of it while the drawer is away.
-                      overlay: streamVisible && !_immersiveChatOpen
-                          ? Positioned.fill(child: RoomChatStream(endInset: _immersiveChatFits ? 36 : 0))
-                          : null,
-                    ),
-                  ),
-                )
+              ? Scaffold(backgroundColor: kPlayerStageColor, body: playerWith())
               : Scaffold(
                   // The portrait full-screen surface is the page's own way of
                   // filling the window: it keeps its black stage and drops the
@@ -1621,12 +1434,10 @@ PreferredSizeWidget _roomAppBar(
   // the caption controls ride at a modest height instead of the old two-line
   // 64, which made the close button read as a slab.
   final height = wide ? 40.0 : WindowClassScope.toolbarHeightOf(context);
-  final leading = DsButton.icon(
-    variant: DsButtonVariant.ghost,
-    size: DsSize.sm,
-    onPressed: leave,
-    icon: const DsIcon(DsIcons.chevronLeft, size: 20),
-    semanticLabel: t.common.back,
+  final leading = DsTooltip(
+    message: t.common.back,
+    side: DsSide.bottom,
+    child: WindowCaptionButton(semanticLabel: t.common.back, icon: DsIcons.arrowLeft, size: 36, onPressed: leave),
   );
   return AppBar(
     backgroundColor: colors.surface,
@@ -1634,17 +1445,11 @@ PreferredSizeWidget _roomAppBar(
     elevation: 0,
     automaticallyImplyLeading: false,
     toolbarHeight: height,
-    leadingWidth: 56,
-    leading: Padding(
-      padding: const EdgeInsetsDirectional.only(start: DsSpace.s12, end: DsSpace.s4),
-      child: leading,
-    ),
-    titleSpacing: DsSpace.s8,
-    // The whole middle band is the window's handle, not just the two lines of
-    // text: a Column sized to its own words leaves the space beside them inert,
-    // and a viewer reaching for "the title bar" grabs that space. The buttons
-    // keep their own taps — the band only claims a drag; the title itself keeps
-    // its press for the room's details.
+    leadingWidth: 36,
+    leading: leading,
+    titleSpacing: DsSpace.s4,
+    // The whole middle band is the window's handle: the title is plain text,
+    // not a menu and not a details door — the header card below carries those.
     title: ownChrome
         ? const SizedBox(
             width: double.infinity,
@@ -1652,12 +1457,12 @@ PreferredSizeWidget _roomAppBar(
           )
         : const _RoomTitleBar(),
     actions: [
+      const ThemeModeToggle(size: 36),
       const _ChatColumnToggle(),
-      const SizedBox(width: DsSpace.s4),
       _RoomMenu(shortcuts: shortcuts),
       if (ownChrome) ...[
-        const SizedBox(width: DsSpace.s8),
-        const SizedBox(height: 20, child: DsDivider.vertical()),
+        const SizedBox(width: DsSpace.s4),
+        const SizedBox(height: 16, child: DsDivider.vertical()),
         const WindowCaptionControls(height: 36),
       ],
       const SizedBox(width: DsSpace.s4),
@@ -1726,45 +1531,24 @@ final class _PortraitSwipeHintState extends State<_PortraitSwipeHint> {
   }
 }
 
-/// The wide bar's document title: the room's name with a caret, the way a
-/// window titles what it shows. The anchor and the facts live elsewhere.
+/// The window's document title: the room's name, plain text. The anchor and
+/// the facts live elsewhere; the title is not a menu and not a details door.
 final class _RoomTitleBar extends ConsumerWidget {
   const _RoomTitleBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final detail = ref.watch(roomProvider.select((room) => room.room));
     if (detail == null) return const DsSkeleton(width: 220, height: 15);
-    return DsPressable(
-      semanticLabel: t.room.detailsHint,
-      onPressed: () => unawaited(showRoomDetails(context)),
-      builder: (context, states, child) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: states.contains(WidgetState.hovered) ? colors.hover : OnVideoColors.clear,
-          borderRadius: BorderRadius.circular(theme.radii.control(theme.sizes.sm)),
-        ),
-        child: child,
-      ),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s4, DsSpace.s4, DsSpace.s8, DsSpace.s4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s4,
-          children: [
-            Flexible(
-              child: Text(
-                detail.content.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.bodyStrong.copyWith(color: colors.text),
-              ),
-            ),
-            DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: DsSpace.s8, end: DsSpace.s8),
+      child: Text(
+        detail.content.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.typography.bodyStrong.copyWith(color: colors.text),
       ),
     );
   }
@@ -1906,7 +1690,7 @@ final class _FollowPill extends ConsumerWidget {
       }),
     );
     return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
+      padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s4),
       child: DsButton(
         variant: followed ? DsButtonVariant.secondary : DsButtonVariant.primary,
         size: DsSize.sm,
@@ -1929,23 +1713,19 @@ final class _ChatColumnToggle extends ConsumerWidget {
     // past the sidebar breakpoint: a viewer who folded the chat at 900 must
     // still be able to unfold it at 900.
     if (MediaQuery.sizeOf(context).width < kRoomWideBreakpoint) return const SizedBox.shrink();
-    final open = ref.watch(chatModeProvider) == ChatMode.column && !ref.watch(chatCollapsedProvider);
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
-      child: DsButton.icon(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        semanticLabel: open ? context.t.room.collapseChat : context.t.room.expandChat,
-        onPressed: () {
-          if (open) {
-            unawaited(ref.read(chatCollapsedProvider.notifier).set(value: true));
-          } else {
-            unawaited(ref.read(chatModeProvider.notifier).set(ChatMode.column));
-            unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
-          }
-        },
-        icon: DsIcon(open ? DsIcons.panelRightClose : DsIcons.panelRightOpen),
-      ),
+    final open = !ref.watch(chatCollapsedProvider);
+    return ChromeIconButton(
+      icon: open ? DsIcons.panelRightClose : DsIcons.panelRightOpen,
+      semanticLabel: open ? context.t.room.collapseChat : context.t.room.expandChat,
+      tooltip: open ? context.t.room.collapseChat : context.t.room.expandChat,
+      size: 36,
+      onPressed: () {
+        if (open) {
+          unawaited(ref.read(chatCollapsedProvider.notifier).set(value: true));
+        } else {
+          unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
+        }
+      },
     );
   }
 }
@@ -2016,24 +1796,6 @@ List<Widget> roomMenuItems(
       label: Text(sleepRunning ? '${t.room.sleep} · ${asmrSleepDurationLabel(sleepMinutes)}' : t.room.sleep),
       onPressed: () => unawaited(showRoomSleepTimer(context)),
     ),
-    if (detail != null)
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.aspectRatio),
-        label: Text(t.room.orientation),
-        onPressed: () => unawaited(
-          showRoomOrientationDialog(
-            context,
-            detail,
-            detected: room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
-          ),
-        ),
-      ),
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.activity),
-      label: Text(t.room.statsToggle),
-      checked: ref.watch(playerStatsVisibleProvider),
-      onPressed: () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
-    ),
     if (detail != null && offersRoomWindow)
       DsMenuItem(
         leading: const DsIcon(DsIcons.appWindow),
@@ -2074,18 +1836,15 @@ final class _RoomMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final room = ref.watch(roomProvider);
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
-      child: DsMenuAnchor(
+    return DsMenuAnchor(
+      semanticLabel: t.common.more,
+      items: roomMenuItems(context, ref, room, shortcuts: shortcuts),
+      builder: (context, controller, _) => ChromeIconButton(
+        icon: DsIcons.ellipsisVertical,
         semanticLabel: t.common.more,
-        items: roomMenuItems(context, ref, room, shortcuts: shortcuts),
-        builder: (context, controller, _) => DsButton.icon(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          semanticLabel: t.common.more,
-          onPressed: controller.toggle,
-          icon: const DsIcon(DsIcons.ellipsisVertical),
-        ),
+        tooltip: t.common.more,
+        size: 36,
+        onPressed: controller.toggle,
       ),
     );
   }

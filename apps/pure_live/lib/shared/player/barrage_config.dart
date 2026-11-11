@@ -30,6 +30,10 @@ BarrageConfig playerBarrageConfig(
     // with the text.
     letterSpacing: style.letterSpacing * scale,
     baseSpeed: compact?.baseSpeed ?? style.baseSpeed,
+    // The slider is written in px/s, so the engine must use that number
+    // directly. The package default (adaptive) derives speed from message and
+    // viewport width and ignores baseSpeed, which made the control look dead.
+    speedMode: BarrageSpeedMode.fixed,
     area: area ?? style.area,
     // The reference's 顶部留白: pixels kept message-free at the top edge
     // before the area's share is measured.

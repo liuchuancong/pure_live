@@ -4,13 +4,12 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account_pane.dart' show AccountQrExit, showAccountSignInAlternative;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/chat/chat_message_filter.dart' show isStandaloneBadgeEcho;
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/modules/live/room/chat/paid_banner.dart';
@@ -18,38 +17,21 @@ import 'package:pure_live/modules/live/room/chat/room_chat_memory.dart'
     show RoomChatListMemory, roomChatListMemoryProvider;
 import 'package:pure_live/modules/live/room/chat/room_emotes.dart';
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
-    show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
+    show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText, showRoomMessageActions;
 import 'package:pure_live/modules/live/room/chat/room_record_tab.dart';
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
+import 'package:pure_live/modules/live/room/chat/room_user_card.dart' show showChatUserCard;
+import 'package:pure_live/modules/live/room/chat/user_level_badge.dart' show UserLevelBadge;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/player/emoji_atlas_loader.dart' show emojiAtlasCodes;
 import 'package:pure_live/shared/shared.dart';
 
-/// The room's chat column: five tabs — the danmaku list with its composer, the
+/// The room's chat column: four tabs — the danmaku list with its composer, the
 /// super chats where the platform keeps a board, this room's own recording
-/// figures, the flying layer's settings, and the shield's lists. The tab is the
-/// panel's own state; a narrow column scrolls its bar rather than cutting a
-/// label.
-enum _ChatTab { danmaku, superChats, recording, settings, shield }
-
-/// The chat panel's settings body, asked for from outside the panel.
-///
-/// The picture bar's gear raises the ask instead of walking to the settings
-/// center: the settings change where the viewer already is. One ask is one
-/// bump of the counter; the panel reads it in its build — including the
-/// build that follows the page opening the column for it — so an ask is
-/// answered even when the panel was folded away at the moment it arrived.
-final roomChatSettingsAskProvider = NotifierProvider<_ChatSettingsAskController, int>(_ChatSettingsAskController.new);
-
-/// Owns the ask counter.
-final class _ChatSettingsAskController extends Notifier<int> {
-  @override
-  int build() => 0;
-
-  /// Raises one ask.
-  void ask() => state++;
-}
+/// figures, and the shield's lists. The tab is the panel's own state; a narrow
+/// column scrolls its bar rather than cutting a label.
+enum _ChatTab { danmaku, superChats, recording, shield }
 
 /// The emoticons this room's talk has actually used: the platforms hand
 /// their tables over inside the messages, so the composer's panel reads
@@ -79,13 +61,19 @@ final class RoomChatPanel extends ConsumerStatefulWidget {
   /// it: a phone held sideways gives the chat a narrow column beside the
   /// picture, where the tab bar and the composer would leave a line or two of
   /// talk (the reference's landscape room shows its list and nothing else).
-  const RoomChatPanel({this.translucent = false, this.feedOnly = false, super.key});
+  ///
+  /// [trailing] rides at the tab row's end — the theatre column's close verb
+  /// lives there instead of floating over the last tab.
+  const RoomChatPanel({this.translucent = false, this.feedOnly = false, this.trailing, super.key});
 
   /// Whether the panel paints no fill of its own.
   final bool translucent;
 
   /// Whether the panel is the danmaku list alone — no tabs, no composer.
   final bool feedOnly;
+
+  /// A verb drawn at the end of the tab row, outside the tabs themselves.
+  final Widget? trailing;
 
   @override
   ConsumerState<RoomChatPanel> createState() => _RoomChatPanelState();
@@ -103,10 +91,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
 
   /// What the chat tab holds that the viewer has not seen, worn as its badge.
   int _unread = 0;
-
-  /// The ask counter this panel has already answered; a fresh panel (the page
-  /// just unfolded the column for the ask) answers the standing one on build.
-  int _handledAsk = 0;
 
   /// Arrivals while the viewer is on another tab. The panel counts them, not the
   /// list, which is disposed the moment another tab is picked — a count kept
@@ -175,46 +159,42 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
       );
     }
     final board = ref.watch(roomSuperChatsProvider);
-    // An ask from outside — the picture bar's gear — lands here. The page
-    // makes the chat face visible on its own listen; this panel, which may
-    // only now be coming up (a folded column mounts fresh), answers the ask
-    // in this build, before the body switch reads the tab.
-    final ask = ref.watch(roomChatSettingsAskProvider);
-    if (ask != _handledAsk) {
-      _handledAsk = ask;
-      _openTab(_ChatTab.settings);
-    }
     final tab = _tab;
+    final tabs = DsTabs<_ChatTab>(
+      value: tab,
+      onChanged: _select,
+      semanticLabel: t.room.chatTitle,
+      tabs: [
+        DsTab(
+          value: _ChatTab.danmaku,
+          label: Text(t.room.danmakuList),
+          count: _unread == 0 ? null : _unread,
+        ),
+        DsTab(
+          value: _ChatTab.superChats,
+          label: Text(t.room.tabSuperChats),
+          count: board.messages.isEmpty ? null : board.messages.length,
+        ),
+        DsTab(value: _ChatTab.recording, label: Text(t.room.tabRecording)),
+        DsTab(value: _ChatTab.shield, label: Text(t.room.tabShield)),
+      ],
+    );
     return ColoredBox(
       color: fill,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // The talk's two tabs carry the words; the room's errands (the
-          // recording, the reading and the shield) are verbs, not reading
-          // material, so they sit at the row's end as buttons and only take
-          // the body while pressed — the words come back with one press on a
-          // tab.
-          DsTabs<_ChatTab>(
-            value: tab,
-            onChanged: _select,
-            semanticLabel: t.room.chatTitle,
-            tabs: [
-              DsTab(
-                value: _ChatTab.danmaku,
-                label: Text(t.room.danmakuList),
-                count: _unread == 0 ? null : _unread,
-              ),
-              DsTab(
-                value: _ChatTab.superChats,
-                label: Text(t.room.tabSuperChats),
-                count: board.messages.isEmpty ? null : board.messages.length,
-              ),
-              DsTab(value: _ChatTab.recording, label: Text(t.room.tabRecording)),
-              DsTab(value: _ChatTab.settings, label: Text(t.room.tabSettings)),
-              DsTab(value: _ChatTab.shield, label: Text(t.room.tabShield)),
-            ],
-          ),
+          // The host's verb (the theatre column's close) rides at the row's
+          // end, outside the tabs, so it never covers the last one.
+          if (widget.trailing == null)
+            tabs
+          else
+            Row(
+              children: [
+                Expanded(child: tabs),
+                Padding(padding: const EdgeInsetsDirectional.only(end: DsSpace.s4), child: widget.trailing),
+              ],
+            ),
           DsLine(color: colors.border),
           Expanded(
             child: switch (tab) {
@@ -228,7 +208,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
               ),
               _ChatTab.superChats => const _SuperChatTab(),
               _ChatTab.recording => const RoomRecordTab(),
-              _ChatTab.settings => const _RoomDanmakuSettings(),
               _ChatTab.shield => const _ShieldTab(),
             },
           ),
@@ -237,6 +216,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     );
   }
 }
+
 
 /// The room's standing word about its own chat login, above the list it
 /// concerns.
@@ -493,14 +473,26 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
   }
 
   /// The floating count's press: back to the newest line. The list is reversed,
-  /// so the bottom is offset zero, and the listener clears the count on the way.
+  /// so the bottom is offset zero. The held list is dropped at the same time —
+  /// clearing only the count left the widget following its paused copy, so the
+  /// press could look like it did nothing when the old offset was already zero.
   void _toBottom() {
-    if (_scroll.hasClients) _scroll.jumpTo(0);
-    if (_boundaryId == null && _unseen == 0) return;
     setState(() {
+      _following = true;
+      _shown = const [];
       _boundaryId = null;
       _unseen = 0;
+      _seen = _chat.added;
+      _removals = _chat.removals;
     });
+    void jump() {
+      if (mounted && _scroll.hasClients) _scroll.jumpTo(0);
+    }
+
+    jump();
+    // The rebuild can change the list's extent; jumping again after layout
+    // makes the button land at the true bottom rather than the old one.
+    WidgetsBinding.instance.addPostFrameCallback((_) => jump());
   }
 
   @override
@@ -511,10 +503,14 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
     final roomKey = ref.watch(roomProvider.select((state) => state.room?.identityKey ?? ''));
     _roomKey = roomKey;
     final anchorName = ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? ''));
+    final platform = ref.watch(roomProvider.select((state) => state.room?.ref.platform ?? ''));
     // While the viewer reads away from the bottom, what they read is the held
     // list, not the feed's — the feed keeps capping, and the row under their
     // eye must not be pulled away by it.
-    final lines = _following || _shown.isEmpty ? chat : _shown;
+    // Super chats live in their own tab; the danmaku feed stays plain talk.
+    final lines = (_following || _shown.isEmpty ? chat : _shown)
+        .where((message) => message.type != LiveMessageType.superChat && !isStandaloneBadgeEcho(message))
+        .toList(growable: false);
     if (lines.isEmpty) {
       // An empty list is four different facts, and only one of them is the
       // room being quiet: the standing the controller publishes says which, so
@@ -571,6 +567,7 @@ final class _ChatFeedState extends ConsumerState<_ChatFeed> {
         final line = _ChatLine(
           message: message,
           anchorName: anchorName,
+          platform: platform,
           repeats: above != null && _continuesSpeaker(above, message),
         );
         if (boundary == null || message.messageId != boundary) return line;
@@ -865,16 +862,23 @@ final class _EmoteTile extends StatelessWidget {
 bool _continuesSpeaker(LiveMessage above, LiveMessage message) {
   if (message.type != LiveMessageType.chat || above.type != LiveMessageType.chat) return false;
   final name = message.sender?.userName.trim() ?? '';
-  return name.isNotEmpty && name == above.sender?.userName.trim();
+  if (name.isEmpty || name != above.sender?.userName.trim()) return false;
+  final at = message.createdAt;
+  final aboveAt = above.createdAt;
+  if (at != null && aboveAt != null && at.difference(aboveAt) > const Duration(minutes: 2)) return false;
+  return true;
 }
 
 /// One chat line: the sender and the text, the platform's own colour when
 /// it gave one. Its context menu copies the line, blocks the sender, or
 /// blocks a keyword to cut out of the line.
 final class _ChatLine extends ConsumerWidget {
-  const _ChatLine({required this.message, this.anchorName = '', this.repeats = false});
+  const _ChatLine({required this.message, this.anchorName = '', this.platform = '', this.repeats = false});
 
   final LiveMessage message;
+
+  /// The platform the room lives on, for the user card the name opens.
+  final String platform;
 
   /// The room's streamer: a gift names its receiver only when it differs.
   final String anchorName;
@@ -892,10 +896,9 @@ final class _ChatLine extends ConsumerWidget {
     final sender = message.sender;
     var nameStyle = theme.typography.caption;
     final senderName = sender?.userName.trim() ?? '';
-    final showNames = ref.watch(chatNamesProvider);
-    final showAvatars = ref.watch(chatAvatarsProvider);
-    final fontSize = ref.watch(chatListFontSizeProvider);
-    final lineSpacing = ref.watch(chatListLineSpacingProvider);
+    const showNames = true;
+    const fontSize = kChatListFontSizeFixed;
+    const lineSpacing = kChatListLineSpacingFixed;
     final height = switch (lineSpacing) {
       'compact' => 1.4,
       'loose' => 1.7,
@@ -905,11 +908,12 @@ final class _ChatLine extends ConsumerWidget {
       // The tightest step on the spacing scale: a compact list still needs
       // lines that read apart.
       'compact' => 1.0,
-      'loose' => DsSpace.s6,
-      _ => DsSpace.s3,
+      'loose' => DsSpace.s8,
+      _ => DsSpace.s6,
     };
+    final fontPx = fontSize > 0 ? fontSize.toDouble() : 15.0;
     final lineStyle = theme.typography.caption.copyWith(
-      fontSize: fontSize > 0 ? fontSize.toDouble() : null,
+      fontSize: fontPx,
       height: height,
       color: colors.text,
     );
@@ -929,7 +933,7 @@ final class _ChatLine extends ConsumerWidget {
       _ => null,
     };
     nameStyle = theme.typography.caption.copyWith(
-      fontSize: fontSize > 0 ? fontSize.toDouble() : null,
+      fontSize: fontPx,
       height: height,
       fontWeight: FontWeight.w600,
       color:
@@ -941,21 +945,14 @@ final class _ChatLine extends ConsumerWidget {
             fallback: colors.textMuted,
           ),
     );
-    // The line's own pixel size, followed from the theme when the viewer
-    // hasn't picked one; an emoticon rides a touch larger than its words.
-    final fontPx = fontSize > 0 ? fontSize.toDouble() : (theme.typography.caption.fontSize ?? 13);
-    // The face rides the line's own size: a fixed disc beside a 12px line reads
-    // as a plate bolted on, and one that follows the viewer's chat size keeps the
-    // column's left edge in proportion with the rest of it.
-    final avatarSize = (fontPx * 1.55).clamp(18.0, 26.0);
-    final avatarUrl = (sender?.avatarUrl ?? '').trim();
+    // The line's own pixel size, followed from the viewer's setting; an
+    // emoticon rides a touch larger than its words.
     final gift = _giftOf(message);
     final superChat = message.type == LiveMessageType.superChat && message.payload is LiveSuperChatMessage
         ? message.payload! as LiveSuperChatMessage
         : null;
     final replayed = message.messageId.startsWith('local-replay-');
-    final valueInYuan = ref.watch(chatGiftValueInYuanProvider);
-    final words = gift == null ? message.text : _giftSentence(t, gift, anchorName, inYuan: valueInYuan);
+    final words = gift == null ? message.text : giftSentenceText(t, gift, anchorName);
     // The room's own notices (the platform's notice and system lines) sit
     // apart from the conversation: centred, quiet, no "系统:" voice. A chat
     // message whose platform lost the sender's name is NOT a notice — it
@@ -967,38 +964,25 @@ final class _ChatLine extends ConsumerWidget {
     // Who is talking, in the room's own terms: the badge pictures the platform
     // sent, the role it declares, the fan medal (its name and level) and the
     // viewer's level. A line with none of them shows none.
-    final fanBadgeName = (sender?.fanBadgeName ?? '').trim();
     final fanBadgeLevel = (sender?.fanBadgeLevel ?? '').trim();
-    final userLevel = (sender?.userLevel ?? '').trim();
-    // A platform can wear several (a title, a medal, an event mark); three is
-    // what the line can carry before the name itself is pushed off the front.
-    final badgeUrls = [for (final badge in (sender?.badges ?? const <LiveBadge>[]).take(3)) badge.url.trim()];
+    final userLevelNumber = int.tryParse((sender?.userLevel ?? '').trim()) ?? 0;
+    final fanLevelNumber = int.tryParse(fanBadgeLevel) ?? 0;
+    // One rank per row: the platform's user level when it has one, else
+    // the room's fan level. Two badges for one person read as a duplicate.
+    final levelNumber = userLevelNumber > 0 ? userLevelNumber : fanLevelNumber;
     final roleTag = switch (sender?.role) {
       LiveAnchorRole.anchor => t.room.roleAnchor,
       LiveAnchorRole.moderator => t.room.roleModerator,
       LiveAnchorRole.platform => t.room.rolePlatform,
       _ => null,
     };
-    final showBadges =
-        showNames &&
-        !isSystem &&
-        !repeats &&
-        (badgeUrls.isNotEmpty || roleTag != null || fanBadgeName.isNotEmpty || userLevel.isNotEmpty);
     // One height for every tag on the line, tied to the viewer's own chat size:
     // tags of three different heights are what made the column look broken.
-    final tagHeight = (fontPx * 1.3).clamp(14.0, 22.0);
+    final tagHeight = (fontPx * 1.55).clamp(20.0, 28.0);
     final badgeStyle = theme.typography.caption.copyWith(
-      fontSize: fontSize > 0 ? math.max(fontSize - 2, 9).toDouble() : 10,
+      fontSize: math.max(fontPx - 2, 10),
       height: 1,
     );
-    // The level is a number, not a plate: it reads as a fact once it carries no
-    // background, and the plate colour belongs to the medals that earn one.
-    final level = int.tryParse(userLevel) ?? 0;
-    final levelInk = level >= 20
-        ? colors.accent
-        : level >= 10
-        ? colors.warning.text
-        : colors.textSubtle;
     if (isSystem) {
       // A notice is not conversation: it sits in a quiet chip of its own, so
       // the flow of talk reads as talk and the room's own voice reads apart.
@@ -1035,31 +1019,33 @@ final class _ChatLine extends ConsumerWidget {
         child: _ChatHover(child: line),
       );
     }
-    // A paid line — a gift or a super chat — sits in a tinted banner; plain
-    // talk is a bare line, so the column keeps live chat's own density.
+    // Every line is the same row: a 2 px rail, then the identity and the
+    // words. Paid lines colour the rail and lead with their gift/price mark;
+    // ordinary talk keeps the rail transparent. No avatar, no bordered card,
+    // so the column reads as one stream instead of two layouts.
     final paid = gift != null || superChat != null;
     final priceText = superChat == null ? null : _superChatPrice(superChat);
-    // Who is talking, on its own line: the platform's marks, the role it
-    // declares, the fan medal and the level, then the name in its own ink —
-    // and the words on the line below, starting at the same edge. The old
-    // single flow — badges, name and words jammed into one run — read as a
-    // pile of pills in front of a sentence; two lines give the eye a who,
-    // then a what, the way the reference's own columns draw them.
-    final showNameLine = showNames && senderName.isNotEmpty && !repeats;
-    final nameLine = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (showBadges) ...[
-          // The platform's own pictures first, then the role it declares,
-          // then the medal and the level: the order a viewer reads a
-          // stranger by.
-          for (final url in badgeUrls)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-              child: _BadgeImage(url: url, height: tagHeight),
+    final showName = showNames && senderName.isNotEmpty && !repeats;
+    final spans = <InlineSpan>[
+      if (priceText != null)
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+            child: _SenderTag(
+              text: priceText,
+              background: colors.warning.fill,
+              foreground: colors.warning.onFill,
+              style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+              height: tagHeight,
             ),
-          if (roleTag != null)
-            Padding(
+          ),
+        ),
+      if (showName) ...[
+        if (roleTag != null)
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
               padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
               child: _SenderTag(
                 text: roleTag,
@@ -1077,152 +1063,57 @@ final class _ChatLine extends ConsumerWidget {
                 height: tagHeight,
               ),
             ),
-          if (fanBadgeName.isNotEmpty)
-            Padding(
+          ),
+        if (levelNumber > 0)
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
               padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-              child: _SenderTag(
-                text: fanBadgeLevel.isEmpty ? fanBadgeName : '$fanBadgeName $fanBadgeLevel',
-                background: colors.accent.withValues(alpha: 0.12),
-                foreground: colors.accent,
-                // A tint alone disappears on a pale panel.
-                border: colors.accent.withValues(alpha: 0.32),
-                style: badgeStyle,
-                height: tagHeight,
-              ),
+              child: UserLevelBadge(level: levelNumber, height: tagHeight),
             ),
-          if (userLevel.isNotEmpty)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-              // The level as the reference draws it: a hairline plate in the
-              // tier's own ink, not a bare number.
-              child: _SenderTag(
-                text: 'Lv.$userLevel',
-                background: levelInk.withValues(alpha: 0.10),
-                foreground: levelInk,
-                border: levelInk.withValues(alpha: 0.55),
-                style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
-                height: tagHeight,
-              ),
-            ),
-        ],
-        Flexible(
-          child: Text(senderName, maxLines: 1, overflow: TextOverflow.ellipsis, style: nameStyle),
+          ),
+        WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: _ChatName(
+            name: senderName,
+            style: nameStyle,
+            onPressed: sender == null || platform.isEmpty
+                ? null
+                : () => unawaited(showChatUserCard(context, ref, sender, platform)),
+          ),
+        ),
+        TextSpan(
+          text: ': ',
+          style: nameStyle.copyWith(color: colors.textSubtle, fontWeight: FontWeight.w400),
         ),
       ],
+      if (replayed)
+        TextSpan(
+          text: '[${t.room.replayed}] ',
+          style: nameStyle.copyWith(color: colors.textSubtle),
+        ),
+      ...chatWordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
+    ];
+    final content = Padding(
+      padding: EdgeInsetsDirectional.fromSTEB(repeats ? DsSpace.s12 : DsSpace.s6, paid ? DsSpace.s4 : vertical, 2, paid ? DsSpace.s4 : vertical),
+      child: Text.rich(TextSpan(style: lineStyle, children: spans)),
     );
-    Widget content = Padding(
-      padding: EdgeInsets.symmetric(vertical: paid ? 2 : vertical),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // The face leads, then the money, then the words: a column of text
-          // only is what made the list read as a log. A sender the platform
-          // sent no picture for keeps the disc with their initial on it, so
-          // every line still starts at the same edge.
-          if (showAvatars && senderName.isNotEmpty && repeats)
-            // The run keeps its indent: the words of a repeated line start
-            // under the first one's, not under the face above.
-            SizedBox(width: avatarSize + DsSpace.s6)
-          else if (showAvatars && senderName.isNotEmpty)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(top: 1, end: DsSpace.s6),
-              child: DsAvatar(
-                image: avatarUrl.isEmpty
-                    ? null
-                    : cachedImage(
-                        avatarUrl,
-                        policy: ImageCachePolicies.userAvatar,
-                        width: (avatarSize * 2).round(),
-                        height: (avatarSize * 2).round(),
-                      ),
-                initials: avatarInitials(senderName),
-                toneIndex: DsAvatar.toneFor(senderName),
-                semanticLabel: senderName,
-                style: DsAvatarStyle(diameter: avatarSize),
-              ),
-            ),
-          if (gift != null)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(top: 1, end: DsSpace.s6),
-              child: _GiftIcon(gift: gift, size: fontSize > 0 ? fontSize.toDouble() : 16),
-            ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 1,
-              children: [
-                if (showNameLine) nameLine,
-                // The words with the platform's own emoticons in them, cut
-                // out of the flying layer's catalogue and drawn as itself -
-                // and, for what the catalogue does not carry, the pictures
-                // this message names.
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      if (priceText != null) ...[
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.middle,
-                          child: Padding(
-                            padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                            child: _SenderTag(
-                              text: priceText,
-                              background: colors.warning.fill,
-                              foreground: colors.warning.onFill,
-                              style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
-                              height: tagHeight,
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (replayed)
-                        TextSpan(
-                          text: '[${t.room.replayed}] ',
-                          style: nameStyle.copyWith(color: colors.textSubtle),
-                        ),
-                      ...chatWordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    // A tap on the words opens the same copy/block sheet as a right click;
+    // the name keeps its own tap for the user card.
+    final row = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => unawaited(
+        showRoomMessageActions(
+          context,
+          ref,
+          text: words,
+          userName: senderName,
+          isLocal: message.isLocal,
+        ),
       ),
+      child: content,
     );
-    if (superChat != null) {
-      // A super chat is the loudest money in the room: the warm banner and
-      // the price chip up front, the words beside them. The platform's own
-      // colours lead when it sends them (five platforms do, for the card the
-      // viewer paid for); the theme's warm tint is the fallback, not the rule.
-      final banner = paidBanner(superChat.display.backgroundColor, colors.surface);
-      content = Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
-          decoration: BoxDecoration(
-            color: banner?.fill ?? colors.warning.tint,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            border: Border.fromBorderSide(
-              BorderSide(color: banner?.edge ?? colors.warning.fill.withValues(alpha: 0.35)),
-            ),
-          ),
-          child: content,
-        ),
-      );
-    } else if (gift != null) {
-      // A gift is money on the page: the same warm banner the super chat
-      // wears, so every paid line reads as money at a glance. Both banners
-      // wear the theme's card corner, not a radius of their own.
-      content = Container(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s5),
-        decoration: BoxDecoration(
-          color: colors.warning.tint,
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.fromBorderSide(BorderSide(color: colors.warning.fill.withValues(alpha: 0.35))),
-        ),
-        child: content,
-      );
-    }
     return DsContextMenuRegion(
       semanticLabel: t.room.messageActions,
       items: [
@@ -1250,7 +1141,31 @@ final class _ChatLine extends ConsumerWidget {
             onPressed: () => unawaited(blockRoomMessageKeyword(context, ref, message.text)),
           ),
       ],
-      child: _ChatHover(child: content),
+      child: _ChatHover(child: row),
+    );
+  }
+}
+
+/// The sender's name inside a chat line: a text, not a chip, that opens the
+/// user card when pressed. It keeps the line's own type and ink.
+final class _ChatName extends StatelessWidget {
+  const _ChatName({required this.name, required this.style, this.onPressed});
+
+  final String name;
+  final TextStyle style;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 160),
+      child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+    );
+    if (onPressed == null) return text;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onPressed,
+      child: MouseRegion(cursor: SystemMouseCursors.click, child: text),
     );
   }
 }
@@ -1285,7 +1200,7 @@ final class _ChatHoverState extends State<_ChatHover> {
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
-          color: _hovered ? colors.hover.withValues(alpha: 0.5) : OnVideoColors.clear,
+          color: _hovered ? colors.accent.withValues(alpha: 0.10) : OnVideoColors.clear,
           borderRadius: theme.radii.controlCorners(null, 24),
         ),
         child: widget.child,
@@ -1368,78 +1283,6 @@ String? _superChatPrice(LiveSuperChatMessage message) {
   return [?message.price.currency, '$amount'].join();
 }
 
-/// The value of the whole line in the gift's unit, when it has one: a free
-/// gift, an unknown unit and a platform without a price show nothing.
-int? _giftShownValue(LiveGift gift) {
-  if (giftUnitIsFree(gift.value.unit)) return null;
-  final shown = giftShownCount(gift);
-  final unitPrice = gift.value.unitPrice;
-  if (shown > gift.count && unitPrice != null && unitPrice > 0) return (unitPrice * shown).round();
-  final total = gift.value.totalValue;
-  if (total == null || total <= 0) return null;
-  return total.round();
-}
-
-/// A fen amount as yuan, without trailing zeros ("100", "0.5", "12.34").
-String _yuanText(int fen) {
-  if (fen % 100 == 0) return '${fen ~/ 100}';
-  final text = (fen / 100).toStringAsFixed(2);
-  final trimmed = text.replaceFirst(RegExp(r'0+$'), '');
-  return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
-}
-
-/// The units whose rate in yuan a platform fixes, so "礼物价值换算成元" can
-/// write them as yuan; the overseas rates only rank gifts and stay in their
-/// own unit (the reference's A08.12 list, plus our [LiveGiftUnit.rmb]).
-const Set<LiveGiftUnit> _giftYuanUnits = {
-  LiveGiftUnit.fen,
-  LiveGiftUnit.rmb,
-  LiveGiftUnit.yuan,
-  LiveGiftUnit.goldSeed,
-  LiveGiftUnit.diamond,
-  LiveGiftUnit.douyinCoin,
-  LiveGiftUnit.acCoin,
-  LiveGiftUnit.starCoin,
-};
-
-String? _giftValueText(Translations t, LiveGift gift, {bool inYuan = false}) {
-  final value = _giftShownValue(gift);
-  if (value == null || value <= 0) return null;
-  final room = t.room;
-  if (inYuan && _giftYuanUnits.contains(gift.value.unit)) {
-    final rate = giftUnitsPerYuan[gift.value.unit]!;
-    // At least a fen: a paid gift is never "0 元".
-    final fen = math.max(1, (value * 100 / rate).round());
-    return room.giftValueYuan(value: _yuanText(fen));
-  }
-  return switch (gift.value.unit) {
-    LiveGiftUnit.fen => room.giftValueYuan(value: _yuanText(value)),
-    LiveGiftUnit.rmb || LiveGiftUnit.yuan => room.giftValueYuan(value: '$value'),
-    LiveGiftUnit.goldSeed => room.giftValueGoldSeed(value: '$value'),
-    LiveGiftUnit.diamond => room.giftValueDiamond(value: '$value'),
-    LiveGiftUnit.redBean => room.giftValueRedBean(value: '$value'),
-    LiveGiftUnit.point => room.giftValuePoint(value: '$value'),
-    LiveGiftUnit.bits => room.giftValueBits(value: '$value'),
-    LiveGiftUnit.kicks => room.giftValueKicks(value: '$value'),
-    LiveGiftUnit.cheese => room.giftValueCheese(value: '$value'),
-    LiveGiftUnit.starBalloon => room.giftValueStarBalloon(value: '$value'),
-    LiveGiftUnit.douyinCoin => room.giftValueDouyinCoin(value: '$value'),
-    LiveGiftUnit.sixCoin => room.giftValueSixCoin(value: '$value'),
-    LiveGiftUnit.acCoin => room.giftValueAcCoin(value: '$value'),
-    LiveGiftUnit.starCoin => room.giftValueStarCoin(value: '$value'),
-    LiveGiftUnit.heart => room.giftValueHeart(value: '$value'),
-    LiveGiftUnit.note => room.giftValueNote(value: '$value'),
-    LiveGiftUnit.free || LiveGiftUnit.silver || LiveGiftUnit.banana || LiveGiftUnit.gold || LiveGiftUnit.other => null,
-  };
-}
-
-/// The gift in words: "送出 小心心 ×3", plus its value when known.
-String _giftSentence(Translations t, LiveGift gift, String anchorName, {bool inYuan = false}) {
-  final value = _giftValueText(t, gift, inYuan: inYuan);
-  final words = giftSentenceText(t, gift, anchorName);
-  return value == null ? words : '$words  $value';
-}
-
 /// A small inline chip on a chat line: a fan badge (its name and level) or
 /// the viewer's level, in the platform's own labels.
 /// One sender tag beside the name: the platform's fan medal, the room role, the
@@ -1456,7 +1299,6 @@ final class _SenderTag extends StatelessWidget {
     required this.foreground,
     required this.style,
     required this.height,
-    this.border,
   });
 
   final String text;
@@ -1467,8 +1309,6 @@ final class _SenderTag extends StatelessWidget {
   /// The tag's own height; the corners follow it, the way a control's do.
   final double height;
 
-  /// A hairline in the tag's own hue: a tint alone disappears on a pale panel.
-  final Color? border;
 
   @override
   Widget build(BuildContext context) {
@@ -1480,112 +1320,8 @@ final class _SenderTag extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: theme.radii.controlCorners(null, height),
-        border: border == null ? null : Border.fromBorderSide(BorderSide(color: border!)),
       ),
       child: Text(text, style: style.apply(color: foreground), maxLines: 1),
-    );
-  }
-}
-
-/// One badge picture the platform sent (a guard crest, a VIP mark, a title).
-///
-/// Where a platform gives an image, this app draws that image rather than
-/// inventing a label for something it cannot name; a URL that fails or is not
-/// http leaves nothing behind, so a broken badge never punches a hole in a line.
-final class _BadgeImage extends StatelessWidget {
-  const _BadgeImage({required this.url, required this.height});
-
-  final String url;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final uri = Uri.tryParse(url);
-    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return const SizedBox.shrink();
-    // A fixed slot: badges are mostly wider than tall, and a line must not
-    // reflow when the picture arrives.
-    return SizedBox(
-      height: height,
-      width: height * 1.5,
-      child: Image(
-        image: cachedImage(url, policy: ImageCachePolicies.chatEmote, height: (height * 2).round()),
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-      ),
-    );
-  }
-}
-
-/// A gift's picture at its line's text size, with the generic gift mark
-/// when the platform gave none or it failed to load.
-final class _GiftIcon extends StatelessWidget {
-  const _GiftIcon({required this.gift, required this.size});
-
-  final LiveGift gift;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final fallback = DsIcon(DsIcons.gift, size: size, color: colors.textSubtle);
-    final url = gift.iconUrl?.trim() ?? '';
-    final uri = Uri.tryParse(url);
-    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return fallback;
-    return Image(
-      image: cachedImage(
-        url,
-        policy: ImageCachePolicies.chatEmote,
-        width: (size * 2).round(),
-        height: (size * 2).round(),
-      ),
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      errorBuilder: (_, _, _) => fallback,
-    );
-  }
-}
-
-/// The flying layer's master switch and the way into its settings page: the
-/// layer has one set of controls, in the settings centre, and a room opens
-/// that page rather than a second copy of it.
-final class _RoomDanmakuSettings extends ConsumerWidget {
-  const _RoomDanmakuSettings();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final settings = ref.watch(playbackSettingsProvider);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s20),
-      children: [
-        DsSwitch(
-          value: settings.danmakuVisible,
-          onChanged: (value) => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
-          label: Text(t.room.danmakuOn),
-          description: Text(t.room.danmakuSettingsDesc),
-        ),
-        const SizedBox(height: DsSpace.s16),
-        // The display body itself, the settings center's own pane: one source
-        // of rows, so the column edits the very same preferences the settings
-        // page does and both read back the same live state — the lines change
-        // while the room keeps playing. The row widgets already answer a
-        // narrow pane, dropping their wide controls under their labels.
-        const DanmakuDisplayPane(),
-        const SizedBox(height: DsSpace.s16),
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.slidersHorizontal),
-              title: Text(t.settings.navDanmaku),
-              description: Text(t.settings.danmakuDescription),
-              showChevron: true,
-              onPressed: () =>
-                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location)),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

@@ -33,36 +33,11 @@ final class ChatNamesController extends Notifier<bool> {
 /// The room chat's sender-name switch.
 final chatNamesProvider = NotifierProvider<ChatNamesController, bool>(ChatNamesController.new);
 
-/// Whether each chat line leads with its sender's face (the reference's
-/// `showChatAvatars`). Platforms differ in what they send: a line whose
-/// sender has no picture falls back to the initial disc rather than leaving
-/// a hole, so the column keeps one left edge either way.
-const String kChatAvatarsKey = 'danmaku.chatAvatars';
-
-/// Owns the avatar switch.
-final class ChatAvatarsController extends Notifier<bool> {
-  @override
-  bool build() {
-    try {
-      return StoragePrefs.getBool(kChatAvatarsKey) ?? true;
-    } on Object {
-      return true;
-    }
-  }
-
-  /// Shows or hides the sender faces and writes through.
-  Future<void> set({required bool value}) async {
-    state = value;
-    try {
-      await StoragePrefs.setBool(kChatAvatarsKey, value);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-/// The room chat's sender-avatar switch.
-final chatAvatarsProvider = NotifierProvider<ChatAvatarsController, bool>(ChatAvatarsController.new);
+/// The chat list is no longer configurable: these are the fixed values the
+/// product ships with, and the settings rows for them are gone.
+const int kChatListFontSizeFixed = 15;
+const String kChatListLineSpacingFixed = 'standard';
+const double kChatPanelWidthFixed = 360;
 
 /// The room chat's font size; 0 follows the theme.
 const String kChatListFontSizeKey = 'danmaku.list.fontSize';
@@ -182,37 +157,6 @@ final class ChatGiftsAboveTierController extends Notifier<bool> {
 /// The chat list's valuable-gifts switch.
 final chatGiftsAboveTierProvider = NotifierProvider<ChatGiftsAboveTierController, bool>(
   ChatGiftsAboveTierController.new,
-);
-
-/// Whether gift values fixed in yuan are written as yuan (the reference's
-/// `giftValueInYuan`): gold seeds, diamonds and Douyin coins at the
-/// platform's rate; overseas currencies stay in their own unit.
-const String kChatGiftValueInYuanKey = 'danmaku.giftValueInYuan';
-
-/// Owns the yuan-value switch; off by default, the reference's value.
-final class ChatGiftValueInYuanController extends Notifier<bool> {
-  @override
-  bool build() {
-    try {
-      return StoragePrefs.getBool(kChatGiftValueInYuanKey) ?? false;
-    } on Object {
-      return false;
-    }
-  }
-
-  Future<void> set({required bool value}) async {
-    state = value;
-    try {
-      await StoragePrefs.setBool(kChatGiftValueInYuanKey, value);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-/// The chat list's yuan-value switch.
-final chatGiftValueInYuanProvider = NotifierProvider<ChatGiftValueInYuanController, bool>(
-  ChatGiftValueInYuanController.new,
 );
 
 /// The room page's chat column width bounds, in px.

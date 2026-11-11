@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/live/room/chat/chat_message_filter.dart' show isStandaloneBadgeEcho;
 import 'package:pure_live/modules/live/room/chat/room_emotes.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/shared/player/on_video_colors.dart';
@@ -91,7 +92,8 @@ final class _RoomChatStreamState extends ConsumerState<RoomChatStream> {
   /// notices, entrances and replays are the column's business, not a glance's.
   static List<LiveMessage> _conversation(List<LiveMessage> lines) => [
     for (final line in lines)
-      if ((line.type == LiveMessageType.chat || line.type == LiveMessageType.superChat) &&
+      if (line.type == LiveMessageType.chat &&
+          !isStandaloneBadgeEcho(line) &&
           !line.replayed &&
           line.text.trim().isNotEmpty)
         line,
@@ -133,14 +135,12 @@ final class _RoomChatStreamState extends ConsumerState<RoomChatStream> {
 
   @override
   Widget build(BuildContext context) {
-    final corner = ref.watch(chatStreamCornerProvider);
-    final showNames = ref.watch(chatNamesProvider);
-    final fontSize = ref.watch(chatListFontSizeProvider);
+    const corner = ChatStreamCorner.topRight;
+    const showNames = true;
     // Over the picture the follow-theme pick lands on the flying layer's own
     // default: 18 reads at a glance where the panel's 13 does not.
-    final fontPx = fontSize > 0 ? fontSize.toDouble() : 18.0;
-    final right = corner == ChatStreamCorner.topRight || corner == ChatStreamCorner.bottomRight;
-    final top = corner == ChatStreamCorner.topRight || corner == ChatStreamCorner.topLeft;
+    const fontPx = 14.0;
+    const right = true;
     final alignment = switch (corner) {
       ChatStreamCorner.topRight => AlignmentDirectional.topEnd,
       ChatStreamCorner.bottomRight => AlignmentDirectional.bottomEnd,
@@ -159,11 +159,11 @@ final class _RoomChatStreamState extends ConsumerState<RoomChatStream> {
           if (width <= 0 || available <= 0) return const SizedBox.shrink();
           final target = _feed.length <= capacity ? _feed : _feed.sublist(_feed.length - capacity);
           _syncWindow(target);
-          final style = TextStyle(
-            fontSize: fontPx,
+          const style = TextStyle(
+            fontSize: 14,
             height: 1.5,
             color: OnVideoColors.foreground,
-            shadows: const [Shadow(color: Color(0xCC000000), blurRadius: 2, offset: Offset(1, 1))],
+            shadows: [Shadow(color: Color(0xCC000000), blurRadius: 2, offset: Offset(1, 1))],
           );
           final nameStyle = style.copyWith(color: OnVideoColors.inkMuted, fontWeight: FontWeight.w600);
           return Padding(
@@ -180,10 +180,10 @@ final class _RoomChatStreamState extends ConsumerState<RoomChatStream> {
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeOutCubic,
-                  alignment: top ? Alignment.topCenter : Alignment.bottomCenter,
+                  alignment: Alignment.topCenter,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: right ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     spacing: 4,
                     children: [
                       for (final line in _leaving)
