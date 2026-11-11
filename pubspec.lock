@@ -477,10 +477,10 @@ packages:
     dependency: transitive
     description:
       name: cnativeapi
-      sha256: "251fb93cd7ec205445fa512ee5ddeb0b82b3273d071cfc0784ddffbbdebbf5d3"
+      sha256: c43703998995e132b0656d2b8a95ed2bedc6b22ccee2c827bcdc075e0330e319
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.2"
+    version: "0.5.10"
   code_assets:
     dependency: "direct overridden"
     description:
@@ -1029,10 +1029,10 @@ packages:
     dependency: transitive
     description:
       name: flame_barrage
-      sha256: "60413ec23c49d163d2cf33aaf2060fff304a56f4527fa885c8e09bfbd3792ac9"
+      sha256: "6fb000faf01678188d224e9db7119f22a3c7589550f929014e5ba1d48164a357"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.10"
+    version: "0.0.11"
   flutter:
     dependency: transitive
     description: flutter
@@ -1107,42 +1107,42 @@ packages:
     dependency: transitive
     description:
       name: flutter_local_notifications
-      sha256: "9ee28742343dd13df758bb4185e8ded37ac2d1aeca6648c3ba7862c99797517e"
+      sha256: e99e9c6078d1359ba131b2c1eb8d68837170836a01bf2cea3cf2fa13e62ac2ac
       url: "https://pub.dev"
     source: hosted
-    version: "22.3.2"
+    version: "23.0.0"
   flutter_local_notifications_linux:
     dependency: transitive
     description:
       name: flutter_local_notifications_linux
-      sha256: "3b89a4bf095fa5f8a99beeabf982c5bd506c3ad25e7b9e61da945e994dc5b615"
+      sha256: bcbcf3c15e33b6866805092308f5f6ef27e1191874f6a92ef59213a0812a79a2
       url: "https://pub.dev"
     source: hosted
-    version: "8.0.2"
+    version: "9.0.0"
   flutter_local_notifications_platform_interface:
     dependency: transitive
     description:
       name: flutter_local_notifications_platform_interface
-      sha256: "43c3761d916c9bd3d5c7ebbc44d82f4990329840c0c5d62ad5260cc1b5d399bd"
+      sha256: "4a49db4ce3d633ebc85c85b5fa959572600ec10bd097419c454579444308a0a0"
       url: "https://pub.dev"
     source: hosted
-    version: "12.2.0"
+    version: "13.0.0"
   flutter_local_notifications_web:
     dependency: transitive
     description:
       name: flutter_local_notifications_web
-      sha256: "516afaf97a2d1e67a036c6617321b00d205d72f7a67b6eccf936cd565f985878"
+      sha256: ef117694fbfcd82308ab0e324cfc9282fa50c192e24ec54a58173ae327ebc544
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.0"
+    version: "2.0.0"
   flutter_local_notifications_windows:
     dependency: "direct overridden"
     description:
       name: flutter_local_notifications_windows
-      sha256: "6f43bdd03b171b7a90f22647506fea33e2bb12294b7c7c7a3d690e960a382945"
+      sha256: c2d6efe9ba585d5f560d8b329131f00fe745834848e6221b22d1f62e0f0b16e2
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.1"
+    version: "4.0.0"
   flutter_localizations:
     dependency: transitive
     description: flutter
@@ -1651,8 +1651,8 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/media_core"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1660,8 +1660,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_audio"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1669,8 +1669,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_better_player"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1678,8 +1678,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_cast_dlna"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.8.0"
@@ -1687,8 +1687,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_danmaku"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1696,8 +1696,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_download"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1705,8 +1705,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_fullscreen"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1714,8 +1714,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_ijk_player"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1723,8 +1723,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_ingest"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1732,8 +1732,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_live"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1741,8 +1741,8 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/media_core_logging"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1750,8 +1750,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_media_kit"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1759,8 +1759,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_mediasession"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1768,8 +1768,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_memory"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1777,8 +1777,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_mpv_audio"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1786,8 +1786,8 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/media_core_native"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.2.0"
@@ -1795,8 +1795,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_notify"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1804,8 +1804,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_pip"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1813,8 +1813,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_presentation"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1822,8 +1822,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_recording_ffmpeg"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1831,8 +1831,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/media_core_win32"
-      ref: a682384ff91e9fb63efa53566751da13fc6b7534
-      resolved-ref: a682384ff91e9fb63efa53566751da13fc6b7534
+      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
+      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
@@ -1840,8 +1840,8 @@ packages:
     dependency: transitive
     description:
       path: media_kit
-      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
-      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      ref: "83b7ca63772856e1ea0158916177e136f7b7b0be"
+      resolved-ref: "83b7ca63772856e1ea0158916177e136f7b7b0be"
       url: "https://github.com/Predidit/media-kit.git"
     source: git
     version: "1.1.11"
@@ -1849,8 +1849,8 @@ packages:
     dependency: transitive
     description:
       path: media_kit_video
-      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
-      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      ref: "83b7ca63772856e1ea0158916177e136f7b7b0be"
+      resolved-ref: "83b7ca63772856e1ea0158916177e136f7b7b0be"
       url: "https://github.com/Predidit/media-kit.git"
     source: git
     version: "1.2.5"
@@ -1890,10 +1890,10 @@ packages:
     dependency: transitive
     description:
       name: mpv_audio_kit
-      sha256: "28a3a1497a43de36e9f9f1bad5638fe0b072cd24e65eaa6e04fe55a42e1c102a"
+      sha256: a2cbb7f8fb3a4e022a17821481d4c2421077356f15c8208cee9d4839161a865e
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.3"
+    version: "0.7.0"
   multiview_desktop:
     dependency: transitive
     description:
@@ -1922,18 +1922,18 @@ packages:
     dependency: transitive
     description:
       name: nativeapi
-      sha256: c4625e81f5ce2f4a9044c0ec1bdb38355119ffcf89e24eb20ae9fc5027a01e59
+      sha256: "118045bb549cb6fabad472a3a22a537e7310bbf20097350f5027808b4a5853ce"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.2"
+    version: "0.5.10"
   nativeapi_flutter:
     dependency: transitive
     description:
       name: nativeapi_flutter
-      sha256: "4feaa68cb5c4fc3b2eeaee1a25e56e2d092178e1c59516d9db5dd34940dcf36c"
+      sha256: "357a405c69212f5157da1bd3be183a53c2b841d0de0eb51f4a3947913712aec4"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.2"
+    version: "0.5.10"
   network_info_plus:
     dependency: transitive
     description:
@@ -3007,8 +3007,8 @@ packages:
     dependency: "direct overridden"
     description:
       path: "."
-      ref: main
-      resolved-ref: "80acd536a1ea1c121c36e32d30e638a295087ed1"
+      ref: "93b914012c2753dda99212fca5e582f9699003af"
+      resolved-ref: "93b914012c2753dda99212fca5e582f9699003af"
       url: "https://github.com/leanflutter/window_manager.git"
     source: git
     version: "0.6.0"

@@ -641,11 +641,11 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     final engine = _engineAdapter?.player;
     if (engine == null) return const <PlayerAudioDevice>[];
     return <PlayerAudioDevice>[
-      for (final device in engine.state.audioDevices)
+      for (final device in engine.state.output.audioDevices)
         PlayerAudioDevice(
           name: device.name,
           description: device.description,
-          selected: device.name == engine.state.audioDevice.name,
+          selected: device.name == engine.state.output.audioDevice.name,
         ),
     ];
   }
@@ -1193,10 +1193,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
     // The engine's own error is the only record of what died; say it here,
     // once per track, before the skip logic moves the queue along.
-    appLog.forCategory('music.playback').warning(
-      'the engine errored on a track',
-      fields: {'track': track.title, 'error': '${next.error}'},
-    );
+    appLog
+        .forCategory('music.playback')
+        .warning('the engine errored on a track', fields: {'track': track.title, 'error': '${next.error}'});
 
     if (!ref.read(musicPlaybackSettingsProvider).skipOnError) {
       return;

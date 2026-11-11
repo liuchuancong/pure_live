@@ -12,7 +12,7 @@ resolution: workspace
 
 environment:
   sdk: ^3.13.0
-  flutter: '>=3.47.0'
+  flutter: ">=3.47.0"
 
 dependencies:
   ffi: ^2.1.0
@@ -31,7 +31,7 @@ dependencies:
   window_manager:
     git:
       url: https://github.com/leanflutter/window_manager.git
-      ref: main
+      ref: 93b914012c2753dda99212fca5e582f9699003af
 
 dev_dependencies:
   flutter_test:

@@ -64,9 +64,11 @@ dependency_overrides:
   flutter_media_session: ^3.1.0-pre.4
   hooks: ^2.2.0
   # 播放内核走 github liuchuancong/media_core（整仓同 pin a682384f，与应用侧同 ref，避免 git/path 双源冲突）
-  media_core: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core, ref: a682384ff91e9fb63efa53566751da13fc6b7534}}
-  media_core_logging: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_logging, ref: a682384ff91e9fb63efa53566751da13fc6b7534}}
-  media_core_native: {git: {url: https://github.com/liuchuancong/media_core, path: packages/media_core_native, ref: a682384ff91e9fb63efa53566751da13fc6b7534}}
+  media_core: { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core, ref: 64d35eb5753ec846d768777305eec5d2348bafec } }
+  media_core_logging:
+    { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_logging, ref: 64d35eb5753ec846d768777305eec5d2348bafec } }
+  media_core_native:
+    { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_native, ref: 64d35eb5753ec846d768777305eec5d2348bafec } }
   platform: ^3.2.0
   test_api: ^0.7.15
   wakelock_plus: 1.8.1
@@ -74,11 +76,20 @@ dependency_overrides:
   window_manager:
     git:
       url: https://github.com/leanflutter/window_manager.git
-      ref: main
+      ref: 93b914012c2753dda99212fca5e582f9699003af
 
   xml: ^7.0.0
 melos:
   scripts:
+    upgrade:
+      description: Upgrade workspace dependencies within current constraints.
+      run: flutter pub upgrade
+    upgrade:major:
+      description: Upgrade dependencies and allow major version changes.
+      run: flutter pub upgrade --major-versions
+    outdated:
+      description: Show outdated dependencies.
+      run: flutter pub outdated
     gen:
       description: Run build_runner code generation in every package that uses it.
       exec:
