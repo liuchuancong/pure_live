@@ -23,7 +23,7 @@ import 'package:pure_live/modules/live/room/chat/room_chat_stream.dart' show Roo
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
-    show PlayerSurface, kPlayerStageColor;
+    show PlayerSurface, kPlayerStageColor, toggleRoomPip;
 import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
 import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
 import 'package:pure_live/modules/live/room/page/room_glass_card.dart';
@@ -1952,11 +1952,12 @@ final class _ChatColumnToggle extends ConsumerWidget {
 
 /// The room's own actions, in one small list.
 ///
-/// The page header's ⋮ and the fullscreen strip's ⋮ open the same five rows —
-/// switch, refresh, sleep, a window of its own, the keyboard help — so a room
-/// action never disappears with the page chrome. Everything else lives where
-/// its object lives: details on the header, playback in the player settings,
-/// picture verbs on the picture.
+/// The page header's ⋮ and the fullscreen strip's ⋮ open the same rows —
+/// switch, refresh, the picture's own verbs (PiP, cast) where the strip is too
+/// narrow to carry them, sleep, a window of its own, the keyboard help — so a
+/// room action never disappears with the page chrome. Everything else lives
+/// where its object lives: details on the header, playback in the player
+/// settings, picture verbs on the picture.
 List<Widget> roomMenuItems(
   BuildContext context,
   WidgetRef ref,
@@ -1965,6 +1966,7 @@ List<Widget> roomMenuItems(
 }) {
   final t = context.t;
   final detail = room.room;
+  final presentation = ref.watch(roomPresentationProvider);
   final sleepMinutes = ref.watch(sleepTimerProvider).minutes;
   final sleepRunning = sleepMinutes != null;
   // A desktop shell that runs secondary windows and has the viewer's
@@ -1988,6 +1990,26 @@ List<Widget> roomMenuItems(
       label: Text(t.room.refreshRoom),
       onPressed: () => unawaited(ref.read(roomProvider.notifier).refreshRoom()),
     ),
+    // The strip folds these away on a narrow picture; the menu keeps them
+    // reachable there, and everywhere else they ride along for free.
+    if (room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.pictureInPicture2),
+        label: Text(presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn),
+        onPressed: () => unawaited(toggleRoomPip(context, ref)),
+      ),
+    if (room.lines.isNotEmpty)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.cast),
+        label: Text(t.room.cast),
+        onPressed: () => unawaited(
+          showCastDialog(
+            context,
+            line: room.lines[room.lineIndex.clamp(0, room.lines.length - 1)],
+            title: detail?.content.title,
+          ),
+        ),
+      ),
     const DsMenuDivider(),
     DsMenuItem(
       leading: DsIcon(sleepRunning ? DsIcons.timer : DsIcons.moon),
@@ -2038,10 +2060,11 @@ List<Widget> roomMenuItems(
   return items;
 }
 
-/// The room's overflow menu: switch, refresh, sleep, a window of its own and
-/// the keyboard help. Everything else lives where its object lives — details
-/// on the header, playback in the player settings, picture verbs on the
-/// picture — so the menu stays five rows and never grows with the window.
+/// The room's overflow menu: switch, refresh, the picture's PiP and cast
+/// where they apply, sleep, a window of its own and the keyboard help.
+/// Everything else lives where its object lives — details on the header,
+/// playback in the player settings, picture verbs on the picture — so the
+/// menu stays a short list and never grows with the window.
 final class _RoomMenu extends ConsumerWidget {
   const _RoomMenu({required this.shortcuts});
 
