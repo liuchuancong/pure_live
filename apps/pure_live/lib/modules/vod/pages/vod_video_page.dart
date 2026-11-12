@@ -1468,13 +1468,28 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // Only a mode that owns the app's window replaces this page's layout; a
     // phone's picture-in-picture window floats over it.
     final immersive = presentationController.modeOwnsWindow(presentation);
-    if (immersive) {
-      return Scaffold(backgroundColor: colors.canvas, body: _playerSurface(context, immersive: true));
-    }
     // The arrows mirror the room page: up and down take the wheel's step (the
     // 画质与音频 setting) toward the volume, left and right skip five seconds.
     // A TV keeps its arrows for focus; the remote drives the volume itself.
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    if (immersive) {
+      // The owned window keeps the keyboard its page had: Escape backs out of
+      // the mode it sits in (the small window back to the page, fullscreen
+      // back to the layout), I raises the stream's figures. The chrome's own
+      // autofocus keeps the bindings live while the strip is up.
+      return Scaffold(
+        backgroundColor: colors.canvas,
+        body: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): _leave,
+            if (!tv)
+              const SingleActivator(LogicalKeyboardKey.keyI): () =>
+                  ref.read(playerStatsVisibleProvider.notifier).toggle(),
+          },
+          child: Focus(autofocus: true, child: _playerSurface(context, immersive: true)),
+        ),
+      );
+    }
     final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
     void nudgeVolume(double delta) {
       _wake();
@@ -1496,6 +1511,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             _wake();
             unawaited(_toggleFullscreen());
           },
+          // The stream's own figures: the key every player answers to, over
+          // the same panel the bar's menu item opens.
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.keyI): () =>
+                ref.read(playerStatsVisibleProvider.notifier).toggle(),
           const SingleActivator(LogicalKeyboardKey.escape): _leave,
           // While the bar is down a TV's arrows and OK have nothing to move
           // through, so they raise it; while it is up they stay with focus.
@@ -1539,25 +1559,23 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         },
         child: Scaffold(
           backgroundColor: colors.surface,
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PageHeader(title: detail?.title ?? t.vod.opening),
-              Expanded(
-                child: _loading && detail == null
-                    ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
-                    : _error != null && detail == null
-                    ? Center(
-                        child: DsEmptyState(
-                          icon: const DsIcon(DsIcons.cloudOff),
-                          title: Text(t.vod.loadFailed),
-                          description: Text(_error!),
-                          actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.vod.retry))],
-                        ),
-                      )
-                    : _body(context, detail, t),
-              ),
-            ],
+          // The page header is gone: the strip over the picture carries the
+          // way back and the name, the room's own shape — the picture reads
+          // from the page's first pixel.
+          body: SafeArea(
+            bottom: false,
+            child: _loading && detail == null
+                ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+                : _error != null && detail == null
+                ? Center(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.cloudOff),
+                      title: Text(t.vod.loadFailed),
+                      description: Text(_error!),
+                      actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.vod.retry))],
+                    ),
+                  )
+                : _body(context, detail, t),
           ),
         ),
       ),
@@ -1968,11 +1986,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             unawaited(_cast());
           },
         ),
-      if (pipAvailable)
+      // In the small window the leading pill is the way back, so the pill
+      // here would be the same verb twice.
+      if (pipAvailable && presentation != PresentationMode.pip)
         PlayerBarButton(
-          iconAsset: presentation == PresentationMode.pip ? 'assets/icons/pip-exit.svg' : 'assets/icons/pip.svg',
-          label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
-          selected: presentation == PresentationMode.pip,
+          iconAsset: 'assets/icons/pip.svg',
+          label: t.vod.pip,
           onPressed: () {
             _wake();
             unawaited(_togglePip());
@@ -2003,14 +2022,43 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         ),
       ),
     );
+    final titleText = Flexible(
+      child: Text(
+        detail?.title ?? t.vod.opening,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
+      ),
+    );
+    final backPill = PlayerGlassPill(
+      child: PlayerBarButton(
+        icon: DsIcons.arrowLeft,
+        label: t.common.back,
+        onPressed: () {
+          _wake();
+          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+        },
+      ),
+    );
     if (!immersive) {
-      // No handle, no verbs: the picture has nothing yet to act on, and the
-      // page header above carries the errands until it does.
-      if (_handle == null) return const SizedBox.shrink();
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, 0),
-        child: Row(mainAxisAlignment: MainAxisAlignment.end, spacing: DsSpace.s8, children: [actionPill, morePill]),
+      // The strip is the page's head now: the way back and the name always,
+      // the verbs once a player exists to act on. No handle, no verbs — the
+      // pills would only promise what cannot run yet.
+      final ground = Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: AlignmentDirectional.topCenter,
+            end: AlignmentDirectional.bottomCenter,
+            colors: [Color(0xB3000000), Color(0x00000000)],
+          ),
+        ),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [backPill, titleText, const Spacer(), if (_handle != null) actionPill, if (_handle != null) morePill],
+        ),
       );
+      return ground;
     }
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
@@ -2024,20 +2072,51 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       child: Row(
         spacing: DsSpace.s8,
         children: [
+          // The leading pill answers the mode this strip sits in: out of the
+          // small window back to the page, or out of fullscreen — the room
+          // strip's own pair.
           PlayerGlassPill(
-            child: PlayerBarButton(
-              icon: DsIcons.minimize2,
-              label: t.vod.exitFullscreen,
-              autofocus: true,
-              onPressed: () => unawaited(_toggleFullscreen()),
-            ),
+            child: presentation == PresentationMode.pip
+                ? PlayerBarButton(
+                    iconAsset: 'assets/icons/pip-exit.svg',
+                    label: t.room.pipOff,
+                    autofocus: true,
+                    onPressed: () {
+                      _wake();
+                      unawaited(_togglePip());
+                    },
+                  )
+                : PlayerBarButton(
+                    icon: DsIcons.minimize2,
+                    label: t.vod.exitFullscreen,
+                    autofocus: true,
+                    onPressed: () => unawaited(_toggleFullscreen()),
+                  ),
           ),
           Expanded(
-            child: Text(
-              detail?.title ?? '',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
+            // The small window moves by its title: a grab on the words drags
+            // the window, a double press restores the page — the compact
+            // room's own pair. A fullscreen strip stays inert.
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: presentation == PresentationMode.pip
+                  ? (_) {
+                      final window = ref.read(windowsPipWindowProvider);
+                      if (window != null) unawaited(window.startDragging());
+                    }
+                  : null,
+              onDoubleTap: presentation == PresentationMode.pip
+                  ? () {
+                      _wake();
+                      unawaited(_togglePip());
+                    }
+                  : null,
+              child: Text(
+                detail?.title ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
+              ),
             ),
           ),
           // The page's own bookmark, reachable from the fullscreen picture: the
@@ -2056,6 +2135,23 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             ),
           actionPill,
           morePill,
+          // The small window's own close: done watching here means the window
+          // goes, and the page stays where its host left it. A window that
+          // cannot close carries no verb.
+          if (presentation == PresentationMode.pip)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.x,
+                label: t.common.close,
+                onPressed: () {
+                  final close = ref.read(roomLeaveProvider);
+                  if (close == null) return;
+                  _wake();
+                  unawaited(_handle?.pause());
+                  unawaited(close());
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -2402,9 +2498,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // then the system fullscreen the phone turns for.
                   if (_desktop && presentation != PresentationMode.pip)
                     PlayerBarButton(
-                      icon: presentation == PresentationMode.windowFullscreen
-                          ? DsIcons.copy
-                          : DsIcons.square,
+                      icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
                       label: presentation == PresentationMode.windowFullscreen
                           ? t.room.windowFullscreenOff
                           : t.room.windowFullscreenOn,
@@ -2675,6 +2769,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // An open catalogue holds the bar up; a paused stream keeps it too.
     if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    // The setting's zero is 常显: the bar never hides on idle while the
+    // video plays.
+    if (seconds <= 0) return;
     _hideTimer = Timer(Duration(seconds: seconds), () {
       if (mounted && (_transport?.isPlaying ?? false) && _openPanel == null) {
         setState(() => _controlsVisible = false);
@@ -3197,7 +3294,8 @@ final class _PartsSectionState extends State<_PartsSection> {
                           ),
                         ),
                       ),
-                      if (part.duration != null) Text(vodDurationText(part.duration!), style: theme.typography.numeric(muted)),
+                      if (part.duration != null)
+                        Text(vodDurationText(part.duration!), style: theme.typography.numeric(muted)),
                       if (playing) ...[
                         const SizedBox(width: DsSpace.s6),
                         DsIcon(DsIcons.play, size: 12, color: colors.accent),

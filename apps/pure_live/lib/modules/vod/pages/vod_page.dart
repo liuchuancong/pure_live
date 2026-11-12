@@ -1,9 +1,10 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart' show showBilibiliWebLoginPage;
@@ -162,6 +163,7 @@ final class _VodPageState extends ConsumerState<VodPage> {
               feedKey: _recommendKey,
               scrollController: _scrollOf(_recommendKey),
               onOpen: _openVideo,
+              carousel: true,
             ),
             VodTab.popular => _VodFeedView(
               key: ValueKey(_popularKey),
@@ -182,12 +184,22 @@ final class _VodPageState extends ConsumerState<VodPage> {
 /// each tab's view on its feed, so a switch starts the wide pager on the new
 /// feed's own first page instead of carrying the tab before it.
 final class _VodFeedView extends ConsumerWidget {
-  const _VodFeedView({required this.feedKey, required this.scrollController, required this.onOpen, super.key});
+  const _VodFeedView({
+    required this.feedKey,
+    required this.scrollController,
+    required this.onOpen,
+    this.carousel = false,
+    super.key,
+  });
 
   final String feedKey;
 
   final ScrollController scrollController;
   final ValueChanged<VodVideo> onOpen;
+
+  /// Leads the feed with the picks carousel — the reference's 推荐 opens on
+  /// one, and the first page's covers are the banners it needs.
+  final bool carousel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -196,7 +208,7 @@ final class _VodFeedView extends ConsumerWidget {
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
-    return PagedCardGrid<VodVideo>(
+    final grid = PagedCardGrid<VodVideo>(
       scrollController: scrollController,
       items: state.videos,
       layout: ref.watch(browseLayoutProvider),
@@ -219,6 +231,19 @@ final class _VodFeedView extends ConsumerWidget {
       emptyDescription: t.vod.noResultsDescription,
       itemBuilder: (context, video) => VodVideoCard(video: video, onOpen: () => onOpen(video), preview: true),
     );
+    if (carousel && state.videos.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, DsSpace.s4, 0, DsSpace.s8),
+            child: _VodCarousel(videos: state.videos.take(5).toList(growable: false), onOpen: onOpen),
+          ),
+          Expanded(child: grid),
+        ],
+      );
+    }
+    return grid;
   }
 }
 
@@ -315,6 +340,147 @@ final class _VodDynamicsView extends ConsumerWidget {
         final post = state.items[index];
         return VodDynamicRow(post: post, onOpen: post.bvid == null ? null : () => _openPost(context, post));
       },
+    );
+  }
+}
+
+/// The picks carousel: the feed's first covers as full-bleed banners, one
+/// advancing every five seconds, the dots saying which — the reference's
+/// 推荐 opens on this, and a click is a click on the video itself.
+final class _VodCarousel extends StatefulWidget {
+  const _VodCarousel({required this.videos, required this.onOpen});
+
+  final List<VodVideo> videos;
+  final ValueChanged<VodVideo> onOpen;
+
+  @override
+  State<_VodCarousel> createState() => _VodCarouselState();
+}
+
+final class _VodCarouselState extends State<_VodCarousel> {
+  final PageController _page = PageController();
+  int _index = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!_page.hasClients) return;
+      final next = _index + 1 >= widget.videos.length ? 0 : _index + 1;
+      _page.animateToPage(next, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+    });
+  }
+
+  @override
+  void didUpdateWidget(_VodCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.videos.length <= _index) _index = 0;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _page.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: inset),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 200,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              PageView.builder(
+                controller: _page,
+                itemCount: widget.videos.length,
+                onPageChanged: (index) => setState(() => _index = index),
+                itemBuilder: (context, index) {
+                  final video = widget.videos[index];
+                  final url = video.coverUrl;
+                  return GestureDetector(
+                    onTap: () => widget.onOpen(video),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (url != null && url.isNotEmpty)
+                          DsImage(
+                            image: cachedImage(url, policy: ImageCachePolicies.videoCover),
+                            semanticLabel: video.title,
+                            fallback: ColoredBox(color: colors.control),
+                          )
+                        else
+                          ColoredBox(color: colors.control),
+                        const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: AlignmentDirectional.bottomCenter,
+                              end: AlignmentDirectional.topCenter,
+                              colors: [Color(0xCC000000), Color(0x00000000)],
+                            ),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          start: DsSpace.s12,
+                          end: DsSpace.s12,
+                          bottom: DsSpace.s8,
+                          child: Row(
+                            spacing: DsSpace.s8,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  video.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
+                                ),
+                              ),
+                              if (video.uploader case final uploader?)
+                                Text(
+                                  uploader,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              PositionedDirectional(
+                end: DsSpace.s12,
+                bottom: DsSpace.s8,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s4,
+                  children: [
+                    for (var i = 0; i < widget.videos.length; i++)
+                      Container(
+                        width: i == _index ? 14 : 6,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: i == _index ? OnVideoColors.foreground : OnVideoColors.track,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
