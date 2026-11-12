@@ -1,3 +1,4 @@
+import 'package:live_iptv/src/guide/guide_format/guide_format.dart' show kGuideProgrammeLimit;
 import 'package:live_iptv/src/model/model.dart';
 import 'package:xml/xml.dart' show XmlParserException;
 import 'package:xml/xml_events.dart';
@@ -16,8 +17,9 @@ import 'package:xml/xml_events.dart';
 abstract final class XmltvParser {
   static const Set<String> _programmeFields = {'title', 'sub-title', 'desc', 'category', 'episode-num'};
 
-  /// Parses [text] as XMLTV.
-  static ParsedGuide parse(String text) {
+  /// Parses [text] as XMLTV; a file past [programmeLimit] rows is refused
+  /// mid-parse rather than built and then measured.
+  static ParsedGuide parse(String text, {int programmeLimit = kGuideProgrammeLimit}) {
     final channels = <GuideChannel>[];
     final programmes = <EpgProgramme>[];
     _Channel? channel;
@@ -83,6 +85,9 @@ abstract final class XmltvParser {
             } else if (name == 'programme' && programme != null) {
               final parsed = programme.build();
               if (parsed != null) {
+                if (programmes.length >= programmeLimit) {
+                  throw const FormatException('the guide holds more programmes than this app will read');
+                }
                 programmes.add(parsed);
               }
               programme = null;

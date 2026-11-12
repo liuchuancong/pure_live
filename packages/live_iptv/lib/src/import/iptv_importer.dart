@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate' show Isolate;
 
 import 'package:live_iptv/src/guide/guide.dart';
 import 'package:live_iptv/src/import/iptv_import_preview.dart';
@@ -8,6 +9,19 @@ import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/playlist/playlist.dart';
 import 'package:live_log/live_log.dart' show LiveLog, LogLevel;
 import 'package:live_net/live_net.dart' show HttpStatusFailure, TimeoutFailure, TlsFailure;
+
+/// The guide's decode and parse, run where they belong: a guide is tens of
+/// megabytes, and both passes freeze the calling isolate while they read.
+///
+/// These are top-level on purpose. A closure made inside an instance method
+/// carries the instance in its captured context, and the importer holds
+/// unsendable fields (the serial write chain's futures) — the send would
+/// fail on the second import, the one whose chain was no longer null.
+Future<String> _decodeGuideBytesIsolated(List<int> bytes) => Isolate.run(() => decodeGuideBytes(bytes));
+
+Future<ParsedGuide> _parseGuideIsolated(String text) => Isolate.run(() => parseGuide(text));
+
+Future<IptvDecodedText> _decodeIptvTextIsolated(List<int> bytes) => Isolate.run(() => decodeIptvText(bytes));
 
 /// Downloads a playlist or guide.
 ///
@@ -528,7 +542,8 @@ final class IptvImporter {
   /// Reads guide [text] and judges it against the library, writing nothing.
   ///
   /// [source] is the address or file the text came from — what a sync will
-  /// read again.
+  /// read again. The small path (pasted text); the byte paths parse off
+  /// the caller's isolate in [previewGuideBytes].
   IptvGuidePreview previewGuideText(String text, {required String source, IptvTextEncoding? encoding}) {
     final ParsedGuide parsed;
     try {
@@ -543,6 +558,12 @@ final class IptvImporter {
         source: source,
       );
     }
+    return _previewParsedGuide(parsed, source: source, encoding: encoding);
+  }
+
+  /// The verdicts that follow the parse: emptiness, and how much of the
+  /// library the guide would answer.
+  IptvGuidePreview _previewParsedGuide(ParsedGuide parsed, {required String source, IptvTextEncoding? encoding}) {
     if (parsed.isEmpty) {
       return IptvGuidePreview.failed(
         IptvImportResult(
@@ -567,17 +588,36 @@ final class IptvImporter {
   }
 
   /// Decodes a picked guide file's [bytes] and previews them.
-  IptvGuidePreview previewGuideBytes(List<int> bytes, {required String source}) {
+  ///
+  /// Decoding and parsing run off the caller's isolate: a guide is tens of
+  /// megabytes of text, and parsing one on the way in would freeze whatever
+  /// page is showing while it reads.
+  Future<IptvGuidePreview> previewGuideBytes(List<int> bytes, {required String source}) async {
     final IptvDecodedText decoded;
     try {
-      decoded = decodeIptvText(bytes);
+      decoded = await _decodeIptvTextIsolated(bytes);
     } on FormatException catch (error) {
       return IptvGuidePreview.failed(
         IptvImportResult(IptvImportStatus.invalid, failure: IptvImportFailure.unreadable, error: error),
         source: source,
       );
     }
-    return previewGuideText(decoded.text, source: source, encoding: decoded.encoding);
+    final ParsedGuide parsed;
+    try {
+      parsed = await _parseGuideIsolated(decoded.text);
+    } on FormatException catch (error) {
+      return IptvGuidePreview.failed(
+        IptvImportResult(
+          IptvImportStatus.invalid,
+          failure: detectMarkup(decoded.text) == PlaylistMarkup.html
+              ? IptvImportFailure.webPage
+              : IptvImportFailure.unreadable,
+          error: error,
+        ),
+        source: source,
+      );
+    }
+    return _previewParsedGuide(parsed, source: source, encoding: decoded.encoding);
   }
 
   /// Downloads guide [url] and previews it.
@@ -599,7 +639,7 @@ final class IptvImporter {
           );
       return IptvGuidePreview.failed(_downloadFailure(error), source: '$url');
     }
-    return previewGuideBytes(bytes, source: '$url');
+    return await previewGuideBytes(bytes, source: '$url');
   }
 
   /// Writes [preview] under [name]; [replace] takes over the stored guides of
@@ -689,7 +729,7 @@ final class IptvImporter {
     }
     final String text;
     try {
-      text = decodeGuideBytes(bytes);
+      text = await _decodeGuideBytesIsolated(bytes);
     } on FormatException catch (error, stack) {
       _log
           ?.forCategory('guide')
@@ -746,7 +786,7 @@ final class IptvImporter {
     }
     final String text;
     try {
-      text = decodeGuideBytes(bytes);
+      text = await _decodeGuideBytesIsolated(bytes);
     } on FormatException catch (error) {
       return IptvImportResult(IptvImportStatus.invalid, failure: IptvImportFailure.unreadable, error: error);
     }
@@ -817,7 +857,7 @@ final class IptvImporter {
   }) async {
     final ParsedGuide parsed;
     try {
-      parsed = parseGuide(text);
+      parsed = await _parseGuideIsolated(text);
     } on FormatException catch (error) {
       _log?.forCategory('guide').log(LogLevel.warning, 'guide parse failed', fields: {'name': name}, error: error);
       return IptvImportResult(IptvImportStatus.invalid, failure: IptvImportFailure.unreadable, error: error);

@@ -1,3 +1,9 @@
+/// How many programmes one guide may hold: the reference's half-million row
+/// ceiling. A legitimate week of any real grid stays well under it; a file
+/// past it is a dump, not a schedule, and parsing one would balloon memory
+/// for rows nobody walks.
+const int kGuideProgrammeLimit = 500000;
+
 /// The guide formats a source can deliver.
 enum GuideFormat {
   /// XMLTV — the format the ecosystem agrees on (`.xml`, and gzipped it is

@@ -15,12 +15,23 @@ ParsedGuide parseGuide(String text, {GuideFormat? format}) => switch (format ?? 
   GuideFormat.json => JsonGuideParser.parse(text),
 };
 
+/// How much decoded text one guide may weigh, in UTF-16 code units: a gzip
+/// bomb or a runaway mirror can inflate far past what any editor meant to
+/// ship, and past roughly 256 MiB of text the guide is refused outright —
+/// the reference's own decompressed ceiling.
+const int kGuideTextCharLimit = 1 << 27;
+
 /// Decodes guide [bytes] as text: gzip when they carry its magic (what most
 /// public guides are served as, whatever the packaging URL says), then the
-/// byte-order mark, UTF-8, and GBK for the guides a Chinese editor saved
-/// ([decodeIptvText]).
+/// byte-order mark, UTF-8, and GBK for the guides a Chinese editor saved.
 ///
-/// Throws a [FormatException] for compressed bytes that do not inflate; text
-/// that is not a guide fails in [parseGuide], so the caller keeps whatever
-/// guide it already had either way.
-String decodeGuideBytes(List<int> bytes) => decodeIptvText(bytes).text;
+/// Throws a [FormatException] for compressed bytes that do not inflate and
+/// for text past [textCharLimit]; text that is not a guide fails in the
+/// parse above, so the caller keeps whatever guide it already had either way.
+String decodeGuideBytes(List<int> bytes, {int textCharLimit = kGuideTextCharLimit}) {
+  final text = decodeIptvText(bytes).text;
+  if (text.length > textCharLimit) {
+    throw const FormatException('the guide decompresses past what this app will read');
+  }
+  return text;
+}

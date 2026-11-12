@@ -712,6 +712,23 @@ final class IptvLibrary {
     return removed;
   }
 
+  /// Renames the playlist at [id]; only the record's own name moves, so the
+  /// channels keep their ids and the viewer's favourites and order with
+  /// them. Answers whether a record was found and named.
+  Future<bool> renamePlaylist(String id, String name) async {
+    final record = _playlistById(id);
+    final trimmed = name.trim();
+    if (record == null || trimmed.isEmpty || trimmed == record.name) {
+      return false;
+    }
+    _playlists = [
+      for (final playlist in _playlists)
+        if (playlist.id == id) playlist.rebuild((b) => b..name = trimmed) else playlist,
+    ];
+    await _commitWith(() => store.savePlaylists(_playlists));
+    return true;
+  }
+
   /// The playlist held at [id], or null.
   IptvPlaylist? playlistById(String id) => _playlistById(id);
 

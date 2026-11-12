@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate' show Isolate;
 
 import 'package:drift/drift.dart';
 import 'package:live_log/live_log.dart' show LiveLog;
@@ -149,6 +150,18 @@ abstract interface class RemoteStorageClient {
   Future<void> clear(String namespace);
 }
 
+/// The big document's encode and decode, run where they belong: a guide
+/// import writes tens of thousands of rows as one JSON document, and both
+/// passes freeze the calling isolate while they read.
+///
+/// These are top-level on purpose. A closure made inside an instance
+/// method carries the store instance in its captured context, and the
+/// store holds unsendable fields (streams, the write chain's future) —
+/// the send would fail for every store whose chain was no longer empty.
+Future<String> _encodeInIsolate(Object? value) => Isolate.run(() => jsonEncode(value));
+
+Future<Object?> _decodeInIsolate(String json) => Isolate.run(() => jsonDecode(json));
+
 /// The main window's store: SQLite-backed, with a synchronous snapshot.
 final class LocalJsonStore implements JsonStore {
   new _(this._database, this.namespace, this._onLocalChange);
@@ -166,6 +179,28 @@ final class LocalJsonStore implements JsonStore {
   Future<void> _lastWrite = Future<void>.value();
   int _lastStamp = 0;
   bool _disposed = false;
+
+  /// From this many rows a value's encode runs in an isolate: a guide
+  /// import writes tens of thousands of programme rows as one JSON
+  /// document, and encoding that on the calling isolate freezes the page
+  /// for seconds. The small documents every other store carries keep the
+  /// synchronous path, which costs less than an isolate round trip.
+  static const int _isolateEncodeRows = 4000;
+
+  /// The decode twin, judged by the stored text's length (the only cheap
+  /// measure that exists before decoding).
+  static const int _isolateDecodeChars = 1 << 20;
+
+  /// Encodes [value], off the caller's isolate when the document is big.
+  Future<String> _encodeValue(Object? value) {
+    final rows = value is List ? value.length : 0;
+    return rows < _isolateEncodeRows ? Future<String>.value(jsonEncode(value)) : _encodeInIsolate(value);
+  }
+
+  /// Decodes the stored [json], off the caller's isolate when it is big.
+  Future<Object?> _decodeValue(String json) {
+    return json.length < _isolateDecodeChars ? Future<Object?>.value(jsonDecode(json)) : _decodeInIsolate(json);
+  }
 
   /// Opens [namespace] in [database] and loads its snapshot.
   static Future<LocalJsonStore> open(
@@ -190,7 +225,7 @@ final class LocalJsonStore implements JsonStore {
     for (final row in rows) {
       final Object? value;
       try {
-        value = jsonDecode(row.valueJson);
+        value = await _decodeValue(row.valueJson);
       } on FormatException catch (error) {
         // One corrupted row used to take the whole namespace down — every
         // page reading it showed 打开失败 with no cause anywhere. Skip the
@@ -244,13 +279,14 @@ final class LocalJsonStore implements JsonStore {
       _validateKey(key);
       final createdAt = _createdAt[key] ?? _nextStamp();
       final now = DateTime.now().millisecondsSinceEpoch;
+      final valueJson = await _encodeValue(value);
       await _database
           .into(_database.jsonEntries)
           .insertOnConflictUpdate(
             JsonEntriesCompanion.insert(
               namespace: namespace,
               key: key,
-              valueJson: jsonEncode(value),
+              valueJson: valueJson,
               createdAt: createdAt,
               updatedAt: now,
             ),
@@ -281,11 +317,12 @@ final class LocalJsonStore implements JsonStore {
         }
         final createdAt = _createdAt[entry.key] ?? _nextStamp();
         stamps[entry.key] = createdAt;
+        final valueJson = await _encodeValue(entry.value);
         rows.add(
           JsonEntriesCompanion.insert(
             namespace: namespace,
             key: entry.key,
-            valueJson: jsonEncode(entry.value),
+            valueJson: valueJson,
             createdAt: createdAt,
             updatedAt: now,
           ),

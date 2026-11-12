@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:live_iptv/src/guide/guide_format/guide_format.dart' show kGuideProgrammeLimit;
 import 'package:live_iptv/src/model/model.dart';
 
 /// JSON guide parsing.
@@ -11,7 +12,7 @@ import 'package:live_iptv/src/model/model.dart';
 /// viewer without programmes.
 abstract final class JsonGuideParser {
   /// Parses [text] as a JSON guide.
-  static ParsedGuide parse(String text) {
+  static ParsedGuide parse(String text, {int programmeLimit = kGuideProgrammeLimit}) {
     final Object? decoded;
     try {
       decoded = jsonDecode(text);
@@ -34,6 +35,9 @@ abstract final class JsonGuideParser {
         for (final item in list) {
           final programme = _programme(item);
           if (programme != null) {
+            if (programmes.length >= programmeLimit) {
+              throw const FormatException('the guide holds more programmes than this app will read');
+            }
             programmes.add(programme);
           }
         }
