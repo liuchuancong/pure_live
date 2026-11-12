@@ -2022,14 +2022,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         ),
       ),
     );
-    final titleText = Flexible(
-      child: Text(
-        detail?.title ?? t.vod.opening,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
-      ),
-    );
+    // No title on the strip: the info block right under the picture is the
+    // title's home, and two copies of one line on the same screen is one too
+    // many. The strip carries the errands only.
     final backPill = PlayerGlassPill(
       child: PlayerBarButton(
         icon: DsIcons.arrowLeft,
@@ -2041,9 +2036,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       ),
     );
     if (!immersive) {
-      // The strip is the page's head now: the way back and the name always,
-      // the verbs once a player exists to act on. No handle, no verbs — the
-      // pills would only promise what cannot run yet.
+      // The strip is the page's head now: the way back always, the verbs
+      // once a player exists to act on. No handle, no verbs — the pills
+      // would only promise what cannot run yet.
       final ground = Container(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
         decoration: const BoxDecoration(
@@ -2055,7 +2050,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         ),
         child: Row(
           spacing: DsSpace.s8,
-          children: [backPill, titleText, const Spacer(), if (_handle != null) actionPill, if (_handle != null) morePill],
+          children: [backPill, const Spacer(), if (_handle != null) actionPill, if (_handle != null) morePill],
         ),
       );
       return ground;

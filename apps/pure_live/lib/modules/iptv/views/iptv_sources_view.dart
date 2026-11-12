@@ -150,7 +150,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (name == null || name.isEmpty || name == playlist.name || !mounted) return;
     final renamed = await ref.read(iptvLibraryProvider).value?.renamePlaylist(playlist.id, name) ?? false;
     if (!mounted) return;
-    _toast(renamed ? t.iptv.sourceChanged : t.iptv.sourceChanged);
+    _toast(t.iptv.sourceChanged, danger: !renamed);
   }
 
   Future<void> _deletePlaylist(IptvPlaylist playlist) async {
