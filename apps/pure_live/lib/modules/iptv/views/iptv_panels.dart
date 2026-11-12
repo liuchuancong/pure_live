@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -349,6 +351,190 @@ Future<void> syncAllIptvSources(BuildContext context, WidgetRef ref) async {
       context: context,
       title: t.iptv.syncAllPartial(failed: report.failed, count: report.total),
       status: DsStatus.danger,
+    );
+  }
+}
+
+/// The on-air tally: three bars dancing, the reference's mark for the row
+/// whose channel is on the player right now.
+final class IptvOnAirEqualizer extends StatefulWidget {
+  /// A tally for the channel on air.
+  const IptvOnAirEqualizer({this.size = 14, super.key});
+
+  /// The dance box's edge.
+  final double size;
+
+  @override
+  State<IptvOnAirEqualizer> createState() => _IptvOnAirEqualizerState();
+}
+
+final class _IptvOnAirEqualizerState extends State<IptvOnAirEqualizer> with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))
+    ..repeat();
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    // The bars are fixed pixels measured off the pulse, never fractions of
+    // the incoming constraints — a row's trailing slot can hand down an
+    // unbounded width, and a factor of infinity is how the last version
+    // brought the whole list's layout down.
+    final bar = widget.size / 5.0;
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, _) {
+        final t = _pulse.value;
+        return SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final phase in const [0, 0.25, 0.5])
+                Container(
+                  width: bar,
+                  height: math.max(2, widget.size * (0.35 + 0.6 * (0.5 + 0.5 * math.sin((t + phase) * math.pi * 2)))),
+                  decoration: BoxDecoration(color: colors.accent, borderRadius: BorderRadius.circular(1)),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The channel row the module's own list draws: the mark, the name with its
+/// dial number, what is on now under it, the heart — and the tally where the
+/// channel is the one on air. The reference's 64px row; a click plays.
+final class IptvChannelTile extends StatelessWidget {
+  /// A row for [channel], read at the instant [slot] holds.
+  const IptvChannelTile({
+    required this.channel,
+    required this.slot,
+    required this.selected,
+    required this.onPlay,
+    required this.onToggleFavourite,
+    this.showNumber = true,
+    this.groupLine,
+    super.key,
+  });
+
+  /// The channel the row names.
+  final IptvChannel channel;
+
+  /// What is on it now, read at the list's shared instant.
+  final IptvProgrammeSlot? slot;
+
+  /// Whether this channel is the one the player is showing — the row draws
+  /// the tally and the selection ground for it.
+  final bool selected;
+
+  /// Plays the channel.
+  final VoidCallback onPlay;
+
+  /// Flips the favourite flag.
+  final VoidCallback onToggleFavourite;
+
+  /// Whether the dial number rides the name.
+  final bool showNumber;
+
+  /// The group's name under the title when the list spans more than one —
+  /// the second line yields to it when nothing is on air.
+  final String? groupLine;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final number = showNumber ? channel.number : null;
+    final current = slot?.current;
+    final onAir = current != null && current.title.isNotEmpty;
+    // The selected row's own ground: a quiet accent tint with the on-air bar
+    // at its left edge — not the kit's full-bleed fill, which has no air
+    // against the pane's borders. The bar keeps its slot on every row, so
+    // the marks line up down the list.
+    return Container(
+      decoration: BoxDecoration(color: selected ? colors.accentTint : null, borderRadius: BorderRadius.circular(8)),
+      // `selected` stays off: the ground above is the selection's whole
+      // statement, and the kit's full-bleed fill would paint over it.
+      child: DsListRow(
+        semanticLabel: channel.entry.name,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s6,
+          children: [
+            Container(
+              width: 3,
+              height: 30,
+              decoration: BoxDecoration(
+                color: selected ? colors.accent : const Color(0x00000000),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            IptvChannelLogo(channel: channel, size: DsSize.md),
+          ],
+        ),
+        title: Text(
+          [if (number != null) '$number', channel.entry.name].join('  '),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.body.copyWith(
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            color: colors.text,
+          ),
+        ),
+        description: onAir
+            ? Row(
+                spacing: DsSpace.s6,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
+                  ),
+                  Flexible(
+                    child: Text(
+                      current.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ),
+                ],
+              )
+            : groupLine == null
+            ? null
+            : Text(
+                groupLine!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+              ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s3,
+          children: [
+            if (selected) const IptvOnAirEqualizer(),
+            IptvIconAction(
+              icon: DsIcons.heart,
+              label: channel.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+              onPressed: onToggleFavourite,
+              color: channel.favorite ? colors.accent : null,
+            ),
+          ],
+        ),
+        onPressed: onPlay,
+      ),
     );
   }
 }

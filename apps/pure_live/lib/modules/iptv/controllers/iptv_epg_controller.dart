@@ -5,6 +5,7 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:live_log/live_log.dart' show LogLevel;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
+import 'package:pure_live/l10n/translations.dart' show t;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart'
     show iptvImporterProvider, iptvLibraryProvider, readyIptvImporter;
 
@@ -88,7 +89,7 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     if (importer == null) {
       return IptvGuidePreview.failed(IptvImportResult(IptvImportStatus.failed), source: source);
     }
-    return importer.previewGuideBytes(bytes, source: source);
+    return await importer.previewGuideBytes(bytes, source: source);
   }
 
   /// Writes [preview] under [name] (taking over the guides of that name when
@@ -162,6 +163,41 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
       appLog
           .forCategory('iptv.epg')
           .warning('import landed but matching failed', fields: {'id': id, 'error': '$error'});
+    }
+  }
+
+  /// Gives a freshly imported playlist its guide: the playlist header's own
+  /// addresses (the list named its guide when it was read), and the first
+  /// address that imports, matches some of the library's channels and still
+  /// covers the present hour is kept, and made the guide in use when none is.
+  ///
+  /// The freshness test is what keeps a dead guide from wearing success: a
+  /// guide of last August's programmes would pass a "readable and matching"
+  /// test with nothing on air to show.
+  ///
+  /// A library that already has a guide gets another only when the viewer
+  /// asked for it ([force], the preview's "add this guide too"): one guide
+  /// in use is the design.
+  Future<void> attachPlaylistGuide(String playlistId, {bool force = false}) async {
+    final library = _library();
+    if (library == null) return;
+    final playlist = library.playlistById(playlistId);
+    if (playlist == null || (library.guideSources.isNotEmpty && !force)) return;
+    for (final address in playlist.guideUrls) {
+      final uri = Uri.tryParse(address.trim());
+      if (uri == null || !uri.isAbsolute || uri.host.isEmpty) continue;
+      try {
+        final preview = await previewUrl(uri);
+        if (!preview.isReadable || preview.matchable == 0) continue;
+        final lastStop = preview.lastStop;
+        if (lastStop == null || lastStop.isBefore(DateTime.now())) continue;
+        final result = await commitPreview(preview, name: t.iptv.guideNameOf(name: playlist.name), replace: true);
+        if (result.isImported) return;
+      } on Object catch (error) {
+        appLog
+            .forCategory('iptv.epg')
+            .warning("the playlist's guide address failed", fields: {'address': address, 'error': '$error'});
+      }
     }
   }
 

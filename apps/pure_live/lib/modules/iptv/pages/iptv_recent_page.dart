@@ -10,10 +10,12 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart'
     show IptvBrowseSettings, iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_now_playing.dart' show iptvNowPlayingProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvNowCell, IptvPageHead;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart'
+    show IptvChannelLogo, IptvNowCell, IptvOnAirEqualizer, IptvPageHead;
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// One watched channel and the record that says when.
@@ -185,6 +187,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
                             section.rows[index],
                             browse,
                             slots,
+                            onAir: ref.watch(iptvNowPlayingProvider) == section.rows[index].channel.id,
                             nameGroup: filter.selectedGroup == null,
                             // 今天 and 昨天 name the very day the rows
                             // happened on, so their rows only owe the clock;
@@ -213,6 +216,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
     Map<String, IptvProgrammeSlot> slots, {
     required bool nameGroup,
     required bool namedDay,
+    required bool onAir,
   }) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -257,12 +261,19 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
       description: programme == null
           ? stamp
           : Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 2, children: [programme, stamp]),
-      trailing: DsButton.icon(
-        variant: DsButtonVariant.ghost,
-        size: DsSize.sm,
-        semanticLabel: t.iptv.recentRemove,
-        onPressed: () => unawaited(ref.read(iptvRecentProvider.notifier).remove(channel.id)),
-        icon: const DsIcon(DsIcons.x, size: 16),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s3,
+        children: [
+          if (onAir) const IptvOnAirEqualizer(),
+          DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            semanticLabel: t.iptv.recentRemove,
+            onPressed: () => unawaited(ref.read(iptvRecentProvider.notifier).remove(channel.id)),
+            icon: const DsIcon(DsIcons.x, size: 16),
+          ),
+        ],
       ),
       onPressed: () => _open(channel),
     );

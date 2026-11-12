@@ -4,9 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show XtreamAccount;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_import_flow.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_presets_controller.dart';
-import 'package:pure_live/modules/iptv/data/iptv_preset.dart';
-import 'package:pure_live/modules/iptv/data/iptv_preset_catalog.dart';
 
 /// The inputs an import page owns: its text controllers, what the clipboard
 /// held when the page opened, and the actions that need the page's context
@@ -21,7 +18,6 @@ final class IptvImportInputs {
     required this.xtreamPassword,
     required this.onPreview,
     required this.onPickFile,
-    required this.onPresetPreview,
     required this.onXtreamPreview,
     required this.onXtreamCheck,
     this.clipboard,
@@ -50,9 +46,6 @@ final class IptvImportInputs {
   /// Picks a file and previews it.
   final VoidCallback onPickFile;
 
-  /// Previews a recommended source (a guide address, for the guide kind).
-  final void Function(IptvPreset? preset, String address) onPresetPreview;
-
   /// Previews the Xtream account's live list.
   final VoidCallback onXtreamPreview;
 
@@ -74,12 +67,11 @@ List<IptvImportOrigin> iptvImportOrigins(IptvImportKind kind, {required bool pho
   IptvImportKind.playlist => [
     if (phone) IptvImportOrigin.scan,
     IptvImportOrigin.link,
-    IptvImportOrigin.preset,
     IptvImportOrigin.file,
     IptvImportOrigin.text,
     IptvImportOrigin.xtream,
   ],
-  IptvImportKind.guide => [IptvImportOrigin.link, IptvImportOrigin.preset, IptvImportOrigin.file],
+  IptvImportKind.guide => [IptvImportOrigin.link, IptvImportOrigin.file],
 };
 
 /// The source half of the import page: where the import reads from and the
@@ -231,10 +223,6 @@ final class _OriginInputs extends ConsumerWidget {
         description: Text(guide ? t.iptv.importGuideFileFormats : t.iptv.importFileFormats),
         semanticLabel: t.iptv.importFileAction,
       ),
-      IptvImportOrigin.preset =>
-        guide
-            ? _GuidePresets(onPreview: inputs.onPresetPreview, busy: busy)
-            : _PlaylistPresets(onPreview: inputs.onPresetPreview, busy: busy),
       IptvImportOrigin.scan => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,
@@ -348,215 +336,9 @@ final class _XtreamStatus extends StatelessWidget {
   }
 }
 
-/// The recommended playlists, as cards: what each carries, whether it is
-/// already in the library, and the one verb that previews it.
-final class _PlaylistPresets extends ConsumerWidget {
-  const _PlaylistPresets({required this.onPreview, required this.busy});
-
-  final void Function(IptvPreset? preset, String address) onPreview;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final presets = ref.watch(iptvPresetsProvider);
-    final controller = ref.read(iptvPresetsProvider.notifier);
-    final tag = currentLanguageTag();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s12,
-      children: [
-        if (presets.presets.isEmpty)
-          DsEmptyState(icon: const DsIcon(DsIcons.sparkles), title: Text(t.iptv.presetEmpty))
-        else
-          for (final preset in presets.presets)
-            IptvPresetCard(
-              preset: preset,
-              languageTag: tag,
-              added: controller.playlistOf(preset) != null,
-              builtin: builtinIptvPresets.any((entry) => entry.id == preset.id),
-              onPressed: busy ? null : () => onPreview(preset, preset.url),
-            ),
-        if (presets.deleted.isNotEmpty)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: DsButton(
-              variant: DsButtonVariant.ghost,
-              size: DsSize.sm,
-              onPressed: busy
-                  ? null
-                  : () {
-                      controller.restoreDefaults();
-                      showDsToast(context: context, status: DsStatus.success, title: t.iptv.presetRestored);
-                    },
-              leading: const DsIcon(DsIcons.rotateCcw, size: 15),
-              child: Text(t.iptv.presetRestore),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// The guides the catalogue names, one row each.
-final class _GuidePresets extends StatelessWidget {
-  const _GuidePresets({required this.onPreview, required this.busy});
-
-  final void Function(IptvPreset? preset, String address) onPreview;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final addresses = <String>{for (final preset in builtinIptvPresets) ...preset.guideUrls};
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
-      children: [
-        for (final address in addresses)
-          _Tile(
-            onPressed: busy ? null : () => onPreview(null, address),
-            child: Row(
-              spacing: DsSpace.s12,
-              children: [
-                DsIcon(DsIcons.calendarClock, size: theme.sizes.iconMd, color: colors.accentText),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 2,
-                    children: [
-                      Text(
-                        Uri.tryParse(address)?.host ?? address,
-                        style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                      ),
-                      Text(
-                        address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(t.iptv.importPreviewAction, style: theme.typography.label.copyWith(color: colors.accentText)),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// One recommended source: its name and badges over a line about what it
-/// carries, its tags, and its verb.
-///
-/// Also the start screen's card, so a fresh library and the import page
-/// offer a preset the same way.
-final class IptvPresetCard extends StatelessWidget {
-  /// A card for [preset] in [languageTag].
-  const IptvPresetCard({
-    required this.preset,
-    required this.languageTag,
-    required this.added,
-    required this.builtin,
-    required this.onPressed,
-    this.actionLabel,
-    super.key,
-  });
-
-  /// The preset.
-  final IptvPreset preset;
-
-  /// The language its words are picked in.
-  final String languageTag;
-
-  /// Whether a playlist in the library came from it.
-  final bool added;
-
-  /// Whether it ships with the app.
-  final bool builtin;
-
-  /// The card's verb; null disables it.
-  final VoidCallback? onPressed;
-
-  /// The verb's word; the preview verb (or sync, once added) when null.
-  final String? actionLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final tags = preset.tagsIn(languageTag);
-    return _Tile(
-      onPressed: onPressed,
-      selected: added,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(10)),
-                child: Center(child: DsIcon(DsIcons.antenna, size: 18, color: colors.accentText)),
-              ),
-              Expanded(
-                child: Text(
-                  preset.nameIn(languageTag),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                ),
-              ),
-              if (added)
-                DsBadge(status: DsStatus.success, label: Text(t.iptv.presetAddedTag))
-              else if (builtin)
-                DsBadge(label: Text(t.iptv.presetBuiltinTag)),
-            ],
-          ),
-          Text(
-            preset.descriptionIn(languageTag),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.small.copyWith(color: colors.textMuted),
-          ),
-          Row(
-            spacing: DsSpace.s6,
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: DsSpace.s6,
-                  runSpacing: DsSpace.s4,
-                  children: [
-                    for (final word in tags) DsBadge(dot: false, label: Text(word)),
-                    if (preset.shortLived)
-                      DsBadge(status: DsStatus.info, dot: false, label: Text(t.iptv.presetShortLivedTag)),
-                  ],
-                ),
-              ),
-              Text(
-                actionLabel ?? (added ? t.iptv.sync : t.iptv.presetAddAction),
-                style: theme.typography.labelStrong.copyWith(
-                  color: onPressed == null ? colors.textSubtle : colors.accentText,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A pressable bordered surface: the house tile the origin rows, the preset
-/// cards and the guide rows share, so all three answer focus, hover and
-/// press alike — and a TV remote can land on each.
+/// A pressable bordered surface: the house tile the origin rows and the
+/// guide rows share, so all answer focus, hover and press alike — and a TV
+/// remote can land on each.
 final class _Tile extends StatefulWidget {
   const _Tile({required this.child, required this.onPressed, this.selected = false});
 
@@ -660,7 +442,6 @@ DsIconData _originIcon(IptvImportOrigin origin) => switch (origin) {
   IptvImportOrigin.link => DsIcons.link,
   IptvImportOrigin.text => DsIcons.clipboard,
   IptvImportOrigin.file => DsIcons.folderOpen,
-  IptvImportOrigin.preset => DsIcons.sparkles,
   IptvImportOrigin.scan => DsIcons.smartphone,
   IptvImportOrigin.xtream => DsIcons.server,
 };
@@ -669,7 +450,6 @@ String _originLabel(IptvImportOrigin origin, Translations t) => switch (origin) 
   IptvImportOrigin.link => t.iptv.importOriginLink,
   IptvImportOrigin.text => t.iptv.importOriginText,
   IptvImportOrigin.file => t.iptv.importOriginFile,
-  IptvImportOrigin.preset => t.iptv.importOriginPreset,
   IptvImportOrigin.scan => t.iptv.importOriginScan,
   IptvImportOrigin.xtream => t.iptv.importOriginXtream,
 };
@@ -680,7 +460,6 @@ String _originDescription(IptvImportOrigin origin, IptvImportKind kind, Translat
   (IptvImportOrigin.link, _) => t.iptv.importOriginLinkDesc,
   (IptvImportOrigin.text, _) => t.iptv.importOriginTextDesc,
   (IptvImportOrigin.file, _) => t.iptv.importOriginFileDesc,
-  (IptvImportOrigin.preset, _) => t.iptv.importOriginPresetDesc,
   (IptvImportOrigin.scan, _) => t.iptv.importOriginScanDesc,
   (IptvImportOrigin.xtream, _) => t.iptv.importOriginXtreamDesc,
 };

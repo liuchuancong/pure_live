@@ -6,9 +6,7 @@ import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_presets_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
-import 'package:pure_live/modules/iptv/data/iptv_preset.dart';
 
 /// What is being imported.
 enum IptvImportKind {
@@ -29,9 +27,6 @@ enum IptvImportOrigin {
 
   /// A file picked from the device.
   file,
-
-  /// One of the recommended sources.
-  preset,
 
   /// An address sent from a phone (TV only).
   scan,
@@ -69,7 +64,6 @@ typedef IptvImportFlowState = ({
   IptvImportStep step,
   IptvPlaylistPreview? playlist,
   IptvGuidePreview? guide,
-  IptvPreset? preset,
   String name,
   Set<String> hiddenGroups,
   bool attachGuide,
@@ -83,20 +77,16 @@ typedef IptvImportFlowState = ({
 });
 
 /// How an import page opens: on which kind, on which source, and with what
-/// already filled in (a preset the start screen chose, a link the
-/// clipboard held).
+/// already filled in (a link the clipboard held).
 final class IptvImportLaunch {
   /// A launch.
-  const new({this.kind = IptvImportKind.playlist, this.origin, this.preset, this.link});
+  const new({this.kind = IptvImportKind.playlist, this.origin, this.link});
 
   /// What to import.
   final IptvImportKind kind;
 
   /// The source to open on; the page chooses when null.
   final IptvImportOrigin? origin;
-
-  /// A preset to preview straight away.
-  final IptvPreset? preset;
 
   /// An address to fill in.
   final String? link;
@@ -118,7 +108,6 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
     step: IptvImportStep.source,
     playlist: null,
     guide: null,
-    preset: null,
     name: '',
     hiddenGroups: const {},
     attachGuide: false,
@@ -149,7 +138,7 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
   }
 
   /// Back from a preview or a result to the source, keeping the inputs.
-  void backToSource() => state = _reset(kind: state.kind, origin: state.origin, preset: state.preset);
+  void backToSource() => state = _reset(kind: state.kind, origin: state.origin);
 
   /// The name the import will carry.
   void setName(String name) => state = _with(name: name, replaceNamed: false);
@@ -200,22 +189,19 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
   void setAttachGuide({required bool value}) => state = _with(attachGuide: value);
 
   /// Previews the playlist at [address].
-  Future<void> previewLink(String address, {IptvPreset? preset}) async {
+  Future<void> previewLink(String address) async {
     final uri = Uri.tryParse(address.trim());
     if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https') || uri.host.isEmpty) {
       return;
     }
-    state = _with(step: IptvImportStep.reading, preset: preset);
+    state = _with(step: IptvImportStep.reading);
     if (state.kind == IptvImportKind.guide) {
       final preview = await ref.read(iptvEpgProvider.notifier).previewUrl(uri);
       _showGuide(preview, fallbackName: uri.host);
       return;
     }
     final preview = await ref.read(iptvSourcesProvider.notifier).previewUrl(uri);
-    _showPlaylist(
-      preview,
-      fallbackName: preset?.nameIn(currentLanguageTag()) ?? preview.urlClash?.name ?? preview.suggestedName ?? uri.host,
-    );
+    _showPlaylist(preview, fallbackName: preview.urlClash?.name ?? preview.suggestedName ?? uri.host);
   }
 
   /// Previews pasted [text].
@@ -284,18 +270,15 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
     if (!ref.mounted) return;
     state = _with(step: result.isImported ? IptvImportStep.done : IptvImportStep.preview, result: result);
     if (!result.isImported || result.id == null) return;
-    final presets = ref.read(iptvPresetsProvider.notifier);
-    final preset = state.preset;
-    if (preset != null) presets.noteAdded(preset.id, result.id!);
-    if (state.attachGuide || preset != null) {
-      unawaited(_attach(result.id!, preset));
+    if (state.attachGuide) {
+      unawaited(_attach(result.id!));
     }
   }
 
-  Future<void> _attach(String playlistId, IptvPreset? preset) async {
+  Future<void> _attach(String playlistId) async {
     final library = ref.read(iptvLibraryProvider).value;
     final before = library?.guideSources.length ?? 0;
-    await ref.read(iptvPresetsProvider.notifier).attachGuide(playlistId, preset: preset, force: state.attachGuide);
+    await ref.read(iptvEpgProvider.notifier).attachPlaylistGuide(playlistId, force: state.attachGuide);
     if (!ref.mounted) return;
     final after = ref.read(iptvLibraryProvider).value?.guideSources ?? const <EpgSource>[];
     if (after.length > before) {
@@ -343,13 +326,12 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
     return base.isEmpty ? fileName : base;
   }
 
-  IptvImportFlowState _reset({required IptvImportKind kind, required IptvImportOrigin origin, IptvPreset? preset}) => (
+  IptvImportFlowState _reset({required IptvImportKind kind, required IptvImportOrigin origin}) => (
     kind: kind,
     origin: origin,
     step: IptvImportStep.source,
     playlist: null,
     guide: null,
-    preset: preset,
     name: state.name,
     hiddenGroups: const {},
     attachGuide: false,
@@ -366,7 +348,6 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
     IptvImportStep? step,
     IptvPlaylistPreview? playlist,
     IptvGuidePreview? guide,
-    IptvPreset? preset,
     String? name,
     Set<String>? hiddenGroups,
     bool? attachGuide,
@@ -384,7 +365,6 @@ final class IptvImportFlow extends Notifier<IptvImportFlowState> {
     step: step ?? state.step,
     playlist: playlist ?? state.playlist,
     guide: guide ?? state.guide,
-    preset: preset ?? state.preset,
     name: name ?? state.name,
     hiddenGroups: hiddenGroups ?? state.hiddenGroups,
     attachGuide: attachGuide ?? state.attachGuide,

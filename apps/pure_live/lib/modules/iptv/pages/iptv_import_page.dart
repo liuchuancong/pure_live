@@ -10,7 +10,6 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_import_flow.dart';
-import 'package:pure_live/modules/iptv/data/iptv_preset.dart';
 import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart';
 import 'package:pure_live/modules/iptv/views/iptv_import_source_pane.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -79,23 +78,14 @@ final class _IptvImportPageState extends ConsumerState<IptvImportPage> {
     if (!mounted) return;
     final launch = widget.launch;
     final flow = ref.read(iptvImportFlowProvider.notifier);
-    final preset = launch.preset;
     final origin =
         launch.origin ??
-        (preset != null
-            ? IptvImportOrigin.preset
-            : _tv && launch.kind == IptvImportKind.playlist
-            ? IptvImportOrigin.scan
-            : IptvImportOrigin.link);
+        (_tv && launch.kind == IptvImportKind.playlist ? IptvImportOrigin.scan : IptvImportOrigin.link);
     flow
       ..setKind(launch.kind)
       ..setOrigin(origin);
     final link = launch.link;
     if (link != null) _link.text = link;
-    if (preset != null) {
-      unawaited(_read(() => flow.previewLink(preset.url, preset: preset)));
-      return;
-    }
     if (!_tv) await _readClipboard();
   }
 
@@ -155,7 +145,7 @@ final class _IptvImportPageState extends ConsumerState<IptvImportPage> {
         }
         final text = _text.text;
         unawaited(_read(() => flow.previewText(text, fallbackName: t.iptv.importDefaultName)));
-      case IptvImportOrigin.link || IptvImportOrigin.preset || IptvImportOrigin.scan:
+      case IptvImportOrigin.link || IptvImportOrigin.scan:
         final raw = _link.text.trim();
         if (raw.isEmpty) {
           _toast(t.iptv.importAddressRequired);
@@ -227,11 +217,6 @@ final class _IptvImportPageState extends ConsumerState<IptvImportPage> {
     unawaited(ref.read(iptvImportFlowProvider.notifier).checkXtream(source));
   }
 
-  void _presetPreview(IptvPreset? preset, String address) {
-    final flow = ref.read(iptvImportFlowProvider.notifier);
-    unawaited(_read(() => flow.previewLink(address, preset: preset)));
-  }
-
   /// The phone form: a name and an address typed on a phone, read straight
   /// into a preview.
   Future<void> _phone() async {
@@ -298,7 +283,6 @@ final class _IptvImportPageState extends ConsumerState<IptvImportPage> {
       xtreamPassword: _xtreamPassword,
       onPreview: _preview,
       onPickFile: _pickFile,
-      onPresetPreview: _presetPreview,
       onXtreamPreview: _previewXtream,
       onXtreamCheck: _checkXtream,
       clipboard: _clipboard,

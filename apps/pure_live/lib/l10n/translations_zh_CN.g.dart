@@ -2593,6 +2593,15 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '直播'
 	String get live => '直播';
 
+	/// zh-CN: '重命名来源'
+	String get renameSourceTitle => '重命名来源';
+
+	/// zh-CN: '来源'
+	String get sourceLabel => '来源';
+
+	/// zh-CN: '全部来源'
+	String get sourceAll => '全部来源';
+
 	/// zh-CN: '频道范围'
 	String get scopeLabel => '频道范围';
 
@@ -3010,8 +3019,20 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '频道不存在或已被删除'
 	String get playerChannelMissing => '频道不存在或已被删除';
 
+	/// zh-CN: '选择一个频道开始观看'
+	String get playerIdleTitle => '选择一个频道开始观看';
+
+	/// zh-CN: '点左侧列表里的任意频道，画面就在这里播放。'
+	String get playerIdleHint => '点左侧列表里的任意频道，画面就在这里播放。';
+
 	/// zh-CN: '频道播放失败'
 	String get playerOpenFailed => '频道播放失败';
+
+	/// zh-CN: '连接中断，正在重连（{attempt}/{total}）…'
+	String reconnectAttempt({required Object attempt, required Object total}) => '连接中断，正在重连（${attempt}/${total}）…';
+
+	/// zh-CN: '继续上次：{name}'
+	String resumeChannel({required Object name}) => '继续上次：${name}';
 
 	/// zh-CN: '节目单'
 	String get guideTitle => '节目单';
@@ -3256,9 +3277,6 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '本地文件'
 	String get importOriginFile => '本地文件';
 
-	/// zh-CN: '推荐源'
-	String get importOriginPreset => '推荐源';
-
 	/// zh-CN: '扫码推送'
 	String get importOriginScan => '扫码推送';
 
@@ -3306,36 +3324,6 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '无法连接面板，仍可尝试导入'
 	String get importXtreamCheckFailed => '无法连接面板，仍可尝试导入';
-
-	/// zh-CN: '推荐源'
-	String get presetSectionTitle => '推荐源';
-
-	/// zh-CN: '没有可推荐的来源'
-	String get presetEmpty => '没有可推荐的来源';
-
-	/// zh-CN: '已添加'
-	String get presetAddedTag => '已添加';
-
-	/// zh-CN: '内置'
-	String get presetBuiltinTag => '内置';
-
-	/// zh-CN: '时效'
-	String get presetShortLivedTag => '时效';
-
-	/// zh-CN: '添加'
-	String get presetAddAction => '添加';
-
-	/// zh-CN: '查看频道'
-	String get presetOpenAction => '查看频道';
-
-	/// zh-CN: '已添加“{name}”'
-	String presetAddedToast({required Object name}) => '已添加“${name}”';
-
-	/// zh-CN: '恢复默认源'
-	String get presetRestore => '恢复默认源';
-
-	/// zh-CN: '默认源已恢复，可在推荐源里重新添加'
-	String get presetRestored => '默认源已恢复，可在推荐源里重新添加';
 
 	/// zh-CN: '预览：{name}'
 	String previewOf({required Object name}) => '预览：${name}';
@@ -3490,12 +3478,6 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '它的频道都被其他来源共享，删除后仍会保留'
 	String get deleteImpactNone => '它的频道都被其他来源共享，删除后仍会保留';
 
-	/// zh-CN: '这是内置推荐源，删除后不会自动恢复；可在“推荐源”里重新添加。'
-	String get deletePresetNote => '这是内置推荐源，删除后不会自动恢复；可在“推荐源”里重新添加。';
-
-	/// zh-CN: '内置'
-	String get sourceBuiltinTag => '内置';
-
 	/// zh-CN: '节目单×{count: int}'
 	String playlistGuideTag({required int count}) => '节目单×${count}';
 
@@ -3519,9 +3501,6 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '选择本机的 m3u/m3u8/txt 文件'
 	String get importOriginFileDesc => '选择本机的 m3u/m3u8/txt 文件';
-
-	/// zh-CN: '精选的公开直播源'
-	String get importOriginPresetDesc => '精选的公开直播源';
 
 	/// zh-CN: '用手机填写地址并推送到这里'
 	String get importOriginScanDesc => '用手机填写地址并推送到这里';
@@ -7096,6 +7075,15 @@ class Translations$room$zh_CN {
 	/// zh-CN: '线路'
 	String get lineLabel => '线路';
 
+	/// zh-CN: '聊天列宽度'
+	String get chatColumnWidth => '聊天列宽度';
+
+	/// zh-CN: '工具'
+	String get moreTools => '工具';
+
+	/// zh-CN: '设置'
+	String get moreSettings => '设置';
+
 	/// zh-CN: '线路{n}'
 	String line({required Object n}) => '线路${n}';
 
@@ -7182,9 +7170,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '退出画中画'
 	String get pipOff => '退出画中画';
-
-	/// zh-CN: '在新窗口打开'
-	String get openInNewWindow => '在新窗口打开';
 
 	/// zh-CN: '进房耗时'
 	String get openStages => '进房耗时';
@@ -7684,14 +7669,23 @@ class Translations$room$zh_CN {
 	/// zh-CN: '搜索'
 	String get switchSearch => '搜索';
 
+	/// zh-CN: '播放统计'
+	String get stats => '播放统计';
+
 	/// zh-CN: '观看'
 	String get statViewers => '观看';
 
 	/// zh-CN: '已开播'
 	String get statOnAir => '已开播';
 
-	/// zh-CN: '已观看'
-	String get statWatched => '已观看';
+	/// zh-CN: '停靠：'
+	String get panelStops => '停靠：';
+
+	/// zh-CN: '拉穿最低档进竖屏全屏'
+	String get panelStopsHint => '拉穿最低档进竖屏全屏';
+
+	/// zh-CN: '已播'
+	String get statWatched => '已播';
 
 	/// zh-CN: '观看记录'
 	String get switchHistory => '观看记录';
@@ -7791,6 +7785,15 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '收起/展开聊天栏'
 	String get shortcutChatColumn => '收起/展开聊天栏';
+
+	/// zh-CN: '弹幕'
+	String get danmakuChip => '弹幕';
+
+	/// zh-CN: '弹幕 关'
+	String get danmakuChipOff => '弹幕 关';
+
+	/// zh-CN: '全屏'
+	String get fullscreenChip => '全屏';
 }
 
 // Path: search
@@ -11374,6 +11377,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '{count: int} 秒'
 	String controlsAutoHideValue({required int count}) => '${count} 秒';
 
+	/// zh-CN: '常显'
+	String get controlsAutoHideAlways => '常显';
+
 	/// zh-CN: '观众指标'
 	String get navAudience => '观众指标';
 
@@ -11841,36 +11847,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '宽屏布局下的宽度。'
 	String get chatPanelWidthDesc => '宽屏布局下的宽度。';
-
-	/// zh-CN: '聊天形态'
-	String get chatPresentation => '聊天形态';
-
-	/// zh-CN: '侧栏是完整聊天面板；画面浮流把纯文本聊天叠在画面上，宽屏与全屏生效。'
-	String get chatPresentationDesc => '侧栏是完整聊天面板；画面浮流把纯文本聊天叠在画面上，宽屏与全屏生效。';
-
-	/// zh-CN: '侧栏'
-	String get chatPresentationColumn => '侧栏';
-
-	/// zh-CN: '画面浮流'
-	String get chatPresentationStream => '画面浮流';
-
-	/// zh-CN: '浮流位置'
-	String get chatStreamCorner => '浮流位置';
-
-	/// zh-CN: '浮流停在画面的哪个角落；侧栏形态下不可调。'
-	String get chatStreamCornerDesc => '浮流停在画面的哪个角落；侧栏形态下不可调。';
-
-	/// zh-CN: '右上'
-	String get chatStreamCornerTopRight => '右上';
-
-	/// zh-CN: '右下'
-	String get chatStreamCornerBottomRight => '右下';
-
-	/// zh-CN: '左上'
-	String get chatStreamCornerTopLeft => '左上';
-
-	/// zh-CN: '左下'
-	String get chatStreamCornerBottomLeft => '左下';
 
 	/// zh-CN: 'Twitch 目录语言'
 	String get twitchLanguages => 'Twitch 目录语言';
@@ -15963,6 +15939,9 @@ extension on Translations {
 			'huya.infoColumnShow' => '展开信息栏',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
+			'iptv.renameSourceTitle' => '重命名来源',
+			'iptv.sourceLabel' => '来源',
+			'iptv.sourceAll' => '全部来源',
 			'iptv.scopeLabel' => '频道范围',
 			'iptv.scopeAll' => '全部频道',
 			'iptv.scopeFavourites' => '收藏频道',
@@ -16018,11 +15997,11 @@ extension on Translations {
 			'iptv.importAddressInvalid' => '请输入有效的订阅地址',
 			'iptv.importAddressRequired' => '请先输入订阅地址',
 			'iptv.importFailed' => '导入失败',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importFormat' => '不支持的文件格式',
 			'iptv.importFromFile' => '从文件',
 			'iptv.importFromText' => '粘贴文本',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importFromUrl' => '订阅地址',
 			'iptv.importGuide' => '导入节目单',
 			'iptv.importGuideDescription' => '支持 XMLTV 地址或文件；导入后会下载节目。',
@@ -16104,7 +16083,11 @@ extension on Translations {
 			'iptv.playerOpening' => '正在打开频道',
 			'iptv.playerNoStream' => '这个频道没有播放地址',
 			'iptv.playerChannelMissing' => '频道不存在或已被删除',
+			'iptv.playerIdleTitle' => '选择一个频道开始观看',
+			'iptv.playerIdleHint' => '点左侧列表里的任意频道，画面就在这里播放。',
 			'iptv.playerOpenFailed' => '频道播放失败',
+			'iptv.reconnectAttempt' => ({required Object attempt, required Object total}) => '连接中断，正在重连（${attempt}/${total}）…',
+			'iptv.resumeChannel' => ({required Object name}) => '继续上次：${name}',
 			'iptv.guideTitle' => '节目单',
 			'iptv.viewRecordings' => '查看录像',
 			'iptv.guideEmpty' => '这一天没有节目',
@@ -16186,7 +16169,6 @@ extension on Translations {
 			'iptv.importOriginLink' => '链接',
 			'iptv.importOriginText' => '粘贴文本',
 			'iptv.importOriginFile' => '本地文件',
-			'iptv.importOriginPreset' => '推荐源',
 			'iptv.importOriginScan' => '扫码推送',
 			'iptv.importOriginXtream' => 'Xtream 账号',
 			'iptv.importClipboardFound' => '剪贴板里有可用的链接或列表内容',
@@ -16203,16 +16185,6 @@ extension on Translations {
 			'iptv.importXtreamAccountExpired' => ({required Object date}) => '订阅已到期（${date}）',
 			'iptv.importXtreamAccountBad' => '服务器拒绝了这组账号密码',
 			'iptv.importXtreamCheckFailed' => '无法连接面板，仍可尝试导入',
-			'iptv.presetSectionTitle' => '推荐源',
-			'iptv.presetEmpty' => '没有可推荐的来源',
-			'iptv.presetAddedTag' => '已添加',
-			'iptv.presetBuiltinTag' => '内置',
-			'iptv.presetShortLivedTag' => '时效',
-			'iptv.presetAddAction' => '添加',
-			'iptv.presetOpenAction' => '查看频道',
-			'iptv.presetAddedToast' => ({required Object name}) => '已添加“${name}”',
-			'iptv.presetRestore' => '恢复默认源',
-			'iptv.presetRestored' => '默认源已恢复，可在推荐源里重新添加',
 			'iptv.previewOf' => ({required Object name}) => '预览：${name}',
 			'iptv.previewChannels' => '频道',
 			'iptv.previewGroups' => '分组',
@@ -16264,8 +16236,6 @@ extension on Translations {
 			'iptv.failureStorage' => '保存失败，请重试',
 			'iptv.deleteImpactNote' => ({required int channels, required int favourites}) => '将移除仅属于它的 ${channels} 个频道（其中 ${favourites} 个已收藏）',
 			'iptv.deleteImpactNone' => '它的频道都被其他来源共享，删除后仍会保留',
-			'iptv.deletePresetNote' => '这是内置推荐源，删除后不会自动恢复；可在“推荐源”里重新添加。',
-			'iptv.sourceBuiltinTag' => '内置',
 			'iptv.playlistGuideTag' => ({required int count}) => '节目单×${count}',
 			'iptv.emptyStartTitle' => '开始使用 IPTV',
 			'iptv.emptyStartDescription' => '添加一个推荐源即可开箱即看，或从地址、文件导入你自己的列表。',
@@ -16274,7 +16244,6 @@ extension on Translations {
 			'iptv.importOriginLinkDesc' => 'M3U/TXT 订阅地址，可随时同步',
 			'iptv.importOriginTextDesc' => '直接粘贴列表内容',
 			'iptv.importOriginFileDesc' => '选择本机的 m3u/m3u8/txt 文件',
-			'iptv.importOriginPresetDesc' => '精选的公开直播源',
 			'iptv.importOriginScanDesc' => '用手机填写地址并推送到这里',
 			'iptv.importOriginXtreamDesc' => '用面板地址和账号导入直播频道',
 			'iptv.importGuideOriginLinkDesc' => 'XMLTV/JSON 地址，可自动更新',
@@ -16535,8 +16504,6 @@ extension on Translations {
 			'music.songDetailArtist' => '歌手',
 			'music.songDetailAlbum' => '专辑',
 			'music.songDetailDuration' => '时长',
-			_ => null,
-		} ?? switch (path) {
 			'music.songDetailQualities' => '可播档位',
 			'music.songDetailSource' => '来源',
 			'music.songDetailPath' => '文件',
@@ -16544,6 +16511,8 @@ extension on Translations {
 			'music.albumPageTitle' => '专辑',
 			'music.artistPageTitle' => '歌手',
 			'music.viewAlbum' => '查看专辑',
+			_ => null,
+		} ?? switch (path) {
 			'music.viewArtist' => '查看歌手',
 			'music.albumUnsupported' => '该来源不支持专辑浏览',
 			'music.artistUnsupported' => '该来源不支持歌手浏览',
@@ -17049,8 +17018,6 @@ extension on Translations {
 			'music.albumTotalDuration' => ({required int count}) => '约 ${count} 分钟',
 			'music.audioCacheTitle' => '音乐音频缓存',
 			'music.audioCacheDesc' => '听过的歌留在本地，源链接过期也能继续播',
-			_ => null,
-		} ?? switch (path) {
 			'music.audioCacheOff' => '关闭',
 			'music.audioCacheClear' => '清空音频缓存',
 			'music.audioCacheCleared' => '音频缓存已清空',
@@ -17058,6 +17025,8 @@ extension on Translations {
 			'music.audioCacheClearAction' => '清空',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
+			_ => null,
+		} ?? switch (path) {
 			'navigation.live' => '直播',
 			'navigation.channels' => '频道',
 			'navigation.discover' => '发现',
@@ -17446,6 +17415,9 @@ extension on Translations {
 			'room.playerSettings' => '播放设置',
 			'room.quality' => '画质',
 			'room.lineLabel' => '线路',
+			'room.chatColumnWidth' => '聊天列宽度',
+			'room.moreTools' => '工具',
+			'room.moreSettings' => '设置',
 			'room.line' => ({required Object n}) => '线路${n}',
 			'room.play' => '播放',
 			'room.pause' => '暂停',
@@ -17475,7 +17447,6 @@ extension on Translations {
 			'room.windowFullscreenOff' => '退出窗口全屏',
 			'room.pipOn' => '画中画',
 			'room.pipOff' => '退出画中画',
-			'room.openInNewWindow' => '在新窗口打开',
 			'room.openStages' => '进房耗时',
 			'room.openStagesTotal' => ({required Object value}) => '共 ${value} 毫秒',
 			'room.openStagesFailed' => '这次进房以失败结束',
@@ -17563,13 +17534,13 @@ extension on Translations {
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
 			'room.danmakuSettings' => '弹幕设置',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '醒目留言',
 			'room.superChatEmpty' => '暂无醒目留言',
 			'room.superChatFailed' => '醒目留言加载失败',
 			'room.superChatCardMembership' => '会员',
+			_ => null,
+		} ?? switch (path) {
 			'room.superChatCardSubscription' => '订阅',
 			'room.onlineViewers' => '在线',
 			'room.popularity' => '热度',
@@ -17644,9 +17615,12 @@ extension on Translations {
 			'room.switchOnAir' => '关注在播',
 			'room.switchSource' => '来源列表',
 			'room.switchSearch' => '搜索',
+			'room.stats' => '播放统计',
 			'room.statViewers' => '观看',
 			'room.statOnAir' => '已开播',
-			'room.statWatched' => '已观看',
+			'room.panelStops' => '停靠：',
+			'room.panelStopsHint' => '拉穿最低档进竖屏全屏',
+			'room.statWatched' => '已播',
 			'room.switchHistory' => '观看记录',
 			'room.switchReplays' => '关注回放',
 			'room.switchEmpty' => '没有可切换的直播间',
@@ -17680,6 +17654,9 @@ extension on Translations {
 			'room.replayRate' => '倍速',
 			'room.replayParts' => '分段',
 			'room.shortcutChatColumn' => '收起/展开聊天栏',
+			'room.danmakuChip' => '弹幕',
+			'room.danmakuChipOff' => '弹幕 关',
+			'room.fullscreenChip' => '全屏',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -18076,9 +18053,9 @@ extension on Translations {
 			'settings.styleAdvanced' => '高级设置',
 			'settings.styleFontSize' => '大小',
 			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
-			'settings.styleFontWeight' => '粗细',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleFontWeight' => '粗细',
 			'settings.styleFontWeightDesc' => '字形的粗细；400 为常规，700 为加粗。',
 			'settings.styleLetterSpacing' => '文字间距',
 			'settings.styleLetterSpacingDesc' => '字符之间额外增加的间距，单位像素。',
@@ -18590,9 +18567,9 @@ extension on Translations {
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
 			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
-			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			_ => null,
 		} ?? switch (path) {
+			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '移动数据下的清晰度；Wi-Fi 与有线沿用上面的首选。',
 			'settings.qualityAuto' => '自动（站点默认）',
 			'settings.qualityOriginal' => '原画',
@@ -18872,6 +18849,7 @@ extension on Translations {
 			'settings.controlsAutoHide' => '控制条自动隐藏',
 			'settings.controlsAutoHideDesc' => '播放时空闲这么久后隐藏控制条。',
 			'settings.controlsAutoHideValue' => ({required int count}) => '${count} 秒',
+			'settings.controlsAutoHideAlways' => '常显',
 			'settings.navAudience' => '观众指标',
 			'settings.audiencePageDescription' => '卡片人数口径、真实在线优先与平台开关。',
 			'settings.portraitLayoutMode' => '普通页布局模式',
@@ -19028,16 +19006,6 @@ extension on Translations {
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
 			'settings.chatPanelWidthDesc' => '宽屏布局下的宽度。',
-			'settings.chatPresentation' => '聊天形态',
-			'settings.chatPresentationDesc' => '侧栏是完整聊天面板；画面浮流把纯文本聊天叠在画面上，宽屏与全屏生效。',
-			'settings.chatPresentationColumn' => '侧栏',
-			'settings.chatPresentationStream' => '画面浮流',
-			'settings.chatStreamCorner' => '浮流位置',
-			'settings.chatStreamCornerDesc' => '浮流停在画面的哪个角落；侧栏形态下不可调。',
-			'settings.chatStreamCornerTopRight' => '右上',
-			'settings.chatStreamCornerBottomRight' => '右下',
-			'settings.chatStreamCornerTopLeft' => '左上',
-			'settings.chatStreamCornerBottomLeft' => '左下',
 			'settings.twitchLanguages' => 'Twitch 目录语言',
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
@@ -19105,8 +19073,6 @@ extension on Translations {
 			'settings.hongguoInterfaceDesc' => '海报卡片上显示哪些信息。',
 			'settings.hongguoDanmakuDesc' => '弹幕开关与字号、透明度、速度、密度。',
 			'settings.hongguoDeviceDesc' => '本机注册的设备身份，可在这里重置。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoQuality' => '默认清晰度',
 			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
 			'settings.hongguoCardVisibleContent' => '卡片显示内容',
@@ -19115,6 +19081,8 @@ extension on Translations {
 			'settings.hongguoCardEpisodes' => '集数',
 			'settings.hongguoCardToday' => '今日标记',
 			'settings.hongguoCardScore' => '评分',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoCardFavorite' => '收藏标记',
 			'settings.hongguoCardHot' => '封面热度',
 			'settings.hongguoCardCategory' => '封面分类',
@@ -19619,8 +19587,6 @@ extension on Translations {
 			'vod.score' => '评分',
 			'vod.danmakuOn' => '显示弹幕',
 			'vod.danmakuOff' => '隐藏弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
@@ -19629,6 +19595,8 @@ extension on Translations {
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',
+			_ => null,
+		} ?? switch (path) {
 			'vod.nextPart' => '下一P',
 			'vod.previousPart' => '上一P',
 			'vod.resumedAt' => ({required Object time}) => '已为你续播到 ${time}',

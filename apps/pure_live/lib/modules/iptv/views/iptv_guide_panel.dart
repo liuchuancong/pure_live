@@ -269,8 +269,13 @@ final class IptvGuideRow extends ConsumerWidget {
     final progress = live && total > Duration.zero
         ? (now.difference(programme.start).inMilliseconds / total.inMilliseconds).clamp(0.0, 1.0)
         : null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+    // The on-air row wears a quiet accent ground — the module's mark for
+    // "this one is playing right now", shared with the channel list's tally.
+    final marked = live || replaying;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(DsSpace.s6, DsSpace.s3, DsSpace.s6, DsSpace.s3),
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s8),
+      decoration: BoxDecoration(color: marked ? colors.accentTint : null, borderRadius: BorderRadius.circular(8)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s12,

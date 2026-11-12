@@ -961,6 +961,9 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	// Translations
 	@override String get tabAll => 'All';
 	@override String get live => 'Live';
+	@override String get renameSourceTitle => 'Rename source';
+	@override String get sourceLabel => 'Source';
+	@override String get sourceAll => 'All sources';
 	@override String get scopeLabel => 'Channel scope';
 	@override String get scopeAll => 'All channels';
 	@override String get scopeFavourites => 'Favourites';
@@ -1100,7 +1103,11 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get playerOpening => 'Opening the channel';
 	@override String get playerNoStream => 'This channel has no stream address';
 	@override String get playerChannelMissing => 'The channel no longer exists';
+	@override String get playerIdleTitle => 'Pick a channel to start watching';
+	@override String get playerIdleHint => 'Tap a channel in the list — the picture plays right here.';
 	@override String get playerOpenFailed => 'The channel failed to play';
+	@override String reconnectAttempt({required Object attempt, required Object total}) => 'Connection lost — reconnecting (${attempt}/${total})…';
+	@override String resumeChannel({required Object name}) => 'Resume ${name}';
 	@override String get guideTitle => 'Guide';
 	@override String get viewRecordings => 'View recordings';
 	@override String get guideEmpty => 'No programmes on this day';
@@ -1182,7 +1189,6 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get importOriginLink => 'Link';
 	@override String get importOriginText => 'Paste text';
 	@override String get importOriginFile => 'Local file';
-	@override String get importOriginPreset => 'Recommended';
 	@override String get importOriginScan => 'From phone';
 	@override String get importOriginXtream => 'Xtream account';
 	@override String get importClipboardFound => 'The clipboard holds a link or a list';
@@ -1199,16 +1205,6 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String importXtreamAccountExpired({required Object date}) => 'The subscription expired (${date})';
 	@override String get importXtreamAccountBad => 'The server rejected these credentials';
 	@override String get importXtreamCheckFailed => 'The panel could not be checked; importing may still work';
-	@override String get presetSectionTitle => 'Recommended sources';
-	@override String get presetEmpty => 'No sources to recommend';
-	@override String get presetAddedTag => 'Added';
-	@override String get presetBuiltinTag => 'Built-in';
-	@override String get presetShortLivedTag => 'Expiring links';
-	@override String get presetAddAction => 'Add';
-	@override String get presetOpenAction => 'Open channels';
-	@override String presetAddedToast({required Object name}) => 'Added “${name}”';
-	@override String get presetRestore => 'Restore default sources';
-	@override String get presetRestored => 'Default sources restored; add them again from Recommended';
 	@override String previewOf({required Object name}) => 'Preview: ${name}';
 	@override String get previewChannels => 'Channels';
 	@override String get previewGroups => 'Groups';
@@ -1260,8 +1256,6 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get failureStorage => 'Saving failed; try again';
 	@override String deleteImpactNote({required int channels, required int favourites}) => 'The ${channels} channels only it lists go with it (${favourites} of them favourites)';
 	@override String get deleteImpactNone => 'Its channels are shared with other sources and stay';
-	@override String get deletePresetNote => 'This is a built-in source; it is not re-added automatically. Add it again from Recommended.';
-	@override String get sourceBuiltinTag => 'Built-in';
 	@override String playlistGuideTag({required int count}) => 'Guide ×${count}';
 	@override String get emptyStartTitle => 'Start with IPTV';
 	@override String get emptyStartDescription => 'Add a recommended source to start watching, or import your own list from an address or a file.';
@@ -1270,7 +1264,6 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get importOriginLinkDesc => 'An M3U/TXT address that can sync any time';
 	@override String get importOriginTextDesc => 'Paste the list itself';
 	@override String get importOriginFileDesc => 'Pick an m3u/m3u8/txt file on this device';
-	@override String get importOriginPresetDesc => 'Curated public sources';
 	@override String get importOriginScanDesc => 'Type the address on a phone and send it here';
 	@override String get importOriginXtreamDesc => 'Import live channels with a panel address and account';
 	@override String get importGuideOriginLinkDesc => 'An XMLTV/JSON address that can update itself';
@@ -2510,6 +2503,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get playerSettings => 'Playback settings';
 	@override String get quality => 'Quality';
 	@override String get lineLabel => 'Line';
+	@override String get chatColumnWidth => 'Chat column width';
+	@override String get moreTools => 'Tools';
+	@override String get moreSettings => 'Settings';
 	@override String line({required Object n}) => 'Line ${n}';
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
@@ -2539,7 +2535,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get windowFullscreenOff => 'Leave window fullscreen';
 	@override String get pipOn => 'Picture-in-picture';
 	@override String get pipOff => 'Leave picture-in-picture';
-	@override String get openInNewWindow => 'Open in a new window';
 	@override String get openStages => 'How the entry went';
 	@override String openStagesTotal({required Object value}) => '${value} ms in all';
 	@override String get openStagesFailed => 'This entry ended in an error';
@@ -2706,8 +2701,11 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get switchOnAir => 'Followed · live';
 	@override String get switchSource => 'Source list';
 	@override String get switchSearch => 'Search';
+	@override String get stats => 'Stats';
 	@override String get statViewers => 'Viewers';
 	@override String get statOnAir => 'On air';
+	@override String get panelStops => 'Stops:';
+	@override String get panelStopsHint => 'Pull past the lowest stop for portrait full screen';
 	@override String get statWatched => 'Watched';
 	@override String get switchHistory => 'Watch history';
 	@override String get switchReplays => 'Followed replays';
@@ -2742,6 +2740,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get replayRate => 'Speed';
 	@override String get replayParts => 'Parts';
 	@override String get shortcutChatColumn => 'Fold/unfold the chat column';
+	@override String get danmakuChip => 'Danmaku';
+	@override String get danmakuChipOff => 'Danmaku off';
+	@override String get fullscreenChip => 'Fullscreen';
 }
 
 // Path: search
@@ -3948,6 +3949,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get controlsAutoHide => 'Controls auto-hide';
 	@override String get controlsAutoHideDesc => 'Hides the controls after this much idle time while playing.';
 	@override String controlsAutoHideValue({required int count}) => '${count} s';
+	@override String get controlsAutoHideAlways => 'Always show';
 	@override String get navAudience => 'Audience figures';
 	@override String get audiencePageDescription => 'The card figure, the concurrent-viewer preference and its platforms.';
 	@override String get portraitLayoutMode => 'Room layout mode';
@@ -4104,16 +4106,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get chatListSpacingLoose => 'Loose';
 	@override String get chatPanelWidth => 'Panel width';
 	@override String get chatPanelWidthDesc => 'Its width in the wide layout.';
-	@override String get chatPresentation => 'Chat presentation';
-	@override String get chatPresentationDesc => 'The column is the full chat panel; the stream floats plain talk over the picture, in wide and fullscreen layouts.';
-	@override String get chatPresentationColumn => 'Side column';
-	@override String get chatPresentationStream => 'On-picture stream';
-	@override String get chatStreamCorner => 'Stream corner';
-	@override String get chatStreamCornerDesc => 'Which corner of the picture the stream keeps to; fixed while the column is in use.';
-	@override String get chatStreamCornerTopRight => 'Top right';
-	@override String get chatStreamCornerBottomRight => 'Bottom right';
-	@override String get chatStreamCornerTopLeft => 'Top left';
-	@override String get chatStreamCornerBottomLeft => 'Bottom left';
 	@override String get twitchLanguages => 'Twitch directory languages';
 	@override String get twitchLanguagesDesc => 'Show only streams in the chosen languages; none selected shows every language.';
 	@override String get twitchAllLanguages => 'All languages';
@@ -6178,6 +6170,9 @@ extension on TranslationsEn {
 			'huya.infoColumnShow' => 'Show the info column',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
+			'iptv.renameSourceTitle' => 'Rename source',
+			'iptv.sourceLabel' => 'Source',
+			'iptv.sourceAll' => 'All sources',
 			'iptv.scopeLabel' => 'Channel scope',
 			'iptv.scopeAll' => 'All channels',
 			'iptv.scopeFavourites' => 'Favourites',
@@ -6233,11 +6228,11 @@ extension on TranslationsEn {
 			'iptv.importAddressInvalid' => 'Enter a valid subscription address',
 			'iptv.importAddressRequired' => 'Enter the subscription address first',
 			'iptv.importFailed' => 'Import failed',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.importFormat' => 'Unsupported file format',
 			'iptv.importFromFile' => 'From file',
 			'iptv.importFromText' => 'Paste text',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importFromUrl' => 'From URL',
 			'iptv.importGuide' => 'Import guide',
 			'iptv.importGuideDescription' => 'XMLTV URLs or files; the guide is downloaded after import.',
@@ -6319,7 +6314,11 @@ extension on TranslationsEn {
 			'iptv.playerOpening' => 'Opening the channel',
 			'iptv.playerNoStream' => 'This channel has no stream address',
 			'iptv.playerChannelMissing' => 'The channel no longer exists',
+			'iptv.playerIdleTitle' => 'Pick a channel to start watching',
+			'iptv.playerIdleHint' => 'Tap a channel in the list — the picture plays right here.',
 			'iptv.playerOpenFailed' => 'The channel failed to play',
+			'iptv.reconnectAttempt' => ({required Object attempt, required Object total}) => 'Connection lost — reconnecting (${attempt}/${total})…',
+			'iptv.resumeChannel' => ({required Object name}) => 'Resume ${name}',
 			'iptv.guideTitle' => 'Guide',
 			'iptv.viewRecordings' => 'View recordings',
 			'iptv.guideEmpty' => 'No programmes on this day',
@@ -6401,7 +6400,6 @@ extension on TranslationsEn {
 			'iptv.importOriginLink' => 'Link',
 			'iptv.importOriginText' => 'Paste text',
 			'iptv.importOriginFile' => 'Local file',
-			'iptv.importOriginPreset' => 'Recommended',
 			'iptv.importOriginScan' => 'From phone',
 			'iptv.importOriginXtream' => 'Xtream account',
 			'iptv.importClipboardFound' => 'The clipboard holds a link or a list',
@@ -6418,16 +6416,6 @@ extension on TranslationsEn {
 			'iptv.importXtreamAccountExpired' => ({required Object date}) => 'The subscription expired (${date})',
 			'iptv.importXtreamAccountBad' => 'The server rejected these credentials',
 			'iptv.importXtreamCheckFailed' => 'The panel could not be checked; importing may still work',
-			'iptv.presetSectionTitle' => 'Recommended sources',
-			'iptv.presetEmpty' => 'No sources to recommend',
-			'iptv.presetAddedTag' => 'Added',
-			'iptv.presetBuiltinTag' => 'Built-in',
-			'iptv.presetShortLivedTag' => 'Expiring links',
-			'iptv.presetAddAction' => 'Add',
-			'iptv.presetOpenAction' => 'Open channels',
-			'iptv.presetAddedToast' => ({required Object name}) => 'Added “${name}”',
-			'iptv.presetRestore' => 'Restore default sources',
-			'iptv.presetRestored' => 'Default sources restored; add them again from Recommended',
 			'iptv.previewOf' => ({required Object name}) => 'Preview: ${name}',
 			'iptv.previewChannels' => 'Channels',
 			'iptv.previewGroups' => 'Groups',
@@ -6479,8 +6467,6 @@ extension on TranslationsEn {
 			'iptv.failureStorage' => 'Saving failed; try again',
 			'iptv.deleteImpactNote' => ({required int channels, required int favourites}) => 'The ${channels} channels only it lists go with it (${favourites} of them favourites)',
 			'iptv.deleteImpactNone' => 'Its channels are shared with other sources and stay',
-			'iptv.deletePresetNote' => 'This is a built-in source; it is not re-added automatically. Add it again from Recommended.',
-			'iptv.sourceBuiltinTag' => 'Built-in',
 			'iptv.playlistGuideTag' => ({required int count}) => 'Guide ×${count}',
 			'iptv.emptyStartTitle' => 'Start with IPTV',
 			'iptv.emptyStartDescription' => 'Add a recommended source to start watching, or import your own list from an address or a file.',
@@ -6489,7 +6475,6 @@ extension on TranslationsEn {
 			'iptv.importOriginLinkDesc' => 'An M3U/TXT address that can sync any time',
 			'iptv.importOriginTextDesc' => 'Paste the list itself',
 			'iptv.importOriginFileDesc' => 'Pick an m3u/m3u8/txt file on this device',
-			'iptv.importOriginPresetDesc' => 'Curated public sources',
 			'iptv.importOriginScanDesc' => 'Type the address on a phone and send it here',
 			'iptv.importOriginXtreamDesc' => 'Import live channels with a panel address and account',
 			'iptv.importGuideOriginLinkDesc' => 'An XMLTV/JSON address that can update itself',
@@ -6750,8 +6735,6 @@ extension on TranslationsEn {
 			'music.songDetailArtist' => 'Artist',
 			'music.songDetailAlbum' => 'Album',
 			'music.songDetailDuration' => 'Duration',
-			_ => null,
-		} ?? switch (path) {
 			'music.songDetailQualities' => 'Available tiers',
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
@@ -6759,6 +6742,8 @@ extension on TranslationsEn {
 			'music.albumPageTitle' => 'Album',
 			'music.artistPageTitle' => 'Artist',
 			'music.viewAlbum' => 'View album',
+			_ => null,
+		} ?? switch (path) {
 			'music.viewArtist' => 'View artist',
 			'music.albumUnsupported' => 'This source does not support album browsing',
 			'music.artistUnsupported' => 'This source does not support artist browsing',
@@ -7264,8 +7249,6 @@ extension on TranslationsEn {
 			'music.albumTotalDuration' => ({required Object count}) => 'About ${count} min',
 			'music.audioCacheTitle' => 'Audio cache',
 			'music.audioCacheDesc' => 'Songs you have played stay on disk and keep playing when their CDN link expires',
-			_ => null,
-		} ?? switch (path) {
 			'music.audioCacheOff' => 'Off',
 			'music.audioCacheClear' => 'Clear the audio cache',
 			'music.audioCacheCleared' => 'Audio cache cleared',
@@ -7273,6 +7256,8 @@ extension on TranslationsEn {
 			'music.audioCacheClearAction' => 'Clear',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
+			_ => null,
+		} ?? switch (path) {
 			'navigation.live' => 'Live',
 			'navigation.channels' => 'Channels',
 			'navigation.discover' => 'Discover',
@@ -7661,6 +7646,9 @@ extension on TranslationsEn {
 			'room.playerSettings' => 'Playback settings',
 			'room.quality' => 'Quality',
 			'room.lineLabel' => 'Line',
+			'room.chatColumnWidth' => 'Chat column width',
+			'room.moreTools' => 'Tools',
+			'room.moreSettings' => 'Settings',
 			'room.line' => ({required Object n}) => 'Line ${n}',
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
@@ -7690,7 +7678,6 @@ extension on TranslationsEn {
 			'room.windowFullscreenOff' => 'Leave window fullscreen',
 			'room.pipOn' => 'Picture-in-picture',
 			'room.pipOff' => 'Leave picture-in-picture',
-			'room.openInNewWindow' => 'Open in a new window',
 			'room.openStages' => 'How the entry went',
 			'room.openStagesTotal' => ({required Object value}) => '${value} ms in all',
 			'room.openStagesFailed' => 'This entry ended in an error',
@@ -7778,13 +7765,13 @@ extension on TranslationsEn {
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
 			'room.danmakuSettings' => 'Danmaku settings',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chat',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'Super chats did not load',
 			'room.superChatCardMembership' => 'Membership',
+			_ => null,
+		} ?? switch (path) {
 			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
@@ -7859,8 +7846,11 @@ extension on TranslationsEn {
 			'room.switchOnAir' => 'Followed · live',
 			'room.switchSource' => 'Source list',
 			'room.switchSearch' => 'Search',
+			'room.stats' => 'Stats',
 			'room.statViewers' => 'Viewers',
 			'room.statOnAir' => 'On air',
+			'room.panelStops' => 'Stops:',
+			'room.panelStopsHint' => 'Pull past the lowest stop for portrait full screen',
 			'room.statWatched' => 'Watched',
 			'room.switchHistory' => 'Watch history',
 			'room.switchReplays' => 'Followed replays',
@@ -7895,6 +7885,9 @@ extension on TranslationsEn {
 			'room.replayRate' => 'Speed',
 			'room.replayParts' => 'Parts',
 			'room.shortcutChatColumn' => 'Fold/unfold the chat column',
+			'room.danmakuChip' => 'Danmaku',
+			'room.danmakuChipOff' => 'Danmaku off',
+			'room.fullscreenChip' => 'Fullscreen',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -8291,9 +8284,9 @@ extension on TranslationsEn {
 			'settings.styleAdvanced' => 'Advanced',
 			'settings.styleFontSize' => 'Size',
 			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
-			'settings.styleFontWeight' => 'Weight',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleFontWeight' => 'Weight',
 			'settings.styleFontWeightDesc' => 'How thick the glyphs are; 400 is regular and 700 is bold.',
 			'settings.styleLetterSpacing' => 'Letter spacing',
 			'settings.styleLetterSpacingDesc' => 'Extra space added between characters, in pixels.',
@@ -8805,9 +8798,9 @@ extension on TranslationsEn {
 			'settings.recordingDescription' => 'Recording folder, file naming and the size cap.',
 			'settings.preferredQuality' => 'Preferred quality',
 			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
-			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			_ => null,
 		} ?? switch (path) {
+			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'Quality on mobile data; Wi-Fi and wired keep the default above.',
 			'settings.qualityAuto' => 'Automatic (site default)',
 			'settings.qualityOriginal' => 'Original',
@@ -9087,6 +9080,7 @@ extension on TranslationsEn {
 			'settings.controlsAutoHide' => 'Controls auto-hide',
 			'settings.controlsAutoHideDesc' => 'Hides the controls after this much idle time while playing.',
 			'settings.controlsAutoHideValue' => ({required int count}) => '${count} s',
+			'settings.controlsAutoHideAlways' => 'Always show',
 			'settings.navAudience' => 'Audience figures',
 			'settings.audiencePageDescription' => 'The card figure, the concurrent-viewer preference and its platforms.',
 			'settings.portraitLayoutMode' => 'Room layout mode',
@@ -9243,16 +9237,6 @@ extension on TranslationsEn {
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
 			'settings.chatPanelWidthDesc' => 'Its width in the wide layout.',
-			'settings.chatPresentation' => 'Chat presentation',
-			'settings.chatPresentationDesc' => 'The column is the full chat panel; the stream floats plain talk over the picture, in wide and fullscreen layouts.',
-			'settings.chatPresentationColumn' => 'Side column',
-			'settings.chatPresentationStream' => 'On-picture stream',
-			'settings.chatStreamCorner' => 'Stream corner',
-			'settings.chatStreamCornerDesc' => 'Which corner of the picture the stream keeps to; fixed while the column is in use.',
-			'settings.chatStreamCornerTopRight' => 'Top right',
-			'settings.chatStreamCornerBottomRight' => 'Bottom right',
-			'settings.chatStreamCornerTopLeft' => 'Top left',
-			'settings.chatStreamCornerBottomLeft' => 'Bottom left',
 			'settings.twitchLanguages' => 'Twitch directory languages',
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
@@ -9320,8 +9304,6 @@ extension on TranslationsEn {
 			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
 			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
 			'settings.hongguoDeviceDesc' => 'The device identity this install registered; reset it here.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
 			'settings.hongguoCardVisibleContent' => 'Card visible content',
@@ -9330,6 +9312,8 @@ extension on TranslationsEn {
 			'settings.hongguoCardEpisodes' => 'Episode count',
 			'settings.hongguoCardToday' => '“Today” marker',
 			'settings.hongguoCardScore' => 'Score',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoCardFavorite' => 'Favorite mark',
 			'settings.hongguoCardHot' => 'Cover heat',
 			'settings.hongguoCardCategory' => 'Cover category',
@@ -9834,8 +9818,6 @@ extension on TranslationsEn {
 			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
@@ -9844,6 +9826,8 @@ extension on TranslationsEn {
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',
+			_ => null,
+		} ?? switch (path) {
 			'vod.nextPart' => 'Next part',
 			'vod.previousPart' => 'Previous part',
 			'vod.resumedAt' => ({required Object time}) => 'Resumed at ${time}',

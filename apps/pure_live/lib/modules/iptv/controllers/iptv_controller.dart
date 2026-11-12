@@ -55,7 +55,13 @@ final iptvImporterProvider = Provider<IptvImporter?>((ref) {
     fetch: routedIptvFetcher(iptvFetcherFor(http, userAgent: userAgent), currentMirrors),
     fetchBytes: routedIptvBytesFetcher(iptvBytesFetcherFor(http, userAgent: userAgent), currentMirrors),
     fetchPlaylistBytes: routedIptvBytesFetcher(
-      iptvBytesFetcherFor(http, timeout: iptvFetchDefaultTimeout, limit: iptvPlaylistByteLimit, userAgent: userAgent),
+      iptvBytesFetcherFor(
+        http,
+        timeout: iptvFetchDefaultTimeout,
+        bodyBudget: iptvFetchDefaultTimeout,
+        limit: iptvPlaylistByteLimit,
+        userAgent: userAgent,
+      ),
       currentMirrors,
     ),
     log: appLog.forCategory('iptv.import'),
@@ -108,6 +114,9 @@ typedef IptvChannelsState = ({
   int libraryCount,
   int totalCount,
   String? selectedGroup,
+
+  /// The playlist the list is narrowed to, or null for every source at once.
+  String? playlistId,
   IptvChannelScope scope,
   String query,
   List<IptvChannel> channels,
@@ -123,6 +132,7 @@ IptvChannelsState _initial() => (
   libraryCount: 0,
   totalCount: 0,
   selectedGroup: null,
+  playlistId: null,
   scope: IptvChannelScope.all,
   query: '',
   channels: const [],
@@ -183,6 +193,16 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     // `dropGroup` carries the "every group at once" choice: a null
     // argument is that choice, not "leave it as it was".
     state = _with(selectedGroup: group, dropGroup: group == null);
+    _remirrorFromFirstPage();
+  }
+
+  /// Narrows the list to the playlist [id] names — null for every source at
+  /// once. A channel shared by two lists stays under both: the filter reads
+  /// the channel's own sources, so a re-import that re-shares it keeps it
+  /// visible on either side.
+  void selectPlaylist(String? id) {
+    if (id == state.playlistId) return;
+    state = _with(playlistId: id, dropPlaylist: id == null);
     _remirrorFromFirstPage();
   }
 
@@ -267,28 +287,39 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
   void _mirror(IptvLibrary library, {int? reveal, bool resetReveal = false, IptvChannelsState? from}) {
     final current = from ?? state;
     final favouritesOnly = current.scope == IptvChannelScope.favourites;
+    final playlistId = current.playlistId;
+    bool mine(IptvChannel channel) => playlistId == null || channel.sources.contains(playlistId);
+    final walk = [
+      for (final channel in library.zapSequence(favouritesOnly: favouritesOnly).channels)
+        if (mine(channel)) channel,
+    ];
+    final counts = <String, int>{};
+    for (final channel in walk) {
+      final key = iptvGroupKeyOf(channel);
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    // A source narrowed away takes its empty groups with it — a group with
+    // no row under the open playlist is not a choice worth showing.
     final groups = [
       for (final name in library.groupNames)
-        if (!library.isGroupHidden(name)) name,
+        if (!library.isGroupHidden(name) && (playlistId == null || (counts[name] ?? 0) > 0)) name,
     ];
     // A re-import may drop the open group; the list falls back to every
     // channel rather than to an empty page nobody can explain.
     final selected = current.selectedGroup != null && groups.contains(current.selectedGroup)
         ? current.selectedGroup
         : null;
-    final walk = library.zapSequence(favouritesOnly: favouritesOnly).channels;
     // The library's own size, whatever the filter: an empty favourites
     // list and an empty library are different facts, and the page words
     // them differently.
-    final libraryCount = favouritesOnly ? library.zapSequence().channels.length : walk.length;
-    final counts = <String, int>{};
-    for (final channel in walk) {
-      final key = iptvGroupKeyOf(channel);
-      counts[key] = (counts[key] ?? 0) + 1;
-    }
+    final everyChannel = [
+      for (final channel in library.zapSequence().channels)
+        if (mine(channel)) channel,
+    ];
+    final libraryCount = favouritesOnly ? everyChannel.length : walk.length;
     final channels = [
       for (final channel in library.zapSequence(group: selected, favouritesOnly: favouritesOnly).channels)
-        if (_matches(channel, current.query)) channel,
+        if (mine(channel) && _matches(channel, current.query)) channel,
     ];
     // A search is complete at once — the viewer names what they look for —
     // while browsing reveals a page at a time. A list that just gained its
@@ -312,6 +343,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
       libraryCount: libraryCount,
       totalCount: walk.length,
       selectedGroup: selected,
+      playlistId: playlistId,
       scope: current.scope,
       query: current.query,
       channels: channels,
@@ -344,6 +376,8 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
   IptvChannelsState _with({
     String? selectedGroup,
     bool dropGroup = false,
+    String? playlistId,
+    bool dropPlaylist = false,
     IptvChannelScope? scope,
     String? query,
     bool? loadingMore,
@@ -355,6 +389,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     libraryCount: state.libraryCount,
     totalCount: state.totalCount,
     selectedGroup: dropGroup ? null : (selectedGroup ?? state.selectedGroup),
+    playlistId: dropPlaylist ? null : (playlistId ?? state.playlistId),
     scope: scope ?? state.scope,
     query: query ?? state.query,
     channels: state.channels,

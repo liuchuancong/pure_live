@@ -8,9 +8,8 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
-import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider, iptvPlaylistIsRemote;
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_presets_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport, runIptvPlaylistImport;
 import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart' show iptvImportFailureWords;
@@ -119,11 +118,44 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
 
   // -- Delete --------------------------------------------------------------
 
+  /// The reference's per-source rename: one field, the record's current name
+  /// filled in, and the save that only moves the record's own name — the
+  /// channels keep their ids, so favourites and order survive untouched.
+  Future<void> _renamePlaylist(IptvPlaylist playlist) async {
+    final t = context.t;
+    final field = TextEditingController(text: playlist.name);
+    final name = await showDsDialog<String>(
+      context: context,
+      builder: (dialogContext) => DsDialog(
+        title: Text(t.iptv.renameSourceTitle),
+        style: const DsDialogStyle(width: 420),
+        description: DsTextField(
+          controller: field,
+          autofocus: true,
+          semanticLabel: t.iptv.renameSourceTitle,
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(
+            onPressed: () => Navigator.of(dialogContext).pop(field.text.trim()),
+            child: Text(t.common.save),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty || name == playlist.name || !mounted) return;
+    final renamed = await ref.read(iptvLibraryProvider).value?.renamePlaylist(playlist.id, name) ?? false;
+    if (!mounted) return;
+    _toast(renamed ? t.iptv.sourceChanged : t.iptv.sourceChanged);
+  }
+
   Future<void> _deletePlaylist(IptvPlaylist playlist) async {
     final t = context.t;
     final impact = ref.read(iptvSourcesProvider.notifier).deletionImpact(playlist);
-    final presets = ref.read(iptvPresetsProvider);
-    final presetId = presets.added.entries.where((entry) => entry.value == playlist.id).firstOrNull?.key;
     final confirmed = await showDsConfirm(
       context: context,
       title: t.iptv.deletePlaylistTitle,
@@ -135,7 +167,6 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
           t.iptv.deleteImpactNote(channels: impact.channels, favourites: impact.favourites)
         else
           t.iptv.deleteImpactNone,
-        if (presetId != null) t.iptv.deletePresetNote,
       ].join('\n'),
       confirmLabel: t.iptv.delete,
       cancelLabel: t.common.cancel,
@@ -145,7 +176,6 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (!confirmed || !mounted) return;
     final deleted = await ref.read(iptvSourcesProvider.notifier).deletePlaylist(playlist);
     if (!mounted) return;
-    if (deleted && presetId != null) ref.read(iptvPresetsProvider.notifier).forget(presetId);
     _toast(deleted ? t.iptv.deleted(name: playlist.name) : t.iptv.sourceChanged, danger: !deleted);
   }
 
@@ -392,12 +422,12 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
                 blocked: settingsBlocked,
                 sourceBusy: sources.busy,
                 guideBusy: epg.busy,
-                presetPlaylists: ref.watch(iptvPresetsProvider.select((state) => state.added.values.toSet())),
                 syncPlaylist: (playlist) => unawaited(_syncPlaylist(playlist)),
                 syncGuide: (source) => unawaited(_syncGuide(source)),
                 deletePlaylist: (playlist) => unawaited(_deletePlaylist(playlist)),
                 deleteGuide: (source) => unawaited(_deleteGuide(source)),
                 autoUpdate: (source, value) => unawaited(_setAutoUpdate(source, value)),
+                renamePlaylist: (playlist) => unawaited(_renamePlaylist(playlist)),
               ),
               emptyView: _emptyView(context, sources, epg),
             ),
@@ -791,11 +821,10 @@ final class _SourcesToolbar extends StatelessWidget {
 /// kit's card fallback is one "label value" line per column at a single
 /// line's height while a source is three lines (name, stats, address), so the
 /// narrow form is defined here instead.
-const double _sourcesTableMinWidth = 760;
-
-/// The playlists and guides: one table in a window wide enough for its
-/// columns, stacked rows in a narrow one. The same fields and the same
-/// actions either way, read from one [_SourcesActions].
+/// The sources list, one stacked row per source at every width: the row
+/// already carries the format, the counts and the stamp on its address
+/// line, so a wide table repeated those facts as columns - a second look
+/// for the same facts, and the last management-grid surface in the module.
 final class _SourcesTable extends StatelessWidget {
   const _SourcesTable({required this.rows, required this.actions, required this.emptyView});
 
@@ -805,93 +834,20 @@ final class _SourcesTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final meta = theme.typography.small.copyWith(color: colors.textMuted);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < _sourcesTableMinWidth) {
-          if (rows.isEmpty) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
-              child: emptyView,
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (index, item) in rows.indexed) ...[
-                if (index > 0) const DsDivider(),
-                _SourceRow(item: item, actions: actions),
-              ],
-            ],
-          );
-        }
-        // The format is a hint about the address every row already shows; it
-        // gets a column of its own only in a window wide enough to pay for
-        // one, and is read inline on the address line otherwise.
-        final showFormat = LiveWindow.isExpanded(constraints.maxWidth);
-        return DsTable<Object>(
-          semanticLabel: t.iptv.viewSources,
-          rows: rows,
-          rowKey: _SourcesActions.rowKey,
-          columns: [
-            DsTableColumn(
-              id: 'name',
-              label: t.iptv.colName,
-              value: actions.name,
-              width: const DsTableColumnWidth.flex(2, 200),
-              cell: (context, item) => _SourceNameCell(item: item, actions: actions, inlineFormat: !showFormat),
-            ),
-            if (showFormat)
-              DsTableColumn(
-                id: 'format',
-                label: t.iptv.colFormat,
-                value: actions.format,
-                width: const DsTableColumnWidth.fixed(96),
-                cell: (context, item) => DsBadge(dot: false, label: Text(actions.format(item))),
-              ),
-            DsTableColumn(
-              id: 'channels',
-              label: t.iptv.colChannel,
-              value: actions.channelCount,
-              width: const DsTableColumnWidth.fixed(76),
-              numeric: true,
-              cell: (context, item) =>
-                  Text(iptvNumber(actions.channelCount(item)), style: theme.typography.numeric(meta)),
-            ),
-            DsTableColumn(
-              id: 'updated',
-              label: t.iptv.colUpdated,
-              value: (item) => actions.updated(item)?.millisecondsSinceEpoch ?? 0,
-              width: const DsTableColumnWidth.flex(1, 120),
-              cell: (context, item) => Text(
-                _stamp(actions.updated(item)) ?? t.iptv.neverUpdated,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: meta,
-              ),
-            ),
-            DsTableColumn(
-              id: 'auto',
-              label: t.iptv.colAutoUpdate,
-              width: const DsTableColumnWidth.fixed(96),
-              alignment: DsTableCellAlignment.center,
-              cell: actions.autoCell,
-            ),
-            DsTableColumn(
-              id: 'actions',
-              label: t.iptv.colActions,
-              width: const DsTableColumnWidth.fixed(84),
-              alignment: DsTableCellAlignment.center,
-              cell: actions.rowActions,
-            ),
-          ],
-          style: iptvTableStyle(context),
-          emptyView: emptyView,
-        );
-      },
+    if (rows.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
+        child: emptyView,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (index, item) in rows.indexed) ...[
+          if (index > 0) const DsDivider(),
+          _SourceRow(item: item, actions: actions),
+        ],
+      ],
     );
   }
 }
@@ -912,7 +868,7 @@ final class _SourcesActions {
     required this.deletePlaylist,
     required this.deleteGuide,
     required this.autoUpdate,
-    this.presetPlaylists = const {},
+    required this.renamePlaylist,
   });
 
   final String? activeId;
@@ -928,11 +884,10 @@ final class _SourcesActions {
   // ignore: avoid_positional_boolean_parameters
   final void Function(EpgSource source, bool value) autoUpdate;
 
-  /// The ids of the playlists a recommended source became.
-  final Set<String> presetPlaylists;
-
-  /// Whether [item] is a playlist a recommended source became.
-  bool isPreset(Object item) => item is IptvPlaylist && presetPlaylists.contains(item.id);
+  /// Opens the rename dialog for a playlist. The reference's per-source
+  /// menu carries the verb beside sync and delete; guides keep the name
+  /// their source declares.
+  final void Function(IptvPlaylist playlist) renamePlaylist;
 
   static String rowKey(Object item) => item is IptvPlaylist ? 'p:${item.id}' : 'g:${(item as EpgSource).id}';
 
@@ -966,6 +921,12 @@ final class _SourcesActions {
             label: t.iptv.sync,
             busy: busy,
             onPressed: blocked && !busy ? null : () => sync(item),
+          ),
+        if (item is IptvPlaylist)
+          IptvIconAction(
+            icon: DsIcons.pencil,
+            label: t.common.rename,
+            onPressed: blocked && !busy ? null : () => renamePlaylist(item),
           ),
         IptvIconAction(
           icon: DsIcons.trash,
@@ -1096,64 +1057,6 @@ final class _SourceRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// A row's name, its local/network origin, the active-guide mark and the
-/// address it came from — with the format read inline on the address line
-/// when the table has no column for it.
-final class _SourceNameCell extends StatelessWidget {
-  const _SourceNameCell({required this.item, required this.actions, required this.inlineFormat});
-
-  final Object item;
-  final _SourcesActions actions;
-  final bool inlineFormat;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final remote = actions.isRemote(item);
-    final address = actions.address(item);
-    final line = address.isEmpty
-        ? actions.format(item)
-        : (inlineFormat ? '${actions.format(item)} · $address' : address);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          spacing: DsSpace.s6,
-          children: [
-            Flexible(
-              child: Text(
-                actions.name(item),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-              ),
-            ),
-            DsBadge(
-              dot: false,
-              label: Text(remote ? t.iptv.networkTag : t.iptv.localTag),
-              icon: DsIcon(remote ? DsIcons.globe : DsIcons.fileText, size: 12),
-            ),
-            if (actions.isPreset(item))
-              DsBadge(
-                dot: false,
-                status: DsStatus.success,
-                label: Text(t.iptv.sourceBuiltinTag),
-                icon: const DsIcon(DsIcons.sparkles, size: 12),
-              ),
-            if (actions.isInUse(item)) DsBadge(dot: false, label: Text(t.iptv.inUse), status: DsStatus.info),
-          ],
-        ),
-        if (inlineFormat || address.isNotEmpty)
-          _SourceAddressLine(text: line, address: address.isEmpty ? null : address, remote: remote),
-      ],
     );
   }
 }

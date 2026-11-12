@@ -1,6 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -14,16 +15,13 @@ import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_presets_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
-import 'package:pure_live/modules/iptv/data/iptv_preset.dart' show IptvPreset;
-import 'package:pure_live/modules/iptv/data/iptv_preset_catalog.dart' show builtinIptvPresets;
+import 'package:pure_live/modules/iptv/pages/iptv_play_page.dart' show IptvPlayPage;
 import 'package:pure_live/modules/iptv/views/iptv_channel_preview.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart';
-import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart' show iptvImportFailureWords;
-import 'package:pure_live/modules/iptv/views/iptv_import_source_pane.dart' show IptvPresetCard;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
 import 'package:pure_live/modules/iptv/views/iptv_sources_view.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -89,6 +87,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   Timer? _slotRefresh;
   late IptvView _view = widget.initialView;
   final TextEditingController _channelSearch = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -105,39 +104,11 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     // post-frame take catches one handed as the page arrives.
     ref.listenManual(iptvSearchHandoffProvider, (_, _) => _takeHandoff());
     WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
-    // Arriving on the module is when the preset layer acts: the first visit
-    // adds the default source, signed lists whose links went stale are
-    // re-read, and the recommended catalogue is refreshed from its feed.
-    // Each runs off the frame and none of them blocks the page.
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_arrive()));
     _slotRefresh = Timer.periodic(_slotRefreshInterval, (_) {
       // A tick queued as the page leaves must not reach a defunct ref.
       if (!mounted) return;
       ref.read(iptvChannelsProvider.notifier).refreshSlots();
     });
-  }
-
-  /// The preset layer's work on arrival, once the library is open.
-  Future<void> _arrive() async {
-    try {
-      await ref.read(iptvLibraryProvider.future);
-    } on Object {
-      return;
-    }
-    if (!mounted) return;
-    final presets = ref.read(iptvPresetsProvider.notifier);
-    unawaited(presets.refreshFeed());
-    if (!ref.read(iptvPresetsProvider).onboarded) {
-      // An existing library is the viewer's own choice already; only an
-      // empty one is given the default.
-      final library = ref.read(iptvLibraryProvider).value;
-      if (library != null && library.playlists.isEmpty) {
-        await presets.onboard();
-      } else {
-        presets.skipOnboarding();
-      }
-    }
-    if (mounted) unawaited(presets.refreshStale());
   }
 
   /// Moves the handed word into the channel search: the field reads it and
@@ -165,7 +136,17 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   void dispose() {
     _slotRefresh?.cancel();
     _channelSearch.dispose();
+    _searchFocus.dispose();
     super.dispose();
+  }
+
+  /// The reference's Ctrl+F: the toolbar's search field takes the keyboard,
+  /// stepping back from the sources surface if it was showing.
+  void _focusSearch() {
+    if (_view != IptvView.channels) setState(() => _view = IptvView.channels);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocus.requestFocus();
+    });
   }
 
   @override
@@ -191,6 +172,23 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     final epg = ref.watch(iptvEpgProvider);
     final blocked = sources.importing || epg.importing || sources.syncAll != null || !sources.ready || !epg.ready;
     final channelsView = _view == IptvView.channels;
+    // The reference's startup card as a head verb: the newest watched
+    // channel, one press away — opened only by the press, never autoplayed.
+    // The first history entry whose channel still exists wins.
+    IptvChannel? recentChannel;
+    for (final entry in ref.watch(iptvRecentProvider)) {
+      final channel = library.value?.channelById(entry.channelId);
+      if (channel != null) {
+        recentChannel = channel;
+        break;
+      }
+    }
+    void resumeRecent() {
+      final channel = recentChannel;
+      if (channel == null) return;
+      unawaited(context.push(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id), extra: channel));
+    }
+
     final title = channelsView ? t.iptv.libraryTitle : t.iptv.viewSources;
     final description = channelsView
         ? channels.query.isNotEmpty
@@ -234,6 +232,15 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
           children: [
             DsListSection(
               children: [
+                if (recentChannel != null)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.play, size: 16),
+                    title: Text(t.iptv.resumeChannel(name: recentChannel.entry.name)),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      resumeRecent();
+                    },
+                  ),
                 DsListRow(
                   leading: const DsIcon(DsIcons.plus, size: 16),
                   title: Text(t.iptv.importPlaylist),
@@ -261,51 +268,79 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       ),
     );
     if (narrow && channelsView) publishPageHeadActions(context, ref, widget.owner, [more]);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // The channels surface opens with the shared head; the sources view
-        // carries its own — its verbs (the import menu, sort) live there, and
-        // one head per surface keeps the line honest.
-        if (channelsView)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final inset = LiveWindow.pageInset(constraints.maxWidth);
-              return Padding(
-                padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-                child: IptvPageHead(
-                  title: title,
-                  description: description,
-                  actions: narrow
-                      ? const <Widget>[]
-                      : [
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            onPressed: blocked ? null : importPlaylist,
-                            leading: const DsIcon(DsIcons.plus, size: 15),
-                            child: Text(t.iptv.importPlaylist),
-                          ),
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            onPressed: blocked ? null : importGuide,
-                            leading: const DsIcon(DsIcons.calendarClock, size: 15),
-                            child: Text(t.iptv.importGuide),
-                          ),
-                          if (channelsView) syncVerb,
-                        ],
+    return CallbackShortcuts(
+      bindings: <SingleActivator, VoidCallback>{
+        // The reference's page shortcuts: the page's own refresh is the
+        // shared sync-all, F lands in the channel search, O opens the
+        // playlist import.
+        if (canSyncAll)
+          const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
+              unawaited(syncAllIptvSources(context, ref)),
+        const SingleActivator(LogicalKeyboardKey.keyF, control: true): _focusSearch,
+        if (!blocked) const SingleActivator(LogicalKeyboardKey.keyO, control: true): importPlaylist,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // The channels surface opens with the shared head; the sources view
+            // carries its own — its verbs (the import menu, sort) live there, and
+            // one head per surface keeps the line honest.
+            if (channelsView)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final inset = LiveWindow.pageInset(constraints.maxWidth);
+                  return Padding(
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+                    child: IptvPageHead(
+                      title: title,
+                      description: description,
+                      actions: narrow
+                          ? const <Widget>[]
+                          : [
+                              if (recentChannel != null)
+                                DsButton(
+                                  variant: DsButtonVariant.secondary,
+                                  size: DsSize.sm,
+                                  onPressed: resumeRecent,
+                                  leading: const DsIcon(DsIcons.play, size: 15),
+                                  child: Text(t.iptv.resumeChannel(name: recentChannel.entry.name)),
+                                ),
+                              DsButton(
+                                variant: DsButtonVariant.secondary,
+                                size: DsSize.sm,
+                                onPressed: blocked ? null : importPlaylist,
+                                leading: const DsIcon(DsIcons.plus, size: 15),
+                                child: Text(t.iptv.importPlaylist),
+                              ),
+                              DsButton(
+                                variant: DsButtonVariant.secondary,
+                                size: DsSize.sm,
+                                onPressed: blocked ? null : importGuide,
+                                leading: const DsIcon(DsIcons.calendarClock, size: 15),
+                                child: Text(t.iptv.importGuide),
+                              ),
+                              if (channelsView) syncVerb,
+                            ],
+                    ),
+                  );
+                },
+              ),
+            Expanded(
+              child: switch (_view) {
+                IptvView.channels => _ChannelsView(
+                  channels: channels,
+                  search: _channelSearch,
+                  searchFocus: _searchFocus,
+                  syncOnToolbar: narrow,
                 ),
-              );
-            },
-          ),
-        Expanded(
-          child: switch (_view) {
-            IptvView.channels => _ChannelsView(channels: channels, search: _channelSearch, syncOnToolbar: narrow),
-            IptvView.sources => const IptvSourcesView(),
-          },
+                IptvView.sources => const IptvSourcesView(),
+              },
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -315,10 +350,19 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
 /// group's channels a resource table — the scope and a name search above it.
 /// The table fills the pane and pages in as it nears its end.
 final class _ChannelsView extends ConsumerStatefulWidget {
-  const _ChannelsView({required this.channels, required this.search, required this.syncOnToolbar});
+  const _ChannelsView({
+    required this.channels,
+    required this.search,
+    required this.searchFocus,
+    required this.syncOnToolbar,
+  });
 
   final IptvChannelsState channels;
   final TextEditingController search;
+
+  /// The page's Ctrl+F lands here: the search field's focus stop, owned by
+  /// the page so the shortcut can take the keyboard.
+  final FocusNode searchFocus;
 
   /// Whether the shared sync-all verb rides the toolbar's own search line:
   /// the page folds the head verbs below the shell's toolbar breakpoint, and
@@ -331,6 +375,10 @@ final class _ChannelsView extends ConsumerStatefulWidget {
 
 final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
   final ScrollController _scroll = ScrollController();
+
+  /// The channel the embedded player is on — the module's three-pane makes
+  /// selection and playback one fact: a click both plays and marks.
+  String? _selected;
 
   @override
   void initState() {
@@ -383,6 +431,18 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
     );
   }
 
+  /// The three-pane's third column: the module's own player, embedded — a
+  /// selection plays here, in place; nothing selected yet is a quiet door,
+  /// not an error.
+  Widget _embeddedPane() {
+    final id = _selected;
+    final channel = id == null ? null : ref.watch(iptvLibraryProvider).value?.channelById(id);
+    if (channel == null) {
+      return _PlayerIdle(broken: id != null);
+    }
+    return IptvPlayPage(channelId: channel.id, channel: channel, embedded: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final channels = widget.channels;
@@ -424,25 +484,46 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
               _ChannelsToolbar(
                 channels: channels,
                 search: widget.search,
+                searchFocus: widget.searchFocus,
                 progress: progress,
                 canSync: canSync,
                 syncOnToolbar: widget.syncOnToolbar,
                 onSync: () => unawaited(syncAllIptvSources(context, ref)),
               ),
-              if (hasGroups && !rail) IptvGroupEntry(filter: filter, onSelect: _selectGroup),
+              if (hasGroups) IptvGroupEntry(filter: filter, onSelect: _selectGroup),
             ],
           ),
-          child: _ChannelsTable(channels: channels, scrollController: _scroll, onOpen: _open),
+          child: _ChannelsList(channels: channels, scrollController: _scroll, onOpen: _open),
         );
         return Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s16),
-          child: rail
+          // From the medium window up the module is the three-pane — the
+          // groups move into the list pane's head where the column has no
+          // room, and the player rides beside the list on every one of them.
+          child: !LiveWindow.isCompact(width)
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: DsSpace.s12,
                   children: [
-                    IptvGroupsColumn(filter: filter, onSelect: _selectGroup),
-                    Expanded(child: panel),
+                    if (rail) IptvGroupsColumn(filter: filter, onSelect: _selectGroup),
+                    SizedBox(
+                      width: LiveWindow.isExpanded(width) ? 340.0 : 300.0,
+                      child: _ChannelListPane(
+                        channels: channels,
+                        slots: channels.slots,
+                        search: widget.search,
+                        searchFocus: widget.searchFocus,
+                        scrollController: _scroll,
+                        selected: _selected,
+                        showGroupEntry: hasGroups && !rail,
+                        filter: filter,
+                        onSelectGroup: _selectGroup,
+                        onSelect: (channel) => setState(() => _selected = channel.id),
+                        onToggleFavourite: (channel) =>
+                            unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
+                      ),
+                    ),
+                    Expanded(child: _embeddedPane()),
                   ],
                 )
               : panel,
@@ -459,6 +540,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
   const _ChannelsToolbar({
     required this.channels,
     required this.search,
+    required this.searchFocus,
     required this.progress,
     required this.canSync,
     required this.syncOnToolbar,
@@ -467,6 +549,9 @@ final class _ChannelsToolbar extends ConsumerWidget {
 
   final IptvChannelsState channels;
   final TextEditingController search;
+
+  /// The search field's focus stop, owned by the page (its Ctrl+F names it).
+  final FocusNode searchFocus;
   final ({int done, int total})? progress;
   final bool canSync;
 
@@ -482,6 +567,43 @@ final class _ChannelsToolbar extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final scope = _ScopeSegments(scope: channels.scope);
+    // The source the list walks: every playlist at once, or one — a menu,
+    // because the names are the facts and a panel would be a second screen
+    // for one choice.
+    final playlists = ref.watch(iptvSourcesProvider).playlists;
+    final sourceButton = playlists.length > 1
+        ? DsMenuAnchor(
+            semanticLabel: t.iptv.sourceLabel,
+            items: [
+              DsMenuItem(
+                checked: channels.playlistId == null,
+                label: Text(t.iptv.sourceAll),
+                onPressed: () => ref.read(iptvChannelsProvider.notifier).selectPlaylist(null),
+              ),
+              for (final playlist in playlists)
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.server, size: 15),
+                  checked: channels.playlistId == playlist.id,
+                  label: Text(playlist.name),
+                  onPressed: () => ref.read(iptvChannelsProvider.notifier).selectPlaylist(playlist.id),
+                ),
+            ],
+            builder: (context, controller, _) {
+              var current = t.iptv.sourceAll;
+              for (final playlist in playlists) {
+                if (playlist.id == channels.playlistId) current = playlist.name;
+              }
+              return DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                semanticLabel: t.iptv.sourceLabel,
+                leading: const DsIcon(DsIcons.server, size: 14),
+                onPressed: controller.toggle,
+                child: Text(current),
+              );
+            },
+          )
+        : null;
     final count = Text(
       progress != null
           ? t.iptv.syncAllRunning(done: progress!.done, total: progress!.total)
@@ -492,6 +614,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
     );
     final field = TvInputField(
       controller: search,
+      focusNode: searchFocus,
       placeholder: t.iptv.searchChannels,
       semanticLabel: t.iptv.searchChannels,
       onChanged: (value) => ref.read(iptvChannelsProvider.notifier).setQuery(value),
@@ -513,6 +636,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
             spacing: DsSpace.s12,
             children: [
               scope,
+              ?sourceButton,
               const Spacer(),
               count,
               SizedBox(width: 200, child: field),
@@ -528,6 +652,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
               spacing: DsSpace.s8,
               children: [
                 scope,
+                ?sourceButton,
                 Flexible(child: count),
               ],
             ),
@@ -568,104 +693,6 @@ final class _ScopeSegments extends ConsumerWidget {
           DsTab(value: IptvChannelScope.favourites, label: Text(t.iptv.scopeFavourites)),
         ],
       ),
-    );
-  }
-}
-
-/// The channel rows: logo and name, group, what is on now, the favourite
-/// heart and the player action. The row itself opens the channel, so a
-/// remote or a click anywhere on it works.
-///
-/// Two forms of the same list. A window of [LiveWindow.compact] and wider
-/// reads it as a table; below that the columns cannot fit — the four a
-/// medium window keeps need 560 px against a phone's 390 — and a
-/// sideways-scrolling table parks the heart and the player action off
-/// screen, so the rows stack instead. The kit's own card layout is not the
-/// fallback here: it puts one column per "label value" line at a single
-/// line's height, and this module's cells are two-line (a name over its dial
-/// number, a programme over its progress bar).
-final class _ChannelsTable extends ConsumerWidget {
-  const _ChannelsTable({required this.channels, required this.scrollController, required this.onOpen});
-
-  final IptvChannelsState channels;
-  final ScrollController scrollController;
-  final ValueChanged<IptvChannel> onOpen;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final browse = ref.watch(iptvBrowseSettingsProvider);
-    final rows = channels.channels.take(channels.shown).toList(growable: false);
-    if (rows.isEmpty) return _channelsEmptyView(context, channels);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (LiveWindow.isCompact(constraints.maxWidth)) {
-          return _ChannelsList(channels: channels, scrollController: scrollController, onOpen: onOpen);
-        }
-        // The group column above (or the entry that opens it) already names
-        // and counts the groups; the per-row column only says something when
-        // the list runs across more than one — every row repeating the open
-        // group's name is the 120 px that pushed this table past a medium
-        // window.
-        final showGroup = LiveWindow.isExpanded(constraints.maxWidth) && channels.selectedGroup == null;
-        return DsTable<IptvChannel>(
-          semanticLabel: t.iptv.viewChannels,
-          rows: rows,
-          rowKey: (channel) => channel.id,
-          columns: [
-            DsTableColumn(
-              id: 'channel',
-              label: t.iptv.colChannel,
-              value: (channel) => channel.entry.name,
-              width: const DsTableColumnWidth.flex(2, 200),
-              cell: (context, channel) => _ChannelNameCell(channel: channel, showNumber: browse.showChannelNumber),
-            ),
-            if (showGroup)
-              DsTableColumn(
-                id: 'group',
-                label: t.iptv.colGroup,
-                value: (channel) => _groupOf(t, channel),
-                width: const DsTableColumnWidth.fixed(120),
-                cell: (context, channel) => Text(
-                  _groupOf(t, channel),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
-                ),
-              ),
-            if (browse.showProgrammeLine)
-              DsTableColumn(
-                id: 'now',
-                label: t.iptv.colNow,
-                value: (channel) => channels.slots[channel.id]?.current?.title ?? '',
-                width: const DsTableColumnWidth.flex(2, 200),
-                cell: (context, channel) => IptvNowCell(slot: channels.slots[channel.id]),
-              ),
-            DsTableColumn(
-              id: 'favorite',
-              label: t.iptv.colFavorite,
-              width: const DsTableColumnWidth.fixed(72),
-              alignment: DsTableCellAlignment.center,
-              cell: (context, channel) => _FavoriteCell(
-                favorite: channel.favorite,
-                onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
-              ),
-            ),
-            DsTableColumn(
-              id: 'actions',
-              label: t.iptv.colActions,
-              width: const DsTableColumnWidth.fixed(64),
-              alignment: DsTableCellAlignment.center,
-              cell: (context, channel) =>
-                  IptvIconAction(icon: DsIcons.play, label: t.iptv.openChannel, onPressed: () => onOpen(channel)),
-            ),
-          ],
-          onRowPressed: onOpen,
-          scrollController: scrollController,
-          loading: channels.loadingMore,
-          style: iptvTableStyle(context),
-        );
-      },
     );
   }
 }
@@ -775,52 +802,6 @@ final class _ChannelsList extends ConsumerWidget {
   }
 }
 
-/// A channel's logo and name, with its dial number under the name when it
-/// has one and the browse setting asks for it. A pointer that rests on the
-/// cell floats the channel itself beside the row, muted — the table has no
-/// cover to play on, so the glance hangs here.
-final class _ChannelNameCell extends StatelessWidget {
-  const _ChannelNameCell({required this.channel, required this.showNumber});
-
-  final IptvChannel channel;
-  final bool showNumber;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final number = showNumber ? channel.number : null;
-    return IptvChannelHoverPreview(
-      channel: channel,
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          IptvChannelLogo(channel: channel),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 1,
-              children: [
-                Text(
-                  channel.entry.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                ),
-                if (number != null)
-                  Text(
-                    '$number',
-                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// The heart in the table: the channel's favourite flag, pressed to flip it.
 final class _FavoriteCell extends StatelessWidget {
   const _FavoriteCell({required this.favorite, required this.onPressed});
@@ -840,158 +821,182 @@ final class _FavoriteCell extends StatelessWidget {
   }
 }
 
-/// The channels surface of an empty library: what the module is for, the
-/// recommended sources one tap away, and the way to bring one's own list.
-///
-/// The first visit adds the default source by itself; this is what a viewer
-/// sees while that runs, when it could not (no network), and after they
-/// removed every source — never a dead end with a lone import button.
-final class _StartView extends ConsumerWidget {
+/// The channels surface of an empty library: what the module is for and
+/// the two ways to fill it. The reference's onboarding is this same shape —
+/// centred, the module's mark, and a short pair of doors, nothing to
+/// browse first and nothing to undo.
+final class _StartView extends StatelessWidget {
   const _StartView();
 
-  Future<void> _add(BuildContext context, WidgetRef ref, IptvPreset preset) async {
-    final t = context.t;
-    final result = await ref.read(iptvPresetsProvider.notifier).add(preset);
-    if (!context.mounted) return;
-    if (result.isImported) {
-      showDsToast(
-        context: context,
-        status: DsStatus.success,
-        title: t.iptv.presetAddedToast(name: preset.nameIn(currentLanguageTag())),
-      );
-      if (result.id != null) unawaited(ref.read(iptvPresetsProvider.notifier).attachGuide(result.id!, preset: preset));
-      return;
-    }
-    if (result.status == IptvImportStatus.cancelled) return;
-    showDsToast(context: context, status: DsStatus.danger, title: iptvImportFailureWords(result, t));
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final presets = ref.watch(iptvPresetsProvider);
-    final controller = ref.read(iptvPresetsProvider.notifier);
-    final tag = currentLanguageTag();
-    final busy = presets.adding != null;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final inset = LiveWindow.pageInset(width);
-        final columns = width >= LiveWindow.expanded ? 3 : (width >= LiveWindow.compact ? 2 : 1);
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s24, inset, DsSpace.s32),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: LiveWindow.content),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s20,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s12,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
+                child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
+              ),
+              Text(t.iptv.emptyStartTitle, style: theme.typography.title.copyWith(color: colors.text)),
+              Text(
+                t.iptv.emptyStartDescription,
+                textAlign: TextAlign.center,
+                style: theme.typography.body.copyWith(color: colors.textMuted),
+              ),
+              const SizedBox(height: DsSpace.s4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s8,
                 children: [
-                  Row(
-                    spacing: DsSpace.s16,
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
-                        child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: DsSpace.s4,
-                          children: [
-                            Text(t.iptv.emptyStartTitle, style: theme.typography.title.copyWith(color: colors.text)),
-                            Text(
-                              t.iptv.emptyStartDescription,
-                              style: theme.typography.body.copyWith(color: colors.textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  DsButton(
+                    onPressed: () => unawaited(runIptvPlaylistImport(context)),
+                    leading: const DsIcon(DsIcons.plus, size: 16),
+                    child: Text(t.iptv.emptyStartImportAction),
                   ),
-                  if (busy) const DsProgressBar(),
-                  Text(t.iptv.presetSectionTitle, style: theme.typography.labelStrong.copyWith(color: colors.text)),
-                  if (presets.presets.isEmpty)
-                    Text(t.iptv.presetEmpty, style: theme.typography.body.copyWith(color: colors.textMuted))
-                  else
-                    _Grid(
-                      columns: columns,
-                      children: [
-                        for (final preset in presets.presets)
-                          IptvPresetCard(
-                            preset: preset,
-                            languageTag: tag,
-                            added: controller.playlistOf(preset) != null,
-                            builtin: builtinIptvPresets.any((entry) => entry.id == preset.id),
-                            actionLabel: presets.adding == preset.id ? t.iptv.previewReading : null,
-                            onPressed: busy ? null : () => unawaited(_add(context, ref, preset)),
-                          ),
-                      ],
-                    ),
-                  Wrap(
-                    spacing: DsSpace.s8,
-                    runSpacing: DsSpace.s8,
-                    children: [
-                      DsButton(
-                        variant: DsButtonVariant.secondary,
-                        onPressed: busy ? null : () => unawaited(runIptvPlaylistImport(context)),
-                        leading: const DsIcon(DsIcons.plus, size: 16),
-                        child: Text(t.iptv.emptyStartImportAction),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.ghost,
-                        onPressed: busy ? null : () => unawaited(runIptvGuideImport(context)),
-                        leading: const DsIcon(DsIcons.calendarClock, size: 16),
-                        child: Text(t.iptv.importGuide),
-                      ),
-                      if (presets.deleted.isNotEmpty)
-                        DsButton(
-                          variant: DsButtonVariant.ghost,
-                          onPressed: busy ? null : controller.restoreDefaults,
-                          leading: const DsIcon(DsIcons.rotateCcw, size: 16),
-                          child: Text(t.iptv.presetRestore),
-                        ),
-                    ],
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    onPressed: () => unawaited(runIptvGuideImport(context)),
+                    leading: const DsIcon(DsIcons.calendarClock, size: 16),
+                    child: Text(t.iptv.importGuide),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-/// [children] in rows of [columns], each row as tall as its tallest card.
-final class _Grid extends StatelessWidget {
-  const _Grid({required this.columns, required this.children});
+/// The three-pane's middle column: the module's channels as the reference's
+/// own rows — mark, name with the dial number, what is on now under it, the
+/// heart, and the tally on the row the player is showing. A click plays and
+/// marks in one motion; the search and the scope tabs ride the pane's head.
+final class _ChannelListPane extends ConsumerWidget {
+  const _ChannelListPane({
+    required this.channels,
+    required this.slots,
+    required this.search,
+    required this.searchFocus,
+    required this.scrollController,
+    required this.selected,
+    required this.onSelect,
+    required this.onToggleFavourite,
+    required this.filter,
+    required this.onSelectGroup,
+    this.showGroupEntry = false,
+  });
 
-  final int columns;
-  final List<Widget> children;
+  final IptvChannelsState channels;
+  final Map<String, IptvProgrammeSlot> slots;
+  final TextEditingController search;
+  final FocusNode searchFocus;
+  final ScrollController scrollController;
+  final String? selected;
+  final ValueChanged<IptvChannel> onSelect;
+  final ValueChanged<IptvChannel> onToggleFavourite;
+
+  /// The group picker rides the pane's head where the window has no room
+  /// for the group column beside it.
+  final bool showGroupEntry;
+  final IptvGroupFilter filter;
+  final ValueChanged<String?> onSelectGroup;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final browse = ref.watch(iptvBrowseSettingsProvider);
+    final rows = channels.channels.take(channels.shown).toList(growable: false);
+    final pane = IptvTablePanel(
+      fill: true,
+      toolbar: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s6,
+        children: [
+          _ChannelsToolbar(
+            channels: channels,
+            search: search,
+            searchFocus: searchFocus,
+            progress: null,
+            canSync: false,
+            syncOnToolbar: false,
+            onSync: () {},
+          ),
+          if (showGroupEntry) IptvGroupEntry(filter: filter, onSelect: onSelectGroup),
+        ],
+      ),
+      child: rows.isEmpty
+          ? _channelsEmptyView(context, channels)
+          : ListView.separated(
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+              itemCount: rows.length,
+              separatorBuilder: (context, _) => const DsDivider(indent: 60),
+              itemBuilder: (context, index) {
+                final channel = rows[index];
+                return IptvChannelTile(
+                  channel: channel,
+                  slot: slots[channel.id],
+                  selected: selected == channel.id,
+                  showNumber: browse.showChannelNumber,
+                  groupLine: channels.selectedGroup == null ? iptvGroupLabel(t, iptvGroupKeyOf(channel)) : null,
+                  onPlay: () => onSelect(channel),
+                  onToggleFavourite: () => onToggleFavourite(channel),
+                );
+              },
+            ),
+    );
+    return pane;
+  }
+}
+
+/// The third column before anything plays: a quiet door, not an error.
+final class _PlayerIdle extends StatelessWidget {
+  const _PlayerIdle({required this.broken});
+
+  /// The selection names a channel the library no longer holds — the words
+  /// say the list is the way back, not that the module is broken.
+  final bool broken;
 
   @override
   Widget build(BuildContext context) {
-    final rows = <Widget>[];
-    for (var start = 0; start < children.length; start += columns) {
-      final row = children.sublist(start, (start + columns).clamp(0, children.length));
-      rows.add(
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s12,
-            children: [
-              for (final child in row) Expanded(child: child),
-              for (var i = row.length; i < columns; i++) const Expanded(child: SizedBox.shrink()),
-            ],
-          ),
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return ColoredBox(
+      color: theme.colors.overlay,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s8,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
+              child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
+            ),
+            Text(t.iptv.playerIdleTitle, style: theme.typography.title.copyWith(color: colors.text)),
+            Text(
+              t.iptv.playerIdleHint,
+              textAlign: TextAlign.center,
+              style: theme.typography.body.copyWith(color: colors.textMuted),
+            ),
+          ],
         ),
-      );
-    }
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s12, children: rows);
+      ),
+    );
   }
 }
