@@ -30,12 +30,12 @@ import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
 import 'package:pure_live/shared/player/on_video_colors.dart';
+import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPill;
 import 'package:pure_live/shared/shared.dart'
     show
         AudienceFormat,
         CoverFallback,
         LiveWindow,
-        PageHeader,
         PlayerIdleProgress,
         RoomCoverChip,
         cachedImage,
@@ -824,17 +824,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         child: Scaffold(
           backgroundColor: immersive ? colors.canvas : colors.surface,
           // The immersive body keeps the whole surface; the page body wears
-          // the pane header as its own head — the immersive mode answers to
-          // the player's chrome alone, as the room's own page does.
-          body: immersive
-              ? body
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    PageHeader(title: season?.title ?? t.vod.opening),
-                    Expanded(child: body),
-                  ],
-                ),
+          // no pane header any more — the strip over the picture carries the
+          // way back and the season's name, as the archive page's strip does.
+          body: SafeArea(bottom: false, child: body),
         ),
       ),
     );
@@ -997,6 +989,53 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     semanticLabel: t.vod.exitFullscreen,
                     onPressed: _toggleFullscreen,
                     icon: const DsIcon(DsIcons.minimize2),
+                  ),
+                ),
+              // The page's head, over the picture: the way back and the
+              // season's name, riding the same shade the archive strip wears.
+              if (showBar && !immersive)
+                PositionedDirectional(
+                  top: 0,
+                  start: 0,
+                  end: 0,
+                  child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: AlignmentDirectional.topCenter,
+                        end: AlignmentDirectional.bottomCenter,
+                        colors: [Color(0xB3000000), Color(0x00000000)],
+                      ),
+                    ),
+                    child: Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        PlayerGlassPill(
+                          child: DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.common.back,
+                            style: const DsButtonStyle(
+                              foreground: OnVideoColors.foreground,
+                              background: Color(0x00000000),
+                            ),
+                            onPressed: () {
+                              _wake();
+                              if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                            },
+                            icon: const DsIcon(DsIcons.arrowLeft),
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            ref.watch(vodSeasonDetailProvider(widget.seasonId)).value?.title ?? t.vod.opening,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               if (_silent)
