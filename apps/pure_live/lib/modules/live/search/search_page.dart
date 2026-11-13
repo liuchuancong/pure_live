@@ -1341,7 +1341,7 @@ final class _AnchorCard extends StatelessWidget {
             children: [
               DsAvatar(
                 initials: avatarInitials(anchor.name),
-                image: anchor.avatarUrl == null
+                image: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty
                     ? null
                     : cachedImage(anchor.avatarUrl!, policy: ImageCachePolicies.avatar),
                 size: DsSize.lg,

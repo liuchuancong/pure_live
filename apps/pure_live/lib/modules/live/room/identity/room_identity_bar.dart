@@ -1,9 +1,12 @@
+import 'dart:async' show unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:pure_live/app/app.dart' show sitesProvider;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
+import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomDetails;
 import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage, localizedSiteName;
 
 /// The title bar's identity block (the redesign's own shape): the avatar in
@@ -48,43 +51,47 @@ final class RoomIdentityBar extends ConsumerWidget {
     final platform = matches.isEmpty ? detail.ref.platform : localizedSiteName(matches.first);
     final area = (detail.area?.areaName ?? '').trim();
     final where = [platform, if (area.isNotEmpty) area].join(' · ');
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
-            child: DsAvatar(
-              initials: avatarInitials(name),
-              image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-              size: DsSize.sm,
-              semanticLabel: name,
+    return DsPressable(
+      semanticLabel: name,
+      onPressed: () => unawaited(showRoomDetails(context)),
+      builder: (context, states, _) => Padding(
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
+              child: DsAvatar(
+                initials: avatarInitials(name),
+                image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+                size: DsSize.sm,
+                semanticLabel: name,
+              ),
             ),
-          ),
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 1,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                ),
-                Text(
-                  where,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              ],
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 1,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                  ),
+                  Text(
+                    where,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

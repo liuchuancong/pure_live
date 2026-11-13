@@ -118,7 +118,7 @@ extension _RoomPageLayouts on _RoomPageState {
           child: ColoredBox(color: kPlayerStageColor, child: player),
         ),
         const DsDivider.vertical(),
-        const SizedBox(width: _RoomPageState._phoneLandscapeChatWidth, child: RoomChatPanel(feedOnly: true)),
+        const SizedBox(width: _RoomPageState._phoneLandscapeChatWidth, child: RoomChatPanel()),
       ],
     );
   }

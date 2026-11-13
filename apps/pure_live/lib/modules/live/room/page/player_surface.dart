@@ -5,7 +5,8 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
-import 'package:flutter/services.dart' show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey;
+import 'package:flutter/services.dart'
+    show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, MouseCursor, SystemMouseCursors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -30,16 +31,17 @@ import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRo
 import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show takeRoomScreenshot;
 import 'package:pure_live/modules/live/room/page/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
-import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomDetails, showRoomSleepTimer;
+import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomDetails;
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show showRoomSwitcher;
 import 'package:pure_live/shared/shared.dart';
-part 'player_surface_stage.dart';
-part 'player_surface_top_bar.dart';
-part 'player_surface_pickers.dart';
+
+part 'player_surface_control_bar.dart';
 part 'player_surface_danmaku.dart';
 part 'player_surface_gestures.dart';
+part 'player_surface_pickers.dart';
 part 'player_surface_pip.dart';
-part 'player_surface_control_bar.dart';
+part 'player_surface_stage.dart';
+part 'player_surface_top_bar.dart';
 
 /// Opens the creator's replay catalog from the room: the covered decoder
 /// goes quiet when a recording opens, and the room reads its own picture
@@ -198,8 +200,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.bottomInset = 0,
     this.controlBarEndInset = 0,
     this.topBarEndInset = DsSpace.s12,
-    this.onChatDrawer,
-    this.chatDrawerOpen = false,
     this.hud,
     this.onFullscreen,
     super.key,
@@ -302,18 +302,10 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// at the page level, so it can dock over the chat column.
   final VoidCallback? onMore;
 
-  /// The room left where the top strip's trailing verbs end: the floating
-  /// chat drawer (方案B) reserves the picture's right edge, and the strip,
-  /// the statistics panel and the pickers keep out from under it.
+  /// The room left where the top strip's trailing verbs end: the docked chat
+  /// column reserves the picture's right edge, and the strip, the statistics
+  /// panel and the pickers keep out from under it.
   final double topBarEndInset;
-
-  /// Toggles the page's theatre chat drawer (the redesign's gbtn 聊天): the
-  /// overlay drawer itself lives at the page level, over the whole stage.
-  /// Null where the shape has none — the strip then carries no chat verb.
-  final VoidCallback? onChatDrawer;
-
-  /// Whether that drawer is open, so the verb can name its own next word.
-  final bool chatDrawerOpen;
 
   /// The page's readout hand: the keyboard's volume steps flash the same
   /// figure the picture's own gestures do. Null leaves the keyboard silent
@@ -693,6 +685,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // not to be adjusted, and a bar that stayed up under the lock would offer
     // the adjustments anyway.
     final showBar = handle != null && barOverPicture && !_locked && (_controlsVisible || !playing);
+    // The pointer's own rule, both shapes alike: it hides only once the
+    // chrome has hid itself on an idle, playing picture. A page still
+    // loading — no handle yet, a state card up, the controls never shown —
+    // never takes the pointer away.
+    final chromeVisible = _controlsVisible || !playing;
     // The shapes that fold the room's identity into the picture itself (the
     // redesign's gcap capsule): the immersive modes, the portrait fullscreen
     // and the phone held sideways, whose room card has no column to sit in.
@@ -731,8 +728,13 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
           // so phones keep the tap.
           child: _tvScope(
             MouseRegion(
-              onHover: mini ? null : (_) => _wake(),
-              onExit: mini ? null : (_) => _scheduleHide(),
+              // The bar away and the stream playing, the pointer hides itself
+              // over the picture — the player's idle rule — and a move wakes
+              // the bar (and with it the pointer) back. The lock keeps its
+              // pointer: the pill is the only way out.
+              cursor: !_locked && !chromeVisible ? SystemMouseCursors.none : MouseCursor.defer,
+              onHover: (_) => _wake(),
+              onExit: (_) => _scheduleHide(),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -811,7 +813,18 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       onPointerCancel: (_) => _releaseDanmaku(),
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTapUp: mini ? null : (_) => unawaited(_onPictureTap()),
+                        onTapUp: mini ? (_) => _wake() : (_) => unawaited(_onPictureTap()),
+                        // A right press is the window-fullscreen toggle — in
+                        // from the page, out again on the next one; the same
+                        // verb the bar's button and the caption carry.
+                        onSecondaryTapUp: (_) {
+                          _releaseDanmaku();
+                          if (_locked || mini) return;
+                          _hidePicker();
+                          final committed = widget.roomState.handle?.id;
+                          if (committed == null) return;
+                          unawaited(ref.read(roomPresentationProvider.notifier).toggleWindowFullscreen(committed));
+                        },
                         // With the switch off no long-press recognizer is registered,
                         // so it never holds back a drag.
                         onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
@@ -1015,7 +1028,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     PositionedDirectional(
                       top: DsSpace.s12,
                       start: 0,
-                      end: 0,
+                      end: DsSpace.s12,
                       // The inline room's tool cluster floats at the picture's
                       // top-right (the redesign's tcluster): 截屏/录制/画中画/⋯ in
                       // one glass pill, text chips on a narrow picture. The page's
@@ -1045,31 +1058,23 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         spacing: DsSpace.s4,
                         children: [
-                          // The theatre's chat verb (the gbtns row's first
-                          // word): the overlay drawer it toggles lives at the
-                          // page level, so it only shows where the page has
-                          // one to open.
-                          if (widget.onChatDrawer != null)
+                          // The window fullscreen leaves through its own Windows
+                          // caption (drag + min/max/close), not a text chip over
+                          // the picture; the other immersive shapes keep a verb.
+                          // The theatre's expand-chat chip is gone: fullscreen
+                          // keeps the picture clean.
+                          if (presentation != PresentationMode.windowFullscreen)
                             _ModeExitChip(
-                              label: widget.chatDrawerOpen ? context.t.room.collapseChat : context.t.room.expandChat,
-                              onPressed: widget.onChatDrawer!,
+                              label: switch (presentation) {
+                                PresentationMode.fullscreen => context.t.room.fullscreenOff,
+                                _ =>
+                                  widget.portraitFullscreen
+                                      ? context.t.room.portraitFullscreenExit
+                                      : context.t.common.close,
+                              },
+                              onPressed: widget.onLeave,
                               onWake: _wake,
                             ),
-                          _ModeExitChip(
-                            label: switch (presentation) {
-                              PresentationMode.fullscreen => context.t.room.fullscreenOff,
-                              PresentationMode.windowFullscreen => context.t.room.windowFullscreenOff,
-                              // The normal mode's capsule shape is the phone
-                              // held sideways: no presentation mode holds it,
-                              // so the verb is the room's own close.
-                              _ =>
-                                widget.portraitFullscreen
-                                    ? context.t.room.portraitFullscreenExit
-                                    : context.t.common.close,
-                            },
-                            onPressed: widget.onLeave,
-                            onWake: _wake,
-                          ),
                           _TopToolCluster(room: room, onWake: _wake, onMore: widget.onMore),
                         ],
                       ),
@@ -1118,27 +1123,45 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         ),
                       ),
                     ),
-                  // The compact window's own chrome (the redesign's pip shape):
-                  // the title strip at the top-left — a grab on it moves the
-                  // window — and the full icon bar at the bottom. It never
-                  // hides: without it the window would have no way back.
-                  if (mini) ...[
+                  // The compact window's own chrome: hover wakes it, idleness
+                  // puts it away (the paused window keeps it). The play/pause
+                  // sits big in the picture's middle; the session verbs ride
+                  // the window-fullscreen cluster's place — a glass pill at
+                  // the top-right: sound, the flying layer's switch, a frame
+                  // copy, the audio mode, the capture and the way out. No
+                  // title, no stream menus, no lock, no more.
+                  if (mini && chromeVisible) ...[
                     PositionedDirectional(
-                      top: DsSpace.s8,
-                      start: DsSpace.s8,
-                      child: _PipTitle(room: room, onRestore: widget.onLeave),
+                      top: DsSpace.s12,
+                      start: DsSpace.s12,
+                      // The way out, where a corner button is looked for: the
+                      // window's top-left.
+                      child: PlayerGlassPill(
+                        child: PlayerBarButton(
+                          iconAsset: 'assets/icons/pip-exit.svg',
+                          label: context.t.room.pipOff,
+                          onPressed: widget.onLeave,
+                        ),
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: Center(child: _PipCenterPlay(room: room)),
+                    ),
+                    PositionedDirectional(
+                      top: DsSpace.s12,
+                      end: DsSpace.s12,
+                      // The window-fullscreen cluster itself: a frame copy,
+                      // the audio mode and the capture — no more chip, and
+                      // no pip chip: the way out lives at the top-left.
+                      child: _TopToolCluster(room: room, onWake: _wake, audioMode: true, pipChip: false),
                     ),
                     PositionedDirectional(
                       bottom: 0,
                       start: 0,
                       end: 0,
-                      child: _PipBar(
-                        room: room,
-                        locked: _locked,
-                        onToggleLock: _toggleLock,
-                        onRestore: widget.onLeave,
-                        onClose: widget.onCloseRoom ?? widget.onLeave,
-                      ),
+                      // The transport, where the window-fullscreen bar keeps
+                      // it: sound and the flying layer's switch.
+                      child: _PipTransportBar(room: room),
                     ),
                   ],
                   if (showBar && !mini)
@@ -1282,9 +1305,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   // picture with no unlock on it is a door bricked from inside.
                   if (!mini && (_locked || showBar))
                     PositionedDirectional(
-                      end: 20,
+                      end: DsSpace.s12,
                       top: 0,
-                      bottom: 0,
+                      bottom: widget.bottomInset,
                       child: Center(
                         child: PlayerGlassPill(
                           child: PlayerBarButton(

@@ -42,8 +42,14 @@ final class ImageCacheLoader {
   /// Fetches [request], sending the validators in [entry] when present.
   ///
   /// [maxBytes] caps both the declared content length and the received
-  /// stream. A body beyond it is refused before it can fill the disk.
+  /// stream. A body beyond it is refused before it can fill the disk. An
+  /// address with no host is refused at this door: such a GET only ends
+  /// as the transport's `No host specified in URI`.
   Future<ImageFetchResult> fetch({required ImageCacheRequest request, required int maxBytes, CacheEntry? entry}) async {
+    final uri = request.url;
+    if (uri.host.isEmpty) {
+      throw const CacheFailure(CacheFailureKind.empty, message: 'image url has no host');
+    }
     final headers = <String, String>{...request.headers};
     if (entry?.etag != null) {
       headers['if-none-match'] = entry!.etag!;
@@ -53,7 +59,7 @@ final class ImageCacheLoader {
     }
     LiveStreamedResponse response;
     try {
-      response = await http.open(LiveRequest.get(request.url, headers: headers, timeout: timeout));
+      response = await http.open(LiveRequest.get(uri, headers: headers, timeout: timeout));
     } on TransportFailure catch (failure) {
       throw _mapTransport(failure);
     }

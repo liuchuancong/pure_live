@@ -24,8 +24,6 @@ import 'package:pure_live/features/settings/playback/playback_settings_providers
         kWindowsPipMinWidthMax,
         kWindowsPipMinWidthMin,
         playbackSettingsProvider;
-import 'package:pure_live/features/settings/playback/portrait_settings_providers.dart'
-    show PortraitLayoutMode, portraitLayoutModeProvider;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
@@ -346,9 +344,9 @@ final class QualityAudioPane extends ConsumerWidget {
   }
 }
 
-/// The picture page: how the video fills its area, how a portrait stream
-/// shares the room page, and what the screen does around it. The floating and
-/// compact windows the picture can leave behind are their own page.
+/// The picture page: how the video fills its area, and what the screen does
+/// around it. The floating and compact windows the picture can leave behind
+/// are their own page.
 final class PicturePane extends ConsumerWidget {
   const PicturePane({super.key});
 
@@ -356,15 +354,13 @@ final class PicturePane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
-    final portraitLayout = ref.watch(portraitLayoutModeProvider);
     final controller = ref.read(playbackSettingsProvider.notifier);
-    // Four of this page's rows belong to the live room alone — how a portrait
-    // stream shares the room page, the room's habit of opening fullscreen, the
-    // portrait fullscreen's swipe between rooms, and the window a room leaves
-    // behind. The control bar's hide delay is not read by the IPTV page, which
-    // keeps its bars up. The other modules reach
-    // this page from their own settings; a row they never read would be a knob
-    // that turns nothing, the fault the music module's engine page had.
+    // Three of this page's rows belong to the live room alone — the room's
+    // habit of opening fullscreen, the portrait room's swipe between rooms,
+    // and the window a room leaves behind. The control bar's hide delay is
+    // not read by the IPTV page, which keeps its bars up. The other modules
+    // reach this page from their own settings; a row they never read would be
+    // a knob that turns nothing, the fault the music module's engine page had.
     final module = ref.watch(selectedModuleProvider);
     final roomOnly = module == AppModule.live;
     return Column(
@@ -386,26 +382,10 @@ final class PicturePane extends ConsumerWidget {
               placeholder: t.settings.fit,
               onChanged: (value) => unawaited(controller.setFit(value)),
             ),
-            // A portrait stream's share of the room page: the engine reports
-            // the source's own ratio, so the layout is the only choice left.
-            // A select like the fit row above, so the two read as a column of
-            // the same control.
+            // The room rows: the picture page hosts them because the live
+            // module's settings reach this pane, and a portrait room's habits
+            // sit beside the fit row that shapes the same picture.
             if (roomOnly) ...[
-              SettingsChoiceRow<PortraitLayoutMode>(
-                leading: const DsIcon(DsIcons.rectangleVertical),
-                title: t.settings.portraitLayoutMode,
-                description: t.settings.portraitLayoutModeDesc,
-                value: portraitLayout,
-                options: [
-                  DsSelectOption(value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
-                  DsSelectOption(value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
-                  DsSelectOption(
-                    value: PortraitLayoutMode.compatibility,
-                    label: t.settings.portraitLayoutCompatibility,
-                  ),
-                ],
-                onChanged: (mode) => unawaited(ref.read(portraitLayoutModeProvider.notifier).set(mode)),
-              ),
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.fullscreen),
                 title: t.settings.fullscreenDefault,

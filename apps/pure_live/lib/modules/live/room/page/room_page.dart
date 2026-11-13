@@ -57,7 +57,6 @@ part 'room_page_compact.dart';
 part 'room_page_hero.dart';
 part 'room_page_lifecycle.dart';
 part 'room_page_layouts.dart';
-part 'room_page_theater.dart';
 
 /// The live room: media_core's picture with the app's control layer over
 /// it, the room's facts under it, and the chat beside it on a wide window.
@@ -147,13 +146,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// this surface a door to the talk its old shape never had.
   bool _portraitChatOpen = false;
 
-  /// Whether the theatre's chat drawer is open (the reference's drawerOpen):
-  /// a glass column over the stage's right edge, opened by the picture's 聊天
-  /// verb and closed by the scrim outside it. The theatre is where the talk
-  /// has no home of its own — the docked column is folded away with the page's
-  /// own chrome — so the mode carries its own door.
-  bool _theaterChatOpen = false;
-
   /// Whether a room switch from the portrait full screen is in flight; the
   /// page keeps its surface while the next room opens on the same controller.
   bool _switchingPortraitRoom = false;
@@ -181,6 +173,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// leaves the route like any other pop, so without this the page would read
   /// the still-playing room as a leave and hand it to the floating player.
   bool _closingRoom = false;
+
+  /// Whether a leave's pop is already in flight. The navigator stays locked
+  /// for the whole exit transition, so a second leave inside it — a double
+  /// press on the back verb, a held Escape — would pop into the locked
+  /// navigator and assert. One leave wins; the page is going away either way.
+  bool _leaving = false;
 
   /// Whether going to the background applied audio-only, and the room's own
   /// mode to restore when it returns (V5-21).
@@ -420,7 +418,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final state = ref.read(roomProvider);
     final handle = state.handle;
     if (handle == null) return;
-    if (ref.read(roomPresentationProvider) != PresentationMode.normal) {
+    final mode = ref.read(roomPresentationProvider);
+    if (mode != PresentationMode.normal) {
       unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
       return;
     }
@@ -606,12 +605,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         _autoFullscreenDone = true;
         _applyFullscreenOrientation();
       }
-      // Leaving the theatre puts its chat drawer away: the mode owns the
-      // drawer, and a drawer that survived into the normal room would be a
-      // column with no edges.
-      if (next != PresentationMode.fullscreen && _theaterChatOpen) {
-        _theaterChatOpen = false;
-      }
       if (next != PresentationMode.normal && _portraitFullscreen) {
         _setPortraitFullscreen(false);
       }
@@ -677,7 +670,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         return;
       }
       final player = room.handle?.id;
-      if (ownsWindow && player != null) {
+      final mode = ref.read(roomPresentationProvider);
+      if (mode == PresentationMode.windowFullscreen && player != null) {
+        unawaited(presentationController.toggleWindowFullscreen(player));
+      } else if (ownsWindow && player != null) {
         unawaited(presentationController.exit(player));
       } else if (ref.read(roomLeaveProvider) case final closeWindow?) {
         // A room window's native close may take the view away before this
@@ -686,6 +682,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         unawaited(_roomNotifier.close());
         unawaited(closeWindow());
       } else if (context.canPop()) {
+        if (_leaving) return;
+        _leaving = true;
         if (_shouldFloatOnExit) _leaveToFloating = true;
         context.pop();
       } else {
@@ -705,6 +703,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         unawaited(_roomNotifier.close());
         unawaited(closeWindow());
       } else if (context.canPop()) {
+        if (_leaving) return;
+        _leaving = true;
         context.pop();
       } else {
         context.go(RouteNames.popular);
@@ -740,15 +740,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     VoidCallback shortcutAction(RoomShortcutAction action) => switch (action) {
       RoomShortcutAction.playPause => () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
       RoomShortcutAction.fullscreen => _toggleFullscreenVerb,
-      // Escape answers the drawer first: a theatre with its chat up closes
-      // the chat, and only a second press leaves the mode.
-      RoomShortcutAction.leave => () {
-        if (_theaterChatOpen) {
-          setState(() => _theaterChatOpen = false);
-          return;
-        }
-        leave();
-      },
+      RoomShortcutAction.leave => leave,
       RoomShortcutAction.volumeUp => () => nudgeVolume(volumeStep),
       RoomShortcutAction.volumeDown => () => nudgeVolume(-volumeStep),
       RoomShortcutAction.chatColumn => toggleChatColumn,
@@ -768,7 +760,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     };
 
     final pictureRatio = _pictureRatio(room);
-    final portraitLayout = ref.watch(portraitLayoutModeProvider);
     final swipeSwitch = ref.watch(portraitSwipeSwitchProvider);
     final roomKey = room.room?.ref.identityKey ?? '';
     // A source that rotates back to landscape leaves the portrait surface,
@@ -800,8 +791,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       double controlBarEndInset = 0,
       VoidCallback? onTitle,
       double topBarEndInset = DsSpace.s12,
-      VoidCallback? onChatDrawer,
-      bool chatDrawerOpen = false,
     }) => PlayerSurface(
       key: _playerKey,
       roomState: room,
@@ -836,10 +825,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       // narrow page stacks it under the picture.
       onMore: () => unawaited(showRoomMore(context, shortcuts: shortcuts)),
       topBarEndInset: topBarEndInset,
-      // The theatre's own chat door: the page owns the drawer, the picture
-      // carries its verb beside the exit one.
-      onChatDrawer: onChatDrawer,
-      chatDrawerOpen: chatDrawerOpen,
       hud: _surfaceHud,
       // The portrait full screen's own verbs, now reachable: the swipe up
       // along the picture's lowest band puts the page's layout back, the
@@ -850,6 +835,22 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       onPortraitSwipe: swipeSwitch && mobile ? _switchRoomByStep : null,
       onFullscreen: _toggleFullscreenVerb,
     );
+
+    // The docked chat column's width while the wide inline room shows it:
+    // the app bar pins the follow pill to the picture's right edge, this
+    // many pixels from the window's end.
+    final barChatWidth = !tv && !landscapePhone && MediaQuery.sizeOf(context).width >= _wideBreakpoint && !chatCollapsed
+        ? ref
+              .watch(chatPanelWidthProvider)
+              .clamp(
+                kChatPanelWidthMin,
+                math.max(
+                  kChatPanelWidthMin,
+                  math.min(kChatPanelWidthMax, MediaQuery.sizeOf(context).width - _wideStageFloor),
+                ),
+              )
+              .toDouble()
+        : 0.0;
 
     final body = _portraitFullscreen
         ? _buildPortraitFullscreen(
@@ -870,7 +871,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 // The engine reports the picture's own ratio, so a portrait
                 // source takes the tall panel unless the viewer chose the
                 // regular 16:9 room page.
-                final tallPortrait = portraitStream && portraitLayout != PortraitLayoutMode.compatibility;
+                final tallPortrait = portraitStream;
                 // The reference's narrow room for a portrait stream: the picture
                 // fills the window and the room's facts and chat ride over it on
                 // a sheet with three stops. A stream that is not portrait keeps
@@ -878,11 +879,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 // either cropped or a black band with a title on it.
                 if (tallPortrait) {
                   return RoomBottomPanel(
-                    // The immersive layout opens on the least picture covered;
-                    // the balanced one opens where a chat is readable.
-                    preferred: portraitLayout == PortraitLayoutMode.immersive
-                        ? RoomPanelStop.minimum
-                        : RoomPanelStop.middle,
+                    // The balanced opening is the room's own: the least
+                    // picture covered still shows the talk where a chat is
+                    // readable (the layout mode setting is gone).
+                    preferred: RoomPanelStop.middle,
                     onCoverChanged: _setPanelCover,
                     // Pulling the sheet past its lowest stop is the handle's own
                     // way into the portrait full screen — the verb follows the
@@ -1077,35 +1077,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
           child: ownsWindow
               ? Scaffold(
                   backgroundColor: kPlayerStageColor,
-                  // The theatre keeps its talk reachable (the reference's
-                  // fTheater): the 聊天 verb on the picture opens a glass
-                  // drawer over the stage's right edge, and a press on the
-                  // scrim outside it — or the same verb again — puts it away.
-                  // The window fullscreen, which owns the window the same way,
-                  // has no drawer: its shape has no words for the talk.
-                  body: presentation == PresentationMode.fullscreen
-                      ? Stack(
-                          fit: StackFit.expand,
+                  body: presentation == PresentationMode.windowFullscreen
+                      ? Column(
                           children: [
-                            playerWith(
-                              onChatDrawer: () => setState(() => _theaterChatOpen = !_theaterChatOpen),
-                              chatDrawerOpen: _theaterChatOpen,
-                            ),
-                            if (_theaterChatOpen) ...[
-                              Positioned.fill(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => setState(() => _theaterChatOpen = false),
-                                  child: const ColoredBox(color: Color(0x59000000)),
-                                ),
-                              ),
-                              PositionedDirectional(
-                                top: 0,
-                                end: 0,
-                                bottom: 0,
-                                child: _TheaterChatDrawer(onClose: () => setState(() => _theaterChatOpen = false)),
-                              ),
-                            ],
+                            _WindowFullscreenCaption(onBack: leave),
+                            Expanded(child: playerWith()),
                           ],
                         )
                       : playerWith(),
@@ -1126,7 +1102,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
                     appBar: _portraitFullscreen
                         ? null
-                        : _roomAppBar(context, colors: colors, ownChrome: ownChrome, leave: leave),
+                        : _roomAppBar(
+                            context,
+                            colors: colors,
+                            ownChrome: ownChrome,
+                            leave: leave,
+                            chatColumnWidth: barChatWidth,
+                          ),
                     body: _portraitFullscreen ? body : SafeArea(child: body),
                   ),
                 ),

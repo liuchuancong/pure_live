@@ -66,7 +66,6 @@ import 'package:pure_live/shared/shared.dart';
 /// `window.height` lands on the next start rather than resizing mid-session.
 final List<ProviderOrFamily> kSettingsProviders = [
   playbackSettingsProvider,
-  portraitLayoutModeProvider,
   danmakuStyleProvider,
   danmakuFrameRateProvider,
   danmakuFixedTopProvider,

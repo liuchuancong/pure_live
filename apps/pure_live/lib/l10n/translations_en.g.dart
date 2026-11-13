@@ -2514,7 +2514,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get noChat => 'No chat yet';
 	@override String get chatConnecting => 'Connecting to chat…';
 	@override String get chatClosed => 'The chat connection closed';
-	@override String get chatViewOnly => 'This platform\'s chat is watch-only';
 	@override String get chatUnsupported => 'This room has no live chat';
 	@override String get chatFailedTitle => 'Chat did not connect';
 	@override String get system => 'System';
@@ -2652,7 +2651,10 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get restrictionUnplayable => 'Not playable now';
 	@override String get portraitFullscreen => 'Portrait full screen';
 	@override String get portraitFullscreenExit => 'Exit portrait full screen';
-	@override String get portraitSwipeHint => 'In the portrait full screen · swipe up or down for another room';
+	@override String get portraitSwipeHint => 'Swipe up or down for another room';
+	@override String get cleanScreen => 'Clean screen';
+	@override String get cleanScreenDesc => 'Hide the chat overlay and composer to focus on the picture';
+	@override String get cleanScreenExit => 'Exit clean screen';
 	@override String get giftLineSent => 'sent';
 	@override String giftLineSentTo({required Object name}) => 'sent ${name}';
 	@override String get giftLineGifted => 'gifted';
@@ -2711,6 +2713,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get panelStops => 'Stops:';
 	@override String get panelStopsHint => 'Pull past the lowest stop for portrait full screen';
 	@override String get statWatched => 'Watched';
+	@override String get startTime => 'Start time';
+	@override String get titleLabel => 'Title';
+	@override String get watchDuration => 'Watch time';
 	@override String get switchHistory => 'Watch history';
 	@override String get switchReplays => 'Followed replays';
 	@override String get switchEmpty => 'No rooms to switch to';
@@ -3952,7 +3957,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get fullscreenDefault => 'Auto Full Screen';
 	@override String get fullscreenDefaultDesc => 'When enter live play, auto into full screen';
 	@override String get portraitSwipeSwitch => 'Swipe between rooms in portrait';
-	@override String get portraitSwipeSwitchDesc => 'In the portrait full screen, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.';
+	@override String get portraitSwipeSwitchDesc => 'In a portrait live room, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.';
 	@override String get keepScreenOn => 'Keep the screen awake while playing';
 	@override String get keepScreenOnDesc => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.';
 	@override String get controlsAutoHide => 'Controls auto-hide';
@@ -3961,11 +3966,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get controlsAutoHideAlways => 'Always show';
 	@override String get navAudience => 'Audience figures';
 	@override String get audiencePageDescription => 'The card figure, the concurrent-viewer preference and its platforms.';
-	@override String get portraitLayoutMode => 'Room layout mode';
-	@override String get portraitLayoutModeDesc => 'Applies only to portrait sources and leaves landscape streams unchanged.';
-	@override String get portraitLayoutBalanced => 'Balanced (recommended)';
-	@override String get portraitLayoutImmersive => 'Immersive';
-	@override String get portraitLayoutCompatibility => 'Compatible 16:9';
 	@override String get searchSections => 'Sections';
 	@override String get searchRows => 'Settings';
 	@override String searchRowMatches({required String items}) => 'Matches: ${items}';
@@ -7669,7 +7669,6 @@ extension on TranslationsEn {
 			'room.noChat' => 'No chat yet',
 			'room.chatConnecting' => 'Connecting to chat…',
 			'room.chatClosed' => 'The chat connection closed',
-			'room.chatViewOnly' => 'This platform\'s chat is watch-only',
 			'room.chatUnsupported' => 'This room has no live chat',
 			'room.chatFailedTitle' => 'Chat did not connect',
 			'room.system' => 'System',
@@ -7782,9 +7781,9 @@ extension on TranslationsEn {
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
 			'room.danmakuSettings' => 'Danmaku settings',
+			'room.blockList' => 'Block list',
 			_ => null,
 		} ?? switch (path) {
-			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chat',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'Super chats did not load',
@@ -7809,7 +7808,10 @@ extension on TranslationsEn {
 			'room.restrictionUnplayable' => 'Not playable now',
 			'room.portraitFullscreen' => 'Portrait full screen',
 			'room.portraitFullscreenExit' => 'Exit portrait full screen',
-			'room.portraitSwipeHint' => 'In the portrait full screen · swipe up or down for another room',
+			'room.portraitSwipeHint' => 'Swipe up or down for another room',
+			'room.cleanScreen' => 'Clean screen',
+			'room.cleanScreenDesc' => 'Hide the chat overlay and composer to focus on the picture',
+			'room.cleanScreenExit' => 'Exit clean screen',
 			'room.giftLineSent' => 'sent',
 			'room.giftLineSentTo' => ({required Object name}) => 'sent ${name}',
 			'room.giftLineGifted' => 'gifted',
@@ -7868,6 +7870,9 @@ extension on TranslationsEn {
 			'room.panelStops' => 'Stops:',
 			'room.panelStopsHint' => 'Pull past the lowest stop for portrait full screen',
 			'room.statWatched' => 'Watched',
+			'room.startTime' => 'Start time',
+			'room.titleLabel' => 'Title',
+			'room.watchDuration' => 'Watch time',
 			'room.switchHistory' => 'Watch history',
 			'room.switchReplays' => 'Followed replays',
 			'room.switchEmpty' => 'No rooms to switch to',
@@ -8291,13 +8296,13 @@ extension on TranslationsEn {
 			'settings.danmakuColorHue' => 'Hue',
 			'settings.danmakuColorSaturation' => 'Saturation and brightness',
 			'settings.danmakuFixedGroup' => 'Pinned danmaku',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListFixedTitle' => 'Chat list is fixed',
 			'settings.chatListFixedDesc' => 'Names and gifts show, memberships go to super chat; side column, 14 px, standard spacing, 360 px.',
 			'settings.chatListGroup' => 'Chat list content',
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuFontDescription' => 'For flying danmaku only; the chat list keeps the UI font.',
 			'settings.danmakuFontManagerDescription' => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.',
 			'settings.styleDensity' => 'Density',
@@ -8805,13 +8810,13 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA: use the RTX VSR preset. Other GPUs: switch the scale kernel to ewa_lanczossharp.',
 			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
 			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
 			'settings.playerGuideEntrySymBufferingBody' => 'Use the stable-network preset; also check the network proxy — a proxy is a common stall source.',
 			'settings.playerGuideEntrySymLatencyTitle' => 'High latency (co-streaming / esports)',
 			'settings.playerGuideEntrySymLatencyBody' => 'Use the low-latency preset and shrink buffering properties.',
 			'settings.playerGuideEntrySymNoVideoTitle' => 'Sound but no picture',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntrySymNoVideoBody' => 'Check the video output driver: null renders nothing. Reset it to auto, or restore the player kernel defaults.',
 			'settings.optionAuto' => 'Auto',
 			'settings.optionOff' => 'Off',
@@ -9095,7 +9100,7 @@ extension on TranslationsEn {
 			'settings.fullscreenDefault' => 'Auto Full Screen',
 			'settings.fullscreenDefaultDesc' => 'When enter live play, auto into full screen',
 			'settings.portraitSwipeSwitch' => 'Swipe between rooms in portrait',
-			'settings.portraitSwipeSwitchDesc' => 'In the portrait full screen, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.',
+			'settings.portraitSwipeSwitchDesc' => 'In a portrait live room, swiping up or down over the picture\'s middle third opens the next or previous room in the list this one came from. Entering shows the gesture once.',
 			'settings.keepScreenOn' => 'Keep the screen awake while playing',
 			'settings.keepScreenOnDesc' => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.',
 			'settings.controlsAutoHide' => 'Controls auto-hide',
@@ -9104,11 +9109,6 @@ extension on TranslationsEn {
 			'settings.controlsAutoHideAlways' => 'Always show',
 			'settings.navAudience' => 'Audience figures',
 			'settings.audiencePageDescription' => 'The card figure, the concurrent-viewer preference and its platforms.',
-			'settings.portraitLayoutMode' => 'Room layout mode',
-			'settings.portraitLayoutModeDesc' => 'Applies only to portrait sources and leaves landscape streams unchanged.',
-			'settings.portraitLayoutBalanced' => 'Balanced (recommended)',
-			'settings.portraitLayoutImmersive' => 'Immersive',
-			'settings.portraitLayoutCompatibility' => 'Compatible 16:9',
 			'settings.searchSections' => 'Sections',
 			'settings.searchRows' => 'Settings',
 			'settings.searchRowMatches' => ({required String items}) => 'Matches: ${items}',

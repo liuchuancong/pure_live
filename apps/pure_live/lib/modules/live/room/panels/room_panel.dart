@@ -3,10 +3,12 @@ import 'dart:async' show Timer;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/features/settings/playback/playback_settings_providers.dart'
+    show asmrSleepDurationLabel, kAsmrSleepMinuteChoices;
 import 'package:pure_live/l10n/translations.dart';
 
 import 'package:pure_live/modules/live/room/page/room_details.dart' show RoomDetailsPanel;
-import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show roomSleepTimerChoices, sleepTimerProvider;
+import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show sleepTimerProvider;
 
 /// The room's side panels: the sheets that linger beside the picture while
 /// the viewer keeps watching. One at a time — inside the page the bus owns
@@ -69,12 +71,41 @@ Widget roomPanelSheet(BuildContext sheetContext, RoomPanelKind kind) => switch (
     child: Consumer(
       builder: (context, ref, _) {
         final timer = ref.watch(sleepTimerProvider);
+        final colors = DsTheme.colorsOf(context);
+        // The live room's lists run at the library's own measure: the app's
+        // settings-sized rows and paddings stop at this subtree.
+        final theme = DsTheme.of(context);
         return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s12,
           children: [
             // A running timer leads with its own figure: the viewer who set
             // one comes back to ask how long is left, not to set it again.
             if (timer.endsAt case final endsAt?) _SleepRemaining(endsAt: endsAt),
-            ...roomSleepTimerChoices(context, ref),
+            DsListRowTheme(
+              data: DsListRowThemeData(style: DsListRow.defaultStyle(theme)),
+              child: DsListSectionTheme(
+                data: DsListSectionThemeData(style: DsListSection.defaultStyle(theme)),
+                child: DsListSection(
+                  children: [
+                    if (timer.minutes != null)
+                      DsListRow(
+                        title: Text(sheetContext.t.room.sleepOff),
+                        onPressed: () => _pickSleepMinutes(context, ref, null),
+                      ),
+                    for (final minutes in kAsmrSleepMinuteChoices)
+                      DsListRow(
+                        title: Text(asmrSleepDurationLabel(minutes)),
+                        trailing: timer.minutes == minutes
+                            ? DsIcon(DsIcons.check, size: 16, color: colors.accent)
+                            : null,
+                        onPressed: () => _pickSleepMinutes(context, ref, minutes),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -131,6 +162,18 @@ final class _SleepRemainingState extends State<_SleepRemaining> {
         ],
       ),
     );
+  }
+}
+
+/// Applies a sleep choice and puts the panel away: the page's host closes
+/// its panel, a lone sheet pops itself.
+void _pickSleepMinutes(BuildContext context, WidgetRef ref, int? minutes) {
+  ref.read(sleepTimerProvider.notifier).start(minutes);
+  final controller = RoomPanelScope.maybeOf(context);
+  if (controller != null) {
+    controller.close();
+  } else {
+    Navigator.of(context).pop();
   }
 }
 

@@ -28,22 +28,8 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
     final t = context.t;
     final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
     if (!canSend) {
-      // The platform's chat only listens: the column's bottom says so, where
-      // the composer would have stood — the room reads as quiet by design,
-      // not broken by silence.
-      final colors = DsTheme.colorsOf(context);
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: colors.border)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
-          child: Text(
-            t.room.chatViewOnly,
-            style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
-          ),
-        ),
-      );
+      // The platform's chat only listens: no composer stands here.
+      return const SizedBox.shrink();
     }
     // The field owns the column's bottom: a hairline above it says where the
     // conversation ends and the viewer's own voice begins.
@@ -57,7 +43,7 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
           children: [
-            if (_emotesOpen) _EmotePanel(onPick: _insertEmote),
+            if (_emotesOpen) RoomEmotePanel(onPick: _insertEmote),
             Row(
               spacing: DsSpace.s8,
               children: [
@@ -116,20 +102,23 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
   }
 }
 
-/// The composer's emote panel: this room's own emoticons first (what the talk
+/// The emote panel: this room's own emoticons first (what the talk
 /// has already used), then the bundled sheet's, every face drawn through the
 /// same parser the lines use — one the chat cannot draw is one the panel does
 /// not offer. A pick puts its code in the field and the panel stays up.
-final class _EmotePanel extends ConsumerStatefulWidget {
-  const _EmotePanel({required this.onPick});
+///
+/// Public so the immersive room's composer bar and the landscape control
+/// bar's input host the same panel the column's composer does.
+final class RoomEmotePanel extends ConsumerStatefulWidget {
+  const RoomEmotePanel({required this.onPick, super.key});
 
   final ValueChanged<String> onPick;
 
   @override
-  ConsumerState<_EmotePanel> createState() => _EmotePanelState();
+  ConsumerState<RoomEmotePanel> createState() => RoomEmotePanelState();
 }
 
-final class _EmotePanelState extends ConsumerState<_EmotePanel> {
+final class RoomEmotePanelState extends ConsumerState<RoomEmotePanel> {
   /// The bundled sheet's emoticon texts; read once, after the first build.
   List<String> _atlasCodes = const [];
 

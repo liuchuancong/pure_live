@@ -7,7 +7,8 @@ import 'package:pure_live/app/background/glass/live_glass.dart' show LiveGlassLe
 import 'package:pure_live/shared/player/on_video_colors.dart';
 
 /// One frosted chip over the picture: a dark glass the frame's own motion
-/// bleeds through, rounded to a pill, quiet enough to sit under words.
+/// bleeds through, rounded to a pill unless [radius] says otherwise, quiet
+/// enough to sit under words.
 ///
 /// The frost is the subtle (G1) level's radius — the player-control tier the
 /// glass ladder assigns to a floating control bar — so no magic sigma lives
@@ -16,20 +17,26 @@ import 'package:pure_live/shared/player/on_video_colors.dart';
 /// must not depend on the app's light/dark pick.
 final class PlayerGlassPill extends StatelessWidget {
   /// The pill's contents.
-  const PlayerGlassPill({required this.child, super.key});
+  const PlayerGlassPill({required this.child, this.radius, super.key});
 
   /// What the pill holds, usually a row of icon buttons or badges.
   final Widget child;
 
+  /// The glass box's corner rule; the classic capsule when null. A host
+  /// whose content grows past one line — the immersive capsule's unfolded
+  /// facts — rounds smaller, so the corners stop cutting its words.
+  final double? radius;
+
   @override
   Widget build(BuildContext context) {
     final frost = LiveGlassLevel.subtle.blurSigma;
+    final corners = BorderRadius.circular(radius ?? DsRadii.pill);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(DsRadii.pill),
+      borderRadius: corners,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: frost, sigmaY: frost, tileMode: TileMode.decal),
         child: Container(
-          decoration: BoxDecoration(color: OnVideoColors.panel, borderRadius: BorderRadius.circular(DsRadii.pill)),
+          decoration: BoxDecoration(color: OnVideoColors.panel, borderRadius: corners),
           child: child,
         ),
       ),

@@ -93,14 +93,13 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
         gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
       ),
       // Two width tiers, each a superset of the other: the desktop bar gains
-      // the volume slider (960) and the window-fullscreen button (720, the
-      // strip's own measure); below 320 the danmaku cluster and the divider
+      // the volume slider beside the window-fullscreen button at 720, the
+      // strip's own measure; below 320 the danmaku cluster and the divider
       // give way, the picture's own catalogues being the cluster a viewer
       // reaches for when the picture looks wrong.
       child: LayoutBuilder(
         builder: (context, constraints) {
           final pip = presentation == PresentationMode.pip && presentationController.pipOwnsWindow;
-          final t1 = constraints.maxWidth >= 960;
           final wide = constraints.maxWidth >= 720;
           final crowded = constraints.maxWidth < 320;
           final play = PlayerBarButton(
@@ -138,7 +137,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   },
                 )
               : null;
-          final volumeSlider = !pip && player != null && t1
+          final volumeSlider = !pip && player != null && wide
               ? SizedBox(
                   width: 72,
                   child: DsSlider(
@@ -169,7 +168,11 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final pickers = !pip ? widget.streamPickers?.call(labelled: true, fitOnly: compactPickers) : null;
           final windowButton = !pip && player != null && wide
               ? PlayerBarButton(
-                  icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
+                  // The window's own spread: out where the mode is off, in
+                  // where it is on — the two chevrons, not the arrows.
+                  icon: presentation == PresentationMode.windowFullscreen
+                      ? DsIcons.chevronsRightLeft
+                      : DsIcons.chevronsLeftRight,
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.room.windowFullscreenOff
                       : t.room.windowFullscreenOn,

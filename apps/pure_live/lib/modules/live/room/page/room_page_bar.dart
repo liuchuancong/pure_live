@@ -22,6 +22,7 @@ PreferredSizeWidget _roomAppBar(
   required DsColors colors,
   required bool ownChrome,
   required VoidCallback leave,
+  double chatColumnWidth = 0,
 }) {
   final t = context.t;
   // Two lines of identity need the room's 56; the caption controls ride
@@ -34,10 +35,32 @@ PreferredSizeWidget _roomAppBar(
   // the theme in the settings, and the column toggle folds itself away
   // under the wide breakpoint.
   final compact = MediaQuery.sizeOf(context).width < kRoomCompactBreakpoint;
+  // The follow pill pins to the video area's right edge — the seam where the
+  // docked chat column starts. The actions the row lays after the pill (the
+  // verbs, then the window's own buttons) are measured here, and the spacer
+  // between the pill and the verbs carries the difference, so the pill's end
+  // lands on the seam. A verb added to the row is counted here too.
+  final trailingAfterFollow =
+      (compact ? 0.0 : 4 * 36.0) + // share, details, theme, chat column
+      (ownChrome ? DsSpace.s4 + 1.0 + 3 * 36.0 : 0.0) + // inset, divider, min/max/close
+      DsSpace.s4; // the row's own trailing inset
+  final followGap = math.max(0, chatColumnWidth - trailingAfterFollow);
   final leading = DsTooltip(
     message: t.common.back,
     side: DsSide.bottom,
-    child: WindowCaptionButton(semanticLabel: t.common.back, icon: DsIcons.arrowLeft, size: 36, onPressed: leave),
+    // The toolbar hands the leading slot the bar's exact height, so the
+    // button stretches to it and its hover fill rides the full bar; the
+    // actions row's buttons stay loose and inset. Center loosens the slot —
+    // the same way the AppBar centers its own IconButton leadings.
+    child: Center(
+      child: ChromeIconButton(
+        icon: DsIcons.arrowLeft,
+        semanticLabel: t.common.back,
+        tooltip: t.common.back,
+        size: 36,
+        onPressed: leave,
+      ),
+    ),
   );
   return AppBar(
     backgroundColor: colors.surface,
@@ -58,6 +81,7 @@ PreferredSizeWidget _roomAppBar(
         : const RoomIdentityBar(),
     actions: [
       const _FollowPill(),
+      SizedBox(width: followGap.toDouble()),
       if (!compact) ...[
         const _ShareButton(),
         DsTooltip(
@@ -97,7 +121,7 @@ final class _ShareButton extends ConsumerWidget {
       message: t.room.share,
       side: DsSide.bottom,
       child: ChromeIconButton(
-        icon: DsIcons.share,
+        icon: DsIcons.share2,
         semanticLabel: t.room.share,
         tooltip: t.room.share,
         size: 36,
@@ -161,6 +185,55 @@ final class _ChatColumnToggle extends ConsumerWidget {
           unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
         }
       },
+    );
+  }
+}
+
+/// The window fullscreen's own Windows caption: a dark drag band that moves the
+/// window and carries the way back, minimize / maximize / close, so the mode
+/// reads as a real window over the picture. Its ink stays on the video's own
+/// dark palette — the theme's text would vanish on the black stage.
+final class _WindowFullscreenCaption extends ConsumerWidget {
+  const _WindowFullscreenCaption({required this.onBack});
+
+  /// Leaves the mode; the caption's back arrow walks the same way out the
+  /// Escape key and the bar's verbs do.
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final title = ref.watch(roomProvider.select((room) => room.room?.content.title)) ?? '';
+    const ink = OnVideoColors.foreground;
+    return ColoredBox(
+      color: kPlayerStageColor,
+      child: SizedBox(
+        height: 40,
+        child: WindowDragArea(
+          child: Row(
+            children: [
+              WindowCaptionButton(
+                semanticLabel: t.common.back,
+                icon: DsIcons.arrowLeft,
+                size: 40,
+                ink: ink,
+                onPressed: onBack,
+              ),
+              const SizedBox(width: DsSpace.s8),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: ink),
+                ),
+              ),
+              const WindowCaptionControls(height: 40, ink: ink),
+              const SizedBox(width: DsSpace.s4),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

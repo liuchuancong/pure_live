@@ -119,7 +119,6 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final startedAt = widget.startedAt;
@@ -132,7 +131,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
     // all: a queued or joining capture is waiting, not recording.
     final still = startedAt == null || MediaQuery.disableAnimationsOf(context) || !TickerMode.valuesOf(context).enabled;
     final alpha = still ? 1.0 : 0.35 + 0.65 * Curves.easeInOut.transform(_pulse.value);
-    final dotSize = widget.tv ? 12.0 : 8.0;
+    final dotSize = widget.tv ? 14.0 : 10.0;
     final content = Padding(
       padding: EdgeInsets.symmetric(horizontal: widget.tv ? DsSpace.s12 : DsSpace.s8, vertical: DsSpace.s3),
       child: Row(
@@ -149,7 +148,7 @@ final class _RecordingIndicatorState extends State<RecordingIndicator> with Sing
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: OnVideoColors.signal.withValues(alpha: alpha),
+                  color: const Color(0xFFFF0000).withValues(alpha: alpha),
                 ),
               ),
             ),

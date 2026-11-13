@@ -7108,9 +7108,6 @@ class Translations$room$zh_CN {
 	/// zh-CN: '聊天连接已断开'
 	String get chatClosed => '聊天连接已断开';
 
-	/// zh-CN: '这个平台只能看，不能发言'
-	String get chatViewOnly => '这个平台只能看，不能发言';
-
 	/// zh-CN: '这个房间没有实时聊天'
 	String get chatUnsupported => '这个房间没有实时聊天';
 
@@ -7522,8 +7519,17 @@ class Translations$room$zh_CN {
 	/// zh-CN: '退出竖屏全屏'
 	String get portraitFullscreenExit => '退出竖屏全屏';
 
-	/// zh-CN: '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间'
-	String get portraitSwipeHint => '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间';
+	/// zh-CN: '上滑或下滑，换到隔壁的直播间'
+	String get portraitSwipeHint => '上滑或下滑，换到隔壁的直播间';
+
+	/// zh-CN: '清屏'
+	String get cleanScreen => '清屏';
+
+	/// zh-CN: '隐藏聊天浮层，专注看画面'
+	String get cleanScreenDesc => '隐藏聊天浮层，专注看画面';
+
+	/// zh-CN: '退出清屏'
+	String get cleanScreenExit => '退出清屏';
 
 	/// zh-CN: '送出'
 	String get giftLineSent => '送出';
@@ -7698,6 +7704,15 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '已播'
 	String get statWatched => '已播';
+
+	/// zh-CN: '开播时间'
+	String get startTime => '开播时间';
+
+	/// zh-CN: '标题'
+	String get titleLabel => '标题';
+
+	/// zh-CN: '观看时长'
+	String get watchDuration => '观看时长';
 
 	/// zh-CN: '观看记录'
 	String get switchHistory => '观看记录';
@@ -11383,11 +11398,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '当进入直播播放页，自动进入全屏'
 	String get fullscreenDefaultDesc => '当进入直播播放页，自动进入全屏';
 
-	/// zh-CN: '竖屏全屏滑动换直播间'
-	String get portraitSwipeSwitch => '竖屏全屏滑动换直播间';
+	/// zh-CN: '竖屏滑动换直播间'
+	String get portraitSwipeSwitch => '竖屏滑动换直播间';
 
-	/// zh-CN: '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。'
-	String get portraitSwipeSwitchDesc => '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。';
+	/// zh-CN: '在竖屏直播间里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入沉浸式竖屏时会提示这个手势。'
+	String get portraitSwipeSwitchDesc => '在竖屏直播间里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入沉浸式竖屏时会提示这个手势。';
 
 	/// zh-CN: '播放时保持屏幕常亮'
 	String get keepScreenOn => '播放时保持屏幕常亮';
@@ -11412,21 +11427,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '卡片人数口径、真实在线优先与平台开关。'
 	String get audiencePageDescription => '卡片人数口径、真实在线优先与平台开关。';
-
-	/// zh-CN: '普通页布局模式'
-	String get portraitLayoutMode => '普通页布局模式';
-
-	/// zh-CN: '仅影响竖屏直播源，不改变普通横屏直播。'
-	String get portraitLayoutModeDesc => '仅影响竖屏直播源，不改变普通横屏直播。';
-
-	/// zh-CN: '均衡（推荐）'
-	String get portraitLayoutBalanced => '均衡（推荐）';
-
-	/// zh-CN: '沉浸'
-	String get portraitLayoutImmersive => '沉浸';
-
-	/// zh-CN: '兼容 16:9'
-	String get portraitLayoutCompatibility => '兼容 16:9';
 
 	/// zh-CN: '分区'
 	String get searchSections => '分区';
@@ -17462,7 +17462,6 @@ extension on Translations {
 			'room.noChat' => '还没有弹幕',
 			'room.chatConnecting' => '正在连接聊天…',
 			'room.chatClosed' => '聊天连接已断开',
-			'room.chatViewOnly' => '这个平台只能看，不能发言',
 			'room.chatUnsupported' => '这个房间没有实时聊天',
 			'room.chatFailedTitle' => '聊天没连上',
 			'room.system' => '系统',
@@ -17575,9 +17574,9 @@ extension on Translations {
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
 			'room.danmakuSettings' => '弹幕设置',
+			'room.blockList' => '屏蔽列表',
 			_ => null,
 		} ?? switch (path) {
-			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '醒目留言',
 			'room.superChatEmpty' => '暂无醒目留言',
 			'room.superChatFailed' => '醒目留言加载失败',
@@ -17602,7 +17601,10 @@ extension on Translations {
 			'room.restrictionUnplayable' => '暂时无法播放',
 			'room.portraitFullscreen' => '竖屏全屏',
 			'room.portraitFullscreenExit' => '退出竖屏全屏',
-			'room.portraitSwipeHint' => '已进入竖屏全屏 · 上滑或下滑换到隔壁的直播间',
+			'room.portraitSwipeHint' => '上滑或下滑，换到隔壁的直播间',
+			'room.cleanScreen' => '清屏',
+			'room.cleanScreenDesc' => '隐藏聊天浮层，专注看画面',
+			'room.cleanScreenExit' => '退出清屏',
 			'room.giftLineSent' => '送出',
 			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
 			'room.giftLineGifted' => '赠送',
@@ -17661,6 +17663,9 @@ extension on Translations {
 			'room.panelStops' => '停靠：',
 			'room.panelStopsHint' => '拉穿最低档进竖屏全屏',
 			'room.statWatched' => '已播',
+			'room.startTime' => '开播时间',
+			'room.titleLabel' => '标题',
+			'room.watchDuration' => '观看时长',
 			'room.switchHistory' => '观看记录',
 			'room.switchReplays' => '关注回放',
 			'room.switchEmpty' => '没有可切换的直播间',
@@ -18084,13 +18089,13 @@ extension on Translations {
 			'settings.danmakuColorHue' => '色相',
 			'settings.danmakuColorSaturation' => '饱和度与明度',
 			'settings.danmakuFixedGroup' => '固定弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListFixedTitle' => '聊天列表已固定',
 			'settings.chatListFixedDesc' => '显示用户名和礼物，会员进醒目留言；侧栏、14 px、标准行距、360 px。',
 			'settings.chatListGroup' => '聊天列表内容',
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuFontDescription' => '仅用于画面弹幕，聊天列表沿用界面字体。',
 			'settings.danmakuFontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。',
 			'settings.styleDensity' => '弹幕密度',
@@ -18598,13 +18603,13 @@ extension on Translations {
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：把放大算法改成 ewa_lanczossharp。',
 			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
 			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
 			'settings.playerGuideEntrySymBufferingBody' => '选「弱网稳定」；同时检查网络代理设置——代理是直播卡顿的常见来源。',
 			'settings.playerGuideEntrySymLatencyTitle' => '延迟高（连麦 / 赛事情景）',
 			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
 			'settings.playerGuideEntrySymNoVideoTitle' => '有声音没画面',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntrySymNoVideoBody' => '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。',
 			'settings.optionAuto' => '自动',
 			'settings.optionOff' => '关闭',
@@ -18887,8 +18892,8 @@ extension on Translations {
 			'settings.windowsPipMinHeightDesc' => '小窗最小高度，60–240；离开小窗后恢复常规下限。',
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
-			'settings.portraitSwipeSwitch' => '竖屏全屏滑动换直播间',
-			'settings.portraitSwipeSwitchDesc' => '在竖屏全屏里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入竖屏全屏时会提示这个手势。',
+			'settings.portraitSwipeSwitch' => '竖屏滑动换直播间',
+			'settings.portraitSwipeSwitchDesc' => '在竖屏直播间里，上下滑动画面中段就换到这份列表的下一个或上一个直播间。开启后进入沉浸式竖屏时会提示这个手势。',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
 			'settings.controlsAutoHide' => '控制条自动隐藏',
@@ -18897,11 +18902,6 @@ extension on Translations {
 			'settings.controlsAutoHideAlways' => '常显',
 			'settings.navAudience' => '观众指标',
 			'settings.audiencePageDescription' => '卡片人数口径、真实在线优先与平台开关。',
-			'settings.portraitLayoutMode' => '普通页布局模式',
-			'settings.portraitLayoutModeDesc' => '仅影响竖屏直播源，不改变普通横屏直播。',
-			'settings.portraitLayoutBalanced' => '均衡（推荐）',
-			'settings.portraitLayoutImmersive' => '沉浸',
-			'settings.portraitLayoutCompatibility' => '兼容 16:9',
 			'settings.searchSections' => '分区',
 			'settings.searchRows' => '具体设置',
 			'settings.searchRowMatches' => ({required String items}) => '匹配：${items}',

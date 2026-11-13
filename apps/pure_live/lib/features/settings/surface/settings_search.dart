@@ -193,11 +193,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.picture, s.controlsAutoHide, 'controls auto hide timeout toolbar overlay 控制条 自动 隐藏 超时 秒'),
     _hit(
       SettingsSection.picture,
-      s.portraitLayoutMode,
-      'portrait vertical live layout mode balanced immersive compatibility 16:9 竖屏 直播 布局 模式 均衡 沉浸 兼容',
-    ),
-    _hit(
-      SettingsSection.picture,
       s.portraitSwipeSwitch,
       'portrait fullscreen swipe up down change switch room gesture 竖屏 全屏 上滑 下滑 换 直播间 手势',
     ),

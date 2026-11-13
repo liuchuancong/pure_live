@@ -187,7 +187,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('playback.autoPip', BackupPrefKind.boolean),
   ('playback.keepScreenOn', BackupPrefKind.boolean),
   ('playback.fullscreenDefault', BackupPrefKind.boolean),
-  ('playback.portraitLayoutMode', BackupPrefKind.string),
   ('player.backend', BackupPrefKind.string),
   ('player.tuning', BackupPrefKind.string),
   ('danmaku.style.fontSize', BackupPrefKind.floating),

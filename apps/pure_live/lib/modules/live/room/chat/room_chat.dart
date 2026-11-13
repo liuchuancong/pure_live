@@ -62,20 +62,12 @@ final class RoomChatPanel extends ConsumerStatefulWidget {
   /// column as a glass card over the picture, and a second opaque surface
   /// underneath would hide the glass.
   ///
-  /// [feedOnly] keeps the danmaku list alone, with the login word that concerns
-  /// it: a phone held sideways gives the chat a narrow column beside the
-  /// picture, where the tab bar and the composer would leave a line or two of
-  /// talk (the reference's landscape room shows its list and nothing else).
-  ///
   /// [trailing] rides at the tab row's end — the theatre column's close verb
   /// lives there instead of floating over the last tab.
-  const RoomChatPanel({this.translucent = false, this.feedOnly = false, this.trailing, super.key});
+  const RoomChatPanel({this.translucent = false, this.trailing, super.key});
 
   /// Whether the panel paints no fill of its own.
   final bool translucent;
-
-  /// Whether the panel is the danmaku list alone — no tabs, no composer.
-  final bool feedOnly;
 
   /// A verb drawn at the end of the tab row, outside the tabs themselves.
   final Widget? trailing;
@@ -157,20 +149,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // the platform keeps no board.
     ref.listen(roomChatProvider, _chatArrived);
     final fill = widget.translucent ? OnVideoColors.clear : colors.surface;
-    if (widget.feedOnly) {
-      // The danmaku tab's own list, not a second one: the narrow column reads
-      // and behaves exactly as the tab does, its boundary and count included.
-      return ColoredBox(
-        color: fill,
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ChatNoticeBar(),
-            Expanded(child: _ChatFeed()),
-          ],
-        ),
-      );
-    }
     final board = ref.watch(roomSuperChatsProvider);
     final tab = _tab;
     final tabs = DsTabs<_ChatTab>(

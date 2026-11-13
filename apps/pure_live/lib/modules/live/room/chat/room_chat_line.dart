@@ -80,7 +80,7 @@ final class _ChatLine extends ConsumerWidget {
       fontWeight: FontWeight.w600,
       color:
           roleInk ??
-          _senderNameInk(
+          chatSenderNameInk(
             sender: sender,
             messageColor: message.color,
             background: colors.surface,
@@ -356,7 +356,11 @@ final Map<(int, int), Color> _nameInks = {};
 /// and black are no colour at all — those lines take [fallback] — and any
 /// other is walked towards black or white until it clears 4.5:1, so a name
 /// never sinks into the panel it sits on. The reference's `chatNameInk`.
-Color _senderNameInk({
+///
+/// Public so the immersive room's chat overlay, whose pills stand on the
+/// picture's own dark glass instead of the panel's surface, reads the same
+/// names the column does.
+Color chatSenderNameInk({
   required MessageSender? sender,
   required LiveMessageColor? messageColor,
   required Color background,

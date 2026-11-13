@@ -25,13 +25,7 @@ final class _RoomTitleCaption extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final t = context.t;
     final detail = ref.watch(roomProvider.select((room) => room.room));
-    final watchStarted = ref.watch(roomProvider.select((room) => room.watchStartedAt));
     if (detail == null) return const SizedBox.shrink();
-    final online = detail.audience.onlineViewers ?? detail.audience.totalViewers;
-    final figures = [
-      if (online != null) '${t.room.statViewers} ${AudienceFormat.format(online)}',
-      '${t.room.statWatched} ${_uptimeText(watchStarted)}',
-    ].join(' · ');
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       child: PlayerGlassPill(
@@ -55,12 +49,6 @@ final class _RoomTitleCaption extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  figures,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
-                ),
               ],
             ),
           ),
@@ -68,15 +56,6 @@ final class _RoomTitleCaption extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// The watched clock for the caption's second row: hours over minutes over
-/// seconds, zero-padded — the same shape the page's hover figures keep.
-String _uptimeText(DateTime since) {
-  final elapsed = DateTime.now().difference(since);
-  String two(int value) => value.toString().padLeft(2, '0');
-  if (elapsed.isNegative) return '00:00:00';
-  return '${two(elapsed.inHours)}:${two(elapsed.inMinutes.remainder(60))}:${two(elapsed.inSeconds.remainder(60))}';
 }
 
 /// The strip over the picture: the way out in a glass pill, the room's name
@@ -388,15 +367,30 @@ final class _AnchorFollowChip extends ConsumerWidget {
 /// room for a fourth word. The verbs ride the bars' auto-hide with everything
 /// else, and a running capture turns its chip the recorder's red.
 final class _TopToolCluster extends ConsumerWidget {
-  const _TopToolCluster({required this.room, required this.onWake, required this.onMore});
+  const _TopToolCluster({
+    required this.room,
+    required this.onWake,
+    this.onMore,
+    this.audioMode = false,
+    this.pipChip = true,
+  });
 
   final RoomState room;
 
   /// Resets the bars' auto-hide timer after a press.
   final VoidCallback onWake;
 
-  /// Opens the room's more container (the page-level panel/sheet).
+  /// Opens the room's more container (the page-level panel/sheet); null
+  /// leaves the more chip off — the compact window's cluster carries none.
   final VoidCallback? onMore;
+
+  /// Whether the audio mode chip rides the cluster: the compact window's
+  /// only audio verb, the page's bars being out of reach there.
+  final bool audioMode;
+
+  /// Whether the small window's verb rides the cluster; the compact window
+  /// itself keeps its way out at the bottom-right corner instead.
+  final bool pipChip;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -408,6 +402,8 @@ final class _TopToolCluster extends ConsumerWidget {
     final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
     final recording = task?.state == RecordingTaskState.recording;
     final pipAvailable = room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
+    final presentation = ref.watch(roomPresentationProvider);
+    final audioOnly = room.audioOnly;
     final danger = colors.danger.text;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -477,6 +473,9 @@ final class _TopToolCluster extends ConsumerWidget {
         return Align(
           alignment: AlignmentDirectional.centerEnd,
           child: PlayerGlassPill(
+            // The session verbs' glass rounds like the chips it holds, not
+            // the capsule: a slight corner on the cluster's own tier.
+            radius: theme.radii.control(side),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s4,
@@ -491,19 +490,34 @@ final class _TopToolCluster extends ConsumerWidget {
                       unawaited(takeRoomScreenshot(context, ref, handle));
                     },
                   ),
-                chip(
-                  icon: DsIcons.disc,
-                  label: recording ? context.t.room.stopRecording : context.t.room.record,
-                  onPressed: () => unawaited(toggleRoomRecording(context, ref)),
-                  alert: recording,
-                ),
-                if (!small && pipAvailable)
+                if (recording)
+                  RecordingIndicator(
+                    startedAt: task?.startedAt,
+                    label: context.t.room.stopRecording,
+                    onStop: () => unawaited(toggleRoomRecording(context, ref)),
+                  )
+                else
                   chip(
-                    iconAsset: 'assets/icons/pip.svg',
-                    label: context.t.room.pipOn,
+                    icon: DsIcons.disc,
+                    label: context.t.room.record,
+                    onPressed: () => unawaited(toggleRoomRecording(context, ref)),
+                  ),
+                if (audioMode)
+                  chip(
+                    icon: audioOnly ? DsIcons.video : DsIcons.headphones,
+                    label: audioOnly ? context.t.room.restoreVideo : context.t.room.audioOnlyMode,
+                    onPressed: () => unawaited(ref.read(roomProvider.notifier).setAudioOnly(value: !audioOnly)),
+                  ),
+                // The way into or out of the small window; on a narrow cluster
+                // it stays — leaving the window is the one verb the window
+                // cannot lose.
+                if (pipChip && pipAvailable && (!small || presentation == PresentationMode.pip))
+                  chip(
+                    icon: DsIcons.pictureInPicture2,
+                    label: presentation == PresentationMode.pip ? context.t.room.pipOff : context.t.room.pipOn,
                     onPressed: () => unawaited(toggleRoomPip(context, ref)),
                   ),
-                chip(icon: DsIcons.ellipsis, label: context.t.common.more, onPressed: onMore),
+                if (onMore != null) chip(icon: DsIcons.ellipsis, label: context.t.common.more, onPressed: onMore),
               ],
             ),
           ),
@@ -582,17 +596,15 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
       followsProvider.select((follows) => follows.rooms.any((room) => room.ref.identityKey == key)),
     );
     final onTitle = widget.onTitle;
-    final viewers = detail.audience.onlineViewers ?? detail.audience.totalViewers;
-    final watchStarted = ref.watch(roomProvider.select((room) => room.watchStartedAt));
-    final figureWords = [
-      if (viewers != null) '${AudienceFormat.format(viewers)} ${t.room.statViewers}',
-      '${t.room.statWatched} ${_uptimeText(watchStarted)}',
-    ].join(' · ');
     // The reference caps the capsule at the picture's 60% width; a fixed
     // ceiling keeps a long title from stretching the pill across the screen.
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 420),
       child: PlayerGlassPill(
+        // A moderate corner, not the capsule: the unfolded facts row runs
+        // wide under it, and the pill's own arc used to cut its first and
+        // last words.
+        radius: 10,
         child: Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s4, DsSpace.s3, DsSpace.s4, DsSpace.s3),
           child: Column(
@@ -725,8 +737,6 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
                     style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
                     children: [
                       TextSpan(text: detail.content.title),
-                      const TextSpan(text: ' · '),
-                      TextSpan(text: figureWords),
                       const TextSpan(text: ' · '),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
