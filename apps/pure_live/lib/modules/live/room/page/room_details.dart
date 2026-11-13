@@ -64,8 +64,7 @@ final class RoomDetailsPanel extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final platform = _platformName(ref, room);
     final external = room.links.webUrl?.trim().isNotEmpty == true || room.links.appUrl?.trim().isNotEmpty == true;
-    final directLinks =
-        ref.read(sitesProvider).getById(room.ref.platform)?.capability<LivePlaybackProvider>() != null;
+    final directLinks = ref.read(sitesProvider).getById(room.ref.platform)?.capability<LivePlaybackProvider>() != null;
     final mobile =
         !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
     final opensApp = mobile && (room.links.appUrl?.trim().isNotEmpty ?? false);
@@ -79,7 +78,9 @@ final class RoomDetailsPanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Hero(child: _Streamer(room: room, platform: platform)),
+          _Hero(
+            child: _Streamer(room: room, platform: platform),
+          ),
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
             child: Column(
@@ -90,11 +91,7 @@ final class RoomDetailsPanel extends ConsumerWidget {
                 if (notice.isNotEmpty) _InfoText(label: t.room.notice, text: notice, emphasis: true),
                 if (introduction.isNotEmpty && introduction != notice)
                   _InfoText(label: t.room.introduction, text: introduction),
-                _RoomInfo(
-                  room: room,
-                  link: link,
-                  onCopy: (label, value) => unawaited(copyRoomValue(context, value)),
-                ),
+                _RoomInfo(room: room, link: link, onCopy: (label, value) => unawaited(copyRoomValue(context, value))),
                 const DsDivider(),
                 _Actions(
                   opensApp: opensApp,
@@ -296,14 +293,9 @@ final class _StateBadgesState extends State<_StateBadges> {
       runSpacing: DsSpace.s6,
       children: [
         DsBadge(dot: status == LiveStatus.live, label: Text(onAir), status: tone),
-        DsBadge(
-          label: Text('${t.room.statWatched} ${_durationText(widget.watchStarted)}'),
-        ),
+        DsBadge(label: Text('${t.room.statWatched} ${_durationText(widget.watchStarted)}')),
         if (room.broadcast.isRestricted)
-          DsBadge(
-            label: Text(_restrictionLabel(t, room.broadcast.effectiveRestriction)),
-            status: DsStatus.danger,
-          ),
+          DsBadge(label: Text(_restrictionLabel(t, room.broadcast.effectiveRestriction)), status: DsStatus.danger),
       ],
     );
   }
@@ -330,8 +322,7 @@ final class _RoomInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        for (final (label, value) in facts)
-          _FactCell(label: label, value: value, onCopy: () => onCopy(label, value)),
+        for (final (label, value) in facts) _FactCell(label: label, value: value, onCopy: () => onCopy(label, value)),
       ],
     );
   }
@@ -421,7 +412,9 @@ final class _InfoTextState extends State<_InfoText> {
         return Container(
           padding: EdgeInsetsDirectional.only(start: leading),
           decoration: widget.emphasis
-              ? BoxDecoration(border: Border(left: BorderSide(color: colors.accent, width: 3)))
+              ? BoxDecoration(
+                  border: Border(left: BorderSide(color: colors.accent, width: 3)),
+                )
               : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -489,16 +482,8 @@ final class _Actions extends StatelessWidget {
       spacing: DsSpace.s8,
       children: [
         Expanded(child: button(DsIcons.share2, t.room.share, onShare)),
-        if (external)
-          Expanded(
-            child: button(
-              DsIcons.externalLink,
-              opensApp ? t.room.openApp : t.room.openWeb,
-              onOpen,
-            ),
-          ),
-        if (directLinks)
-          Expanded(child: button(DsIcons.link2, t.toolbox.linkDirect, onDirectLinks)),
+        if (external) Expanded(child: button(DsIcons.externalLink, opensApp ? t.room.openApp : t.room.openWeb, onOpen)),
+        if (directLinks) Expanded(child: button(DsIcons.link2, t.toolbox.linkDirect, onDirectLinks)),
       ],
     );
   }

@@ -13,6 +13,7 @@ enum RoomShortcutAction {
   volumeDown,
   chatColumn,
   screenshot,
+  stats,
   retry,
   help,
 }
@@ -83,6 +84,14 @@ List<RoomShortcutBinding> roomShortcutBindings(
       action: RoomShortcutAction.screenshot,
       keys: const [SingleActivator(LogicalKeyboardKey.keyS)],
       label: t.room.screenshot,
+    ),
+  // The stream's own figures, on the key the media preview shares: one
+  // press over the picture, the same panel the more container's tile opens.
+  if (!tv)
+    RoomShortcutBinding(
+      action: RoomShortcutAction.stats,
+      keys: const [SingleActivator(LogicalKeyboardKey.keyI)],
+      label: t.room.statsToggle,
     ),
   RoomShortcutBinding(
     action: RoomShortcutAction.retry,

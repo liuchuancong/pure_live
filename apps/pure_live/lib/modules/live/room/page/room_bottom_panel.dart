@@ -98,12 +98,60 @@ final class RoomBottomPanel extends StatefulWidget {
   /// quick settle onto that stop is never read as a throw past it.
   static const double fullscreenFlingDistance = 28;
 
+  /// The window's three stops: the floor, the reading height, and the most a
+  /// panel may take of a live picture.
+  static RoomPanelStops stopsOf(double area) {
+    final least = math.min(RoomBottomPanel.least, area);
+    final greatest = clampDouble(area * 0.68, least, math.max(least, area - RoomBottomPanel.freeFloor));
+    final middle = clampDouble(area * 0.44, least, greatest);
+    return (least: least, middle: middle, greatest: greatest);
+  }
+
+  /// The height of one [stop] within [stops].
+  static double stopOf(RoomPanelStops stops, RoomPanelStop stop) => switch (stop) {
+    RoomPanelStop.minimum => stops.least,
+    RoomPanelStop.middle => stops.middle,
+    RoomPanelStop.maximum => stops.greatest,
+  };
+
+  /// The nearest stop, with a fling taking precedence over position: a viewer
+  /// who throws the panel up means the biggest stop even if it only crossed
+  /// the halfway mark on the way.
+  static double nearestStop(double from, double velocityY, RoomPanelStops stops) {
+    final candidates = [stops.least, stops.middle, stops.greatest];
+    if (velocityY.abs() >= RoomBottomPanel.fling) {
+      // Dragging up (a negative velocity) grows the panel.
+      final rising = velocityY < 0;
+      final ahead = candidates.where((stop) => rising ? stop > from : stop < from).toList();
+      if (ahead.isNotEmpty) return rising ? ahead.first : ahead.last;
+    }
+    var best = candidates.first;
+    for (final stop in candidates) {
+      if ((stop - from).abs() < (best - from).abs()) best = stop;
+    }
+    return best;
+  }
+
+  /// Whether a release [dismissed] under the lowest stop enters the portrait
+  /// full screen (the reference's `panelDragEntersFullscreen`): 30 % of the
+  /// panel's height, kept between 72 and 144 px, or a downward flick of
+  /// [RoomBottomPanel.fullscreenFling] once [RoomBottomPanel.fullscreenFlingDistance]
+  /// is behind it.
+  static bool entersFullscreen({required double dismissed, required double panel, required double velocity}) {
+    if (dismissed <= 0 || panel <= 0) return false;
+    final distance = clampDouble(panel * 0.3, 72, 144);
+    return dismissed >= distance ||
+        (velocity >= RoomBottomPanel.fullscreenFling && dismissed >= RoomBottomPanel.fullscreenFlingDistance);
+  }
+
   @override
   State<RoomBottomPanel> createState() => _RoomBottomPanelState();
 }
 
-/// The window's three stops, lowest first.
-typedef _Stops = ({double least, double middle, double greatest});
+/// The window's three stops, lowest first. Both narrow hosts read their
+/// geometry from [RoomBottomPanel.stopsOf]: the sheet over a portrait stream
+/// and the compact room's docked panel are the same three questions.
+typedef RoomPanelStops = ({double least, double middle, double greatest});
 
 final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTickerProviderStateMixin {
   /// Where the sheet's top stands above the window's bottom edge: its height
@@ -137,36 +185,15 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
 
   /// The window's three stops: the floor, the reading height, and the most a
   /// sheet may take of a live picture.
-  _Stops _stops(double area) {
-    final least = math.min(RoomBottomPanel.least, area);
-    final greatest = clampDouble(area * 0.68, least, math.max(least, area - RoomBottomPanel.freeFloor));
-    final middle = clampDouble(area * 0.44, least, greatest);
-    return (least: least, middle: middle, greatest: greatest);
-  }
+  RoomPanelStops _stops(double area) => RoomBottomPanel.stopsOf(area);
 
-  double _stopOf(_Stops stops, RoomPanelStop stop) => switch (stop) {
-    RoomPanelStop.minimum => stops.least,
-    RoomPanelStop.middle => stops.middle,
-    RoomPanelStop.maximum => stops.greatest,
-  };
+  double _stopOf(RoomPanelStops stops, RoomPanelStop stop) => RoomBottomPanel.stopOf(stops, stop);
 
   /// The nearest stop, with a fling taking precedence over position: a viewer
   /// who throws the sheet up means the biggest stop even if it only crossed the
   /// halfway mark on the way.
-  double _target(double from, double velocityY, _Stops stops) {
-    final candidates = [stops.least, stops.middle, stops.greatest];
-    if (velocityY.abs() >= RoomBottomPanel.fling) {
-      // Dragging up (a negative velocity) grows the panel.
-      final rising = velocityY < 0;
-      final ahead = candidates.where((stop) => rising ? stop > from : stop < from).toList();
-      if (ahead.isNotEmpty) return rising ? ahead.first : ahead.last;
-    }
-    var best = candidates.first;
-    for (final stop in candidates) {
-      if ((stop - from).abs() < (best - from).abs()) best = stop;
-    }
-    return best;
-  }
+  double _target(double from, double velocityY, RoomPanelStops stops) =>
+      RoomBottomPanel.nearestStop(from, velocityY, stops);
 
   void _settle(double target) {
     widget.onCoverChanged?.call(target);
@@ -184,29 +211,17 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
   /// Where a finger at [drag] shows the sheet's top: one to one between the
   /// stops, and under the lowest one with a resistance that grows the further
   /// it goes — at most a third of that stop's height.
-  double _banded(double drag, _Stops stops) =>
+  double _banded(double drag, RoomPanelStops stops) =>
       drag < stops.least ? stops.least + _rubberBand(drag - stops.least, stops.least) : drag;
 
   /// The finger [_banded] shows at [top]: where a drag that catches the sheet
   /// on its way back carries on from, without a jump.
-  double _unbanded(double top, _Stops stops) =>
+  double _unbanded(double top, RoomPanelStops stops) =>
       top < stops.least ? stops.least + _rubberBandDrag(top - stops.least, stops.least) : top;
-
-  /// Whether a release [dismissed] under the lowest stop enters the portrait
-  /// full screen (the reference's `panelDragEntersFullscreen`): 30 % of the
-  /// [panel]'s height, kept between 72 and 144 px, or a downward flick of
-  /// [RoomBottomPanel.fullscreenFling] once [RoomBottomPanel.fullscreenFlingDistance]
-  /// is behind it.
-  static bool _entersFullscreen({required double dismissed, required double panel, required double velocity}) {
-    if (dismissed <= 0 || panel <= 0) return false;
-    final distance = clampDouble(panel * 0.3, 72, 144);
-    return dismissed >= distance ||
-        (velocity >= RoomBottomPanel.fullscreenFling && dismissed >= RoomBottomPanel.fullscreenFlingDistance);
-  }
 
   /// A finger takes the sheet, from wherever it is: one that lands on a sheet
   /// still settling stops it there rather than fighting the spring.
-  void _started(_Stops stops) {
+  void _started(RoomPanelStops stops) {
     if (_entering) return;
     _offset.stop();
     _dragging = true;
@@ -216,7 +231,7 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
   /// Up to the highest stop and no further, since that stop's strip of free
   /// picture is the point of it; down as far as the finger goes, the band
   /// taking over under the lowest stop.
-  void _dragged(DragUpdateDetails details, _Stops stops) {
+  void _dragged(DragUpdateDetails details, RoomPanelStops stops) {
     if (!_dragging) return;
     _drag = clampDouble(_drag - details.delta.dy, 0, stops.greatest);
     _offset.value = _banded(_drag, stops);
@@ -224,13 +239,13 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
 
   /// The finger left: far enough under the lowest stop, the portrait full
   /// screen; anywhere else, the stop the release points at.
-  void _released(DragEndDetails details, _Stops stops) {
+  void _released(DragEndDetails details, RoomPanelStops stops) {
     if (!_dragging) return;
     _dragging = false;
     // Downwards positive: the direction that shrinks the sheet.
     final velocity = details.primaryVelocity ?? 0;
     if (widget.onPortraitFullscreen != null &&
-        _entersFullscreen(dismissed: stops.least - _drag, panel: stops.least, velocity: velocity)) {
+        RoomBottomPanel.entersFullscreen(dismissed: stops.least - _drag, panel: stops.least, velocity: velocity)) {
       _enter(stops);
       return;
     }
@@ -238,7 +253,7 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
   }
 
   /// A drag the system took back settles where it stands.
-  void _cancelled(_Stops stops) {
+  void _cancelled(RoomPanelStops stops) {
     if (!_dragging) return;
     _dragging = false;
     _settle(_target(clampDouble(_offset.value, stops.least, stops.greatest), 0, stops));
@@ -250,7 +265,7 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
   /// still on screen. The cover is not reported on the way: the page that takes
   /// the window lays its picture out without one, and the sheet it brings back
   /// later reports its own stop.
-  void _enter(_Stops stops) {
+  void _enter(RoomPanelStops stops) {
     _entering = true;
     final motion = DsTheme.of(context).motion;
     final spring = motion.moveSpringOrNull;
@@ -268,7 +283,7 @@ final class _RoomBottomPanelState extends State<RoomBottomPanel> with SingleTick
   /// swaps this layout away in the frame that follows, so the sheet only comes
   /// back if it is still here once that frame is drawn — the room kept its
   /// inline layout after all.
-  void _entered(_Stops stops) {
+  void _entered(RoomPanelStops stops) {
     if (!_entering || !mounted) return;
     _entering = false;
     widget.onPortraitFullscreen?.call();

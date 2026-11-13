@@ -16,12 +16,7 @@ import 'package:pure_live/shared/shared.dart';
 ///
 /// There is deliberately no avatar in the chat list; the card is the one place
 /// a face is worth its download, because the viewer asked for this person.
-Future<void> showChatUserCard(
-  BuildContext context,
-  WidgetRef ref,
-  MessageSender sender,
-  String platform,
-) async {
+Future<void> showChatUserCard(BuildContext context, WidgetRef ref, MessageSender sender, String platform) async {
   final t = context.t;
   final name = sender.userName.trim();
   if (name.isEmpty) return;
@@ -55,9 +50,7 @@ Future<void> showChatUserCard(
             spacing: DsSpace.s12,
             children: [
               DsAvatar(
-                image: avatar.isEmpty
-                    ? null
-                    : cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
+                image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.userAvatar),
                 initials: avatarInitials(name),
                 toneIndex: DsAvatar.toneFor(name),
                 semanticLabel: name,
@@ -87,9 +80,8 @@ Future<void> showChatUserCard(
                         facts,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: DsTheme.of(context).typography.caption.copyWith(
-                          color: DsTheme.colorsOf(context).textMuted,
-                        ),
+                        style: DsTheme.of(context).typography.caption
+                            .copyWith(color: DsTheme.colorsOf(context).textMuted),
                       ),
                   ],
                 ),

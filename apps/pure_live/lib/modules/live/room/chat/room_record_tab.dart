@@ -213,12 +213,7 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
 /// A waiting task is what the monitor polls; turning the check on here matches
 /// the reference, where "Record when live" opens the live check as it adds the
 /// room.
-Future<void> toggleRoomAutoRecord(
-  BuildContext context,
-  WidgetRef ref,
-  LiveRoom detail,
-  RecordingTask? task,
-) async {
+Future<void> toggleRoomAutoRecord(BuildContext context, WidgetRef ref, LiveRoom detail, RecordingTask? task) async {
   final t = context.t;
   final tasks = ref.read(recordingTasksProvider.notifier);
   if (task?.state == RecordingTaskState.recording) return;
