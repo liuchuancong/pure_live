@@ -38,6 +38,7 @@ import 'package:pure_live/features/settings/surface/settings_search.dart' show S
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart';
+import 'package:pure_live/modules/huya/huya.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
@@ -536,6 +537,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.hongguo => const HongguoSettingsPane(),
       SettingsSection.hongguoInterface => const HongguoInterfacePane(),
       SettingsSection.hongguoDownload => const HongguoDownloadsPane(),
+      SettingsSection.huyaDownload => const HuyaDownloadsPane(),
       SettingsSection.hongguoDanmaku => const HongguoDanmakuPane(),
       SettingsSection.hongguoDevice => const HongguoDevicePane(),
       SettingsSection.musicSources => const MusicSourcesPane(),

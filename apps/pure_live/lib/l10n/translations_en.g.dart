@@ -750,6 +750,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get reserveFailed => 'Could not reserve it; try again later.';
 	@override String get comments => 'Comments';
 	@override String get commentsEmpty => 'No comments yet';
+	@override String get anonymousUser => 'Hongguo user';
 	@override String get commentsLoadMore => 'More';
 	@override String get danmaku => 'Danmaku';
 	@override String get danmakuOn => 'Danmaku on';
@@ -4260,6 +4261,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get roomCardGroup => 'Room card style';
 	@override String get hongguoDownloadTitle => 'Downloads';
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
+	@override String get huyaDownloadTitle => 'Huya downloads';
+	@override String get huyaDownloadDescription => 'Huya video download tasks and their folder';
 	@override String get storageFolderCopyPath => 'Copy path';
 	@override String get localBackupTitle => 'Local backup';
 	@override String get localBackupDescription => 'Write backup files into a folder on this device and restore from it.';
@@ -4871,6 +4874,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadEmptyDesc => 'Tap download on a video and its tasks appear here.';
 	@override String get downloadPhaseQueued => 'Queued';
 	@override String get downloadPhasePaused => 'Paused';
+	@override String get downloadResume => 'Resume download';
 	@override String get downloadPhaseFailed => 'Failed';
 	@override String get downloadPhaseDone => 'Done';
 	@override String get downloadDeleteFile => 'Delete file';
@@ -5977,6 +5981,7 @@ extension on TranslationsEn {
 			'hongguo.reserveFailed' => 'Could not reserve it; try again later.',
 			'hongguo.comments' => 'Comments',
 			'hongguo.commentsEmpty' => 'No comments yet',
+			'hongguo.anonymousUser' => 'Hongguo user',
 			'hongguo.commentsLoadMore' => 'More',
 			'hongguo.danmaku' => 'Danmaku',
 			'hongguo.danmakuOn' => 'Danmaku on',
@@ -6227,9 +6232,9 @@ extension on TranslationsEn {
 			'iptv.importAction' => 'Import',
 			'iptv.importAddressInvalid' => 'Enter a valid subscription address',
 			'iptv.importAddressRequired' => 'Enter the subscription address first',
-			'iptv.importFailed' => 'Import failed',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.importFailed' => 'Import failed',
 			'iptv.importFormat' => 'Unsupported file format',
 			'iptv.importFromFile' => 'From file',
 			'iptv.importFromText' => 'Paste text',
@@ -6741,9 +6746,9 @@ extension on TranslationsEn {
 			'music.songDetailEmpty' => '—',
 			'music.albumPageTitle' => 'Album',
 			'music.artistPageTitle' => 'Artist',
-			'music.viewAlbum' => 'View album',
 			_ => null,
 		} ?? switch (path) {
+			'music.viewAlbum' => 'View album',
 			'music.viewArtist' => 'View artist',
 			'music.albumUnsupported' => 'This source does not support album browsing',
 			'music.artistUnsupported' => 'This source does not support artist browsing',
@@ -7255,9 +7260,9 @@ extension on TranslationsEn {
 			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
 			'music.audioCacheClearAction' => 'Clear',
 			'navigation.groupPrimary' => 'Top pages',
-			'navigation.home' => 'Home',
 			_ => null,
 		} ?? switch (path) {
+			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
 			'navigation.channels' => 'Channels',
 			'navigation.discover' => 'Discover',
@@ -7769,9 +7774,9 @@ extension on TranslationsEn {
 			'room.superChats' => 'Super chat',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'Super chats did not load',
-			'room.superChatCardMembership' => 'Membership',
 			_ => null,
 		} ?? switch (path) {
+			'room.superChatCardMembership' => 'Membership',
 			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
@@ -8283,9 +8288,9 @@ extension on TranslationsEn {
 			'settings.styleDensityOverlap' => 'Overlap',
 			'settings.styleAdvanced' => 'Advanced',
 			'settings.styleFontSize' => 'Size',
-			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
 			'settings.styleFontWeight' => 'Weight',
 			'settings.styleFontWeightDesc' => 'How thick the glyphs are; 400 is regular and 700 is bold.',
 			'settings.styleLetterSpacing' => 'Letter spacing',
@@ -8797,9 +8802,9 @@ extension on TranslationsEn {
 			'settings.playerAdvancedRequiresMpv' => 'These options only affect the mpv engine.',
 			'settings.recordingDescription' => 'Recording folder, file naming and the size cap.',
 			'settings.preferredQuality' => 'Preferred quality',
-			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'Quality on mobile data; Wi-Fi and wired keep the default above.',
 			'settings.qualityAuto' => 'Automatic (site default)',
@@ -9311,9 +9316,9 @@ extension on TranslationsEn {
 			'settings.hongguoCardTags' => 'Source tags',
 			'settings.hongguoCardEpisodes' => 'Episode count',
 			'settings.hongguoCardToday' => '“Today” marker',
-			'settings.hongguoCardScore' => 'Score',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hongguoCardScore' => 'Score',
 			'settings.hongguoCardFavorite' => 'Favorite mark',
 			'settings.hongguoCardHot' => 'Cover heat',
 			'settings.hongguoCardCategory' => 'Cover category',
@@ -9393,6 +9398,8 @@ extension on TranslationsEn {
 			'settings.roomCardGroup' => 'Room card style',
 			'settings.hongguoDownloadTitle' => 'Downloads',
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
+			'settings.huyaDownloadTitle' => 'Huya downloads',
+			'settings.huyaDownloadDescription' => 'Huya video download tasks and their folder',
 			'settings.storageFolderCopyPath' => 'Copy path',
 			'settings.localBackupTitle' => 'Local backup',
 			'settings.localBackupDescription' => 'Write backup files into a folder on this device and restore from it.',
@@ -9823,11 +9830,11 @@ extension on TranslationsEn {
 			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
+			_ => null,
+		} ?? switch (path) {
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',
-			_ => null,
-		} ?? switch (path) {
 			'vod.nextPart' => 'Next part',
 			'vod.previousPart' => 'Previous part',
 			'vod.resumedAt' => ({required Object time}) => 'Resumed at ${time}',
@@ -9970,6 +9977,7 @@ extension on TranslationsEn {
 			'vod.downloadEmptyDesc' => 'Tap download on a video and its tasks appear here.',
 			'vod.downloadPhaseQueued' => 'Queued',
 			'vod.downloadPhasePaused' => 'Paused',
+			'vod.downloadResume' => 'Resume download',
 			'vod.downloadPhaseFailed' => 'Failed',
 			'vod.downloadPhaseDone' => 'Done',
 			'vod.downloadDeleteFile' => 'Delete file',

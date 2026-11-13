@@ -2,6 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
@@ -10,6 +11,7 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_iptv/live_iptv.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart'
     show LivePlayFormatSource, LivePlayLine, LiveStreamFormat, inferStreamFormat;
 import 'package:media_core/media_core.dart';
@@ -28,6 +30,8 @@ import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show catchupUrlOf, iptvClockLabel, showIptvGuide;
 import 'package:pure_live/modules/iptv/views/iptv_zapper.dart' show IptvZapper;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomSleepTimer;
+import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show SleepTimerController, sleepTimerProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// One IPTV channel on media_core's own player: the playlist entry's URL
@@ -98,10 +102,6 @@ const List<(LogicalKeyboardKey, int)> _kDigitKeys = [
 const int _kReconnectMaxAttempts = 5;
 const Duration _kReconnectStableWindow = Duration(seconds: 20);
 
-/// How long the pointer may rest before the picture takes the cursor away,
-/// and a move gives it back — the reference's idle rule.
-const Duration _kCursorIdle = Duration(seconds: 3);
-
 final class IptvPlayPage extends ConsumerStatefulWidget {
   /// Plays [channelId]; [channel] is the card's own object when it opened
   /// the page (a deep link resolves it from the library instead), and
@@ -149,6 +149,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// Captured while the page is alive; `ref` is refused by the time
   /// dispose runs.
   late final RoomPresentationController _presentationNotifier;
+
+  /// The sleep timer this page owns while it stands: its fire stops this
+  /// channel, and leaving disarms it.
+  late final SleepTimerController _sleepTimerNotifier;
 
   /// The presentation mode, followed through a manual listener for the same
   /// reason: the leaving page reads its own field, not `ref`.
@@ -259,6 +263,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // notifier captured while it was alive.
     _presentationNotifier = ref.read(roomPresentationProvider.notifier);
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
+    // The sleep timer must stop this channel, not some global notion of one.
+    _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
+    _sleepTimerNotifier.onFire_ = _onSleepFire;
     WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
@@ -312,6 +319,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
 
   @override
   void dispose() {
+    _sleepTimerNotifier.onFire_ = null;
+    Timer.run(() => _sleepTimerNotifier.start(null));
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -542,13 +551,40 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         _barVisible = true;
       });
     }
-    _cursorTimer = Timer(_kCursorIdle, () {
+    // The station's own seconds name the rest; zero is 常显 — the bar and
+    // the cursor stay while the channel plays.
+    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    if (seconds <= 0) return;
+    _cursorTimer = Timer(Duration(seconds: seconds), () {
       if (!mounted || !_playbackState.playing) return;
       setState(() {
         _cursorHidden = true;
         _barVisible = false;
       });
     });
+  }
+
+  /// A desktop owns the window-fullscreen verb; a phone has no window to
+  /// widen.
+  bool get _desktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux);
+
+  /// The desktop's window-fullscreen: the app window goes full-bleed — the
+  /// channel edge to edge without the system fullscreen's device turn.
+  Future<void> _toggleWindowFullscreen() async {
+    final handle = _handle;
+    if (handle == null) return;
+    await ref.read(roomPresentationProvider.notifier).toggleWindowFullscreen(handle.id);
+  }
+
+  /// The sleep timer's end: the channel pauses where it stands, said with
+  /// the room's own toast.
+  void _onSleepFire() {
+    unawaited(_handle?.pause() ?? Future<void>.value());
+    if (mounted) showDsToast(context: context, title: context.t.room.sleepDone);
   }
 
   /// The picture's double click: fullscreen in, fullscreen out — the
@@ -845,10 +881,17 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
-  /// Stops the channel from the compact window: leave the mode, stop the
-  /// stream, leave the page. The window's ✕ means "I am done watching".
+  /// Stops the channel from the compact window: stop the stream, then leave
+  /// by the window's own close — the ✕ means "I am done watching", and a
+  /// window that cannot close itself falls back to leaving the page.
   void _closeChannel() {
     final handle = _handle;
+    unawaited(handle?.pause());
+    final close = ref.read(roomLeaveProvider);
+    if (close != null) {
+      unawaited(close());
+      return;
+    }
     if (handle != null) unawaited(ref.read(roomPresentationProvider.notifier).exit(handle.id));
     context.pop();
   }
@@ -1040,6 +1083,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // unlabelled glyphs stops naming the channel — while the arrow keys, the
     // zapper panel and the line menu keep doing the same work. The page fills
     // the window, so its width decides.
+    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     final headerWidth = MediaQuery.sizeOf(context).width;
     final headerCompact = headerWidth < 560;
     final headerNarrow = headerWidth < 420;
@@ -1048,12 +1092,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final muted = _effectivelyMuted;
     // The task store is the truth the record button follows, so a recording
     // started in an earlier visit still reads as running.
-    final recording =
-        channel != null &&
-        ref
-            .watch(recordingTasksProvider)
-            .tasks
-            .any((task) => task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording);
+    final recordingTask = channel == null
+        ? null
+        : ref
+              .watch(recordingTasksProvider)
+              .tasks
+              .where((task) => task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording)
+              .firstOrNull;
+    final recording = recordingTask != null;
     // The door stands where the store files a settled take under this channel.
     // Only the store's own facts are read here — this header redraws on the
     // minute tick, and a walk of the recordings folder would then run per
@@ -1130,6 +1176,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     ];
     final demoVerbs = [
       if (channel != null && !headerNarrow) headerVerb(DsIcons.cast, t.room.cast, () => _cast(channel)),
+      // A channel ends itself when the viewer falls asleep: the timer's
+      // panel reads the same choices the room's reads.
+      if (channel != null) headerVerb(DsIcons.timer, t.room.sleep, () => unawaited(showRoomSleepTimer(context))),
       if (hasTake) headerVerb(DsIcons.listVideo, t.iptv.viewRecordings, () => unawaited(_openRecordings())),
     ];
     final verbs = [...navVerbs, ...demoVerbs];
@@ -1177,28 +1226,50 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // out are drawn. The window hides its own caption, so the strip below is
     // the only way back.
     if (presentation == PresentationMode.pip && presentationController.pipOwnsWindow) {
-      return ColoredBox(
-        color: OnVideoColors.ground,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (handle != null)
-              MediaPlayerView(key: _playerKey, handle: handle, fit: ref.watch(playbackSettingsProvider).fit.boxFit),
-            PositionedDirectional(
-              start: 0,
-              end: 0,
-              child: _PipStrip(
-                title: channel == null ? t.common.appTitle : channel.entry.name,
-                playing: playing,
-                muted: muted,
-                onDrag: () => unawaited(ref.read(windowsPipWindowProvider)?.startDragging() ?? Future<void>.value()),
-                onPlayPause: () => unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
-                onMute: handle == null ? null : () => unawaited(_toggleMute()),
-                onRestore: handle == null ? null : () => unawaited(presentationController.exit(handle.id)),
-                onClose: _closeChannel,
-              ),
+      // The small window keeps its page's keys: Escape is the way back to it,
+      // I raises the stream's figures over the picture. The autofocus keeps
+      // the bindings live with nothing else in the window to hold focus.
+      return CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): () {
+            if (handle != null) unawaited(presentationController.exit(handle.id));
+          },
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.keyI): () =>
+                ref.read(playerStatsVisibleProvider.notifier).toggle(),
+        },
+        child: Focus(
+          autofocus: true,
+          child: ColoredBox(
+            color: OnVideoColors.ground,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (handle != null)
+                  MediaPlayerView(key: _playerKey, handle: handle, fit: ref.watch(playbackSettingsProvider).fit.boxFit),
+                PositionedDirectional(
+                  start: 0,
+                  end: 0,
+                  child: _PipStrip(
+                    title: channel == null ? t.common.appTitle : channel.entry.name,
+                    playing: playing,
+                    muted: muted,
+                    onDrag: () =>
+                        unawaited(ref.read(windowsPipWindowProvider)?.startDragging() ?? Future<void>.value()),
+                    onPlayPause: () => unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
+                    onMute: handle == null ? null : () => unawaited(_toggleMute()),
+                    onRestore: handle == null ? null : () => unawaited(presentationController.exit(handle.id)),
+                    onClose: _closeChannel,
+                  ),
+                ),
+                // The stream's own numbers, over the small window's picture.
+                if (handle case final player? when ref.watch(playerStatsVisibleProvider))
+                  Positioned.fill(
+                    child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
@@ -1215,6 +1286,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         // Space plays and pauses, the baseline the other players already bind.
         const SingleActivator(LogicalKeyboardKey.space): () =>
             unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
+        // The stream's own figures: the key every player answers to.
+        if (!tv)
+          const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
         // The reference's number keys: four digits at most, two seconds
         // between the last key and the switch.
         for (final (key, digit) in _kDigitKeys) SingleActivator(key): () => _typeDigit(digit),
@@ -1418,6 +1492,19 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                             if (handle case final player? when ref.watch(playerStatsVisibleProvider))
                               Positioned.fill(
                                 child: IgnorePointer(child: PlayerStatsOverlay(handle: player)),
+                              ),
+                            // The capture's own mark: a breathing red point, the
+                            // minutes it has run, and the tap that ends it — the
+                            // live room's marker read on this page's own recording.
+                            if (recordingTask != null && handle != null)
+                              PositionedDirectional(
+                                top: DsSpace.s12,
+                                end: DsSpace.s12,
+                                child: RecordingIndicator(
+                                  startedAt: recordingTask.startedAt,
+                                  label: t.room.stopRecording,
+                                  onStop: () => unawaited(_recordWithToast()),
+                                ),
                               ),
                             if (_volumeHud case final value?)
                               PositionedDirectional(
@@ -1682,6 +1769,21 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                           ? 'assets/icons/pip-exit.svg'
                                           : 'assets/icons/pip.svg',
                                       onPressed: () => unawaited(_togglePip(handle)),
+                                    ),
+                                  // The window verbs, then the way out of the
+                                  // picture's box: the desktop's
+                                  // window-fullscreen first, then the system
+                                  // fullscreen the phone turns for.
+                                  if (_desktop && presentation != PresentationMode.pip)
+                                    PlayerBarButton(
+                                      label: presentation == PresentationMode.windowFullscreen
+                                          ? t.room.windowFullscreenOff
+                                          : t.room.windowFullscreenOn,
+                                      icon: presentation == PresentationMode.windowFullscreen
+                                          ? DsIcons.copy
+                                          : DsIcons.square,
+                                      selected: presentation == PresentationMode.windowFullscreen,
+                                      onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
                                     ),
                                   PlayerBarButton(
                                     label: fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,

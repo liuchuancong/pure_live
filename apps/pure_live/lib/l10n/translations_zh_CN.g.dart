@@ -1996,6 +1996,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '还没有评论'
 	String get commentsEmpty => '还没有评论';
 
+	/// zh-CN: '红果用户'
+	String get anonymousUser => '红果用户';
+
 	/// zh-CN: '加载更多'
 	String get commentsLoadMore => '加载更多';
 
@@ -12310,6 +12313,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '下载队列、清晰度与保存目录'
 	String get hongguoDownloadDescription => '下载队列、清晰度与保存目录';
 
+	/// zh-CN: '虎牙下载'
+	String get huyaDownloadTitle => '虎牙下载';
+
+	/// zh-CN: '虎牙视频的下载任务与存放文件夹'
+	String get huyaDownloadDescription => '虎牙视频的下载任务与存放文件夹';
+
 	/// zh-CN: '复制路径'
 	String get storageFolderCopyPath => '复制路径';
 
@@ -14071,6 +14080,9 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '已暂停'
 	String get downloadPhasePaused => '已暂停';
 
+	/// zh-CN: '恢复下载'
+	String get downloadResume => '恢复下载';
+
 	/// zh-CN: '下载失败'
 	String get downloadPhaseFailed => '下载失败';
 
@@ -15746,6 +15758,7 @@ extension on Translations {
 			'hongguo.reserveFailed' => '预约失败，请稍后再试。',
 			'hongguo.comments' => '评论',
 			'hongguo.commentsEmpty' => '还没有评论',
+			'hongguo.anonymousUser' => '红果用户',
 			'hongguo.commentsLoadMore' => '加载更多',
 			'hongguo.danmaku' => '弹幕',
 			'hongguo.danmakuOn' => '弹幕开',
@@ -15996,9 +16009,9 @@ extension on Translations {
 			'iptv.importAction' => '导入',
 			'iptv.importAddressInvalid' => '请输入有效的订阅地址',
 			'iptv.importAddressRequired' => '请先输入订阅地址',
-			'iptv.importFailed' => '导入失败',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.importFailed' => '导入失败',
 			'iptv.importFormat' => '不支持的文件格式',
 			'iptv.importFromFile' => '从文件',
 			'iptv.importFromText' => '粘贴文本',
@@ -16510,9 +16523,9 @@ extension on Translations {
 			'music.songDetailEmpty' => '—',
 			'music.albumPageTitle' => '专辑',
 			'music.artistPageTitle' => '歌手',
-			'music.viewAlbum' => '查看专辑',
 			_ => null,
 		} ?? switch (path) {
+			'music.viewAlbum' => '查看专辑',
 			'music.viewArtist' => '查看歌手',
 			'music.albumUnsupported' => '该来源不支持专辑浏览',
 			'music.artistUnsupported' => '该来源不支持歌手浏览',
@@ -17024,9 +17037,9 @@ extension on Translations {
 			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
 			'music.audioCacheClearAction' => '清空',
 			'navigation.groupPrimary' => '高频页面',
-			'navigation.home' => '首页',
 			_ => null,
 		} ?? switch (path) {
+			'navigation.home' => '首页',
 			'navigation.live' => '直播',
 			'navigation.channels' => '频道',
 			'navigation.discover' => '发现',
@@ -17538,9 +17551,9 @@ extension on Translations {
 			'room.superChats' => '醒目留言',
 			'room.superChatEmpty' => '暂无醒目留言',
 			'room.superChatFailed' => '醒目留言加载失败',
-			'room.superChatCardMembership' => '会员',
 			_ => null,
 		} ?? switch (path) {
+			'room.superChatCardMembership' => '会员',
 			'room.superChatCardSubscription' => '订阅',
 			'room.onlineViewers' => '在线',
 			'room.popularity' => '热度',
@@ -18052,9 +18065,9 @@ extension on Translations {
 			'settings.styleDensityOverlap' => '重叠',
 			'settings.styleAdvanced' => '高级设置',
 			'settings.styleFontSize' => '大小',
-			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			'settings.styleFontWeight' => '粗细',
 			'settings.styleFontWeightDesc' => '字形的粗细；400 为常规，700 为加粗。',
 			'settings.styleLetterSpacing' => '文字间距',
@@ -18566,9 +18579,9 @@ extension on Translations {
 			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
-			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '移动数据下的清晰度；Wi-Fi 与有线沿用上面的首选。',
 			'settings.qualityAuto' => '自动（站点默认）',
@@ -19080,9 +19093,9 @@ extension on Translations {
 			'settings.hongguoCardTags' => '来源标签',
 			'settings.hongguoCardEpisodes' => '集数',
 			'settings.hongguoCardToday' => '今日标记',
-			'settings.hongguoCardScore' => '评分',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hongguoCardScore' => '评分',
 			'settings.hongguoCardFavorite' => '收藏标记',
 			'settings.hongguoCardHot' => '封面热度',
 			'settings.hongguoCardCategory' => '封面分类',
@@ -19162,6 +19175,8 @@ extension on Translations {
 			'settings.roomCardGroup' => '房间卡片样式',
 			'settings.hongguoDownloadTitle' => '视频下载',
 			'settings.hongguoDownloadDescription' => '下载队列、清晰度与保存目录',
+			'settings.huyaDownloadTitle' => '虎牙下载',
+			'settings.huyaDownloadDescription' => '虎牙视频的下载任务与存放文件夹',
 			'settings.storageFolderCopyPath' => '复制路径',
 			'settings.localBackupTitle' => '本地备份',
 			'settings.localBackupDescription' => '把备份文件写进本机文件夹，并从中恢复。',
@@ -19592,11 +19607,11 @@ extension on Translations {
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
+			_ => null,
+		} ?? switch (path) {
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',
-			_ => null,
-		} ?? switch (path) {
 			'vod.nextPart' => '下一P',
 			'vod.previousPart' => '上一P',
 			'vod.resumedAt' => ({required Object time}) => '已为你续播到 ${time}',
@@ -19739,6 +19754,7 @@ extension on Translations {
 			'vod.downloadEmptyDesc' => '在视频页点「下载」，任务会出现在这里。',
 			'vod.downloadPhaseQueued' => '排队中',
 			'vod.downloadPhasePaused' => '已暂停',
+			'vod.downloadResume' => '恢复下载',
 			'vod.downloadPhaseFailed' => '下载失败',
 			'vod.downloadPhaseDone' => '已完成',
 			'vod.downloadDeleteFile' => '删除文件',

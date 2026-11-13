@@ -6,6 +6,7 @@ library;
 
 export 'controller/huya_video.dart';
 export 'controller/huya_video_playback.dart';
+export 'pages/huya_downloads_pane.dart';
 export 'pages/huya_search_page.dart';
 export 'pages/huya_uploader_page.dart';
 export 'pages/huya_video_page.dart';

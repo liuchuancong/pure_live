@@ -2,6 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
@@ -151,6 +152,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   double _volume = 1;
   double _speed = 1;
 
+  /// The arrow key's seek: the presses of one held key step bigger each
+  /// time, and the count forgets itself once the key rests.
+  int _keySeekSteps = 0;
+  Timer? _keySeekTimer;
+
   /// The volume a wheel is setting right now; null while no gesture shows it.
   /// A vertical drag belongs to the episodes here, so this surface answers the
   /// wheel only — the chip and the fade are the room's.
@@ -241,6 +247,18 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   PresentationMode _presentationMode = PresentationMode.normal;
 
   bool get _effectivelyMuted => _muted || _globalMute;
+
+  /// A desktop owns the window-fullscreen verb; a phone has no window to
+  /// widen.
+  bool get _desktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux);
+
+  /// The rate ladder the speed panel lists; the keyboard walks it step by
+  /// step.
+  static const List<double> _speedChoices = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
   @override
   void initState() {
@@ -414,9 +432,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           : episodes.firstWhere((episode) => episode.vid == widget.episodeVid, orElse: () => episodes.first);
       await _openEpisode(chosen, resume: _resumeSeconds ?? resume?.seconds);
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.play')
-          .warning('playback step failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.play').warning('playback step failed', fields: {'error': '$error'});
       if (!mounted || _disposed) return;
       setState(() {
         _loading = false;
@@ -528,9 +544,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         _error = null;
       });
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.play')
-          .warning('playback step failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.play').warning('playback step failed', fields: {'error': '$error'});
       if (!mounted || _disposed) return;
       // The handle may still hold the previous episode; it is not the
       // episode this page now names, so it goes rather than playing on
@@ -770,8 +784,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       if (size.width <= 0 || size.height <= 0) return;
       _aspectRatio = size.width / size.height;
       // The fullscreen and compact-window drivers shape their surfaces from
-      // the picture's own size.
+      // the picture's own size; the small window locks to the video instead
+      // of the config's 16:9.
       ref.read(fullscreenDriverProvider).onVideoSize(size.width, size.height);
+      ref.read(pipDriverProvider).onVideoSize(size.width, size.height);
     });
     _transportSub = handle.playbackStream.listen((state) {
       if (!mounted) return;
@@ -847,9 +863,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     try {
       playing ? await handle.pause() : await handle.play();
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.play')
-          .warning('playback step failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.play').warning('playback step failed', fields: {'error': '$error'});
       if (mounted) setState(() => _error = '$error');
     }
   }
@@ -860,9 +874,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     try {
       await handle.seek(Duration(milliseconds: (seconds * 1000).round()));
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.play')
-          .warning('playback step failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.play').warning('playback step failed', fields: {'error': '$error'});
       if (mounted) setState(() => _error = '$error');
     }
   }
@@ -1060,6 +1072,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     }
   }
 
+  /// The desktop's window-fullscreen: the app window goes full-bleed, the
+  /// system chrome out of the way, the page the viewer's whole view.
+  Future<void> _toggleWindowFullscreen() async {
+    final handle = _handle;
+    if (handle == null) return;
+    await _presentationNotifier.toggleWindowFullscreen(handle.id);
+  }
+
   Future<void> _toggleFullscreen() async {
     final handle = _handle;
     if (handle == null) return;
@@ -1215,13 +1235,27 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final colors = DsTheme.colorsOf(context);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     final immersive = presentationController.modeOwnsWindow(presentation);
-    if (immersive) {
-      return Scaffold(backgroundColor: colors.canvas, body: _playerSurface(context, immersive: true));
-    }
     // The arrows mirror the room page: up and down take the wheel's step (the
     // 画质与音频 setting) toward the volume, left and right skip five seconds.
     // A TV keeps its arrows for focus; the remote drives the volume itself.
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    if (immersive) {
+      // The owned window keeps the keyboard its page had: Escape backs out of
+      // the mode it sits in, I raises the stream's figures. The chrome's own
+      // autofocus keeps the bindings live while the strip is up.
+      return Scaffold(
+        backgroundColor: colors.canvas,
+        body: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): _leave,
+            if (!tv)
+              const SingleActivator(LogicalKeyboardKey.keyI): () =>
+                  ref.read(playerStatsVisibleProvider.notifier).toggle(),
+          },
+          child: Focus(autofocus: true, child: _playerSurface(context, immersive: true)),
+        ),
+      );
+    }
     final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
     void nudgeVolume(double delta) => unawaited(_setVolume((_volume + delta).clamp(0.0, 1.0)));
     void nudgeSeek(double delta) {
@@ -1229,6 +1263,33 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       if (position == null) return;
       final target = position.inMilliseconds / 1000 + delta;
       unawaited(_seekTo(target < 0 ? 0 : target));
+    }
+
+    // A held arrow keeps stepping, and each step in a row is bigger: five
+    // seconds, then ten, then twenty, so reaching the middle of an episode
+    // is one key rather than a hundred taps.
+    void nudgeKeySeek(int direction) {
+      _wake();
+      _keySeekSteps++;
+      _keySeekTimer?.cancel();
+      _keySeekTimer = Timer(const Duration(milliseconds: 400), () {
+        if (mounted) _keySeekSteps = 0;
+      });
+      nudgeSeek((direction * 5 * _keySeekSteps).toDouble());
+    }
+
+    // One step along the speed panel's own ladder, the keyboard's way
+    // through it.
+    void stepSpeed(int direction) {
+      const choices = _speedChoices;
+      var nearest = 0;
+      for (var i = 1; i < choices.length; i++) {
+        if ((choices[i] - _speed).abs() < (choices[nearest] - _speed).abs()) nearest = i;
+      }
+      final next = (nearest + (direction > 0 ? 1 : -1)).clamp(0, choices.length - 1);
+      if (choices[next] == _speed) return;
+      _wake();
+      unawaited(_setSpeed(choices[next]));
     }
 
     return PlayerBarTier(
@@ -1245,6 +1306,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             _wake();
             unawaited(_toggleFullscreen());
           },
+          // The stream's own figures: the key every player answers to, over
+          // the same panel the bar's menu item opens.
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.keyI): () =>
+                ref.read(playerStatsVisibleProvider.notifier).toggle(),
           const SingleActivator(LogicalKeyboardKey.escape): _leave,
           // While the bar is down a TV's arrows and OK have nothing to move
           // through, so they raise it; while it is up they stay with focus.
@@ -1257,8 +1323,17 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           },
           if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
           if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
-          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
-          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeKeySeek(-1),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeKeySeek(1),
+          // The speed ladder and the sound: comma and period walk the panel's
+          // own choices, M flips the mute.
+          if (!tv) const SingleActivator(LogicalKeyboardKey.comma): () => stepSpeed(-1),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.period): () => stepSpeed(1),
+          if (!tv)
+            const SingleActivator(LogicalKeyboardKey.keyM): () {
+              _wake();
+              unawaited(_setMuted(muted: !_effectivelyMuted));
+            },
         },
         child: Scaffold(
           backgroundColor: colors.surface,
@@ -1869,7 +1944,14 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                                     if (immersive)
                                       DsButton(
                                         variant: DsButtonVariant.ghost,
-                                        onPressed: () => unawaited(_toggleFullscreen()),
+                                        // The small window has no fullscreen to
+                                        // fall into: back to the page is what
+                                        // 「回选集」 means there.
+                                        onPressed: () => unawaited(
+                                          ref.read(roomPresentationProvider) == PresentationMode.pip
+                                              ? _togglePip()
+                                              : _toggleFullscreen(),
+                                        ),
                                         child: Text(t.hongguo.backToEpisodes),
                                       ),
                                     if (_autoRecovery)
@@ -1946,6 +2028,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   Widget _topStrip(Translations t, HongguoSeriesDetail? detail) {
     final theme = DsTheme.of(context);
     final episode = _episode;
+    // The strip answers the mode it sits in: in the small window the leading
+    // pill is the way back to the page, and the title itself moves the
+    // window — a grab drags it, a double press restores.
+    final inPip = ref.watch(roomPresentationProvider) == PresentationMode.pip;
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
       decoration: const BoxDecoration(
@@ -1959,28 +2045,70 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         spacing: DsSpace.s8,
         children: [
           PlayerGlassPill(
-            child: PlayerBarButton(
-              icon: DsIcons.minimize2,
-              label: t.hongguo.exitFullscreen,
-              autofocus: true,
-              onPressed: () => unawaited(_toggleFullscreen()),
-            ),
+            child: inPip
+                ? PlayerBarButton(
+                    iconAsset: 'assets/icons/pip-exit.svg',
+                    label: t.room.pipOff,
+                    autofocus: true,
+                    onPressed: () {
+                      _wake();
+                      unawaited(_togglePip());
+                    },
+                  )
+                : PlayerBarButton(
+                    icon: DsIcons.minimize2,
+                    label: t.hongguo.exitFullscreen,
+                    autofocus: true,
+                    onPressed: () => unawaited(_toggleFullscreen()),
+                  ),
           ),
           Expanded(
-            child: Text(
-              detail == null
-                  ? ''
-                  : episode == null
-                  ? detail.meta.title
-                  : '${detail.meta.title} · ${t.hongguo.episodeLabel(index: episode.index)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: inPip
+                  ? (_) {
+                      final window = ref.read(windowsPipWindowProvider);
+                      if (window != null) unawaited(window.startDragging());
+                    }
+                  : null,
+              onDoubleTap: inPip
+                  ? () {
+                      _wake();
+                      unawaited(_togglePip());
+                    }
+                  : null,
+              child: Text(
+                detail == null
+                    ? ''
+                    : episode == null
+                    ? detail.meta.title
+                    : '${detail.meta.title} · ${t.hongguo.episodeLabel(index: episode.index)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
+              ),
             ),
           ),
           // The stage's corner cluster rides the strip in fullscreen: the
           // capture, the download and the switches the bar no longer carries.
           if (detail != null) _stageCornerActions(t, detail),
+          // The small window's own close: done watching here means the window
+          // goes, and the page stays where its host left it. A window that
+          // cannot close carries no verb.
+          if (inPip)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.x,
+                label: t.common.close,
+                onPressed: () {
+                  final close = ref.read(roomLeaveProvider);
+                  if (close == null) return;
+                  _wake();
+                  unawaited(_handle?.pause());
+                  unawaited(close());
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -2081,10 +2209,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                                 unawaited(_toggleAudioOnly());
                               },
                       ),
-                      if (pipIn)
+                      // In the small window the strip's leading pill is the
+                      // way back, so the menu would be the same verb twice.
+                      if (pipIn && !pipInMode)
                         DsMenuItem(
-                          leading: DsIcon(pipInMode ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture),
-                          label: Text(pipInMode ? t.room.pipOff : t.room.pipOn),
+                          leading: const DsIcon(DsIcons.pictureInPicture),
+                          label: Text(t.room.pipOn),
                           onPressed: () => unawaited(_togglePip()),
                         ),
                       DsMenuItem(
@@ -2240,11 +2370,29 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     semanticLabel: t.hongguo.quality,
                     compact: compact,
                   ),
-                  PlayerBarButton(
-                    icon: immersive ? DsIcons.minimize2 : DsIcons.maximize2,
-                    label: immersive ? t.hongguo.exitFullscreen : t.hongguo.fullscreen,
-                    onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
-                  ),
+                  // The window verbs, then the way out of the picture's box —
+                  // the room bar's pair: the desktop's window-fullscreen
+                  // first, then the system fullscreen the phone turns for.
+                  if (_desktop && ref.watch(roomPresentationProvider) != PresentationMode.pip)
+                    PlayerBarButton(
+                      icon: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen
+                          ? DsIcons.copy
+                          : DsIcons.square,
+                      label: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen
+                          ? t.room.windowFullscreenOff
+                          : t.room.windowFullscreenOn,
+                      selected: ref.watch(roomPresentationProvider) == PresentationMode.windowFullscreen,
+                      onPressed: handle == null ? null : () => unawaited(_toggleWindowFullscreen()),
+                    ),
+                  // The small window has no fullscreen of its own to toggle —
+                  // its way back rides the strip's leading pill — so the verb
+                  // stands down there.
+                  if (ref.watch(roomPresentationProvider) != PresentationMode.pip)
+                    PlayerBarButton(
+                      icon: immersive ? DsIcons.minimize2 : DsIcons.maximize2,
+                      label: immersive ? t.hongguo.exitFullscreen : t.hongguo.fullscreen,
+                      onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
+                    ),
                 ],
               );
             },
@@ -2396,7 +2544,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           title: t.hongguo.speed,
           width: _panelWidth(panel),
           children: [
-            for (final speed in const <double>[0.5, 0.75, 1, 1.25, 1.5, 2])
+            for (final speed in _speedChoices)
               PlayerPanelOption(
                 label: '${speed == speed.roundToDouble() ? speed.toInt() : speed}x',
                 selected: speed == _speed,
@@ -2658,6 +2806,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     // An open catalogue holds the bar up; a paused stream keeps it too.
     if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    // The setting's zero is 常显: the bar never hides on idle while the
+    // drama plays.
+    if (seconds <= 0) return;
     _hideTimer = Timer(Duration(seconds: seconds), () {
       if (mounted && (_transport?.isPlaying ?? false) && _openPanel == null) {
         setState(() => _controlsVisible = false);

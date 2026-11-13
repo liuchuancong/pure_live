@@ -61,24 +61,27 @@ final class _HongguoCommentPanelState extends ConsumerState<HongguoCommentPanel>
       spacing: DsSpace.s8,
       children: [
         if (widget.showTitle)
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Text(title, style: theme.typography.title.copyWith(color: colors.text)),
-              ),
-              if (_episodeTab && comments.total > 0)
-                DsBadge(label: Text('${comments.total}'), dot: false)
-              else if (!_episodeTab && reviews != null && reviews.rating > 0)
-                DsBadge(
-                  label: Text(
-                    reviews.ratingCount > 0
-                        ? '${t.hongguo.rating(score: reviews.rating.toStringAsFixed(1))} · ${t.hongguo.ratingCount(count: reviews.ratingCount)}'
-                        : t.hongguo.rating(score: reviews.rating.toStringAsFixed(1)),
-                  ),
-                  dot: false,
+          Semantics(
+            header: true,
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(title, style: theme.typography.title.copyWith(color: colors.text)),
                 ),
-            ],
+                if (_episodeTab && comments.total > 0)
+                  DsBadge(label: Text('${comments.total}'), dot: false)
+                else if (!_episodeTab && reviews != null && reviews.rating > 0)
+                  DsBadge(
+                    label: Text(
+                      reviews.ratingCount > 0
+                          ? '${t.hongguo.rating(score: reviews.rating.toStringAsFixed(1))} · ${t.hongguo.ratingCount(count: reviews.ratingCount)}'
+                          : t.hongguo.rating(score: reviews.rating.toStringAsFixed(1)),
+                    ),
+                    dot: false,
+                  ),
+              ],
+            ),
           ),
         Align(
           alignment: AlignmentDirectional.centerStart,
@@ -143,12 +146,13 @@ final class _CommentsListState extends ConsumerState<_CommentsList> {
     final colors = DsTheme.colorsOf(context);
     final state = ref.watch(hongguoCommentsProvider);
     final episode = widget.episodeVid;
+    final items = state.items;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        if (state.loading && state.items.isEmpty) const Center(child: DsSpinner()),
-        if (state.error != null && state.items.isEmpty)
+        if (state.loading && items.isEmpty) const Center(child: DsSpinner()),
+        if (state.error != null && items.isEmpty)
           Row(
             spacing: DsSpace.s8,
             children: [
@@ -163,51 +167,63 @@ final class _CommentsListState extends ConsumerState<_CommentsList> {
               ),
             ],
           ),
-        if (!state.loading && state.items.isEmpty && state.error == null && episode.isNotEmpty)
+        if (!state.loading && items.isEmpty && state.error == null && episode.isNotEmpty)
           Text(t.hongguo.commentsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        for (final comment in state.items)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s8,
-              children: [
-                DsAvatar(
-                  initials: comment.author.isEmpty ? 'HG' : avatarInitials(comment.author),
-                  size: DsSize.xs,
-                  toneIndex: DsAvatar.toneFor(comment.id),
-                ),
-                Expanded(
-                  child: Column(
+        // The rows run in their own block with no spacing of its own: each
+        // row carries its vertical padding and a hairline sits between
+        // neighbours, so the line keeps its breathing room on both sides —
+        // the station's own comment list, one thin rule to a row.
+        if (items.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < items.length; i++) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s3,
+                    spacing: DsSpace.s8,
                     children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              comment.author.isEmpty ? '红果用户' : comment.author,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textMuted),
-                            ),
-                          ),
-                          DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            '${comment.likes}',
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
+                      DsAvatar(
+                        initials: items[i].author.isEmpty ? 'HG' : avatarInitials(items[i].author),
+                        size: DsSize.xs,
+                        toneIndex: DsAvatar.toneFor(items[i].id),
                       ),
-                      Text(comment.content, style: theme.typography.body.copyWith(color: colors.text)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: DsSpace.s3,
+                          children: [
+                            Row(
+                              spacing: DsSpace.s8,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    items[i].author.isEmpty ? t.hongguo.anonymousUser : items[i].author,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                  ),
+                                ),
+                                DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
+                                Text(
+                                  '${items[i].likes}',
+                                  style: theme.typography.numeric(
+                                    theme.typography.caption.copyWith(color: colors.textSubtle),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(items[i].content, style: theme.typography.body.copyWith(color: colors.text)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
+                if (i < items.length - 1) const DsDivider(),
               ],
-            ),
+            ],
           ),
         if (state.hasMore && state.loading) const Center(child: DsSpinner(style: DsSpinnerStyle(size: 20))),
       ],
@@ -279,56 +295,70 @@ final class _ReviewsListState extends ConsumerState<_ReviewsList> {
           ),
         if (data != null && reviews.isEmpty)
           Text(t.hongguo.reviewsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        for (final review in reviews)
-          DsCard(
-            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s12,
-              children: [
-                DsAvatar(
-                  initials: review.author.isEmpty ? 'HG' : avatarInitials(review.author),
-                  size: DsSize.sm,
-                  toneIndex: DsAvatar.toneFor(review.id),
-                ),
-                Expanded(
-                  child: Column(
+        // The reviews share the comments' row language — one thin rule to a
+        // row, the row carrying its own padding — where each review used to
+        // sit in its own card; a page speaking one list keeps its rhythm.
+        if (reviews.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < reviews.length; i++) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
+                    spacing: DsSpace.s12,
                     children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              review.author.isEmpty ? '红果用户' : review.author,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                            ),
-                          ),
-                          if (review.rating > 0)
-                            Text(
-                              review.rating.toStringAsFixed(1),
-                              style: theme.typography.numeric(
-                                theme.typography.caption.copyWith(color: colors.textSubtle),
-                              ),
-                            ),
-                          DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            '${review.likes}',
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
+                      DsAvatar(
+                        initials: reviews[i].author.isEmpty ? 'HG' : avatarInitials(reviews[i].author),
+                        size: DsSize.sm,
+                        toneIndex: DsAvatar.toneFor(reviews[i].id),
                       ),
-                      Text(review.content, style: theme.typography.body.copyWith(color: colors.text)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: DsSpace.s4,
+                          children: [
+                            Row(
+                              spacing: DsSpace.s8,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    reviews[i].author.isEmpty ? t.hongguo.anonymousUser : reviews[i].author,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.caption.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.text,
+                                    ),
+                                  ),
+                                ),
+                                if (reviews[i].rating > 0)
+                                  Text(
+                                    reviews[i].rating.toStringAsFixed(1),
+                                    style: theme.typography.numeric(
+                                      theme.typography.caption.copyWith(color: colors.textSubtle),
+                                    ),
+                                  ),
+                                DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
+                                Text(
+                                  '${reviews[i].likes}',
+                                  style: theme.typography.numeric(
+                                    theme.typography.caption.copyWith(color: colors.textSubtle),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(reviews[i].content, style: theme.typography.body.copyWith(color: colors.text)),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
+                if (i < reviews.length - 1) const DsDivider(),
               ],
-            ),
+            ],
           ),
       ],
     );

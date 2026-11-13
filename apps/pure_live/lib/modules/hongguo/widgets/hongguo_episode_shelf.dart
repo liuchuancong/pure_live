@@ -175,8 +175,15 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
         Row(
           spacing: DsSpace.s8,
           children: [
+            // The total rides the title as the season page's does — a series
+            // that fits one page otherwise never says how many it holds.
             Expanded(
-              child: Text(t.hongguo.episodes, style: theme.typography.title.copyWith(color: colors.text)),
+              child: Text(
+                '${t.hongguo.episodes} · ${episodes.length}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
             ),
             if (groups > 1) ...[
               Text('$first–$last / ${episodes.length}', style: muted),

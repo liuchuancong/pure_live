@@ -234,6 +234,7 @@
   "downloadEmptyDesc": "在视频页点「下载」，任务会出现在这里。",
   "downloadPhaseQueued": "排队中",
   "downloadPhasePaused": "已暂停",
+  "downloadResume": "恢复下载",
   "downloadPhaseFailed": "下载失败",
   "downloadPhaseDone": "已完成",
   "downloadDeleteFile": "删除文件",

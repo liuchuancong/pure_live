@@ -6,6 +6,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, BarrageItem, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouter;
@@ -36,8 +37,10 @@ import 'package:pure_live/app/app.dart'
         fullscreenDriverProvider,
         pipDriverProvider,
         resolvedFontFamily,
+        roomLeaveProvider,
         roomPresentationProvider,
-        routeCaptionTitle;
+        routeCaptionTitle,
+        windowsPipWindowProvider;
 import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart' show WallpaperVideoPlayer;
@@ -835,6 +838,67 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     onAutoNext: widget.items.length > 1 ? (value) => setState(() => _autoNext = value) : null,
   );
 
+  /// The compact window's strip: the restore pill leads, the title carries
+  /// the window's drag and the double press that restores, and the ✕ closes
+  /// the window through the same leave the other windows close by.
+  Widget _pipStrip(Translations t) {
+    final theme = DsTheme.of(context);
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.topCenter,
+          end: AlignmentDirectional.bottomCenter,
+          colors: [Color(0xB3000000), Color(0x00000000)],
+        ),
+      ),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          PlayerGlassPill(
+            child: PlayerBarButton(
+              iconAsset: 'assets/icons/pip-exit.svg',
+              label: t.room.pipOff,
+              autofocus: true,
+              onPressed: () {
+                final handle = _handle;
+                if (handle != null) unawaited(_presentation.exit(handle.id));
+              },
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (_) => unawaited(ref.read(windowsPipWindowProvider)?.startDragging() ?? Future<void>.value()),
+              onDoubleTap: () {
+                final handle = _handle;
+                if (handle != null) unawaited(_presentation.exit(handle.id));
+              },
+              child: Text(
+                _current?.title ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
+              ),
+            ),
+          ),
+          PlayerGlassPill(
+            child: PlayerBarButton(
+              icon: DsIcons.x,
+              label: t.common.close,
+              onPressed: () {
+                final close = ref.read(roomLeaveProvider);
+                if (close == null) return;
+                unawaited(_handle?.pause());
+                unawaited(close());
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// The immersive layout, the room's own arrangement: the picture fills the
   /// window and the file list — which the inline layout keeps beside it —
   /// lives on a drawer at the picture's end edge. A 28px glass tab summons
@@ -842,62 +906,98 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// it, so a playing take is one hover away from being alone.
   Widget _immersiveStage(Translations t, {required bool compact, required bool pipOwned}) {
     final stage = _stageOf(t, compact: compact, immersive: true);
-    if (pipOwned) return stage;
-    final colors = DsTheme.colorsOf(context);
-    return Stack(
-      children: [
-        Positioned.fill(child: stage),
-        PositionedDirectional(
-          top: 0,
-          bottom: 0,
-          end: 0,
-          child: MouseRegion(
-            onExit: _drawerOpen ? (_) => _setDrawerOpen(false) : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              width: _drawerOpen ? _drawerWidth : _drawerTabWidth,
-              child: _drawerOpen
-                  ? DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: colors.surface.withValues(alpha: 0.94),
-                        border: BorderDirectional(start: BorderSide(color: colors.border)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s4, 0),
-                            child: Row(
-                              children: [
-                                const Spacer(),
-                                DsButton.icon(
-                                  variant: DsButtonVariant.ghost,
-                                  size: DsSize.sm,
-                                  onPressed: () => _setDrawerOpen(false),
-                                  icon: const DsIcon(DsIcons.panelRightClose),
-                                  semanticLabel: t.common.previewCollapseList,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(child: _previewList()),
-                        ],
-                      ),
-                    )
-                  : Center(
-                      child: MouseRegion(
-                        onEnter: (_) => _setDrawerOpen(true),
-                        child: GestureDetector(
-                          onTap: () => _setDrawerOpen(true),
-                          child: _DrawerTab(label: t.common.previewDrawerLabel),
-                        ),
-                      ),
-                    ),
-            ),
+    if (pipOwned) {
+      // The compact window keeps its page's keys: Escape is the way back to
+      // it, I raises the stream's figures over the picture. The strip below
+      // is its only chrome — the restore verb leads, the title drags the
+      // window, and the ✕ closes it.
+      return CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): () {
+            final handle = _handle;
+            if (handle != null) unawaited(_presentation.exit(handle.id));
+          },
+          const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+        },
+        child: Focus(
+          autofocus: true,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              stage,
+              PositionedDirectional(top: 0, start: 0, end: 0, child: _pipStrip(t)),
+            ],
           ),
         ),
-      ],
+      );
+    }
+    final colors = DsTheme.colorsOf(context);
+    // The fullscreen picture keeps its page's keys: Escape hands the screen
+    // back (the drawer gives way first, as it does to back), I raises the
+    // stream's figures.
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () => _leave(context, immersive: true, narrow: false),
+        const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Stack(
+          children: [
+            Positioned.fill(child: stage),
+            PositionedDirectional(
+              top: 0,
+              bottom: 0,
+              end: 0,
+              child: MouseRegion(
+                onExit: _drawerOpen ? (_) => _setDrawerOpen(false) : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  width: _drawerOpen ? _drawerWidth : _drawerTabWidth,
+                  child: _drawerOpen
+                      ? DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.surface.withValues(alpha: 0.94),
+                            border: BorderDirectional(start: BorderSide(color: colors.border)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s4, 0),
+                                child: Row(
+                                  children: [
+                                    const Spacer(),
+                                    DsButton.icon(
+                                      variant: DsButtonVariant.ghost,
+                                      size: DsSize.sm,
+                                      onPressed: () => _setDrawerOpen(false),
+                                      icon: const DsIcon(DsIcons.panelRightClose),
+                                      semanticLabel: t.common.previewCollapseList,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(child: _previewList()),
+                            ],
+                          ),
+                        )
+                      : Center(
+                          child: MouseRegion(
+                            onEnter: (_) => _setDrawerOpen(true),
+                            child: GestureDetector(
+                              onTap: () => _setDrawerOpen(true),
+                              child: _DrawerTab(label: t.common.previewDrawerLabel),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1068,7 +1168,10 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             spacing: DsSpace.s8,
             children: [
               const DsIcon(DsIcons.playCircle, size: 32, color: OnVideoColors.inkSubtle),
-              Text(t.common.previewEmpty, style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground)),
+              Text(
+                t.common.previewEmpty,
+                style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground),
+              ),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Text(
@@ -1090,7 +1193,10 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             spacing: DsSpace.s8,
             children: [
               const DsIcon(DsIcons.fileX, size: 32, color: OnVideoColors.inkSubtle),
-              Text(t.common.previewFileMissing, style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground)),
+              Text(
+                t.common.previewFileMissing,
+                style: DsTheme.of(context).typography.title.copyWith(color: OnVideoColors.foreground),
+              ),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Text(

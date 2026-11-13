@@ -29,6 +29,8 @@ import 'package:media_core_danmaku/media_core_danmaku.dart' show BarrageItemMapp
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomSleepTimer;
+import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show SleepTimerController, sleepTimerProvider;
 import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
@@ -247,6 +249,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   // runs, and the leaving page must still exit its presentation mode and
   // release its handle.
   late final RoomPresentationController _presentationNotifier;
+
+  /// The sleep timer this page owns while it stands: its fire stops this
+  /// video, and leaving disarms it.
+  late final SleepTimerController _sleepTimerNotifier;
   late final PlayerKernel _kernel;
 
   /// The presentation mode, followed through a manual listener for the same
@@ -259,6 +265,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   void initState() {
     super.initState();
     _presentationNotifier = ref.read(roomPresentationProvider.notifier);
+    // The sleep timer must stop this video, not some global notion of one.
+    _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
+    _sleepTimerNotifier.onFire_ = _onSleepFire;
     _kernel = ref.read(playerKernelProvider);
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     WidgetsBinding.instance.addObserver(this);
@@ -360,6 +369,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
+    _sleepTimerNotifier.onFire_ = null;
+    Timer.run(() => _sleepTimerNotifier.start(null));
     _routeObserver?.unsubscribe(this);
     _saveProgress(force: true);
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
@@ -1252,6 +1263,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     } on Object {
       // The switch says what was asked; the next handle gets the same try.
     }
+  }
+
+  /// The sleep timer's end: the part pauses where it stands, said with the
+  /// room's own toast.
+  void _onSleepFire() {
+    unawaited(_handle?.pause() ?? Future<void>.value());
+    if (mounted) showDsToast(context: context, title: context.t.room.sleepDone);
   }
 
   /// Keeps the frame the part is showing in the viewer's screenshot folder, and
@@ -2258,6 +2276,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 _wake();
                 unawaited(_startDownload());
               },
+      ),
+      // A long video ends itself: the timer's panel reads the same choices
+      // the room's reads, and its fire pauses the part where it stands.
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.timer),
+        label: Text(t.room.sleep),
+        onPressed: () => unawaited(showRoomSleepTimer(context)),
       ),
     ];
   }

@@ -12,6 +12,8 @@ export 'fullscreen_orientation.dart';
 export 'media_bar_button.dart';
 export 'on_video_colors.dart';
 export 'player_bar_tier.dart';
+export 'player_glass_card.dart';
+export 'player_more_container.dart';
 export 'player_overlay.dart';
 export 'player_screenshot.dart';
 export 'player_stats_overlay.dart';

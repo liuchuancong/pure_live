@@ -201,7 +201,15 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // playback pages are not this module's, and Huya has no settings page of
     // its own yet — its player opens at the station's rendition ladder and the
     // viewer switches quality in the player's own menu.
-    settingsGroups: [_sharedAppearanceGroup, _sharedPlaybackGroup, _systemGroup, _aboutGroup],
+    settingsGroups: [
+      _sharedAppearanceGroup,
+      // The station's own download queue — its page had none before, and
+      // the queue is the one thing a viewer manages between videos.
+      (labelKey: 'groupHuya', sections: [SettingsSection.huyaDownload]),
+      _sharedPlaybackGroup,
+      _systemGroup,
+      _aboutGroup,
+    ],
   ),
   AppModule.music: ModuleNavigation(
     // Two blocks above the tools: what the source suggests — 推荐 and 精选 —

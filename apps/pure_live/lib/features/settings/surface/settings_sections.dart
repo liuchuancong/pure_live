@@ -94,6 +94,7 @@ enum SettingsSection {
   hongguoDownload(DsIcons.download),
   hongguoDanmaku(DsIcons.captions),
   hongguoDevice(DsIcons.smartphone),
+  huyaDownload(DsIcons.download),
   // Deep-link aliases: their content lives on another page now (see
   // [aliasTarget]); kept readable so stored links never 404.
   personalization(DsIcons.brushFlat),
@@ -190,6 +191,7 @@ enum SettingsSection {
     SettingsSection.hongguoDownload => t.settings.hongguoDownloadTitle,
     SettingsSection.hongguoDanmaku => t.settings.navHongguoDanmaku,
     SettingsSection.hongguoDevice => t.settings.navHongguoDevice,
+    SettingsSection.huyaDownload => t.settings.huyaDownloadTitle,
     // Aliases: their pre-merge words, kept for anything still naming them.
     SettingsSection.personalization => t.settings.navPersonalization,
     SettingsSection.live => t.settings.navLive,
@@ -278,6 +280,7 @@ enum SettingsSection {
     SettingsSection.hongguoDownload => t.settings.hongguoDownloadDescription,
     SettingsSection.hongguoDanmaku => t.settings.hongguoDanmakuDesc,
     SettingsSection.hongguoDevice => t.settings.hongguoDeviceDesc,
+    SettingsSection.huyaDownload => t.settings.huyaDownloadDescription,
     SettingsSection.personalization => t.settings.personalizationDescription,
     SettingsSection.live => t.settings.liveSettingsDescription,
     SettingsSection.playback => t.settings.playbackSettingsDescription,
@@ -488,6 +491,7 @@ String settingsGroupLabel(Translations t, String key) => switch (key) {
   'groupVod' => t.settings.navVod,
   'groupMusic' => t.settings.navMusic,
   'groupHongguo' => t.settings.navHongguo,
+  'groupHuya' => t.settings.huyaDownloadTitle,
   'groupData' => t.settings.groupData,
   'groupAbout' => t.settings.groupAbout,
   _ => key,
@@ -504,6 +508,7 @@ String settingsGroupDescription(Translations t, String key) => switch (key) {
   'groupVod' => t.settings.vodDescription,
   'groupMusic' => t.settings.musicSettingsDescription,
   'groupHongguo' => t.settings.hongguoDescription,
+  'groupHuya' => t.settings.huyaDownloadDescription,
   'groupData' => t.settings.dataCacheDescription,
   'groupAbout' => t.settings.aboutDescription,
   _ => '',
@@ -520,6 +525,7 @@ DsIconData settingsGroupIcon(String key) => switch (key) {
   'groupVod' => DsIcons.film,
   'groupMusic' => DsIcons.music,
   'groupHongguo' => DsIcons.drama,
+  'groupHuya' => DsIcons.download,
   'groupData' => DsIcons.database,
   'groupAbout' => DsIcons.info,
   _ => DsIcons.settings,

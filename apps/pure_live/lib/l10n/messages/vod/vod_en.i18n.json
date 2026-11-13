@@ -234,6 +234,7 @@
   "downloadEmptyDesc": "Tap download on a video and its tasks appear here.",
   "downloadPhaseQueued": "Queued",
   "downloadPhasePaused": "Paused",
+  "downloadResume": "Resume download",
   "downloadPhaseFailed": "Failed",
   "downloadPhaseDone": "Done",
   "downloadDeleteFile": "Delete file",

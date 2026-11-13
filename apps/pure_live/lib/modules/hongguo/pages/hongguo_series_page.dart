@@ -147,9 +147,11 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     if (detail == null) return const SizedBox.shrink();
     final row = _checkpoint();
     final resume = _resumeEpisode(detail, row);
+    final window = MediaQuery.sizeOf(context).width;
     final head = HongguoSeriesHead(
       detail: detail,
       seriesId: widget.seriesId,
+      posterWidth: LiveWindow.isCompact(window) ? 116 : 200,
       onPlay: ({resume = false, episode}) => _play(detail, episode, row: resume ? row : null),
     );
     final shelf = HongguoEpisodeShelf(
@@ -165,7 +167,9 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
         // The episode shelf used to sit in a 320px column of its own on a wide
         // window; the reference lays the detail page out as one reading column
         // — head, then the selection, then the rest — so the shelf keeps its
-        // place in the flow at every width.
+        // place in the flow at every width. The column itself ends where the
+        // season page's ends, the family's reading width, so a wide window
+        // does not stretch the words past what a head can hold.
         // The detail page keeps one wider margin than a list at reading
         // width; below that it is the app's own page inset, not this module's
         // number — a phone must not see two different left edges under one
@@ -173,10 +177,23 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
         final side = constraints.maxWidth >= 1000 ? DsSpace.s24 : LiveWindow.pageInset(constraints.maxWidth);
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(side, DsSpace.s12, side, DsSpace.s24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s16,
-            children: [head, shelf, related, comments],
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s16,
+                children: [
+                  head,
+                  // The one rule the season page draws: between the head and
+                  // everything that follows it.
+                  const DsDivider(),
+                  shelf,
+                  related,
+                  comments,
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -184,23 +201,34 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
   }
 }
 
-/// The series' own head: the cover, the name, the update and the figures,
-/// where the viewer stopped, every way into the player and the shelf's own
-/// bookmark — all in one block, the way the station's detail pages open.
+/// The series' own head: the poster at its 3:4 reading size with the
+/// station's score stamped on its corner, the name, the rank and the
+/// categories as chips, the counts demoted to one gray line, the stripe
+/// saying where the viewer stopped, and one primary way into the player
+/// beside the bookmarks — the season page's own composition, tuned to a
+/// drama's words.
 ///
-/// Before it was two: a small card with the cover, the name and the play
-/// button, then a block repeating the name as the page's title with the
-/// figures, the badges and the favourite under it. The head says each of
-/// those once and keeps every action of the series beside its name.
+/// Before it sat in a card with a small cover and every verb speaking at
+/// the same volume; the poster now carries the first read and the row of
+/// actions keeps one primary among quiet ghosts.
 final class HongguoSeriesHead extends ConsumerStatefulWidget {
   /// The head for [detail]; [onPlay] opens the chosen episode.
-  const HongguoSeriesHead({required this.detail, required this.seriesId, required this.onPlay, super.key});
+  const HongguoSeriesHead({
+    required this.detail,
+    required this.seriesId,
+    required this.posterWidth,
+    required this.onPlay,
+    super.key,
+  });
 
   /// The series as the detail page answered it.
   final HongguoSeriesDetail detail;
 
   /// The series' id, the key the library's progress and bookmark hang on.
   final String seriesId;
+
+  /// The poster's width: the wide head's 200, the phone's 116.
+  final double posterWidth;
 
   /// Opens the player: the checkpoint's episode when `resume` is set, another
   /// one when the viewer picks it from the head.
@@ -259,15 +287,18 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
     final meta = detail.meta;
     final row = _checkpoint();
     final fallback = CoverFallback(title: meta.title, padding: const EdgeInsets.all(DsSpace.s8));
-    final figures = <String>[
+    final rating = meta.rating > 0 ? meta.rating.toStringAsFixed(1) : '';
+    // The weak line: the state, the heat and the counts in one gray caption.
+    // The score and the rank live on the poster and the chips row, where
+    // they are read first; the station's own status line says the total in
+    // words — 全102集 / 更新至第6集 — so the bare count only speaks when
+    // that line is absent.
+    final facts = <String>[
       if (meta.statusText.isNotEmpty) meta.statusText,
       if (meta.hot.isNotEmpty) meta.hot,
       if (meta.playCount > 0) '${t.hongguo.plays} ${AudienceFormat.format(meta.playCount)}',
-      if (meta.rating > 0) t.hongguo.rating(score: meta.rating.toStringAsFixed(1)),
       if (meta.followedCount > 0) '${t.hongguo.followers} ${AudienceFormat.format(meta.followedCount)}',
       if (meta.likeCount > 0) '${t.hongguo.likes} ${AudienceFormat.format(meta.likeCount)}',
-      // The station's own status line says the total in words — 全102集 /
-      // 更新至第6集 — so the bare count only speaks when that line is absent.
       if (meta.episodeCount > 0 && meta.statusText.isEmpty) t.hongguo.episodesCount(count: meta.episodeCount),
     ];
     final library = ref.watch(hongguoLibraryProvider);
@@ -281,123 +312,175 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
     );
     final favored = library.isFavorite(meta.seriesId);
     final hasEpisode = detail.episodes.isNotEmpty;
-    return DsCard(
-      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s12,
-            children: [
-              SizedBox(
-                width: 88,
-                height: 118,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(theme.radii.card),
-                  child: meta.cover.isEmpty
-                      ? fallback
-                      : DsImage(
-                          image: hongguoCoverImage(meta.cover),
-                          aspectRatio: 88 / 118,
-                          semanticLabel: meta.title,
-                          fallback: fallback,
-                        ),
-                ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s16,
+      children: [
+        SizedBox(
+          width: widget.posterWidth,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            child: AspectRatio(
+              aspectRatio: 3 / 4,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (meta.cover.isEmpty)
+                    fallback
+                  else
+                    DsImage(
+                      image: hongguoCoverImage(meta.cover),
+                      aspectRatio: 3 / 4,
+                      semanticLabel: meta.title,
+                      fallback: fallback,
+                    ),
+                  // The soft band under the cover's bottom edge, so anything
+                  // riding the picture stays legible over a bright one.
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                    ),
+                  ),
+                  // The score on the poster's corner, the season page's
+                  // accent stamp: the one figure worth reading before the
+                  // words.
+                  if (rating.isNotEmpty)
+                    PositionedDirectional(top: DsSpace.s6, end: DsSpace.s6, child: _scoreBadge(context, rating)),
+                ],
               ),
-              Expanded(
-                child: Column(
+            ),
+          ),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s8,
+            children: [
+              Text(
+                meta.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.heading.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+              ),
+              // The chips row leads with the rank's trophy — the station's
+              // own billboard — then the categories, then the score in its
+              // stamp: the corner and the row each say the figure once, in
+              // their own place.
+              if (meta.rankLabel.isNotEmpty || meta.categories.isNotEmpty || rating.isNotEmpty)
+                Wrap(
+                  spacing: DsSpace.s6,
+                  runSpacing: DsSpace.s6,
+                  children: [
+                    if (meta.rankLabel.isNotEmpty)
+                      DsBadge(
+                        label: Text(meta.rankLabel),
+                        status: DsStatus.warning,
+                        icon: const DsIcon(DsIcons.trophy),
+                      ),
+                    for (final category in meta.categories) DsBadge(label: Text(category), dot: false),
+                    if (rating.isNotEmpty) _scoreBadge(context, t.hongguo.rating(score: rating)),
+                  ],
+                ),
+              if (facts.isNotEmpty)
+                Text(
+                  facts.join(' · '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              // The one place the page says where the viewer stopped, set
+              // above the actions as its own strip — the stripe is the
+              // history row's own reading of it.
+              if (row != null)
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: DsSpace.s6,
                   children: [
                     Text(
-                      meta.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.heading.copyWith(color: colors.text),
+                      '${t.hongguo.episodeLabel(index: row.episodeIndex)} · '
+                      '${hongguoDurationText(Duration(milliseconds: row.positionMs))}',
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
                     ),
-                    if (figures.isNotEmpty)
-                      Text(figures.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    if (meta.rankLabel.isNotEmpty || meta.categories.isNotEmpty)
-                      Wrap(
-                        spacing: DsSpace.s8,
-                        runSpacing: DsSpace.s4,
-                        children: [
-                          if (meta.rankLabel.isNotEmpty)
-                            DsBadge(
-                              label: Text(meta.rankLabel),
-                              status: DsStatus.warning,
-                              icon: const DsIcon(DsIcons.trophy),
-                            ),
-                          for (final category in meta.categories) DsBadge(label: Text(category), dot: false),
-                        ],
-                      ),
-                    // The one place the page says where the viewer stopped;
-                    // the stripe is the history row's own reading of it.
-                    if (row != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s6,
-                        children: [
-                          Text(
-                            '${t.hongguo.episodeLabel(index: row.episodeIndex)} · '
-                            '${hongguoDurationText(Duration(milliseconds: row.positionMs))}',
-                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                          ),
-                          HongguoProgressStripe(fraction: row.fraction),
-                        ],
-                      ),
+                    HongguoProgressStripe(fraction: row.fraction),
                   ],
                 ),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  DsButton(
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.play, size: 14),
+                    onPressed: hasEpisode ? () => widget.onPlay(resume: true) : null,
+                    child: Text(row == null ? t.hongguo.play : t.hongguo.continueWatching),
+                  ),
+                  if (row != null && hasEpisode)
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: () => widget.onPlay(episode: detail.episodes.first),
+                      child: Text(t.hongguo.playFromStart),
+                    ),
+                  // The bookmark stays a quiet ghost whether it is on or off —
+                  // only the heart and the word change, so the row keeps one
+                  // primary voice.
+                  DsButton(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    leading: DsIcon(favored ? DsIcons.heart : DsIcons.heartOff, size: 14),
+                    onPressed: () {
+                      final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(snapshot);
+                      showDsToast(
+                        context: context,
+                        title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
+                      );
+                    },
+                    child: Text(favored ? t.hongguo.favorited : t.hongguo.favorite),
+                  ),
+                  if (account.signedIn)
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.cloudUpload, size: 14),
+                      onPressed: () => unawaited(
+                        ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(snapshot, add: true),
+                      ),
+                      child: Text(t.hongguo.cloudFavoriteOn),
+                    ),
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.hongguo.share,
+                    onPressed: () => unawaited(_share()),
+                    icon: const DsIcon(DsIcons.share),
+                  ),
+                ],
               ),
+              if (meta.intro.isNotEmpty) _intro(context, meta.intro, theme, colors, t),
             ],
           ),
-          Wrap(
-            spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
-            children: [
-              DsButton(
-                leading: const DsIcon(DsIcons.play, size: 16),
-                onPressed: hasEpisode ? () => widget.onPlay(resume: true) : null,
-                child: Text(row == null ? t.hongguo.play : t.hongguo.continueWatching),
-              ),
-              if (row != null && hasEpisode)
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  onPressed: () => widget.onPlay(episode: detail.episodes.first),
-                  child: Text(t.hongguo.playFromStart),
-                ),
-              DsButton(
-                variant: favored ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                leading: DsIcon(favored ? DsIcons.heart : DsIcons.heartOff, size: 16),
-                onPressed: () {
-                  final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(snapshot);
-                  showDsToast(
-                    context: context,
-                    title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
-                  );
-                },
-                child: Text(favored ? t.hongguo.favorited : t.hongguo.favorite),
-              ),
-              if (account.signedIn)
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  leading: const DsIcon(DsIcons.cloudUpload, size: 16),
-                  onPressed: () =>
-                      unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(snapshot, add: true)),
-                  child: Text(t.hongguo.cloudFavoriteOn),
-                ),
-              DsButton(
-                variant: DsButtonVariant.ghost,
-                leading: const DsIcon(DsIcons.share, size: 16),
-                onPressed: () => unawaited(_share()),
-                child: Text(t.hongguo.share),
-              ),
-            ],
-          ),
-          if (meta.intro.isNotEmpty) _intro(context, meta.intro, theme, colors, t),
-        ],
+        ),
+      ],
+    );
+  }
+
+  /// The score in the accent stamp: white digits on the accent fill, the
+  /// poster corner and the chips row saying the same figure once each in
+  /// their own place.
+  Widget _scoreBadge(BuildContext context, String text) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsBadge(
+      label: Text(text),
+      dot: false,
+      style: DsBadgeStyle(
+        background: colors.accent,
+        foreground: colors.onAccent,
+        borderRadius: BorderRadius.circular(theme.radii.control(18)),
+        textStyle: theme.typography.numeric(
+          theme.typography.caption.copyWith(color: colors.onAccent, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

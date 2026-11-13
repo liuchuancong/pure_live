@@ -719,6 +719,12 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.hongguoDownload, t.hongguo.downloadRetry, 'failed task try again 重试 失败 任务'),
     _hit(SettingsSection.hongguoDownload, t.hongguo.downloadRetryDelay, 'retry interval wait seconds 重试 间隔 等待 秒'),
     _hit(
+      SettingsSection.huyaDownload,
+      t.settings.huyaDownloadTitle,
+      'huya video download queue task pause resume 下载 任务 队列 虎牙 视频 暂停 恢复',
+    ),
+    _hit(SettingsSection.huyaDownload, t.vod.downloadDirectory, 'download folder path storage 下载 文件夹 存放 路径'),
+    _hit(
       SettingsSection.hongguoDownload,
       s.downloadFilterPlayable,
       'missing file gone disk only playable 文件 已删除 只 看 能 打开 筛选',
