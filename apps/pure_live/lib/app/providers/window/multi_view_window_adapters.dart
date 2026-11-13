@@ -28,11 +28,18 @@ final class MultiViewFullscreenWindow implements FullscreenWindow {
 
   @override
   Future<void> setFullscreen({required bool value, Rect? restoreBounds}) async {
-    // The plugin remembers the frame the window left and puts it back itself.
-    // Applying [restoreBounds] on top of that would resize the window a second
-    // time inside one transition — two client-size changes, and the frame
-    // between them has no picture to paint.
     _window.setFullScreen(value);
+    // The plugin puts back the frame it remembered itself, and the driver's
+    // captured bounds used to be dropped on its word. But the plugin's
+    // memory is not always the frame the driver captured: a window living on
+    // a negative-coordinate display came back displaced onto the primary
+    // one - landing on top of the room the viewer was watching. The
+    // captured bounds are the authority, so they are enforced after the
+    // plugin's own transition settles.
+    if (!value && restoreBounds != null) {
+      await _window.setPosition(restoreBounds.topLeft);
+      await _window.setSize(restoreBounds.size);
+    }
   }
 }
 
