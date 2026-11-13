@@ -346,7 +346,8 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                     emptyIcon: DsIcons.heart,
                     emptyTitle: t.vod.favouritesEmptyTitle,
                     emptyDescription: t.vod.favouritesEmptyDescription,
-                    itemBuilder: (context, video) => VodVideoCard(video: video.video, onOpen: () => _open(video.bvid), preview: true),
+                    itemBuilder: (context, video) =>
+                        VodVideoCard(video: video.video, onOpen: () => _open(video.bvid), preview: true),
                   ),
                   VodPersonalTab.following => PagedCardGrid<VodSeason>(
                     items: following?.seasons ?? const <VodSeason>[],

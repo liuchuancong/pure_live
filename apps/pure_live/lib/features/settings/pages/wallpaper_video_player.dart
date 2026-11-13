@@ -130,7 +130,8 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   void _scheduleHideBar() {
     _hideTimer?.cancel();
     final after = widget.barHideAfter;
-    if (after == null || !_playing) return;
+    // A zero delay is 常显: the bar stays while the clip plays.
+    if (after == null || after.inSeconds <= 0 || !_playing) return;
     _hideTimer = Timer(after, () {
       if (mounted && _playing) setState(() => _barVisible = false);
       _notifyChrome();

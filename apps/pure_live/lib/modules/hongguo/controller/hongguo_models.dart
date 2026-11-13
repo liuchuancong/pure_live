@@ -359,12 +359,7 @@ final class HongguoFilterOption {
 @immutable
 final class HongguoFilterRow {
   /// Creates the row.
-  const HongguoFilterRow({
-    required this.type,
-    required this.rowName,
-    required this.items,
-    this.multiple = false,
-  });
+  const HongguoFilterRow({required this.type, required this.rowName, required this.items, this.multiple = false});
 
   /// Reads the row from a selector panel answer.
   factory HongguoFilterRow.fromJson(Map<String, Object?> json) => HongguoFilterRow(
@@ -444,7 +439,10 @@ String _score(Object? value) {
 
 List<String> _strList(Object? value) {
   if (value is List<Object?>) {
-    return [for (final item in value) if (item != null) item.toString()];
+    return [
+      for (final item in value)
+        if (item != null) item.toString(),
+    ];
   }
   if (value is String && value.trim().isNotEmpty) {
     return value.split('/');

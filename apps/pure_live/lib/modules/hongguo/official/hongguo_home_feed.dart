@@ -129,11 +129,8 @@ final class HongguoHomeFeed {
         // The signer carries the same device the query does: the platform
         // reads the identity out of `x-medusa` and rejects the two halves
         // disagreeing.
-        final signed = HongguoSigner(device: query).sign(
-          '$_kFeedHost/reading/distribution/category/landpage/v/',
-          query,
-          body: Uint8List.fromList(body),
-        );
+        final signed = HongguoSigner(device: query)
+            .sign('$_kFeedHost/reading/distribution/category/landpage/v/', query, body: Uint8List.fromList(body));
         request = (url: Uri.parse(signed.url), headers: signed.headers, body: Uint8List.fromList(body));
       }
       final response = await _http.send(
@@ -215,7 +212,9 @@ final class HongguoHomeFeed {
           if (videos is! List<Object?>) continue;
           for (final video in videos) {
             if (video is Map<String, Object?>) {
-              rows.add(video['video_detail'] is Map<String, Object?> ? video['video_detail']! as Map<String, Object?> : video);
+              rows.add(
+                video['video_detail'] is Map<String, Object?> ? video['video_detail']! as Map<String, Object?> : video,
+              );
             }
           }
         }
@@ -229,7 +228,10 @@ final class HongguoHomeFeed {
     if (rows is! List<Object?>) {
       throw const HongguoHomeFeedFailure('分类推荐列表缺失');
     }
-    return _rowsToItems([for (final row in rows) if (row is Map<String, Object?>) row], _str(data, 'session_id'));
+    return _rowsToItems([
+      for (final row in rows)
+        if (row is Map<String, Object?>) row,
+    ], _str(data, 'session_id'));
   }
 
   ({List<HongguoSeries> items, List<String> allIds, String session}) _rowsToItems(
@@ -248,13 +250,15 @@ final class HongguoHomeFeed {
       if (intro.isEmpty) intro = _str(row, 'video_desc');
       var cover = _str(row, 'series_cover');
       if (cover.isEmpty) cover = _str(row, 'cover');
-      items.add(HongguoSeries(
-        seriesId: id,
-        title: title,
-        cover: cover.replaceAll(r'\/', '/'),
-        intro: intro,
-        episodeCount: (row['episode_cnt'] as num?)?.toInt() ?? 0,
-      ));
+      items.add(
+        HongguoSeries(
+          seriesId: id,
+          title: title,
+          cover: cover.replaceAll(r'\/', '/'),
+          intro: intro,
+          episodeCount: (row['episode_cnt'] as num?)?.toInt() ?? 0,
+        ),
+      );
       if (items.length >= 30) break;
     }
     if (items.isEmpty) {

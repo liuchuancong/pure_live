@@ -483,9 +483,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       _pump();
       return (outcome: HongguoDownloadEnqueue.queued, error: null);
     } on Object catch (failure) {
-      appLog
-          .forCategory('hongguo.download')
-          .warning('download step failed', fields: {'error': '$failure'});
+      appLog.forCategory('hongguo.download').warning('download step failed', fields: {'error': '$failure'});
       return (outcome: HongguoDownloadEnqueue.failed, error: '$failure');
     }
   }
@@ -819,9 +817,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       await scratch.rename(target.path);
       _replace(item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.done));
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.download')
-          .error('download write failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.download').error('download write failed', fields: {'error': '$error'});
       if (error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.failed, error: '$error');
         _replace(item);

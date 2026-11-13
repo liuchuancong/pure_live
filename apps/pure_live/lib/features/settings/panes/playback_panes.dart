@@ -433,7 +433,11 @@ final class PicturePane extends ConsumerWidget {
                 leading: const DsIcon(DsIcons.eyeOff),
                 title: t.settings.controlsAutoHide,
                 description: t.settings.controlsAutoHideDesc,
-                detail: Text(t.settings.controlsAutoHideValue(count: settings.controlsAutoHideSeconds)),
+                detail: Text(
+                  settings.controlsAutoHideSeconds == 0
+                      ? t.settings.controlsAutoHideAlways
+                      : t.settings.controlsAutoHideValue(count: settings.controlsAutoHideSeconds),
+                ),
                 controlWidth: 220,
                 control: DsSlider(
                   value: settings.controlsAutoHideSeconds.toDouble(),

@@ -438,7 +438,8 @@ final class _SearchResults extends StatelessWidget {
           emptyIcon: DsIcons.clapperboard,
           emptyTitle: t.vod.noResultsTitle,
           emptyDescription: t.vod.noResultsDescription,
-          itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onSeason(season), preview: true),
+          itemBuilder: (context, season) =>
+              VodSeasonCard(season: season, onOpen: () => onSeason(season), preview: true),
         );
       case VodSearchKind.user:
         // A user hit is a display row — the station offers no space page to

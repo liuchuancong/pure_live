@@ -93,11 +93,7 @@ final class HongguoWebLogin {
       final response = await request.close();
       _absorb(
         response.cookies.map(
-          (cookie) => _LoginCookie(
-            cookie.name,
-            cookie.value,
-            (cookie.expires?.millisecondsSinceEpoch ?? 0) ~/ 1000,
-          ),
+          (cookie) => _LoginCookie(cookie.name, cookie.value, (cookie.expires?.millisecondsSinceEpoch ?? 0) ~/ 1000),
         ),
       );
       return response;
@@ -155,9 +151,7 @@ final class HongguoWebLogin {
     if (reply['message'] != 'success') {
       final code = data['error_code'] is num ? (data['error_code']! as num).toInt() : -1;
       final described = data['description'];
-      final message = described is String && described.isNotEmpty
-          ? described
-          : '官网登录失败';
+      final message = described is String && described.isNotEmpty ? described : '官网登录失败';
       throw HongguoLoginFailure('$message（错误码 $code）');
     }
     return data;
@@ -184,9 +178,7 @@ final class HongguoWebLogin {
     if (_token.isEmpty) {
       throw const HongguoLoginFailure('请先获取二维码');
     }
-    final data = _checked(
-      await _call('/passport/web/check_qrconnect/', params: {'next': '$_kBase/', 'token': _token}),
-    );
+    final data = _checked(await _call('/passport/web/check_qrconnect/', params: {'next': '$_kBase/', 'token': _token}));
     final status = data['status'];
     if (status == '5' || status == 'expired') {
       throw const HongguoLoginFailure('二维码已过期，请重新获取');
@@ -229,10 +221,7 @@ final class HongguoWebLogin {
 
   /// Mixes a field the way the web passport expects: each UTF-8 byte
   /// xored with 5, written as two hex digits.
-  static String _mix(String value) => utf8
-      .encode(value)
-      .map((byte) => ((byte & 0xFF) ^ 0x05).toRadixString(16))
-      .join();
+  static String _mix(String value) => utf8.encode(value).map((byte) => ((byte & 0xFF) ^ 0x05).toRadixString(16)).join();
 
   /// Sends the login code to [number] (`138…` mainland, `+区号 号码`
   /// elsewhere). The QR fetch warms the CSRF cookie when the session has
@@ -243,12 +232,10 @@ final class HongguoWebLogin {
     }
     _mobile = number.startsWith('+') ? number : '+86 $number';
     final data = _checked(
-      await _call('/passport/web/send_code/', data: {
-        'mobile': _mix(_mobile),
-        'type': _mix('24'),
-        'mix_mode': '1',
-        'fixed_mix_mode': '1',
-      }),
+      await _call(
+        '/passport/web/send_code/',
+        data: {'mobile': _mix(_mobile), 'type': _mix('24'), 'mix_mode': '1', 'fixed_mix_mode': '1'},
+      ),
     );
     _codeSent = true;
     final masked = data['mobile'] is String && (data['mobile']! as String).isNotEmpty
@@ -264,13 +251,16 @@ final class HongguoWebLogin {
       throw const HongguoLoginFailure('请先发送验证码');
     }
     _checked(
-      await _call('/passport/web/sms_login/', data: {
-        'mobile': _mix(_mobile),
-        'code': _mix(code),
-        'login_only': 'true',
-        'mix_mode': '1',
-        'fixed_mix_mode': '1',
-      }),
+      await _call(
+        '/passport/web/sms_login/',
+        data: {
+          'mobile': _mix(_mobile),
+          'code': _mix(code),
+          'login_only': 'true',
+          'mix_mode': '1',
+          'fixed_mix_mode': '1',
+        },
+      ),
     );
     return hasSession;
   }
@@ -284,10 +274,7 @@ final class HongguoWebLogin {
       throw const HongguoLoginFailure('官网尚未下发登录态，请先在手机确认登录');
     }
     _checked(await _call('/passport/account/info/v2/'));
-    return _cookies
-        .where((cookie) => cookie.alive)
-        .map((cookie) => '${cookie.name}=${cookie.value}')
-        .join('; ');
+    return _cookies.where((cookie) => cookie.alive).map((cookie) => '${cookie.name}=${cookie.value}').join('; ');
   }
 }
 

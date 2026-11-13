@@ -11,7 +11,7 @@ import 'package:pure_live/shared/player/on_video_colors.dart';
 ///
 /// A view preference, not a saved setting: whoever wants the numbers turns them
 /// on for the surface in front and the next one in the same session starts
-/// plain. The room toggles it with `I` and in its overflow menu; the media
+/// plain. The room toggles it in its overflow menu's 播放统计 tile; the media
 /// preview carries the verb on its bar.
 final playerStatsVisibleProvider = NotifierProvider<PlayerStatsVisibleController, bool>(
   PlayerStatsVisibleController.new,

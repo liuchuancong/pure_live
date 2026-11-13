@@ -64,11 +64,7 @@ Uint8List _ttEncrypt(Uint8List data) {
     padded,
     decrypt: false,
   );
-  return Uint8List.fromList([
-    0x74, 0x63, 0x05, 0x10, 0x00, 0x00,
-    ...rnd,
-    ...encrypted,
-  ]);
+  return Uint8List.fromList([0x74, 0x63, 0x05, 0x10, 0x00, 0x00, ...rnd, ...encrypted]);
 }
 
 String _hexOf(List<int> bytes) => bytes.map((b) => (b & 0xFF).toRadixString(16).padLeft(2, '0')).join();
@@ -138,7 +134,12 @@ Uint8List hongguoDevicePayload(Map<String, String> device, {int? now}) {
     'oaid_may_support': false,
     'req_id': _uuid(),
     'device_platform': 'android',
-    'custom': {'account_region_src': 'fallback', 'host_bit': 64, 'account_region': 'cn', 'dragon_device_type': value('dragon_device_type', 'pad')},
+    'custom': {
+      'account_region_src': 'fallback',
+      'host_bit': 64,
+      'account_region': 'cn',
+      'dragon_device_type': value('dragon_device_type', 'pad'),
+    },
     'pre_installed_channel': '',
     'apk_first_install_time': time,
     'is_system_app': 0,
@@ -245,7 +246,9 @@ final class HongguoDeviceSession {
       throw HongguoDeviceException('HTTP ${response.statusCode}');
     }
     final registered = hongguoParseRegistered(response.text, response.setCookies);
-    if (registered == null || !RegExp(r'^[1-9][0-9]{0,29}$').hasMatch(registered.deviceId) || !RegExp(r'^[1-9][0-9]{0,29}$').hasMatch(registered.installId)) {
+    if (registered == null ||
+        !RegExp(r'^[1-9][0-9]{0,29}$').hasMatch(registered.deviceId) ||
+        !RegExp(r'^[1-9][0-9]{0,29}$').hasMatch(registered.installId)) {
       throw const HongguoDeviceException('播放设备注册失败');
     }
     final identity = _Identity(

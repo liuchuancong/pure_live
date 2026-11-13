@@ -221,8 +221,7 @@ final class HongguoSeriesCard extends ConsumerStatefulWidget {
   ConsumerState<HongguoSeriesCard> createState() => _HongguoSeriesCardState();
 }
 
-final class _HongguoSeriesCardState extends ConsumerState<HongguoSeriesCard>
-    with CoverPreviewDwell<HongguoSeriesCard> {
+final class _HongguoSeriesCardState extends ConsumerState<HongguoSeriesCard> with CoverPreviewDwell<HongguoSeriesCard> {
   /// The card's own interaction states, observed through the pressable: the
   /// preview's dwell rides them, a press rebuilds nothing.
   final WidgetStatesController _states = WidgetStatesController();
@@ -282,8 +281,7 @@ final class _HongguoSeriesCardState extends ConsumerState<HongguoSeriesCard>
         : null;
     final favored =
         visibility.shows(HongguoCardElement.favorite) &&
-        (widget.favorited ??
-            (widget.favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId)));
+        (widget.favorited ?? (widget.favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId)));
     // A kept state the caller gave is the sample's own: a heart that wrote would
     // rewrite this device's library from a settings page.
     final onUnfavorite = widget.favorited == null

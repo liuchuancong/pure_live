@@ -106,9 +106,7 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
         groups: cursor == null ? page.groups : current.groups,
       ));
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.feed')
-          .warning('feed request failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
       if (generation != _generation) return;
       _write(genre, (
         items: current.items,
@@ -192,9 +190,7 @@ final class HongguoLatestController extends Notifier<Map<String, HongguoLatestFe
         error: null,
       ));
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.feed')
-          .warning('feed request failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
       _write(genre, (
         items: current.items,
         cursor: null,
@@ -307,9 +303,7 @@ final class HongguoRankController extends Notifier<Map<String, HongguoRankFeed>>
         error: null,
       ));
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.feed')
-          .warning('feed request failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
       // A read that failed leaves the board the viewer was looking at.
       _write(board, (
         items: held.items,
@@ -334,8 +328,9 @@ final class HongguoRankController extends Notifier<Map<String, HongguoRankFeed>>
 }
 
 /// The website's boards, one snapshot each.
-final hongguoRankProvider =
-    NotifierProvider<HongguoRankController, Map<String, HongguoRankFeed>>(HongguoRankController.new);
+final hongguoRankProvider = NotifierProvider<HongguoRankController, Map<String, HongguoRankFeed>>(
+  HongguoRankController.new,
+);
 
 /// What the search view holds: the committed query, the shelf it was asked
 /// of, its hits, the cursor the next page asks, the words the platform
@@ -468,9 +463,7 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
       if (generation != _suggestGeneration) return;
       state = _copy(suggestions: words, suggesting: false);
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.feed')
-          .warning('feed request failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
       if (generation != _suggestGeneration) return;
       state = _copy(suggestions: const [], suggesting: false, suggestionError: hongguoFailureText(error));
     }
@@ -524,9 +517,7 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
         history: history,
       );
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.feed')
-          .warning('feed request failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
       if (generation != _generation) return;
       // The website's page answers what the app endpoint could not, and it is
       // paged too (measured: pages 1/2/3 each serve ten distinct series), so
@@ -567,9 +558,7 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
         history: history,
       );
     } on Object catch (error) {
-      appLog
-          .forCategory('hongguo.feed')
-          .warning('feed request failed', fields: {'error': '$error'});
+      appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
       if (generation != _generation) return;
       // Both doors refused: the words the viewer's own shelf endpoint gave are
       // the more useful of the two, since that is the one the page names.

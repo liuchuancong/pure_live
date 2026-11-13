@@ -9,8 +9,7 @@ import 'dart:typed_data' show ByteData, Uint8List;
 import 'package:crypto/crypto.dart' as crypto show sha512;
 import 'package:pointycastle/export.dart' show AESEngine, CTRStreamCipher, KeyParameter, ParametersWithIV;
 
-import 'package:pure_live/modules/hongguo/official/hongguo_signer.dart'
-    show hongguoAesCbc, hongguoDecode64;
+import 'package:pure_live/modules/hongguo/official/hongguo_signer.dart' show hongguoAesCbc, hongguoDecode64;
 
 /// One encrypted range in the file: its place, its IV and how far into the
 /// sample's cipher stream it begins (sub-sample clear leads).
@@ -142,12 +141,7 @@ final class HongguoMediaCrypto {
     }
     if (size == 0) size = bound - at;
     if (size < header || size > bound - at) return null;
-    return (
-      start: at,
-      end: at + size,
-      body: at + header,
-      type: String.fromCharCodes(data.sublist(at + 4, at + 8)),
-    );
+    return (start: at, end: at + size, body: at + header, type: String.fromCharCodes(data.sublist(at + 4, at + 8)));
   }
 
   static ({int start, int end, int body, String type})? _find(Uint8List data, String type, int start, int limit) {
@@ -213,7 +207,10 @@ final class HongguoMediaCrypto {
       if (stsc.body + 8 + entryCount * 12 > stsc.end || entryCount == 0) {
         throw const FormatException('块索引截断');
       }
-      final entries = List.generate(entryCount, (i) => (_u32(data, stsc.body + 8 + i * 12), _u32(data, stsc.body + 12 + i * 12)));
+      final entries = List.generate(
+        entryCount,
+        (i) => (_u32(data, stsc.body + 8 + i * 12), _u32(data, stsc.body + 12 + i * 12)),
+      );
       final sizeBase = saiz.body + 4 + ((_i32(data, saiz.body) & 1) != 0 ? 8 : 0);
       if (sizeBase + 5 > saiz.end) throw const FormatException('辅助索引截断');
       final auxDefault = data[sizeBase];
@@ -360,8 +357,7 @@ final class HongguoMediaCrypto {
   }
 
   static Uint8List _aesCtr(Uint8List key, Uint8List iv, Uint8List data) {
-    final cipher = CTRStreamCipher(AESEngine())
-      ..init(false, ParametersWithIV(KeyParameter(key), iv));
+    final cipher = CTRStreamCipher(AESEngine())..init(false, ParametersWithIV(KeyParameter(key), iv));
     return cipher.process(data);
   }
 
@@ -375,7 +371,6 @@ final class HongguoMediaCrypto {
     return count;
   }
 
-  static Uint8List _hex(String value) => Uint8List.fromList([
-    for (var i = 0; i < value.length; i += 2) int.parse(value.substring(i, i + 2), radix: 16),
-  ]);
+  static Uint8List _hex(String value) =>
+      Uint8List.fromList([for (var i = 0; i < value.length; i += 2) int.parse(value.substring(i, i + 2), radix: 16)]);
 }

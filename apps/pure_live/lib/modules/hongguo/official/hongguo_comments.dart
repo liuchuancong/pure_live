@@ -10,8 +10,7 @@ import 'dart:typed_data' show BytesBuilder;
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest;
-import 'package:pointycastle/export.dart'
-    show AESEngine, CBCBlockCipher, KeyParameter, ParametersWithIV, SM3Digest;
+import 'package:pointycastle/export.dart' show AESEngine, CBCBlockCipher, KeyParameter, ParametersWithIV, SM3Digest;
 
 const String _kCommentHost = 'https://api5-normal-sinfonlineb.fqnovel.com';
 const String _kVideoUa =
@@ -19,9 +18,8 @@ const String _kVideoUa =
 
 Uint8List _md5(List<int> data) => Uint8List.fromList(crypto.md5.convert(data).bytes);
 
-Uint8List _hex(String value) => Uint8List.fromList([
-  for (var i = 0; i < value.length; i += 2) int.parse(value.substring(i, i + 2), radix: 16),
-]);
+Uint8List _hex(String value) =>
+    Uint8List.fromList([for (var i = 0; i < value.length; i += 2) int.parse(value.substring(i, i + 2), radix: 16)]);
 
 String _hexOf(List<int> bytes) => bytes.map((b) => (b & 0xFF).toRadixString(16).padLeft(2, '0')).join();
 
@@ -38,8 +36,7 @@ Uint8List _pad16(List<int> data) {
 }
 
 Uint8List _sm3(List<int> data) {
-  final digest = SM3Digest()
-    ..update(Uint8List.fromList(data), 0, data.length);
+  final digest = SM3Digest()..update(Uint8List.fromList(data), 0, data.length);
   final out = Uint8List(digest.digestSize);
   digest.doFinal(out, 0);
   return out;
@@ -54,9 +51,7 @@ int _rotr64(int v, int n) => ((v >>> n) | (v << (64 - n))) & 0xFFFFFFFFFFFFFFFF;
 Map<String, String> _commentHeaders(String query, {int? now, Uint8List? nonce}) {
   final time = now ?? DateTime.now().millisecondsSinceEpoch;
   final ts = time ~/ 1000;
-  final salt =
-      nonce ??
-          Uint8List.fromList([for (var i = 0; i < 11; i++) math.Random.secure().nextInt(256)]);
+  final salt = nonce ?? Uint8List.fromList([for (var i = 0; i < 11; i++) math.Random.secure().nextInt(256)]);
   final first = ((salt[0] & 0xFF) % 7 + 1) << 5;
   final second = 0xE0 | (salt[1] & 0x0F);
   final input = Uint8List.fromList([
@@ -216,11 +211,7 @@ String _argus(String query, int ts, Uint8List salt) {
     var b = _word(blocks, at + 8);
     for (final k in keys) {
       final next =
-          (a ^
-              ((_rotl64(b, 1) & _rotl64(b, 8)) & 0xFFFFFFFFFFFFFFFF) ^
-              _rotl64(b, 2) ^
-              k) &
-          0xFFFFFFFFFFFFFFFF;
+          (a ^ ((_rotl64(b, 1) & _rotl64(b, 8)) & 0xFFFFFFFFFFFFFFFF) ^ _rotl64(b, 2) ^ k) & 0xFFFFFFFFFFFFFFFF;
       a = b;
       b = next;
     }
@@ -269,7 +260,14 @@ Uint8List _concat(List<List<int>> parts) {
 /// One episode comment.
 final class HongguoComment {
   /// Creates the comment.
-  const HongguoComment({required this.id, required this.author, required this.avatar, required this.content, required this.created, required this.likes});
+  const HongguoComment({
+    required this.id,
+    required this.author,
+    required this.avatar,
+    required this.content,
+    required this.created,
+    required this.likes,
+  });
 
   final String id;
   final String author;
@@ -342,7 +340,9 @@ final class HongguoCommentClient {
       'iid': '7397450988462912346',
       '_rticket': '${DateTime.now().millisecondsSinceEpoch}',
     };
-    final encoded = (query.keys.toList()..sort()).map((key) => '$key=${Uri.encodeQueryComponent(query[key]!)}').join('&');
+    final encoded = (query.keys.toList()..sort())
+        .map((key) => '$key=${Uri.encodeQueryComponent(query[key]!)}')
+        .join('&');
     final response = await _http.send(
       LiveRequest.custom(
         method: 'POST',
@@ -379,20 +379,25 @@ final class HongguoCommentClient {
     if (cursor.length > 8192) {
       throw const HongguoCommentFailure('评论游标无效');
     }
-    final result = await _read(episodeVid, {
-      'comment_source': 4,
-      'server_channel': 18,
-      'group_id': episodeVid,
-      'group_type': 30,
-      'comment_type': 4,
-      'sort': 1,
-      'need_count': true,
-      'count': 20,
-      'cursor': cursor,
-      'aid': 8662,
-      'compliance_status': 0,
-      'business_param': {'book_id': seriesId, 'req_type': 0},
-    }, source: 4, channel: 18);
+    final result = await _read(
+      episodeVid,
+      {
+        'comment_source': 4,
+        'server_channel': 18,
+        'group_id': episodeVid,
+        'group_type': 30,
+        'comment_type': 4,
+        'sort': 1,
+        'need_count': true,
+        'count': 20,
+        'cursor': cursor,
+        'aid': 8662,
+        'compliance_status': 0,
+        'business_param': {'book_id': seriesId, 'req_type': 0},
+      },
+      source: 4,
+      channel: 18,
+    );
     final code = result['code'];
     if (code is! num || code.toInt() != 0) {
       throw const HongguoCommentFailure('评论接口未返回成功数据');
@@ -418,25 +423,30 @@ final class HongguoCommentClient {
         final common = comment['common'];
         final expand = comment['expand'];
         if (common is! Map<String, Object?> || expand is! Map<String, Object?>) continue;
-        if (_str(common, 'group_id') != episodeVid || (common['status'] is num ? (common['status']! as num).toInt() : -1) != 1) {
+        if (_str(common, 'group_id') != episodeVid ||
+            (common['status'] is num ? (common['status']! as num).toInt() : -1) != 1) {
           continue;
         }
         final id = _str(row, 'comment_id');
         final content = _text(common);
         if (id.isEmpty || id.length > 120 || content.isEmpty || !seen.add(id)) continue;
-        final user = common['user_info'] is Map<String, Object?> ? (common['user_info']! as Map<String, Object?>)['base_info'] : null;
+        final user = common['user_info'] is Map<String, Object?>
+            ? (common['user_info']! as Map<String, Object?>)['base_info']
+            : null;
         final avatar = user is Map<String, Object?> && _str(user, 'user_avatar').startsWith('https://')
             ? _str(user, 'user_avatar')
             : '';
         final stat = row['stat'];
-        items.add(HongguoComment(
-          id: id,
-          author: user is Map<String, Object?> ? _str(user, 'user_name') : '',
-          avatar: avatar,
-          content: content,
-          created: (common['create_timestamp'] as num?)?.toInt() ?? 0,
-          likes: stat is Map<String, Object?> ? (stat['digg_count'] as num?)?.toInt() ?? 0 : 0,
-        ));
+        items.add(
+          HongguoComment(
+            id: id,
+            author: user is Map<String, Object?> ? _str(user, 'user_name') : '',
+            avatar: avatar,
+            content: content,
+            created: (common['create_timestamp'] as num?)?.toInt() ?? 0,
+            likes: stat is Map<String, Object?> ? (stat['digg_count'] as num?)?.toInt() ?? 0 : 0,
+          ),
+        );
       }
     }
     return HongguoCommentPage(
@@ -455,24 +465,29 @@ final class HongguoCommentClient {
     if (startMs < 0 || durationMs <= startMs || durationMs > 86400000) {
       throw const HongguoCommentFailure('弹幕时间段无效');
     }
-    final result = await _read(episodeVid, {
-      'comment_source': 601,
-      'server_channel': 1000,
-      'group_id': episodeVid,
-      'group_type': 30,
-      'comment_type': 20,
-      'sort': 1,
-      'count': 90,
-      'cursor': '',
-      'aid': 8662,
-      'compliance_status': 0,
-      'business_param': {
-        'book_id': seriesId,
-        'start_offset_time': startMs,
-        'playlet_item_duration': durationMs,
-        'need_danmaku_guide_type': [1, 3, 4, 2],
+    final result = await _read(
+      episodeVid,
+      {
+        'comment_source': 601,
+        'server_channel': 1000,
+        'group_id': episodeVid,
+        'group_type': 30,
+        'comment_type': 20,
+        'sort': 1,
+        'count': 90,
+        'cursor': '',
+        'aid': 8662,
+        'compliance_status': 0,
+        'business_param': {
+          'book_id': seriesId,
+          'start_offset_time': startMs,
+          'playlet_item_duration': durationMs,
+          'need_danmaku_guide_type': [1, 3, 4, 2],
+        },
       },
-    }, source: 601, channel: 1000);
+      source: 601,
+      channel: 1000,
+    );
     final code = result['code'];
     if (code is! num || code.toInt() != 0) {
       throw const HongguoCommentFailure('弹幕接口未返回成功数据');
@@ -498,7 +513,8 @@ final class HongguoCommentClient {
         final common = comment['common'];
         final expand = comment['expand'];
         if (common is! Map<String, Object?> || expand is! Map<String, Object?>) continue;
-        if (_str(common, 'group_id') != episodeVid || (common['status'] is num ? (common['status']! as num).toInt() : -1) != 1) {
+        if (_str(common, 'group_id') != episodeVid ||
+            (common['status'] is num ? (common['status']! as num).toInt() : -1) != 1) {
           continue;
         }
         final time = (expand['offset_time'] as num?)?.toInt() ?? -1;

@@ -85,8 +85,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   chatListFontSizeProvider,
   chatListLineSpacingProvider,
   chatCollapsedProvider,
-  chatModeProvider,
-  chatStreamCornerProvider,
   pipDanmakuScaleProvider,
   floatingWindowSettingsProvider,
   shieldRulesProvider,

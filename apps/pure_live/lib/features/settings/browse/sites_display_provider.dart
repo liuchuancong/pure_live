@@ -81,7 +81,10 @@ final class SitesDisplayController extends Notifier<Set<String>> {
   /// still shown. Answers whether the set was applied.
   Future<bool> setHidden(Set<String> hidden) async {
     final order = ref.read(sitesOrderProvider);
-    final visible = [for (final id in order.order) if (!hidden.contains(id)) id];
+    final visible = [
+      for (final id in order.order)
+        if (!hidden.contains(id)) id,
+    ];
     if (visible.isEmpty) return false;
     if (!visible.contains(order.preferred)) {
       await ref.read(sitesOrderProvider.notifier).setPreferred(visible.first);

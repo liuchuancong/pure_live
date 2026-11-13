@@ -186,8 +186,9 @@ const double kWindowsPipMinHeightMax = 240;
 const int kAsmrSleepMinutesMin = 15;
 const int kAsmrSleepMinutesMax = 1440;
 
-/// The control bar's auto-hide delay bounds, in seconds.
-const int kControlsAutoHideSecondsMin = 1;
+/// The control bar's auto-hide delay bounds, in seconds. Zero is the
+/// reference's 常显: the bars never hide on idle while a stream plays.
+const int kControlsAutoHideSecondsMin = 0;
 const int kControlsAutoHideSecondsMax = 10;
 
 /// The volume wheel's step choices, in percent of the full range.
@@ -505,7 +506,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   }
 
   /// Stores how long a playing picture keeps its controls before hiding
-  /// them, clamped to 1–10 seconds.
+  /// them, clamped to 0–10 seconds; zero keeps them always.
   Future<void> setControlsAutoHideSeconds(int value) async {
     final next = value.clamp(kControlsAutoHideSecondsMin, kControlsAutoHideSecondsMax);
     state = _with(controlsAutoHideSeconds: next);
