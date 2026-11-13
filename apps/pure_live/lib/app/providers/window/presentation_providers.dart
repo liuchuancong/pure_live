@@ -1,7 +1,7 @@
 import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
-import 'package:flutter/widgets.dart' show Size;
+import 'package:flutter/widgets.dart' show Size, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart' show ScreenRetrieverDisplays, frameToRect;
 import 'package:media_core/media_core.dart';
@@ -276,10 +276,22 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   }
 
   /// Re-reads the drivers; the last transition wins.
+  ///
+  /// The write waits for the frame's end. The drivers answer on the native
+  /// window-resize event, and Windows delivers that in the middle of the
+  /// frame's layout on a fullscreen toggle - writing here marks an already
+  /// laid-out LayoutBuilder dirty from inside the layout pass, the frame
+  /// asserts and dies half-laid-out. User-initiated switches keep their own
+  /// optimistic write, so the delay only touches driver-originated news.
   void _sync() {
     if (!ref.mounted) return;
-    final next = _currentMode();
-    if (state != next) state = next;
+    if (state != _currentMode()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!ref.mounted) return;
+        final next = _currentMode();
+        if (state != next) state = next;
+      });
+    }
   }
 
   /// Whether this window offers the picture-in-picture button.
