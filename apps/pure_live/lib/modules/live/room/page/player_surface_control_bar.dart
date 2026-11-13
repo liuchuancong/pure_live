@@ -21,6 +21,7 @@ final class _ControlBar extends ConsumerStatefulWidget {
     this.canEnterPortraitFullscreen = false,
     this.portraitFullscreen = false,
     this.onPortraitFullscreen,
+    this.onFullscreen,
     super.key,
   });
 
@@ -59,6 +60,10 @@ final class _ControlBar extends ConsumerStatefulWidget {
 
   /// Enters portrait full screen.
   final VoidCallback? onPortraitFullscreen;
+
+  /// The page's shape-aware fullscreen toggle (a portrait stream answers
+  /// with the portrait surface); null keeps the presentation's own toggle.
+  final VoidCallback? onFullscreen;
 
   @override
   ConsumerState<_ControlBar> createState() => _ControlBarState();
@@ -119,20 +124,17 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           // wheel and the arrows have always reached. The slider rides only
           // where the bar has the room for it (the desktop widths); a narrow
           // strip keeps the toggle alone — the picture's vertical drag still
-          // moves the level there. The echo after the set keeps the glyph
-          // honest: the mute's state is the controller's, not this bar's.
-          final muted = controller.muted;
+          // moves the level there. Both read the state record: mute is not
+          // on the transport stream, so the record's write after a set —
+          // here or on any other surface — is what turns the glyph.
+          final muted = room.muted;
           final muteButton = !pip && player != null
               ? PlayerBarButton(
                   icon: muted ? DsIcons.volumeOff : DsIcons.volume2,
                   label: muted ? t.room.unmute : t.room.mute,
                   onPressed: () {
                     widget.onWake();
-                    unawaited(
-                      controller.setMuted(value: !muted).then((_) {
-                        if (context.mounted) setState(() {});
-                      }),
-                    );
+                    unawaited(controller.setMuted(value: !muted));
                   },
                 )
               : null;
@@ -140,7 +142,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
               ? SizedBox(
                   width: 72,
                   child: DsSlider(
-                    value: ((room.handle?.volume ?? 1) * 100).clamp(0.0, 100.0),
+                    value: (room.volume * 100).clamp(0.0, 100.0),
                     max: 100,
                     onChanged: (value) {
                       widget.onWake();
@@ -185,6 +187,10 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   selected: presentation == PresentationMode.fullscreen,
                   onPressed: () {
                     widget.onWake();
+                    if (widget.onFullscreen case final onFullscreen?) {
+                      onFullscreen();
+                      return;
+                    }
                     unawaited(presentationController.toggleFullscreen(player));
                   },
                 )

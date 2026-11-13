@@ -148,7 +148,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
             ? const SizedBox.shrink()
             : PlayerGlassPill(
                 child: PlayerBarButton(
-                  icon: DsIcons.ellipsisVertical,
+                  icon: DsIcons.ellipsis,
                   label: t.common.more,
                   onPressed: () {
                     widget.onWake();

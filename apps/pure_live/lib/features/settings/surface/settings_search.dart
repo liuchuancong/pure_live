@@ -229,6 +229,12 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.danmaku, s.styleTapInteraction, 'tap click interaction actions copy block 点按 点击 弹幕 操作 复制 屏蔽'),
     _hit(SettingsSection.danmaku, s.styleLongPressInteraction, 'long press interaction actions 长按 弹幕 操作 复制 屏蔽'),
     _hit(SettingsSection.danmaku, s.holdDanmakuOnPress, 'hold freeze press danmaku 按住 冻结 弹幕'),
+    _hit(SettingsSection.danmaku, s.danmakuChatGiftLines, 'gift lines chat show 礼物 行 聊天 列 显示'),
+    _hit(
+      SettingsSection.danmaku,
+      s.danmakuChatGiftsAboveTier,
+      'valuable gifts only tier cheap free combo 值钱 贵 礼物 只看 聊天 列',
+    ),
     _hit(SettingsSection.danmaku, s.danmakuFont, 'danmaku font typeface family flying 弹幕 字体 字族 飞行'),
     _hit(SettingsSection.danmaku, s.styleFontSize, 'font size type size 字体大小 字号 弹幕'),
     _hit(SettingsSection.danmaku, s.styleFontWeight, 'font weight thickness bold thin 字重 粗细 字体 加粗 弹幕'),

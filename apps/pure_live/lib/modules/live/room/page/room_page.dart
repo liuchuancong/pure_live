@@ -8,7 +8,6 @@ import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
@@ -25,7 +24,8 @@ import 'package:pure_live/modules/live/room/identity/room_identity_bar.dart';
 import 'package:pure_live/modules/live/room/layout/room_layout.dart';
 import 'package:pure_live/modules/live/room/more/room_more_menu.dart' show showRoomMore;
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
-import 'package:pure_live/modules/live/room/page/player_surface.dart' show PlayerSurface, kPlayerStageColor;
+import 'package:pure_live/modules/live/room/page/player_surface.dart'
+    show PlayerSurface, PlayerSurfaceHud, kPlayerStageColor;
 import 'package:pure_live/modules/live/room/page/room_bottom_panel.dart';
 import 'package:pure_live/modules/live/room/page/room_details.dart' show shareRoom;
 import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
@@ -234,6 +234,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// the subtree instead of tearing the video texture down and back.
   final GlobalKey _playerKey = GlobalKey();
 
+  /// The keyboard's hand to the surface's adjustment readout: the arrows'
+  /// volume steps flash the same HUD the picture's drag and wheel use.
+  final PlayerSurfaceHud _surfaceHud = PlayerSurfaceHud();
+
   /// The phone's view of this room, registered for as long as the page is.
   late final RemotePlaybackTarget _remoteTarget;
 
@@ -357,7 +361,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 .setDanmakuVisible(value: !ref.read(playbackSettingsProvider).danmakuVisible);
             return true;
           case 'fullscreen':
-            _enterFullscreen();
+            _toggleFullscreenVerb();
             return true;
           case 'previous':
           case 'up':
@@ -388,11 +392,39 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     });
   }
 
-  /// The sheet's pill: the room's own full screen, the same verb the bar carries.
+  /// The sheet's pill: the room's own full screen, routed by the picture's
+  /// shape — the fullscreen verb follows the frame. A portrait stream takes
+  /// the portrait full-screen surface (its chat door and its swipe list
+  /// live there); a landscape one takes the system's own fullscreen, the
+  /// shape the verb has always meant.
   void _enterFullscreen() {
-    final handle = ref.read(roomProvider).handle;
+    final state = ref.read(roomProvider);
+    final handle = state.handle;
     if (handle == null) return;
+    if (_pictureRatio(state) < 1) {
+      _setPortraitFullscreen(true);
+      return;
+    }
     unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
+  }
+
+  /// The fullscreen verb as a toggle, for the key, the bar's button and the
+  /// picture's double tap: out of the portrait surface first, out of the
+  /// system's fullscreen next, and into the one the picture's shape asks
+  /// for last.
+  void _toggleFullscreenVerb() {
+    if (_portraitFullscreen) {
+      _setPortraitFullscreen(false);
+      return;
+    }
+    final state = ref.read(roomProvider);
+    final handle = state.handle;
+    if (handle == null) return;
+    if (ref.read(roomPresentationProvider) != PresentationMode.normal) {
+      unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
+      return;
+    }
+    _enterFullscreen();
   }
 
   /// Shows or leaves the portrait full-screen surface and publishes it: the
@@ -685,7 +717,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     void nudgeVolume(double delta) {
       final handle = room.handle;
       if (handle == null) return;
-      unawaited(ref.read(roomProvider.notifier).setVolume(handle.volume + delta));
+      final next = (handle.volume + delta).clamp(0.0, 1.0);
+      _surfaceHud.show(next);
+      unawaited(ref.read(roomProvider.notifier).setVolume(next));
     }
 
     // The arrows take the wheel's step (the 画质与音频 setting); watching it
@@ -705,10 +739,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     );
     VoidCallback shortcutAction(RoomShortcutAction action) => switch (action) {
       RoomShortcutAction.playPause => () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
-      RoomShortcutAction.fullscreen => () {
-        final player = room.handle?.id;
-        if (player != null) unawaited(presentationController.toggleFullscreen(player));
-      },
+      RoomShortcutAction.fullscreen => _toggleFullscreenVerb,
       // Escape answers the drawer first: a theatre with its chat up closes
       // the chat, and only a second press leaves the mode.
       RoomShortcutAction.leave => () {
@@ -803,12 +834,21 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       controlBarEndInset: controlBarEndInset,
       // A presentation mode that owns the window has no chat to float, and a
       // narrow page stacks it under the picture.
-      onMore: () => unawaited(showRoomMore(context)),
+      onMore: () => unawaited(showRoomMore(context, shortcuts: shortcuts)),
       topBarEndInset: topBarEndInset,
       // The theatre's own chat door: the page owns the drawer, the picture
       // carries its verb beside the exit one.
       onChatDrawer: onChatDrawer,
       chatDrawerOpen: chatDrawerOpen,
+      hud: _surfaceHud,
+      // The portrait full screen's own verbs, now reachable: the swipe up
+      // along the picture's lowest band puts the page's layout back, the
+      // sideways swipe in the middle third walks the room list where the
+      // viewer asked for one, and the fullscreen verb follows the frame's
+      // shape — the page owns all three.
+      onPortraitRestore: () => _setPortraitFullscreen(false),
+      onPortraitSwipe: swipeSwitch && mobile ? _switchRoomByStep : null,
+      onFullscreen: _toggleFullscreenVerb,
     );
 
     final body = _portraitFullscreen
@@ -845,8 +885,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                         : RoomPanelStop.middle,
                     onCoverChanged: _setPanelCover,
                     // Pulling the sheet past its lowest stop is the handle's own
-                    // way into the portrait full screen, by hand: a phone's,
-                    // where that full screen exists.
+                    // way into the portrait full screen — the verb follows the
+                    // picture's shape, and the sheet only shows for a portrait
+                    // stream, so the pull always lands on the portrait surface.
+                    onPortraitFullscreen: _enterFullscreen,
                     picture: ColoredBox(
                       color: kPlayerStageColor,
                       child: playerWith(bottomInset: _panelCover),
@@ -932,13 +974,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                       ),
                       SizedBox(
                         width: columnWidth,
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _ChatRoomHeader(),
-                            Expanded(child: RoomChatPanel()),
-                          ],
-                        ),
+                        // The column is the panel's own: its tabs lead it, and
+                        // the identity lives once, in the bar above — the
+                        // redesign's single-owner rule for the anchor's card.
+                        child: const RoomChatPanel(),
                       ),
                     ],
                   ],
@@ -1071,15 +1110,25 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                         )
                       : playerWith(),
                 )
-              : Scaffold(
-                  // The portrait full-screen surface is the page's own way of
-                  // filling the window: it keeps its black stage and drops the
-                  // app bar with it, so no header survives into the mode.
-                  backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
-                  appBar: _portraitFullscreen
-                      ? null
-                      : _roomAppBar(context, colors: colors, ownChrome: ownChrome, leave: leave),
-                  body: _portraitFullscreen ? body : SafeArea(child: body),
+              : PopScope(
+                  // The portrait full screen holds the back gesture: a pop here
+                  // would leave the room itself, and the mode has its own way
+                  // out first — the same first step `leave` takes. Any other
+                  // layout pops as the route always did.
+                  canPop: !_portraitFullscreen,
+                  onPopInvokedWithResult: (didPop, _) {
+                    if (!didPop && _portraitFullscreen) _setPortraitFullscreen(false);
+                  },
+                  child: Scaffold(
+                    // The portrait full-screen surface is the page's own way of
+                    // filling the window: it keeps its black stage and drops the
+                    // app bar with it, so no header survives into the mode.
+                    backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
+                    appBar: _portraitFullscreen
+                        ? null
+                        : _roomAppBar(context, colors: colors, ownChrome: ownChrome, leave: leave),
+                    body: _portraitFullscreen ? body : SafeArea(child: body),
+                  ),
                 ),
         ),
       ),

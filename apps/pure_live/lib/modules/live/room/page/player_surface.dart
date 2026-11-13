@@ -90,7 +90,9 @@ final class PictureActionButton extends ConsumerWidget {
     final room = ref.read(roomProvider).room;
     final (label, onPressed) = switch (action) {
       RoomPictureAction.back => (
-        t.common.close,
+        // The same word the bar above the page carries: leaving is leaving,
+        // whatever surface asks for it.
+        t.common.back,
         () async {
           final presentation = ref.read(roomPresentationProvider);
           final player = ref.read(roomProvider).handle?.id;
@@ -114,7 +116,9 @@ final class PictureActionButton extends ConsumerWidget {
         },
       ),
       RoomPictureAction.refresh => (
-        t.common.retry,
+        // Not the stream's retry: this opens the room again from its
+        // detail — a different verb that used to borrow retry's word.
+        t.room.reloadRoom,
         room == null
             ? null
             : () => unawaited(controller.open(platform: room.ref.platform, roomId: room.ref.roomId, known: room)),
@@ -135,6 +139,29 @@ final class PictureActionButton extends ConsumerWidget {
       ),
     };
     return DsButton(onPressed: onPressed, autofocus: autofocus, child: Text(label));
+  }
+}
+
+/// The page's hand to the surface's adjustment readout: a volume a keyboard
+/// step sets flashes through the same HUD the picture's drag and wheel use,
+/// so every channel that moves the audio says so the same way. The surface
+/// registers its readout on mount and clears it on disposal; a call with
+/// none mounted is a no-op.
+final class PlayerSurfaceHud {
+  void Function(double value, {bool brightness})? _show;
+
+  /// Flashes the readout: [value] 0–1, [brightness] switches the glyph to
+  /// the screen brightness the left half adjusts.
+  void show(double value, {bool brightness = false}) => _show?.call(value, brightness: brightness);
+
+  // The registration is a property write by shape, but the call site reads
+  // as a verb next to [_detach]; the setter lint wants a getter that has no
+  // business existing here.
+  // ignore: use_setters_to_change_properties
+  void _attach(void Function(double value, {bool brightness}) show) => _show = show;
+
+  void _detach(void Function(double value, {bool brightness}) show) {
+    if (identical(_show, show)) _show = null;
   }
 }
 
@@ -173,6 +200,8 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.topBarEndInset = DsSpace.s12,
     this.onChatDrawer,
     this.chatDrawerOpen = false,
+    this.hud,
+    this.onFullscreen,
     super.key,
   });
 
@@ -285,6 +314,17 @@ final class PlayerSurface extends ConsumerStatefulWidget {
 
   /// Whether that drawer is open, so the verb can name its own next word.
   final bool chatDrawerOpen;
+
+  /// The page's readout hand: the keyboard's volume steps flash the same
+  /// figure the picture's own gestures do. Null leaves the keyboard silent
+  /// (a surface hosted without a page around it).
+  final PlayerSurfaceHud? hud;
+
+  /// The page's own fullscreen verb — the shape-aware one, which a portrait
+  /// stream's fullscreen answers with the portrait surface. The bar's
+  /// fullscreen button and the picture's double tap call it when it is
+  /// here; without it both fall back to the presentation's own toggle.
+  final VoidCallback? onFullscreen;
 
   @override
   ConsumerState<PlayerSurface> createState() => _PlayerSurfaceState();
@@ -414,6 +454,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   @override
   void initState() {
     super.initState();
+    widget.hud?._attach(_showAdjust);
     _controlsFocus.addListener(_onControlsFocus);
     _scheduleHide();
     unawaited(_syncBrightness());
@@ -454,6 +495,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   @override
   void dispose() {
+    widget.hud?._detach(_showAdjust);
     _hideTimer?.cancel();
     _volumeHudTimer?.cancel();
     _switchDebounce?.cancel();
@@ -784,11 +826,16 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             return;
                           }
                           // The fullscreen button's own verb: the reference's double
-                          // tap, its button and F are one toggle, and play and pause
-                          // keep the bar's button. A catalogue left open would only
-                          // float over the picture in its new box, so the double
+                          // tap, its button and F are one toggle — the page's
+                          // shape-aware one when it hands one over — and play and
+                          // pause keep the bar's button. A catalogue left open would
+                          // only float over the picture in its new box, so the double
                           // tap puts it away the way a single tap would.
                           _hidePicker();
+                          if (widget.onFullscreen case final onFullscreen?) {
+                            onFullscreen();
+                            return;
+                          }
                           final committed = widget.roomState.handle?.id;
                           if (committed == null) return;
                           unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(committed));
@@ -950,11 +997,13 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   // The stream's own figures (the more panel's 播放统计): the
                   // same overlay the other players hang, at the picture's
                   // top-right, under the bars so a bar over it still reads.
-                  if (ref.watch(playerStatsVisibleProvider))
+                  // A switch left on while no engine holds the picture waits:
+                  // the handle arrives, the figures return.
+                  if (ref.watch(playerStatsVisibleProvider) && handle != null)
                     PositionedDirectional(
                       top: DsSpace.s8,
                       end: DsSpace.s12,
-                      child: PlayerStatsOverlay(handle: handle!),
+                      child: PlayerStatsOverlay(handle: handle),
                     ),
                   // The inline room's caption: the title and its figures at the
                   // picture's top-left, the redesign's own home for them. The
@@ -1124,6 +1173,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
                             portraitFullscreen: widget.portraitFullscreen,
                             onPortraitFullscreen: widget.onPortraitFullscreen,
+                            onFullscreen: widget.onFullscreen,
                           ),
                         ),
                       ),

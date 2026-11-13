@@ -62,6 +62,13 @@ extension _RoomPageLifecycle on _RoomPageState {
       if (!mounted) return;
       if (ref.read(roomPresentationProvider) != PresentationMode.normal) return;
       if (!ref.read(roomProvider).playback.playing) return;
+      // The fullscreen verb follows the picture's shape: a portrait stream
+      // opens onto the portrait full-screen surface, a landscape one into
+      // the system's own fullscreen.
+      if (_pictureRatio(ref.read(roomProvider)) < 1) {
+        _setPortraitFullscreen(true);
+        return;
+      }
       unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
     });
   }

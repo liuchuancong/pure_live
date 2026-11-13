@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart'
     show BarrageItemMapper, DanmakuColor, DanmakuMessage, DanmakuMessageType, DanmakuPlacement, DanmakuStyle;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
+    show chatGiftsAboveTierProvider, chatShowGiftsProvider;
 import 'package:pure_live/features/settings/danmaku/danmaku_fixed_providers.dart'
     show
         danmakuFixedBottomProvider,
@@ -195,6 +197,31 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
         // The formats are one table, shared with the recorder's file tab:
         // a recording's chat and a download's sidecar take the same set.
         const DanmakuSaveFormatsSection(),
+        // The chat list's own display: what the column beside the picture
+        // carries, the switches living with the rest of the room's face.
+        DsListSection(
+          header: Text(t.settings.danmakuChatListGroup),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.gift),
+              title: t.settings.danmakuChatGiftLines,
+              description: t.settings.danmakuChatGiftLinesDesc,
+              control: DsSwitch(
+                value: ref.watch(chatShowGiftsProvider),
+                onChanged: (value) => unawaited(ref.read(chatShowGiftsProvider.notifier).set(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.diamond),
+              title: t.settings.danmakuChatGiftsAboveTier,
+              description: t.settings.danmakuChatGiftsAboveTierDesc,
+              control: DsSwitch(
+                value: ref.watch(chatGiftsAboveTierProvider),
+                onChanged: (value) => unawaited(ref.read(chatGiftsAboveTierProvider.notifier).set(value: value)),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

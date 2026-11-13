@@ -52,9 +52,6 @@ enum RoomPictureKind {
   /// Playback failed mid-stream.
   playbackFailed,
 
-  /// The stream broke and is being brought back.
-  reconnecting,
-
   /// The replay ran to its end.
   replayEnded,
 }

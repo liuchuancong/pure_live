@@ -190,16 +190,14 @@ final class _PipBarState extends ConsumerState<_PipBar> {
   /// by a second surface.
   double? _rate;
 
-  /// The strip's own mute word; null follows the controller, so a surface
-  /// elsewhere muting the room still reads here.
-  bool? _muted;
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final room = widget.room;
     final controller = ref.read(roomProvider.notifier);
-    final muted = _muted ?? controller.muted;
+    // The state record's mute: a set here or on any other surface lands in
+    // the record, and the widget's fresh room carries it back.
+    final muted = room.muted;
     final playing = room.playback.playing;
     final detail = room.room;
     final capture = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, detail);
@@ -246,11 +244,7 @@ final class _PipBarState extends ConsumerState<_PipBar> {
             button(
               icon: muted ? DsIcons.volumeOff : DsIcons.volume2,
               label: muted ? t.room.unmute : t.room.mute,
-              onPressed: () {
-                final next = !muted;
-                setState(() => _muted = next);
-                unawaited(controller.setMuted(value: next));
-              },
+              onPressed: () => unawaited(controller.setMuted(value: !muted)),
             ),
             // The stream's menus, raised in this window: the page's ask
             // channel points at the main window, so the small window keeps
@@ -312,11 +306,15 @@ final class _PipBarState extends ConsumerState<_PipBar> {
                   unawaited(ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: !dmVisible)),
               dim: !dmVisible,
             ),
-            button(
-              icon: DsIcons.camera,
-              label: t.room.screenshot,
-              onPressed: canCapture ? () => unawaited(takeRoomScreenshot(context, ref, room.handle!)) : null,
-            ),
+            // The strips' own gate: a verb the engine cannot do stays off the
+            // strip (the same rule the floating cluster follows), rather than
+            // a grey button that answers nothing.
+            if (canCapture)
+              button(
+                icon: DsIcons.camera,
+                label: t.room.screenshot,
+                onPressed: () => unawaited(takeRoomScreenshot(context, ref, room.handle!)),
+              ),
             button(
               icon: DsIcons.disc,
               label: recording ? t.room.stopRecording : t.room.record,

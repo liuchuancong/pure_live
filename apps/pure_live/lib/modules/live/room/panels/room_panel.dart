@@ -1,10 +1,12 @@
+import 'dart:async' show Timer;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 import 'package:pure_live/modules/live/room/page/room_details.dart' show RoomDetailsPanel;
-import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show roomSleepTimerChoices;
+import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show roomSleepTimerChoices, sleepTimerProvider;
 
 /// The room's side panels: the sheets that linger beside the picture while
 /// the viewer keeps watching. One at a time — inside the page the bus owns
@@ -64,9 +66,73 @@ Widget roomPanelSheet(BuildContext sheetContext, RoomPanelKind kind) => switch (
   RoomPanelKind.details => DsPanel(title: Text(sheetContext.t.room.details), child: const RoomDetailsPanel()),
   RoomPanelKind.sleepTimer => DsPanel(
     title: Text(sheetContext.t.room.sleep),
-    child: Consumer(builder: (context, ref, _) => Column(children: roomSleepTimerChoices(context, ref))),
+    child: Consumer(
+      builder: (context, ref, _) {
+        final timer = ref.watch(sleepTimerProvider);
+        return Column(
+          children: [
+            // A running timer leads with its own figure: the viewer who set
+            // one comes back to ask how long is left, not to set it again.
+            if (timer.endsAt case final endsAt?) _SleepRemaining(endsAt: endsAt),
+            ...roomSleepTimerChoices(context, ref),
+          ],
+        );
+      },
+    ),
   ),
 };
+
+/// The running timer's own line: how long the room has left, ticking with
+/// the second so the wait reads as a wait (the controller's state only
+/// steps once a minute). The controller clearing the timer disposes the
+/// row with its watch.
+final class _SleepRemaining extends StatefulWidget {
+  const _SleepRemaining({required this.endsAt});
+
+  final DateTime endsAt;
+
+  @override
+  State<_SleepRemaining> createState() => _SleepRemainingState();
+}
+
+final class _SleepRemainingState extends State<_SleepRemaining> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining = widget.endsAt.difference(DateTime.now().toUtc());
+    if (remaining <= Duration.zero) return const SizedBox.shrink();
+    final time = '${remaining.inMinutes}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}';
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s4),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          DsIcon(DsIcons.timer, size: 14, color: colors.textMuted),
+          Text(
+            context.t.room.sleepRemaining(time: time),
+            style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// The one open verb for the room's side panels. Inside the page the panel
 /// is hosted there — one at a time, the page sweeps the previous one off

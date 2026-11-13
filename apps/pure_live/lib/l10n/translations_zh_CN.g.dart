@@ -7072,6 +7072,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '播放设置'
 	String get playerSettings => '播放设置';
 
+	/// zh-CN: '重新打开房间'
+	String get reloadRoom => '重新打开房间';
+
 	/// zh-CN: '画质'
 	String get quality => '画质';
 
@@ -7102,6 +7105,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '正在连接聊天…'
 	String get chatConnecting => '正在连接聊天…';
 
+	/// zh-CN: '聊天连接已断开'
+	String get chatClosed => '聊天连接已断开';
+
+	/// zh-CN: '这个平台只能看，不能发言'
+	String get chatViewOnly => '这个平台只能看，不能发言';
+
 	/// zh-CN: '这个房间没有实时聊天'
 	String get chatUnsupported => '这个房间没有实时聊天';
 
@@ -7125,6 +7134,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '关闭定时'
 	String get sleepOff => '关闭定时';
+
+	/// zh-CN: '已定时 · 剩余 {time}'
+	String sleepRemaining({required Object time}) => '已定时 · 剩余 ${time}';
 
 	/// zh-CN: '发个弹幕见证当下'
 	String get sendHint => '发个弹幕见证当下';
@@ -7677,9 +7689,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '观看'
 	String get statViewers => '观看';
-
-	/// zh-CN: '已开播'
-	String get statOnAir => '已开播';
 
 	/// zh-CN: '停靠：'
 	String get panelStops => '停靠：';
@@ -8895,6 +8904,21 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '弹幕交互'
 	String get danmakuInteractionGroup => '弹幕交互';
+
+	/// zh-CN: '聊天列表'
+	String get danmakuChatListGroup => '聊天列表';
+
+	/// zh-CN: '礼物行'
+	String get danmakuChatGiftLines => '礼物行';
+
+	/// zh-CN: '在聊天列显示礼物消息行。'
+	String get danmakuChatGiftLinesDesc => '在聊天列显示礼物消息行。';
+
+	/// zh-CN: '只看值钱礼物'
+	String get danmakuChatGiftsAboveTier => '只看值钱礼物';
+
+	/// zh-CN: '免费与廉价礼物不进聊天列，组合礼物攒够一并显示。'
+	String get danmakuChatGiftsAboveTierDesc => '免费与廉价礼物不进聊天列，组合礼物攒够一并显示。';
 
 	/// zh-CN: '点按弹幕'
 	String get styleTapInteraction => '点按弹幕';
@@ -17426,6 +17450,7 @@ extension on Translations {
 			'room.unfollowAction' => '不再关注',
 			'room.unfollowConfirm' => ({required Object name}) => '不再关注 ${name} 的直播间？',
 			'room.playerSettings' => '播放设置',
+			'room.reloadRoom' => '重新打开房间',
 			'room.quality' => '画质',
 			'room.lineLabel' => '线路',
 			'room.chatColumnWidth' => '聊天列宽度',
@@ -17436,6 +17461,8 @@ extension on Translations {
 			'room.pause' => '暂停',
 			'room.noChat' => '还没有弹幕',
 			'room.chatConnecting' => '正在连接聊天…',
+			'room.chatClosed' => '聊天连接已断开',
+			'room.chatViewOnly' => '这个平台只能看，不能发言',
 			'room.chatUnsupported' => '这个房间没有实时聊天',
 			'room.chatFailedTitle' => '聊天没连上',
 			'room.system' => '系统',
@@ -17444,6 +17471,7 @@ extension on Translations {
 			'room.volume' => '音量',
 			'room.sleep' => '定时关闭',
 			'room.sleepOff' => '关闭定时',
+			'room.sleepRemaining' => ({required Object time}) => '已定时 · 剩余 ${time}',
 			'room.sendHint' => '发个弹幕见证当下',
 			'room.send' => '发送',
 			'room.sendFailed' => '发送失败',
@@ -17547,12 +17575,12 @@ extension on Translations {
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
 			'room.danmakuSettings' => '弹幕设置',
+			_ => null,
+		} ?? switch (path) {
 			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '醒目留言',
 			'room.superChatEmpty' => '暂无醒目留言',
 			'room.superChatFailed' => '醒目留言加载失败',
-			_ => null,
-		} ?? switch (path) {
 			'room.superChatCardMembership' => '会员',
 			'room.superChatCardSubscription' => '订阅',
 			'room.onlineViewers' => '在线',
@@ -17630,7 +17658,6 @@ extension on Translations {
 			'room.switchSearch' => '搜索',
 			'room.stats' => '播放统计',
 			'room.statViewers' => '观看',
-			'room.statOnAir' => '已开播',
 			'room.panelStops' => '停靠：',
 			'room.panelStopsHint' => '拉穿最低档进竖屏全屏',
 			'room.statWatched' => '已播',
@@ -18030,6 +18057,11 @@ extension on Translations {
 			'settings.danmakuDisplayGroup' => '弹幕显示',
 			'settings.danmakuList' => '弹幕列表',
 			'settings.danmakuInteractionGroup' => '弹幕交互',
+			'settings.danmakuChatListGroup' => '聊天列表',
+			'settings.danmakuChatGiftLines' => '礼物行',
+			'settings.danmakuChatGiftLinesDesc' => '在聊天列显示礼物消息行。',
+			'settings.danmakuChatGiftsAboveTier' => '只看值钱礼物',
+			'settings.danmakuChatGiftsAboveTierDesc' => '免费与廉价礼物不进聊天列，组合礼物攒够一并显示。',
 			'settings.styleTapInteraction' => '点按弹幕',
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
 			'settings.styleLongPressInteraction' => '长按弹幕',
@@ -18057,6 +18089,8 @@ extension on Translations {
 			'settings.chatListGroup' => '聊天列表内容',
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuFontDescription' => '仅用于画面弹幕，聊天列表沿用界面字体。',
 			'settings.danmakuFontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。',
 			'settings.styleDensity' => '弹幕密度',
@@ -18065,8 +18099,6 @@ extension on Translations {
 			'settings.styleDensityOverlap' => '重叠',
 			'settings.styleAdvanced' => '高级设置',
 			'settings.styleFontSize' => '大小',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			'settings.styleFontWeight' => '粗细',
 			'settings.styleFontWeightDesc' => '字形的粗细；400 为常规，700 为加粗。',
@@ -18571,6 +18603,8 @@ extension on Translations {
 			'settings.playerGuideEntrySymLatencyTitle' => '延迟高（连麦 / 赛事情景）',
 			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
 			'settings.playerGuideEntrySymNoVideoTitle' => '有声音没画面',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntrySymNoVideoBody' => '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。',
 			'settings.optionAuto' => '自动',
 			'settings.optionOff' => '关闭',
@@ -18579,8 +18613,6 @@ extension on Translations {
 			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '移动数据下的清晰度；Wi-Fi 与有线沿用上面的首选。',
@@ -19085,6 +19117,8 @@ extension on Translations {
 			'settings.hongguoDescription' => '红果伴侣服务与播放偏好。',
 			'settings.hongguoInterfaceDesc' => '海报卡片上显示哪些信息。',
 			'settings.hongguoDanmakuDesc' => '弹幕开关与字号、透明度、速度、密度。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoDeviceDesc' => '本机注册的设备身份，可在这里重置。',
 			'settings.hongguoQuality' => '默认清晰度',
 			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
@@ -19093,8 +19127,6 @@ extension on Translations {
 			'settings.hongguoCardTags' => '来源标签',
 			'settings.hongguoCardEpisodes' => '集数',
 			'settings.hongguoCardToday' => '今日标记',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoCardScore' => '评分',
 			'settings.hongguoCardFavorite' => '收藏标记',
 			'settings.hongguoCardHot' => '封面热度',
@@ -19599,6 +19631,8 @@ extension on Translations {
 			'vod.collapse' => '收起',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
+			_ => null,
+		} ?? switch (path) {
 			'vod.score' => '评分',
 			'vod.danmakuOn' => '显示弹幕',
 			'vod.danmakuOff' => '隐藏弹幕',
@@ -19607,8 +19641,6 @@ extension on Translations {
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
-			_ => null,
-		} ?? switch (path) {
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
 			'vod.pause' => '暂停',

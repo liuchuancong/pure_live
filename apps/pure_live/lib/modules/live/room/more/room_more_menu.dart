@@ -12,7 +12,7 @@ import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
     show RoomStreamPicker, roomStreamPickerAskProvider;
 import 'package:pure_live/modules/live/room/page/room_details.dart' show copyRoomLink, openRoomExternally, shareRoom;
-import 'package:pure_live/modules/live/room/page/room_shortcuts.dart' show showRoomShortcuts;
+import 'package:pure_live/modules/live/room/page/room_shortcuts.dart' show RoomShortcutBinding, showRoomShortcuts;
 import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomDetails, showRoomSleepTimer;
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show showRoomSwitcher;
 import 'package:pure_live/shared/shared.dart';
@@ -26,8 +26,14 @@ import 'package:pure_live/shared/shared.dart';
 /// verbs — screenshot, recording, the small window, the danmaku gear — stay
 /// on the bars where they live; the container is an index of the homes that
 /// have no bar, not a second copy of the ones that do.
-Future<void> showRoomMore(BuildContext context) {
-  return showPlayerMoreContainer(context, content: (context, {required labeled}) => _RoomMoreContent(labeled: labeled));
+///
+/// [shortcuts] is the page's own live bindings, so the help row opens the
+/// same sheet the `?` key does — not an empty one.
+Future<void> showRoomMore(BuildContext context, {required List<RoomShortcutBinding> shortcuts}) {
+  return showPlayerMoreContainer(
+    context,
+    content: (context, {required labeled}) => _RoomMoreContent(labeled: labeled, shortcuts: shortcuts),
+  );
 }
 
 /// The container's content: the share row, the tools grid and the settings
@@ -36,10 +42,13 @@ Future<void> showRoomMore(BuildContext context) {
 /// the groups from their spacing; the sheet, which the reference draws with
 /// the labels on, keeps them.
 final class _RoomMoreContent extends ConsumerWidget {
-  const _RoomMoreContent({required this.labeled});
+  const _RoomMoreContent({required this.labeled, required this.shortcuts});
 
   /// Whether the group labels show.
   final bool labeled;
+
+  /// The page's live key bindings, for the help row's sheet.
+  final List<RoomShortcutBinding> shortcuts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -164,6 +173,18 @@ final class _RoomMoreContent extends ConsumerWidget {
                       unawaited(ref.read(playbackSettingsProvider.notifier).setControlsAutoHideSeconds(value)),
                 ),
               ),
+              // The flying layer's switch, where a strip too narrow to carry
+              // the pair still reaches it: the same one read the bar's glyph.
+              PlayerMoreRow(
+                label: t.room.danmakuOn,
+                value: null,
+                onTap: null,
+                trailing: DsSwitch(
+                  value: settings.danmakuVisible,
+                  onChanged: (value) =>
+                      unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
+                ),
+              ),
               PlayerMoreRow(
                 label: t.room.quality,
                 value: room.quality?.displayLabel ?? t.room.quality,
@@ -201,7 +222,7 @@ final class _RoomMoreContent extends ConsumerWidget {
                 PlayerMoreRow(
                   label: t.room.shortcutsHelp,
                   value: null,
-                  onTap: () => unawaited(showRoomShortcuts(context, const [])),
+                  onTap: () => unawaited(showRoomShortcuts(context, shortcuts)),
                 ),
             ],
           ),

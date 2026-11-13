@@ -2502,6 +2502,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get unfollowAction => 'Unfollow';
 	@override String unfollowConfirm({required Object name}) => 'Unfollow ${name}\'s room?';
 	@override String get playerSettings => 'Playback settings';
+	@override String get reloadRoom => 'Reopen the room';
 	@override String get quality => 'Quality';
 	@override String get lineLabel => 'Line';
 	@override String get chatColumnWidth => 'Chat column width';
@@ -2512,6 +2513,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get pause => 'Pause';
 	@override String get noChat => 'No chat yet';
 	@override String get chatConnecting => 'Connecting to chat…';
+	@override String get chatClosed => 'The chat connection closed';
+	@override String get chatViewOnly => 'This platform\'s chat is watch-only';
 	@override String get chatUnsupported => 'This room has no live chat';
 	@override String get chatFailedTitle => 'Chat did not connect';
 	@override String get system => 'System';
@@ -2520,6 +2523,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get volume => 'Volume';
 	@override String get sleep => 'Sleep timer';
 	@override String get sleepOff => 'Stop the timer';
+	@override String sleepRemaining({required Object time}) => 'Timer set · ${time} left';
 	@override String get sendHint => 'Say something';
 	@override String get send => 'Send';
 	@override String get sendFailed => 'The message failed to send';
@@ -2704,7 +2708,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get switchSearch => 'Search';
 	@override String get stats => 'Stats';
 	@override String get statViewers => 'Viewers';
-	@override String get statOnAir => 'On air';
 	@override String get panelStops => 'Stops:';
 	@override String get panelStopsHint => 'Pull past the lowest stop for portrait full screen';
 	@override String get statWatched => 'Watched';
@@ -3122,6 +3125,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuDisplayGroup => 'Danmaku display';
 	@override String get danmakuList => 'Danmaku list';
 	@override String get danmakuInteractionGroup => 'Danmaku interaction';
+	@override String get danmakuChatListGroup => 'Chat list';
+	@override String get danmakuChatGiftLines => 'Gift lines';
+	@override String get danmakuChatGiftLinesDesc => 'Show the chat list\'s gift messages as lines.';
+	@override String get danmakuChatGiftsAboveTier => 'Valuable gifts only';
+	@override String get danmakuChatGiftsAboveTierDesc => 'Free and cheap gifts stay out of the chat list; a combo shows once it adds up.';
 	@override String get styleTapInteraction => 'Tap danmaku';
 	@override String get styleTapInteractionDesc => 'Copy or block a message; off, a tap only toggles the controls.';
 	@override String get styleLongPressInteraction => 'Long-press danmaku';
@@ -7649,6 +7657,7 @@ extension on TranslationsEn {
 			'room.unfollowAction' => 'Unfollow',
 			'room.unfollowConfirm' => ({required Object name}) => 'Unfollow ${name}\'s room?',
 			'room.playerSettings' => 'Playback settings',
+			'room.reloadRoom' => 'Reopen the room',
 			'room.quality' => 'Quality',
 			'room.lineLabel' => 'Line',
 			'room.chatColumnWidth' => 'Chat column width',
@@ -7659,6 +7668,8 @@ extension on TranslationsEn {
 			'room.pause' => 'Pause',
 			'room.noChat' => 'No chat yet',
 			'room.chatConnecting' => 'Connecting to chat…',
+			'room.chatClosed' => 'The chat connection closed',
+			'room.chatViewOnly' => 'This platform\'s chat is watch-only',
 			'room.chatUnsupported' => 'This room has no live chat',
 			'room.chatFailedTitle' => 'Chat did not connect',
 			'room.system' => 'System',
@@ -7667,6 +7678,7 @@ extension on TranslationsEn {
 			'room.volume' => 'Volume',
 			'room.sleep' => 'Sleep timer',
 			'room.sleepOff' => 'Stop the timer',
+			'room.sleepRemaining' => ({required Object time}) => 'Timer set · ${time} left',
 			'room.sendHint' => 'Say something',
 			'room.send' => 'Send',
 			'room.sendFailed' => 'The message failed to send',
@@ -7770,12 +7782,12 @@ extension on TranslationsEn {
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
 			'room.danmakuSettings' => 'Danmaku settings',
+			_ => null,
+		} ?? switch (path) {
 			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chat',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'Super chats did not load',
-			_ => null,
-		} ?? switch (path) {
 			'room.superChatCardMembership' => 'Membership',
 			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
@@ -7853,7 +7865,6 @@ extension on TranslationsEn {
 			'room.switchSearch' => 'Search',
 			'room.stats' => 'Stats',
 			'room.statViewers' => 'Viewers',
-			'room.statOnAir' => 'On air',
 			'room.panelStops' => 'Stops:',
 			'room.panelStopsHint' => 'Pull past the lowest stop for portrait full screen',
 			'room.statWatched' => 'Watched',
@@ -8253,6 +8264,11 @@ extension on TranslationsEn {
 			'settings.danmakuDisplayGroup' => 'Danmaku display',
 			'settings.danmakuList' => 'Danmaku list',
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
+			'settings.danmakuChatListGroup' => 'Chat list',
+			'settings.danmakuChatGiftLines' => 'Gift lines',
+			'settings.danmakuChatGiftLinesDesc' => 'Show the chat list\'s gift messages as lines.',
+			'settings.danmakuChatGiftsAboveTier' => 'Valuable gifts only',
+			'settings.danmakuChatGiftsAboveTierDesc' => 'Free and cheap gifts stay out of the chat list; a combo shows once it adds up.',
 			'settings.styleTapInteraction' => 'Tap danmaku',
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
@@ -8280,6 +8296,8 @@ extension on TranslationsEn {
 			'settings.chatListGroup' => 'Chat list content',
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuFontDescription' => 'For flying danmaku only; the chat list keeps the UI font.',
 			'settings.danmakuFontManagerDescription' => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.',
 			'settings.styleDensity' => 'Density',
@@ -8288,8 +8306,6 @@ extension on TranslationsEn {
 			'settings.styleDensityOverlap' => 'Overlap',
 			'settings.styleAdvanced' => 'Advanced',
 			'settings.styleFontSize' => 'Size',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
 			'settings.styleFontWeight' => 'Weight',
 			'settings.styleFontWeightDesc' => 'How thick the glyphs are; 400 is regular and 700 is bold.',
@@ -8794,6 +8810,8 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymLatencyTitle' => 'High latency (co-streaming / esports)',
 			'settings.playerGuideEntrySymLatencyBody' => 'Use the low-latency preset and shrink buffering properties.',
 			'settings.playerGuideEntrySymNoVideoTitle' => 'Sound but no picture',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntrySymNoVideoBody' => 'Check the video output driver: null renders nothing. Reset it to auto, or restore the player kernel defaults.',
 			'settings.optionAuto' => 'Auto',
 			'settings.optionOff' => 'Off',
@@ -8802,8 +8820,6 @@ extension on TranslationsEn {
 			'settings.playerAdvancedRequiresMpv' => 'These options only affect the mpv engine.',
 			'settings.recordingDescription' => 'Recording folder, file naming and the size cap.',
 			'settings.preferredQuality' => 'Preferred quality',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'Quality on mobile data; Wi-Fi and wired keep the default above.',
@@ -9308,6 +9324,8 @@ extension on TranslationsEn {
 			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
 			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
 			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoDeviceDesc' => 'The device identity this install registered; reset it here.',
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
@@ -9316,8 +9334,6 @@ extension on TranslationsEn {
 			'settings.hongguoCardTags' => 'Source tags',
 			'settings.hongguoCardEpisodes' => 'Episode count',
 			'settings.hongguoCardToday' => '“Today” marker',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoCardScore' => 'Score',
 			'settings.hongguoCardFavorite' => 'Favorite mark',
 			'settings.hongguoCardHot' => 'Cover heat',
@@ -9822,6 +9838,8 @@ extension on TranslationsEn {
 			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
+			_ => null,
+		} ?? switch (path) {
 			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',
@@ -9830,8 +9848,6 @@ extension on TranslationsEn {
 			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
-			_ => null,
-		} ?? switch (path) {
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
 			'vod.pause' => 'Pause',

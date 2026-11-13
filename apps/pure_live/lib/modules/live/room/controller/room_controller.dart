@@ -78,6 +78,13 @@ typedef RoomState = ({
   PlayerHandle? handle,
   PlayerHandle? player,
   bool audioOnly,
+
+  /// The room's effective mute (the viewer's own toggle after the app-wide
+  /// mute has had its say) and its level. Neither rides the transport
+  /// stream, so this record is what carries them to every bar at once —
+  /// a write here is the only echo a mute or a wheel step needs.
+  bool muted,
+  double volume,
   String? error,
   RoomChat chat,
 
@@ -89,7 +96,7 @@ typedef RoomState = ({
   DateTime watchStartedAt,
 });
 
-RoomState _initial({bool audioOnly = false}) => (
+RoomState _initial({bool audioOnly = false, bool muted = false, double volume = 0}) => (
   room: null,
   qualities: const [],
   lines: const [],
@@ -99,6 +106,8 @@ RoomState _initial({bool audioOnly = false}) => (
   handle: null,
   player: null,
   audioOnly: audioOnly,
+  muted: muted,
+  volume: volume,
   error: null,
   chat: (status: RoomChatStatus.connecting, error: null),
   watchStartedAt: DateTime.now(),
@@ -945,6 +954,11 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<PlayerHandle>? _handles;
   StreamSubscription<PlayerFailure>? _failures;
   StreamSubscription<LiveMessage>? _chat;
+
+  /// The installed session's connective states, when it tells them (the
+  /// site package's base sessions do): a mid-session break names itself in
+  /// the column instead of a chat that silently stops.
+  StreamSubscription<DanmakuStateEvent>? _chatStates;
   StreamSubscription<GeometryState>? _geometry;
 
   /// The adapter events that carry the first decoded frame of an entry.
@@ -1223,10 +1237,10 @@ final class RoomController extends Notifier<RoomState> {
     // ASMR is an Android-only automatic audio-only entry (the reference's
     // `enableAsmrSleepMode`); the room page starts its sleep timer beside it.
     _audioOnly = !kIsWeb && defaultTargetPlatform == TargetPlatform.android && settings.asmrSleepMode;
-    state = _initial(audioOnly: _audioOnly);
     _muted = settings.muted;
     _globalMute = settings.globalMute;
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    state = _initial(audioOnly: _audioOnly, muted: _muted || _globalMute, volume: _volume);
     _preparedHandle = null;
     ref.read(roomChatProvider.notifier).clear();
     ref.read(roomShieldCountProvider.notifier).reset();
@@ -1453,8 +1467,8 @@ final class RoomController extends Notifier<RoomState> {
       unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
     }
     _muted = value;
-    // Mute is not on the transport stream; a state echo rebuilds the bar's
-    // icon now rather than on the next unrelated event.
+    // Mute is not on the transport stream: the record above carries it, so
+    // this write — the field now differing — is the echo every bar reads.
     state = _with();
     final handle = state.handle;
     if (handle != null) await _setHandleMute(handle);
@@ -1492,10 +1506,14 @@ final class RoomController extends Notifier<RoomState> {
   /// The volume the room holds.
   double get volume => _volume;
 
-  /// Sets the volume, remembering it for the next engine.
+  /// Sets the volume, remembering it for the next engine. The level rides
+  /// the state record — throttled to whole percents, a drag reporting per
+  /// frame — so every bar's slider reads the figure the audio holds, from
+  /// whichever surface moved it.
   Future<void> setVolume(double value) async {
     final clamped = value.clamp(0.0, 1.0);
     _volume = clamped;
+    if ((clamped * 100).round() != (state.volume * 100).round()) state = _with();
     await state.handle?.setVolume(clamped);
   }
 
@@ -1691,7 +1709,10 @@ final class RoomController extends Notifier<RoomState> {
     } on Object catch (error) {
       // The next room open retries; background return is not a failure path
       // — but a pattern of these means the danmaku is permanently broken.
+      // The column says so too: the viewer who comes back reads the failure
+      // row with its retry, not a chat that pretends to be alive.
       appLog.forCategory('room.chat').warning('background danmaku reconnect failed', fields: {'error': '$error'});
+      _setChat(RoomChatStatus.failed, error: '$error');
     }
   }
 
@@ -2369,8 +2390,10 @@ final class RoomController extends Notifier<RoomState> {
     // flies and lands in the chat list at once.
     final pipeline = RoomDanmakuPipeline(
       ref.read(roomChatProvider.notifier).add,
-      showChatGifts: () => true,
-      chatGiftsAboveTier: () => false,
+      // The chat list's own gift filters, the settings rows' live reads: a
+      // flip applies to the next gift without reopening the room.
+      showChatGifts: () => ref.read(chatShowGiftsProvider),
+      chatGiftsAboveTier: () => ref.read(chatGiftsAboveTierProvider),
       showFlyGifts: () => ref.read(danmakuShowGiftsProvider),
       streamer: () => room.anchor?.name ?? '',
       shield: ref.read(shieldRulesProvider),
@@ -2388,7 +2411,10 @@ final class RoomController extends Notifier<RoomState> {
       await _closeDanmaku();
       return;
     }
-    _chat = session.events.listen(_onSiteMessage);
+    _chat = session.events.listen(_onSiteMessage, onDone: () => _onChatClosed(from: session));
+    if (session case final DanmakuSessionBase sessionBase) {
+      _chatStates = sessionBase.states.listen((event) => _onChatState(event, from: sessionBase));
+    }
     _setChat(RoomChatStatus.connected);
     final handle = state.handle;
     if (handle != null) pipeline.bind(handle);
@@ -2402,6 +2428,40 @@ final class RoomController extends Notifier<RoomState> {
   void _setChat(RoomChatStatus status, {String? error}) {
     if (!ref.mounted) return;
     state = _with(chat: (status: status, error: error));
+  }
+
+  /// The site session's own account of the connection (the base sessions
+  /// carry the state stream): a joined connection back after a break goes
+  /// to connected without the viewer's hand, a recovering one shows the
+  /// column's connecting spinner, and a spent budget names its reason in
+  /// the failure row. The room's own teardown cancels the subscription
+  /// before it closes the session, so a replaced session's voice — the
+  /// [from] check — cannot reach here.
+  void _onChatState(DanmakuStateEvent event, {required DanmakuSessionBase from}) {
+    if (!ref.mounted || !identical(_danmaku, from)) return;
+    switch (event) {
+      case DanmakuJoined():
+        _setChat(RoomChatStatus.connected);
+      case DanmakuReconnecting(:final reason):
+        appLog.forCategory('room.chat').info('danmaku reconnecting', fields: {'reason': reason});
+        _setChat(RoomChatStatus.connecting);
+      case DanmakuExhausted(:final reason):
+        appLog.forCategory('room.chat').warning('danmaku reconnect budget exhausted', fields: {'reason': reason});
+        _setChat(RoomChatStatus.failed, error: reason);
+      case DanmakuConnecting() || DanmakuHandshakeDone():
+        break; // the open path owns these two
+    }
+  }
+
+  /// The events stream closed by itself: a session that ended on its own
+  /// (its reconnect budget spent, or a transport the platform gave up on)
+  /// leaves the column saying so, not connected. The room's own teardown
+  /// cancels the subscription before it closes the session, so this never
+  /// fires for a room the viewer left.
+  void _onChatClosed({required LiveDanmakuSession from}) {
+    if (!ref.mounted || !identical(_danmaku, from)) return;
+    appLog.forCategory('room.chat').info('danmaku session closed by itself');
+    _setChat(RoomChatStatus.failed, error: l10n.t.room.chatClosed);
   }
 
   /// Tries the chat's handshake again over the room's own platform: a network
@@ -2427,6 +2487,8 @@ final class RoomController extends Notifier<RoomState> {
   /// Retires the room's danmaku session and pipeline only: the playback, its
   /// handle and the recorder keep running exactly as they were.
   Future<void> _closeDanmaku() async {
+    unawaited(_chatStates?.cancel() ?? Future<void>.value());
+    _chatStates = null;
     unawaited(_chat?.cancel() ?? Future<void>.value());
     _chat = null;
     final pipeline = _pipeline;
@@ -2737,6 +2799,8 @@ final class RoomController extends Notifier<RoomState> {
     PlayerHandle? handle,
     PlayerHandle? player,
     bool? audioOnly,
+    bool? muted,
+    double? volume,
     String? error,
     RoomChat? chat,
     DateTime? watchStartedAt,
@@ -2752,6 +2816,8 @@ final class RoomController extends Notifier<RoomState> {
       handle: handle ?? state.handle,
       player: player ?? state.player,
       audioOnly: audioOnly ?? state.audioOnly,
+      muted: muted ?? _muted || _globalMute,
+      volume: volume ?? _volume,
       error: error,
       chat: chat ?? state.chat,
       watchStartedAt: watchStartedAt ?? state.watchStartedAt,
@@ -2780,6 +2846,8 @@ final class RoomController extends Notifier<RoomState> {
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_handles?.cancel() ?? Future<void>.value());
     unawaited(_failures?.cancel() ?? Future<void>.value());
+    unawaited(_chatStates?.cancel() ?? Future<void>.value());
+    _chatStates = null;
     unawaited(_chat?.cancel() ?? Future<void>.value());
     unawaited(_geometry?.cancel() ?? Future<void>.value());
     unawaited(_frames?.cancel() ?? Future<void>.value());

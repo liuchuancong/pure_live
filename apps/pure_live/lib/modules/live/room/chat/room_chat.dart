@@ -85,7 +85,14 @@ final class RoomChatPanel extends ConsumerStatefulWidget {
 }
 
 final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
-  _ChatTab _tab = _ChatTab.danmaku;
+  /// The tab the viewer left open last: the store keeps the name, an
+  /// unknown one (or none) opens the talk.
+  late _ChatTab _tab = switch (readChatTabName()) {
+    'superChats' => _ChatTab.superChats,
+    'recording' => _ChatTab.recording,
+    'shield' => _ChatTab.shield,
+    _ => _ChatTab.danmaku,
+  };
 
   /// The newest line the viewer had reached when they last left the chat tab.
   ///
@@ -133,6 +140,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
       _unread = 0;
     }
     _tab = value;
+    unawaited(writeChatTabName(value.name));
   }
 
   static int _after(List<LiveMessage> chat, String mark) {

@@ -27,7 +27,24 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
   Widget build(BuildContext context) {
     final t = context.t;
     final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
-    if (!canSend) return const SizedBox.shrink();
+    if (!canSend) {
+      // The platform's chat only listens: the column's bottom says so, where
+      // the composer would have stood — the room reads as quiet by design,
+      // not broken by silence.
+      final colors = DsTheme.colorsOf(context);
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: colors.border)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
+          child: Text(
+            t.room.chatViewOnly,
+            style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+          ),
+        ),
+      );
+    }
     // The field owns the column's bottom: a hairline above it says where the
     // conversation ends and the viewer's own voice begins.
     return DecoratedBox(
@@ -49,6 +66,10 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
                     controller: _field,
                     clearable: true,
                     placeholder: t.room.sendHint,
+                    // The app's own ceiling for a posted message: the counter
+                    // shows the room left, and the platforms' own limits still
+                    // name themselves through the send's failure.
+                    maxLength: 100,
                     onSubmitted: (word) => unawaited(_send(word)),
                     style: DsTextFieldStyle(borderRadius: BorderRadius.circular(DsRadii.pill)),
                   ),
@@ -89,7 +110,8 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
     if (failure == null) {
       _field.clear();
     } else {
-      showDsToast(context: context, title: context.t.room.sendFailed);
+      // The platform's own reason: a refused send names what refused it.
+      showDsToast(context: context, title: context.t.room.sendFailed, description: failure);
     }
   }
 }
