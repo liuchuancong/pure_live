@@ -68,13 +68,9 @@ extension _RoomPageLifecycle on _RoomPageState {
       // already the page's full-bleed layout — there is no fuller surface
       // under it, so the portrait branch has nothing to do there.
       final portrait = _pictureRatio(ref.read(roomProvider)) < 1;
-      final formFactor = ref.read(platformRuntimeProvider).environment.runtime.formFactor;
-      // 平板走桌面骨架：它的竖屏流没有沉浸式房间，照旧落竖屏全屏表面。
-      final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
-      final phoneImmersive =
-          mobile &&
-          !isTabletSized(MediaQuery.sizeOf(context)) &&
-          MediaQuery.sizeOf(context).width < kRoomCompactBreakpoint;
+      // 沉浸式按窗口形状判定（<600 与平台无关）：窄窗已是满铺的竖屏沉浸
+      // 房间，竖屏流不再落竖屏全屏表面——桌面小窗与手机同款。
+      final phoneImmersive = MediaQuery.sizeOf(context).width < kRoomCompactBreakpoint;
       if (portrait && phoneImmersive) return;
       if (portrait) {
         _setPortraitFullscreen(true);

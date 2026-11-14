@@ -30,17 +30,24 @@ import 'package:pure_live/shared/shared.dart';
 /// same sheet the `?` key does — not an empty one. [cleanScreen] shows the
 /// immersive room's clean-screen switch when not null, flipping through
 /// [onCleanScreen]; null leaves the row out (the layouts with no overlay to
-/// clean have nothing for it to say).
+/// clean have nothing for it to say). [onOpenChat] shows the chat's door —
+/// the row that opens the talk's drawer (the immersive room's only door,
+/// its send bar having gone away); null leaves the row out.
 Future<void> showRoomMore(
   BuildContext context, {
   required List<RoomShortcutBinding> shortcuts,
   bool? cleanScreen,
   ValueChanged<bool>? onCleanScreen,
+  VoidCallback? onOpenChat,
 }) {
   return showPlayerMoreContainer(
     context,
-    content: (context, {required labeled}) =>
-        _RoomMoreContent(shortcuts: shortcuts, cleanScreen: cleanScreen, onCleanScreen: onCleanScreen),
+    content: (context, {required labeled}) => _RoomMoreContent(
+      shortcuts: shortcuts,
+      cleanScreen: cleanScreen,
+      onCleanScreen: onCleanScreen,
+      onOpenChat: onOpenChat,
+    ),
   );
 }
 
@@ -49,7 +56,7 @@ Future<void> showRoomMore(
 /// own list — [DsListSection] holding [DsListRow]s, each row with its icon,
 /// value and trailing control, so no row chrome is hand-drawn here.
 final class _RoomMoreContent extends ConsumerWidget {
-  const _RoomMoreContent({required this.shortcuts, this.cleanScreen, this.onCleanScreen});
+  const _RoomMoreContent({required this.shortcuts, this.cleanScreen, this.onCleanScreen, this.onOpenChat});
 
   /// The page's live key bindings, for the help row's sheet.
   final List<RoomShortcutBinding> shortcuts;
@@ -59,6 +66,10 @@ final class _RoomMoreContent extends ConsumerWidget {
 
   /// Flips the clean-screen state.
   final ValueChanged<bool>? onCleanScreen;
+
+  /// Opens the chat's drawer (the immersive room's only door); null hides
+  /// the row.
+  final VoidCallback? onOpenChat;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,6 +83,9 @@ final class _RoomMoreContent extends ConsumerWidget {
     // they hold the notifiers, not this widget's ref.
     final roomNotifier = ref.read(roomProvider.notifier);
     final playbackSettingsController = ref.read(playbackSettingsProvider.notifier);
+    // The chat door's local: a field's null-promotion does not reach into
+    // the row's closure.
+    final openChat = onOpenChat;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,6 +166,17 @@ final class _RoomMoreContent extends ConsumerWidget {
         ),
         DsListSection(
           children: [
+            // The chat's door: the row closes the menu first — the drawer it
+            // opens is a page surface, not another sheet on the stack.
+            if (openChat != null)
+              DsListRow(
+                title: Text(t.room.chatTitle),
+                leading: const DsIcon(DsIcons.messageCircle),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  openChat();
+                },
+              ),
             // The bars' auto-hide pace: the row opens its own choice panel —
             // 常显, then the three delays — where the pick lands like every
             // other choice in the menu.

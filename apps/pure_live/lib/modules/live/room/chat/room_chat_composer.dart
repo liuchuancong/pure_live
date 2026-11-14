@@ -106,19 +106,10 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
 /// has already used), then the bundled sheet's, every face drawn through the
 /// same parser the lines use — one the chat cannot draw is one the panel does
 /// not offer. A pick puts its code in the field and the panel stays up.
-///
-/// Public so the immersive room's composer bar and the landscape control
-/// bar's input host the same panel the column's composer does. [onVideo]
-/// draws it in the player's fixed dark plate instead of the theme's surface,
-/// because a panel floating over the picture must not follow the app's
-/// light/dark pick (the same rule [OnVideoColors] serves).
 final class RoomEmotePanel extends ConsumerStatefulWidget {
-  const RoomEmotePanel({required this.onPick, this.onVideo = false, super.key});
+  const RoomEmotePanel({required this.onPick, super.key});
 
   final ValueChanged<String> onPick;
-
-  /// Whether the panel floats over the picture and wears the on-video plate.
-  final bool onVideo;
 
   @override
   ConsumerState<RoomEmotePanel> createState() => RoomEmotePanelState();
@@ -145,20 +136,19 @@ final class RoomEmotePanelState extends ConsumerState<RoomEmotePanel> {
     final faces = [for (final emote in emotes) emote.code, ..._atlasCodes];
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final plate = widget.onVideo;
     return Container(
       constraints: const BoxConstraints(maxHeight: 180),
       padding: const EdgeInsets.all(DsSpace.s8),
       decoration: BoxDecoration(
-        color: plate ? OnVideoColors.menuPlate : colors.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(theme.radii.card),
-        border: Border.all(color: plate ? OnVideoColors.inkHover : colors.border),
+        border: Border.all(color: colors.border),
       ),
       child: faces.isEmpty
           ? Center(
               child: Text(
                 t.room.emotesEmpty,
-                style: theme.typography.caption.copyWith(color: plate ? OnVideoColors.inkMuted : colors.textMuted),
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
               ),
             )
           : SingleChildScrollView(
@@ -166,8 +156,7 @@ final class RoomEmotePanelState extends ConsumerState<RoomEmotePanel> {
                 spacing: DsSpace.s4,
                 runSpacing: DsSpace.s4,
                 children: [
-                  for (final code in faces)
-                    _EmoteTile(code: code, emotes: emotes, onPick: widget.onPick, onVideo: plate),
+                  for (final code in faces) _EmoteTile(code: code, emotes: emotes, onPick: widget.onPick),
                 ],
               ),
             ),
@@ -178,14 +167,11 @@ final class RoomEmotePanelState extends ConsumerState<RoomEmotePanel> {
 /// One face the panel offers: the emoticon drawn at the line's own size, its
 /// code the pick.
 final class _EmoteTile extends StatelessWidget {
-  const _EmoteTile({required this.code, required this.emotes, required this.onPick, this.onVideo = false});
+  const _EmoteTile({required this.code, required this.emotes, required this.onPick});
 
   final String code;
   final List<LiveEmote> emotes;
   final ValueChanged<String> onPick;
-
-  /// The on-video plate's own hover ink instead of the theme's.
-  final bool onVideo;
 
   @override
   Widget build(BuildContext context) {
@@ -200,9 +186,7 @@ final class _EmoteTile extends StatelessWidget {
         alignment: Alignment.center,
         decoration: DsBoxDecoration(
           color:
-              states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)
-              ? (onVideo ? OnVideoColors.inkHover : colors.hover)
-              : null,
+              states.contains(WidgetState.hovered) || states.contains(WidgetState.focused) ? colors.hover : null,
           borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
         ),
         child: RichText(

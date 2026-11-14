@@ -22,8 +22,6 @@ final class _ControlBar extends ConsumerStatefulWidget {
     this.portraitFullscreen = false,
     this.onPortraitFullscreen,
     this.onFullscreen,
-    this.danmakuInput = false,
-    this.onInputFocus,
     super.key,
   });
 
@@ -66,15 +64,6 @@ final class _ControlBar extends ConsumerStatefulWidget {
   /// The page's shape-aware fullscreen toggle (a portrait stream answers
   /// with the portrait surface); null keeps the presentation's own toggle.
   final VoidCallback? onFullscreen;
-
-  /// Whether the bar carries the immersive room's inline send (the phone
-  /// held sideways, where no chat column and no composer bar exists — the
-  /// reference's landscape bar keeps its input in the middle of the strip).
-  final bool danmakuInput;
-
-  /// Tells the surface the send field's focus, so it can hold the chrome up
-  /// while the keyboard is typing into it.
-  final ValueChanged<bool>? onInputFocus;
 
   @override
   ConsumerState<_ControlBar> createState() => _ControlBarState();
@@ -209,12 +198,6 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                   },
                 )
               : null;
-          // The immersive strip's inline send (the phone held sideways): it
-          // takes the middle the pickers' tail leaves, from a width where a
-          // sentence has room to be typed into.
-          final input = widget.danmakuInput && !pip && constraints.maxWidth >= 480
-              ? Expanded(child: _BarDanmakuInput(onWake: widget.onWake, onFocusChange: widget.onInputFocus))
-              : null;
           return Row(
             spacing: tv ? DsSpace.s8 : DsSpace.s4,
             children: [
@@ -232,7 +215,6 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
                 )
               else
                 const Spacer(),
-              ?input,
               if (!crowded) const _BarDivider(),
               ?windowButton,
               ?fullscreenButton,
@@ -240,190 +222,6 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           );
         },
       ),
-    );
-  }
-}
-
-/// The bar's inline send (the reference's landscape input): a dark pill
-/// field, an emote toggle and the send glyph, typed straight into the room's
-/// talk while the picture plays. The emote panel overflows the bar upward —
-/// a Stack that does not clip is the whole trick.
-final class _BarDanmakuInput extends ConsumerStatefulWidget {
-  const _BarDanmakuInput({required this.onWake, this.onFocusChange});
-
-  /// Resets the bar's auto-hide timer after a press or a send.
-  final VoidCallback onWake;
-
-  /// Tells the surface the field's focus, so the chrome stays while the
-  /// keyboard types into it.
-  final ValueChanged<bool>? onFocusChange;
-
-  @override
-  ConsumerState<_BarDanmakuInput> createState() => _BarDanmakuInputState();
-}
-
-final class _BarDanmakuInputState extends ConsumerState<_BarDanmakuInput> {
-  final TextEditingController _field = TextEditingController();
-  final FocusNode _focus = FocusNode();
-  bool _emotesOpen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_onFocus);
-  }
-
-  @override
-  void dispose() {
-    _focus.removeListener(_onFocus);
-    // The surface's hold outlives the field only by accident; the next frame
-    // clears it (a setState here would land on a defunct element).
-    if (_focus.hasFocus) {
-      final focusChange = widget.onFocusChange;
-      WidgetsBinding.instance.addPostFrameCallback((_) => focusChange?.call(false));
-    }
-    _focus.dispose();
-    _field.dispose();
-    super.dispose();
-  }
-
-  /// The field's hold on the bar: a keyboard up and a bar that hides under
-  /// it would strand the words mid-sentence, so the surface keeps the chrome
-  /// up while the field is focused.
-  void _onFocus() {
-    if (mounted) setState(() {});
-    widget.onFocusChange?.call(_focus.hasFocus);
-    widget.onWake();
-  }
-
-  /// Puts an emote's code where the caret is — the composer's own rule, so
-  /// both fields take a face the same way.
-  void _insertEmote(String code) {
-    final text = _field.text;
-    final selection = _field.selection;
-    final start = selection.start < 0 || selection.start > text.length ? text.length : selection.start;
-    final end = selection.end < 0 || selection.end > text.length ? text.length : selection.end;
-    _field.value = TextEditingValue(
-      text: text.replaceRange(start, end, code),
-      selection: TextSelection.collapsed(offset: start + code.length),
-    );
-  }
-
-  Future<void> _send(String word) async {
-    if (word.trim().isEmpty) return;
-    widget.onWake();
-    final failure = await ref.read(roomProvider.notifier).sendDanmaku(word);
-    if (!mounted) return;
-    if (failure == null) {
-      _field.clear();
-    } else {
-      // The platform's own reason: a refused send names what refused it.
-      showDsToast(context: context, title: context.t.room.sendFailed, description: failure);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
-    if (!canSend) {
-      // The platform's chat only listens: the bar keeps its pickers' width.
-      return const SizedBox.shrink();
-    }
-    final theme = DsTheme.of(context);
-    final focused = _focus.hasFocus;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Row(
-          spacing: DsSpace.s4,
-          children: [
-            Expanded(
-              child: Container(
-                height: 32,
-                padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8),
-                decoration: BoxDecoration(
-                  color: focused ? OnVideoColors.inkPressed : OnVideoColors.chipFill,
-                  borderRadius: BorderRadius.circular(DsRadii.pill),
-                  border: Border.all(color: focused ? OnVideoColors.iconDim : OnVideoColors.clear),
-                ),
-                child: TextField(
-                  controller: _field,
-                  focusNode: _focus,
-                  style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                  cursorColor: DsTheme.colorsOf(context).accent,
-                  maxLength: 100,
-                  textAlignVertical: TextAlignVertical.center,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (word) => unawaited(_send(word)),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    hintText: t.room.sendHint,
-                    hintStyle: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
-                    counterText: '',
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ),
-            DsTooltip(
-              message: t.room.emotes,
-              child: DsPressable(
-                semanticLabel: t.room.emotes,
-                onPressed: () {
-                  widget.onWake();
-                  setState(() => _emotesOpen = !_emotesOpen);
-                },
-                builder: (context, states, _) {
-                  final side = PlayerBarTier.controlSize(context);
-                  final lit = _emotesOpen || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                  return Container(
-                    width: side,
-                    height: side,
-                    alignment: Alignment.center,
-                    decoration: DsBoxDecoration(
-                      color: lit ? _onVideoHover : null,
-                      borderRadius: theme.radii.controlCorners(null, side),
-                    ),
-                    child: DsIcon(DsIcons.smile, size: side * .5, color: _emotesOpen ? _onVideo : _onVideoMuted),
-                  );
-                },
-              ),
-            ),
-            DsTooltip(
-              message: t.room.send,
-              child: DsPressable(
-                semanticLabel: t.room.send,
-                onPressed: () => unawaited(_send(_field.text)),
-                builder: (context, states, _) {
-                  final side = PlayerBarTier.controlSize(context);
-                  final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                  return Container(
-                    width: side,
-                    height: side,
-                    alignment: Alignment.center,
-                    decoration: DsBoxDecoration(
-                      color: lit ? _onVideoHover : null,
-                      borderRadius: theme.radii.controlCorners(null, side),
-                    ),
-                    child: DsIcon(DsIcons.send, size: side * .5, color: _onVideo),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        // The faces, over the bar's top edge: the non-clipping Stack lets
-        // them stand on the picture, the way the pickers' cards do.
-        if (_emotesOpen)
-          PositionedDirectional(
-            bottom: 40,
-            start: 0,
-            end: 0,
-            child: RoomEmotePanel(onPick: _insertEmote, onVideo: true),
-          ),
-      ],
     );
   }
 }

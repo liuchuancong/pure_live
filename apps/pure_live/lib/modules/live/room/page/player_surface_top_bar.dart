@@ -558,16 +558,16 @@ final class _NarrowRecordingUnderMenu extends ConsumerWidget {
 /// identity half opens the details where the shape folds the room card into
 /// the picture (a phone held sideways).
 final class _ImmersiveCapsule extends ConsumerStatefulWidget {
-  const _ImmersiveCapsule({required this.room, required this.onWake, this.onTitle});
+  const _ImmersiveCapsule({required this.room, required this.onWake, required this.onBack});
 
   final RoomState room;
 
   /// Resets the bars' auto-hide timer after a press.
   final VoidCallback onWake;
 
-  /// The room-card press the shape handed over (a phone held sideways); null
-  /// leaves the identity half opening the details.
-  final VoidCallback? onTitle;
+  /// The capsule's back arrow: the way out of the shape it rides (the page's
+  /// own leave — the portrait full screen unwinds first, then the room).
+  final VoidCallback onBack;
 
   @override
   ConsumerState<_ImmersiveCapsule> createState() => _ImmersiveCapsuleState();
@@ -576,6 +576,43 @@ final class _ImmersiveCapsule extends ConsumerStatefulWidget {
 final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
   /// Whether the facts row is unfolded (the reference's `capExp`).
   bool _expanded = false;
+
+  /// The identity half: the avatar over the name and the platform · area —
+  /// the label the shapes share, pressable or inert by the caller's shape.
+  Widget _capsuleIdentity({required String name, required String avatar, required String where}) {
+    final theme = DsTheme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s6,
+      children: [
+        DsAvatar(
+          initials: avatarInitials(name),
+          image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+          size: DsSize.sm,
+          semanticLabel: name,
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.bodyStrong.copyWith(color: _onVideo),
+            ),
+            if (where.isNotEmpty)
+              Text(
+                where,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -595,7 +632,6 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
     final followed = ref.watch(
       followsProvider.select((follows) => follows.rooms.any((room) => room.ref.identityKey == key)),
     );
-    final onTitle = widget.onTitle;
     // The reference caps the capsule at the picture's 60% width; a fixed
     // ceiling keeps a long title from stretching the pill across the screen.
     return ConstrainedBox(
@@ -616,57 +652,34 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
                 mainAxisSize: MainAxisSize.min,
                 spacing: DsSpace.s6,
                 children: [
+                  // The back arrow leads the capsule (the reference's own):
+                  // the immersive shapes and the portrait full screen have no
+                  // other way back — the exit chip is gone, the strip is gone.
                   DsPressable(
-                    semanticLabel: t.room.detailsHint,
+                    semanticLabel: t.common.back,
                     onPressed: () {
                       widget.onWake();
-                      if (onTitle != null) {
-                        onTitle();
-                      } else {
-                        unawaited(showRoomDetails(context));
-                      }
+                      widget.onBack();
                     },
                     builder: (context, states, _) {
                       final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
+                        width: 28,
+                        height: 28,
+                        alignment: Alignment.center,
                         decoration: DsBoxDecoration(
                           color: lit ? _onVideoHover : null,
                           borderRadius: BorderRadius.circular(DsRadii.pill),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: DsSpace.s6,
-                          children: [
-                            DsAvatar(
-                              initials: avatarInitials(name),
-                              image: avatar.isEmpty ? null : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-                              size: DsSize.sm,
-                              semanticLabel: name,
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.bodyStrong.copyWith(color: _onVideo),
-                                ),
-                                if (where.isNotEmpty)
-                                  Text(
-                                    where,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        child: const DsIcon(DsIcons.arrowLeft, size: 16, color: _onVideo),
                       );
                     },
+                  ),
+                  // The identity half is a label, not a door: no tap, no
+                  // details sheet — the anchor's facts stay where they are.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
+                    child: _capsuleIdentity(name: name, avatar: avatar, where: where),
                   ),
                   // The follow verb rides the capsule: in the immersive shapes
                   // it is the only follow surface, the column being gone.
