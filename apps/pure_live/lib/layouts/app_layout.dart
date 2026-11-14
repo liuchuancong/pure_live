@@ -364,6 +364,11 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       pageIdentity: inSettings
           ? '${module.name}/settings/${sectionOpen ? settingsSection.name : 'category/$settingsCategory'}'
           : '${module.name}/${selected.name}/',
+      // The IPTV module keeps the pair off: its browser embeds the playing
+      // picture as the third pane, and the two floating circles would stand
+      // on the picture's corner — the lists that scroll beside it move fine
+      // with a flick, so nothing here needs a jump button.
+      showControls: module != AppModule.iptv,
       // The page tree is the module's own: a switch builds a new one instead
       // of handing the previous module's state to the next, even when the two
       // show the same page type (the settings surface is one).
