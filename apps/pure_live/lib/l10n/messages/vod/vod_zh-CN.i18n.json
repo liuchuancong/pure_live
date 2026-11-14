@@ -197,6 +197,8 @@
   "downloadingUnknown": "下载中…",
   "downloadDone": "已下载到 {name: String}",
   "downloadFailed": "下载失败",
+  "downloadUnsupported": "这条回放的格式暂不支持下载",
+  "downloadPercent": "{percent}% 正在下载",
   "downloadCancelled": "已取消下载",
   "downloadCancel": "取消下载",
   "downloadPause": "暂停下载",

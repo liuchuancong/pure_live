@@ -22,7 +22,6 @@ import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPa
 import 'package:pure_live/modules/live/room/chat/room_chat_overlay.dart' show RoomChatOverlay;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/identity/room_identity_bar.dart';
-import 'package:pure_live/modules/live/room/layout/room_layout.dart';
 import 'package:pure_live/modules/live/room/more/room_more_menu.dart' show showRoomMore;
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/page/player_surface.dart'
@@ -210,7 +209,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   /// The room's width at which the chat moves beside the picture (the
   /// reference's `wide` layout). The measure lives in the layout machine.
-  static const double _wideBreakpoint = kRoomWideBreakpoint;
+  static const double _wideBreakpoint = kPlaybackWideBreakpoint;
 
   /// The stage's floor while the chat column is dragged wide: at the wide
   /// layout's own edge the column tops out under its 520 px cap rather than
@@ -440,7 +439,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // 沉浸式布局已是满铺（键盘的 F 也能到）：全屏动词在那里就是系统自己
     // 的全屏，竖屏全屏表面不再是窄窗的一条路——Windows 小窗与手机同款。
     final size = MediaQuery.sizeOf(context);
-    final phoneImmersive = size.width < kRoomCompactBreakpoint && size.height >= kRoomLandscapeMaxHeight;
+    final phoneImmersive = size.width < kPlaybackCompactBreakpoint && size.height >= kPlaybackLandscapeMaxHeight;
     if (phoneImmersive) {
       _enterSystemFullscreen();
       return;
@@ -651,17 +650,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // 沉浸，横而矮（<480）的窗走横屏沉浸——Windows 的小窗就是参考机型。
     // 平板（最短边 ≥600 的触屏设备）仍走桌面的双栏骨架。
     final tabletSized = mobile && isTabletSized(windowSize);
-    final phone = windowSize.width < kRoomCompactBreakpoint || windowSize.height < kRoomLandscapeMaxHeight;
+    final phone = windowSize.width < kPlaybackCompactBreakpoint || windowSize.height < kPlaybackLandscapeMaxHeight;
     // The machine resolves both axes once and the page's branches read it —
     // the policy table's whole point (P1's fold): a phone held sideways in a
     // short window takes the landscape arrangement before any width is asked
     // (the compact height wins over the wide breakpoint), and the wide
     // arrangement is the wide class minus that sideways take.
-    final roomLayout = RoomLayout.resolve(width: windowSize.width, height: windowSize.height, phoneLike: phone);
-    final landscapePhone = roomLayout.landscapePhone;
+    final roomLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
+    final landscapePhone = roomLayout.landscapeImmersive;
     // 平板在 600–840 的竖窗里也走宽布局：双栏的桌面骨架是它的形态，
     // 分栏底板只属于桌面窄窗与手机。
-    final wideWindow = tabletSized || (roomLayout.windowClass == RoomWindowClass.wide && !landscapePhone);
+    final wideWindow = tabletSized || (roomLayout.windowClass == PlaybackWindowClass.wide && !landscapePhone);
 
     /// T 键与栏上按钮共用：宽屏把聊天列收起/展开——收起时回到列（必要时
     /// 从弹幕流切回），开着时收起。一个方向一对动作，不再是单程门。
@@ -934,7 +933,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 // 手机竖屏的沉浸式房间（宽 < 600）：满铺画面，聊天以胶囊浮层
                 // 贴在左下，输入条常驻底部，顶部是主播胶囊。清屏一行把浮层
                 // 收起，更多菜单携带它的开关。
-                if (phone && constraints.maxWidth < kRoomCompactBreakpoint) {
+                if (phone && constraints.maxWidth < kPlaybackCompactBreakpoint) {
                   void setCleanScreen({required bool value}) {
                     setState(() {
                       _cleanScreen = value;
@@ -1167,7 +1166,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // 应用栏与 SafeArea 都不参与，系统栏的空隙由浮层自己让出，键盘由表
     // 面自己抬（页面不随键盘缩放，画面不跳）。
     final immersiveSurface =
-        phone && !landscapePhone && !_portraitFullscreen && windowSize.width < kRoomCompactBreakpoint;
+        phone && !landscapePhone && !_portraitFullscreen && windowSize.width < kPlaybackCompactBreakpoint;
     return withShortcuts(
       RoomPanelScope(
         notifier: _panels,

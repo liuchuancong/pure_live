@@ -34,7 +34,7 @@ PreferredSizeWidget _roomAppBar(
   // own compact topbar): share and the details live in the more container,
   // the theme in the settings, and the column toggle folds itself away
   // under the wide breakpoint.
-  final compact = MediaQuery.sizeOf(context).width < kRoomCompactBreakpoint;
+  final compact = MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
   // The follow pill pins to the video area's right edge — the seam where the
   // docked chat column starts. The actions the row lays after the pill (the
   // verbs, then the window's own buttons) are measured here, and the spacer
@@ -171,7 +171,7 @@ final class _ChatColumnToggle extends ConsumerWidget {
     // The column exists wherever the wide layout does (840 and up), not only
     // past the sidebar breakpoint: a viewer who folded the chat at 900 must
     // still be able to unfold it at 900.
-    if (MediaQuery.sizeOf(context).width < kRoomWideBreakpoint) return const SizedBox.shrink();
+    if (MediaQuery.sizeOf(context).width < kPlaybackWideBreakpoint) return const SizedBox.shrink();
     final open = !ref.watch(chatCollapsedProvider);
     return ChromeIconButton(
       icon: open ? DsIcons.panelRightClose : DsIcons.panelRightOpen,

@@ -87,6 +87,33 @@ PlayerKernel createPreviewKernel(Ref ref) {
   return kernel;
 }
 
+/// The floating mini window's own player kernel: one for the whole app,
+/// deliberately outside the module wall.
+///
+/// A handoff (小窗播放) has to outlive the page that handed its picture
+/// over — and that page's module kernel dies the moment the shell moves to
+/// another module, taking every handle it owns with it. This kernel watches
+/// nothing, so it stands for as long as the app does; the floating window
+/// opens its handle here, releases it when it closes, and the provider's
+/// `onDispose` sweeps whatever a crash left behind. No presentation chain:
+/// the mini window owns no fullscreen modes.
+final Provider<PlayerKernel> floatingVideoKernelProvider = Provider<PlayerKernel>((ref) {
+  // The background rule is the module kernel's own: the picture pauses when
+  // the app leaves the foreground, except where the system picture-in-picture
+  // window keeps its own rule.
+  final systemPip = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  final kernel = PlayerKernel(options: KernelOptions(pauseWhenBackgrounded: !systemPip))
+    ..registerBackend(const MediaKitAdapterFactory().registration())
+    ..registerBackend(const MpvAudioAdapterFactory().registration());
+  if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {
+    kernel
+      ..registerBackend(const FlvLzcPlayerAdapterFactory().registration())
+      ..registerBackend(const BetterPlayerAdapterFactory().registration());
+  }
+  ref.onDispose(() => unawaited(kernel.dispose()));
+  return kernel;
+});
+
 /// One live playback controller per open room: the kernel's single-slot
 /// live orchestration (line × engine sweeps, watchdogs, recovery) over
 /// one site's lines.

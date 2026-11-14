@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_net/live_net.dart' show ClientProfile;
@@ -33,6 +34,8 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
 import 'package:pure_live/modules/live/archive/archive_playback.dart';
 import 'package:pure_live/modules/live/archive/archive_progress.dart';
+import 'package:pure_live/modules/live/archive/archive_replay_download.dart'
+    show ArchiveReplayDownloadException, ArchiveReplayDownloadFailure, ArchiveReplayDownloader;
 import 'package:pure_live/modules/live/archive/douyu_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/huya_archive_controller.dart';
 import 'package:pure_live/modules/live/archive/soop_archive_controller.dart';
@@ -62,6 +65,13 @@ final class ArchivePlayerPage extends ConsumerStatefulWidget {
 
 final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> with WidgetsBindingObserver {
   PlayerHandle? _handle;
+
+  /// The replay download this page owns: null progress while none is under
+  /// way, a 0–1 fraction (null for an unknowable length) while one runs.
+  /// The task dies with the page — leaving cancels it and strikes the
+  /// partial file.
+  ArchiveReplayDownloader? _downloader;
+  double? _downloadProgress;
   ArchivePlaybackController? _controller;
   bool _disposed = false;
   bool _startFailed = false;
@@ -229,6 +239,10 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
       if (_controller == null) return;
       _wireDanmaku(_controller!, handle);
       _bind(handle);
+      // A playing mini window belongs to the recording the viewer just
+      // left; a new one here supersedes it (its close path checkpoints the
+      // old).
+      FloatingVideoWindow.dismiss();
       setState(() {});
       final recordingId = request.soop?.id ?? request.huya?.id ?? request.douyu?.id;
       if (recordingId != null) await _controller!.open(recordingId);
@@ -315,6 +329,9 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     _disposed = true;
     _tipTimer?.cancel();
     _hideTimer?.cancel();
+    // A download under way stops with the page: its partial file is struck
+    // so no half-written take pretends to be a finished one.
+    unawaited(_downloader?.dispose() ?? Future<void>.value());
     _sleepTimerNotifier.onFire_ = null;
     Timer.run(() => _sleepTimerNotifier.start(null));
     // A page leaving while a mode owns the window takes the mode with it.
@@ -583,6 +600,105 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
+  /// Whether the 小窗 verb may show: the handle carries a source to hand
+  /// over, no window-owning mode stands, and no mini window is up yet.
+  bool get _miniWindowReady {
+    final handle = _handle;
+    return handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Fetches the walking rendition to the finished-videos folder: an m3u8
+  /// playlist is walked segment by segment into one file, a plain stream is
+  /// taken as it comes. A refusal (an encrypted replay, a broken read)
+  /// lands in the same toasts every other download reports through.
+  Future<void> _startDownload() async {
+    final handle = _handle;
+    final source = handle?.source;
+    if (handle == null || source == null) return;
+    final downloader = _downloader ??= ArchiveReplayDownloader(directory: ref.read(appPathsProvider).videos);
+    if (downloader.isRunning) return;
+    final t = context.t;
+    try {
+      setState(() => _downloadProgress = 0);
+      final file = await downloader.run(
+        source: source,
+        title: widget.request?.title ?? 'replay',
+        onProgress: (value) {
+          if (!mounted) return;
+          setState(() => _downloadProgress = value);
+        },
+      );
+      if (!mounted) return;
+      setState(() => _downloadProgress = null);
+      showDsToast(
+        context: context,
+        title: t.vod.downloadDone(name: file.uri.pathSegments.last),
+        status: DsStatus.success,
+      );
+    } on ArchiveReplayDownloadException catch (failure) {
+      if (!mounted) return;
+      setState(() => _downloadProgress = null);
+      showDsToast(
+        context: context,
+        // A replay the downloader cannot rebuild says so; only a broken
+        // request reads as a plain failure worth trying again.
+        title: failure.code == ArchiveReplayDownloadFailure.network
+            ? t.vod.downloadFailed
+            : t.vod.downloadUnsupported,
+        status: DsStatus.danger,
+      );
+    }
+  }
+
+  /// Takes the running download's press as the way to stop it.
+  void _cancelDownload() => _downloader?.cancel();
+
+  /// Hands the recording to the floating mini window and leaves: the window
+  /// opens its own handle from this one's source at the position it stood
+  /// at, while the page pops back. The expand button re-opens this route
+  /// with the same request — the walk's own progress store resumes from the
+  /// handoff, and the minutes the window played past it are the one thing a
+  /// handoff cannot carry back (the site's part key is the controller's).
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    final request = widget.request;
+    if (handle == null || source == null || request == null) return;
+    _wake();
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: request.title,
+        resume: handle.position,
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              unawaited(root.push(RouteNames.archivePlayer, extra: request));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted || _disposed) return;
+    // The window now carries the sound: this page goes quiet before it pops.
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
   void _leave() {
     final handle = _handle;
     // A phone's picture-in-picture window floats over the page; leaving the
@@ -637,6 +753,13 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     // Only a mode that owns the app's window replaces this page's layout; a
     // phone's picture-in-picture window floats over it.
     final immersive = presentationController.modeOwnsWindow(presentation);
+    // 舞台档按窗口的形状判定（与直播间同一台排版机，与平台无关）：宽
+    // <600 或高 <480 的窗只留画面——页框与分P行退场，分P从条上的目录
+    // 走，返回从条上的胶囊走。
+    final windowSize = MediaQuery.sizeOf(context);
+    final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
+    final sizeStage =
+        playbackLayout.windowClass == PlaybackWindowClass.compact || playbackLayout.landscapeImmersive;
     // A TV sits far from the screen: the bar's controls grow, its buttons
     // draw the focus ring a remote needs, and the space key reaches the
     // transport without the pointer the page otherwise assumes.
@@ -655,6 +778,20 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                   ref.read(playerStatsVisibleProvider.notifier).toggle(),
           },
           child: Focus(autofocus: true, child: _surface(context, name, immersive: true)),
+        ),
+      );
+    }
+    if (sizeStage) {
+      return Scaffold(
+        backgroundColor: colors.canvas,
+        body: CallbackShortcuts(
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): _leave,
+            if (!tv)
+              const SingleActivator(LogicalKeyboardKey.keyI): () =>
+                  ref.read(playerStatsVisibleProvider.notifier).toggle(),
+          },
+          child: Focus(autofocus: true, child: _surface(context, name, immersive: false, partsOnBar: true)),
         ),
       );
     }
@@ -747,7 +884,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// strip and bar that ride it on the auto-hide clock. In the owned modes
   /// the chrome answers the mode — the leading pill is the way out, and the
   /// small window's title drags.
-  Widget _surface(BuildContext context, String name, {required bool immersive}) {
+  Widget _surface(BuildContext context, String name, {required bool immersive, bool partsOnBar = false}) {
     final controller = _controller;
     final handle = _handle;
     final danmakuStyle = ref.watch(danmakuStyleProvider);
@@ -840,7 +977,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                   child: MouseRegion(
                     onEnter: (_) => _hideTimer?.cancel(),
                     onExit: (_) => _scheduleHide(),
-                    child: _bar(context, immersive: immersive),
+                    child: _bar(context, immersive: immersive, partsOnBar: immersive || partsOnBar),
                   ),
                 ),
               // The immersive parts catalogue floats over the bar, centred
@@ -893,6 +1030,33 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           onPressed: () {
             _wake();
             unawaited(_togglePip());
+          },
+        ),
+      // The replay rides the destination cluster too: the walking rendition
+      // fetched to the finished-videos folder. A download under way says its
+      // own percent and takes the press as the way to stop it.
+      if (_handle?.source != null)
+        PlayerBarButton(
+          icon: _downloadProgress == null ? DsIcons.download : DsIcons.squareStop,
+          label: _downloadProgress == null
+              ? t.vod.download
+              : t.vod.downloadPercent(percent: (_downloadProgress! * 100).round()),
+          onPressed: _downloadProgress == null
+              ? () {
+                  _wake();
+                  unawaited(_startDownload());
+                }
+              : _cancelDownload,
+        ),
+      // The mini window is the cluster's third destination: keep the frame,
+      // copy it, shrink it to a corner of the app.
+      if (_miniWindowReady)
+        PlayerBarButton(
+          icon: DsIcons.appWindow,
+          label: t.common.miniWindow,
+          onPressed: () {
+            _wake();
+            unawaited(_enterMiniWindow());
           },
         ),
     ];
@@ -1045,13 +1209,13 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// The recording's bar over the picture: the seek line over the transport
   /// row — play, the sound, the clock, the comments' switch, the renditions
   /// and the speed — then the window verbs and the way out of the box.
-  Widget _bar(BuildContext context, {required bool immersive}) {
+  Widget _bar(BuildContext context, {required bool partsOnBar, required bool immersive}) {
     final t = context.t;
     final controller = _controller;
     final handle = _handle;
     if (controller == null || handle == null) return const SizedBox(height: 56);
     final tv = PlayerBarTier.tvOf(context);
-    final compact = !tv && !LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
+    final compact = !tv && MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     final presentation = ref.watch(roomPresentationProvider);
     final playing = _transport?.isPlaying ?? false;
     final position = _transport?.position ?? Duration.zero;
@@ -1145,7 +1309,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         ),
         // The immersive surface has no parts row under the picture — the
         // catalogue on the bar is the only way to another part there.
-        if (immersive && controller.segments.length > 1)
+        if (partsOnBar && controller.segments.length > 1)
           KeyedSubtree(
             key: _partsAnchor,
             child: PlayerBarButton(

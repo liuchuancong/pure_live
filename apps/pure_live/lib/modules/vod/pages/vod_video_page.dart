@@ -29,6 +29,7 @@ import 'package:media_core_danmaku/media_core_danmaku.dart' show BarrageItemMapp
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomSleepTimer;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show SleepTimerController, sleepTimerProvider;
 import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppClientProvider;
@@ -200,6 +201,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   /// Whether the overlay bars are up; a playing stream lets them settle away.
   bool _controlsVisible = true;
+
+  /// The wide window's rail (the parts shelf and the related videos): open
+  /// or folded to its door, and the width the seam's drag left it at.
+  bool _railOpen = true;
+  double _railWidth = _railDefault;
+  static const double _railMin = 280;
+  static const double _railMax = 520;
+  static const double _railDefault = 340;
+
+  /// The least width the stage keeps beside the rail.
+  static const double _stageFloor = 420;
 
   /// The display's wake lock: held while a part plays and the app's own
   /// 屏幕常亮 allows it, the same rule the live room and the IPTV page keep.
@@ -565,6 +577,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       }
       _handle = handle;
       _bind(handle);
+      // A playing mini window belongs to the video the viewer just left; a
+      // new one here supersedes it (its close path checkpoints the old one).
+      FloatingVideoWindow.dismiss();
       await _applyEngineOptions(handle);
       // What plays, and what the bar therefore says plays: the rendition at or
       // below the viewer's tier that this engine can be handed, named by the
@@ -1334,6 +1349,64 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
+  /// Whether the 小窗 verb may show: the handle has a source to hand over
+  /// (a still-opening picture has nothing to float) and no window-owning
+  /// mode stands — the picture-in-picture small window already is a small
+  /// window.
+  bool get _miniWindowReady {
+    final handle = _handle;
+    return handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Hands the picture to the floating mini window and leaves: the window
+  /// opens its own handle on the app-level kernel from this one's source,
+  /// seeking where this one stopped, while the page pops back to whatever
+  /// the viewer came from.
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    if (handle == null || source == null) return;
+    _wake();
+    final t = context.t;
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final detail = _detail;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: detail?.title ?? _part?.title ?? t.vod.opening,
+        resume: handle.position,
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          // The page is gone by then, but its progress fields survive as
+          // plain data: the write goes to the same key a return resumes from.
+          _saveProgress(force: true, positionOverride: position);
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              unawaited(root.push('/vod/${Uri.encodeComponent(widget.bvid)}'));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted || _disposed) return;
+    // The window now carries the sound: this page goes quiet before it
+    // pops, so the two never speak over each other.
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
   void _leave() {
     final handle = _handle;
     // A phone's picture-in-picture window floats over the page; leaving the
@@ -1383,12 +1456,15 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// also the history record the station's 个人 page reads, so it carries the
   /// archive's metadata; the end of an archive marks it finished instead of
   /// clearing it.
-  void _saveProgress({bool force = false}) {
+  void _saveProgress({bool force = false, Duration? positionOverride}) {
     final part = _part;
     final transport = _transport;
     if (part == null || transport == null) return;
     final total = transport.duration.inMilliseconds;
-    final position = transport.position.inMilliseconds;
+    // The floating mini window hands the page its last position on the way
+    // out: the page's own transport stopped at the handoff, so the override
+    // is the only record of what the window played since.
+    final position = positionOverride?.inMilliseconds ?? transport.position.inMilliseconds;
     if (total <= 0 || position <= 0) return;
     final now = DateTime.now();
     if (!force && now.difference(_lastSave) < const Duration(seconds: 5)) return;
@@ -1603,7 +1679,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Widget _body(BuildContext context, VodDetail? detail, Translations t) {
     if (detail == null) return const SizedBox.shrink();
     final colors = DsTheme.colorsOf(context);
-    final player = _playerSurface(context, immersive: false);
+    // 排版与直播间同一台机器，按窗口的形状判定（与平台无关）：矮窗（高
+    // <480）横屏沉浸——满铺画面加覆盖条，页面内容退场，分P与画质都在
+    // 条上；窄窗（宽 <600）竖屏沉浸——画面满宽贴顶；宽窗（≥840）舞台
+    // 加可拖拽、可收起的侧栏。
+    final windowSize = MediaQuery.sizeOf(context);
+    final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
+    if (playbackLayout.landscapeImmersive) {
+      return _playerSurface(context, immersive: false, fills: true);
+    }
+    final compact = playbackLayout.windowClass == PlaybackWindowClass.compact;
+    final player = _playerSurface(context, immersive: false, flush: compact);
     final window = _relatedWindow;
     final related = window.isEmpty
         ? null
@@ -1651,9 +1737,26 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s16, children: [?parts, ?related]);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = LiveWindow.isExpanded(constraints.maxWidth);
+        final wide = constraints.maxWidth >= kPlaybackWideBreakpoint;
         final info = _info(context, detail, t, showParts: parts == null || !wide);
         if (!wide) {
+          if (compact) {
+            // 竖屏沉浸（宽 <600）：画面满宽贴顶、直角贴边，文字内容留边距
+            // ——参考机型的竖屏视频页。
+            const gutter = EdgeInsets.symmetric(horizontal: DsSpace.s12);
+            return SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: DsSpace.s24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s16,
+                children: [
+                  player,
+                  Padding(padding: gutter, child: info),
+                  if (related != null) Padding(padding: gutter, child: related),
+                ],
+              ),
+            );
+          }
           final inset = LiveWindow.pageInset(constraints.maxWidth);
           return SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
@@ -1664,27 +1767,68 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             ),
           );
         }
+        // 宽窗（≥840）：舞台加可拖拽、可收起的侧栏——直播间聊天列同款的缝，
+        // 收起后舞台的右缘留一扇门。
+        final railMax = (constraints.maxWidth - _stageFloor).clamp(_railMin, _railMax);
+        final railWidth = _railWidth.clamp(_railMin, railMax);
         return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s12, DsSpace.s24, DsSpace.s24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: DsSpace.s16,
-                  children: [player, info],
-                ),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s12, DsSpace.s24, DsSpace.s24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s16,
+                      children: [player, info],
+                    ),
+                  ),
+                  if (rail != null && !_railOpen) _RailDoor(onOpen: () => setState(() => _railOpen = true)),
+                ],
               ),
             ),
-            if (rail != null)
+            if (rail != null && _railOpen) ...[
+              ChatSplitter(
+                width: railWidth,
+                minWidth: _railMin,
+                maxWidth: railMax,
+                onResize: (value) => setState(() => _railWidth = value),
+                onResizeEnd: (value) => setState(() => _railWidth = value),
+                onReset: () => setState(() => _railWidth = _railDefault),
+                label: t.vod.related,
+              ),
               SizedBox(
-                width: 340,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, DsSpace.s24, DsSpace.s24),
-                  child: rail,
+                width: railWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s8, 0),
+                      child: Row(
+                        children: [
+                          const Spacer(),
+                          DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            onPressed: () => setState(() => _railOpen = false),
+                            icon: const DsIcon(DsIcons.panelRightClose),
+                            semanticLabel: t.common.previewCollapseList,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s24),
+                        child: rail,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ],
           ],
         );
       },
@@ -1709,7 +1853,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// glass panels, the way the live room's strip does. [immersive] adds the way
   /// out and the title over the picture, since the page's own headline is gone
   /// there.
-  Widget _playerSurface(BuildContext context, {required bool immersive}) {
+  Widget _playerSurface(BuildContext context, {required bool immersive, bool fills = false, bool flush = false}) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
@@ -1723,11 +1867,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
     final showBar = _controlsVisible || !playing;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
+      borderRadius: BorderRadius.circular(immersive || fills || flush ? 0 : theme.radii.overlay),
       child: ColoredBox(
         color: colors.overlay,
         child: _PictureBox(
-          immersive: immersive,
+          immersive: immersive || fills,
           child: MouseRegion(
             onHover: (_) => _wake(),
             onExit: (_) => _scheduleHide(),
@@ -1881,7 +2025,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                               padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
                               child: Align(alignment: AlignmentDirectional.centerEnd, child: notice),
                             ),
-                          _vodControlBar(context),
+                          _vodControlBar(context, partsOnBar: immersive || fills),
                         ],
                       ),
                     ),
@@ -2013,6 +2157,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           onPressed: () {
             _wake();
             unawaited(_togglePip());
+          },
+        ),
+      // The mini window rides the cluster as the third destination — keep
+      // the picture, send it to a TV, shrink it to a corner of the app.
+      if (_miniWindowReady)
+        PlayerBarButton(
+          icon: DsIcons.appWindow,
+          label: t.common.miniWindow,
+          onPressed: () {
+            _wake();
+            unawaited(_enterMiniWindow());
           },
         ),
     ];
@@ -2325,7 +2480,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// rendition, the speed and the danmaku pair — and the two ways out of the
   /// box. What acts on the picture (capture, cast, the small window) and the
   /// errands live on the strip above and its ⋮ menu.
-  Widget _vodControlBar(BuildContext context) {
+  Widget _vodControlBar(BuildContext context, {required bool partsOnBar}) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final handle = _handle;
@@ -2339,7 +2494,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final parts = _detail?.parts ?? const <VodPart>[];
     final presentation = ref.watch(roomPresentationProvider);
     final presentationController = ref.read(roomPresentationProvider.notifier);
-    final immersive = presentationController.modeOwnsWindow(presentation);
     final playback = ref.watch(playbackSettingsProvider);
     final danmakuVisible = playback.danmakuVisible;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
@@ -2461,7 +2615,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // page under it — the picture is the whole window — and there
                   // the catalogue on the bar is the only way to any part (the
                   // chip only steps forward), so it stays.
-                  if (parts.length > 1 && immersive)
+                  if (parts.length > 1 && partsOnBar)
                     _vodPickerButton(
                       panel: _VodPanel.parts,
                       icon: DsIcons.listVideo,
@@ -3487,6 +3641,60 @@ final class _CommentRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The door a folded rail leaves at the stage's end edge: a narrow upright
+/// tab, the room's immersive drawer door read on the video page. The chevron
+/// points the way the rail will come back from.
+final class _RailDoor extends StatelessWidget {
+  const _RailDoor({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return PositionedDirectional(
+      top: 0,
+      bottom: 0,
+      end: 0,
+      child: DsTooltip(
+        message: t.vod.related,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpen,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface.withValues(alpha: 0.92),
+                border: BorderDirectional(start: BorderSide(color: colors.border)),
+              ),
+              child: SizedBox(
+                width: 28,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
+                    RotatedBox(
+                      quarterTurns: 1,
+                      child: Text(
+                        t.vod.related,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

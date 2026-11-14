@@ -516,6 +516,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       }
       _handle = handle;
       _bind(handle);
+      // A playing mini window belongs to the episode the viewer just left;
+      // a new one here supersedes it (its close path checkpoints the old).
+      FloatingVideoWindow.dismiss();
       await _applyEngineOptions(handle);
       final uri = Uri.parse(url);
       await handle.open(
@@ -972,6 +975,67 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
+  /// Whether the 小窗 verb may show: the handle carries a source to hand
+  /// over, no window-owning mode stands (the picture-in-picture small window
+  /// already is a small window), and no mini window is up yet.
+  bool get _miniWindowReady {
+    final handle = _handle;
+    return handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Hands the episode to the floating mini window and leaves: the window
+  /// opens its own handle from this one's source, resuming where it stopped,
+  /// while the page pops back; the expand button re-opens this route at the
+  /// position the window closed at.
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    final episode = _episode;
+    if (handle == null || source == null || episode == null) return;
+    _wake();
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final title = _detail?.meta.title ?? episode.title;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: title,
+        resume: handle.position,
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          // The page is gone by then, but its progress fields survive as
+          // plain data: the write lands in the same local history row (and,
+          // signed in, the same cloud copy) a return resumes from.
+          _saveProgress(force: true, positionOverride: position);
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              final resume = (position.inMilliseconds / 1000).toStringAsFixed(1);
+              final vid = Uri.encodeComponent(episode.vid);
+              final route =
+                  '/hongguo/${Uri.encodeComponent(widget.seriesId)}?vid=$vid&resume=$resume';
+              unawaited(root.push(route));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted || _disposed) return;
+    // The window now carries the sound: this page goes quiet before it pops.
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
   Future<void> _setSpeed(double speed) async {
     final handle = _handle;
     if (handle == null) return;
@@ -1108,12 +1172,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// Saves the episode and position at most once every few seconds — the
   /// local history row a return resumes from, and, signed in, the cloud's
   /// own copy (best effort; a refused upload never fails the page).
-  void _saveProgress({bool force = false, bool completed = false}) {
+  void _saveProgress({bool force = false, bool completed = false, Duration? positionOverride}) {
     final episode = _episode;
     final transport = _transport;
     if (episode == null || transport == null) return;
     final total = transport.duration.inMilliseconds;
-    final position = transport.position.inMilliseconds;
+    // The floating mini window hands the page its last position on the way
+    // out: the page's own transport stopped at the handoff, so the override
+    // is the only record of what the window played since.
+    final position = positionOverride?.inMilliseconds ?? transport.position.inMilliseconds;
     if (total <= 0 || position <= 0) return;
     final now = DateTime.now();
     if (!force && now.difference(_lastSave) < const Duration(seconds: 5)) return;
@@ -1235,6 +1302,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final colors = DsTheme.colorsOf(context);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     final immersive = presentationController.modeOwnsWindow(presentation);
+    // 矮窗（高 <480）横屏沉浸：满铺画面加覆盖控件，页头退场——判定是
+    // 窗口的形状，与平台无关（与直播间同一台排版机）。
+    final windowSize = MediaQuery.sizeOf(context);
+    final landscapeImmersive =
+        PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height).landscapeImmersive;
     // The arrows mirror the room page: up and down take the wheel's step (the
     // 画质与音频 setting) toward the volume, left and right skip five seconds.
     // A TV keeps its arrows for focus; the remote drives the volume itself.
@@ -1337,7 +1409,33 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         },
         child: Scaffold(
           backgroundColor: colors.surface,
-          body: Column(
+          body: landscapeImmersive
+              ? Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _playerSurface(context, immersive: false, fills: true),
+                    PositionedDirectional(
+                      top: 0,
+                      start: 0,
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, 0),
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: PlayerGlassPill(
+                              child: PlayerBarButton(
+                                icon: DsIcons.arrowLeft,
+                                label: t.common.back,
+                                onPressed: _leave,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PageHeader(
@@ -1397,7 +1495,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         ? const SizedBox.shrink()
         : HongguoEpisodeShelf(detail: detail, current: _episode, onOpen: (episode) => unawaited(_openEpisode(episode)));
     final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
-    if (MediaQuery.sizeOf(context).width < 1100) {
+    if (MediaQuery.sizeOf(context).width < kPlaybackWideBreakpoint) {
       return SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
         child: Column(
@@ -1722,7 +1820,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// for — the page stage's shape, never narrower than 9:16 for an upright
   /// episode — and the engine's own reading is the fallback, which a
   /// fullscreen window's tight constraints hold in place regardless.
-  Widget _playerSurface(BuildContext context, {required bool immersive, double? aspectRatio}) {
+  Widget _playerSurface(BuildContext context, {required bool immersive, bool fills = false, double? aspectRatio}) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -1745,10 +1843,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         ? hongguoLowerRendition(ladder, attempted, settings.quality.maxHeight, learnedFailures: lessons)
         : null;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
+      borderRadius: BorderRadius.circular(immersive || fills ? 0 : theme.radii.overlay),
       child: ColoredBox(
         color: colors.overlay,
-        child: AspectRatio(
+        child: _FramedPicture(
+          fills: fills,
           aspectRatio: aspectRatio ?? (_aspectRatio > 0 ? _aspectRatio : 16 / 9),
           child: MouseRegion(
             onHover: (_) => _wake(),
@@ -2178,6 +2277,29 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                                   unawaited(_startDownload());
                                 },
                         ),
+                      // The small window rides the cluster with the frame
+                      // copy and the download: the cluster is where the
+                      // capture verbs live, the menu holds the settings.
+                      if (pipIn && !pipInMode)
+                        PlayerBarButton(
+                          icon: DsIcons.pictureInPicture,
+                          label: t.room.pipOn,
+                          onPressed: () {
+                            _wake();
+                            unawaited(_togglePip());
+                          },
+                        ),
+                      // The mini window is the cluster's fourth destination:
+                      // keep the frame, shrink it to a corner of the app.
+                      if (_miniWindowReady)
+                        PlayerBarButton(
+                          icon: DsIcons.appWindow,
+                          label: t.common.miniWindow,
+                          onPressed: () {
+                            _wake();
+                            unawaited(_enterMiniWindow());
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -2209,14 +2331,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                                 unawaited(_toggleAudioOnly());
                               },
                       ),
-                      // In the small window the strip's leading pill is the
-                      // way back, so the menu would be the same verb twice.
-                      if (pipIn && !pipInMode)
-                        DsMenuItem(
-                          leading: const DsIcon(DsIcons.pictureInPicture),
-                          label: Text(t.room.pipOn),
-                          onPressed: () => unawaited(_togglePip()),
-                        ),
                       DsMenuItem(
                         leading: const DsIcon(DsIcons.aspectRatio),
                         label: Text('${t.settings.fit} · ${fitLabels(t)[fit.index]}'),
@@ -2226,16 +2340,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                         leading: DsIcon(danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff),
                         label: Text(danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff),
                         onPressed: () => _showPanel(_HongguoPanel.danmaku),
-                      ),
-                      DsMenuItem(
-                        leading: DsIcon(_effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume),
-                        label: Text(_effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute),
-                        onPressed: handle == null
-                            ? null
-                            : () {
-                                _wake();
-                                unawaited(_setMuted(muted: !_effectivelyMuted));
-                              },
                       ),
                     ],
                     builder: (context, anchor, _) => PlayerBarButton(
@@ -2941,4 +3045,23 @@ final class _RailAction extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The picture's frame: an aspect box for the page's stage, the window's own
+/// shape for a surface that fills it (the sideways-immersive window).
+final class _FramedPicture extends StatelessWidget {
+  const _FramedPicture({required this.fills, required this.aspectRatio, required this.child});
+
+  /// Whether the picture takes the whole box instead of an aspect shape.
+  final bool fills;
+
+  /// The stage's own shape when it keeps one.
+  final double aspectRatio;
+
+  /// The picture and its controls.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      fills ? SizedBox.expand(child: child) : AspectRatio(aspectRatio: aspectRatio, child: child);
 }

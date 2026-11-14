@@ -30,15 +30,20 @@ import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
 import 'package:pure_live/shared/player/on_video_colors.dart';
+import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton;
 import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPill;
 import 'package:pure_live/shared/shared.dart'
     show
         AudienceFormat,
         CoverFallback,
+        FloatingVideoHandoff,
+        FloatingVideoWindow,
         LiveWindow,
+        PlaybackLayout,
         PlayerIdleProgress,
         RoomCoverChip,
         cachedImage,
+        capturePlayerFrame,
         kRoomCoverScrim,
         silencePlayer;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
@@ -125,6 +130,12 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   PlayerId? _boundPlayer;
   StreamSubscription<PlayerTransportState>? _transportSub;
   StreamSubscription<PlayerAdapterEvent>? _eventSub;
+  StreamSubscription<void>? _geometrySub;
+
+  /// The picture's own shape, followed from the engine's geometry: the
+  /// stage sizes itself to the episode, not to a hardcoded 16:9 that
+  /// letterboxes a vertical episode wrong on a portrait phone.
+  double _aspectRatio = 16 / 9;
   PlayerTransportState? _transport;
   String? _error;
   bool _opening = false;
@@ -213,6 +224,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     _countdownTimer?.cancel();
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
+    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     super.dispose();
   }
 
@@ -273,6 +285,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       }
       _handle = handle;
       _bind(handle);
+      // A playing mini window belongs to the episode the viewer just left;
+      // a new one here supersedes it (its close path checkpoints the old).
+      FloatingVideoWindow.dismiss();
       final picture = vodDashVideoOf(info, maxQuality: want);
       _openedQn = picture?.quality ?? info.servedQuality ?? want;
       _openedLabel = vodQualityLabel(info, _openedQn) ?? info.quality;
@@ -667,6 +682,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     _boundPlayer = handle.id;
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
+    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+    _geometrySub = handle.geometryController.state.listen((state) {
+      final size = state.geometry.videoSize;
+      if (size.width <= 0 || size.height <= 0) return;
+      final ratio = size.width / size.height;
+      if (!mounted || !ratio.isFinite || (_aspectRatio - ratio).abs() < 0.01) return;
+      setState(() => _aspectRatio = ratio.clamp(0.5, 2.4));
+    });
     _transportSub = handle.playbackStream.listen((state) {
       if (!mounted) return;
       setState(() {
@@ -735,11 +758,128 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
   }
 
+  /// Keeps the frame the episode is showing in the viewer's screenshot
+  /// folder, the way every player's picture verbs do.
+  Future<void> _screenshot() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final file = await capturePlayerFrame(handle, ref.read(appPathsProvider).screenshots, prefix: 'season');
+    if (!mounted) return;
+    final t = context.t;
+    showDsToast(
+      context: context,
+      title: file == null ? t.room.screenshotFailed : t.room.screenshotSaved(name: file.uri.pathSegments.last),
+      status: file == null ? DsStatus.danger : DsStatus.success,
+    );
+  }
+
+  /// The desktop's compact window (the phone's system window on iOS); a host
+  /// that refuses has to be told, or the button reads as broken.
+  Future<void> _togglePip() async {
+    final handle = _handle;
+    if (handle == null) return;
+    final accepted = await ref.read(roomPresentationProvider.notifier).togglePip(handle.id);
+    if (accepted || !mounted) return;
+    showDsToast(context: context, title: context.t.common.pipUnavailable);
+  }
+
+  /// Whether the picture verbs may show: the frame copy needs an engine that
+  /// can hand a frame back; the small windows need a source to work on and
+  /// no window-owning mode standing (the picture-in-picture small window
+  /// already is a small window).
+  bool get _pictureVerbsReady {
+    final handle = _handle;
+    return handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Hands the episode to the floating mini window and leaves: the window
+  /// opens its own handle from this one's source, resuming where it stopped,
+  /// while the page pops back; the expand button re-opens this route (the
+  /// season restarts its walk — this page keeps no progress record).
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    if (handle == null || source == null) return;
+    final t = context.t;
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final title = ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.title ?? t.vod.opening;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: title,
+        resume: handle.position,
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              unawaited(root.push('/vod/season/${widget.seasonId}'));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted || _disposed) return;
+    // The window now carries the sound: this page goes quiet before it pops.
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
+  /// The picture verbs over the picture: the frame copy, the two small
+  /// windows — one pill, on every stage size this page draws.
+  List<Widget> _pictureVerbs(Translations t) => [
+    if (_handle?.canCaptureScreenshot ?? false)
+      PlayerBarButton(
+        icon: DsIcons.camera,
+        label: t.room.screenshot,
+        onPressed: () {
+          _wake();
+          unawaited(_screenshot());
+        },
+      ),
+    if (_handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
+      PlayerBarButton(
+        iconAsset: 'assets/icons/pip.svg',
+        label: t.vod.pip,
+        onPressed: () {
+          _wake();
+          unawaited(_togglePip());
+        },
+      ),
+    if (_pictureVerbsReady)
+      PlayerBarButton(
+        icon: DsIcons.appWindow,
+        label: t.common.miniWindow,
+        onPressed: () {
+          _wake();
+          unawaited(_enterMiniWindow());
+        },
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final immersive = _immersive;
+    // A sideways window (shorter than 480 tall, wider than tall, 600 or
+    // more across) takes the stage alone: the page's episode column has no
+    // room beside a 16:9 picture that short, and the strip's verbs stay
+    // over the picture — the same judgement every other player makes
+    // (与直播间同一台排版机，与平台无关).
+    final windowSize = MediaQuery.sizeOf(context);
+    final sizeStage = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height).landscapeImmersive;
     // This episode's queue rows announce themselves: a finished episode
     // says where it landed, a failed one says so — however the page was left.
     ref.listen(vodDownloadsProvider, (previous, next) {
@@ -789,6 +929,13 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       body = const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
     } else if (immersive) {
       body = _player(immersive: true);
+    } else if (sizeStage) {
+      // The sideways window plays over black: the letterbox a shorter-than-
+      // 16:9 stage leaves is part of the picture, not of the page.
+      body = ColoredBox(
+        color: OnVideoColors.ground,
+        child: Center(child: _player(immersive: false, stageOnly: true)),
+      );
     } else {
       body = _page(season);
     }
@@ -920,7 +1067,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   /// The picture and its controls; [immersive] drops the page's chrome and
   /// puts the way out over the picture, since the app bar is gone there.
-  Widget _player({required bool immersive}) {
+  Widget _player({required bool immersive, bool stageOnly = false}) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -938,11 +1085,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final showBar = _controlsVisible || !playing;
     final qualities = _play?.qualities ?? const <VodQuality>[];
     return ClipRRect(
-      borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
+      borderRadius: BorderRadius.circular(immersive || stageOnly ? 0 : theme.radii.overlay),
       child: ColoredBox(
         color: colors.overlay,
         child: AspectRatio(
-          aspectRatio: 16 / 9,
+          aspectRatio: _aspectRatio,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -992,9 +1139,42 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                     icon: const DsIcon(DsIcons.minimize2),
                   ),
                 ),
+              // Immersive keeps the picture verbs too: the way out sits at
+              // the top-left, the verbs at the top-right, over both stage
+              // shapes this page draws. The sideways stage-only body does
+              // the same, its top-left pill being the way back instead.
+              if ((immersive || stageOnly) && handle != null)
+                PositionedDirectional(
+                  top: DsSpace.s8,
+                  end: DsSpace.s8,
+                  child: SafeArea(
+                    child: PlayerGlassPill(
+                      child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t)),
+                    ),
+                  ),
+                ),
+              if (stageOnly)
+                PositionedDirectional(
+                  top: DsSpace.s8,
+                  start: DsSpace.s8,
+                  child: SafeArea(
+                    child: PlayerGlassPill(
+                      child: PlayerBarButton(
+                        icon: DsIcons.arrowLeft,
+                        label: t.common.back,
+                        onPressed: () {
+                          _wake();
+                          if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               // The page's head, over the picture: the way back and the
               // season's name, riding the same shade the archive strip wears.
-              if (showBar && !immersive)
+              // The sideways stage-only body leads with its own pill, and
+              // the title would only fight it for the corner.
+              if (showBar && !immersive && !stageOnly)
                 PositionedDirectional(
                   top: 0,
                   start: 0,
@@ -1035,6 +1215,16 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             style: theme.typography.bodyStrong.copyWith(color: OnVideoColors.foreground),
                           ),
                         ),
+                        // The picture verbs at the row's far end — the
+                        // same cluster every player carries, sized for
+                        // the stage that shows it.
+                        if (handle != null)
+                          PlayerGlassPill(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: _pictureVerbs(t),
+                            ),
+                          ),
                       ],
                     ),
                   ),

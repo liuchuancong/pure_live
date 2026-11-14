@@ -17,6 +17,7 @@ import 'package:media_core/media_core.dart'
         GeometryState,
         PlayerAdapterCompleted,
         PlayerAdapterEvent,
+        PlayerConfig,
         PlayerHandle,
         PlayerHandleLifecycle,
         PlayerHandlePlayback,
@@ -39,8 +40,10 @@ import 'package:pure_live/app/app.dart'
         resolvedFontFamily,
         roomLeaveProvider,
         roomPresentationProvider,
+        rootNavigatorKey,
         routeCaptionTitle,
         windowsPipWindowProvider;
+import 'package:pure_live/app/providers/player/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart' show WallpaperVideoPlayer;
@@ -57,7 +60,11 @@ import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/shared.dart'
     show
         DanmakuFormat,
+        FloatingVideoHandoff,
+        FloatingVideoWindow,
         LiveWindow,
+        PlaybackLayout,
+        PlaybackWindowClass,
         PlayerBarButton,
         PlayerGlassPill,
         PlayerStatsOverlay,
@@ -66,9 +73,11 @@ import 'package:pure_live/shared/shared.dart'
         cachedImage,
         capturePlayerFrame,
         danmakuFileFor,
+        kPlaybackWideBreakpoint,
         playerBarrageConfig,
         playerStatsVisibleProvider,
-        showCastUriDialog;
+        showCastUriDialog,
+        silencePlayer;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens the media preview over [items], on the entry at [initialIndex].
@@ -133,9 +142,6 @@ final class MediaPreviewPage extends ConsumerStatefulWidget {
 final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// The stage is dark whatever the app's theme: a preview is a picture.
   static const Color _stage = Color(0xFF000000);
-
-  /// Below this width the list becomes a second view instead of a column.
-  static const double _inlineWidth = 900;
 
   static const double _listMin = 240;
   static const double _listMax = 420;
@@ -283,6 +289,9 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   void _onHandle(PlayerHandle handle) {
     if (_disposed) return;
     _detachPlayer();
+    // A playing mini window belongs to the take the viewer just left; a new
+    // one here supersedes it (its close path checkpoints the old).
+    FloatingVideoWindow.dismiss();
     _handle = handle;
     _binding = DanmakuPlayerBinding.forHandle(controller: _barrage, handle: handle)..attach();
     _transport = handle.playbackStream.listen((state) {
@@ -352,6 +361,58 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     final accepted = await _presentation.togglePip(handle.id);
     if (accepted || !mounted) return;
     showDsToast(context: context, title: context.t.common.pipUnavailable);
+  }
+
+  /// Whether the 小窗 verb may show: the stage carries a source to hand
+  /// over, no window-owning mode stands, and no mini window is up yet.
+  bool get _miniWindowReady {
+    final handle = _handle;
+    return handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Hands the take to the floating mini window and leaves: the window
+  /// opens its own handle from the file this stage plays, resuming where it
+  /// stopped, while the page pops back; the expand button re-opens the
+  /// preview on the same entry.
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    final entry = _current;
+    if (handle == null || source == null || entry == null) return;
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final index = _index;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: entry.title,
+        resume: handle.position,
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              unawaited(openMediaPreview(root, title: widget.title, items: widget.items, initialIndex: index));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted) return;
+    // The window now carries the sound: this stage goes quiet before the
+    // page pops (the stage's own player releases its handle with it).
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
   }
 
   /// Opens or closes the immersive layout's file drawer.
@@ -683,12 +744,19 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final width = MediaQuery.sizeOf(context).width;
-    final narrow = width < _inlineWidth;
+    final windowSize = MediaQuery.sizeOf(context);
+    final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
+    // 页头在宽 <840 的窗收窄（第二视图的档）；宽 <600 或高 <480 的窗是
+    // 舞台自己——页头与列表列退场，列表走右缘抽屉（与全屏同款）。判定是
+    // 窗口的形状，与平台无关：小桌面窗与手机同款。
+    final narrow = playbackLayout.windowClass != PlaybackWindowClass.wide;
+    final sizeImmersive =
+        playbackLayout.windowClass == PlaybackWindowClass.compact || playbackLayout.landscapeImmersive;
     final presentation = ref.watch(roomPresentationProvider);
     // A mode that owns the window takes the whole screen: the header and the
     // list column step out and the bar carries what they held.
     final immersive = _presentation.modeOwnsWindow(presentation);
+    final stageOnly = immersive || sizeImmersive;
     // The desktop compact window is a picture too small to carry the page's
     // chrome: its own bar plays, and the overlays stay out of it.
     final pipOwned = presentation == PresentationMode.pip && _presentation.pipOwnsWindow;
@@ -716,11 +784,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       canPop: !immersive && !_theater && !(narrow && _listOpen) && !_drawerOpen,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+        // The drawer gives way before anything else, in every arrangement.
+        if (_drawerOpen) {
+          _setDrawerOpen(false);
+          return;
+        }
         if (immersive) {
-          if (_drawerOpen) {
-            _setDrawerOpen(false);
-            return;
-          }
           unawaited(_toggleFullscreen());
           return;
         }
@@ -731,11 +800,17 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       },
       child: ColoredBox(
         // The page wears the theme; the picture's own box paints its dark
-        // behind it (and the whole page while a mode owns the window).
-        color: immersive ? _stage : DsTheme.colorsOf(context).canvas,
-        child: immersive
+        // behind it (and the whole page while a mode owns the window, or the
+        // window's own shape leaves only the stage).
+        color: stageOnly ? _stage : DsTheme.colorsOf(context).canvas,
+        child: stageOnly
             ? SafeArea(
-                child: _immersiveStage(t, compact: LiveWindow.isCompact(width), pipOwned: pipOwned),
+                child: _immersiveStage(
+                  t,
+                  compact: playbackLayout.windowClass == PlaybackWindowClass.compact,
+                  pipOwned: pipOwned,
+                  ownsWindow: immersive,
+                ),
               )
             : SafeArea(
                 child: Column(
@@ -745,7 +820,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, constraints) {
-                          final inline = constraints.maxWidth >= _inlineWidth;
+                          final inline = constraints.maxWidth >= kPlaybackWideBreakpoint;
                           final list = _previewList();
                           if (!inline) {
                             if (_listOpen) return list;
@@ -900,11 +975,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   }
 
   /// The immersive layout, the room's own arrangement: the picture fills the
-  /// window and the file list — which the inline layout keeps beside it —
+  /// the window and the file list — which the inline layout keeps beside it —
   /// lives on a drawer at the picture's end edge. A 28px glass tab summons
   /// the 280px column, and the column closes again when the pointer leaves
-  /// it, so a playing take is one hover away from being alone.
-  Widget _immersiveStage(Translations t, {required bool compact, required bool pipOwned}) {
+  /// it, so a playing take is one hover away from being alone. [ownsWindow]
+  /// says whether a presentation mode holds the window (its Escape hands the
+  /// screen back); a stage the window's own shape drove has a back pill
+  /// instead, and Escape leaves the page.
+  Widget _immersiveStage(Translations t, {required bool compact, required bool pipOwned, required bool ownsWindow}) {
     final stage = _stageOf(t, compact: compact, immersive: true);
     if (pipOwned) {
       // The compact window keeps its page's keys: Escape is the way back to
@@ -937,7 +1015,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     // stream's figures.
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): () => _leave(context, immersive: true, narrow: false),
+        const SingleActivator(LogicalKeyboardKey.escape): () => _leave(context, immersive: ownsWindow, narrow: false),
         const SingleActivator(LogicalKeyboardKey.keyI): () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
       },
       child: Focus(
@@ -945,6 +1023,21 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         child: Stack(
           children: [
             Positioned.fill(child: stage),
+            // The window's own shape put the page on the stage (no mode owns
+            // the window), so the back pill leads: the header that carried it
+            // stepped out with the rest of the chrome.
+            if (!ownsWindow)
+              PositionedDirectional(
+                top: DsSpace.s8,
+                start: DsSpace.s12,
+                child: PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: DsIcons.arrowLeft,
+                    label: t.common.back,
+                    onPressed: () => _leave(context, immersive: false, narrow: false),
+                  ),
+                ),
+              ),
             PositionedDirectional(
               top: 0,
               bottom: 0,
@@ -1381,6 +1474,10 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             pip ? t.room.pipOff : t.vod.pip,
             onPressed: () => unawaited(_togglePip()),
           ),
+        // The mini window is the destinations' last stop: keep the frame,
+        // send it to a TV, shrink it to a corner of the app.
+        if (_miniWindowReady)
+          pill(DsIcons.appWindow, t.common.miniWindow, onPressed: () => unawaited(_enterMiniWindow())),
         PlayerGlassPill(
           child: DsMenuAnchor(
             semanticLabel: t.common.more,
@@ -1418,6 +1515,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                   label: Text(_theater ? t.room.theaterOff : t.room.theaterOn),
                   onPressed: () => setState(() => _theater = !_theater),
                 ),
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.repeat),
+                label: Text(t.common.previewLoop),
+                checked: _loop,
+                onPressed: handle == null ? null : () => unawaited(_setLoop(!_loop)),
+              ),
               DsMenuItem(
                 leading: const DsIcon(DsIcons.slidersHorizontal),
                 label: Text(t.common.previewDanmakuSettings),
@@ -1505,14 +1608,6 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                 ),
               ),
       ),
-      // The take again from its top when it ends: the engine's own switch, so
-      // a press only has to reach the handle.
-      PlayerBarButton(
-        icon: DsIcons.repeat,
-        label: t.common.previewLoop,
-        selected: _loop,
-        onPressed: () => unawaited(_setLoop(!_loop)),
-      ),
       // The flying danmaku's switch beside the gear that opens its settings —
       // the pair the room's bar draws at the reading end. Without a sidecar
       // the switch stays in place but out of reach, and says why.
@@ -1526,11 +1621,6 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         onPressed: has
             ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
             : null,
-      ),
-      PlayerBarButton(
-        icon: DsIcons.slidersHorizontal,
-        label: t.common.previewDanmakuSettings,
-        onPressed: _openDanmakuSettings,
       ),
       // The window's own verbs: the in-app fullscreen where a desktop can
       // fill its window, and the system fullscreen whose button doubles as

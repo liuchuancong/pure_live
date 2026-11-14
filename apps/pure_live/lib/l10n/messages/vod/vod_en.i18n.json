@@ -197,6 +197,8 @@
   "downloadingUnknown": "Downloading…",
   "downloadDone": "Saved to {name: String}",
   "downloadFailed": "Download failed",
+  "downloadUnsupported": "This replay's format cannot be downloaded yet",
+  "downloadPercent": "{percent}% downloading",
   "downloadCancelled": "Download cancelled",
   "downloadCancel": "Cancel download",
   "downloadPause": "Pause download",

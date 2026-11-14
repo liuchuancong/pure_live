@@ -1231,6 +1231,12 @@ class Translations$common$zh_CN {
 	/// zh-CN: '新建窗口'
 	String get newWindow => '新建窗口';
 
+	/// zh-CN: '小窗播放'
+	String get miniWindow => '小窗播放';
+
+	/// zh-CN: '回到视频'
+	String get backToVideo => '回到视频';
+
 	/// zh-CN: '显示'
 	String get show => '显示';
 
@@ -13993,6 +13999,12 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '下载失败'
 	String get downloadFailed => '下载失败';
 
+	/// zh-CN: '这条回放的格式暂不支持下载'
+	String get downloadUnsupported => '这条回放的格式暂不支持下载';
+
+	/// zh-CN: '{percent}% 正在下载'
+	String downloadPercent({required Object percent}) => '${percent}% 正在下载';
+
 	/// zh-CN: '已取消下载'
 	String get downloadCancelled => '已取消下载';
 
@@ -15536,6 +15548,8 @@ extension on Translations {
 			'common.switchPlatform' => '切换平台',
 			'common.delete' => '删除',
 			'common.newWindow' => '新建窗口',
+			'common.miniWindow' => '小窗播放',
+			'common.backToVideo' => '回到视频',
 			'common.show' => '显示',
 			'common.save' => '保存',
 			'common.copied' => '已复制',
@@ -16031,10 +16045,10 @@ extension on Translations {
 			'iptv.guideNameHint' => '例如：我的 EPG',
 			'iptv.guideSelected' => ({required String name}) => '已切换到“${name}”',
 			'iptv.importAction' => '导入',
-			'iptv.importAddressInvalid' => '请输入有效的订阅地址',
-			'iptv.importAddressRequired' => '请先输入订阅地址',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.importAddressInvalid' => '请输入有效的订阅地址',
+			'iptv.importAddressRequired' => '请先输入订阅地址',
 			'iptv.importFailed' => '导入失败',
 			'iptv.importFormat' => '不支持的文件格式',
 			'iptv.importFromFile' => '从文件',
@@ -16545,10 +16559,10 @@ extension on Translations {
 			'music.songDetailSource' => '来源',
 			'music.songDetailPath' => '文件',
 			'music.songDetailEmpty' => '—',
-			'music.albumPageTitle' => '专辑',
-			'music.artistPageTitle' => '歌手',
 			_ => null,
 		} ?? switch (path) {
+			'music.albumPageTitle' => '专辑',
+			'music.artistPageTitle' => '歌手',
 			'music.viewAlbum' => '查看专辑',
 			'music.viewArtist' => '查看歌手',
 			'music.albumUnsupported' => '该来源不支持专辑浏览',
@@ -17059,10 +17073,10 @@ extension on Translations {
 			'music.audioCacheClear' => '清空音频缓存',
 			'music.audioCacheCleared' => '音频缓存已清空',
 			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
-			'music.audioCacheClearAction' => '清空',
-			'navigation.groupPrimary' => '高频页面',
 			_ => null,
 		} ?? switch (path) {
+			'music.audioCacheClearAction' => '清空',
+			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
 			'navigation.channels' => '频道',
@@ -17573,10 +17587,10 @@ extension on Translations {
 			'room.blockKeywordHint' => '输入要屏蔽的关键词',
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
-			'room.danmakuSettings' => '弹幕设置',
-			'room.blockList' => '屏蔽列表',
 			_ => null,
 		} ?? switch (path) {
+			'room.danmakuSettings' => '弹幕设置',
+			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '醒目留言',
 			'room.superChatEmpty' => '暂无醒目留言',
 			'room.superChatFailed' => '醒目留言加载失败',
@@ -18087,10 +18101,10 @@ extension on Translations {
 			'settings.danmakuColorHex' => '十六进制颜色',
 			'settings.danmakuColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.danmakuColorHue' => '色相',
-			'settings.danmakuColorSaturation' => '饱和度与明度',
-			'settings.danmakuFixedGroup' => '固定弹幕',
 			_ => null,
 		} ?? switch (path) {
+			'settings.danmakuColorSaturation' => '饱和度与明度',
+			'settings.danmakuFixedGroup' => '固定弹幕',
 			'settings.chatListFixedTitle' => '聊天列表已固定',
 			'settings.chatListFixedDesc' => '显示用户名和礼物，会员进醒目留言；侧栏、14 px、标准行距、360 px。',
 			'settings.chatListGroup' => '聊天列表内容',
@@ -18601,10 +18615,10 @@ extension on Translations {
 			'settings.playerGuideEntrySymGlitchBody' => 'Android：一键方案切「安卓兼容」。其它平台：关闭硬解开关走软解，或在自定义驱动与硬件加速里把解码器改 auto-safe。',
 			'settings.playerGuideEntrySymBlurryTitle' => '低清源在高分屏发糊',
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：把放大算法改成 ewa_lanczossharp。',
-			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
-			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
+			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
 			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
 			'settings.playerGuideEntrySymBufferingBody' => '选「弱网稳定」；同时检查网络代理设置——代理是直播卡顿的常见来源。',
 			'settings.playerGuideEntrySymLatencyTitle' => '延迟高（连麦 / 赛事情景）',
@@ -19115,10 +19129,10 @@ extension on Translations {
 			'settings.navHongguoDanmaku' => '弹幕',
 			'settings.navHongguoDevice' => '设备与身份',
 			'settings.hongguoDescription' => '红果伴侣服务与播放偏好。',
-			'settings.hongguoInterfaceDesc' => '海报卡片上显示哪些信息。',
-			'settings.hongguoDanmakuDesc' => '弹幕开关与字号、透明度、速度、密度。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hongguoInterfaceDesc' => '海报卡片上显示哪些信息。',
+			'settings.hongguoDanmakuDesc' => '弹幕开关与字号、透明度、速度、密度。',
 			'settings.hongguoDeviceDesc' => '本机注册的设备身份，可在这里重置。',
 			'settings.hongguoQuality' => '默认清晰度',
 			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
@@ -19629,10 +19643,10 @@ extension on Translations {
 			'vod.changeRelated' => '换一换',
 			'vod.expand' => '展开',
 			'vod.collapse' => '收起',
-			'vod.parts' => '分P',
-			'vod.views' => '播放',
 			_ => null,
 		} ?? switch (path) {
+			'vod.parts' => '分P',
+			'vod.views' => '播放',
 			'vod.score' => '评分',
 			'vod.danmakuOn' => '显示弹幕',
 			'vod.danmakuOff' => '隐藏弹幕',
@@ -19749,6 +19763,8 @@ extension on Translations {
 			'vod.downloadingUnknown' => '下载中…',
 			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
 			'vod.downloadFailed' => '下载失败',
+			'vod.downloadUnsupported' => '这条回放的格式暂不支持下载',
+			'vod.downloadPercent' => ({required Object percent}) => '${percent}% 正在下载',
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadCancel' => '取消下载',
 			'vod.downloadPause' => '暂停下载',

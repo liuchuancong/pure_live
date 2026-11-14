@@ -70,7 +70,7 @@ extension _RoomPageLifecycle on _RoomPageState {
       final portrait = _pictureRatio(ref.read(roomProvider)) < 1;
       // 沉浸式按窗口形状判定（<600 与平台无关）：窄窗已是满铺的竖屏沉浸
       // 房间，竖屏流不再落竖屏全屏表面——桌面小窗与手机同款。
-      final phoneImmersive = MediaQuery.sizeOf(context).width < kRoomCompactBreakpoint;
+      final phoneImmersive = MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
       if (portrait && phoneImmersive) return;
       if (portrait) {
         _setPortraitFullscreen(true);

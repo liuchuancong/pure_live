@@ -198,6 +198,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         progress: ArchiveProgress(),
       );
       _bind(handle);
+      // A playing mini window belongs to the video the viewer just left; a
+      // new one here supersedes it (its close path checkpoints the old).
+      FloatingVideoWindow.dismiss();
       setState(() {});
       await _controller!.open(widget.id);
     } on Object {
@@ -512,6 +515,61 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
+  /// Whether the 小窗 verb may show: the handle carries a source to hand
+  /// over, no window-owning mode stands, and no mini window is up yet.
+  bool get _miniWindowReady {
+    final handle = _handle;
+    return handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Hands the video to the floating mini window and leaves: the window
+  /// opens its own handle from this one's source, resuming where it stopped,
+  /// while the page pops back; the expand button re-opens this route, and
+  /// the walk's own progress store resumes there.
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    final detail = ref.read(huyaVideoDetailProvider(widget.id)).value;
+    if (handle == null || source == null || detail == null) return;
+    _wake();
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final videoId = detail.video.id;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: detail.video.title,
+        resume: handle.position,
+        rate: handle.rate,
+        muted: handle.muted,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          // The page is gone by then, so the walk's own store takes the
+          // position the same way the controller would have.
+          unawaited(ArchiveProgress().save('huya-video:$videoId', position));
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              unawaited(root.push('/huya/${Uri.encodeComponent(widget.id)}'));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted || _disposed) return;
+    // The window now carries the sound: this page goes quiet before it pops.
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
   void _leave() {
     final handle = _handle;
     // A phone's picture-in-picture window floats over the page; leaving the
@@ -571,6 +629,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     // Only a mode that owns the app's window replaces this page's layout; a
     // phone's picture-in-picture window floats over it.
     final immersive = presentationController.modeOwnsWindow(presentation);
+    // 矮窗（高 <480）横屏沉浸：满铺画面加覆盖条，页面内容退场——判定
+    // 是窗口的形状，与平台无关（与直播间同一台排版机）。
+    final windowSize = MediaQuery.sizeOf(context);
+    final landscapeImmersive =
+        PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height).landscapeImmersive;
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     if (immersive) {
       // The owned window keeps the keyboard its page had: Escape backs out of
@@ -599,6 +662,18 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       unawaited(_setVolume(next));
     }
 
+    if (landscapeImmersive) {
+      // The sideways window takes the stage alone: the picture fills it, the
+      // strip's verbs stay over it, and the back pill leads out of the page —
+      // the header and the information column stepped out with the chrome.
+      return PlayerBarTier(
+        tv: tv,
+        child: Scaffold(
+          backgroundColor: colors.canvas,
+          body: _surface(context, detail.value, immersive: false),
+        ),
+      );
+    }
     return PlayerBarTier(
       tv: tv,
       child: CallbackShortcuts(
@@ -673,7 +748,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final related = ref.watch(huyaRelatedProvider(widget.id));
     final width = MediaQuery.sizeOf(context).width;
     final inset = LiveWindow.pageInset(width);
-    final wide = LiveWindow.isExpanded(width);
+    final wide = width >= kPlaybackWideBreakpoint;
     final video = detail?.video;
     final info = _Info(video: video, detail: detail, onUploader: _openUploader);
     final rail = _Related(
@@ -966,6 +1041,17 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             unawaited(_togglePip());
           },
         ),
+      // The mini window rides the cluster as the fourth destination — keep
+      // the frame, download it, copy it, shrink it to a corner of the app.
+      if (_miniWindowReady)
+        PlayerBarButton(
+          icon: DsIcons.appWindow,
+          label: t.common.miniWindow,
+          onPressed: () {
+            _wake();
+            unawaited(_enterMiniWindow());
+          },
+        ),
     ];
     final actionPill = actions.isEmpty
         ? const SizedBox.shrink()
@@ -1113,7 +1199,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final handle = _handle;
     if (controller == null || handle == null) return const SizedBox(height: 56);
     final tv = PlayerBarTier.tvOf(context);
-    final compact = !tv && !LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
+    final compact = !tv && MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     final presentation = ref.watch(roomPresentationProvider);
     final playing = _transport?.isPlaying ?? false;
     final position = _transport?.position ?? Duration.zero;

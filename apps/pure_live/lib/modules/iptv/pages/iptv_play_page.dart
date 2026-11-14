@@ -449,6 +449,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       // The audio and engine options below read the stored settings off
       // `ref`; an event in flight past dispose must not reach them.
       if (!mounted) return;
+      // A playing mini window belongs to the channel the viewer just left;
+      // a new one here supersedes it (its close path checkpoints the old).
+      FloatingVideoWindow.dismiss();
       setState(() => _handle = handle);
       unawaited(_applyAudio(handle));
       unawaited(_applyEngineOptions(handle));
@@ -881,6 +884,56 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
+  /// Whether the 小窗 verb may show: the handle carries a source to hand
+  /// over, no window-owning mode stands, no mini window is up yet, and the
+  /// stage is the page's own (a multi-view tile does not float away from
+  /// its grid).
+  bool get _miniWindowReady {
+    final handle = _handle;
+    return !widget.embedded &&
+        handle != null &&
+        handle.source != null &&
+        _presentationMode == PresentationMode.normal &&
+        !FloatingVideoWindow.isShowing;
+  }
+
+  /// Hands the channel to the floating mini window and leaves: the window
+  /// opens its own handle from this one's source (a live stream, so there
+  /// is nothing to resume), while the page pops back; the expand button
+  /// re-opens this route on the same channel.
+  Future<void> _enterMiniWindow() async {
+    final handle = _handle;
+    final source = handle?.source;
+    final channel = _channel;
+    if (handle == null || source == null || channel == null) return;
+    final backend = ref.read(playerKernelBackendProvider).id;
+    final ok = await FloatingVideoWindow.show(
+      FloatingVideoHandoff(
+        title: channel.entry.name,
+        open: (kernel) async {
+          final fresh = await kernel.create(
+            config: const PlayerConfig(name: 'floating-video'),
+            preferredBackend: backend,
+          );
+          await fresh.open(source, autoPlay: true);
+          return fresh;
+        },
+        onClose: (position, {required reopen}) {
+          if (reopen) {
+            final root = rootNavigatorKey.currentContext;
+            if (root != null && root.mounted) {
+              unawaited(root.push(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id), extra: channel));
+            }
+          }
+        },
+      ),
+    );
+    if (!ok || !mounted) return;
+    // The window now carries the sound: this page goes quiet before it pops.
+    silencePlayer(handle);
+    if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+
   /// Stops the channel from the compact window: stop the stream, then leave
   /// by the window's own close — the ✕ means "I am done watching", and a
   /// window that cannot close itself falls back to leaving the page.
@@ -1122,6 +1175,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // phone's picture-in-picture window floats over this page, which keeps
     // its layout.
     final ownsWindow = presentationController.modeOwnsWindow(presentation);
+    // 舞台档按窗口的形状判定（与直播间同一台排版机，与平台无关）：宽
+    // <600 或高 <480 的独立页收起页头，画面铺满，返回以胶囊贴在画面
+    // 左上。嵌入式面板不参与——它的宿主页自己排版。
+    final windowSize = MediaQuery.sizeOf(context);
+    final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
+    final sizeStage = !widget.embedded &&
+        (playbackLayout.windowClass == PlaybackWindowClass.compact || playbackLayout.landscapeImmersive);
     final fullscreen = presentation != PresentationMode.normal;
     final playing = _playbackState.playing;
     _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
@@ -1317,7 +1377,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (!widget.embedded)
+                  if (!widget.embedded && !sizeStage)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s16, DsSpace.s8),
                       child: Row(
@@ -1617,6 +1677,25 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                   ),
                                 ),
                               ),
+                            // 舞台档收起了页头：返回以玻璃胶囊贴在画面左上，
+                            // 页头的路不跟着退场。
+                            if (sizeStage)
+                              PositionedDirectional(
+                                top: 0,
+                                start: 0,
+                                child: SafeArea(
+                                  child: Padding(
+                                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, 0),
+                                    child: PlayerGlassPill(
+                                      child: PlayerBarButton(
+                                        icon: DsIcons.arrowLeft,
+                                        label: t.common.close,
+                                        onPressed: () => context.pop(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         );
                       },
@@ -1746,22 +1825,43 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                       icon: DsIcons.camera,
                                       onPressed: () => unawaited(_screenshot()),
                                     ),
-                                  if (!crowded)
-                                    PlayerBarButton(
-                                      label: t.room.statsToggle,
-                                      icon: DsIcons.activity,
-                                      selected: ref.watch(playerStatsVisibleProvider),
-                                      onPressed: handle == null
-                                          ? null
-                                          : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+                                  // The quiet pair — the stream's figures and
+                                  // the sound-only mode — folds into the ⋯, the
+                                  // room's own rule: the bar carries what a
+                                  // watching hand reaches for.
+                                  DsMenuAnchor(
+                                    semanticLabel: t.common.more,
+                                    items: [
+                                      DsMenuItem(
+                                        leading: const DsIcon(DsIcons.activity),
+                                        label: Text(t.room.statsToggle),
+                                        checked: ref.watch(playerStatsVisibleProvider),
+                                        onPressed: handle == null
+                                            ? null
+                                            : () => ref.read(playerStatsVisibleProvider.notifier).toggle(),
+                                      ),
+                                      DsMenuItem(
+                                        leading: DsIcon(_audioOnly ? DsIcons.headphones : DsIcons.music2),
+                                        label: Text(t.room.audioOnlyMode),
+                                        checked: _audioOnly,
+                                        onPressed: handle == null ? null : () => unawaited(_toggleAudioOnly()),
+                                      ),
+                                      // The narrow bar's carry: the mini
+                                      // window rides here when the bar
+                                      // itself has no room for it.
+                                      if (crowded && _miniWindowReady)
+                                        DsMenuItem(
+                                          leading: const DsIcon(DsIcons.appWindow),
+                                          label: Text(t.common.miniWindow),
+                                          onPressed: () => unawaited(_enterMiniWindow()),
+                                        ),
+                                    ],
+                                    builder: (context, controller, _) => PlayerBarButton(
+                                      label: t.common.more,
+                                      icon: DsIcons.ellipsisVertical,
+                                      onPressed: controller.toggle,
                                     ),
-                                  if (!crowded)
-                                    PlayerBarButton(
-                                      label: t.room.audioOnlyMode,
-                                      icon: _audioOnly ? DsIcons.headphones : DsIcons.music2,
-                                      selected: _audioOnly,
-                                      onPressed: handle == null ? null : () => unawaited(_toggleAudioOnly()),
-                                    ),
+                                  ),
                                   if (handle != null && presentationController.pipAvailable)
                                     PlayerBarButton(
                                       label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
@@ -1769,6 +1869,16 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                           ? 'assets/icons/pip-exit.svg'
                                           : 'assets/icons/pip.svg',
                                       onPressed: () => unawaited(_togglePip(handle)),
+                                    ),
+                                  // The mini window rides the destinations
+                                  // beside the picture-in-picture; a bar too
+                                  // narrow to carry it folds it into the ⋯
+                                  // with the other quiet verbs.
+                                  if (!crowded && _miniWindowReady)
+                                    PlayerBarButton(
+                                      label: t.common.miniWindow,
+                                      icon: DsIcons.appWindow,
+                                      onPressed: () => unawaited(_enterMiniWindow()),
                                     ),
                                   // The window verbs, then the way out of the
                                   // picture's box: the desktop's

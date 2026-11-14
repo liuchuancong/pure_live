@@ -67,7 +67,11 @@ final class FloatingRoomPlayer {
         abort();
         return;
       }
-      final overlay = Overlay.maybeOf(context, rootOverlay: true);
+      // The root navigator owns its overlay; an ancestor lookup from the
+      // navigator's own element finds nothing (the overlay is its child),
+      // so the state's own handle is the way in.
+      final navigator = rootNavigatorKey.currentState;
+      final overlay = (navigator != null && navigator.mounted) ? navigator.overlay : null;
       if (overlay == null) {
         abort();
         return;

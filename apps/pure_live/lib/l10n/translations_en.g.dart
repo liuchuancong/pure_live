@@ -477,6 +477,8 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get switchPlatform => 'Switch platform';
 	@override String get delete => 'Delete';
 	@override String get newWindow => 'New window';
+	@override String get miniWindow => 'Mini window';
+	@override String get backToVideo => 'Back to video';
 	@override String get show => 'Show';
 	@override String get save => 'Save';
 	@override String get copied => 'Copied';
@@ -4845,6 +4847,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadingUnknown => 'Downloading…';
 	@override String downloadDone({required String name}) => 'Saved to ${name}';
 	@override String get downloadFailed => 'Download failed';
+	@override String get downloadUnsupported => 'This replay\'s format cannot be downloaded yet';
+	@override String downloadPercent({required Object percent}) => '${percent}% downloading';
 	@override String get downloadCancelled => 'Download cancelled';
 	@override String get downloadCancel => 'Cancel download';
 	@override String get downloadPause => 'Pause download';
@@ -5743,6 +5747,8 @@ extension on TranslationsEn {
 			'common.switchPlatform' => 'Switch platform',
 			'common.delete' => 'Delete',
 			'common.newWindow' => 'New window',
+			'common.miniWindow' => 'Mini window',
+			'common.backToVideo' => 'Back to video',
 			'common.show' => 'Show',
 			'common.save' => 'Save',
 			'common.copied' => 'Copied',
@@ -6238,10 +6244,10 @@ extension on TranslationsEn {
 			'iptv.guideNameHint' => 'e.g. My EPG',
 			'iptv.guideSelected' => ({required String name}) => 'Switched to “${name}”',
 			'iptv.importAction' => 'Import',
-			'iptv.importAddressInvalid' => 'Enter a valid subscription address',
-			'iptv.importAddressRequired' => 'Enter the subscription address first',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.importAddressInvalid' => 'Enter a valid subscription address',
+			'iptv.importAddressRequired' => 'Enter the subscription address first',
 			'iptv.importFailed' => 'Import failed',
 			'iptv.importFormat' => 'Unsupported file format',
 			'iptv.importFromFile' => 'From file',
@@ -6752,10 +6758,10 @@ extension on TranslationsEn {
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
 			'music.songDetailEmpty' => '—',
-			'music.albumPageTitle' => 'Album',
-			'music.artistPageTitle' => 'Artist',
 			_ => null,
 		} ?? switch (path) {
+			'music.albumPageTitle' => 'Album',
+			'music.artistPageTitle' => 'Artist',
 			'music.viewAlbum' => 'View album',
 			'music.viewArtist' => 'View artist',
 			'music.albumUnsupported' => 'This source does not support album browsing',
@@ -7266,10 +7272,10 @@ extension on TranslationsEn {
 			'music.audioCacheClear' => 'Clear the audio cache',
 			'music.audioCacheCleared' => 'Audio cache cleared',
 			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
-			'music.audioCacheClearAction' => 'Clear',
-			'navigation.groupPrimary' => 'Top pages',
 			_ => null,
 		} ?? switch (path) {
+			'music.audioCacheClearAction' => 'Clear',
+			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
 			'navigation.channels' => 'Channels',
@@ -7780,10 +7786,10 @@ extension on TranslationsEn {
 			'room.blockKeywordHint' => 'Enter the keyword to block',
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
-			'room.danmakuSettings' => 'Danmaku settings',
-			'room.blockList' => 'Block list',
 			_ => null,
 		} ?? switch (path) {
+			'room.danmakuSettings' => 'Danmaku settings',
+			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chat',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'Super chats did not load',
@@ -8294,10 +8300,10 @@ extension on TranslationsEn {
 			'settings.danmakuColorHex' => 'Hex colour',
 			'settings.danmakuColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
 			'settings.danmakuColorHue' => 'Hue',
-			'settings.danmakuColorSaturation' => 'Saturation and brightness',
-			'settings.danmakuFixedGroup' => 'Pinned danmaku',
 			_ => null,
 		} ?? switch (path) {
+			'settings.danmakuColorSaturation' => 'Saturation and brightness',
+			'settings.danmakuFixedGroup' => 'Pinned danmaku',
 			'settings.chatListFixedTitle' => 'Chat list is fixed',
 			'settings.chatListFixedDesc' => 'Names and gifts show, memberships go to super chat; side column, 14 px, standard spacing, 360 px.',
 			'settings.chatListGroup' => 'Chat list content',
@@ -8808,10 +8814,10 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymGlitchBody' => 'Android: switch to the compat preset. Elsewhere: turn hardware decoding off, or set the decoder to auto-safe under Custom drivers and hardware acceleration.',
 			'settings.playerGuideEntrySymBlurryTitle' => 'Low-res sources look soft on a sharp screen',
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA: use the RTX VSR preset. Other GPUs: switch the scale kernel to ewa_lanczossharp.',
-			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
-			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
+			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
 			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
 			'settings.playerGuideEntrySymBufferingBody' => 'Use the stable-network preset; also check the network proxy — a proxy is a common stall source.',
 			'settings.playerGuideEntrySymLatencyTitle' => 'High latency (co-streaming / esports)',
@@ -9322,10 +9328,10 @@ extension on TranslationsEn {
 			'settings.navHongguoDanmaku' => 'Danmaku',
 			'settings.navHongguoDevice' => 'Device & identity',
 			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
-			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
-			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
+			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
 			'settings.hongguoDeviceDesc' => 'The device identity this install registered; reset it here.',
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
@@ -9836,10 +9842,10 @@ extension on TranslationsEn {
 			'vod.changeRelated' => 'Shuffle',
 			'vod.expand' => 'More',
 			'vod.collapse' => 'Less',
-			'vod.parts' => 'Parts',
-			'vod.views' => 'Views',
 			_ => null,
 		} ?? switch (path) {
+			'vod.parts' => 'Parts',
+			'vod.views' => 'Views',
 			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',
@@ -9956,6 +9962,8 @@ extension on TranslationsEn {
 			'vod.downloadingUnknown' => 'Downloading…',
 			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
 			'vod.downloadFailed' => 'Download failed',
+			'vod.downloadUnsupported' => 'This replay\'s format cannot be downloaded yet',
+			'vod.downloadPercent' => ({required Object percent}) => '${percent}% downloading',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
 			'vod.downloadPause' => 'Pause download',
