@@ -15,6 +15,7 @@ import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIp
 import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart' show iptvImportFailureWords;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// What the resources table shows: everything, only playlists or only
@@ -124,9 +125,9 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   Future<void> _renamePlaylist(IptvPlaylist playlist) async {
     final t = context.t;
     final field = TextEditingController(text: playlist.name);
-    final name = await showDsDialog<String>(
+    final name = await showAppDialog<String>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.iptv.renameSourceTitle),
         style: const DsDialogStyle(width: 420),
         description: DsTextField(
@@ -156,7 +157,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   Future<void> _deletePlaylist(IptvPlaylist playlist) async {
     final t = context.t;
     final impact = ref.read(iptvSourcesProvider.notifier).deletionImpact(playlist);
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.iptv.deletePlaylistTitle,
       // The confirmation says what goes with the record before the stars go,
@@ -171,7 +172,6 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
       confirmLabel: t.iptv.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash),
     );
     if (!confirmed || !mounted) return;
     final deleted = await ref.read(iptvSourcesProvider.notifier).deletePlaylist(playlist);
@@ -182,14 +182,13 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   Future<void> _deleteGuide(EpgSource source) async {
     final t = context.t;
     final inUse = ref.read(iptvEpgProvider).activeId == source.id;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.iptv.deleteGuideTitle,
       description: [t.iptv.deleteGuideMessage(name: source.name), if (inUse) t.iptv.deleteActiveGuideNote].join('\n'),
       confirmLabel: t.iptv.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash),
     );
     if (!confirmed || !mounted) return;
     final deleted = await ref.read(iptvEpgProvider.notifier).deleteSource(source);
@@ -202,9 +201,9 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   Future<void> _chooseGuide() async {
     final t = context.t;
     final epg = ref.read(iptvEpgProvider);
-    final chosen = await showDsDialog<EpgSource>(
+    final chosen = await showAppDialog<EpgSource>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.iptv.chooseGuide),
         style: const DsDialogStyle(width: 480),
         description: Column(

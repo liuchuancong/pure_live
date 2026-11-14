@@ -8,6 +8,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_card_settings.dart';
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The piece every card of this station can draw, with the icon and the word
 /// the switch wears: the table the sample's panel is built from.
@@ -103,11 +104,10 @@ final class VodCardPreviewPage extends ConsumerWidget {
   /// Asks before every switch goes back to the designed default, then does it.
   Future<void> _confirmReset(BuildContext context, VodCardSettingsController controller) async {
     final t = context.t;
-    final confirmed = await showDsDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.settings.roomCardResetConfirmTitle),
-        destructive: true,
         description: Text(t.settings.roomCardResetConfirmBody),
         style: const DsDialogStyle(width: 420),
         actions: [

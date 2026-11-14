@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens [options] as one radio group and returns the value confirmed, or
 /// null when the viewer cancels. Nothing is applied while the dialog is
@@ -21,7 +22,7 @@ Future<T?> showChoiceDialog<T>({
   required List<DsSelectOption<T>> options,
   required T? value,
   String? semanticLabel,
-}) => showDsDialog<T>(
+}) => showAppDialog<T>(
   context: context,
   builder: (context) =>
       _ChoiceDialog<T>(title: title, options: options, value: value, semanticLabel: semanticLabel ?? title),
@@ -51,7 +52,7 @@ final class _ChoiceDialogState<T> extends State<_ChoiceDialog<T>> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
+    return AppDialog(
       title: Text(widget.title),
       description: DsListSection(
         children: [

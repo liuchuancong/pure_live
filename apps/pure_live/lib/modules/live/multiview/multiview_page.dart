@@ -150,7 +150,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final t = context.t;
     final wall = ref.read(multiviewProvider);
     final count = wall.slots.where((slot) => slot != null).length;
-    final accepted = await showDsConfirm(
+    final accepted = await showAppConfirm(
       context: context,
       title: t.multiview.restoreAskTitle,
       description: t.multiview.restoreAskBody(count: count),

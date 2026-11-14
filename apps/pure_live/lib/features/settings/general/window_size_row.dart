@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The General pane's window-size row and its dialog: pick one of the
 /// reference's presets or type a width and height, then apply it to the live
@@ -32,7 +33,7 @@ final class WindowSizeRow extends ConsumerWidget {
 }
 
 /// Opens the size dialog with the current size filled in.
-Future<void> showWindowSizeDialog(BuildContext context, WidgetRef ref) => showDsDialog<void>(
+Future<void> showWindowSizeDialog(BuildContext context, WidgetRef ref) => showAppDialog<void>(
   context: context,
   builder: (context) => _WindowSizeDialog(initial: ref.read(windowSizeProvider) ?? const Size(1280, 800)),
 );
@@ -106,7 +107,7 @@ final class _WindowSizeDialogState extends ConsumerState<_WindowSizeDialog> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.windowSize),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

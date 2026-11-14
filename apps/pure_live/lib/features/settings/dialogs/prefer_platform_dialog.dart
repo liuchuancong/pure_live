@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The reference's preferred-platform picker: the platforms browsing shows,
 /// a field that filters them by name or id, and an honest empty state when
@@ -10,7 +11,7 @@ Future<String?> showPreferPlatformDialog({
   required BuildContext context,
   required List<DsSelectOption<String>> options,
   required String? value,
-}) => showDsDialog<String>(
+}) => showAppDialog<String>(
   context: context,
   builder: (context) => _PreferPlatformDialog(options: options, value: value),
 );
@@ -39,7 +40,7 @@ final class _PreferPlatformDialogState extends State<_PreferPlatformDialog> {
         if (query.isEmpty || option.label.toLowerCase().contains(query) || option.value.toLowerCase().contains(query))
           option,
     ];
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.preferPlatform),
       style: const DsDialogStyle(width: 420),
       description: Column(

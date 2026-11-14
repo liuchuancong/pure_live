@@ -9,6 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 
 /// The 日志 settings page: what the tree records, whether a rotating file is
@@ -64,11 +65,10 @@ final class _LogSettingsSectionState extends ConsumerState<LogSettingsSection> {
     final t = context.t;
     final controller = TextEditingController(text: ref.read(logSettingsProvider).fileName);
     var value = controller.text;
-    await showDsDialog<void>(
+    await showAppDialog<void>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.settings.logFileName),
-        icon: const DsIcon(DsIcons.fileText),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,

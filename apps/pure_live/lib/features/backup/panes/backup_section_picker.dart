@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Asks which sections a backup, an upload, a restore or a sync should
 /// carry: one check per section with how many entries it holds, select all
@@ -33,7 +34,7 @@ Future<Set<BackupSection>?> showBackupSectionPicker(
     for (final section in initial ?? BackupSection.all)
       if (offered.contains(section)) section,
   };
-  return showDsPanel<Set<BackupSection>>(
+  return showAppPanel<Set<BackupSection>>(
     context: context,
     builder: (context) => _SectionPicker(
       title: title,
@@ -124,7 +125,7 @@ final class _SectionPickerState extends State<_SectionPicker> {
     final colors = DsTheme.colorsOf(context);
     final muted = theme.typography.caption.copyWith(color: colors.textMuted);
     final note = widget.note;
-    return DsPanel(
+    return AppPanel(
       title: Text(widget.title),
       footer: DsButton(
         onPressed: _selected.isEmpty ? null : () => Navigator.of(context).pop(_selected),

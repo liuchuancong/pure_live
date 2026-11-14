@@ -10,6 +10,7 @@ import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The card and the list row have fixed designs; the preview page draws both
 /// with this device's appearance and carries these controls beside them. The
@@ -187,11 +188,10 @@ final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage>
   /// Asks before every switch goes back to the designed default, then does it.
   Future<void> _confirmReset(BuildContext context) async {
     final t = context.t;
-    final confirmed = await showDsDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.settings.roomCardResetConfirmTitle),
-        destructive: true,
         description: Text(t.settings.roomCardResetConfirmBody),
         style: const DsDialogStyle(width: 420),
         actions: [

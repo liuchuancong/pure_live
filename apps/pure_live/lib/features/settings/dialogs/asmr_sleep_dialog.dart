@@ -13,9 +13,10 @@ import 'package:pure_live/features/settings/playback/playback_settings_providers
         playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens the ASMR sleep-duration dialog with the stored duration filled in.
-Future<void> showAsmrSleepMinutesDialog(BuildContext context, WidgetRef ref) => showDsDialog<void>(
+Future<void> showAsmrSleepMinutesDialog(BuildContext context, WidgetRef ref) => showAppDialog<void>(
   context: context,
   builder: (context) => _AsmrSleepDialog(initial: ref.read(playbackSettingsProvider).asmrSleepMinutes),
 );
@@ -69,7 +70,7 @@ final class _AsmrSleepDialogState extends ConsumerState<_AsmrSleepDialog> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.asmrSleepTimer),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -34,6 +34,8 @@ import 'package:pure_live/modules/music/widgets/music_spectrum.dart';
 import 'package:pure_live/modules/music/widgets/music_stage_panels.dart' show MusicCommentsDialog, MusicStagePanels;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// The module's player page: the song at listening size, its transport, and
 /// the queue behind it — the reference's PlayDetail, with the module's own
@@ -227,9 +229,9 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
 void _openStagePanels(BuildContext context) {
   final t = context.t;
   unawaited(
-    showDsPanel<void>(
+    showAppPanel<void>(
       context: context,
-      builder: (context) => DsPanel(
+      builder: (context) => AppPanel(
         title: Text(t.music.stagePanels),
         scrollable: false,
         child: SizedBox(
@@ -709,7 +711,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
   /// Searches the source for another recording and takes its lyric.
   Future<void> _searchLyric(audio.MusicTrack track) async {
     final t = context.t;
-    final candidate = await showDsDialog<audio.MusicTrack>(
+    final candidate = await showAppDialog<audio.MusicTrack>(
       context: context,
       builder: (context) => _LyricSearchDialog(track: track),
     );
@@ -724,7 +726,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
   }
 
   /// Opens the song's comments — the reference's 评论.
-  Future<void> _showComments(audio.MusicTrack track) => showDsDialog<void>(
+  Future<void> _showComments(audio.MusicTrack track) => showAppDialog<void>(
     context: context,
     builder: (context) => MusicCommentsDialog(track: track),
   );
@@ -979,14 +981,13 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             onPressed: () async {
               // The same ask the queue panel makes: an emptied queue cannot
               // be brought back.
-              final confirmed = await showDsConfirm(
+              final confirmed = await showAppConfirm(
                 context: context,
                 title: t.music.clearQueueConfirmTitle,
                 description: t.music.clearQueueConfirmBody,
                 confirmLabel: t.music.clearQueue,
                 cancelLabel: t.common.cancel,
                 destructive: true,
-                icon: const DsIcon(DsIcons.trash2),
               );
               if (!confirmed || !context.mounted) return;
               unawaited(controller.clearQueue());
@@ -1060,9 +1061,8 @@ final class _LyricSearchDialogState extends ConsumerState<_LyricSearchDialog> {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final results = _results;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.music.lyricSearch),
-      icon: const DsIcon(DsIcons.search),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,

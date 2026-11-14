@@ -6,6 +6,7 @@ import 'package:dpad/dpad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -383,10 +384,17 @@ final class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final width = MediaQuery.sizeOf(context).width;
+    final size = MediaQuery.sizeOf(context);
+    final width = size.width;
     // A TV keeps the sidebar at every width: the drawer and bottom bar belong
-    // to thumbs, and this shell's rail is what a remote starts on.
-    final narrow = width < kBottomBarBreakpoint.breakpoint && !widget.tv;
+    // to thumbs, and this shell's rail is what a remote starts on. A tablet
+    // reads the rail too, at every width — its desktop skeleton is the point;
+    // a desktop window narrowed under the breakpoint keeps the bottom bar it
+    // has always taken.
+    final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
+    final tablet =
+        (formFactor == FormFactor.phone || formFactor == FormFactor.tablet) && isTabletSized(size);
+    final narrow = width < kBottomBarBreakpoint.breakpoint && !widget.tv && !tablet;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final wallpaper = BackgroundActiveScope.isActiveOf(context);

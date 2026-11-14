@@ -22,6 +22,7 @@ import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webD
 import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The WebDAV page under Backup and restore: the saved drives as a file
 /// manager.
@@ -126,12 +127,11 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
     final userField = TextEditingController(text: account?.user ?? '');
     final passwordField = TextEditingController();
     var testing = false;
-    await showDsDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setLocal) => DsDialog(
+        builder: (context, setLocal) => AppDialog(
           title: Text(adding ? t.backup.webdavAddAccount : t.backup.webdavEditAccount),
-          icon: const DsIcon(DsIcons.server),
           description: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -262,14 +262,13 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
   /// The saved accounts with their edit and delete verbs, plus "add".
   Future<void> _manageAccounts() async {
     final t = context.t;
-    await showDsDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (context) => Consumer(
         builder: (context, ref, _) {
           final accounts = ref.watch(webdavAccountsProvider).accounts;
-          return DsDialog(
+          return AppDialog(
             title: Text(t.backup.webdavAccounts),
-            icon: const DsIcon(DsIcons.server),
             description: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 360),
               child: SingleChildScrollView(
@@ -331,14 +330,13 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
 
   Future<void> _removeAccount(WebDavAccount account) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.backup.webdavAccountDeleteTitle(name: account.name),
       description: t.backup.webdavAccountDeleteDesc,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await ref.read(webdavAccountsProvider.notifier).remove(account.id);
@@ -628,14 +626,13 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
   Future<void> _delete(WebDavEntry entry) async {
     if (_busy) return;
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.backup.webdavDeleteTitle(name: entry.name),
       description: entry.isDirectory ? t.backup.webdavDeleteFolderDesc : t.backup.webdavDeleteDesc,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await _run((client) async {
@@ -670,11 +667,10 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
   Future<String?> _askText({required String title, String initial = '', String? hint}) async {
     final t = context.t;
     final field = TextEditingController(text: initial);
-    final answer = await showDsDialog<String>(
+    final answer = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(title),
-        icon: const DsIcon(DsIcons.folderPlus),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
@@ -708,7 +704,7 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
     final t = context.t;
     var path = WebDavBackupClient.root;
     var folders = client.list(path: path);
-    return showDsDialog<String>(
+    return showAppDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setLocal) {
@@ -717,9 +713,8 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
             path = next;
             folders = client.list(path: next);
           });
-          return DsDialog(
+          return AppDialog(
             title: Text(title),
-            icon: const DsIcon(DsIcons.folderTree),
             description: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s8,

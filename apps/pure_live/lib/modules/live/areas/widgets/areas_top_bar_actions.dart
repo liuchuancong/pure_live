@@ -126,7 +126,7 @@ final class AreasTopBarActions extends ConsumerWidget {
 
 /// The narrow toolbar's search: a wide window types into the title bar's
 /// field, here the menu opens the same word's field over the catalogue.
-Future<void> showAreasSearchPanel(BuildContext context, {String initial = ''}) => showDsPanel<void>(
+Future<void> showAreasSearchPanel(BuildContext context, {String initial = ''}) => showAppPanel<void>(
   context: context,
   builder: (_) => _AreaSearchPanel(initial: initial),
 );
@@ -183,7 +183,7 @@ final class _AreaSearchPanelState extends ConsumerState<_AreaSearchPanel> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsPanel(
+    return AppPanel(
       title: Text(t.areas.searchHint),
       footer: Row(
         mainAxisAlignment: MainAxisAlignment.end,

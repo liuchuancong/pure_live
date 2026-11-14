@@ -26,7 +26,7 @@ Future<void> showRoomDirectLinks(BuildContext context, WidgetRef ref, LiveRoom r
     showDsToast(context: context, title: t.toolbox.linkDirectEmpty, status: DsStatus.danger);
     return;
   }
-  await showDsDialog<void>(
+  await showAppDialog<void>(
     context: context,
     builder: (context) => DirectLinkDialog(room: room, playback: playback, qualities: qualities),
   );
@@ -87,7 +87,7 @@ final class _DirectLinkDialogState extends ConsumerState<DirectLinkDialog> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.toolbox.linkDirectTitle),
       description: SizedBox(
         width: 460,

@@ -111,7 +111,7 @@ Future<void> showWallpaperDownloadDetail(BuildContext context, String taskId) {
       DsPageRoute<void>(fullscreenDialog: true, builder: (context) => WallpaperDownloadDetailPage(taskId: taskId)),
     );
   }
-  return showDsDialog<void>(
+  return showAppDialog<void>(
     context: context,
     builder: (context) => _WallpaperDownloadDetailDialog(taskId: taskId),
   );
@@ -132,14 +132,13 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
 
   Future<void> _remove(BuildContext context, WidgetRef ref, WallpaperDownloadTask task) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDelete,
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.settings.downloadDelete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed) return;
     await ref.read(wallpaperDownloadsProvider.notifier).remove(task.id);
@@ -368,9 +367,8 @@ final class _WallpaperDownloadDetailDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.downloadDetailTitle),
-      icon: const DsIcon(DsIcons.download),
       description: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: _WallpaperDownloadDetail(taskId: taskId, onGone: () => Navigator.of(context).maybePop()),
@@ -553,11 +551,11 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
     final folders = ref.read(appPathsProvider);
     final pictures = folders.wallpapers.path;
     final clips = folders.videoWallpapers.path;
-    return showDsPanel<void>(
+    return showAppPanel<void>(
       context: context,
       builder: (panelContext) {
         final theme = DsTheme.of(panelContext);
-        return DsPanel(
+        return AppPanel(
           title: Text(t.settings.downloadSettings),
           child: DsListSection(
             children: [
@@ -595,14 +593,13 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
   /// Asks before dropping a row: the record goes, the file stays.
   Future<void> _remove(WallpaperDownloadTask task) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadRemove,
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await ref.read(wallpaperDownloadsProvider.notifier).remove(task.id);
@@ -614,14 +611,13 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
     final t = context.t;
     final count = _selected.length;
     if (count == 0) return;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteSelected(count: count),
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await ref.read(wallpaperDownloadsProvider.notifier).removeMany(_selected);
@@ -632,14 +628,13 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
   Future<void> _removeAll() async {
     final t = context.t;
     if (ref.read(wallpaperDownloadsProvider).isEmpty) return;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteAll,
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.settings.downloadDeleteAll,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await ref.read(wallpaperDownloadsProvider.notifier).removeAll();
@@ -1311,14 +1306,13 @@ Future<void> confirmClearFinished(
   required Future<void> Function() clear,
 }) async {
   final t = context.t;
-  final confirmed = await showDsConfirm(
+  final confirmed = await showAppConfirm(
     context: context,
     title: title,
     description: t.settings.downloadClearFinishedBody,
     confirmLabel: title,
     cancelLabel: t.common.cancel,
     destructive: true,
-    icon: const DsIcon(DsIcons.trash2),
   );
   // The tap can land after the dialog's host is gone (the list rebuilt
   // under it); a dead context must not reach the store callback.

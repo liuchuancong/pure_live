@@ -13,6 +13,7 @@ import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// The bar's own width thresholds. The sidebar takes its share of the window
 /// first, so the window width says nothing about how much room the bar has.
@@ -143,9 +144,9 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                 size: DsSize.sm,
                 semanticLabel: t.music.lyrics,
                 onPressed: () => unawaited(
-                  showDsPanel<void>(
+                  showAppPanel<void>(
                     context: context,
-                    builder: (context) => DsPanel(
+                    builder: (context) => AppPanel(
                       title: Text(context.t.music.lyrics),
                       scrollable: false,
                       child: SizedBox(
@@ -195,9 +196,9 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                 size: DsSize.sm,
                 semanticLabel: t.music.queueTitle,
                 onPressed: () => unawaited(
-                  showDsPanel<void>(
+                  showAppPanel<void>(
                     context: context,
-                    builder: (context) => DsPanel(
+                    builder: (context) => AppPanel(
                       title: Text(context.t.music.queueTitle),
                       scrollable: false,
                       child: const MusicQueuePanel(),
@@ -363,9 +364,9 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                     leading: const DsIcon(DsIcons.listMusic),
                     label: Text(t.music.queueTitle),
                     onPressed: () => unawaited(
-                      showDsPanel<void>(
+                      showAppPanel<void>(
                         context: context,
-                        builder: (context) => DsPanel(
+                        builder: (context) => AppPanel(
                           title: Text(context.t.music.queueTitle),
                           scrollable: false,
                           child: const MusicQueuePanel(),
@@ -377,9 +378,9 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                     leading: const DsIcon(DsIcons.captions),
                     label: Text(t.music.lyrics),
                     onPressed: () => unawaited(
-                      showDsPanel<void>(
+                      showAppPanel<void>(
                         context: context,
-                        builder: (context) => DsPanel(
+                        builder: (context) => AppPanel(
                           title: Text(context.t.music.lyrics),
                           scrollable: false,
                           child: SizedBox(

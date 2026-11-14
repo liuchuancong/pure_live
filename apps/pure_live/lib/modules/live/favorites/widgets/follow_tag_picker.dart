@@ -7,6 +7,8 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Opens the tags of one followed [room]: the tags it belongs to, a tap to
 /// join or leave one, an inline field for a new tag, and a remove action per
@@ -17,9 +19,9 @@ import 'package:pure_live/modules/live/favorites/data/follow_tags.dart';
 /// The panel follows the kit's own sheet: a title and close in the header,
 /// labelled sections for the tags and the new one, and the closing action in
 /// the footer.
-Future<void> showFollowTagPicker(BuildContext context, LiveRoom room) => showDsPanel<void>(
+Future<void> showFollowTagPicker(BuildContext context, LiveRoom room) => showAppPanel<void>(
   context: context,
-  builder: (context) => DsPanel(
+  builder: (context) => AppPanel(
     title: Text(context.t.favorites.setTags),
     footer: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.t.common.save)),
     child: _FollowTagPicker(room: room),
@@ -78,13 +80,12 @@ final class _FollowTagPickerState extends ConsumerState<_FollowTagPicker> {
 
   Future<void> _removeTag(FollowTag tag) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.favorites.deleteTagTitle(name: tag.name),
       description: t.favorites.deleteTagBody,
       confirmLabel: t.favorites.deleteTag,
       destructive: true,
-      icon: const DsIcon(DsIcons.tag),
     );
     if (!confirmed || !mounted) return;
     await ref.read(followTagsProvider.notifier).remove(tag.id);

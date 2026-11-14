@@ -407,7 +407,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       final day = dayOf(watchedAt);
       if (earliest == null || day.isBefore(earliest)) earliest = day;
     }
-    return showDsPanel<void>(
+    return showAppPanel<void>(
       context: context,
       builder: (context) => _FilterPanel(
         filter: _filter,
@@ -466,14 +466,13 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   Future<void> _remove(LiveRoom room) async {
     if (_busy) return;
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.history.deleteConfirmTitle,
       description: t.history.deleteConfirmDesc(title: _roomLabel(room)),
       confirmLabel: t.history.deleteAction,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await _runChange(() => ref.read(historyProvider.notifier).remove(room.ref.identityKey), done: t.history.deleteDone);
@@ -490,7 +489,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     if (shown.isEmpty) return;
     final filtered = shown.length != all.length;
     final count = shown.length;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.history.clearConfirmTitle,
       description: filtered
@@ -499,7 +498,6 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       confirmLabel: t.history.clear,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await _runChange(() => ref.read(historyProvider.notifier).clear(shown), done: t.history.clearDone(count: count));
@@ -892,7 +890,7 @@ final class _FilterPanelState extends State<_FilterPanel> {
         ),
       ),
     ];
-    return DsPanel(
+    return AppPanel(
       title: Text(t.history.filterPanelTitle),
       footer: Row(
         spacing: DsSpace.s8,

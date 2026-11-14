@@ -99,12 +99,11 @@ final class RoomCardMenu extends ConsumerWidget {
   Future<void> _setTags(BuildContext context, WidgetRef ref, bool followed) async {
     final t = context.t;
     if (!followed) {
-      final follow = await showDsConfirm(
+      final follow = await showAppConfirm(
         context: context,
         title: t.favorites.tagFollowTitle,
         description: t.favorites.tagFollowBody,
         confirmLabel: t.room.follow,
-        icon: const DsIcon(DsIcons.heart),
       );
       if (!follow) return;
       await ref.read(followsProvider.notifier).add(room);

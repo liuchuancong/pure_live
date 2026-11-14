@@ -11,6 +11,7 @@ import 'package:pure_live/features/backup/panes/backup_actions.dart';
 import 'package:pure_live/features/backup/panes/backup_section_picker.dart';
 import 'package:pure_live/features/backup/panes/restore_preview_dialog.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The one action running: the other rows grey out and the running row
 /// spins until it settles.
@@ -277,7 +278,7 @@ final class _LocalBackupPaneState extends ConsumerState<LocalBackupPane> {
 
   // -- Dialogs ------------------------------------------------------------
 
-  Future<bool> _confirm(String title, {required String description}) => showDsConfirm(
+  Future<bool> _confirm(String title, {required String description}) => showAppConfirm(
     context: context,
     title: title,
     description: description,

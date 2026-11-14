@@ -32,6 +32,8 @@ import 'package:pure_live/shared/shared.dart'
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Whether a finished part's file is still on disk where its row says.
 ///
@@ -51,14 +53,13 @@ bool _vodFileMissing(VodDownloadItem task) =>
 /// as "off this list" and as "gone" — and only the second would cost bytes.
 Future<void> _removeRecord(BuildContext context, WidgetRef ref, String id) async {
   final t = context.t;
-  final confirmed = await showDsConfirm(
+  final confirmed = await showAppConfirm(
     context: context,
     title: t.settings.downloadRemove,
     description: t.settings.downloadRemoveBody,
     confirmLabel: t.settings.downloadRemove,
     cancelLabel: t.common.cancel,
     destructive: true,
-    icon: const DsIcon(DsIcons.trash2),
   );
   // The tap can land after the dialog's host is gone (the list rebuilt
   // under it); a dead context must not reach the page's store callback.
@@ -186,14 +187,13 @@ List<Widget> _vodRowMenu(BuildContext context, WidgetRef ref, VodDownloadItem ta
   final t = context.t;
   final controller = ref.read(vodDownloadsProvider.notifier);
   Future<void> deleteFile() async {
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.vod.downloadDeleteFile,
       description: t.vod.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !context.mounted) return;
     try {
@@ -618,14 +618,13 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   /// which is what the body says rather than leaves to be guessed.
   Future<void> _removePicked(List<VodDownloadItem> picked) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteSelected(count: picked.length),
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await _runOver(picked, (controller, id) => controller.remove(id));
@@ -638,14 +637,13 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   /// number.
   Future<void> _deletePicked(List<VodDownloadItem> picked) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteSelected(count: picked.length),
       description: t.vod.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     final controller = ref.read(vodDownloadsProvider.notifier);
@@ -674,9 +672,9 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
       _playableOnly = playable;
       _selected.clear();
     });
-    await showDsPanel<void>(
+    await showAppPanel<void>(
       context: context,
-      builder: (panelContext) => DsPanel(
+      builder: (panelContext) => AppPanel(
         title: Text(t.settings.downloadFilterTitle),
         child: DsListSection(
           children: [
@@ -1167,7 +1165,7 @@ final class _VodArchiveHead extends ConsumerWidget {
 
   Future<void> _removeBlock(BuildContext context, WidgetRef ref, Translations t) async {
     final ids = [for (final task in group.tasks) task.id];
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadRemove,
       // Which upload, and how many of its parts: the row's own body says 这条
@@ -1176,7 +1174,6 @@ final class _VodArchiveHead extends ConsumerWidget {
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     // The tap can land after the dialog's host is gone (the queue rebuilt
     // under it); a dead context must not reach the page's store.

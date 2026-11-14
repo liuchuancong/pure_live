@@ -24,6 +24,8 @@ import 'package:pure_live/shared/shared.dart'
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// A task whose file is on disk and playable.
 bool _playableTask(audio.MusicDownloadTask task) =>
@@ -157,14 +159,13 @@ List<Widget> _musicRowMenu(BuildContext context, WidgetRef ref, audio.MusicDownl
   final verbIsRemove = task.status == audio.MusicDownloadStatus.cancelled;
 
   Future<void> deleteFile() async {
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.music.downloadDeleteFile,
       description: t.music.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !context.mounted) return;
     try {
@@ -329,14 +330,13 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   /// which is what the body says rather than leaves to be guessed.
   Future<void> _removePicked(List<audio.MusicDownloadTask> picked) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteSelected(count: picked.length),
       description: t.settings.downloadRemoveBody,
       confirmLabel: t.music.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     await _runOver(picked, (controller, id) => controller.remove(id));
@@ -348,14 +348,13 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   /// does not read as a clean run.
   Future<void> _deletePicked(List<audio.MusicDownloadTask> picked) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteSelected(count: picked.length),
       description: t.music.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     final controller = ref.read(musicDownloadsProvider.notifier);
@@ -403,9 +402,9 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
       _playableOnly = playable;
       _selected.clear();
     });
-    await showDsPanel<void>(
+    await showAppPanel<void>(
       context: context,
-      builder: (panelContext) => DsPanel(
+      builder: (panelContext) => AppPanel(
         title: Text(t.settings.downloadFilterTitle),
         child: DsListSection(
           children: [

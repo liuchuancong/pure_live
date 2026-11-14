@@ -7,6 +7,7 @@ import 'package:live_sites/live_sites.dart' show LivePlayLine;
 import 'package:media_core/media_core.dart' show CastController, CastDevice, CastMedia;
 import 'package:media_core_cast_dlna/media_core_cast_dlna.dart' show DlnaCastBackend;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The app's one DLNA casting controller: SSDP discovery and the AVTransport
 /// commands behind media_core's [CastController]. Discovery starts on first
@@ -49,7 +50,7 @@ Future<void> showCastUriDialog(
   required String? title,
   Map<String, String> headers = const {},
 }) {
-  return showDsDialog<void>(
+  return showAppDialog<void>(
     context: context,
     builder: (context) => _CastDialog(url: url, title: title ?? context.t.room.castTitle, headers: headers),
   );
@@ -71,7 +72,7 @@ final class _CastDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final controller = ref.watch(castControllerProvider);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.room.castTitle),
       description: SizedBox(
         width: 380,

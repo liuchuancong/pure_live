@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Builds the container's content: [labeled] is true where the groups need
 /// their names; the panel keeps them on.
@@ -13,9 +14,9 @@ typedef PlayerMoreContent = Widget Function(BuildContext context, {required bool
 /// [PlayerMoreSeg]); the container is an index of the homes that have no bar,
 /// not a second copy of the verbs the bars already carry.
 Future<void> showPlayerMoreContainer(BuildContext context, {required PlayerMoreContent content}) {
-  return showDsPanel<void>(
+  return showAppPanel<void>(
     context: context,
-    builder: (context) => DsPanel(
+    builder: (context) => AppPanel(
       title: Text(context.t.common.more),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -9,11 +9,12 @@ import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:pure_live/app/app.dart' show networkFactoryProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_app_login.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens the TV sign-in dialog; the app interface's token is stored when the
 /// phone confirms the scan.
 Future<void> showVodAppLogin(BuildContext context) =>
-    showDsDialog<void>(context: context, builder: (context) => const _VodAppLoginDialog());
+    showAppDialog<void>(context: context, builder: (context) => const _VodAppLoginDialog());
 
 /// The Bilibili app's own scan-to-sign-in: a QR from the TV login endpoint,
 /// polled until the phone confirms.
@@ -111,7 +112,7 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.vod.appLoginTitle),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

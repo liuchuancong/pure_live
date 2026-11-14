@@ -9,6 +9,7 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/search/search_capability.dart';
 import 'package:pure_live/shared/shared.dart' show localizedSiteIcon, localizedSiteName;
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Platforms outside mainland China: without a proxy their requests usually
 /// fail there, which is why "all" lets the viewer leave them out.
@@ -82,7 +83,7 @@ Future<Set<String>> showSearchScopePanel(
   required List<LiveSite> sites,
   required Set<String> excluded,
 }) async {
-  final result = await showDsPanel<Set<String>>(
+  final result = await showAppPanel<Set<String>>(
     context: context,
     builder: (context) => _SearchScopePanel(
       sites: sites,
@@ -208,7 +209,7 @@ final class _SearchScopePanelState extends State<_SearchScopePanel> {
       );
     }
 
-    return DsPanel(
+    return AppPanel(
       title: Text(t.search.scopeTitle),
       footer: DsButton(
         onPressed: _chosen == 0 ? null : () => Navigator.of(context).pop(_excluded),

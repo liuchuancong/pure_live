@@ -225,11 +225,11 @@ final class _Step extends StatelessWidget {
         : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s12, children: [prose, image]);
   }
 
-  Future<void> _openFull(BuildContext context) => showDsDialog<void>(
+  Future<void> _openFull(BuildContext context) => showAppDialog<void>(
     context: context,
     builder: (context) {
       final t = context.t.backup.webdavHelp;
-      return DsDialog(
+      return AppDialog(
         title: Text(t.screenshotLabel(number: index)),
         description: ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 560),

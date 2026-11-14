@@ -10,6 +10,7 @@ import 'package:pure_live/features/lan_sync/presentation/lan_sync_grants.dart';
 import 'package:pure_live/features/lan_sync/presentation/pairing_dialog.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The LAN sync pane: the switch, this device's facts, what it shares and
 /// how conflicts settle, the nearby and paired devices (each with its
@@ -87,9 +88,9 @@ final class LanSyncPane extends ConsumerWidget {
 
   Future<void> _renameDialog(BuildContext context, WidgetRef ref, String current) async {
     final controller = TextEditingController(text: current);
-    final saved = await showDsDialog<String>(
+    final saved = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(context.t.settings.lanSyncDeviceName),
         description: DsTextField(controller: controller, autofocus: true),
         actions: [

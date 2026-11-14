@@ -115,7 +115,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
 
   Future<void> _clearHistory() async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.vod.clearHistoryTitle,
       description: t.vod.clearHistoryDesc,
@@ -150,7 +150,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
 
   /// 番剧 or 影视 — the one condition the 追番 list reads under, behind the
   /// head's entry rather than as a second standing tab row.
-  Future<void> _openSeasonFilter() => showDsPanel<void>(
+  Future<void> _openSeasonFilter() => showAppPanel<void>(
     context: context,
     builder: (context) => _SeasonTypePanel(
       seasonType: _seasonType,
@@ -527,7 +527,7 @@ final class _SeasonTypePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsPanel(
+    return AppPanel(
       title: Text(t.vod.personalFollowing),
       child: Wrap(
         spacing: DsSpace.s8,

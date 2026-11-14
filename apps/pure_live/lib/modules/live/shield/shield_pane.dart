@@ -8,6 +8,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
 import 'package:pure_live/modules/live/shield/shield_add_field.dart';
 import 'package:pure_live/modules/live/shield/shield_repository.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The danmaku filter's settings pane (the reference's video → danmaku
 /// filter page): the shield's master switch, then its rules one group at a
@@ -412,7 +413,7 @@ final class _ShieldList extends ConsumerWidget {
 
   Future<void> _clear(BuildContext context) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.shield.clear,
       description: t.shield.clearConfirmDesc,

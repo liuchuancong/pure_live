@@ -124,11 +124,11 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
       return typed >= 1 && typed <= episodes.length ? typed - 1 : null;
     }
 
-    final position = await showDsDialog<int>(
+    final position = await showAppDialog<int>(
       context: context,
       builder: (dialogContext) {
         final t = dialogContext.t;
-        return DsDialog(
+        return AppDialog(
           title: Text(t.hongguo.episodesJump),
           description: DsTextField(
             controller: controller,

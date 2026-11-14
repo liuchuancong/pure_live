@@ -10,6 +10,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart' show HongguoSeries;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The card and the list row have fixed designs; the preview page draws both with
 /// this device's appearance and carries these controls beside them, the way the
@@ -203,11 +204,10 @@ final class _HongguoCardPreviewPageState extends ConsumerState<HongguoCardPrevie
   /// Asks before every piece goes back to the designed default, then does it.
   Future<void> _confirmReset(BuildContext context) async {
     final t = context.t;
-    final confirmed = await showDsDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.settings.hongguoCardResetConfirmTitle),
-        destructive: true,
         description: Text(t.settings.hongguoCardResetConfirmBody),
         style: const DsDialogStyle(width: 420),
         actions: [

@@ -6,6 +6,7 @@ import 'package:live_lan_sync/live_lan_sync.dart';
 import 'package:pure_live/features/lan_sync/application/lan_sync_providers.dart';
 import 'package:pure_live/features/lan_sync/data/sync_scopes.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// The scope's name as the pane shows it.
 String lanSyncScopeLabel(Translations t, LanSyncScope scope) => switch (scope) {
@@ -72,7 +73,7 @@ Future<bool> showLanSyncGrantsPanel(
   required LanSyncRuntime runtime,
   required DeviceTrust trust,
 }) async {
-  final saved = await showDsPanel<bool>(
+  final saved = await showAppPanel<bool>(
     context: context,
     builder: (context) => _GrantsPanel(runtime: runtime, trust: trust),
   );
@@ -123,7 +124,7 @@ final class _GrantsPanelState extends State<_GrantsPanel> {
     final colors = DsTheme.colorsOf(context);
     final muted = theme.typography.caption.copyWith(color: colors.textMuted);
     final scopes = _scopes;
-    return DsPanel(
+    return AppPanel(
       title: Text(t.settings.lanSyncGrantsTitle(name: widget.trust.displayName)),
       footer: DsButton(
         onPressed: _saving ? null : () => unawaited(_save()),

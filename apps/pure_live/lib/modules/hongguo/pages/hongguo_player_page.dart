@@ -1697,9 +1697,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final episode = _episode;
     if (episode == null) return;
     unawaited(
-      showDsPanel<void>(
+      showAppPanel<void>(
         context: context,
-        builder: (context) => DsPanel(
+        builder: (context) => AppPanel(
           title: Text(context.t.hongguo.comments),
           child: HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: episode.vid, showTitle: false),
         ),

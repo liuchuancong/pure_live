@@ -42,7 +42,7 @@ List<LiveRoom> roomSwipeList({
 /// source list the room was opened from, and a search across every enabled
 /// platform. A pick replaces the room page, so going back does not return to
 /// the old room.
-Future<void> showRoomSwitcher(BuildContext context, {required LiveRoom current}) => showDsDialog<void>(
+Future<void> showRoomSwitcher(BuildContext context, {required LiveRoom current}) => showAppDialog<void>(
   context: context,
   builder: (context) => _RoomSwitcherDialog(current: current),
 );
@@ -161,7 +161,7 @@ final class _RoomSwitcherDialogState extends ConsumerState<_RoomSwitcherDialog> 
             );
     }
 
-    return DsDialog(
+    return AppDialog(
       title: Text(t.room.switchRoom),
       description: SizedBox(
         width: dialogWidth,

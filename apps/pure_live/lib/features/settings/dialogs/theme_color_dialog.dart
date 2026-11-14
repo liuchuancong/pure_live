@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/dialogs/color_picker.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The reference's accent presets (`AppConsts.themeColors`), in its order.
 ///
@@ -45,7 +46,7 @@ Future<void> showThemeColorDialog(
   required AppThemeSettings settings,
   required Color? seedColor,
   required ValueChanged<AppThemeSettings> onChanged,
-}) => showDsDialog<void>(
+}) => showAppDialog<void>(
   context: context,
   builder: (context) => _ThemeColorDialog(settings: settings, seedColor: seedColor, onChanged: onChanged),
 );
@@ -186,7 +187,7 @@ final class _ThemeColorDialogState extends State<_ThemeColorDialog> {
     final sectionStyle = theme.typography.small.copyWith(color: colors.textMuted, fontWeight: FontWeight.w600);
     final preview = _custom ?? _hsv.toColor();
     final system = _named == null && _custom == null;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.themeColorTitle),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

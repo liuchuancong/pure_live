@@ -254,7 +254,7 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
   Future<void> _signOut(String siteId, String name) async {
     if (_signingOut.contains(siteId)) return;
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.account.signOut,
       description: t.account.signOutConfirmDesc(site: name),
@@ -306,7 +306,7 @@ Future<AccountQrExit> showQrLoginDialog(
   required LiveAuthCapability auth,
   VoidCallback? onSignedIn,
 }) async =>
-    (await showDsDialog<AccountQrExit>(
+    (await showAppDialog<AccountQrExit>(
       context: context,
       builder: (dialogContext) =>
           _QrLoginDialog(site: site, auth: auth, onSignedIn: onSignedIn ?? _noSignInAnnouncement),
@@ -398,7 +398,7 @@ final class _QrLoginDialogState extends ConsumerState<_QrLoginDialog> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final name = siteDisplayName(widget.site);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.account.qrDialogTitle(site: name)),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -623,7 +623,7 @@ final class _CookieLoginDialogState extends ConsumerState<CookieLoginDialog> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final name = siteDisplayName(widget.site);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.account.cookieDialogTitle(site: name)),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

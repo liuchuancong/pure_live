@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/features/settings/surface/settings_page_action.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// One orderable list on a settings page.
 ///
@@ -157,7 +158,7 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
   /// Leaving with a changed draft asks before the order is dropped.
   Future<void> _confirmDiscard(BuildContext context) async {
     final t = context.t;
-    final discard = await showDsConfirm(
+    final discard = await showAppConfirm(
       context: context,
       title: t.settings.discardOrderTitle,
       description: t.settings.discardOrderBody,

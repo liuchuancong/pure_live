@@ -9,6 +9,7 @@ import 'package:pure_live/l10n/translations.dart';
 
 import 'package:pure_live/modules/live/room/page/room_details.dart' show RoomDetailsPanel;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show sleepTimerProvider;
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// The room's side panels: the sheets that linger beside the picture while
 /// the viewer keeps watching. One at a time — inside the page the bus owns
@@ -65,8 +66,8 @@ bool isRoomPanelRoute(Route<Object?> route) => route.settings.name?.startsWith('
 /// the lone-button fallback build the same thing from here, so the two
 /// hosts cannot drift apart.
 Widget roomPanelSheet(BuildContext sheetContext, RoomPanelKind kind) => switch (kind) {
-  RoomPanelKind.details => DsPanel(title: Text(sheetContext.t.room.details), child: const RoomDetailsPanel()),
-  RoomPanelKind.sleepTimer => DsPanel(
+  RoomPanelKind.details => AppPanel(title: Text(sheetContext.t.room.details), child: const RoomDetailsPanel()),
+  RoomPanelKind.sleepTimer => AppPanel(
     title: Text(sheetContext.t.room.sleep),
     child: Consumer(
       builder: (context, ref, _) {
@@ -183,7 +184,7 @@ void _pickSleepMinutes(BuildContext context, WidgetRef ref, int? minutes) {
 Future<void> openRoomPanel(BuildContext context, RoomPanelKind kind) async {
   final controller = RoomPanelScope.maybeOf(context);
   if (controller == null) {
-    await showDsPanel<void>(
+    await showAppPanel<void>(
       context: context,
       routeSettings: RouteSettings(name: roomPanelRouteName(kind)),
       builder: (sheetContext) => roomPanelSheet(sheetContext, kind),

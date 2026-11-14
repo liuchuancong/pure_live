@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// What a room key does. The page maps each one to its own controllers; the
 /// table below only names the verb.
@@ -125,7 +126,7 @@ String roomShortcutKeyLabel(SingleActivator activator, Translations t) {
 
 /// The keyboard cheat sheet: the keys this room answers to right now, one row
 /// each. Opened by `?` and by the room menu.
-Future<void> showRoomShortcuts(BuildContext context, List<RoomShortcutBinding> bindings) => showDsDialog<void>(
+Future<void> showRoomShortcuts(BuildContext context, List<RoomShortcutBinding> bindings) => showAppDialog<void>(
   context: context,
   builder: (_) => _RoomShortcutsDialog(bindings: bindings),
 );
@@ -145,9 +146,8 @@ final class _RoomShortcutsDialog extends StatelessWidget {
         const SingleActivator(LogicalKeyboardKey.question): close,
         const SingleActivator(LogicalKeyboardKey.slash, shift: true): close,
       },
-      child: DsDialog(
+      child: AppDialog(
         title: Text(t.room.shortcutsHelp),
-        icon: const DsIcon(DsIcons.keyboard),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,

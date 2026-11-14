@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The automatic-shutdown section of the General pane: the switch and the
 /// duration. The countdown runs from the moment it is enabled (and restarts
@@ -57,7 +58,7 @@ final class AutoShutdownSection extends ConsumerWidget {
 
 /// Opens the duration dialog; choosing a value saves it and restarts a
 /// running countdown.
-Future<void> showAutoShutdownDurationDialog(BuildContext context, WidgetRef ref) => showDsDialog<void>(
+Future<void> showAutoShutdownDurationDialog(BuildContext context, WidgetRef ref) => showAppDialog<void>(
   context: context,
   builder: (context) => _AutoShutdownDurationDialog(initial: ref.read(autoShutdownProvider).minutes),
 );
@@ -101,7 +102,7 @@ final class _AutoShutdownDurationDialogState extends ConsumerState<_AutoShutdown
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.autoShutdownDuration),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

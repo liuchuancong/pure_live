@@ -171,7 +171,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
       showDsToast(context: context, title: context.t.toolbox.linkDirectEmpty, status: DsStatus.danger);
       return;
     }
-    await showDsDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (context) => DirectLinkDialog(room: room, playback: playback, qualities: qualities),
     );
@@ -679,14 +679,13 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
 
   Future<void> _clear() async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.toolbox.logsClearConfirm,
       description: t.toolbox.logsClearConfirmDesc,
       confirmLabel: t.toolbox.logsClear,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     clearAppLog();

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show DanmakuBlockList;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// The actions one chat line offers: copy its words, block the sender, or
 /// block a keyword (the reference's danmaku message panel).
@@ -25,12 +27,12 @@ Future<void> showRoomMessageActions(
   // identity: the shield's list reads it as every viewer whose name starts the
   // same way, so the row would offer to hide a crowd.
   final blockable = !isLocal && name.isNotEmpty && !DanmakuBlockList.isMaskedName(name);
-  final action = await showDsPanel<RoomMessageAction>(
+  final action = await showAppPanel<RoomMessageAction>(
     context: context,
     builder: (panelContext) {
       final t = panelContext.t;
       final theme = DsTheme.of(panelContext);
-      return DsPanel(
+      return AppPanel(
         title: Text(t.room.messageActions),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,11 +95,10 @@ Future<void> blockRoomMessageSender(BuildContext context, WidgetRef ref, String 
 Future<void> blockRoomMessageKeyword(BuildContext context, WidgetRef ref, String text) async {
   final t = context.t;
   final key = GlobalKey<_KeywordEditorState>();
-  final picked = await showDsDialog<String>(
+  final picked = await showAppDialog<String>(
     context: context,
-    builder: (dialogContext) => DsDialog(
+    builder: (dialogContext) => AppDialog(
       title: Text(t.room.blockKeyword),
-      icon: const DsIcon(DsIcons.shield),
       description: _KeywordEditor(key: key, initial: text, onSubmit: (word) => Navigator.of(dialogContext).pop(word)),
       actions: [
         DsButton(

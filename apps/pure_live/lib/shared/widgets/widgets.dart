@@ -3,6 +3,8 @@
 library;
 
 export 'action_panel.dart';
+export 'app_dialog.dart';
+export 'app_panel.dart';
 export 'choice_dialog.dart';
 export 'chrome_icon_button.dart';
 export 'cover_fallback.dart';

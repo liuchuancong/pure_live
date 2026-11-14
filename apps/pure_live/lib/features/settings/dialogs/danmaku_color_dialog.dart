@@ -5,11 +5,12 @@ import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart
     show danmakuColorLabel, kDanmakuColorChoices;
 import 'package:pure_live/features/settings/dialogs/color_picker.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens the danmaku colour picker: the palette for a quick answer, then any
 /// colour from the HSV field, the hue strip or a hex value. Answers the
 /// chosen opaque ARGB, or null when the viewer cancelled.
-Future<int?> showDanmakuColorDialog(BuildContext context, {required int initial}) => showDsDialog<int>(
+Future<int?> showDanmakuColorDialog(BuildContext context, {required int initial}) => showAppDialog<int>(
   context: context,
   builder: (context) => _DanmakuColorDialog(initial: initial),
 );
@@ -81,7 +82,7 @@ final class _DanmakuColorDialogState extends State<_DanmakuColorDialog> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final color = _color;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.danmakuColorTitle),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

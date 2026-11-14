@@ -18,6 +18,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
     show musicTrackArtistId, openMusicAlbum, openMusicArtist;
 import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The content tabs the module's pages wear: 44 tall, starting flush with
 /// the strip that holds them, and no hairline under the row — the same
@@ -241,11 +242,10 @@ final class MusicSongRow extends ConsumerWidget {
     );
 
     unawaited(
-      showDsDialog<void>(
+      showAppDialog<void>(
         context: context,
-        builder: (context) => DsDialog(
+        builder: (context) => AppDialog(
           title: Text(t.music.songDetails),
-          icon: const DsIcon(DsIcons.info),
           description: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

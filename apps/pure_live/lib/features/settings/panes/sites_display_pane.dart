@@ -135,14 +135,13 @@ final class SitesDisplayPaneState extends ConsumerState<SitesDisplayPane> {
 
   Future<void> _reset() async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.sitesReset,
       description: t.settings.sitesResetDesc,
       confirmLabel: t.common.confirm,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.rotateCcw),
     );
     if (!confirmed || !mounted) return;
     setState(() => _busy = true);

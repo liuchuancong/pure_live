@@ -1,4 +1,3 @@
-import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
@@ -6,6 +5,7 @@ import 'package:pure_live/l10n/translations.dart';
 
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Toggles the room's follow, asking first when it would undo one.
 ///
@@ -21,13 +21,12 @@ Future<void> toggleRoomFollow(BuildContext context, WidgetRef ref) async {
   if (followed) {
     final t = context.t;
     final name = (detail.anchor?.name ?? '').trim();
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.room.unfollowAction,
       description: t.room.unfollowConfirm(name: name.isEmpty ? detail.content.title : name),
       confirmLabel: t.room.unfollowAction,
       destructive: true,
-      icon: const DsIcon(DsIcons.heartCrack),
     );
     if (!confirmed) return;
   }

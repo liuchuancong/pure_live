@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:desen_ui/desen_ui.dart' show DsSpace;
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
@@ -22,6 +24,11 @@ abstract final class LiveWindow {
   /// Below this width a page keeps one column: toolbars stack, secondary
   /// actions become icons, and a side panel is a bottom sheet.
   static const double compact = 600;
+
+  /// The device measure that reads as a tablet: a shortest side at or above
+  /// it takes the desktop skeleton (the room's wide arrangement, the shell's
+  /// rail) whatever its form factor reports.
+  static const double tabletShortestSide = compact;
 
   /// At or above this width a page may hold its toolbar on one line and
   /// read as a desktop surface.
@@ -80,3 +87,10 @@ abstract final class LiveWindow {
   /// a compact window, the feed's own measure otherwise.
   static double pageInset(double width) => isCompact(width) ? DsSpace.s16 : DsSpace.s20;
 }
+
+/// Whether the device or window [size] reads as a tablet: the Android
+/// tablet's own floor, the shortest side at or above [LiveWindow.tabletShortestSide].
+/// A tablet runs the desktop skeleton — the room's wide arrangement, the
+/// shell's rail — however narrow its current orientation is; a phone and a
+/// desktop window never reach the floor.
+bool isTabletSized(Size size) => size.shortestSide >= LiveWindow.tabletShortestSide;

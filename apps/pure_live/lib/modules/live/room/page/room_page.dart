@@ -4,7 +4,7 @@ import 'dart:ui' show clampDouble;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show AppBar, Scaffold;
+import 'package:flutter/material.dart' show AppBar, InputBorder, InputDecoration, Scaffold, TextField, TextInputAction;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -18,7 +18,8 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
-import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
+import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel, RoomEmotePanel;
+import 'package:pure_live/modules/live/room/chat/room_chat_overlay.dart' show RoomChatOverlay;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/identity/room_identity_bar.dart';
 import 'package:pure_live/modules/live/room/layout/room_layout.dart';
@@ -142,9 +143,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// Whether the page is showing its portrait full-screen surface.
   bool _portraitFullscreen = false;
 
-  /// Whether the portrait full screen's chat panel is up: the redesign gives
-  /// this surface a door to the talk its old shape never had.
-  bool _portraitChatOpen = false;
+  /// Whether the immersive room's chat drawer is up: the overlay pills are
+  /// the glance, and the drawer — the panel with its tabs and composer — is
+  /// where a viewer goes when the glance is not enough.
+  bool _immersiveChatOpen = false;
+
+  /// Whether the immersive room is showing its clean screen: the overlay
+  /// chat and the composer bar give way to the picture alone, and a pill at
+  /// the picture's side takes them back.
+  bool _cleanScreen = false;
 
   /// Whether a room switch from the portrait full screen is in flight; the
   /// page keeps its surface while the next room opens on the same controller.
@@ -204,11 +211,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// The room's width at which the chat moves beside the picture (the
   /// reference's `wide` layout). The measure lives in the layout machine.
   static const double _wideBreakpoint = kRoomWideBreakpoint;
-
-  /// The chat's column beside the picture on a phone held sideways (the
-  /// reference's `phoneLandscapeChatWidth`): the list alone, at the width a
-  /// line of talk still reads at without taking the picture's share.
-  static const double _phoneLandscapeChatWidth = 280;
 
   /// The stage's floor while the chat column is dragged wide: at the wide
   /// layout's own edge the column tops out under its 520 px cap rather than
@@ -406,6 +408,18 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
   }
 
+  /// The system's own fullscreen, unconditionally: the immersive layouts'
+  /// fullscreen verb. They are already the page's full-bleed layout — there
+  /// is no surface under them — so the verb means the presentation's own
+  /// mode, whatever the stream's shape (a portrait stream locks the phone's
+  /// portrait side and hides the status bar; a landscape one takes the
+  /// screen's long side).
+  void _enterSystemFullscreen() {
+    final handle = ref.read(roomProvider).handle;
+    if (handle == null) return;
+    unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
+  }
+
   /// The fullscreen verb as a toggle, for the key, the bar's button and the
   /// picture's double tap: out of the portrait surface first, out of the
   /// system's fullscreen next, and into the one the picture's shape asks
@@ -423,6 +437,21 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(handle.id));
       return;
     }
+    // 手机的沉浸式布局已是满铺（键盘的 F 也能到）：全屏动词在那里就是系统
+    // 自己的全屏，竖屏全屏表面不再是手机的一条路。平板走桌面骨架，它的
+    // 全屏动词是窗口全屏。
+    final formFactor = ref.read(platformRuntimeProvider).environment.runtime.formFactor;
+    final size = MediaQuery.sizeOf(context);
+    final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
+    final phone = mobile && !isTabletSized(size);
+    final phoneImmersive =
+        phone &&
+        size.width < kRoomCompactBreakpoint &&
+        size.height >= kRoomLandscapeMaxHeight;
+    if (phoneImmersive) {
+      _enterSystemFullscreen();
+      return;
+    }
     _enterFullscreen();
   }
 
@@ -437,7 +466,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         _portraitFullscreen = value;
         // Leaving the surface closes its panel with it; a fresh entry starts
         // with the picture alone.
-        if (!value) _portraitChatOpen = false;
+        if (!value) _immersiveChatOpen = false;
       });
     } else {
       _portraitFullscreen = value;
@@ -625,15 +654,21 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // The wide room fills the route, and this route can own the window, so
     // the page's own width is the measure its layout will take.
     final windowSize = MediaQuery.sizeOf(context);
+    // 平板按设备最短边认定（≥600dp）：它走桌面的双栏骨架，跟手机的沉浸
+    // 式和横持分栏无关。手机才是沉浸式的读者。
+    final tabletSized = mobile && isTabletSized(windowSize);
+    final phone = mobile && !tabletSized;
     // The machine resolves both axes once and the page's branches read it —
-    // the policy table's whole point (P1's fold): a phone or tablet held
-    // sideways in a short window takes the landscape arrangement before any
-    // width is asked (the compact height wins over the wide breakpoint), and
-    // the wide arrangement is the wide class minus that sideways take. A
-    // desktop window as short keeps the layout its width gives it.
-    final roomLayout = RoomLayout.resolve(width: windowSize.width, height: windowSize.height, phoneLike: mobile);
+    // the policy table's whole point (P1's fold): a phone held sideways in a
+    // short window takes the landscape arrangement before any width is asked
+    // (the compact height wins over the wide breakpoint), and the wide
+    // arrangement is the wide class minus that sideways take. A desktop
+    // window as short keeps the layout its width gives it.
+    final roomLayout = RoomLayout.resolve(width: windowSize.width, height: windowSize.height, phoneLike: phone);
     final landscapePhone = roomLayout.landscapePhone;
-    final wideWindow = roomLayout.windowClass == RoomWindowClass.wide && !landscapePhone;
+    // 平板在 600–840 的竖窗里也走宽布局：双栏的桌面骨架是它的形态，
+    // 分栏底板只属于桌面窄窗与手机。
+    final wideWindow = tabletSized || (roomLayout.windowClass == RoomWindowClass.wide && !landscapePhone);
 
     /// T 键与栏上按钮共用：宽屏把聊天列收起/展开——收起时回到列（必要时
     /// 从弹幕流切回），开着时收起。一个方向一对动作，不再是单程门。
@@ -785,12 +820,29 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     /// surface draws its own bars and catalogues above that layer. [onTitle]
     /// is the sideways phone's: the strip names the room where its card used
     /// to, and the name opens the details.
+    ///
+    /// The immersive layouts override the portrait-surface bits through the
+    /// trailing arguments: [portraitSurface] puts the capsule and the
+    /// swipe-to-switch zones on a surface the page does not track as
+    /// `_portraitFullscreen` (the immersive room is the layout, not a mode),
+    /// [showModeExit] silences a chip that would lie (an always-on surface
+    /// has no layout under itself to exit to), and [onMoreOverride] lets the
+    /// immersive shapes carry the clean-screen switch in the sheet.
     Widget playerWith({
       Widget? overlay,
       double bottomInset = 0,
       double controlBarEndInset = 0,
       VoidCallback? onTitle,
       double topBarEndInset = DsSpace.s12,
+      bool? portraitSurface,
+      bool? ambientOverride,
+      bool showModeExit = true,
+      double topInset = 0,
+      bool liftsOverKeyboard = false,
+      bool danmakuInput = false,
+      bool allowPortraitRestore = true,
+      VoidCallback? fullscreenVerb,
+      VoidCallback? onMoreOverride,
     }) => PlayerSurface(
       key: _playerKey,
       roomState: room,
@@ -809,37 +861,50 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       // A TV's bars take their own tier: larger controls, wider gaps and a
       // focus ring, since the remote has no pointer and the viewer sits back.
       tv: tv,
-      portraitFullscreen: _portraitFullscreen,
+      portraitFullscreen: portraitSurface ?? _portraitFullscreen,
       // The swipe up from the portrait full screen's bottom band, back to the
       // panel: a touch screen's gesture, where the surface is the whole of it.
       onTitle: onTitle,
       // The room's own framing, not only the source's: a portrait frame the
       // viewer chose sits over the room's art too, a landscape one keeps the
-      // stage's black — except on the portrait full screen, where a landscape
-      // room swiped to sits over the art as the reference draws it.
-      ambient: pictureRatio < 1 || _portraitFullscreen,
+      // stage's black — except on the immersive surfaces, where whatever the
+      // stream's shape the room's art stands behind the frame.
+      ambient: ambientOverride ?? (pictureRatio < 1 || _portraitFullscreen),
       overlay: overlay,
       bottomInset: bottomInset,
       controlBarEndInset: controlBarEndInset,
       // A presentation mode that owns the window has no chat to float, and a
       // narrow page stacks it under the picture.
-      onMore: () => unawaited(showRoomMore(context, shortcuts: shortcuts)),
+      onMore: onMoreOverride ?? () => unawaited(showRoomMore(context, shortcuts: shortcuts)),
       topBarEndInset: topBarEndInset,
       hud: _surfaceHud,
       // The portrait full screen's own verbs, now reachable: the swipe up
       // along the picture's lowest band puts the page's layout back, the
       // sideways swipe in the middle third walks the room list where the
       // viewer asked for one, and the fullscreen verb follows the frame's
-      // shape — the page owns all three.
-      onPortraitRestore: () => _setPortraitFullscreen(false),
-      onPortraitSwipe: swipeSwitch && mobile ? _switchRoomByStep : null,
-      onFullscreen: _toggleFullscreenVerb,
+      // shape — the page owns all three. The immersive surfaces answer the
+      // verb with the system's own fullscreen directly: they are already the
+      // page's full-bleed layout, and there is no surface under them.
+      showModeExit: showModeExit,
+      topInset: topInset,
+      liftsOverKeyboard: liftsOverKeyboard,
+      danmakuInput: danmakuInput,
+      // The restore band listens only where a restore exists: an immersive
+      // layout has no page layout under it, and its lowest band keeps the
+      // volume drag the band would otherwise swallow.
+      onPortraitRestore: allowPortraitRestore ? () => _setPortraitFullscreen(false) : null,
+      onPortraitSwipe: swipeSwitch && phone ? _switchRoomByStep : null,
+      onFullscreen: fullscreenVerb ?? _toggleFullscreenVerb,
     );
 
     // The docked chat column's width while the wide inline room shows it:
     // the app bar pins the follow pill to the picture's right edge, this
     // many pixels from the window's end.
-    final barChatWidth = !tv && !landscapePhone && MediaQuery.sizeOf(context).width >= _wideBreakpoint && !chatCollapsed
+    final barChatWidth =
+        !tv &&
+        !landscapePhone &&
+        (MediaQuery.sizeOf(context).width >= _wideBreakpoint || tabletSized) &&
+        !chatCollapsed
         ? ref
               .watch(chatPanelWidthProvider)
               .clamp(
@@ -858,26 +923,78 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
             // The portrait full screen has no column of its own: the stream
             // is the chat there, unless the stats panel owns the corner.
             playerWith(),
-            canSwipeRooms: swipeSwitch && mobile,
+            canSwipeRooms: swipeSwitch && phone,
           )
         : LayoutBuilder(
             builder: (context, constraints) {
+              // 手机横持的沉浸式房间（对齐参考横屏）：满铺画面，控制条带发送，
+              // 竖直滑动照旧换直播间。聊天列不再横持分栏——飞行弹幕与条上的
+              // 输入就是这里的全部对话。
               if (landscapePhone) {
-                return _buildPhoneLandscape(playerWith(onTitle: () => unawaited(showRoomDetails(context))));
+                return _buildPhoneLandscapeImmersive(
+                  context,
+                  player: playerWith(
+                    portraitSurface: true,
+                    ambientOverride: true,
+                    showModeExit: false,
+                    topInset: MediaQuery.paddingOf(context).top,
+                    liftsOverKeyboard: true,
+                    danmakuInput: true,
+                    allowPortraitRestore: false,
+                    fullscreenVerb: _enterSystemFullscreen,
+                  ),
+                  canSwipeRooms: swipeSwitch && phone,
+                );
               }
-              final wide = constraints.maxWidth >= _wideBreakpoint;
+              final wide = constraints.maxWidth >= _wideBreakpoint || tabletSized;
               if (!wide) {
+                // 手机竖屏的沉浸式房间（宽 < 600）：满铺画面，聊天以胶囊浮层
+                // 贴在左下，输入条常驻底部，顶部是主播胶囊。清屏一行把浮层
+                // 收起，更多菜单携带它的开关。
+                if (phone && constraints.maxWidth < kRoomCompactBreakpoint) {
+                  void setCleanScreen({required bool value}) {
+                    setState(() {
+                      _cleanScreen = value;
+                      // 清屏收起抽屉：一张谈话表面在场的规则。
+                      if (value) _immersiveChatOpen = false;
+                    });
+                  }
+
+                  VoidCallback openMore() => () => unawaited(
+                    showRoomMore(
+                      context,
+                      shortcuts: shortcuts,
+                      cleanScreen: true,
+                      onCleanScreen: (value) => setCleanScreen(value: value),
+                    ),
+                  );
+                  final padding = MediaQuery.paddingOf(context);
+                  final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+                  return _buildPhoneImmersivePortrait(
+                    context,
+                    player: playerWith(
+                      portraitSurface: true,
+                      ambientOverride: true,
+                      showModeExit: false,
+                      topInset: padding.top,
+                      liftsOverKeyboard: true,
+                      allowPortraitRestore: false,
+                      // The control bar stands on the composer bar — and on
+                      // the keyboard with it; a clean screen has no bar under
+                      // it, so the floor drops away with the pills.
+                      bottomInset: _cleanScreen ? 0 : padding.bottom + keyboard + _kImmersiveComposerBarHeight,
+                      fullscreenVerb: _enterSystemFullscreen,
+                      onMoreOverride: openMore(),
+                    ),
+                    canSwipeRooms: swipeSwitch && phone,
+                    onMore: openMore(),
+                  );
+                }
+                // 桌面窄窗（600–840）保持分栏：竖屏流全铺画面加拖拽面板
+                // （平衡停靠），其余流堆叠分栏。竖屏全屏表面仍是这一档的
+                // 竖屏出口。
                 final portraitStream = pictureRatio < 1;
-                // The engine reports the picture's own ratio, so a portrait
-                // source takes the tall panel unless the viewer chose the
-                // regular 16:9 room page.
-                final tallPortrait = portraitStream;
-                // The reference's narrow room for a portrait stream: the picture
-                // fills the window and the room's facts and chat ride over it on
-                // a sheet with three stops. A stream that is not portrait keeps
-                // the stacked room, because a 16:9 frame stretched over a phone is
-                // either cropped or a black band with a title on it.
-                if (tallPortrait) {
+                if (portraitStream) {
                   return RoomBottomPanel(
                     // The balanced opening is the room's own: the least
                     // picture covered still shows the talk where a chat is
@@ -924,14 +1041,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 // the chat with the docks' chips at its foot. A pull past the
                 // lowest stop — or a downward flick — hands the room to its
                 // portrait full screen.
-                final ratio = portraitStream
-                    ? 16 / 9
-                    : pictureRatio < 1.0
-                    ? 1.0
-                    : pictureRatio;
                 return _CompactRoomBody(
                   player: playerWith(),
-                  ratio: ratio,
+                  ratio: pictureRatio,
                   chat: const RoomChatPanel(),
                   onPortraitFullscreen: _enterFullscreen,
                 );
@@ -1069,6 +1181,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // transition's missing frame paints the picture's own black instead of
     // the theme's surface.
     final ownChrome = WindowChromeState.drawsCaptionControls;
+    // 手机的沉浸式表面：页面自己的满铺布局（竖屏 < 600、横持的矮窗）——
+    // 应用栏与 SafeArea 都不参与，系统栏的空隙由浮层自己让出，键盘由表
+    // 面自己抬（页面不随键盘缩放，画面不跳）。
+    final immersiveSurface =
+        phone && !landscapePhone && !_portraitFullscreen && windowSize.width < kRoomCompactBreakpoint;
     return withShortcuts(
       RoomPanelScope(
         notifier: _panels,
@@ -1098,9 +1215,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   child: Scaffold(
                     // The portrait full-screen surface is the page's own way of
                     // filling the window: it keeps its black stage and drops the
-                    // app bar with it, so no header survives into the mode.
-                    backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
-                    appBar: _portraitFullscreen
+                    // app bar with it, so no header survives into the mode. The
+                    // immersive phone's surfaces are the same kind of layout —
+                    // the page's own full-bleed — and drop the chrome with it.
+                    backgroundColor: _portraitFullscreen || immersiveSurface ? kPlayerStageColor : colors.canvas,
+                    resizeToAvoidBottomInset: immersiveSurface ? false : null,
+                    appBar: _portraitFullscreen || immersiveSurface
                         ? null
                         : _roomAppBar(
                             context,
@@ -1109,7 +1229,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                             leave: leave,
                             chatColumnWidth: barChatWidth,
                           ),
-                    body: _portraitFullscreen ? body : SafeArea(child: body),
+                    body: _portraitFullscreen || immersiveSurface ? body : SafeArea(child: body),
                   ),
                 ),
         ),

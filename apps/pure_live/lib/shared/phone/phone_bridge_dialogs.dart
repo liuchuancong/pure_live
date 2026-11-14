@@ -6,11 +6,12 @@ import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/phone/phone_bridge.dart';
 import 'package:pure_live/shared/phone/tv_phone_server.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Fills [request] on a phone: the code of a one-off page on this network;
 /// the values when the phone sends them, null when cancelled.
 Future<Map<String, String>?> showTvPhoneInput(BuildContext context, PhoneInputRequest request) =>
-    showDsDialog<Map<String, String>>(
+    showAppDialog<Map<String, String>>(
       context: context,
       builder: (context) => _PhoneServerDialog(
         title: request.title,
@@ -25,7 +26,7 @@ Future<Map<String, String>?> showTvPhoneInput(BuildContext context, PhoneInputRe
 
 /// Shows [text] on a phone: the code of a one-off page on this network (a
 /// log is easier to read there).
-Future<void> showTvPhoneView(BuildContext context, {required String title, required String text}) => showDsDialog<void>(
+Future<void> showTvPhoneView(BuildContext context, {required String title, required String text}) => showAppDialog<void>(
   context: context,
   builder: (context) => _PhoneServerDialog(
     title: title,
@@ -93,7 +94,7 @@ class _PhoneServerDialogState extends State<_PhoneServerDialog> {
   Widget build(BuildContext context) {
     final t = context.t;
     final server = _server;
-    return DsDialog(
+    return AppDialog(
       title: Text(widget.title),
       description: _failed
           ? Text(t.phone.failed)

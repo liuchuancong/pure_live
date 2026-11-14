@@ -6,6 +6,7 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/images.dart' show cachedImage;
 import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// One download task as its own detail sheet shows it.
 ///
@@ -73,9 +74,9 @@ final class DownloadDetails {
 
 /// Shows [details] in a panel — the download rows' 详情 verb.
 Future<void> showDownloadDetails(BuildContext context, DownloadDetails details) {
-  return showDsPanel<void>(
+  return showAppPanel<void>(
     context: context,
-    builder: (context) => DsPanel(
+    builder: (context) => AppPanel(
       title: Text(context.t.common.downloadDetails),
       scrollable: false,
       child: SizedBox(

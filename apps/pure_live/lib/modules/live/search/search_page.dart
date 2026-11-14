@@ -140,9 +140,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// keeps them in the field row's popover.
   void _openFilterPanel() {
     unawaited(
-      showDsPanel<void>(
+      showAppPanel<void>(
         context: context,
-        builder: (context) => DsPanel(
+        builder: (context) => AppPanel(
           title: Text(context.t.search.filterTitle),
           child: _SearchFilterPanel(
             sort: _sort,
@@ -577,9 +577,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       showDsToast(context: context, title: context.t.search.webSearchUnavailable);
       return Future<String?>.value();
     }
-    return showDsPanel<String>(
+    return showAppPanel<String>(
       context: context,
-      builder: (context) => DsPanel(
+      builder: (context) => AppPanel(
         title: Text(context.t.search.webSearchTitle),
         child: SingleChildScrollView(
           child: Column(
@@ -602,9 +602,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// Asks what to do without WebView2: the system browser continues the
   /// search, the download action leaves for Microsoft's page, cancel stops.
   Future<bool> _askWithoutWebView2() async {
-    final choice = await showDsDialog<String>(
+    final choice = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(context.t.search.webView2MissingTitle),
         description: Text(context.t.search.webView2MissingBody),
         actions: [

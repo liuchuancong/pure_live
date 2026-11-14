@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/tv/tv_dialog.dart' show showTvDialog;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The remote's back at the app's root: the shell route cannot pop, so Back
 /// asks whether the viewer is done for the day. The reference autofocuses
@@ -14,7 +15,7 @@ import 'package:pure_live/layouts/tv/tv_dialog.dart' show showTvDialog;
 Future<void> showTvExitConfirm(BuildContext context) => showTvDialog<void>(
   context: context,
   dismissible: false,
-  builder: (context) => DsDialog(
+  builder: (context) => AppDialog(
     title: Text(context.t.common.exitAppTitle),
     description: Text(context.t.common.exitAppMessage),
     actions: [

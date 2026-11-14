@@ -1,6 +1,5 @@
 import 'dart:async' show unawaited;
 
-import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show localizedSiteName;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The reference's `detectClipboardRooms`: a room link in the clipboard is
 /// offered when the app comes back, never opened on its own.
@@ -160,13 +160,12 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
     // own language; the parser only knows the id.
     final site = container.read(sitesProvider).getById(room.platform);
     final platformName = site == null ? room.platform : localizedSiteName(site);
-    final open = await showDsConfirm(
+    final open = await showAppConfirm(
       context: navigatorContext,
       title: t.settings.clipboardRoomTitle,
       description: t.settings.clipboardRoomDesc(platform: platformName, roomId: room.roomId),
       confirmLabel: t.settings.clipboardRoomOpen,
       cancelLabel: t.common.cancel,
-      icon: const DsIcon(DsIcons.clipboard),
     );
     if (open && mounted) {
       await container.read(appRouterProvider).push(RoomRoute(platform: room.platform, roomId: room.roomId).location);

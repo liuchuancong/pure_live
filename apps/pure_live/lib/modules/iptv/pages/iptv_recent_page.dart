@@ -17,6 +17,7 @@ import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvSta
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart'
     show IptvChannelLogo, IptvNowCell, IptvOnAirEqualizer, IptvPageHead;
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// One watched channel and the record that says when.
 typedef _Watched = ({IptvRecentEntry entry, IptvChannel channel});
@@ -71,7 +72,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
 
   Future<void> _clear(BuildContext context, WidgetRef ref) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.iptv.recentClearTitle,
       description: t.iptv.recentClearDesc,

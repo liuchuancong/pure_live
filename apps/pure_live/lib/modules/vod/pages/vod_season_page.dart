@@ -41,6 +41,7 @@ import 'package:pure_live/shared/shared.dart'
         cachedImage,
         kRoomCoverScrim,
         silencePlayer;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
 /// One cinema title's page: the player over media_core, the season's blurb,
@@ -1624,11 +1625,11 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
       return typed >= 1 && typed <= episodes.length ? typed - 1 : null;
     }
 
-    final position = await showDsDialog<int>(
+    final position = await showAppDialog<int>(
       context: context,
       builder: (dialogContext) {
         final t = dialogContext.t;
-        return DsDialog(
+        return AppDialog(
           title: Text(t.vod.episodesJump),
           description: DsTextField(
             controller: controller,

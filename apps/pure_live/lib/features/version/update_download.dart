@@ -12,6 +12,7 @@ import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/version/release_builds.dart' show ReleaseBuild, formatReleaseSize;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Where a download got to.
 enum UpdateDownloadPhase {
@@ -36,7 +37,7 @@ enum UpdateDownloadPhase {
 /// renames only once the whole file arrived, which is what keeps a cancelled
 /// or broken download from looking like an installer.
 Future<void> showUpdateDownload(BuildContext context, {required ReleaseBuild build}) {
-  return showDsDialog<void>(
+  return showAppDialog<void>(
     context: context,
     dismissible: false,
     builder: (context) => UpdateDownloadDialog(build: build),
@@ -192,9 +193,8 @@ final class _UpdateDownloadDialogState extends ConsumerState<UpdateDownloadDialo
     final directory = _savedDirectory;
     final savedPath = _savedPath;
     final failure = _error;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.downloadTitle),
-      icon: DsIcon(done ? DsIcons.circleCheck : running ? DsIcons.cloudDownload : DsIcons.circleAlert),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,

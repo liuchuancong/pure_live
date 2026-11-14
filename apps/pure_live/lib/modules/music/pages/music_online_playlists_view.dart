@@ -29,6 +29,8 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show AudienceFormat, CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 final class MusicSonglistTabs extends ConsumerWidget {
   const MusicSonglistTabs({
@@ -175,11 +177,10 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
     final t = context.t;
     final theme = DsTheme.of(context);
     final field = TextEditingController();
-    final opened = await showDsDialog<String>(
+    final opened = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.music.openPlaylistTitle),
-        icon: const DsIcon(DsIcons.listMusic),
         description: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -283,7 +284,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
         icon: DsIcons.listFilter,
         available: hasFilters,
         onPressed: () => unawaited(
-          showDsPanel<void>(
+          showAppPanel<void>(
             context: context,
             builder: (_) => MusicPlazaFilterPanel(
               sorts: sorts,
@@ -500,7 +501,7 @@ final class _MusicPlazaFilterPanelState extends State<MusicPlazaFilterPanel> {
       ),
     );
 
-    return DsPanel(
+    return AppPanel(
       title: Text(t.music.plazaFilterTitle),
       footer: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -585,9 +586,9 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
     // list offers to refresh what is already there.
     final existing = controller.findLinked(sourceId, info.id);
     if (existing != null) {
-      final confirmed = await showDsDialog<bool>(
+      final confirmed = await showAppDialog<bool>(
         context: context,
-        builder: (context) => DsDialog(
+        builder: (context) => AppDialog(
           title: Text(t.music.playlistUpdateOnline),
           description: Text(t.music.duplicateListTip(name: existing.name)),
           actions: [

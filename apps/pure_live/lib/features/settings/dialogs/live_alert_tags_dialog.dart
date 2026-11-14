@@ -6,12 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/settings/browse/live_alert_settings.dart' show liveAlertSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens the live-alert tag filter: every follow, or only the follows that
 /// carry one of the ticked tags. No tick means every follow, which is also
 /// what the refresh row shows.
 Future<void> showLiveAlertTagsDialog(BuildContext context) =>
-    showDsDialog<void>(context: context, builder: (context) => const _LiveAlertTagsDialog());
+    showAppDialog<void>(context: context, builder: (context) => const _LiveAlertTagsDialog());
 
 final class _LiveAlertTagsDialog extends ConsumerWidget {
   const _LiveAlertTagsDialog();
@@ -24,7 +25,7 @@ final class _LiveAlertTagsDialog extends ConsumerWidget {
     final tags = ref.watch(followTagsProvider);
     final chosen = ref.watch(liveAlertSettingsProvider).tagIds.toSet();
     final controller = ref.read(liveAlertSettingsProvider.notifier);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.liveAlertTags),
       description: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 400),

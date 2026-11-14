@@ -10,6 +10,8 @@ import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart
 import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Copies a family's or face's name and says so: a menu item that closes
 /// with nothing on screen reads as a press that did not land.
@@ -209,14 +211,13 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
   /// face was in use.
   Future<void> _delete(FontEntry entry, String? family) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.fontManagerDeleteFont,
       description: t.settings.fontManagerDeleteQuestion(name: entry.name),
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     if (_isCurrent(entry, family)) _setFamily(null);
@@ -755,7 +756,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
   /// here — and everything that can be done with it. A bottom sheet on a touch
   /// shell, a side panel on a wide window.
   Future<void> _openDetails(FontEntry entry, {required String? family}) {
-    return showDsPanel<void>(
+    return showAppPanel<void>(
       context: context,
       builder: (sheetContext) => Consumer(
         builder: (sheetContext, ref, _) {
@@ -768,7 +769,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
           final downloaded = _isDownloaded(entry, store, google);
           final downloading = _isDownloading(entry, store, google);
           final isDefault = family == null || family == kDefaultFontFamily;
-          return DsPanel(
+          return AppPanel(
             title: Text(entry.name),
             footer: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

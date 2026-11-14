@@ -7,6 +7,7 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Opens the channel's guide: one day of programmes, the one on air marked
 /// with its progress, the past ones replayable where the playlist offers
@@ -18,9 +19,9 @@ Future<void> showIptvGuide(
   required EpgProgramme? catchup,
   required Future<void> Function(EpgProgramme programme) onCatchup,
   required Future<void> Function() onBackToLive,
-}) => showDsPanel<void>(
+}) => showAppPanel<void>(
   context: context,
-  builder: (context) => DsPanel(
+  builder: (context) => AppPanel(
     title: Text(context.t.iptv.guideTitle),
     child: _IptvGuidePanel(channel: channel, catchup: catchup, onCatchup: onCatchup, onBackToLive: onBackToLive),
   ),

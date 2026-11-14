@@ -19,6 +19,8 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' sh
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
 import 'package:pure_live/shared/shared.dart'
     show LiveWindow, NavigationItem, PagedCardGrid, avatarInitials, feedGutter;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// The page's own left and right margin, asked rather than written again:
 /// `LiveWindow.pageInset` is one number for the whole app (16 while the window
@@ -314,7 +316,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
   /// The shelf's conditions live in a panel over the posters, as the app's
   /// other filtered lists do: the page keeps its room for the grid, and the
   /// grid thins as each condition arrives.
-  Future<void> _openFilters(List<HongguoFilterRow> rows) => showDsPanel<void>(
+  Future<void> _openFilters(List<HongguoFilterRow> rows) => showAppPanel<void>(
     context: context,
     builder: (context) => _FindFilterPanel(genre: _genre, rows: rows),
   );
@@ -485,7 +487,7 @@ final class _FindFilterPanel extends ConsumerWidget {
     final feed = ref.watch(hongguoBrowseProvider.select((feeds) => feeds[genre.name]));
     final controller = ref.read(hongguoBrowseProvider.notifier);
     final selection = feed?.selection ?? const <String, String>{};
-    return DsPanel(
+    return AppPanel(
       title: Text(t.hongguo.filterPanelTitle),
       footer: Row(
         spacing: DsSpace.s8,
@@ -543,7 +545,7 @@ final class _RankViewState extends ConsumerState<_RankView> {
 
   /// The board's topics, in a panel over the rows: the board carries fifty of
   /// them at a time and a pick goes straight to the list behind.
-  Future<void> _openTopics(HongguoWebsiteBoard board, List<HongguoRankTopic> topics) => showDsPanel<void>(
+  Future<void> _openTopics(HongguoWebsiteBoard board, List<HongguoRankTopic> topics) => showAppPanel<void>(
     context: context,
     builder: (context) =>
         _RankFilterPanel(topics: topics, topic: _topic, onSelect: (topic) => setState(() => _topic = topic ?? '')),
@@ -732,7 +734,7 @@ final class _RankFilterPanel extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsPanel(
+    return AppPanel(
       title: Text(t.hongguo.rankFilterTitle),
       footer: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -997,14 +999,13 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
   /// Empties this device's watch history after a confirmation; the reference
   ///'s 清空历史 asks before it forgets.
   Future<void> _clearHistory(Translations t) async {
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.hongguo.historyClear,
       description: t.hongguo.historyClearDesc,
       confirmLabel: t.common.confirm,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     ref.read(hongguoLibraryProvider.notifier).clearHistory();
@@ -1015,14 +1016,13 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
   /// Forgets every ticked row after a confirmation, then leaves the mode.
   Future<void> _removeSelected(Translations t) async {
     if (_selected.isEmpty) return;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.hongguo.historyManageDelete,
       description: t.hongguo.historyRemoveDesc,
       confirmLabel: t.common.confirm,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     ref.read(hongguoLibraryProvider.notifier).removeHistoryRows(_selected);

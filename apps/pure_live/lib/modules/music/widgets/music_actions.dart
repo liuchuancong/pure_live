@@ -13,16 +13,16 @@ import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Asks for a playlist name and makes one; null when cancelled or blank.
 Future<MusicPlaylist?> showCreatePlaylistDialog(BuildContext context, WidgetRef ref) async {
   final t = context.t;
   final field = TextEditingController();
-  final name = await showDsDialog<String>(
+  final name = await showAppDialog<String>(
     context: context,
-    builder: (context) => DsDialog(
+    builder: (context) => AppDialog(
       title: Text(t.music.playlistCreateTitle),
-      icon: const DsIcon(DsIcons.listMusic),
       description: DsTextField(
         controller: field,
         autofocus: true,
@@ -130,11 +130,10 @@ Future<MusicPlaylist?> _choosePlaylist(
   ];
   final choice =
       listName ??
-      await showDsDialog<String>(
+      await showAppDialog<String>(
         context: context,
-        builder: (context) => DsDialog(
+        builder: (context) => AppDialog(
           title: Text(title ?? t.music.addToPlaylist),
-          icon: const DsIcon(DsIcons.listMusic),
           description: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -217,7 +216,7 @@ Future<void> showToggleSourceDialog(
   audio.MusicTrack track, {
   void Function(audio.MusicTrack swapped)? onSwapped,
 }) async {
-  final swapped = await showDsDialog<audio.MusicTrack>(
+  final swapped = await showAppDialog<audio.MusicTrack>(
     context: context,
     builder: (context) => _ToggleSourceDialog(track: track),
   );
@@ -286,9 +285,8 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
         source.id: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
     };
     final candidates = _answers[_source] ?? const <audio.MusicTrack>[];
-    return DsDialog(
+    return AppDialog(
       title: Text(t.music.toggleSource),
-      icon: const DsIcon(DsIcons.arrowRightLeft),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,

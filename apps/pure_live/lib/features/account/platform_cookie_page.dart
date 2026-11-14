@@ -26,6 +26,7 @@ import 'package:pure_live/features/account/douyu_login_store.dart' show accountS
 import 'package:pure_live/features/settings/settings.dart' show douyuForceRenewProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage, localizedSiteIcon, localizedSiteName;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The widest the cookie page's column gets on a big window; below that it
@@ -484,7 +485,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     if (_accountsBusy || _busy) return;
     final t = context.t;
     final name = bilibiliAccountLabel(account, t);
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.account.switchTitle,
       description: t.account.switchConfirmDesc(name: name),
@@ -513,7 +514,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     if (_accountsBusy || _busy) return;
     final t = context.t;
     final name = bilibiliAccountLabel(account, t);
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.account.forgetTitle,
       description: t.account.forgetConfirmDesc(name: name),
@@ -546,7 +547,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     if (site == null || auth == null) return;
     final t = context.t;
     if (ref.read(bilibiliAccountsProvider).length >= bilibiliAccountLimit) {
-      final confirmed = await showDsConfirm(
+      final confirmed = await showAppConfirm(
         context: context,
         title: t.account.addAccount,
         description: t.account.addFullConfirmDesc(count: '$bilibiliAccountLimit'),
@@ -789,7 +790,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
   Future<void> _signOut() async {
     if (_busy) return;
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.account.signOut,
       description: t.account.signOutConfirmDesc(site: _displayName),
@@ -1103,7 +1104,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     if (_confirmingDiscard) return;
     _confirmingDiscard = true;
     final t = context.t;
-    final discard = await showDsConfirm(
+    final discard = await showAppConfirm(
       context: context,
       title: t.account.discardTitle,
       description: t.account.discardDesc,

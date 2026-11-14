@@ -118,7 +118,7 @@ PageInlineSearch? pageInlineSearch(
 /// into a sheet, for a window (or a module bar) too narrow to hold it. The
 /// word goes where the page's own inline search would take it.
 Future<void> showPageInlineSearch(BuildContext context, {required PageInlineSearch search, String initial = ''}) =>
-    showDsPanel<void>(
+    showAppPanel<void>(
       context: context,
       builder: (_) => _PageSearchPanel(search: search, initial: initial),
     );
@@ -151,7 +151,7 @@ final class _PageSearchPanelState extends State<_PageSearchPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return DsPanel(
+    return AppPanel(
       title: Text(widget.search.hint),
       child: DsSearchField(
         controller: _field,

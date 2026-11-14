@@ -30,6 +30,7 @@ import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, NavigationItem, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 final class MusicPlaylistsView extends ConsumerStatefulWidget {
   const MusicPlaylistsView({this.initialOnlineOpen, super.key});
@@ -161,11 +162,10 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
   Future<void> _rename(MusicPlaylist playlist) async {
     final t = context.t;
     final field = TextEditingController(text: playlist.name);
-    final name = await showDsDialog<String>(
+    final name = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.music.playlistRenameTitle),
-        icon: const DsIcon(DsIcons.pencil),
         description: DsTextField(
           controller: field,
           autofocus: true,
@@ -202,7 +202,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
 
   Future<void> _delete(MusicPlaylist playlist) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.music.playlistDeleteTitle(name: playlist.name),
       description: t.music.playlistDeleteDesc,
@@ -269,7 +269,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
   /// merge the backup's lists in.
   Future<void> _importLxmc(String path) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.music.playlistImport,
       description: t.music.playlistImportLxmcConfirm,
@@ -321,7 +321,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
   /// The reference's 重复歌曲 dialog: duplicate titles in one list, picked
   /// ones removable in place.
   Future<void> _showDuplicates(MusicPlaylist playlist) async {
-    await showDsDialog<bool>(
+    await showAppDialog<bool>(
       context: context,
       builder: (context) => _DuplicateTracksDialog(playlistId: playlist.id),
     );
@@ -448,11 +448,10 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
     if (tracks.isEmpty) return;
     final t = context.t;
     final field = TextEditingController();
-    final answer = await showDsDialog<String>(
+    final answer = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.music.repositionTitle(count: tracks.length)),
-        icon: const DsIcon(DsIcons.arrowUpDown),
         description: DsTextField(
           controller: field,
           autofocus: true,
@@ -1063,9 +1062,8 @@ final class _DuplicateTracksDialogState extends ConsumerState<_DuplicateTracksDi
     };
     final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
     final favourites = ref.watch(musicFavouritesProvider);
-    return DsDialog(
+    return AppDialog(
       title: Text(playlist?.name ?? t.music.duplicateTracks),
-      icon: const DsIcon(DsIcons.copy),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,

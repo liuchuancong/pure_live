@@ -9,6 +9,7 @@ import 'package:pure_live/features/lan_sync/application/lan_sync_providers.dart'
 import 'package:pure_live/features/lan_sync/data/secure_credential_store.dart';
 import 'package:pure_live/features/lan_sync/data/tls_identity_provider.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The pairing flow, both sides in one dialog (spec §9.2's user step):
 ///
@@ -50,7 +51,7 @@ Future<void> showPairingDialog(
       unawaited(outgoing.reject());
       return;
     }
-    await showDsDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (dialogContext) => _PairingDialog(
         outgoing: outgoing,
@@ -72,7 +73,7 @@ Future<void> showPairingDialog(
 /// Opens the answer side: the responder's UI calls this for every
 /// [IncomingPairing] the requests stream emits.
 Future<void> showIncomingPairingDialog(BuildContext context, IncomingPairing incoming) async {
-  await showDsDialog<void>(
+  await showAppDialog<void>(
     context: context,
     builder: (context) => _PairingDialog(
       outgoing: null,
@@ -216,7 +217,7 @@ final class _PairingDialogState extends ConsumerState<_PairingDialog> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.lanSyncPairTitle),
       description: Column(
         mainAxisSize: MainAxisSize.min,

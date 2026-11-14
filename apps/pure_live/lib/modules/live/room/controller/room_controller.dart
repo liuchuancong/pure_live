@@ -840,6 +840,20 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
 /// The open room's chat lines.
 final roomChatProvider = NotifierProvider<RoomChatController, List<LiveMessage>>(RoomChatController.new);
 
+/// The chat's standing as the overlay reads it: a narrow select over the
+/// room's state, so a glance surface does not rebuild for every playback
+/// twitch the room publishes. The panel's own list watches [roomProvider]
+/// directly; the overlay's wants are smaller than the room.
+final roomChatStandingProvider = Provider<RoomChat>(
+  (ref) => ref.watch(roomProvider.select((state) => state.chat)),
+);
+
+/// The room's anchor name as the overlay reads it: a gift line names its
+/// receiver only when it differs, and the name is the room's own fact.
+final roomAnchorNameProvider = Provider<String>(
+  (ref) => ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? '')),
+);
+
 /// One line the room raises for the viewer about a login (a Bilibili
 /// connection that only sees masked names, a Twitch cookie the server
 /// refused). Its `id` rises with every hint, so the same words twice in

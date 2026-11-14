@@ -123,7 +123,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   /// The two conditions in the panel the field row's entry opens: the picks
   /// wait in the panel until the panel confirms them, so walking the five
   /// sorts is one search rather than five.
-  Future<void> _openFilters() => showDsPanel<void>(
+  Future<void> _openFilters() => showAppPanel<void>(
     context: context,
     builder: (context) => _SearchFilterPanel(
       order: _order,
@@ -307,7 +307,7 @@ final class _SearchFilterPanelState extends State<_SearchFilterPanel> {
       ),
     );
 
-    return DsPanel(
+    return AppPanel(
       title: Text(t.vod.searchFilterTitle),
       footer: Row(
         mainAxisAlignment: MainAxisAlignment.end,

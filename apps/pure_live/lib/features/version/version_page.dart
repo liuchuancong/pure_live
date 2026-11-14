@@ -10,6 +10,7 @@ import 'package:pure_live/features/version/update_download.dart' show showUpdate
 import 'package:pure_live/features/version/update_feed.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// 查看更新: what the new release says and the two ways to act on it.
@@ -18,7 +19,7 @@ import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 /// notes, take the installer or leave it — and the viewer stays on the
 /// version page either way.
 Future<void> showUpdateDialog(BuildContext context, UpdateInfo info) {
-  return showDsDialog<void>(
+  return showAppDialog<void>(
     context: context,
     builder: (context) => _UpdateDialog(info: info),
   );
@@ -35,9 +36,8 @@ final class _UpdateDialog extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final notes = plainReleaseText(info.log);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.updatePanelTitle),
-      icon: const DsIcon(DsIcons.refreshCw),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,

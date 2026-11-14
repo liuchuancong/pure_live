@@ -101,13 +101,12 @@ final class _StorageFoldersSectionState extends ConsumerState<StorageFoldersSect
       if (!context.mounted) return;
       final active = folder == StorageFolder.recordings ? ref.read(recorderEngineProvider).activeRecordingCount : 0;
       if (active > 0) {
-        final confirmed = await showDsConfirm(
+        final confirmed = await showAppConfirm(
           context: context,
           title: t.recorder.folderInUseTitle,
           description: t.recorder.folderInUseBody(count: active),
           confirmLabel: t.recorder.folderInUseConfirm,
           cancelLabel: t.common.cancel,
-          icon: const DsIcon(DsIcons.folderVideo),
         );
         if (!confirmed || !context.mounted) return;
       }
@@ -340,14 +339,13 @@ final class CachePaneState extends ConsumerState<CachePane> {
     required Future<CacheCleanupResult> Function(LiveCacheManager manager) work,
   }) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: title,
       description: description,
       confirmLabel: t.common.confirm,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) {
       return;

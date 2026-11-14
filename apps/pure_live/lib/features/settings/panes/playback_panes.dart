@@ -32,6 +32,7 @@ import 'package:pure_live/features/settings/surface/settings_widgets.dart' show 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/pages/recorder_page.dart' show RecordingSettingsPane;
 import 'package:pure_live/shared/shared.dart' show AppModule;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The window page: the window's own shape — title bar, room windows, size
 /// and refresh rate. Closing and exit behaviour is the startup page's task.
@@ -114,7 +115,7 @@ void _syncWindowsPipConfig(WidgetRef ref) {
 /// the next PiP entry opens at the app window's own corner again.
 Future<void> _resetWindowsPipGeometry(BuildContext context) async {
   final t = context.t;
-  final confirmed = await showDsConfirm(
+  final confirmed = await showAppConfirm(
     context: context,
     title: t.settings.windowsPipResetPosition,
     description: t.settings.windowsPipResetPositionConfirm,

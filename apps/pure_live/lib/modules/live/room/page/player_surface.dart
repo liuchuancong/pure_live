@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
+import 'package:flutter/material.dart' show InputBorder, InputDecoration, TextField, TextInputAction;
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, MouseCursor, SystemMouseCursors;
 import 'package:flutter/widgets.dart';
@@ -23,6 +24,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart' show openArchives;
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomEmotePanel;
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
@@ -196,6 +198,10 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onTitle,
     this.onSwitchRoom,
     this.ambient = false,
+    this.showModeExit = true,
+    this.topInset = 0,
+    this.liftsOverKeyboard = false,
+    this.danmakuInput = false,
     this.overlay,
     this.bottomInset = 0,
     this.controlBarEndInset = 0,
@@ -276,6 +282,30 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// crop, stretch or size the frame on their own terms.
   final bool ambient;
 
+  /// Whether the capsule shapes carry the mode-exit chip (the redesign's
+  /// `exit` verb). The immersive room's own layouts suppress it: there is no
+  /// page layout under an always-on surface to return to, and a chip that
+  /// leaves the room while reading as "exit the mode" would lie.
+  final bool showModeExit;
+
+  /// How much of the picture's top edge the system's own chrome (a status
+  /// bar drawn edge-to-edge) covers: the capsule and the strips stand below
+  /// it, exactly as the page's `SafeArea` would put them where the surface
+  /// fills a safe-area-less page.
+  final double topInset;
+
+  /// Whether the bottom bar and the strip that wakes it rise above the soft
+  /// keyboard while it is up (the immersive phone's composer input lives
+  /// there). The page keeps its full height — `resizeToAvoidBottomInset` is
+  /// the page's no — so the surface does the lifting itself.
+  final bool liftsOverKeyboard;
+
+  /// Whether the control bar carries the room's inline send (the phone held
+  /// sideways, where no chat column and no composer bar exists). The bar
+  /// shows it from a width where a sentence has room to be typed into, and
+  /// only while the room's chat accepts a posted message.
+  final bool danmakuInput;
+
   /// How much of the picture's bottom edge a page layer covers: the narrow
   /// room's chat sheet rides over the stream, so the control bar and the strip
   /// that wakes it stand above the sheet instead of under a panel the viewer
@@ -337,6 +367,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   /// The video-area danmaku settings panel is open: the bars stay while it
   /// is, the same hold the pickers take.
   bool _danmakuSettingsOpen = false;
+
+  /// The bar's inline send field is focused (the immersive strip's input): a
+  /// keyboard up and a bar that hides under it would strand the words
+  /// mid-sentence, so the field holds the chrome the way a panel does.
+  bool _barInputFocused = false;
 
   /// The danmaku settings gear's box, for the panel host that hangs the
   /// settings above it.
@@ -574,7 +609,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   void _scheduleHide() {
     _hideTimer?.cancel();
-    if (_panelOpen || _danmakuSettingsOpen) return;
+    if (_panelOpen || _danmakuSettingsOpen || _barInputFocused) return;
     if (!widget.roomState.playback.playing) return;
     // A TV room keeps its bars: with no pointer there is no way to wake a
     // hidden bar, and the focused control would go with it.
@@ -600,6 +635,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     if (_controlsVisible) {
       _hideTimer?.cancel();
       _hidePicker();
+      // The focused field went with the bar: its hold on the chrome goes too.
+      _barInputFocused = false;
       setState(() => _controlsVisible = false);
     } else {
       _wake();
@@ -690,6 +727,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // loading — no handle yet, a state card up, the controls never shown —
     // never takes the pointer away.
     final chromeVisible = _controlsVisible || !playing;
+    // The keyboard's height while the surface lifts for it (the immersive
+    // phone's shapes): zero everywhere the page did not ask, so a desktop's
+    // zero inset changes nothing.
+    final keyboardLift = widget.liftsOverKeyboard ? MediaQuery.viewInsetsOf(context).bottom : 0.0;
     // The shapes that fold the room's identity into the picture itself (the
     // redesign's gcap capsule): the immersive modes, the portrait fullscreen
     // and the phone held sideways, whose room card has no column to sit in.
@@ -1023,10 +1064,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   // immersive shapes hang their capsule instead, and the mini
                   // window keeps its title strip — both cover the same ground.
                   if (showBar && !mini && !capsuleIdentity && !widget.tv)
-                    const PositionedDirectional(top: 0, start: 0, child: _RoomTitleCaption()),
+                    PositionedDirectional(top: widget.topInset, start: 0, child: const _RoomTitleCaption()),
                   if (showBar && !mini && !capsuleIdentity && !widget.tv)
                     PositionedDirectional(
-                      top: DsSpace.s12,
+                      top: DsSpace.s12 + widget.topInset,
                       start: 0,
                       end: DsSpace.s12,
                       // The inline room's tool cluster floats at the picture's
@@ -1047,12 +1088,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   // beneath its text buttons when both are up.
                   if (showBar && !mini && capsuleIdentity) ...[
                     PositionedDirectional(
-                      top: DsSpace.s12,
+                      top: DsSpace.s12 + widget.topInset,
                       start: DsSpace.s12,
                       child: _ImmersiveCapsule(room: room, onWake: _wake, onTitle: widget.onTitle),
                     ),
                     PositionedDirectional(
-                      top: DsSpace.s12,
+                      top: DsSpace.s12 + widget.topInset,
                       end: DsSpace.s12,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -1060,10 +1101,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         children: [
                           // The window fullscreen leaves through its own Windows
                           // caption (drag + min/max/close), not a text chip over
-                          // the picture; the other immersive shapes keep a verb.
-                          // The theatre's expand-chat chip is gone: fullscreen
+                          // the picture; the other immersive shapes keep a verb
+                          // unless the page suppresses it (an always-on surface
+                          // has no layout under itself to exit to). The
+                          // theatre's expand-chat chip is gone: fullscreen
                           // keeps the picture clean.
-                          if (presentation != PresentationMode.windowFullscreen)
+                          if (widget.showModeExit && presentation != PresentationMode.windowFullscreen)
                             _ModeExitChip(
                               label: switch (presentation) {
                                 PresentationMode.fullscreen => context.t.room.fullscreenOff,
@@ -1166,7 +1209,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   ],
                   if (showBar && !mini)
                     Positioned(
-                      bottom: widget.bottomInset,
+                      bottom: widget.bottomInset + keyboardLift,
                       left: 0,
                       right: widget.controlBarEndInset,
                       child: MouseRegion(
@@ -1197,6 +1240,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             portraitFullscreen: widget.portraitFullscreen,
                             onPortraitFullscreen: widget.onPortraitFullscreen,
                             onFullscreen: widget.onFullscreen,
+                            danmakuInput: widget.danmakuInput,
+                            onInputFocus: (focused) => setState(() => _barInputFocused = focused),
                           ),
                         ),
                       ),
@@ -1207,7 +1252,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   // draw and a line of its own would read as a timeline.
                   else if (playing && !mini && handle != null && !_locked)
                     Positioned(
-                      bottom: widget.bottomInset,
+                      bottom: widget.bottomInset + keyboardLift,
                       left: 0,
                       right: widget.controlBarEndInset,
                       child: _RestoreSwipe(
@@ -1307,7 +1352,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     PositionedDirectional(
                       end: DsSpace.s12,
                       top: 0,
-                      bottom: widget.bottomInset,
+                      bottom: widget.bottomInset + keyboardLift,
                       child: Center(
                         child: PlayerGlassPill(
                           child: PlayerBarButton(

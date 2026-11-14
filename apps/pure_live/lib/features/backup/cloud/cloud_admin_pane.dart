@@ -10,6 +10,7 @@ import 'package:pure_live/features/backup/cloud/cloud_controller.dart';
 import 'package:pure_live/features/backup/cloud/cloud_models.dart';
 import 'package:pure_live/features/backup/cloud/cloud_service.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The accounts page for managers and admins: the figures up top (every
 /// account, by role, how many may upload), a search by email prefix, the
@@ -155,7 +156,7 @@ final class _CloudAdminPaneState extends ConsumerState<CloudAdminPane> {
 
   Future<void> _delete(CloudUserItem item) async {
     final t = context.t.backup.cloud;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.adminDeleteTitle(email: item.email),
       description: t.adminDeleteDesc,

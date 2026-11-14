@@ -18,6 +18,7 @@ import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseHeader;
 import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The sound-effect center — the spec's own page, drawn after the streaming
 /// apps' own effect rooms: the current track's cover sits blurred behind the
@@ -253,7 +254,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
   }
 
   Future<void> _pickPreset(BuildContext context) async {
-    await showDsDialog<Object?>(context: context, builder: (dialogContext) => const _PresetDialog());
+    await showAppDialog<Object?>(context: context, builder: (dialogContext) => const _PresetDialog());
   }
 }
 
@@ -567,9 +568,8 @@ final class _PresetDialogState extends ConsumerState<_PresetDialog> {
     final colors = DsTheme.colorsOf(context);
     final eq = ref.watch(musicEqProvider);
     final controller = ref.read(musicEqProvider.notifier);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.music.eqCenterPickTitle),
-      icon: const DsIcon(DsIcons.music4),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,
@@ -710,11 +710,10 @@ final class _MyPresetsList extends ConsumerWidget {
 Future<void> _saveCurrent(BuildContext context, WidgetRef ref) async {
   final t = context.t;
   final field = TextEditingController();
-  final name = await showDsDialog<String>(
+  final name = await showAppDialog<String>(
     context: context,
-    builder: (dialogContext) => DsDialog(
+    builder: (dialogContext) => AppDialog(
       title: Text(t.music.eqSavePreset),
-      icon: const DsIcon(DsIcons.star),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,

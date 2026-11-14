@@ -125,13 +125,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final t = context.t;
     final live = room.broadcast.isLiveNow;
     final title = room.content.title.trim().isEmpty ? room.anchor?.name ?? room.ref.roomId : room.content.title;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.recorder.addTitle,
       description: live ? t.recorder.addBodyLive(title: title) : t.recorder.addBodyOffline(title: title),
       confirmLabel: live ? t.recorder.addStartNow : t.recorder.addArm,
       cancelLabel: t.common.cancel,
-      icon: const DsIcon(DsIcons.disc3),
     );
     if (!confirmed || !mounted) return;
     final id = '${room.ref.platform}:${room.ref.roomId}';
@@ -681,14 +680,13 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// rather than faked: another window owns that session and its files.
   Future<void> _stopAll(List<RecordingTask> recording) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.recorder.stopAllTitle,
       description: t.recorder.stopAllBody(count: recording.length),
       confirmLabel: t.recorder.stopAll,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.squareStop),
     );
     if (!confirmed || !mounted) return;
     final engine = ref.read(recorderEngineProvider);
@@ -778,7 +776,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
 
   /// Opens the take's schedule editor and saves the window it returns.
   Future<void> _editSchedule(RecordingTask task) async {
-    final draft = await showDsPanel<_ScheduleDraft>(
+    final draft = await showAppPanel<_ScheduleDraft>(
       context: context,
       builder: (context) => _RoomSettingsPanel(task: task),
     );
@@ -902,7 +900,7 @@ final class _TaskDetailsPanel extends ConsumerWidget {
     ].join(' · ');
     final saved = (task.filePath ?? '').trim();
     final section = recorderPanelSectionStyle(context);
-    return DsPanel(
+    return AppPanel(
       title: Text(t.recorder.detailsTitle),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1212,7 +1210,7 @@ final class _TaskCard extends ConsumerWidget {
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.info, size: 14),
             onPressed: () => unawaited(
-              showDsPanel<void>(
+              showAppPanel<void>(
                 context: context,
                 builder: (context) => _TaskDetailsPanel(task: task, room: room, platformName: platformName),
               ),
@@ -1540,14 +1538,13 @@ final class _TaskMenu extends StatelessWidget {
   Future<void> _confirmDelete(BuildContext context) async {
     final t = context.t;
     final name = task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.recorder.deleteTitle(name: name),
       description: t.recorder.deleteBody,
       confirmLabel: t.recorder.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     // The tap can land after the dialog's host is gone (the list rebuilt
     // under it); a dead context must not reach the page's store callback.
@@ -2217,13 +2214,12 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
       if (!mounted) return;
       final active = ref.read(recorderEngineProvider).activeRecordingCount;
       if (active > 0) {
-        final confirmed = await showDsConfirm(
+        final confirmed = await showAppConfirm(
           context: context,
           title: t.recorder.folderInUseTitle,
           description: t.recorder.folderInUseBody(count: active),
           confirmLabel: t.recorder.folderInUseConfirm,
           cancelLabel: t.common.cancel,
-          icon: const DsIcon(DsIcons.folderVideo),
         );
         if (!confirmed || !mounted) return;
       }
@@ -2303,14 +2299,13 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
   /// recorder tunables and stay exactly as they are.
   Future<void> _resetAll() async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.recorder.resetAllConfirmTitle,
       description: t.recorder.resetAllConfirmDesc,
       confirmLabel: t.recorder.resetAll,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.rotateCw),
     );
     if (!confirmed || !mounted) return;
     await ref.read(recordingSettingsProvider.notifier).reset();
@@ -2357,9 +2352,9 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
     final t = context.t;
     final field = TextEditingController(text: initial);
     var value = initial;
-    await showDsDialog<void>(
+    await showAppDialog<void>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(title),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2475,7 +2470,7 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
   }
 
   Future<void> _editLimit() async {
-    final value = await showDsDialog<int>(
+    final value = await showAppDialog<int>(
       context: context,
       builder: (_) => _CacheLimitDialog(initialMb: ref.read(recordingSettingsProvider).cacheLimitMb),
     );
@@ -2486,14 +2481,13 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
 
   Future<void> _clear() async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.recorder.cacheClearConfirm,
       description: t.recorder.cacheClearConfirmDesc,
       confirmLabel: t.recorder.cacheClear,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     setState(() => _busy = true);
@@ -2518,14 +2512,13 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
   /// this only says how many landed and which did not.
   Future<void> _mergeStranded(List<RecordingTask> stranded) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.recorder.mergeTitle,
       description: t.recorder.mergeBody(count: stranded.length),
       confirmLabel: t.recorder.merge,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.folderVideo),
     );
     if (!confirmed || !mounted) return;
     setState(() {
@@ -2704,7 +2697,7 @@ final class _RoomSettingsPanelState extends State<_RoomSettingsPanel> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsPanel(
+    return AppPanel(
       title: Text(t.recorder.roomSettings),
       footer: Row(
         spacing: DsSpace.s8,
@@ -2919,9 +2912,8 @@ final class _CacheLimitDialogState extends State<_CacheLimitDialog> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.recorder.cacheLimit),
-      icon: const DsIcon(DsIcons.database),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,

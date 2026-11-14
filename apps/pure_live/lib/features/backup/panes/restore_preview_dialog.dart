@@ -7,6 +7,7 @@ import 'package:pure_live/features/backup/document/restore_preview.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show includeSecretsAllowed;
 import 'package:pure_live/features/backup/panes/backup_section_picker.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Whether a restore is running on this device right now. Every restore
 /// entry asks before it reads or downloads anything, so a second restore is
@@ -55,7 +56,7 @@ Future<BackupDocument?> pickAndPreviewRestore(
 /// focus, so a remote's OK never restores by accident; Escape, a tap on
 /// the scrim and back all answer no.
 Future<bool> showRestorePreview(BuildContext context, {required String name, required RestorePreview preview}) async =>
-    await showDsDialog<bool>(
+    await showAppDialog<bool>(
       context: context,
       builder: (context) => _RestorePreviewDialog(name: name, preview: preview),
     ) ??
@@ -78,10 +79,8 @@ final class _RestorePreviewDialog extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     final quiet = theme.typography.caption.copyWith(color: colors.textMuted);
     final parts = {for (final part in preview.parts) part.section: part};
-    return DsDialog(
+    return AppDialog(
       alert: true,
-      destructive: true,
-      icon: const DsIcon(DsIcons.archiveRestore),
       title: Text(t.backup.restoreConfirmTitle),
       style: const DsDialogStyle(width: 440),
       description: Column(

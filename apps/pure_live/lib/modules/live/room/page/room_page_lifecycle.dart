@@ -64,8 +64,19 @@ extension _RoomPageLifecycle on _RoomPageState {
       if (!ref.read(roomProvider).playback.playing) return;
       // The fullscreen verb follows the picture's shape: a portrait stream
       // opens onto the portrait full-screen surface, a landscape one into
-      // the system's own fullscreen.
-      if (_pictureRatio(ref.read(roomProvider)) < 1) {
+      // the system's own fullscreen. A phone's portrait immersive room is
+      // already the page's full-bleed layout — there is no fuller surface
+      // under it, so the portrait branch has nothing to do there.
+      final portrait = _pictureRatio(ref.read(roomProvider)) < 1;
+      final formFactor = ref.read(platformRuntimeProvider).environment.runtime.formFactor;
+      // 平板走桌面骨架：它的竖屏流没有沉浸式房间，照旧落竖屏全屏表面。
+      final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
+      final phoneImmersive =
+          mobile &&
+          !isTabletSized(MediaQuery.sizeOf(context)) &&
+          MediaQuery.sizeOf(context).width < kRoomCompactBreakpoint;
+      if (portrait && phoneImmersive) return;
+      if (portrait) {
         _setPortraitFullscreen(true);
         return;
       }
@@ -248,7 +259,7 @@ extension _RoomPageLifecycle on _RoomPageState {
   }
 
   Future<void> _showRoomPanel(RoomPanelKind kind) async {
-    await showDsPanel<void>(
+    await showAppPanel<void>(
       context: context,
       routeSettings: RouteSettings(name: roomPanelRouteName(kind)),
       builder: (sheetContext) => roomPanelSheet(sheetContext, kind),

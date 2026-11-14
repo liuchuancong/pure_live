@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/settings/browse/twitch_languages_provider.dart'
     show kTwitchLanguageCodes, kTwitchLegacyLanguages;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The localized name of a Twitch broadcaster-language code.
 String twitchLanguageLabel(Translations t, String code) => switch (code) {
@@ -33,7 +34,7 @@ String twitchLanguagesSummary(Translations t, List<String> codes) =>
 /// Opens the language picker; answers the chosen codes, or null when the
 /// viewer cancelled.
 Future<List<String>?> showTwitchLanguagesDialog(BuildContext context, {required List<String> initial}) =>
-    showDsDialog<List<String>>(
+    showAppDialog<List<String>>(
       context: context,
       builder: (context) => _TwitchLanguagesDialog(initial: initial),
     );
@@ -55,7 +56,7 @@ final class _TwitchLanguagesDialogState extends ConsumerState<_TwitchLanguagesDi
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.twitchLanguages),
       actions: [
         DsButton(

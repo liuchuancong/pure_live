@@ -59,6 +59,7 @@ import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dar
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
     show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The speeds the player offers — the same ladder its own menu walks.
 const List<double> _kPlaybackRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -454,11 +455,10 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
 
   Future<void> _clearOverrides(BuildContext context, WidgetRef ref) async {
     final t = context.t;
-    final confirmed = await showDsDialog<bool>(
+    final confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.music.cacheOverrideClear),
-        icon: const DsIcon(DsIcons.fileMusic),
         description: Text(t.music.cacheOverrideConfirm),
         actions: [
           DsButton(
@@ -488,11 +488,10 @@ final class MusicSourcesPane extends ConsumerWidget {
   Future<void> _importText(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     final field = TextEditingController();
-    final script = await showDsDialog<String>(
+    final script = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.music.importTitle),
-        icon: const DsIcon(DsIcons.fileCode),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
@@ -539,11 +538,10 @@ final class MusicSourcesPane extends ConsumerWidget {
   Future<void> _importUrl(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     final field = TextEditingController();
-    final address = await showDsDialog<String>(
+    final address = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.music.sourcesImportUrl),
-        icon: const DsIcon(DsIcons.link),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
@@ -607,7 +605,7 @@ final class MusicSourcesPane extends ConsumerWidget {
 
   Future<void> _remove(BuildContext context, WidgetRef ref, MusicCustomSource source) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.music.sourceDeleteTitle(name: source.name),
       description: t.music.sourceDeleteDesc,
@@ -890,11 +888,10 @@ final class MusicDownloadPane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.read(musicDownloadSettingsProvider);
     final field = TextEditingController(text: settings.downloadPattern);
-    final pattern = await showDsDialog<String>(
+    final pattern = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(t.music.downloadPattern),
-        icon: const DsIcon(DsIcons.fileCode),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
@@ -2159,11 +2156,10 @@ final class MusicSyncPane extends ConsumerWidget {
     final t = context.t;
     final provider = ref.read(musicSyncServerAuthCodeProvider.notifier);
     final field = TextEditingController(text: ref.read(musicSyncServerAuthCodeProvider));
-    final edited = await showDsDialog<String>(
+    final edited = await showAppDialog<String>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.music.syncServerAuthCode),
-        icon: const DsIcon(DsIcons.keyRound),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
@@ -2204,11 +2200,10 @@ final class MusicSyncPane extends ConsumerWidget {
     final t = context.t;
     final server = ref.read(musicSyncServerProvider);
     var devices = server.deviceView();
-    await showDsDialog<Object?>(
+    await showAppDialog<Object?>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.music.syncServerDevices),
-        icon: const DsIcon(DsIcons.smartphone),
         description: StatefulBuilder(
           builder: (listContext, setState) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2288,11 +2283,10 @@ final class MusicSyncPane extends ConsumerWidget {
     final t = context.t;
     final controller = ref.read(musicSyncProvider.notifier);
     var hosts = ref.read(musicSyncProvider).hostHistory;
-    final selected = await showDsDialog<String>(
+    final selected = await showAppDialog<String>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.music.syncHistoryTitle),
-        icon: const DsIcon(DsIcons.history),
         description: StatefulBuilder(
           builder: (context, setState) => hosts.isEmpty
               ? Text(t.music.syncHistoryEmpty)
@@ -2367,11 +2361,10 @@ final class MusicSyncPane extends ConsumerWidget {
   Future<String?> _editField(BuildContext context, String title, String hint, String initial) async {
     final t = context.t;
     final field = TextEditingController(text: initial);
-    final value = await showDsDialog<String>(
+    final value = await showAppDialog<String>(
       context: context,
-      builder: (context) => DsDialog(
+      builder: (context) => AppDialog(
         title: Text(title),
-        icon: const DsIcon(DsIcons.link),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,

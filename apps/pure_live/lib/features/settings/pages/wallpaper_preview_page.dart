@@ -819,13 +819,13 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   /// touch surfaces. The page stays behind it and keeps answering changes.
   Future<void> _openSettingsSheet() {
     final t = context.t;
-    return showDsPanel<void>(
+    return showAppPanel<void>(
       context: context,
       presentation: DsPanelPresentation.bottom,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
           final theme = DsTheme.of(context);
-          return DsPanel(
+          return AppPanel(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: DsSpace.s4,

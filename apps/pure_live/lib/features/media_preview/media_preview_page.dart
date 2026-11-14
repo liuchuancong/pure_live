@@ -69,6 +69,7 @@ import 'package:pure_live/shared/shared.dart'
         playerBarrageConfig,
         playerStatsVisibleProvider,
         showCastUriDialog;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Opens the media preview over [items], on the entry at [initialIndex].
 ///
@@ -639,14 +640,13 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     if (index < 0 || index >= widget.items.length) return;
     final t = context.t;
     final item = widget.items[index];
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.common.previewDeleteTitle,
       description: t.common.previewDeleteBody(name: item.title),
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
     );
     if (!confirmed || !mounted) return;
     // The engine holds its own file open, so the take being played is stepped

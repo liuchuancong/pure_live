@@ -11,6 +11,7 @@ import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_playback.dart';
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The play queue: the panel beside the player and the sheet the bar's queue
 /// button raises. It walks to the playing row once per song and empties from
@@ -211,14 +212,13 @@ final class MusicQueuePanelState extends ConsumerState<MusicQueuePanel> {
                   size: DsSize.sm,
                   semanticLabel: t.music.clearQueue,
                   onPressed: () async {
-                    final confirmed = await showDsConfirm(
+                    final confirmed = await showAppConfirm(
                       context: context,
                       title: t.music.clearQueueConfirmTitle,
                       description: t.music.clearQueueConfirmBody,
                       confirmLabel: t.music.clearQueue,
                       cancelLabel: t.common.cancel,
                       destructive: true,
-                      icon: const DsIcon(DsIcons.trash2),
                     );
                     if (!confirmed || !context.mounted) return;
                     unawaited(controller.clearQueue());

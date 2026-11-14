@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Asks for the history cap, the number of watch records the history keeps;
 /// [save] writes the choice through. Returns the saved cap, or null when
@@ -13,7 +14,7 @@ Future<int?> showHistoryLimitDialog(
   BuildContext context, {
   required int limit,
   required Future<void> Function(int limit) save,
-}) => showDsDialog<int>(
+}) => showAppDialog<int>(
   context: context,
   builder: (_) => HistoryLimitDialog(limit: limit, save: save),
 );
@@ -111,9 +112,8 @@ final class _HistoryLimitDialogState extends State<HistoryLimitDialog> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.history.limitTitle),
-      icon: const DsIcon(DsIcons.gauge),
       description: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

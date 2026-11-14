@@ -16,6 +16,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 import 'package:pure_live/modules/music/controller/music_tag_writer.dart';
 import 'package:pure_live/modules/music/controller/sources/music_source_match.dart' show findSameSong;
 import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Edits a local song's tags in place — the reference's 编辑歌曲标签.
 ///
@@ -23,7 +24,7 @@ import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 /// viewer actually changed are written back; a saved edit rescans the local
 /// library so the row follows the file.
 Future<void> showEditTrackTagsDialog(BuildContext context, WidgetRef ref, audio.MusicTrack track) async {
-  final saved = await showDsDialog<bool>(
+  final saved = await showAppDialog<bool>(
     context: context,
     builder: (context) => _EditTagsDialog(track: track),
   );
@@ -280,9 +281,8 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final picture = _newPicture ?? (_removedPicture ? null : _filePicture);
-    return DsDialog(
+    return AppDialog(
       title: Text(t.music.tagEditTitle),
-      icon: const DsIcon(DsIcons.edit),
       description: _loading
           ? const SizedBox(height: 96, child: Center(child: DsSpinner()))
           : _failed

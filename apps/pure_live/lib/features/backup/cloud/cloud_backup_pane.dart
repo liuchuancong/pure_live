@@ -18,6 +18,7 @@ import 'package:pure_live/features/backup/panes/restore_preview_dialog.dart';
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The cloud strings node; the other locales' nodes extend the base one.
@@ -154,11 +155,11 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
 
   Future<String?> _askCallback() {
     final field = TextEditingController();
-    return showDsDialog<String>(
+    return showAppDialog<String>(
       context: context,
       builder: (context) {
         final t = context.t.backup.cloud;
-        return DsDialog(
+        return AppDialog(
           title: Text(t.gitHubPasteTitle),
           description: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -251,7 +252,7 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
 
   Future<void> _delete() async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.backup.cloud.deleteTitle,
       description: t.backup.cloud.deleteDesc,

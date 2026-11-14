@@ -17,6 +17,7 @@ import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The charts: the source's own boards, each one answer rather than a feed.
 final class MusicChartsView extends ConsumerWidget {
@@ -95,9 +96,9 @@ final class MusicChartsView extends ConsumerWidget {
     final sourceListId = 'board__${catalog.id.substring(split + 1)}';
     final existing = controller.findLinked(sourceId, sourceListId);
     if (existing != null) {
-      final confirmed = await showDsDialog<bool>(
+      final confirmed = await showAppDialog<bool>(
         context: context,
-        builder: (context) => DsDialog(
+        builder: (context) => AppDialog(
           title: Text(t.music.playlistUpdateOnline),
           description: Text(t.music.duplicateListTip(name: existing.name)),
           actions: [

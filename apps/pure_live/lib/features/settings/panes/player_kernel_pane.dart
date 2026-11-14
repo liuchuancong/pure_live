@@ -13,6 +13,7 @@ import 'package:pure_live/features/settings/surface/settings_sections.dart' show
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
     show SettingsChoiceRow, SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The player kernel page: the engine in use, its hardware decoding switch,
@@ -269,13 +270,12 @@ Future<void> _applyOneClickPreset(
   required DsIconData icon,
 }) async {
   final t = context.t;
-  final confirmed = await showDsConfirm(
+  final confirmed = await showAppConfirm(
     context: context,
     title: t.settings.playerOneClickConfirmTitle,
     description: t.settings.playerOneClickConfirmBody(preset: _presetName(t, preset)),
     confirmLabel: t.common.confirm,
     cancelLabel: t.common.cancel,
-    icon: DsIcon(icon),
   );
   if (!confirmed) return;
   await ref.read(playerTuningProvider.notifier).applyPreset(preset);
@@ -418,14 +418,13 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
 
 Future<void> _resetMpvSettings(BuildContext context, WidgetRef ref) async {
   final t = context.t;
-  final confirmed = await showDsConfirm(
+  final confirmed = await showAppConfirm(
     context: context,
     title: t.settings.mpvReset,
     description: t.settings.mpvResetConfirm,
     confirmLabel: t.settings.styleReset,
     cancelLabel: t.common.cancel,
     destructive: true,
-    icon: const DsIcon(DsIcons.rotateCcw),
   );
   if (!confirmed) return;
   await ref.read(playerTuningProvider.notifier).resetKernelDefaults();

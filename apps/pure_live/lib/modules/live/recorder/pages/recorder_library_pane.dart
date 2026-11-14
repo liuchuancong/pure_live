@@ -31,6 +31,7 @@ import 'package:pure_live/shared/shared.dart'
         localizedSiteIcon,
         showActionsPanel,
         showPlatformPickerPanel;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The recording library: the takes on disk, browsed the way the recorder
 /// filed them — one day after another, the way a drive client reads a folder.
@@ -354,7 +355,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
 
   Future<void> _confirmDeleteTake(RecordingTake take) async {
     final t = context.t;
-    final ok = await showDsConfirm(
+    final ok = await showAppConfirm(
       context: context,
       title: t.recorder.deleteTakeTitle(name: take.name),
       description: t.recorder.deleteTakeBody(count: 1),

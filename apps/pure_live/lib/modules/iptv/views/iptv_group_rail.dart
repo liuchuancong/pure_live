@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:live_iptv/live_iptv.dart' show iptvUngroupedKey;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show iptvNumber;
+import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// What one of the module's channel surfaces holds open: the library's
 /// visible groups in the library's own display order, how many channels each
@@ -129,7 +130,7 @@ final class IptvGroupEntry extends StatelessWidget {
           leading: const DsIcon(DsIcons.folder, size: 14),
           semanticLabel: t.iptv.groupsLabel,
           onPressed: () => unawaited(
-            showDsPanel<void>(
+            showAppPanel<void>(
               context: context,
               builder: (context) => IptvGroupPickerPanel(
                 filter: filter,
@@ -166,7 +167,7 @@ final class IptvGroupPickerPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsPanel(
+    return AppPanel(
       title: Text(t.iptv.groupsLabel),
       // The list scrolls itself; the panel should not wrap it in a second
       // scroll that never gets a bounded height to measure against.

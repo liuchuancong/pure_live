@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Follow tags (the reference's `TagsPage`, reached from its platforms
 /// group): the viewer's own groups for followed rooms. One row per tag —
@@ -51,14 +52,13 @@ final class _FollowTagsPaneState extends ConsumerState<FollowTagsPane> {
 
   Future<void> _delete(FollowTag tag, int rooms) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.tagDeleteTitle(name: tag.name),
       description: rooms > 0 ? t.settings.tagDeleteRoomsHint(count: rooms) : t.settings.tagDeleteBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
-      icon: const DsIcon(DsIcons.tag),
     );
     if (!confirmed) return;
     await _run(() => ref.read(followTagsProvider.notifier).remove(tag.id));
@@ -207,7 +207,7 @@ final class _TagMenu extends StatelessWidget {
 /// its note, checked on save — a blank name, a duplicate of another tag, or
 /// a tag that was removed elsewhere while the dialog was open all refuse
 /// with a message instead of writing.
-Future<FollowTag?> showFollowTagEditor(BuildContext context, {FollowTag? tag}) => showDsDialog<FollowTag>(
+Future<FollowTag?> showFollowTagEditor(BuildContext context, {FollowTag? tag}) => showAppDialog<FollowTag>(
   context: context,
   builder: (dialogContext) => _FollowTagEditorDialog(tag: tag),
 );
@@ -285,7 +285,7 @@ final class _FollowTagEditorDialogState extends ConsumerState<_FollowTagEditorDi
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsDialog(
+    return AppDialog(
       title: Text(widget.tag == null ? t.settings.tagAdd : t.settings.tagEdit),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

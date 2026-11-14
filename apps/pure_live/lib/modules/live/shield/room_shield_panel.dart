@@ -9,6 +9,7 @@ import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
 import 'package:pure_live/modules/live/shield/room_shield_count.dart';
 import 'package:pure_live/modules/live/shield/shield_add_field.dart';
 import 'package:pure_live/modules/live/shield/shield_repository.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The shield inside the room's chat column: the same rules the settings
 /// page edits, laid out for a narrow pane — the two block lists as
@@ -413,7 +414,7 @@ final class _TagList extends ConsumerWidget {
 
   Future<void> _clear(BuildContext context) async {
     final t = context.t;
-    final confirmed = await showDsConfirm(
+    final confirmed = await showAppConfirm(
       context: context,
       title: t.shield.clear,
       description: t.shield.clearConfirmDesc,

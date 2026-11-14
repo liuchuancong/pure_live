@@ -7,6 +7,7 @@ import 'package:live_shell/live_shell.dart' show CloseAction, CloseChoice;
 
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The reference's close dialog: what closing the window does, and whether
 /// the question should stop being asked.
@@ -14,7 +15,7 @@ import 'package:pure_live/l10n/translations.dart';
 /// [tray] is whether a hidden window has an icon to come back from; without
 /// one the stay choice minimizes to the taskbar instead.
 Future<CloseChoice?> showCloseWindowDialog(BuildContext context, {required bool tray}) =>
-    showDsDialog<CloseChoice>(
+    showAppDialog<CloseChoice>(
       context: context,
       builder: (_) => _CloseWindowDialog(tray: tray),
     );
@@ -46,10 +47,8 @@ final class _CloseWindowDialogState extends ConsumerState<_CloseWindowDialog> {
   Widget build(BuildContext context) {
     final t = context.t;
     final stay = widget.tray ? CloseAction.hideToTray : CloseAction.minimise;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.closeWindowTitle),
-      icon: const DsIcon(DsIcons.panelLeftClose),
-      destructive: true,
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,

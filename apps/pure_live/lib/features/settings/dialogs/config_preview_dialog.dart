@@ -6,13 +6,14 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Shows the backed-up settings as formatted JSON, with a copy action.
 ///
 /// This is the app's version of the reference's local config preview: a
 /// read-only view of the keys a backup carries, not an editor.
 Future<void> showConfigPreview(BuildContext context) =>
-    showDsDialog<void>(context: context, builder: (context) => const _ConfigPreviewDialog());
+    showAppDialog<void>(context: context, builder: (context) => const _ConfigPreviewDialog());
 
 final class _ConfigPreviewDialog extends StatelessWidget {
   const _ConfigPreviewDialog();
@@ -23,7 +24,7 @@ final class _ConfigPreviewDialog extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final text = const JsonEncoder.withIndent('  ').convert(captureSettingsSnapshot());
-    return DsDialog(
+    return AppDialog(
       title: Text(t.settings.configPreview),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

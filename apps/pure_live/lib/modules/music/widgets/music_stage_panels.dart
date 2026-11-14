@@ -14,6 +14,7 @@ import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The player's side panels: lyrics, the current song's comments, the queue
 /// and the recent list, behind one row of tabs. The wide player keeps them
@@ -319,9 +320,8 @@ final class MusicCommentsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
+    return AppDialog(
       title: Text(t.music.comments),
-      icon: const DsIcon(DsIcons.messageCircle),
       description: SizedBox(height: 360, child: _CommentsPanel(track: track)),
       actions: [
         DsButton(

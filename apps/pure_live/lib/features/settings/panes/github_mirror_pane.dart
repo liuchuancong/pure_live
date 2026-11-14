@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The value the route picker uses for "the viewer's own endpoint".
 const String _kCustomOption = 'custom';
@@ -175,9 +176,9 @@ final class _GithubMirrorSectionState extends ConsumerState<GithubMirrorSection>
   Future<void> _addMirror() async {
     final t = context.t;
     final field = TextEditingController();
-    final value = await showDsDialog<String>(
+    final value = await showAppDialog<String>(
       context: context,
-      builder: (dialogContext) => DsDialog(
+      builder: (dialogContext) => AppDialog(
         title: Text(t.settings.githubMirrorAddTitle),
         description: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

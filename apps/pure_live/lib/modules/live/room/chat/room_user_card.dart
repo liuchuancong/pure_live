@@ -37,11 +37,10 @@ Future<void> showChatUserCard(BuildContext context, WidgetRef ref, MessageSender
     if (fan.isNotEmpty) fan,
     if (platformName.isNotEmpty) platformName,
   ].join(' · ');
-  await showDsDialog<void>(
+  await showAppDialog<void>(
     context: context,
-    builder: (dialogContext) => DsDialog(
+    builder: (dialogContext) => AppDialog(
       title: Text(name),
-      icon: const DsIcon(DsIcons.userRound),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s12,

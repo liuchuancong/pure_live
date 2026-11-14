@@ -27,11 +27,20 @@ import 'package:pure_live/shared/shared.dart';
 /// have no bar, not a second copy of the ones that do.
 ///
 /// [shortcuts] is the page's own live bindings, so the help row opens the
-/// same sheet the `?` key does — not an empty one.
-Future<void> showRoomMore(BuildContext context, {required List<RoomShortcutBinding> shortcuts}) {
+/// same sheet the `?` key does — not an empty one. [cleanScreen] shows the
+/// immersive room's clean-screen switch when not null, flipping through
+/// [onCleanScreen]; null leaves the row out (the layouts with no overlay to
+/// clean have nothing for it to say).
+Future<void> showRoomMore(
+  BuildContext context, {
+  required List<RoomShortcutBinding> shortcuts,
+  bool? cleanScreen,
+  ValueChanged<bool>? onCleanScreen,
+}) {
   return showPlayerMoreContainer(
     context,
-    content: (context, {required labeled}) => _RoomMoreContent(shortcuts: shortcuts),
+    content: (context, {required labeled}) =>
+        _RoomMoreContent(shortcuts: shortcuts, cleanScreen: cleanScreen, onCleanScreen: onCleanScreen),
   );
 }
 
@@ -40,10 +49,16 @@ Future<void> showRoomMore(BuildContext context, {required List<RoomShortcutBindi
 /// own list — [DsListSection] holding [DsListRow]s, each row with its icon,
 /// value and trailing control, so no row chrome is hand-drawn here.
 final class _RoomMoreContent extends ConsumerWidget {
-  const _RoomMoreContent({required this.shortcuts});
+  const _RoomMoreContent({required this.shortcuts, this.cleanScreen, this.onCleanScreen});
 
   /// The page's live key bindings, for the help row's sheet.
   final List<RoomShortcutBinding> shortcuts;
+
+  /// The immersive room's clean-screen state; null hides the row.
+  final bool? cleanScreen;
+
+  /// Flips the clean-screen state.
+  final ValueChanged<bool>? onCleanScreen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -174,6 +189,17 @@ final class _RoomMoreContent extends ConsumerWidget {
                 onChanged: (value) => unawaited(playbackSettingsController.setDanmakuVisible(value: value)),
               ),
             ),
+            // The immersive room's clean screen: the overlay chat and the
+            // composer bar give way to the picture alone, and a small pill
+            // floating at the picture's side takes them back. A layout with
+            // no overlay carries no row for it.
+            if (cleanScreen case final clean? when onCleanScreen != null)
+              DsListRow(
+                title: Text(t.room.cleanScreen),
+                leading: const DsIcon(DsIcons.eyeOff),
+                detail: Text(t.room.cleanScreenDesc, maxLines: 1, overflow: TextOverflow.ellipsis),
+                trailing: DsSwitch(value: clean, onChanged: onCleanScreen),
+              ),
             DsListRow(
               title: Text(t.room.quality),
               leading: const DsIcon(DsIcons.monitorPlay),
@@ -343,14 +369,14 @@ Future<void> showRoomChoicePanel(
   required List<RoomChoiceOption> options,
 }) {
   Navigator.of(context).pop();
-  return showDsPanel<void>(
+  return showAppPanel<void>(
     context: context,
     builder: (sheetContext) {
       final colors = DsTheme.colorsOf(sheetContext);
       // The live room's lists run at the library's own measure: the app's
       // settings-sized rows and paddings stop at this subtree.
       final theme = DsTheme.of(sheetContext);
-      return DsPanel(
+      return AppPanel(
         title: Text(title),
         child: DsListRowTheme(
           data: DsListRowThemeData(style: DsListRow.defaultStyle(theme)),

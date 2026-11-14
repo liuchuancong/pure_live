@@ -3196,11 +3196,11 @@ final class _PartsSectionState extends State<_PartsSection> {
       return typed >= 1 && typed <= parts.length ? typed - 1 : null;
     }
 
-    final position = await showDsDialog<int>(
+    final position = await showAppDialog<int>(
       context: context,
       builder: (dialogContext) {
         final t = dialogContext.t;
-        return DsDialog(
+        return AppDialog(
           title: Text(t.vod.partsJump),
           description: DsTextField(
             controller: controller,

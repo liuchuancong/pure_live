@@ -28,7 +28,7 @@ Future<void> showRoomSearchPicker(
   required String title,
   required Future<void> Function(LiveRoom room) onPick,
 }) {
-  return showDsPanel<void>(
+  return showAppPanel<void>(
     context: context,
     detents: const [0.7, 1],
     builder: (context) => _RoomSearchPickerPanel(query: query, title: title, onPick: onPick),
@@ -105,7 +105,7 @@ final class _RoomSearchPickerPanelState extends ConsumerState<_RoomSearchPickerP
       return RoomCard(room: room, listRow: listRow, onOpen: () => unawaited(pick()));
     }
 
-    return DsPanel(
+    return AppPanel(
       title: Text(widget.title),
       // The grid scrolls itself; the panel hands it the room it has.
       scrollable: false,

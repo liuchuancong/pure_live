@@ -7,6 +7,7 @@ export 'chat/gift_flights.dart';
 export 'chat/gift_text.dart';
 export 'chat/membership_cards.dart';
 export 'chat/room_chat.dart';
+export 'chat/room_chat_overlay.dart';
 export 'chat/room_message_actions.dart';
 export 'chat/room_super_chats.dart';
 export 'controller/room_controller.dart';

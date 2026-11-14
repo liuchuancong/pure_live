@@ -9,6 +9,7 @@ import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
 import 'package:pure_live/shared/widgets/action_panel.dart' show showActionsPanel;
+import 'package:pure_live/shared/widgets/app_panel.dart';
 import 'package:pure_live/shared/widgets/choice_dialog.dart' show showChoiceDialog;
 
 /// The special scope meaning "every platform" — the platform tabs' first
@@ -295,7 +296,7 @@ Future<void> showPlatformPickerPanel(
   VoidCallback? onManagePlatforms,
   int? Function(String id)? countOf,
 }) {
-  return showDsPanel<void>(
+  return showAppPanel<void>(
     context: context,
     // auto (the default) is exactly the rule: side on a wide window, bottom
     // on a narrow one.
@@ -346,7 +347,7 @@ final class _PlatformPanel extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return DsPanel(
+    return AppPanel(
       // The header carries the way out to the setting that hides and
       // reorders these entries, beside the panel's own close button: the
       // viewer is looking at the whole catalogue right here.
