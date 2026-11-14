@@ -193,6 +193,7 @@ final class IptvGroupList extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     // Listed through one rule wherever the rows stand: the column, the panel
     // and the picker all order the same groups the same way, so the catch-all
     // bucket is in one place across the module's three group surfaces.
@@ -204,20 +205,41 @@ final class IptvGroupList extends StatelessWidget {
       itemBuilder: (context, index) {
         final group = index == 0 ? null : groups[index - 1];
         final selected = filter.selectedGroup == group;
-        return DsListRow(
-          semanticLabel: group == null ? t.iptv.tabAll : iptvGroupLabel(t, group),
-          title: Text(
-            group == null ? t.iptv.tabAll : iptvGroupLabel(t, group),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        // The open group reads as a quiet pill inside the column, not a slab
+        // across the card: the row keeps an inset from the card's edges, the
+        // fill is the module's own soft accent tint, and the name carries the
+        // accent's label ink instead of the kit's filled-slab treatment.
+        return Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
+          child: DsListRow(
+            semanticLabel: group == null ? t.iptv.tabAll : iptvGroupLabel(t, group),
+            title: Text(
+              group == null ? t.iptv.tabAll : iptvGroupLabel(t, group),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: selected
+                  ? theme.typography.body.copyWith(color: colors.accentText, fontWeight: FontWeight.w600)
+                  : null,
+            ),
+            detail: Text(
+              iptvNumber(group == null ? filter.totalCount : (filter.groupCounts[group] ?? 0)),
+              style: theme.typography.numeric(theme.typography.small),
+            ),
+            selected: selected,
+            style: DsListRowStyle(
+              height: kIptvGroupRowExtent,
+              selected: DsListRowStyle(
+                background: colors.accentTint,
+                foreground: colors.accentText,
+                iconColor: colors.accentText,
+                detailStyle: TextStyle(color: colors.accentText),
+                // The tint carries the selection; the filled slab's bright
+                // edge has nothing to stand off here.
+                borderColor: const Color(0x00000000),
+              ),
+            ),
+            onPressed: () => onSelect(group),
           ),
-          detail: Text(
-            iptvNumber(group == null ? filter.totalCount : (filter.groupCounts[group] ?? 0)),
-            style: theme.typography.numeric(theme.typography.small),
-          ),
-          selected: selected,
-          style: const DsListRowStyle(height: kIptvGroupRowExtent),
-          onPressed: () => onSelect(group),
         );
       },
     );
