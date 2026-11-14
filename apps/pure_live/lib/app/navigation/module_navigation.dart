@@ -139,13 +139,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],
   ),
   AppModule.iptv: ModuleNavigation(
-    // The reference's home order: 直播 first, then the recent ones; the
-    // module's own sources sit under them. Favourites are not a rail entry:
+    // The reference's home order: 直播 first, then the recent ones. The
+    // sources are not an entry: the channel page's top-left pickers choose
+    // the playlist and the guide in place. Favourites are not a rail entry:
     // the channels surface's own 全部/收藏 switch covers them, and a second
     // entry opening the same page only overlapped the first in the rail.
     menu: [
       [NavigationItem.channels, NavigationItem.iptvRecent],
-      [NavigationItem.iptvGuide, NavigationItem.iptvSources, NavigationItem.record, NavigationItem.logs],
+      [NavigationItem.iptvGuide, NavigationItem.record, NavigationItem.logs],
     ],
     landing: NavigationItem.channels,
     // IPTV's own surface is guide updates and source syncing; the app-wide
@@ -311,7 +312,6 @@ NavigationItem defaultNavigationItemFor(AppModule module) => navigationOf(module
 final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.channels: () => const IptvPage(owner: NavigationItem.channels),
   NavigationItem.iptvGuide: IptvGuidePage.new,
-  NavigationItem.iptvSources: () => const IptvPage(owner: NavigationItem.iptvSources, initialView: IptvView.sources),
   NavigationItem.iptvRecent: IptvRecentPage.new,
   NavigationItem.vod: VodPage.new,
   NavigationItem.vodLive: VodLivePage.new,
