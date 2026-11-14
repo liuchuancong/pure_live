@@ -100,28 +100,27 @@ extension _RoomPageLayouts on _RoomPageState {
 
   /// The phone's portrait immersive room (the reference's own portrait live
   /// room): the picture fills the page edge to edge, the room's talk rides
-  /// over it as pills anchored above the composer bar, and the top chrome is
-  /// the capsule. No column, no sheet — the page is the player.
+  /// over it as pills anchored above the control bar, and the top chrome is
+  /// the capsule. No column, no sheet, no send bar — the page is the player.
   ///
   /// [player] arrives built with the immersive surface's own arguments (the
   /// capsule's shape, the swipe-to-switch zones, the system fullscreen verb,
-  /// the insets the control bar stands on); [onMore] is the composer bar's ⋯,
-  /// carrying the clean-screen switch; [canSwipeRooms] lights the swipe hint
-  /// the portrait full screen keeps.
+  /// the insets the control bar stands on); [onMore] is the ⋯ the tool
+  /// cluster opens, carrying the clean-screen switch and the chat's door;
+  /// [canSwipeRooms] lights the swipe hint the portrait full screen keeps.
   Widget _buildPhoneImmersivePortrait(
     BuildContext context, {
     required Widget player,
     required bool canSwipeRooms,
     required VoidCallback onMore,
   }) {
-    // The composer bar's floor: the safe area's bottom (the page opts out of
-    // SafeArea, so the layout clears it itself) plus the keyboard while it is
-    // up — the bar rides above the keyboard, the pills above the bar, and the
-    // control bar above the pills.
+    // The control bar's floor: the safe area's bottom (the page opts out of
+    // SafeArea, so the layout clears it itself) and the bar's own height over
+    // it. The pills ride above the bar; the drawer's floor lifts over the
+    // keyboard while it is up.
     final padding = MediaQuery.paddingOf(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
-    final barBottom = padding.bottom + keyboard;
-    final barTop = barBottom + _kImmersiveComposerBarHeight;
+    final barFloor = padding.bottom + _kControlBarFloor;
     final size = MediaQuery.sizeOf(context);
     final clean = _cleanScreen;
     return ColoredBox(
@@ -133,7 +132,7 @@ extension _RoomPageLayouts on _RoomPageState {
           // over the picture. Its handle closes it — a tap, or a swipe down.
           // While it is up (and while the screen is clean) the glance layer
           // stands down: one conversation surface at a time. The keyboard
-          // lifts the drawer's composer the way the bar's own floor does.
+          // lifts the drawer's composer the way any field would ask.
           if (!clean && _immersiveChatOpen)
             PositionedDirectional(
               top: size.height * .38,
@@ -172,26 +171,16 @@ extension _RoomPageLayouts on _RoomPageState {
                 ),
               ),
             ),
-          // The glance layer: the pills over the picture's lower left, the
-          // composer bar under them. The pills keep the picture's right edge
-          // clear — the corner the reference reserves for its activity card.
-          if (!clean && !_immersiveChatOpen) ...[
+          // The glance layer: the pills over the picture's lower left. They
+          // keep the picture's right edge clear — the corner the reference
+          // reserves for its activity card.
+          if (!clean && !_immersiveChatOpen)
             PositionedDirectional(
               start: DsSpace.s12,
               end: math.max(72, size.width * 0.18),
-              bottom: barTop + DsSpace.s8,
+              bottom: barFloor + DsSpace.s8,
               child: const RoomChatOverlay(),
             ),
-            PositionedDirectional(
-              start: 0,
-              end: 0,
-              bottom: barBottom,
-              child: _ImmersiveComposerBar(
-                onMore: onMore,
-                onOpenChat: () => setState(() => _immersiveChatOpen = true),
-              ),
-            ),
-          ],
           // The clean screen's way back: a pill at the picture's left edge,
           // the lock pill's opposite. It stays while the chrome hides, so the
           // viewer is never stranded in the quiet.
@@ -214,7 +203,7 @@ extension _RoomPageLayouts on _RoomPageState {
             PositionedDirectional(
               start: DsSpace.s12,
               end: DsSpace.s12,
-              bottom: math.max(28, barTop + DsSpace.s12),
+              bottom: math.max(28, barFloor + DsSpace.s12),
               child: const IgnorePointer(child: _PortraitSwipeHint()),
             ),
         ],
@@ -224,9 +213,9 @@ extension _RoomPageLayouts on _RoomPageState {
 
   /// The phone held sideways, immersive (the reference's landscape full
   /// screen): the picture fills the sideways window and the control bar
-  /// carries the room's send. The reference draws no chat column sideways —
-  /// the flying layer and the bar's input are the talk's whole surface
-  /// there — and the vertical swipe keeps walking the room list.
+  /// carries the playback verbs. The reference draws no chat column sideways
+  /// — the flying layer is the talk's whole surface there — and the vertical
+  /// swipe keeps walking the room list.
   Widget _buildPhoneLandscapeImmersive(BuildContext context, {required Widget player, required bool canSwipeRooms}) {
     return ColoredBox(
       color: OnVideoColors.ground,
@@ -304,146 +293,7 @@ extension _RoomPageLayouts on _RoomPageState {
   }
 }
 
-/// The immersive composer bar's own height above its padding: one control
-/// row and its air, the figure the control bar stands on (`bottomInset`) and
-/// the chat pills measure their floor from.
-const double _kImmersiveComposerBarHeight = 52;
-
-/// The immersive room's composer bar (the reference's bottom bar): the ⋯
-/// that opens the more container, the chat's door, the send field and its
-/// emote panel and the send glyph — glass pills over the picture, never a
-/// panel of their own. A room whose chat only listens keeps the two pills:
-/// a field that cannot send is a lie the bar must not draw.
-final class _ImmersiveComposerBar extends ConsumerStatefulWidget {
-  const _ImmersiveComposerBar({required this.onMore, required this.onOpenChat});
-
-  /// Opens the room's more container (the page hands its own closure in, so
-  /// the clean-screen switch rides the same sheet).
-  final VoidCallback onMore;
-
-  /// Opens the chat drawer (the panel with its tabs and composer).
-  final VoidCallback onOpenChat;
-
-  @override
-  ConsumerState<_ImmersiveComposerBar> createState() => _ImmersiveComposerBarState();
-}
-
-final class _ImmersiveComposerBarState extends ConsumerState<_ImmersiveComposerBar> {
-  final TextEditingController _field = TextEditingController();
-
-  /// The emote panel: open until the viewer closes it, the composer's own
-  /// rule — a picker that shut itself after every face would make a run of
-  /// them impossible.
-  bool _emotesOpen = false;
-
-  @override
-  void dispose() {
-    _field.dispose();
-    super.dispose();
-  }
-
-  /// Puts an emote's code where the caret is — or at the line's end when the
-  /// field has no say about a caret — and leaves the typing position there.
-  void _insertEmote(String code) {
-    final text = _field.text;
-    final selection = _field.selection;
-    final start = selection.start < 0 || selection.start > text.length ? text.length : selection.start;
-    final end = selection.end < 0 || selection.end > text.length ? text.length : selection.end;
-    _field.value = TextEditingValue(
-      text: text.replaceRange(start, end, code),
-      selection: TextSelection.collapsed(offset: start + code.length),
-    );
-  }
-
-  Future<void> _send(String word) async {
-    if (word.trim().isEmpty) return;
-    final failure = await ref.read(roomProvider.notifier).sendDanmaku(word);
-    if (!mounted) return;
-    if (failure == null) {
-      _field.clear();
-    } else {
-      // The platform's own reason: a refused send names what refused it.
-      showDsToast(context: context, title: context.t.room.sendFailed, description: failure);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              PlayerGlassPill(
-                child: PlayerBarButton(icon: DsIcons.ellipsis, label: t.common.more, onPressed: widget.onMore),
-              ),
-              PlayerGlassPill(
-                child: PlayerBarButton(
-                  icon: DsIcons.messageCircle,
-                  label: t.room.chatTitle,
-                  onPressed: widget.onOpenChat,
-                ),
-              ),
-              if (canSend) ...[
-                Expanded(
-                  child: PlayerGlassPill(
-                    child: TextField(
-                      controller: _field,
-                      style: theme.typography.caption.copyWith(color: OnVideoColors.foreground),
-                      cursorColor: DsTheme.colorsOf(context).accent,
-                      maxLength: 100,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (word) => unawaited(_send(word)),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsetsDirectional.symmetric(
-                          horizontal: DsSpace.s12,
-                          vertical: DsSpace.s8,
-                        ),
-                        hintText: t.room.sendHint,
-                        hintStyle: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
-                        counterText: '',
-                      ),
-                    ),
-                  ),
-                ),
-                PlayerGlassPill(
-                  child: PlayerBarButton(
-                    icon: DsIcons.smile,
-                    label: t.room.emotes,
-                    selected: _emotesOpen,
-                    onPressed: () => setState(() => _emotesOpen = !_emotesOpen),
-                  ),
-                ),
-                PlayerGlassPill(
-                  child: PlayerBarButton(
-                    icon: DsIcons.send,
-                    label: t.room.send,
-                    onPressed: () => unawaited(_send(_field.text)),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          // The faces, over the bar's top edge: the non-clipping Stack lets
-          // them stand on the picture, in the player's own dark plate — the
-          // app theme's light/dark pick never reaches the picture.
-          if (_emotesOpen && canSend)
-            PositionedDirectional(
-              start: 0,
-              end: 0,
-              bottom: _kImmersiveComposerBarHeight - DsSpace.s8,
-              child: RoomEmotePanel(onPick: _insertEmote, onVideo: true),
-            ),
-        ],
-      ),
-    );
-  }
-}
+/// The control bar's own height over its floor, with air for the pills: the
+/// figure the talk pills and the swipe hint measure their floors from (the
+/// bar's padding, a control row and its breath).
+const double _kControlBarFloor = 64;

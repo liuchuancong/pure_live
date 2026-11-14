@@ -5,7 +5,6 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
-import 'package:flutter/material.dart' show InputBorder, InputDecoration, TextField, TextInputAction;
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, MouseCursor, SystemMouseCursors;
 import 'package:flutter/widgets.dart';
@@ -24,7 +23,6 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart' show openArchives;
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomEmotePanel;
 import 'package:pure_live/modules/live/room/chat/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
@@ -195,13 +193,11 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onPortraitFullscreen,
     this.onPortraitSwipe,
     this.onPortraitRestore,
-    this.onTitle,
     this.onSwitchRoom,
     this.ambient = false,
     this.showModeExit = true,
     this.topInset = 0,
     this.liftsOverKeyboard = false,
-    this.danmakuInput = false,
     this.overlay,
     this.bottomInset = 0,
     this.controlBarEndInset = 0,
@@ -262,12 +258,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// null where the swipe means nothing.
   final VoidCallback? onPortraitRestore;
 
-  /// Opens the room's details from its name on the strip. A phone held
-  /// sideways has no column for the room's own card, so the strip names the
-  /// room in-page and its name takes the card's press; null leaves the strip
-  /// as its layout draws it.
-  final VoidCallback? onTitle;
-
   /// Switches to the room `step` places away in the list this room came
   /// from (+1 the next, -1 the previous). The TV room's scope hands it a
   /// held Up or Down; the page answers with its own room switch, so the
@@ -299,12 +289,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// there). The page keeps its full height — `resizeToAvoidBottomInset` is
   /// the page's no — so the surface does the lifting itself.
   final bool liftsOverKeyboard;
-
-  /// Whether the control bar carries the room's inline send (the phone held
-  /// sideways, where no chat column and no composer bar exists). The bar
-  /// shows it from a width where a sentence has room to be typed into, and
-  /// only while the room's chat accepts a posted message.
-  final bool danmakuInput;
 
   /// How much of the picture's bottom edge a page layer covers: the narrow
   /// room's chat sheet rides over the stream, so the control bar and the strip
@@ -367,11 +351,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   /// The video-area danmaku settings panel is open: the bars stay while it
   /// is, the same hold the pickers take.
   bool _danmakuSettingsOpen = false;
-
-  /// The bar's inline send field is focused (the immersive strip's input): a
-  /// keyboard up and a bar that hides under it would strand the words
-  /// mid-sentence, so the field holds the chrome the way a panel does.
-  bool _barInputFocused = false;
 
   /// The danmaku settings gear's box, for the panel host that hangs the
   /// settings above it.
@@ -609,7 +588,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   void _scheduleHide() {
     _hideTimer?.cancel();
-    if (_panelOpen || _danmakuSettingsOpen || _barInputFocused) return;
+    if (_panelOpen || _danmakuSettingsOpen) return;
     if (!widget.roomState.playback.playing) return;
     // A TV room keeps its bars: with no pointer there is no way to wake a
     // hidden bar, and the focused control would go with it.
@@ -635,8 +614,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     if (_controlsVisible) {
       _hideTimer?.cancel();
       _hidePicker();
-      // The focused field went with the bar: its hold on the chrome goes too.
-      _barInputFocused = false;
       setState(() => _controlsVisible = false);
     } else {
       _wake();
@@ -734,7 +711,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // The shapes that fold the room's identity into the picture itself (the
     // redesign's gcap capsule): the immersive modes, the portrait fullscreen
     // and the phone held sideways, whose room card has no column to sit in.
-    final capsuleIdentity = !widget.tv && (widget.immersive || widget.portraitFullscreen || widget.onTitle != null);
+    final capsuleIdentity = !widget.tv && (widget.immersive || widget.portraitFullscreen);
     _watchTransport(handle);
     ref.listen(roomProvider.select((state) => state.playback.playing), (previous, next) {
       if (next) {
@@ -1090,7 +1067,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     PositionedDirectional(
                       top: DsSpace.s12 + widget.topInset,
                       start: DsSpace.s12,
-                      child: _ImmersiveCapsule(room: room, onWake: _wake, onTitle: widget.onTitle),
+                      child: _ImmersiveCapsule(room: room, onWake: _wake, onBack: widget.onLeave),
                     ),
                     PositionedDirectional(
                       top: DsSpace.s12 + widget.topInset,
@@ -1099,22 +1076,15 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         spacing: DsSpace.s4,
                         children: [
-                          // The window fullscreen leaves through its own Windows
-                          // caption (drag + min/max/close), not a text chip over
-                          // the picture; the other immersive shapes keep a verb
-                          // unless the page suppresses it (an always-on surface
-                          // has no layout under itself to exit to). The
-                          // theatre's expand-chat chip is gone: fullscreen
-                          // keeps the picture clean.
-                          if (widget.showModeExit && presentation != PresentationMode.windowFullscreen)
+                          // Only the system fullscreen keeps a chip — its own
+                          // way out on a window that has no caption to drag.
+                          // The portrait full screen and the immersive shapes
+                          // leave through the capsule's back arrow; the window
+                          // fullscreen leaves through its own Windows caption
+                          // (drag + min/max/close).
+                          if (widget.showModeExit && presentation == PresentationMode.fullscreen)
                             _ModeExitChip(
-                              label: switch (presentation) {
-                                PresentationMode.fullscreen => context.t.room.fullscreenOff,
-                                _ =>
-                                  widget.portraitFullscreen
-                                      ? context.t.room.portraitFullscreenExit
-                                      : context.t.common.close,
-                              },
+                              label: context.t.room.fullscreenOff,
                               onPressed: widget.onLeave,
                               onWake: _wake,
                             ),
@@ -1240,8 +1210,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             portraitFullscreen: widget.portraitFullscreen,
                             onPortraitFullscreen: widget.onPortraitFullscreen,
                             onFullscreen: widget.onFullscreen,
-                            danmakuInput: widget.danmakuInput,
-                            onInputFocus: (focused) => setState(() => _barInputFocused = focused),
                           ),
                         ),
                       ),
