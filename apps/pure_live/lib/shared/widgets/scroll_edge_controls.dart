@@ -30,13 +30,19 @@ import 'package:pure_live/l10n/translations.dart';
 final class ScrollEdgeControls extends StatefulWidget {
   /// Wraps [child], the scrolling page. [pageIdentity] names what the shell
   /// shows; a new one re-reads the page.
-  const ScrollEdgeControls({required this.child, this.pageIdentity, super.key});
+  const ScrollEdgeControls({required this.child, this.pageIdentity, this.showControls = true, super.key});
 
   /// The page being scrolled.
   final Widget child;
 
   /// What the shell is showing.
   final Object? pageIdentity;
+
+  /// Whether the pair draws at all. A module whose corner is a playing
+  /// picture — the IPTV browser's embedded player — turns it off: the two
+  /// floating circles would stand between the viewer and the channel, and
+  /// the lists that scroll beside it need no jump to their ends.
+  final bool showControls;
 
   @override
   State<ScrollEdgeControls> createState() => _ScrollEdgeControlsState();
@@ -76,8 +82,11 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   void didUpdateWidget(ScrollEdgeControls oldWidget) {
     super.didUpdateWidget(oldWidget);
     // A tab, a pushed page, a popped one: the shown scroll is another one
-    // now, and nothing scrolls to say so — go and look for it.
-    if (oldWidget.pageIdentity != widget.pageIdentity) _rescan();
+    // now, and nothing scrolls to say so — go and look for it. The switch
+    // that hides the pair re-reads too, so it detaches on the way down.
+    if (oldWidget.pageIdentity != widget.pageIdentity || oldWidget.showControls != widget.showControls) {
+      _rescan();
+    }
   }
 
   @override
@@ -87,10 +96,12 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   }
 
   /// Finds the shown page's scroll after a frame: the walk needs it laid out,
-  /// which it is not while this build is still running.
+  /// which it is not while this build is still running. A hidden pair tracks
+  /// nothing — it detaches instead, and the buttons leave with it.
   void _rescan() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _attach(_visibleScroll(context));
+      if (!mounted) return;
+      _attach(widget.showControls ? _visibleScroll(context) : null);
     });
   }
 
@@ -143,6 +154,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   /// Follows the page's own vertical scroll: a horizontal strip inside a card,
   /// or a list nested under the page's scroll, is not what these are for.
   bool _onNotification(ScrollNotification notification) {
+    if (!widget.showControls) return false;
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
     final position = _positionOf(notification.context);
@@ -155,6 +167,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
   /// loaded grid, says so with a metrics notification while it lays out.
   /// Attach after the frame, where adding a listener and rebuilding belongs.
   bool _onMetrics(ScrollMetricsNotification notification) {
+    if (!widget.showControls) return false;
     if (notification.depth != 0) return false;
     if (notification.metrics.axis != Axis.vertical) return false;
     final position = _positionOf(notification.context);
@@ -222,7 +235,7 @@ final class _ScrollEdgeControlsState extends State<ScrollEdgeControls> {
         child: Stack(
           children: [
             Positioned.fill(key: const ValueKey('scrollEdgeContent'), child: widget.child),
-            if (_scrollable)
+            if (_scrollable && widget.showControls)
               Positioned(
                 key: const ValueKey('scrollEdgeButtons'),
                 right: _inset,

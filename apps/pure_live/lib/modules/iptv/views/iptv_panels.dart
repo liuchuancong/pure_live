@@ -458,82 +458,86 @@ final class IptvChannelTile extends StatelessWidget {
     final number = showNumber ? channel.number : null;
     final current = slot?.current;
     final onAir = current != null && current.title.isNotEmpty;
-    // The selected row's own ground: a quiet accent tint with the on-air bar
-    // at its left edge — not the kit's full-bleed fill, which has no air
-    // against the pane's borders. The bar keeps its slot on every row, so
-    // the marks line up down the list.
-    return Container(
-      decoration: BoxDecoration(color: selected ? colors.accentTint : null, borderRadius: BorderRadius.circular(8)),
-      // `selected` stays off: the ground above is the selection's whole
-      // statement, and the kit's full-bleed fill would paint over it.
-      child: DsListRow(
-        semanticLabel: channel.entry.name,
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s6,
-          children: [
-            Container(
-              width: 3,
-              height: 30,
-              decoration: BoxDecoration(
-                color: selected ? colors.accent : const Color(0x00000000),
-                borderRadius: BorderRadius.circular(2),
+    // The selected row's own ground: an inset pill in the module's soft
+    // accent tint — air at the pane's edges instead of a slab running edge
+    // to edge — with the on-air bar at its left and the name in the accent's
+    // label ink. The bar keeps its slot on every row, so the marks line up
+    // down the list.
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4, vertical: DsSpace.s3),
+      child: Container(
+        decoration: BoxDecoration(color: selected ? colors.accentTint : null, borderRadius: BorderRadius.circular(10)),
+        // `selected` stays off: the ground above is the selection's whole
+        // statement, and the kit's filled treatment would paint over it.
+        child: DsListRow(
+          semanticLabel: channel.entry.name,
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s6,
+            children: [
+              Container(
+                width: 3,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: selected ? colors.accent : const Color(0x00000000),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            IptvChannelLogo(channel: channel, size: DsSize.md),
-          ],
-        ),
-        title: Text(
-          [if (number != null) '$number', channel.entry.name].join('  '),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.body.copyWith(
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-            color: colors.text,
+              IptvChannelLogo(channel: channel, size: DsSize.md),
+            ],
           ),
-        ),
-        description: onAir
-            ? Row(
-                spacing: DsSpace.s6,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 5,
-                    height: 5,
-                    decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
-                  ),
-                  Flexible(
-                    child: Text(
-                      current.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  ),
-                ],
-              )
-            : groupLine == null
-            ? null
-            : Text(
-                groupLine!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
-              ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s3,
-          children: [
-            if (selected) const IptvOnAirEqualizer(),
-            IptvIconAction(
-              icon: DsIcons.heart,
-              label: channel.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
-              onPressed: onToggleFavourite,
-              color: channel.favorite ? colors.accent : null,
+          title: Text(
+            [if (number != null) '$number', channel.entry.name].join('  '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.body.copyWith(
+              fontWeight: FontWeight.w600,
+              color: selected ? colors.accentText : colors.text,
             ),
-          ],
+          ),
+          description: onAir
+              ? Row(
+                  spacing: DsSpace.s6,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
+                    ),
+                    Flexible(
+                      child: Text(
+                        current.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ),
+                  ],
+                )
+              : groupLine == null
+              ? null
+              : Text(
+                  groupLine!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s3,
+            children: [
+              if (selected) const IptvOnAirEqualizer(),
+              IptvIconAction(
+                icon: DsIcons.heart,
+                label: channel.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                onPressed: onToggleFavourite,
+                color: channel.favorite ? colors.accent : null,
+              ),
+            ],
+          ),
+          onPressed: onPlay,
         ),
-        onPressed: onPlay,
       ),
     );
   }

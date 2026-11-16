@@ -1,6 +1,6 @@
 /// The IPTV module: its library and guide controllers, the channel page and
-/// player, the guide and source views, the import page, and the module's
-/// own settings pane.
+/// player, the guide view, the import page, and the module's own settings
+/// pane.
 library;
 
 export 'controllers/iptv_auto_update.dart';
@@ -24,5 +24,4 @@ export 'views/iptv_group_rail.dart';
 export 'views/iptv_guide_panel.dart';
 export 'views/iptv_import_dialog.dart';
 export 'views/iptv_panels.dart';
-export 'views/iptv_sources_view.dart';
 export 'views/iptv_zapper.dart';

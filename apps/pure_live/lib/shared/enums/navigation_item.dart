@@ -99,9 +99,6 @@ enum NavigationItem {
   /// The Huya station's search.
   huyaSearch(DsIcons.search),
 
-  /// The IPTV module's playlists and guide sources.
-  iptvSources(DsIcons.radioTower),
-
   /// The IPTV module's programme guide, the reference's 节目单 surface.
   iptvGuide(DsIcons.calendarClock),
 
@@ -199,7 +196,6 @@ enum NavigationItem {
     NavigationItem.huyaLive => t.huya.liveTab,
     NavigationItem.huyaRank => t.huya.rank,
     NavigationItem.huyaSearch => t.huya.search,
-    NavigationItem.iptvSources => t.navigation.iptvSources,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvRecent => t.iptv.recentTitle,
     NavigationItem.musicRecommend => t.navigation.musicRecommend,
