@@ -119,6 +119,10 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
         maximizedProvider.overrideWith(MaximizedController.new),
         windowSizeProvider.overrideWith(WindowSizeController.new),
         playerKernelProvider.overrideWith(createPlayerKernel),
+        // The hover previews' kernel holds players too: one window's previews
+        // must not die because another window left the module, and a closed
+        // window must not leave them in the shared container's kernel.
+        previewKernelProvider.overrideWith(createPreviewKernel),
         presentationDriverProvider.overrideWith(createPresentationDriver),
         fullscreenDriverProvider.overrideWith(createFullscreenDriver),
         windowsPipWindowProvider.overrideWith(createWindowsPipWindow),

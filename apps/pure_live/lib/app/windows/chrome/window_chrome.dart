@@ -208,10 +208,7 @@ final class WindowCaptionButton extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.all(DsSpace.s4),
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: background,
-                borderRadius: BorderRadius.circular(6),
-              ),
+              decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(6)),
               child: Center(child: DsIcon(icon, size: 16, color: glyph)),
             ),
           );
@@ -272,7 +269,10 @@ final class _WindowTopResizeBandState extends State<WindowTopResizeBand> {
       onEnter: (_) => _refresh(),
       onHover: (_) => _refresh(),
       child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
+        // A maximised or full-screen window has no top edge to grab: the band
+        // then lets taps through to the page beneath instead of swallowing
+        // its top row, and the hover refresh re-arms it once it can resize.
+        behavior: _sizable ? HitTestBehavior.opaque : HitTestBehavior.translucent,
         onPanDown: (_) {
           if (_sizableNow) MultiViewDesktop.fromId(widget.viewId).startResizing(ResizeEdge.top);
         },

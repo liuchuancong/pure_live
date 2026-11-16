@@ -10,16 +10,17 @@ import 'package:pure_live/shared/shared.dart';
 /// its failed state, and the show/dismiss pair keeps its invariants — one
 /// window at a time, a close path that runs on supersede.
 void main() {
-  Future<FloatingVideoHandoff> handoff() async => FloatingVideoHandoff(
-    title: '测试视频',
-    open: (kernel) async => throw StateError('no engine in tests'),
-  );
+  Future<FloatingVideoHandoff> handoff() async =>
+      FloatingVideoHandoff(title: '测试视频', open: (kernel) async => throw StateError('no engine in tests'));
 
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(
       TranslationProvider(
         child: ProviderScope(
-          child: MaterialApp(navigatorKey: rootNavigatorKey, home: const Scaffold(body: Text('页面'))),
+          child: MaterialApp(
+            navigatorKey: rootNavigatorKey,
+            home: const Scaffold(body: Text('页面')),
+          ),
         ),
       ),
     );

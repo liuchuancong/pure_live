@@ -25,8 +25,9 @@ final class WindowSizeController extends Notifier<Size?> {
   /// The smallest accepted width, matching the reference.
   static const double minWidth = 400;
 
-  /// The smallest accepted height, matching the reference.
-  static const double minHeight = 300;
+  /// The smallest accepted height, matching the native runner's minimumSize
+  /// (whose height floor is 600; the width floor here stays the stricter one).
+  static const double minHeight = 600;
 
   /// The largest accepted dimension, matching the reference.
   static const double maxDimension = 16384;

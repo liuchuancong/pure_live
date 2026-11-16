@@ -14,11 +14,10 @@ import 'package:pure_live/shared/widgets/app_dialog.dart';
 ///
 /// [tray] is whether a hidden window has an icon to come back from; without
 /// one the stay choice minimizes to the taskbar instead.
-Future<CloseChoice?> showCloseWindowDialog(BuildContext context, {required bool tray}) =>
-    showAppDialog<CloseChoice>(
-      context: context,
-      builder: (_) => _CloseWindowDialog(tray: tray),
-    );
+Future<CloseChoice?> showCloseWindowDialog(BuildContext context, {required bool tray}) => showAppDialog<CloseChoice>(
+  context: context,
+  builder: (_) => _CloseWindowDialog(tray: tray),
+);
 
 final class _CloseWindowDialog extends ConsumerStatefulWidget {
   const _CloseWindowDialog({required this.tray});
@@ -36,9 +35,7 @@ final class _CloseWindowDialogState extends ConsumerState<_CloseWindowDialog> {
   Future<void> _answer(CloseAction action) async {
     if (_answering) return;
     _answering = true;
-    await ref
-        .read(shellWindowSettingsProvider.notifier)
-        .rememberCloseChoice(action: action, dontAskAgain: _remember);
+    await ref.read(shellWindowSettingsProvider.notifier).rememberCloseChoice(action: action, dontAskAgain: _remember);
     if (!mounted) return;
     Navigator.of(context).pop((action: action, remember: _remember));
   }

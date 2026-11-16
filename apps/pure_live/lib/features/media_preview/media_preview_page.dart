@@ -36,6 +36,7 @@ import 'package:pure_live/app/app.dart'
         SettingsSectionRoute,
         appPathsProvider,
         fullscreenDriverProvider,
+        isPrimaryWindowProvider,
         pipDriverProvider,
         resolvedFontFamily,
         roomLeaveProvider,
@@ -366,6 +367,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// Whether the 小窗 verb may show: the stage carries a source to hand
   /// over, no window-owning mode stands, and no mini window is up yet.
   bool get _miniWindowReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return handle != null &&
         handle.source != null &&
@@ -1077,11 +1083,19 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                           ),
                         )
                       : Center(
-                          child: MouseRegion(
-                            onEnter: (_) => _setDrawerOpen(true),
-                            child: GestureDetector(
-                              onTap: () => _setDrawerOpen(true),
-                              child: _DrawerTab(label: t.common.previewDrawerLabel),
+                          // With the list folded away this tab is the one
+                          // way back that needs no hover: it reads as a
+                          // named button.
+                          child: Semantics(
+                            button: true,
+                            label: t.common.previewDrawerLabel,
+                            onTap: () => _setDrawerOpen(true),
+                            child: MouseRegion(
+                              onEnter: (_) => _setDrawerOpen(true),
+                              child: GestureDetector(
+                                onTap: () => _setDrawerOpen(true),
+                                child: _DrawerTab(label: t.common.previewDrawerLabel),
+                              ),
                             ),
                           ),
                         ),
@@ -1888,17 +1902,21 @@ final class _Splitter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeLeftRight,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
-        // A double press is the way back to the width the page starts with.
-        onDoubleTap: onReset,
-        child: const SizedBox(
-          width: 10,
-          child: Center(
-            child: SizedBox(width: 1, height: 48, child: ColoredBox(color: Color(0x33FFFFFF))),
+    // A drag-only seam says nothing to a reader; it carries its name.
+    return Semantics(
+      label: context.t.common.previewSplitter,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeLeftRight,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
+          // A double press is the way back to the width the page starts with.
+          onDoubleTap: onReset,
+          child: const SizedBox(
+            width: 10,
+            child: Center(
+              child: SizedBox(width: 1, height: 48, child: ColoredBox(color: Color(0x33FFFFFF))),
+            ),
           ),
         ),
       ),

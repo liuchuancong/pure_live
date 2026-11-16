@@ -1,12 +1,24 @@
 import 'dart:async' show Completer, unawaited;
+import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io' show exit;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart'
-    show DesktopShell, ShellSettings, TrayAction, TrayDivider, TrayEntry, TrayIconState, WindowHost, WindowRole;
+    show
+        DesktopShell,
+        PixelRect,
+        ShellSettings,
+        TrayAction,
+        TrayDivider,
+        TrayEntry,
+        TrayIconState,
+        WindowGeometry,
+        WindowHost,
+        WindowRole,
+        WindowStateStore;
 import 'package:live_shell_desktop/live_shell_desktop.dart' show MultiViewWindowHost, TrayManagerHost;
-import 'package:live_storage/live_storage.dart' show StorageStores;
+import 'package:live_storage/live_storage.dart' show StoragePrefs, StorageStores;
 import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/providers.dart';
@@ -57,6 +69,10 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
   final shell = DesktopShell(
     platform: platform,
     window: host,
+    // Where the window's place is remembered: the shell records its frame
+    // here as the viewer moves and resizes it (debounced), and the next
+    // start reads it back, so the window opens where it was left.
+    stateStore: _windowStateStore(),
     settings: () => ShellSettings(closeAction: storedCloseAction(), dontAskExit: storedDontAskExit()),
     confirmClose: platform == PlatformKind.macos
         ? null
@@ -143,5 +159,52 @@ Future<void> _reveal(WindowHost host) async {
     await host.show();
   } on Object {
     // The tray remains the way back.
+  }
+}
+
+/// The prefs key the primary's geometry record lives under.
+const String _windowGeometryKey = 'window.geometry';
+
+/// The primary window's geometry store over the shared prefs.
+WindowStateStore _windowStateStore() => WindowStateStore(
+  save: (record) => StoragePrefs.setString(_windowGeometryKey, _encodeGeometry(record)),
+  load: () async {
+    final raw = StoragePrefs.getString(_windowGeometryKey);
+    if (raw == null) return null;
+    return _decodeGeometry(raw);
+  },
+);
+
+String _encodeGeometry(WindowGeometry record) => jsonEncode(<String, Object?>{
+  'left': record.frame.left,
+  'top': record.frame.top,
+  'width': record.frame.width,
+  'height': record.frame.height,
+  'maximized': record.maximized,
+  if (record.displayId != null) 'displayId': record.displayId,
+  'scaleFactor': record.scaleFactor,
+});
+
+/// The record [raw] holds, or null when it is not one this app can open (a
+/// half-written document; the window then opens at its default place).
+WindowGeometry? _decodeGeometry(String raw) {
+  try {
+    final json = jsonDecode(raw);
+    if (json is! Map) return null;
+    final left = json['left'];
+    final top = json['top'];
+    final width = json['width'];
+    final height = json['height'];
+    if (left is! int || top is! int || width is! int || height is! int) return null;
+    final displayId = json['displayId'];
+    final scaleFactor = json['scaleFactor'];
+    return WindowGeometry(
+      frame: PixelRect(left, top, width, height),
+      maximized: json['maximized'] == true,
+      displayId: displayId is String ? displayId : null,
+      scaleFactor: scaleFactor is num ? scaleFactor.toDouble() : 1,
+    );
+  } on Object {
+    return null;
   }
 }

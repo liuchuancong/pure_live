@@ -242,7 +242,11 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
 
   void _close({required bool reopen}) {
     final handle = _handle;
-    final position = handle?.position ?? Duration.zero;
+    // A window whose picture never opened has no position of its own: the
+    // page's handoff position is the truth there. Falling back to zero would
+    // let a close that beat the first frame checkpoint a fresh start over
+    // the progress the page had.
+    final position = handle?.position ?? FloatingVideoWindow._handoff?.resume ?? Duration.zero;
     final onClose = FloatingVideoWindow._handoff?.onClose;
     FloatingVideoWindow._removeEntry();
     // The callback runs after the overlay is gone: a page that pushes its
@@ -379,9 +383,12 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
                           );
                         }
                       },
-                      child: const Padding(
-                        padding: EdgeInsets.all(DsSpace.s4),
-                        child: DsIcon(DsIcons.expand, size: 12, color: OnVideoColors.inkFaint),
+                      child: Semantics(
+                        label: context.t.common.resizeWindow,
+                        child: const Padding(
+                          padding: EdgeInsets.all(DsSpace.s12),
+                          child: DsIcon(DsIcons.expand, size: 12, color: OnVideoColors.inkFaint),
+                        ),
                       ),
                     ),
                   ),
