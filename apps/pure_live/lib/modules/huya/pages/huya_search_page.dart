@@ -13,6 +13,11 @@ import 'package:pure_live/shared/shared.dart';
 /// for a word the index answered with nothing — the station's own completions
 /// to try instead. Reached from the module's 搜索 entry and from the shell's
 /// toolbar, which hands a word in as the opening query.
+/// The search head's column: a wide window reads a field and its verbs in
+/// one line, the settings page's own measure — not a field stretched
+/// across the window.
+const double _kSearchHeadMaxWidth = 960;
+
 final class HuyaSearchPage extends ConsumerStatefulWidget {
   /// The search page.
   const HuyaSearchPage({super.key});
@@ -71,12 +76,17 @@ final class _HuyaSearchPageState extends ConsumerState<HuyaSearchPage> {
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-            child: DsSearchField(
-              controller: _field,
-              autofocus: _word.isEmpty,
-              placeholder: t.huya.searchHint,
-              semanticLabel: t.huya.searchHint,
-              onSubmitted: _run,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _kSearchHeadMaxWidth),
+                child: DsSearchField(
+                  controller: _field,
+                  autofocus: _word.isEmpty,
+                  placeholder: t.huya.searchHint,
+                  semanticLabel: t.huya.searchHint,
+                  onSubmitted: _run,
+                ),
+              ),
             ),
           ),
           if (_word.isEmpty)

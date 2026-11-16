@@ -242,6 +242,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     _disposed = true;
     _tipTimer?.cancel();
     _hideTimer?.cancel();
+    _keySeekTimer?.cancel();
     _sleepTimerNotifier.onFire_ = null;
     Timer.run(() => _sleepTimerNotifier.start(null));
     // A page leaving while a mode owns the window takes the mode with it;
@@ -518,6 +519,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   /// Whether the 小窗 verb may show: the handle carries a source to hand
   /// over, no window-owning mode stands, and no mini window is up yet.
   bool get _miniWindowReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return handle != null &&
         handle.source != null &&
@@ -632,8 +638,10 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     // 矮窗（高 <480）横屏沉浸：满铺画面加覆盖条，页面内容退场——判定
     // 是窗口的形状，与平台无关（与直播间同一台排版机）。
     final windowSize = MediaQuery.sizeOf(context);
-    final landscapeImmersive =
-        PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height).landscapeImmersive;
+    final landscapeImmersive = PlaybackLayout.resolve(
+      width: windowSize.width,
+      height: windowSize.height,
+    ).landscapeImmersive;
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     if (immersive) {
       // The owned window keeps the keyboard its page had: Escape backs out of
@@ -668,10 +676,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       // the header and the information column stepped out with the chrome.
       return PlayerBarTier(
         tv: tv,
-        child: Scaffold(
-          backgroundColor: colors.canvas,
-          body: _surface(context, detail.value, immersive: false),
-        ),
+        child: Scaffold(backgroundColor: colors.canvas, body: _surface(context, detail.value, immersive: false)),
       );
     }
     return PlayerBarTier(
@@ -685,6 +690,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
             unawaited(_toggle());
           },
           const SingleActivator(LogicalKeyboardKey.keyF): () {
+            _wake();
+            unawaited(_toggleFullscreen());
+          },
+          // The window variant of the same verb, on the desktop's own chord.
+          const SingleActivator(LogicalKeyboardKey.f11): () {
             _wake();
             unawaited(_toggleFullscreen());
           },
@@ -750,11 +760,19 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final inset = LiveWindow.pageInset(width);
     final wide = width >= kPlaybackWideBreakpoint;
     final video = detail?.video;
-    final info = _Info(video: video, detail: detail, onUploader: _openUploader);
+    final info = _Info(
+      video: video,
+      detail: detail,
+      onUploader: _openUploader,
+      onDownload: video == null ? null : () => unawaited(_startDownload(video)),
+    );
     final rail = _Related(
       videos: related.value ?? const <HuyaVideo>[],
       onOpen: _openRelated,
       loading: related.isLoading,
+      compact: wide,
+      failed: related.hasError,
+      onRetry: () => ref.invalidate(huyaRelatedProvider(widget.id)),
     );
     if (!wide) {
       return SingleChildScrollView(
@@ -830,7 +848,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
     final showBar = _controlsVisible || !playing;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.card),
+      borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
       child: ColoredBox(
         color: OnVideoColors.ground,
         child: MouseRegion(
@@ -1102,7 +1120,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           gradient: LinearGradient(
             begin: AlignmentDirectional.topCenter,
             end: AlignmentDirectional.bottomCenter,
-            colors: [Color(0xB3000000), Color(0x00000000)],
+            colors: [Color(0xD9000000), Color(0x00000000)],
           ),
         ),
         child: Row(spacing: DsSpace.s8, children: [backPill, titleText, const Spacer(), actionPill, morePill]),
@@ -1114,7 +1132,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         gradient: LinearGradient(
           begin: AlignmentDirectional.topCenter,
           end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
+          colors: [Color(0xD9000000), Color(0x00000000)],
         ),
       ),
       child: Row(
@@ -1310,7 +1328,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         gradient: LinearGradient(
           begin: AlignmentDirectional.bottomCenter,
           end: AlignmentDirectional.topCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
+          colors: [Color(0xD9000000), Color(0x00000000)],
         ),
       ),
       child: Column(
@@ -1332,85 +1350,141 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
   }
 }
 
-/// The video's own block: what it is, who posted it and what it is about.
-final class _Info extends StatelessWidget {
-  const _Info({required this.video, required this.detail, required this.onUploader});
+/// The video's own block: what it is, who posted it, what it is about —
+/// and the one verb the page itself carries (the download), so the viewer is
+/// not sent back to a picture strip that may have settled away.
+final class _Info extends StatefulWidget {
+  const _Info({required this.video, required this.detail, required this.onUploader, this.onDownload});
 
   final HuyaVideo? video;
   final HuyaVideoDetail? detail;
   final ValueChanged<String> onUploader;
+  final VoidCallback? onDownload;
+
+  @override
+  State<_Info> createState() => _InfoState();
+}
+
+final class _InfoState extends State<_Info> {
+  /// The brief folds to six lines until the viewer asks for the rest — the
+  /// same 展开 every other detail page answers with.
+  bool _briefExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final video = this.video;
-    if (video == null) return const SizedBox.shrink();
-    final brief = detail?.video.brief ?? video.brief;
-    final tags = detail?.tags ?? const <String>[];
+    final video = widget.video;
+    if (video == null) return const _InfoSkeleton();
+    final brief = widget.detail?.video.brief ?? video.brief;
+    final tags = widget.detail?.tags ?? const <String>[];
     final lines = [
       if (video.playCount > 0) '${AudienceFormat.format(video.playCount)} ${t.huya.views}',
       if (video.publishedAt case final at?) vodDateText(at),
     ];
+    final uploaderName = video.uploaderName.isEmpty ? t.common.moduleHuya : video.uploaderName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
         Text(video.title, style: theme.typography.title.copyWith(color: colors.text)),
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            DsAvatar(
-              initials: avatarInitials(video.uploaderName.isEmpty ? video.title : video.uploaderName),
-              image: video.uploaderAvatar.isEmpty
-                  ? null
-                  : cachedImage(video.uploaderAvatar, policy: ImageCachePolicies.avatar),
-              size: DsSize.md,
-              semanticLabel: video.uploaderName,
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s3,
-                children: [
-                  GestureDetector(
-                    onTap: video.uploaderId.isEmpty ? null : () => onUploader(video.uploaderId),
-                    child: Text(
-                      video.uploaderName.isEmpty ? t.common.moduleHuya : video.uploaderName,
+        // The whole row opens the uploader, the way a card does — not just
+        // the name's few points of text.
+        GestureDetector(
+          onTap: video.uploaderId.isEmpty ? null : () => widget.onUploader(video.uploaderId),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsAvatar(
+                initials: avatarInitials(video.uploaderName.isEmpty ? video.title : video.uploaderName),
+                image: video.uploaderAvatar.isEmpty
+                    ? null
+                    : cachedImage(video.uploaderAvatar, policy: ImageCachePolicies.avatar),
+                size: DsSize.md,
+                semanticLabel: video.uploaderName,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
+                  children: [
+                    Text(
+                      uploaderName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.bodyStrong.copyWith(
                         color: video.uploaderId.isEmpty ? colors.text : colors.indicator,
                       ),
                     ),
+                    if (lines.isNotEmpty)
+                      Text(
+                        lines.join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        // The page's own verbs: the download the strip carries, kept here so
+        // it survives the strip settling away.
+        if (widget.onDownload != null)
+          Wrap(
+            spacing: DsSpace.s8,
+            runSpacing: DsSpace.s8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.download, size: 14),
+                onPressed: widget.onDownload,
+                child: Text(t.vod.download),
+              ),
+            ],
+          ),
+        if (brief.isNotEmpty)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final style = theme.typography.body.copyWith(color: colors.textMuted);
+              final painter = TextPainter(
+                text: TextSpan(text: brief, style: style),
+                maxLines: 6,
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+              )..layout(maxWidth: constraints.maxWidth);
+              final overflows = painter.didExceedMaxLines;
+              painter.dispose();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s4,
+                children: [
+                  Text(
+                    brief,
+                    maxLines: _briefExpanded ? null : 6,
+                    overflow: _briefExpanded ? null : TextOverflow.ellipsis,
+                    style: style,
                   ),
-                  if (lines.isNotEmpty)
-                    Text(
-                      lines.join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  if (overflows)
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      onPressed: () => setState(() => _briefExpanded = !_briefExpanded),
+                      child: Text(_briefExpanded ? t.vod.collapse : t.vod.expand),
                     ),
                 ],
-              ),
-            ),
-          ],
-        ),
-        if (brief.isNotEmpty)
-          Text(
-            brief,
-            maxLines: 6,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(color: colors.textMuted),
+              );
+            },
           ),
         if (tags.isNotEmpty)
           Wrap(
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s4,
-            children: [
-              for (final tag in tags) Text('#$tag', style: theme.typography.caption.copyWith(color: colors.textMuted)),
-            ],
+            children: [for (final tag in tags) DsBadge(label: Text('#$tag'), dot: false)],
           ),
       ],
     );
@@ -1420,29 +1494,70 @@ final class _Info extends StatelessWidget {
 /// What the station puts beside the video: one row each, the same shape the
 /// station's own rail wears.
 final class _Related extends StatelessWidget {
-  const _Related({required this.videos, required this.onOpen, required this.loading});
+  const _Related({
+    required this.videos,
+    required this.onOpen,
+    required this.loading,
+    this.compact = false,
+    this.failed = false,
+    this.onRetry,
+  });
 
   final List<HuyaVideo> videos;
   final ValueChanged<String> onOpen;
   final bool loading;
 
+  /// The side column's cut of the rows: a narrower cover and one line of
+  /// title, the shape a 320–520px column reads without squeezing.
+  final bool compact;
+
+  /// Whether the related read itself failed: a failed rail says so with its
+  /// own retry instead of posing as an empty one.
+  final bool failed;
+  final VoidCallback? onRetry;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-        Text(t.huya.related, style: theme.typography.title.copyWith(color: colors.text)),
+        SectionHeader(title: t.huya.related),
         if (videos.isEmpty && loading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: DsSpace.s16),
-            child: Center(child: DsSpinner()),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+            child: _RelatedSkeleton(compact: compact),
+          )
+        else if (videos.isEmpty && failed)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
+            child: DsEmptyState(
+              icon: const DsIcon(DsIcons.cloudOff),
+              title: Text(t.vod.loadFailed),
+              actions: [
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: onRetry,
+                  child: Text(t.common.retry),
+                ),
+              ],
+            ),
+          )
+        else if (videos.isEmpty)
+          // A quiet nothing beats an orphaned header: the section says there
+          // is nothing beside it rather than trailing off.
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
+            child: DsEmptyState(icon: const DsIcon(DsIcons.compass), title: Text(t.huya.relatedEmpty)),
           )
         else
-          for (final video in videos) VodVideoRow(video: video.asVideo(), onOpen: () => onOpen(video.id)),
+          for (final video in videos)
+            Padding(
+              padding: const EdgeInsets.only(bottom: DsSpace.s8),
+              child: VodVideoRow(video: video.asVideo(), compact: compact, onOpen: () => onOpen(video.id)),
+            ),
       ],
     );
   }
@@ -1584,6 +1699,83 @@ final class _HuyaMoreContent extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: DsSpace.s12),
+      ],
+    );
+  }
+}
+
+/// The video block's loading shape: the title, the uploader row and the
+/// brief as bars where their words will stand.
+final class _InfoSkeleton extends StatelessWidget {
+  const _InfoSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s12,
+      children: [
+        DsSkeleton(width: double.infinity, height: 20, strong: true),
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            DsSkeleton.circle(size: 40),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s6,
+                children: [DsSkeleton(width: 140, height: 14), DsSkeleton(width: 96, height: 12)],
+              ),
+            ),
+          ],
+        ),
+        Row(spacing: DsSpace.s8, children: [DsSkeleton(width: 88, height: 30)]),
+        DsSkeleton.block(width: double.infinity, height: 64),
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            DsSkeleton(width: 64, height: 22),
+            DsSkeleton(width: 72, height: 22),
+            DsSkeleton(width: 56, height: 22),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// The related rail's loading shape: three rows of cover block and words —
+/// the rail cut's narrower cover when the rows land in the side column.
+final class _RelatedSkeleton extends StatelessWidget {
+  const _RelatedSkeleton({required this.compact});
+
+  /// Whether the rows draw the side column's cut.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final coverWidth = compact ? 104.0 : 148.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s8,
+      children: [
+        for (final _ in const [1, 2, 3])
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsSkeleton.block(width: coverWidth, height: coverWidth * 9 / 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s6,
+                  children: [
+                    DsSkeleton(width: double.infinity, height: 14),
+                    DsSkeleton(width: 120, height: 12),
+                  ],
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
