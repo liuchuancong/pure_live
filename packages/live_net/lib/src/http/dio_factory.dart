@@ -62,6 +62,16 @@ final class DioFactory {
   /// The [LiveHttp] for [profile]; repeated calls return the same instance.
   LiveHttp create({ClientProfile profile = ClientProfile.site}) => _clients.putIfAbsent(profile, () => _build(profile));
 
+  /// Closes every client this factory built. The app's provider calls
+  /// this on dispose, so a rebuilt factory does not drop its connection
+  /// pools unclosed.
+  void close() {
+    for (final client in _clients.values) {
+      client.close();
+    }
+    _clients.clear();
+  }
+
   /// Drops every cached response across all profiles — account switches,
   /// logouts and site removals go through here.
   Future<void> purgeCache() => _effectiveCacheStore.clean();
