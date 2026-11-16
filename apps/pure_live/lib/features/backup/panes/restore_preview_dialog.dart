@@ -122,6 +122,15 @@ final class _RestorePreviewDialog extends StatelessWidget {
                         style: TextStyle(color: colors.text),
                       )
                     : Text(p.settingsSame),
+                // A newer build's keys ride along in the file; naming
+                // them is how the restore stays honest about ignoring
+                // them.
+                extraDetail: preview.settingsUnknown > 0
+                    ? Text(
+                        p.settingsUnknown(count: preview.settingsUnknown),
+                        style: TextStyle(color: colors.textMuted),
+                      )
+                    : null,
               )
             else if (section == BackupSection.secrets && preview.accounts > 0)
               _ChangeRow(
@@ -197,12 +206,16 @@ final class _RestorePreviewDialog extends StatelessWidget {
 /// One line of the preview: the section's icon and name with its entries
 /// now → after at the far end, and under the name what moves.
 final class _ChangeRow extends StatelessWidget {
-  const new({required this.icon, required this.label, required this.figures, required this.detail});
+  const new({required this.icon, required this.label, required this.figures, required this.detail, this.extraDetail});
 
   final DsIconData icon;
   final String label;
   final String figures;
   final Widget detail;
+
+  /// A second, quieter line under [detail] — the caveats (a newer build's
+  /// settings the restore leaves alone) that are not the movement itself.
+  final Widget? extraDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -232,6 +245,7 @@ final class _ChangeRow extends StatelessWidget {
             child: detail,
           ),
         ),
+        ?extraDetail,
       ],
     );
   }

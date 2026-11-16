@@ -43,13 +43,7 @@ final class WebDavFailure implements Exception {
 /// the list it just read.
 final class WebDavEntry {
   /// Creates the entry.
-  const WebDavEntry({
-    required this.name,
-    required this.path,
-    required this.isDirectory,
-    this.size,
-    this.modified,
-  });
+  const WebDavEntry({required this.name, required this.path, required this.isDirectory, this.size, this.modified});
 
   /// The display name, as the server spells it.
   final String name;
@@ -125,20 +119,21 @@ final class WebDavBackupClient implements WebDavBackupDrive {
   @override
   Future<List<WebDavEntry>> list({String path = root}) async {
     final files = await _guard(() => _client.readDir(path));
-    final entries = [
-      for (final file in files)
-        if (file.name.trim().isNotEmpty)
-          WebDavEntry(
-            name: file.name,
-            path: _rooted(file.path, file.name, isDirectory: file.isDir),
-            isDirectory: file.isDir,
-            size: file.size,
-            modified: file.modified,
-          ),
-    ]..sort((a, b) {
-      if (a.isDirectory != b.isDirectory) return a.isDirectory ? -1 : 1;
-      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-    });
+    final entries =
+        [
+          for (final file in files)
+            if (file.name.trim().isNotEmpty)
+              WebDavEntry(
+                name: file.name,
+                path: _rooted(file.path, file.name, isDirectory: file.isDir),
+                isDirectory: file.isDir,
+                size: file.size,
+                modified: file.modified,
+              ),
+        ]..sort((a, b) {
+          if (a.isDirectory != b.isDirectory) return a.isDirectory ? -1 : 1;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
     return entries;
   }
 

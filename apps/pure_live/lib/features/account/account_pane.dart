@@ -223,6 +223,13 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
     final result = await _askAccount(auth);
     if (!mounted || accountCookieLine(ref.read(accountsProvider).credentials[siteId]) != cookie) return;
     if (result is AccountRejected && siteId == SiteIds.bilibili) {
+      // A rejection only condemns the login the adapter actually carried;
+      // one that raced the apply (or an adapter that never took the cookie)
+      // keeps the credential, unjudged, for the next check.
+      if (!ref.read(accountsProvider.notifier).credentialApplied(siteId, cookie)) {
+        setState(() => _checks[siteId] = const AccountCheckFailed());
+        return;
+      }
       // A bilibili login the platform no longer recognises is over: say so
       // and drop it, the way a browser gives up on a rejected session.
       showDsToast(context: context, title: context.t.account.bilibiliLoginExpired, status: DsStatus.danger);

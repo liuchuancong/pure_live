@@ -73,6 +73,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('browse.crossSpacing', BackupPrefKind.floating),
   ('browse.mainSpacing', BackupPrefKind.floating),
   ('browse.gridColumns', BackupPrefKind.string),
+  // The phone grid's own column count, kept as text and parsed on read.
+  ('browse.phoneColumns', BackupPrefKind.string),
   ('browse.audienceMetric', BackupPrefKind.string),
   ('browse.preferRealOnline', BackupPrefKind.boolean),
   ('browse.realOnlinePlatforms', BackupPrefKind.stringList),
@@ -83,6 +85,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('updates.autoCheck', BackupPrefKind.boolean),
   ('window.width', BackupPrefKind.integer),
   ('window.height', BackupPrefKind.integer),
+  ('window.geometry', BackupPrefKind.string),
   ('exit.autoShutdown.enabled', BackupPrefKind.boolean),
   ('exit.autoShutdown.minutes', BackupPrefKind.integer),
   ('nav.menuOrder', BackupPrefKind.stringList),
@@ -96,6 +99,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // The search's excluded platforms are one JSON string, not a string list:
   // `SearchExcludedController` encodes the set itself.
   ('search.allExcluded', BackupPrefKind.string),
+  // The surface the global search last targeted.
+  ('search.target', BackupPrefKind.string),
   // The platform display and its order/preference.
   ('sites.display', BackupPrefKind.stringList),
   ('sites.display.hidden', BackupPrefKind.stringList),
@@ -273,6 +278,11 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.filter.blockLong', BackupPrefKind.boolean),
   ('danmaku.filter.blockLongLength', BackupPrefKind.integer),
   ('danmaku.filter.douyuSuspected', BackupPrefKind.boolean),
+  ('danmaku.filter.coloredOnly', BackupPrefKind.boolean),
+  ('danmaku.filter.minUserLevel', BackupPrefKind.integer),
+  ('danmaku.filter.minFansLevel', BackupPrefKind.integer),
+  // The chat display's own tab, remembered per install.
+  ('danmaku.chatTab', BackupPrefKind.string),
   // The cache's cap, switches and freshness. The moved folders stay out, as
   // above.
   ('cache.maxMB', BackupPrefKind.integer),
@@ -289,6 +299,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('iptv.browse.channelReversal', BackupPrefKind.boolean),
   ('iptv.browse.clock', BackupPrefKind.boolean),
   ('iptv.browse.programmeLine', BackupPrefKind.boolean),
+  ('iptv.channel.order', BackupPrefKind.string),
   ('iptv.recent', BackupPrefKind.string),
   ('iptv.reminders', BackupPrefKind.string),
   // The recorder's 15 tunables (and the old gigabyte cap for upgrades).
@@ -322,18 +333,26 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('recorder.liveCheckSeconds', BackupPrefKind.integer),
   ('recorder.checkBackoffEnabled', BackupPrefKind.boolean),
   ('recorder.maxCheckSeconds', BackupPrefKind.integer),
-  ('recorder.autoStartOnBoot', BackupPrefKind.boolean),
-  ('recorder.pollingEnabled', BackupPrefKind.boolean),
+  ('recorder.autoStartOnBoot', BackupPrefKind.string),
+  ('recorder.pollingEnabled', BackupPrefKind.string),
   // Local follow tags.
   ('follow.tags', BackupPrefKind.string),
+  // The archive replay's own progress map, one JSON string per key.
+  ('archive.replay.progress', BackupPrefKind.string),
+  // The huya video page's own column width.
+  ('huya.videoColumnWidth', BackupPrefKind.floating),
   // The default Bilibili quality number and the station's playback choices.
   ('vod.quality.qn', BackupPrefKind.integer),
   ('vod.playback.speed', BackupPrefKind.floating),
   ('vod.playback.finish', BackupPrefKind.string),
   ('vod.playback.showDetails', BackupPrefKind.boolean),
-  // Whether the station's feed opens with its header picture.
-  ('vod.feed.banner', BackupPrefKind.boolean),
+  ('vod.playback.apiType', BackupPrefKind.string),
+  ('vod.playback.skipHeadTail', BackupPrefKind.boolean),
+  ('vod.playback.longPressSpeed', BackupPrefKind.floating),
+  ('vod.playback.seekPreview', BackupPrefKind.boolean),
   ('vod.favourites', BackupPrefKind.string),
+  // The station page's own 搜索历史, the same list the other stations keep.
+  ('vod.search.history', BackupPrefKind.string),
   ('vod.download.maxConcurrent', BackupPrefKind.integer),
   ('vod.download.qn', BackupPrefKind.integer),
   ('vod.download.danmaku', BackupPrefKind.boolean),
@@ -348,6 +367,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('music.play.rememberProgress', BackupPrefKind.boolean),
   ('music.play.volume', BackupPrefKind.floating),
   ('music.play.rate', BackupPrefKind.floating),
+  ('music.play.audioCacheLimitMb', BackupPrefKind.integer),
   ('music.eq', BackupPrefKind.string),
   ('music.list.addToTop', BackupPrefKind.boolean),
   ('music.list.showSource', BackupPrefKind.boolean),
@@ -425,7 +445,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // The hongguo station's rendition, learned decoder notes and the viewer's
   // own shelves.
   ('hongguo.quality', BackupPrefKind.string),
-  // Whether 首页 draws its first pick at head size above the shelves.
   ('hongguo.danmaku', BackupPrefKind.string),
   ('hongguo.decoderFailures', BackupPrefKind.stringList),
   ('hongguo.library.favorites', BackupPrefKind.string),
@@ -475,6 +494,14 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('backup.webdav.auto.includeSecrets', BackupPrefKind.boolean),
 ];
 
+/// The computed-key families a backup carries: every stored key under
+/// the prefix travels in the document, as the JSON text the players
+/// write. The archive's history, continue checkpoints and skip points
+/// are per-video keys — a static list would grow without end, so the
+/// family travels as its prefix; the LAN sync's settings scope carries
+/// the same families.
+const List<String> kBackedUpPrefFamilies = ['vod.progress.', 'vod.season.progress.', 'vod.skip.'];
+
 /// Reads every backed-up pref that currently has a value.
 ///
 /// A closed store answers an empty snapshot — capture runs where a
@@ -493,6 +520,14 @@ Map<String, Object?> captureSettingsSnapshot() {
       if (value != null) snapshot[key] = value;
     } on Object {
       // One unreadable key loses itself; the rest still go in.
+    }
+  }
+  // The families: whatever videos the viewer has watched, every key
+  // under a registered prefix goes in with it.
+  for (final entry in StoragePrefs.snapshot().entries) {
+    if (entry.value is! String) continue;
+    if (kBackedUpPrefFamilies.any(entry.key.startsWith)) {
+      snapshot[entry.key] = entry.value;
     }
   }
   return snapshot;
@@ -524,6 +559,17 @@ Future<void> applySettingsSnapshot(Map<String, Object?> snapshot) async {
       // One unwritable key loses itself; the rest still land.
     }
   }
+  // The families land the same way they left: one string per key, only
+  // the keys the document itself carries.
+  for (final MapEntry(:key, :value) in snapshot.entries) {
+    if (value is! String) continue;
+    if (!kBackedUpPrefFamilies.any(key.startsWith)) continue;
+    try {
+      await StoragePrefs.setString(key, value);
+    } on Object {
+      // One unwritable key loses itself; the rest still land.
+    }
+  }
 }
 
 /// The value a restore writes for a pref of [kind] from a document's
@@ -543,14 +589,15 @@ Object? restorablePrefValue(BackupPrefKind kind, Object? value) => switch (kind)
 
 /// What [applySettingsSnapshot] would do with [snapshot] on this device:
 /// the known keys it writes, how many of those differ from the stored
-/// value (one with no stored value differs), and how many it skips for
-/// their shape. Keys this build does not know are neither: the restore
-/// ignores them, as it ignores a newer writer's prefs.
-({int written, int changed, int skipped}) settingsSnapshotChanges(Map<String, Object?> snapshot) {
+/// value (one with no stored value differs), how many it skips for
+/// their shape, and how many keys this build does not know at all (a
+/// newer build's prefs — the restore leaves them alone and says so).
+({int written, int changed, int skipped, int unknown}) settingsSnapshotChanges(Map<String, Object?> snapshot) {
   final current = captureSettingsSnapshot();
   var written = 0;
   var changed = 0;
   var skipped = 0;
+  var unknown = 0;
   for (final (key, kind) in kBackedUpPrefs) {
     final raw = snapshot[key];
     if (raw == null) continue;
@@ -564,5 +611,18 @@ Object? restorablePrefValue(BackupPrefKind kind, Object? value) => switch (kind)
     final same = value is List<String> && now is List ? listEquals(value, now) : value == now;
     if (!same) changed++;
   }
-  return (written: written, changed: changed, skipped: skipped);
+  for (final entry in snapshot.entries) {
+    if (entry.value is! String) continue;
+    if (kBackedUpPrefFamilies.any(entry.key.startsWith)) {
+      written++;
+      if (current[entry.key] != entry.value) changed++;
+      continue;
+    }
+    if (!knownKeys.contains(entry.key)) unknown++;
+  }
+  return (written: written, changed: changed, skipped: skipped, unknown: unknown);
 }
+
+/// The exact keys this build backs up — the families' members are
+/// covered by their prefix, so only a bare name can be unknown.
+final Set<String> knownKeys = {for (final (key, _) in kBackedUpPrefs) key};

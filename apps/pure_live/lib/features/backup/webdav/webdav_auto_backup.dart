@@ -203,9 +203,8 @@ final class WebDavAutoBackupSettingsController extends Notifier<WebDavAutoBackup
   Future<void> setEnabled({required bool enabled}) => _write(state.copyWith(enabled: enabled));
 
   /// Sets the hours between two uploads, clamped to the allowed range.
-  Future<void> setHours(int hours) => _write(
-    state.copyWith(hours: hours.clamp(WebDavAutoBackupSettings.minHours, WebDavAutoBackupSettings.maxHours)),
-  );
+  Future<void> setHours(int hours) =>
+      _write(state.copyWith(hours: hours.clamp(WebDavAutoBackupSettings.minHours, WebDavAutoBackupSettings.maxHours)));
 
   /// Sets what the upload carries.
   Future<void> setScope(WebDavAutoBackupScope scope) => _write(state.copyWith(scope: scope));
@@ -246,10 +245,9 @@ final class WebDavAutoBackupSettingsController extends Notifier<WebDavAutoBackup
 }
 
 /// The automatic WebDAV backup's settings.
-final webdavAutoBackupSettingsProvider =
-    NotifierProvider<WebDavAutoBackupSettingsController, WebDavAutoBackupSettings>(
-      WebDavAutoBackupSettingsController.new,
-    );
+final webdavAutoBackupSettingsProvider = NotifierProvider<WebDavAutoBackupSettingsController, WebDavAutoBackupSettings>(
+  WebDavAutoBackupSettingsController.new,
+);
 
 /// What the last runs left behind: when the last upload landed, when the
 /// last attempt was made, how many failed in a row since, and the target
@@ -397,10 +395,7 @@ String webDavAutoBackupFileName(DateTime localNow, {required bool followsOnly}) 
 
 /// Matches the files [webDavAutoBackupFileName] writes; a manual file or a
 /// renamed one does not match.
-final RegExp _autoBackupName = RegExp(
-  r'^pure_live_(?:backup|follows)_auto_(\d{8}_\d{6})\.json$',
-  caseSensitive: false,
-);
+final RegExp _autoBackupName = RegExp(r'^pure_live_(?:backup|follows)_auto_(\d{8}_\d{6})\.json$', caseSensitive: false);
 
 /// Whether [name] is a scheduled upload's file.
 bool isWebDavAutoBackupFile(String name) => webDavAutoBackupTimeKey(name) != null;

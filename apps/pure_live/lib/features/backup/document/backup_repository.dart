@@ -246,7 +246,7 @@ final class BackupRepository {
       skipped += document.recordings.length - tasks.length;
       parts.add(RestorePart.compare(BackupSection.recordings, recordings.store.keys, tasks.keys));
     }
-    var settings = (written: 0, changed: 0, skipped: 0);
+    var settings = (written: 0, changed: 0, skipped: 0, unknown: 0);
     if (document.hasSettings) {
       settings = settingsSnapshotChanges(document.settings);
       skipped += settings.skipped;
@@ -274,6 +274,7 @@ final class BackupRepository {
       followsOnlyFile: followsOnlyFile,
       settingsInFile: settings.written,
       settingsChanged: settings.changed,
+      settingsUnknown: settings.unknown,
       accounts: document.hasSecrets && secrets != null
           ? document.secrets.values.where((value) => value.isNotEmpty).length
           : 0,
@@ -410,20 +411,18 @@ final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
   } on Object catch (error) {
     // A store that did not open is simply not offered — but the viewer
     // should know their backup is missing a section.
-    appLog.forCategory('backup').warning(
-      'a store did not open; the backup will be missing it',
-      fields: {'error': '$error'},
-    );
+    appLog
+        .forCategory('backup')
+        .warning('a store did not open; the backup will be missing it', fields: {'error': '$error'});
   }
   SecretStore? secrets;
   try {
     secrets = await ref.watch(appSecretStoreProvider.future);
   } on Object catch (error) {
     // No vault on this platform: the secrets section is simply not offered.
-    appLog.forCategory('backup').warning(
-      'the secret vault did not open; secrets are not backed up',
-      fields: {'error': '$error'},
-    );
+    appLog
+        .forCategory('backup')
+        .warning('the secret vault did not open; secrets are not backed up', fields: {'error': '$error'});
   }
   return BackupRepository(
     follows: follows,

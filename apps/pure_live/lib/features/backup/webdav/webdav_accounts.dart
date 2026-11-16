@@ -49,8 +49,7 @@ String normalizeWebDavUrl(String url) {
 /// The stored form of [accounts]: the list as JSON, dropping anything the
 /// reader would only have to repair anyway.
 String encodeWebDavAccounts(List<WebDavAccount> accounts) => jsonEncode([
-  for (final account in accounts)
-    {'id': account.id, 'name': account.name, 'url': account.url, 'user': account.user},
+  for (final account in accounts) {'id': account.id, 'name': account.name, 'url': account.url, 'user': account.user},
 ]);
 
 /// The accounts a stored JSON array holds; anything malformed stops the read
@@ -68,12 +67,7 @@ List<WebDavAccount>? decodeWebDavAccounts(String? raw) {
       final id = '${entry['id'] ?? ''}'.trim();
       final url = '${entry['url'] ?? ''}'.trim();
       if (id.isEmpty || url.isEmpty) continue;
-      accounts.add((
-        id: id,
-        name: '${entry['name'] ?? ''}'.trim(),
-        url: url,
-        user: '${entry['user'] ?? ''}'.trim(),
-      ));
+      accounts.add((id: id, name: '${entry['name'] ?? ''}'.trim(), url: url, user: '${entry['user'] ?? ''}'.trim()));
     }
     return accounts;
   } on Object {
@@ -93,10 +87,7 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
     if (stored != null) {
       if (stored.isEmpty) return _empty;
       final selected = _read(kWebDavSelectedPref);
-      return (
-        accounts: stored,
-        selected: stored.any((account) => account.id == selected) ? selected : stored.first.id,
-      );
+      return (accounts: stored, selected: stored.any((account) => account.id == selected) ? selected : stored.first.id);
     }
     return _migrate();
   }
@@ -142,13 +133,13 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
   /// Adds or replaces an account. A null [password] keeps the stored secret,
   /// an empty one clears it, anything else stores it. Answers the id the
   /// account ended up with, which is how a caller finds its own new entry.
-  Future<String> save({
-    required WebDavAccount account,
-    required String? password,
-  }) async {
+  Future<String> save({required WebDavAccount account, required String? password}) async {
     final id = account.id.isEmpty ? _newAccountId(account.url) : account.id;
     final next = (id: id, name: account.name, url: account.url, user: account.user);
-    final others = [for (final other in state.accounts) if (other.id != id) other];
+    final others = [
+      for (final other in state.accounts)
+        if (other.id != id) other,
+    ];
     final accounts = [...others, next];
     await _write((accounts: accounts, selected: state.selected.isEmpty ? id : state.selected));
     if (password != null) {
@@ -159,7 +150,10 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
 
   /// Removes an account and its stored password.
   Future<void> remove(String id) async {
-    final accounts = [for (final account in state.accounts) if (account.id != id) account];
+    final accounts = [
+      for (final account in state.accounts)
+        if (account.id != id) account,
+    ];
     final selected = state.selected == id ? (accounts.isEmpty ? '' : accounts.first.id) : state.selected;
     await _write((accounts: accounts, selected: selected));
     await writeAccountPassword(await _secretStore(), id: id, password: '');
@@ -226,13 +220,11 @@ Future<void> writeAccountPassword(SecretStore? store, {required String id, requi
 
 /// The account's stored password, or '' when the vault holds none (or will not
 /// open — an empty password then fails auth loudly, as the reference's does).
-Future<String> readAccountPassword(SecretStore? store, String id) async =>
-    store?.value(SecretRefs.webdav(id)) ?? '';
+Future<String> readAccountPassword(SecretStore? store, String id) async => store?.value(SecretRefs.webdav(id)) ?? '';
 
 /// Whether the vault holds a password for [id].
 Future<bool> hasAccountPassword(SecretStore? store, String id) async =>
     (await readAccountPassword(store, id)).isNotEmpty;
 
 /// The saved WebDAV accounts.
-final webdavAccountsProvider =
-    NotifierProvider<WebDavAccountsController, WebDavAccounts>(WebDavAccountsController.new);
+final webdavAccountsProvider = NotifierProvider<WebDavAccountsController, WebDavAccounts>(WebDavAccountsController.new);

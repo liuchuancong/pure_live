@@ -21,8 +21,11 @@ import 'package:pure_live/l10n/translations.dart' show t;
 
 /// Builds the drive one scheduled upload goes through; the scheduler's
 /// default makes the real client, a test hands in a fake.
-typedef WebDavAutoBackupClientFactory =
-    WebDavBackupDrive Function({required String url, required String username, required String password});
+typedef WebDavAutoBackupClientFactory = WebDavBackupDrive Function({
+  required String url,
+  required String username,
+  required String password,
+});
 
 /// How one scheduled check ended.
 final class WebDavAutoBackupResult {
@@ -143,12 +146,7 @@ final class WebDavAutoBackupService {
       account: account,
       folder: folder,
       includeSecrets: secrets,
-      target: webDavAutoBackupTarget(
-        account: account,
-        folder: folder,
-        scope: settings.scope,
-        includeSecrets: secrets,
-      ),
+      target: webDavAutoBackupTarget(account: account, folder: folder, scope: settings.scope, includeSecrets: secrets),
     );
   }
 

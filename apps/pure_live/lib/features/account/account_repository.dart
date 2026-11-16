@@ -1,8 +1,7 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:live_sites/live_sites.dart' show LiveCredential, SiteIds;
-import 'package:live_storage/live_storage.dart' show SecretStore, SecretVault;
+import 'package:live_storage/live_storage.dart' show SecretStore;
 
 /// One sign-in the vault remembers (the reference's `SavedAccount`).
 ///
@@ -87,32 +86,17 @@ final class BilibiliAccount {
   String toString() => 'BilibiliAccount($uid, $name, used $usedAt)';
 }
 
-/// The device's secret vault over `flutter_secure_storage` — the
-/// implementation the storage package leaves to the app shell (Windows
-/// DPAPI, the iOS Keychain, the Android Keystore).
-final class SecureVaultAdapter implements SecretVault {
-  /// The adapter; the plugin carries its own platform options.
-  const SecureVaultAdapter();
-
-  static const FlutterSecureStorage _storage = FlutterSecureStorage();
-
-  @override
-  Future<Map<String, String>> readAll() => _storage.readAll();
-
-  @override
-  Future<void> write(String ref, String plain) => _storage.write(key: ref, value: plain);
-
-  @override
-  Future<void> delete(String ref) => _storage.delete(key: ref);
-}
-
 /// The viewer's platform credentials over the app's [SecretStore]: one
 /// JSON document per signed-in site, never on disk in plain text. The
 /// refs live under `credentials/<siteId>` — the app's vault namespace for
 /// login credentials — and every read is a memory read off the store's
 /// cache.
 final class AccountRepository {
-  AccountRepository._(this._store);
+  /// The repository over the app's shared secret store — the one instance
+  /// the backups, the WebDAV pane and the proxy read. A sign-in here is then
+  /// a fact in every one of them, and a secret restored by a backup lands in
+  /// the very cache this repository watches.
+  AccountRepository.forStore(this._store);
 
   static const String _refPrefix = 'credentials/';
 
@@ -132,11 +116,6 @@ final class AccountRepository {
 
   /// The secret store this repository reads and writes.
   final SecretStore _store;
-
-  /// Opens the repository: loads every stored secret into the store's
-  /// memory cache once.
-  static Future<AccountRepository> open() async =>
-      AccountRepository._(await SecretStore.load(vault: const SecureVaultAdapter()));
 
   /// Emits after every committed credential change under the
   /// repository's namespace.
@@ -268,10 +247,7 @@ final class AccountRepository {
   Future<void> touchBilibiliAccount(int uid, {DateTime? at}) async {
     final known = bilibiliAccount(uid);
     if (known == null) return;
-    await _store.set(
-      _bilibiliAccountRef(uid),
-      jsonEncode(known.copyWith(usedAt: at ?? DateTime.now()).toJson()),
-    );
+    await _store.set(_bilibiliAccountRef(uid), jsonEncode(known.copyWith(usedAt: at ?? DateTime.now()).toJson()));
   }
 
   /// Forgets the remembered bilibili sign-in [uid] (not the current login:

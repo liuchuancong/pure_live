@@ -1,7 +1,6 @@
-import 'dart:convert' show jsonDecode;
+import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:live_sites/live_sites.dart';
-import 'package:live_storage/live_storage.dart' show SecretRefs;
 import 'package:pure_live/features/backup/document/backup_document.dart';
 
 /// What came out of a legacy document: the v2 document to restore and the
@@ -81,8 +80,10 @@ abstract final class LegacyBackupImporter {
       for (final entry in cookie.entries) {
         final value = entry.value;
         if (value is! String || value.trim().isEmpty) continue;
-        final ref = _cookieRefOf(entry.key);
-        if (ref != null) secrets[ref] = value;
+        final ref = _credentialRefOf(entry.key);
+        if (ref == null) continue;
+        final stored = _credentialValueOf(entry.key, value);
+        if (stored != null) secrets[ref] = stored;
       }
     }
 
@@ -221,15 +222,46 @@ abstract final class LegacyBackupImporter {
     );
   }
 
-  /// The reference cookie controller's keys → this app's secret refs.
-  static String? _cookieRefOf(String key) => switch (key) {
-    'bilibiliCookie' => SecretRefs.cookie('bilibili'),
-    'huyaCookie' => SecretRefs.cookie('huya'),
-    'douyuCookie' => SecretRefs.cookie('douyu'),
-    'douyinCookie' => SecretRefs.cookie('douyin'),
-    'kuaishouCookie' => SecretRefs.cookie('kuaishou'),
-    'douyuLtp0' => SecretRefs.douyuLtp0,
-    'douyuDid' => SecretRefs.douyuDid,
+  /// The reference cookie controller's keys → this app's credential refs:
+  /// a site cookie becomes the `credentials/<site>` document the account
+  /// repository reads, and the douyu renewal pair keeps its own sub-refs.
+  static String? _credentialRefOf(String key) => switch (key) {
+    'bilibiliCookie' => 'credentials/bilibili',
+    'huyaCookie' => 'credentials/huya',
+    'douyuCookie' => 'credentials/douyu',
+    'douyinCookie' => 'credentials/douyin',
+    'kuaishouCookie' => 'credentials/kuaishou',
+    'douyuLtp0' => 'credentials/douyu.ltp0',
+    'douyuDid' => 'credentials/douyu.did',
     _ => null,
   };
+
+  /// A legacy value in the stored form its ref names. A cookie header
+  /// (`name=value; …`) becomes the credential document; the douyu renewal
+  /// pair is kept raw. A header with no readable pairs is left out rather
+  /// than stored as a document the app would call unreadable.
+  static String? _credentialValueOf(String key, String value) {
+    if (key == 'douyuLtp0' || key == 'douyuDid') return value;
+    final site = switch (key) {
+      'bilibiliCookie' => 'bilibili',
+      'huyaCookie' => 'huya',
+      'douyuCookie' => 'douyu',
+      'douyinCookie' => 'douyin',
+      'kuaishouCookie' => 'kuaishou',
+      _ => null,
+    };
+    if (site == null) return null;
+    final cookies = <String, String>{};
+    for (final part in value.split(';')) {
+      final pair = part.trim();
+      final equals = pair.indexOf('=');
+      if (equals <= 0) continue;
+      final name = pair.substring(0, equals).trim();
+      final fieldValue = pair.substring(equals + 1).trim();
+      if (name.isEmpty || fieldValue.isEmpty) continue;
+      cookies[name] = fieldValue;
+    }
+    if (cookies.isEmpty) return null;
+    return jsonEncode({'siteId': site, 'cookies': cookies});
+  }
 }

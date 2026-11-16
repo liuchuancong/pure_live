@@ -1,7 +1,6 @@
-import 'dart:convert' show jsonDecode;
-
 import 'package:live_iptv/live_iptv.dart' show IptvKeys;
 import 'package:pure_live/features/backup/document/backup_document.dart';
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show MultiviewRepository;
 
 /// How one section of the device changes in a restore: its entries now and
 /// after, and the ones the restore adds and removes, told apart by identity
@@ -56,6 +55,7 @@ final class RestorePreview {
     this.settingsChanged = 0,
     this.accounts = 0,
     this.skipped = 0,
+    this.settingsUnknown = 0,
   });
 
   /// The keyed sections the restore replaces, in section order.
@@ -80,6 +80,9 @@ final class RestorePreview {
 
   /// The entries left out because they could not be read.
   final int skipped;
+
+  /// The settings a newer build wrote, which this restore leaves alone.
+  final int settingsUnknown;
 
   /// Whether the restore would change anything the preview can tell.
   bool get changesSomething => settingsChanged > 0 || accounts > 0 || parts.any((part) => !part.unchanged);
@@ -117,14 +120,10 @@ List<String> multiviewRooms(Map<String, Object?> documents) => [
 ];
 
 List<Object?> _slotsOf(Object? document) {
-  var json = document;
-  if (json is String) {
-    try {
-      json = jsonDecode(json);
-    } on FormatException {
-      return const [];
-    }
-  }
-  final slots = json is Map ? json['slots'] : null;
+  // The wall document's own reader, shared with the multiview controller —
+  // one decode of the shape, not two drifting ones.
+  final json = MultiviewRepository.jsonOf(document);
+  if (json == null) return const [];
+  final slots = json['slots'];
   return slots is List ? slots : const [];
 }

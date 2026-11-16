@@ -8,10 +8,18 @@ import 'package:pure_live/features/account/account_repository.dart';
 import 'package:pure_live/features/account/account_state.dart';
 import 'package:pure_live/features/account/bilibili_web_cookies.dart' show clearBilibiliWebCookies;
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
+import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show appSecretStoreProvider;
 import 'package:pure_live/shared/shared.dart';
 
-/// The accounts repository (one secret store, one process).
-final accountRepositoryProvider = FutureProvider<AccountRepository>((ref) => AccountRepository.open());
+/// The accounts repository: one process, one secret store — the app's shared
+/// one, the same instance the backups, the WebDAV pane and the proxy read.
+/// Two stores would mean two caches and two change streams: a sign-in the
+/// account pane makes could stay invisible to a backup taken after it, and
+/// a credential a restore writes would never reach the sites.
+final accountRepositoryProvider = FutureProvider<AccountRepository>((ref) async {
+  final store = await ref.watch(appSecretStoreProvider.future);
+  return AccountRepository.forStore(store);
+});
 
 /// What the account pane holds: whether the repository has opened yet, the
 /// stored credentials keyed by site id, and the sites whose stored document
@@ -31,6 +39,13 @@ final class AccountsController extends Notifier<AccountsState> {
   StreamSubscription<void>? _subscription;
   bool _restored = false;
 
+  /// The sign-in waiting for the store to open (see [_applyAndStore]).
+  LiveCredential? _pendingCredential;
+
+  /// The cookie line each site's adapter actually carries: the guard a
+  /// "login expired" judgment reads before dropping anything.
+  final Map<String, String> _applied = {};
+
   @override
   AccountsState build() {
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
@@ -38,7 +53,7 @@ final class AccountsController extends Notifier<AccountsState> {
     // build is discarded — the build's return is the initial state.
     var initial = (ready: false, credentials: const <String, LiveCredential>{}, unreadable: const <String>{});
     ref.watch(accountRepositoryProvider).whenData((repository) {
-      _subscription ??= repository.watch().listen((_) => _refresh(repository));
+      _subscription ??= repository.watch().listen((_) => _onStoreChange(repository));
       initial = (ready: true, credentials: repository.list(), unreadable: repository.unreadableSites());
       if (!_restored) {
         _restored = true;
@@ -46,6 +61,15 @@ final class AccountsController extends Notifier<AccountsState> {
         // stored cookies onto the site adapters' requests.
         unawaited(_applyStored(repository));
       }
+    });
+    // A sign-in that beat the store's opening is completed by the store's
+    // arrival: the held credential is stored then, not lost with the run.
+    ref.listen(accountRepositoryProvider, (previous, next) {
+      final repository = next.value;
+      final credential = _pendingCredential;
+      if (repository == null || credential == null) return;
+      _pendingCredential = null;
+      unawaited(_storeCredential(repository, credential));
     });
     return initial;
   }
@@ -105,6 +129,15 @@ final class AccountsController extends Notifier<AccountsState> {
     // Read what is being left before it goes: the roster matches on it.
     final leaving = repository.get(siteId);
     await repository.remove(siteId);
+    _applied.remove(siteId);
+    // The shared transport keeps its own session cookies beside the stored
+    // credentials; the sign-out empties them, so the site reads even its
+    // next incidental request as a guest.
+    try {
+      await ref.read(networkFactoryProvider).clearCookies();
+    } on Object {
+      // A guest all the same.
+    }
     if (siteId == 'douyu') {
       await repository.clearDouyuPair();
       await ref.read(douyuCookieSavedAtProvider.notifier).clear();
@@ -163,12 +196,20 @@ final class AccountsController extends Notifier<AccountsState> {
 
   Future<void> _applyAndStore(LiveAuthCapability auth, LiveCredential credential) async {
     await auth.applyCredential(credential);
+    _applied[credential.siteId] = accountCookieLine(credential);
     final repository = ref.read(accountRepositoryProvider).value;
     if (repository == null) {
-      // The site carries the credential for this session; storing waits
-      // for the secret store to open.
+      // The site carries the credential for this session; storing waits for
+      // the store's arrival — the listen in [build] completes the write.
+      _pendingCredential = credential;
       return;
     }
+    await _storeCredential(repository, credential);
+  }
+
+  /// The storing half of a sign-in: the vault document, the bilibili roster
+  /// entry beside it, and the pane's mirror.
+  Future<void> _storeCredential(AccountRepository repository, LiveCredential credential) async {
     await repository.save(credential);
     // A bilibili login is also remembered, so the next one can be switched
     // back to without a new scan. The login itself is stored either way.
@@ -203,17 +244,21 @@ final class AccountsController extends Notifier<AccountsState> {
   Future<void> _applyStored(AccountRepository repository) async {
     for (final credential in repository.list().values) {
       final auth = authOf(credential.siteId);
-      if (auth == null) continue;
+      final line = accountCookieLine(credential);
+      if (auth == null || line.isEmpty || _applied[credential.siteId] == line) continue;
       try {
         await auth.applyCredential(credential);
+        _applied[credential.siteId] = line;
       } on Object catch (error) {
         // A credential the site now refuses (a stale cookie) stays stored;
         // the next sign-in replaces it. A failure here is a silent logout,
         // so the viewer at least sees it in the log.
-        appLog.forCategory('account').warning(
-          'credential apply failed; the site carried on anonymously',
-          fields: {'site': credential.siteId, 'error': '$error'},
-        );
+        appLog
+            .forCategory('account')
+            .warning(
+              'credential apply failed; the site carried on anonymously',
+              fields: {'site': credential.siteId, 'error': '$error'},
+            );
       }
     }
   }
@@ -221,6 +266,21 @@ final class AccountsController extends Notifier<AccountsState> {
   void _refresh(AccountRepository repository) {
     state = (ready: true, credentials: repository.list(), unreadable: repository.unreadableSites());
   }
+
+  /// The store moved from outside this controller — a restore writing its
+  /// secrets, a removal from another surface. The pane's mirror follows,
+  /// and a credential it newly carries is applied onto its site right away,
+  /// so a restored login works in this run, not after a restart.
+  void _onStoreChange(AccountRepository repository) {
+    _refresh(repository);
+    unawaited(_applyStored(repository));
+  }
+
+  /// Whether [siteId]'s adapter actually carries [cookie]: a "login
+  /// expired" verdict may only drop a credential the adapter judged, not
+  /// one it never took (an apply that lost its race, a launch still walking
+  /// the stored logins).
+  bool credentialApplied(String siteId, String cookie) => _applied[siteId] == cookie;
 }
 
 /// The account pane's state.

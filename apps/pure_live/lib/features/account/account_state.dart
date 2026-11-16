@@ -91,13 +91,7 @@ AccountCheck accountCheckFailure(Object error) =>
 @immutable
 final class AccountSnapshot {
   /// Creates the snapshot.
-  const AccountSnapshot({
-    this.credential,
-    this.unreadable = false,
-    this.douyuLtp0,
-    this.douyuDid,
-    this.douyuSavedAt,
-  });
+  const AccountSnapshot({this.credential, this.unreadable = false, this.douyuLtp0, this.douyuDid, this.douyuSavedAt});
 
   /// The stored credential; null when the platform has none on this device.
   final LiveCredential? credential;
@@ -185,8 +179,11 @@ AccountStatus _douyuStatus(AccountSnapshot stored, Translations t, {required Dat
     DouyuSessionState.valid => AccountStatus(_douyuValid(stored, credentials, t), tone: AccountTone.ok, signedIn: true),
     // A lapsed login with a pair to renew it: the row reads as renewable and
     // the site renews it on the next play, so it stays signed in.
-    DouyuSessionState.expiredRefreshable =>
-      AccountStatus(t.account.statusDouyuRenewsOnPlay, tone: AccountTone.warning, signedIn: true),
+    DouyuSessionState.expiredRefreshable => AccountStatus(
+      t.account.statusDouyuRenewsOnPlay,
+      tone: AccountTone.warning,
+      signedIn: true,
+    ),
     // Expired with nothing to renew it with — the pair is gone, so it is no
     // longer a login and the row drops the sign-out.
     DouyuSessionState.expired => AccountStatus(t.account.statusDouyuRepaste),
@@ -225,18 +222,17 @@ String douyuSummary(AccountSnapshot stored, Translations t, {required DateTime n
   final expiry = DouyuAccount.sessionExpiry(stored.cookie, savedAt: stored.douyuSavedAt);
   final at = expiry == null ? '' : accountTime(expiry);
   final hasPair = stored.douyuLtp0 != null || stored.douyuDid != null;
-  return switch (
-      DouyuAccount.sessionState(
-        stored.cookie,
-        now: now,
-        savedAt: stored.douyuSavedAt,
-        ltp0: credentials.ltp0,
-        did: credentials.did,
-      )
-    ) {
-    DouyuSessionState.none || DouyuSessionState.guest => stored.cookie.isEmpty
-        ? (hasPair ? t.account.douyuPairOnly : t.account.douyuCookieCleared)
-        : t.account.douyuCookieGuest,
+  return switch (DouyuAccount.sessionState(
+    stored.cookie,
+    now: now,
+    savedAt: stored.douyuSavedAt,
+    ltp0: credentials.ltp0,
+    did: credentials.did,
+  )) {
+    DouyuSessionState.none || DouyuSessionState.guest =>
+      stored.cookie.isEmpty
+          ? (hasPair ? t.account.douyuPairOnly : t.account.douyuCookieCleared)
+          : t.account.douyuCookieGuest,
     DouyuSessionState.valid when expiry == null => t.account.douyuCookieValidNoExpiry,
     DouyuSessionState.valid when credentials.ltp0 != null && credentials.did != null =>
       t.account.douyuCookieValidAutoRenew(time: at),

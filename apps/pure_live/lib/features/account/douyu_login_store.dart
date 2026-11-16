@@ -60,12 +60,15 @@ final class VaultDouyuLoginStore implements DouyuLoginStore {
     final fields = DouyuAccount.cookieFields(cookie);
     if (fields.isEmpty) return;
     final previous = repository.get(_douyuSiteId);
+    // A renewal that lands after a sign-out must not resurrect the login:
+    // nothing stored means the viewer left, and the renewal dies with it.
+    if (previous == null) return;
     final credential = LiveCredential(
       siteId: _douyuSiteId,
       cookies: fields,
-      userId: previous?.userId,
-      nickname: previous?.nickname,
-      avatar: previous?.avatar,
+      userId: previous.userId,
+      nickname: previous.nickname,
+      avatar: previous.avatar,
       expiry: DouyuAccount.sessionExpiry(cookie, savedAt: renewedAt),
     );
     await repository.save(credential);

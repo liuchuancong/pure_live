@@ -46,9 +46,11 @@ final class _WebDavAutoBackupPaneState extends ConsumerState<WebDavAutoBackupPan
     if (!_settings.enabled) return t.backup.webdavAutoOff;
     final now = DateTime.now();
     if (ref.read(webdavAutoBackupServiceProvider).isDue(now: now)) return t.backup.webdavAutoDueNow;
-    final due = WebDavAutoBackupRules.nextDue(now: now.toUtc(), interval: _settings.interval, meta: ref.read(
-      webdavAutoBackupMetaProvider,
-    ));
+    final due = WebDavAutoBackupRules.nextDue(
+      now: now.toUtc(),
+      interval: _settings.interval,
+      meta: ref.read(webdavAutoBackupMetaProvider),
+    );
     return due == null ? t.backup.webdavAutoDueNow : formatBackupTime(due.toLocal());
   }
 
@@ -65,7 +67,11 @@ final class _WebDavAutoBackupPaneState extends ConsumerState<WebDavAutoBackupPan
     final t = context.t;
     switch (result) {
       case WebDavAutoBackupResult(:final fileName?):
-        showDsToast(context: context, title: t.backup.webdavAutoUploaded(file: fileName), status: DsStatus.success);
+        showDsToast(
+          context: context,
+          title: t.backup.webdavAutoUploaded(file: fileName),
+          status: DsStatus.success,
+        );
       case WebDavAutoBackupResult(:final error?):
         showDsToast(
           context: context,
@@ -104,7 +110,10 @@ final class _WebDavAutoBackupPaneState extends ConsumerState<WebDavAutoBackupPan
               leading: const DsIcon(DsIcons.calendarClock),
               title: t.backup.webdavAutoEnabled,
               description: t.backup.webdavAutoEnabledDesc,
-              control: DsSwitch(value: enabled, onChanged: (value) => unawaited(_controller.setEnabled(enabled: value))),
+              control: DsSwitch(
+                value: enabled,
+                onChanged: (value) => unawaited(_controller.setEnabled(enabled: value)),
+              ),
             ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.clock),
@@ -141,7 +150,10 @@ final class _WebDavAutoBackupPaneState extends ConsumerState<WebDavAutoBackupPan
               value: _settings.keep,
               options: [
                 for (final keep in WebDavAutoBackupSettings.keepChoices)
-                  DsSelectOption(value: keep, label: t.backup.webdavAutoKeepValue(count: keep)),
+                  DsSelectOption(
+                    value: keep,
+                    label: t.backup.webdavAutoKeepValue(count: keep),
+                  ),
               ],
               onChanged: enabled ? (keep) => unawaited(_controller.setKeep(keep)) : null,
             ),
@@ -222,9 +234,7 @@ final class _WebDavAutoBackupPaneState extends ConsumerState<WebDavAutoBackupPan
 
   /// When the backoff lets the next try go, in local time.
   String _retryText(WebDavAutoBackupMeta meta) {
-    final retryAt = meta.lastAttempt!.toUtc().add(
-      WebDavAutoBackupRules.backoff(meta.failures, _settings.interval),
-    );
+    final retryAt = meta.lastAttempt!.toUtc().add(WebDavAutoBackupRules.backoff(meta.failures, _settings.interval));
     return formatBackupTime(retryAt.toLocal());
   }
 }

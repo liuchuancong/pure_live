@@ -1,3 +1,5 @@
+import 'dart:convert' show jsonEncode;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/features/backup/cloud/cloud_callback.dart';
 import 'package:pure_live/features/backup/cloud/legacy_backup_importer.dart';
@@ -75,8 +77,16 @@ void main() {
       });
       expect(document.history.keys, ['douyin:5']);
       expect(document.history['douyin:5']!['lastWatchedAt'], '2023-11-14T22:13:20.000Z');
-      // Empty cookies are skipped; known keys map to the vault's refs.
-      expect(document.secrets, {'cookie/bilibili': 'SESSDATA=abc', 'cookie/douyu.ltp0': 'ltp'});
+      // Empty cookies are skipped; known keys map to the vault's refs — a
+      // cookie header becomes the credential document the repository reads,
+      // and the renewal pair stays raw.
+      expect(document.secrets, {
+        'credentials/bilibili': jsonEncode({
+          'siteId': 'bilibili',
+          'cookies': {'SESSDATA': 'abc'},
+        }),
+        'credentials/douyu.ltp0': 'ltp',
+      });
       expect(imported.skipped, ['theme']);
       // The v2 writer can encode it and the reader round-trips it.
       expect(BackupDocument.tryDecode(document.encode())!.follows.keys, ['bilibili:123', 'douyu:77']);
@@ -108,7 +118,10 @@ void main() {
 
     test('refuses other hosts, empty tokens and garbage', () {
       expect(gitHubTokenFromCallback('purelive://other?credential=$encoded'), isNull);
-      expect(gitHubTokenFromCallback('purelive://auth?credential=${Uri.encodeComponent('{"accessToken":""}')}'), isNull);
+      expect(
+        gitHubTokenFromCallback('purelive://auth?credential=${Uri.encodeComponent('{"accessToken":""}')}'),
+        isNull,
+      );
       expect(gitHubTokenFromCallback('https://example.com/?credential=$encoded'), isNull);
       expect(gitHubTokenFromCallback('not a link'), isNull);
       expect(gitHubTokenFromCallback(''), isNull);

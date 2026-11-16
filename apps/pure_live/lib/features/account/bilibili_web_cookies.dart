@@ -55,10 +55,13 @@ Future<void> clearBilibiliWebCookies() async {
     } on Object catch (error, stack) {
       appLog
           .forCategory('account')
-          .log(LogLevel.warning, 'clearing the bilibili web cookies failed', fields: {
-            'host': url.host,
-            'error': '$error',
-          }, error: error, stackTrace: stack);
+          .log(
+            LogLevel.warning,
+            'clearing the bilibili web cookies failed',
+            fields: {'host': url.host, 'error': '$error'},
+            error: error,
+            stackTrace: stack,
+          );
     }
   }
 }
@@ -82,10 +85,13 @@ Future<String> readBilibiliWebCookieHeader() async {
     } on Object catch (error, stack) {
       appLog
           .forCategory('account')
-          .log(LogLevel.warning, 'reading the bilibili web cookies failed', fields: {
-            'host': url.host,
-            'error': '$error',
-          }, error: error, stackTrace: stack);
+          .log(
+            LogLevel.warning,
+            'reading the bilibili web cookies failed',
+            fields: {'host': url.host, 'error': '$error'},
+            error: error,
+            stackTrace: stack,
+          );
     }
   }
   return fields.join('; ');

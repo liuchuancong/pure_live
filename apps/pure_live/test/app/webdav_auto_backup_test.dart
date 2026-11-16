@@ -143,8 +143,11 @@ Future<(ProviderContainer, _RecordingClient)> _container({
       backupRepositoryProvider.overrideWith((ref) async => repository ?? _repository(follows: _followed())),
       appSecretStoreProvider.overrideWith((ref) => SecretStore.load(vault: _MemoryVault())),
       webdavAutoBackupServiceProvider.overrideWith(
-        (ref) =>
-            WebDavAutoBackupService(ref, now: now, clientFactory: ({required url, required username, required password}) => client),
+        (ref) => WebDavAutoBackupService(
+          ref,
+          now: now,
+          clientFactory: ({required url, required username, required password}) => client,
+        ),
       ),
     ],
   );
@@ -203,11 +206,21 @@ void main() {
     );
     final succeeded = meta.copyWith(lastSuccess: now, target: target);
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 13), interval: const Duration(hours: 24), target: target, meta: succeeded),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 13),
+        interval: const Duration(hours: 24),
+        target: target,
+        meta: succeeded,
+      ),
       isFalse,
     );
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 7, 12), interval: const Duration(hours: 24), target: target, meta: succeeded),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 7, 12),
+        interval: const Duration(hours: 24),
+        target: target,
+        meta: succeeded,
+      ),
       isTrue,
     );
   });
@@ -218,17 +231,37 @@ void main() {
     final now = _utc(2026, 11, 6, 12);
     final fresh = WebDavAutoBackupMeta(lastSuccess: now, target: oldTarget);
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 12, 1), interval: const Duration(hours: 24), target: newTarget, meta: fresh),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 12, 1),
+        interval: const Duration(hours: 24),
+        target: newTarget,
+        meta: fresh,
+      ),
       isTrue,
     );
     // One failure ten minutes ago: the retry waits out the backoff.
-    final failed = WebDavAutoBackupMeta(lastSuccess: now, target: oldTarget, lastAttempt: _utc(2026, 11, 6, 11, 55), failures: 1);
+    final failed = WebDavAutoBackupMeta(
+      lastSuccess: now,
+      target: oldTarget,
+      lastAttempt: _utc(2026, 11, 6, 11, 55),
+      failures: 1,
+    );
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 12, 5), interval: const Duration(hours: 24), target: newTarget, meta: failed),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 12, 5),
+        interval: const Duration(hours: 24),
+        target: newTarget,
+        meta: failed,
+      ),
       isFalse,
     );
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 12, 10), interval: const Duration(hours: 24), target: newTarget, meta: failed),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 12, 10),
+        interval: const Duration(hours: 24),
+        target: newTarget,
+        meta: failed,
+      ),
       isTrue,
     );
   });
@@ -243,12 +276,22 @@ void main() {
       failures: 1,
     );
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 12), interval: const Duration(hours: 24), target: target, meta: recovered),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 12),
+        interval: const Duration(hours: 24),
+        target: target,
+        meta: recovered,
+      ),
       isFalse,
     );
     // Due when both the backoff and the interval have run out.
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 7, 10), interval: const Duration(hours: 24), target: target, meta: recovered),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 7, 10),
+        interval: const Duration(hours: 24),
+        target: target,
+        meta: recovered,
+      ),
       isTrue,
     );
     // Failures alone (never succeeded): the backoff decides. The target is
@@ -256,11 +299,21 @@ void main() {
     // that a fresh failure still holds off.
     final never = WebDavAutoBackupMeta(lastAttempt: _utc(2026, 11, 6, 11, 58), failures: 1);
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 12, 10), interval: const Duration(hours: 24), target: target, meta: never),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 12, 10),
+        interval: const Duration(hours: 24),
+        target: target,
+        meta: never,
+      ),
       isFalse,
     );
     expect(
-      WebDavAutoBackupRules.isDue(now: _utc(2026, 11, 6, 12, 15), interval: const Duration(hours: 24), target: target, meta: never),
+      WebDavAutoBackupRules.isDue(
+        now: _utc(2026, 11, 6, 12, 15),
+        interval: const Duration(hours: 24),
+        target: target,
+        meta: never,
+      ),
       isTrue,
     );
   });
@@ -303,7 +356,11 @@ void main() {
     );
     // A backoff already past answers null: due now.
     expect(
-      WebDavAutoBackupRules.nextDue(now: _utc(2026, 11, 7, 13, 20), interval: const Duration(hours: 24), meta: lateFailure),
+      WebDavAutoBackupRules.nextDue(
+        now: _utc(2026, 11, 7, 13, 20),
+        interval: const Duration(hours: 24),
+        meta: lateFailure,
+      ),
       isNull,
     );
   });
@@ -319,7 +376,11 @@ void main() {
         isDirectory: false,
       ),
       file('pure_live_follows_auto_20261103_100000.json'),
-      const WebDavEntry(name: 'nested.json', path: '/pure_live/sub/pure_live_backup_auto_20261104_100000.json', isDirectory: false),
+      const WebDavEntry(
+        name: 'nested.json',
+        path: '/pure_live/sub/pure_live_backup_auto_20261104_100000.json',
+        isDirectory: false,
+      ),
       file('pure_live_backup_auto_20261105_100000.json'),
     ];
     final doomed = WebDavAutoBackupRules.prune(entries, folder: '/pure_live', keep: 2);
@@ -330,7 +391,10 @@ void main() {
 
   test('retention with a count below one keeps nothing extra and nothing less', () {
     WebDavEntry file(String name) => WebDavEntry(name: name, path: '/a/$name', isDirectory: false);
-    final entries = [file('pure_live_backup_auto_20261101_100000.json'), file('pure_live_backup_auto_20261102_100000.json')];
+    final entries = [
+      file('pure_live_backup_auto_20261101_100000.json'),
+      file('pure_live_backup_auto_20261102_100000.json'),
+    ];
     expect(WebDavAutoBackupRules.prune(entries, folder: '/a', keep: 0), hasLength(2));
     expect(WebDavAutoBackupRules.prune(entries, folder: '/a', keep: 5), isEmpty);
   });
@@ -353,7 +417,13 @@ void main() {
     expect(await controller.setFolder('backup/pure_live'), isTrue);
     expect(
       container.read(webdavAutoBackupSettingsProvider),
-      const WebDavAutoBackupSettings(enabled: true, hours: 6, keep: 30, folder: 'backup/pure_live', includeSecrets: true),
+      const WebDavAutoBackupSettings(
+        enabled: true,
+        hours: 6,
+        keep: 30,
+        folder: 'backup/pure_live',
+        includeSecrets: true,
+      ),
     );
 
     // A fresh controller re-reads what was stored.
@@ -381,13 +451,23 @@ void main() {
 
   test('the target fingerprint moves with the account, the folder and the contents', () {
     final folder = ['pure_live'];
-    final base = webDavAutoBackupTarget(account: _account, folder: folder, scope: WebDavAutoBackupScope.all, includeSecrets: false);
+    final base = webDavAutoBackupTarget(
+      account: _account,
+      folder: folder,
+      scope: WebDavAutoBackupScope.all,
+      includeSecrets: false,
+    );
     expect(
       webDavAutoBackupTarget(account: _account, folder: folder, scope: WebDavAutoBackupScope.all, includeSecrets: true),
       isNot(base),
     );
     expect(
-      webDavAutoBackupTarget(account: _account, folder: ['other'], scope: WebDavAutoBackupScope.all, includeSecrets: false),
+      webDavAutoBackupTarget(
+        account: _account,
+        folder: ['other'],
+        scope: WebDavAutoBackupScope.all,
+        includeSecrets: false,
+      ),
       isNot(base),
     );
     expect(
@@ -512,7 +592,11 @@ void main() {
 
   test('a follows-only upload names a follows file and never carries secrets', () async {
     final (container, client) = await _container(
-      settings: const WebDavAutoBackupSettings(enabled: true, scope: WebDavAutoBackupScope.follows, includeSecrets: true),
+      settings: const WebDavAutoBackupSettings(
+        enabled: true,
+        scope: WebDavAutoBackupScope.follows,
+        includeSecrets: true,
+      ),
       now: () => _utc(2026, 11, 6, 12, 34, 56),
     );
     addTearDown(container.dispose);
@@ -586,8 +670,10 @@ void main() {
         backupRepositoryProvider.overrideWith((ref) async => _repository(follows: _followed())),
         appSecretStoreProvider.overrideWith((ref) => SecretStore.load(vault: _MemoryVault())),
         webdavAutoBackupServiceProvider.overrideWith(
-          (ref) =>
-              WebDavAutoBackupService(ref, clientFactory: ({required url, required username, required password}) => client),
+          (ref) => WebDavAutoBackupService(
+            ref,
+            clientFactory: ({required url, required username, required password}) => client,
+          ),
         ),
       ],
     );
@@ -628,8 +714,10 @@ void main() {
         backupRepositoryProvider.overrideWith((ref) async => _repository(follows: _followed())),
         appSecretStoreProvider.overrideWith((ref) => SecretStore.load(vault: _MemoryVault())),
         webdavAutoBackupServiceProvider.overrideWith(
-          (ref) =>
-              WebDavAutoBackupService(ref, clientFactory: ({required url, required username, required password}) => client),
+          (ref) => WebDavAutoBackupService(
+            ref,
+            clientFactory: ({required url, required username, required password}) => client,
+          ),
         ),
       ],
     );

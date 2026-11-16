@@ -51,4 +51,6 @@ final class DouyuCookieSavedAtController extends Notifier<int> {
 }
 
 /// The douyu login's save time, in epoch seconds.
-final douyuCookieSavedAtProvider = NotifierProvider<DouyuCookieSavedAtController, int>(DouyuCookieSavedAtController.new);
+final douyuCookieSavedAtProvider = NotifierProvider<DouyuCookieSavedAtController, int>(
+  DouyuCookieSavedAtController.new,
+);
