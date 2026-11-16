@@ -237,8 +237,8 @@ extension _RoomPageLayouts on _RoomPageState {
   /// The picture's frame, from the engine's own geometry: the stream reports
   /// its shape, so the room no longer keeps a per-room manual orientation to
   /// fight it. The clamp keeps an absurd report from taking the whole stage.
-  double _pictureRatio(RoomState room) {
-    final detected = room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
+  double _pictureRatio(PlayerHandle? handle) {
+    final detected = handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
     final ratio = detected <= 0 || !detected.isFinite ? 16 / 9 : detected;
     return ratio.clamp(kRoomFrameRatioMin, kRoomFrameRatioMax);
   }

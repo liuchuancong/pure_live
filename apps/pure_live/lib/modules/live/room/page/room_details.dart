@@ -12,6 +12,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/room_follow.dart' show toggleRoomFollow;
+import 'package:pure_live/modules/live/room/room_links.dart' show openAnchorVideos, openRoomArea;
 import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart' show showRoomDirectLinks;
 import 'package:pure_live/shared/shared.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
@@ -216,17 +217,17 @@ final class _DetailsFollow extends ConsumerWidget {
 /// and link — the number and the link copy on a press. A timer keeps the
 /// two durations moving; a restriction, when the stream carries one, keeps
 /// its badge.
-final class _RoomFactsList extends StatefulWidget {
+final class _RoomFactsList extends ConsumerStatefulWidget {
   const _RoomFactsList({required this.room, required this.watchStarted});
 
   final LiveRoom room;
   final DateTime watchStarted;
 
   @override
-  State<_RoomFactsList> createState() => _RoomFactsListState();
+  ConsumerState<_RoomFactsList> createState() => _RoomFactsListState();
 }
 
-final class _RoomFactsListState extends State<_RoomFactsList> {
+final class _RoomFactsListState extends ConsumerState<_RoomFactsList> {
   Timer? _tick;
 
   @override
@@ -276,6 +277,21 @@ final class _RoomFactsListState extends State<_RoomFactsList> {
                     leading: const DsIcon(DsIcons.video),
                     description: Text(title),
                     style: prose,
+                  ),
+                // The panel's two doors, said as rows rather than hidden on
+                // the hero's words: the streamer's videos on their platform,
+                // and the partition's own room list.
+                DsListRow(
+                  title: Text(t.room.anchorVideos),
+                  leading: const DsIcon(DsIcons.film),
+                  onPressed: () => unawaited(openAnchorVideos(context, ref, room)),
+                ),
+                if ((room.area?.areaName ?? '').trim().isNotEmpty)
+                  DsListRow(
+                    title: Text(t.room.areaEntry),
+                    leading: const DsIcon(DsIcons.compass),
+                    detail: Text(room.area!.areaName),
+                    onPressed: () => unawaited(openRoomArea(context, ref, room)),
                   ),
                 if (startedAt != null) ...[
                   DsListRow(

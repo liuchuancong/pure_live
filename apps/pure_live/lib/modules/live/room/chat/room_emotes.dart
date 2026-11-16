@@ -89,7 +89,7 @@ List<InlineSpan> chatWordSpans(
     spans.add(
       WidgetSpan(
         alignment: PlaceholderAlignment.middle,
-        child: _AtlasEmoji(image: image, src: src, size: emojiSize),
+        child: _AtlasEmoji(code: key, image: image, src: src, size: emojiSize),
       ),
     );
     last = match.end;
@@ -138,6 +138,9 @@ final class _PlatformEmote extends StatelessWidget {
     child: Image(
       image: cachedImage(url, policy: ImageCachePolicies.chatEmote, height: size.round()),
       height: size,
+      // A message can be nothing but emoticons: the code is the line's
+      // whole reading, on screen and to a reader.
+      semanticLabel: code,
       errorBuilder: (context, error, stackTrace) => Text(code, style: style),
     ),
   );
@@ -146,7 +149,10 @@ final class _PlatformEmote extends StatelessWidget {
 /// One emoticon of the bundled atlas: a rect of the sheet the flying layer
 /// already decoded, painted at the chat line's own size.
 final class _AtlasEmoji extends StatelessWidget {
-  const _AtlasEmoji({required this.image, required this.src, required this.size});
+  const _AtlasEmoji({required this.code, required this.image, required this.src, required this.size});
+
+  /// The code as written in the message: the emoticon's whole reading.
+  final String code;
 
   final ui.Image image;
   final Rect src;
@@ -157,7 +163,11 @@ final class _AtlasEmoji extends StatelessWidget {
     // A hair of air on each side, so a run of emoticons reads as a run and
     // not one pasted strip.
     padding: const EdgeInsets.symmetric(horizontal: 1),
-    child: CustomPaint(size: Size.square(size), painter: _AtlasEmojiPainter(this)),
+    child: Semantics(
+      label: code,
+      image: true,
+      child: CustomPaint(size: Size.square(size), painter: _AtlasEmojiPainter(this)),
+    ),
   );
 }
 

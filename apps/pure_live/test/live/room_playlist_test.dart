@@ -44,14 +44,18 @@ void main() {
   tearDown(() => container.dispose());
 
   /// The navigation seam's write: a room opened from a list of [roomIds].
-  void open(List<String> roomIds, String current) => container.read(roomPlaylistProvider.notifier).open(
-    rooms: [for (final id in roomIds) _room(id)],
-    current: _room(current),
-  );
+  void open(List<String> roomIds, String current) => container
+      .read(roomPlaylistProvider.notifier)
+      .open(rooms: [for (final id in roomIds) _room(id)], current: _room(current));
 
   testWidgets('a leaving page hands its list clear outside the teardown phase', (tester) async {
     open(['123', '456'], '123');
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: _LeavingPage(room: _room('123'))));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _LeavingPage(room: _room('123')),
+      ),
+    );
     expect(container.read(roomPlaylistProvider)?.current.roomId, '123');
 
     await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const SizedBox.shrink()));
@@ -62,7 +66,12 @@ void main() {
 
   testWidgets("a leaving page leaves a newer room's list alone", (tester) async {
     open(['123', '456'], '123');
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: _LeavingPage(room: _room('123'))));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: _LeavingPage(room: _room('123')),
+      ),
+    );
 
     // The room the viewer is on now is not the one being unmounted.
     open(['456', '123'], '456');

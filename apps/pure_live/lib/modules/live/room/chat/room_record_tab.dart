@@ -75,6 +75,9 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
               .firstOrNull;
     final recording = task != null && task.state == RecordingTaskState.recording;
     final waiting = task?.state == RecordingTaskState.waiting;
+    // The take's segments are being joined into its file: neither recording
+    // nor stopped, and the state words say so where the raw state cannot.
+    final joining = task?.postProcessing ?? false;
     _syncTicker(running: recording);
 
     if (task == null) {
@@ -106,14 +109,20 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
     // The take's own average rather than the stream's instantaneous rate: the
     // store keeps bytes and media time and no live bitrate, which is all a
     // recording can honestly answer with.
-    final bitrate = formatRecordingBitrate(task.bytes, recording ? elapsed : Duration(milliseconds: task.durationMs));
+    // Media time over the wall clock: a stalled stream writes fewer bytes
+    // than the clock says, and the average should say what landed. The
+    // clock keeps its own line below.
+    final mediaTime = Duration(milliseconds: task.durationMs);
+    final bitrate = formatRecordingBitrate(task.bytes, mediaTime > Duration.zero ? mediaTime : elapsed);
     final chatCount = recording ? ref.read(recorderEngineProvider).chatEntries(task.id) : null;
-    final (word, tone) = switch (task.state) {
-      RecordingTaskState.recording => (t.recorder.stateRecording, DsStatus.danger),
-      RecordingTaskState.waiting => (t.recorder.stateWaiting, DsStatus.neutral),
-      RecordingTaskState.stopped => (t.recorder.stateStopped, DsStatus.success),
-      RecordingTaskState.failed => (t.recorder.stateFailed, DsStatus.warning),
-    };
+    final (word, tone) = joining
+        ? (t.recorder.stateProcessing, DsStatus.info)
+        : switch (task.state) {
+            RecordingTaskState.recording => (t.recorder.stateRecording, DsStatus.danger),
+            RecordingTaskState.waiting => (t.recorder.stateWaiting, DsStatus.neutral),
+            RecordingTaskState.stopped => (t.recorder.stateStopped, DsStatus.success),
+            RecordingTaskState.failed => (t.recorder.stateFailed, DsStatus.warning),
+          };
     return ListView(
       padding: const EdgeInsets.all(DsSpace.s16),
       children: [
@@ -168,7 +177,7 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
               variant: recording ? DsButtonVariant.danger : DsButtonVariant.primary,
               size: DsSize.sm,
               leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc, size: 15),
-              onPressed: _toggle,
+              onPressed: joining ? null : _toggle,
               child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
             ),
           ),

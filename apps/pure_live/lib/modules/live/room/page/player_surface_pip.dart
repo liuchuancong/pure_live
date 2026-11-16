@@ -258,11 +258,21 @@ Future<void> toggleRoomRecording(BuildContext context, WidgetRef ref) async {
   final recording =
       roomRecordingTaskOf(ref.read(recordingTasksProvider).tasks, ref.read(roomProvider).room)?.state ==
       RecordingTaskState.recording;
-  final failure = await ref.read(roomProvider.notifier).toggleRecording();
+  // The toast is this verb's only answer, so a throw must land in it too —
+  // an uncaught error here would leave the viewer pressing a dead button.
+  String? failure;
+  try {
+    failure = await ref.read(roomProvider.notifier).toggleRecording();
+  } on Object catch (error) {
+    appLog.forCategory('recorder').warning('recording toggle threw', fields: {'error': '$error'});
+    failure = 'cannot start: $error';
+  }
   if (!context.mounted) return;
   showDsToast(
     context: context,
-    title: failure == null ? (recording ? t.room.recordStopped : t.room.recordStarted) : t.room.recordFailed,
+    title: failure == null
+        ? (recording ? t.room.recordStopped : t.room.recordStarted)
+        : recorderFailureText(t, failure),
     status: failure == null ? DsStatus.success : DsStatus.danger,
   );
 }

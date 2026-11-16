@@ -30,7 +30,10 @@ extension _RoomPageLifecycle on _RoomPageState {
     );
   }
 
-  void _watchSlow(RoomState room) {
+  void _watchSlow() {
+    // The state is read, not watched: the page's build selects the fields
+    // this answers to and calls in whenever any of them changes.
+    final room = ref.read(roomProvider);
     final connecting = room.room != null && room.handle == null && !room.playback.playing;
     if (connecting && _slowTimer == null) {
       _slowTimer = Timer(slowAfter, () {
@@ -51,9 +54,10 @@ extension _RoomPageLifecycle on _RoomPageState {
   /// enters fullscreen once. A viewer already in another presentation mode
   /// (or one who leaves it) keeps their choice; a paused or failed room
   /// never asks.
-  void _maybeAutoFullscreen(RoomState room, PresentationMode presentation) {
+  void _maybeAutoFullscreen(PresentationMode presentation) {
     if (_autoFullscreenDone) return;
     if (!_autoFullscreenArmed) return;
+    final room = ref.read(roomProvider);
     final handle = room.handle;
     if (handle == null || !room.playback.playing) return;
     _autoFullscreenDone = true;
@@ -67,7 +71,7 @@ extension _RoomPageLifecycle on _RoomPageState {
       // the system's own fullscreen. A phone's portrait immersive room is
       // already the page's full-bleed layout — there is no fuller surface
       // under it, so the portrait branch has nothing to do there.
-      final portrait = _pictureRatio(ref.read(roomProvider)) < 1;
+      final portrait = _pictureRatio(ref.read(roomProvider).handle) < 1;
       // 沉浸式按窗口形状判定（<600 与平台无关）：窄窗已是满铺的竖屏沉浸
       // 房间，竖屏流不再落竖屏全屏表面——桌面小窗与手机同款。
       final phoneImmersive = MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
@@ -182,17 +186,21 @@ extension _RoomPageLifecycle on _RoomPageState {
   /// Armed here, ahead of the leave, because the native side decides in
   /// `onUserLeaveHint` — before any Dart call could run. Phones only, and only
   /// with the draw-over-other-apps grant: without it the app simply leaves.
-  void _syncFloatingWindowArm(
-    RoomState room, {
+  void _syncFloatingWindowArm({
     required Size screen,
     required bool onTop,
     required bool autoSmallWindow,
     required FloatingWindowSettings floating,
   }) {
+    final room = ref.read(roomProvider);
     if (!FloatingOverlay.supported) return;
     final wanted =
         onTop && autoSmallWindow && room.handle != null && room.playback.playing && !FloatingOverlay.active.value;
+    // A refusal stands until the grant arrives: re-asking every build would
+    // hammer the channel while the viewer sits on the system's grant page.
+    if (wanted && _floatingArmRefused) return;
     final size = wanted ? _floatingWindowSize(_floatingWindowRatio(room), floating, screen) : Size.zero;
+    if (!wanted) _floatingArmRefused = false;
     if (wanted == _floatingArmed && (!wanted || size == _floatingArmedSize)) return;
     _floatingArmed = wanted;
     _floatingArmedSize = wanted ? size : null;
@@ -208,10 +216,12 @@ extension _RoomPageLifecycle on _RoomPageState {
 
   Future<void> _armFloatingWindow(Size size) async {
     if (!await FloatingOverlay.refresh()) {
-      // No grant yet: leave the arm open so the next build arms the window
-      // once the viewer grants it (the setting's toggle asks for it).
+      // No grant yet: remember the refusal so the builds stop re-asking, and
+      // let the grant's own callback restart the arm once the viewer grants
+      // it (the setting's toggle asks for it).
       _floatingArmed = false;
       _floatingArmedSize = null;
+      _floatingArmRefused = true;
       return;
     }
     if (!mounted || !_floatingArmed) return;
@@ -221,7 +231,10 @@ extension _RoomPageLifecycle on _RoomPageState {
   /// The grant can arrive while the app is away (the system page) or after the
   /// page armed without it: re-run the arm decision.
   void _onFloatingWindowPermitted() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    // A grant lifts a refusal: the rebuild arms the window again.
+    _floatingArmRefused = false;
+    setState(() {});
   }
 
   /// The small window's size: the floating player's, for the picture's shape,

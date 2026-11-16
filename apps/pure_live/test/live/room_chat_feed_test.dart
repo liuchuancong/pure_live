@@ -119,7 +119,10 @@ void main() {
       expect(chat.added - seen, 0);
       final tests = chat.removalsSince(removals)!;
       expect(tests, hasLength(3));
-      final kept = [for (final line in held) if (!tests.any((test) => test(line))) line];
+      final kept = [
+        for (final line in held)
+          if (!tests.any((test) => test(line))) line,
+      ];
       expect(kept, isEmpty);
       expect(_ids(container), isEmpty);
     });

@@ -27,7 +27,7 @@ extension _PlayerSurfacePictureGestures on _PlayerSurfaceState {
       return;
     }
     final item = _takeHeldDanmaku();
-    if (item == null || !shownBefore || !widget.roomState.playback.playing) {
+    if (item == null || !shownBefore || !ref.read(roomProvider).playback.playing) {
       // The message was frozen on pointer-down; this tap was never going to
       // open it, so it flies on and the bars take the tap instead.
       if (item != null) widget.barrage?.resumeAllPaused();

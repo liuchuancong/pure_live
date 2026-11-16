@@ -10,7 +10,9 @@ Future<void> _show(WidgetTester tester, Size window, RoomBottomPanel panel) asyn
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     MaterialApp(
-      home: Scaffold(body: SizedBox.fromSize(size: window, child: panel)),
+      home: Scaffold(
+        body: SizedBox.fromSize(size: window, child: panel),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -19,12 +21,8 @@ Future<void> _show(WidgetTester tester, Size window, RoomBottomPanel panel) asyn
 /// The sheet's own height, read off the frosted card that is its surface.
 double _sheetHeight(WidgetTester tester) => tester.getSize(find.byType(RoomGlassCard)).height;
 
-RoomBottomPanel _panel(RoomPanelStop stop, {ValueChanged<double>? onCover}) => RoomBottomPanel(
-  picture: const Placeholder(),
-  panel: const Placeholder(),
-  preferred: stop,
-  onCoverChanged: onCover,
-);
+RoomBottomPanel _panel(RoomPanelStop stop, {ValueChanged<double>? onCover}) =>
+    RoomBottomPanel(picture: const Placeholder(), panel: const Placeholder(), preferred: stop, onCoverChanged: onCover);
 
 void main() {
   testWidgets('the balanced panel opens at the reading height of the window', (tester) async {

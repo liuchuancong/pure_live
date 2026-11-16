@@ -1,8 +1,46 @@
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show HardwareKeyboard, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/widgets/app_dialog.dart';
+
+/// A room key that stands down while the viewer types. The chat composer
+/// sits inside the page's shortcut subtree, and a bare letter the bindings
+/// match would otherwise never reach the field — a matched shortcut marks
+/// the key handled, and a handled key never turns into a character. The
+/// activator refuses while a text field owns the focus, so the letter falls
+/// through to the field and the page's verb waits its turn.
+final class NotWhileEditingActivator implements ShortcutActivator {
+  /// Wraps [activator] (the room table's own key and modifiers).
+  const NotWhileEditingActivator(this.activator);
+
+  /// The key this stands in for, matched exactly as the table spells it.
+  final ShortcutActivator activator;
+
+  @override
+  bool accepts(KeyEvent event, HardwareKeyboard state) {
+    // The focus a field holds is the one inside it; the ancestors of that
+    // focus carry the EditableText it types into. An IME composition reports
+    // a process key, which never matches the table's letters, so composing
+    // stays untouched.
+    var editing = false;
+    FocusManager.instance.primaryFocus?.context?.visitAncestorElements((element) {
+      if (element.widget is EditableText) {
+        editing = true;
+        return false;
+      }
+      return true;
+    });
+    if (editing) return false;
+    return activator.accepts(event, state);
+  }
+
+  @override
+  Iterable<LogicalKeyboardKey>? get triggers => activator.triggers;
+
+  @override
+  String debugDescribeKeys() => activator.debugDescribeKeys();
+}
 
 /// What a room key does. The page maps each one to its own controllers; the
 /// table below only names the verb.
@@ -12,6 +50,7 @@ enum RoomShortcutAction {
   leave,
   volumeUp,
   volumeDown,
+  mute,
   chatColumn,
   screenshot,
   stats,
@@ -54,7 +93,8 @@ List<RoomShortcutBinding> roomShortcutBindings(
   ),
   RoomShortcutBinding(
     action: RoomShortcutAction.fullscreen,
-    keys: const [SingleActivator(LogicalKeyboardKey.keyF)],
+    // F11 alongside F: the desktop's own fullscreen chord.
+    keys: const [SingleActivator(LogicalKeyboardKey.keyF), SingleActivator(LogicalKeyboardKey.f11)],
     label: t.room.shortcutFullscreen,
   ),
   RoomShortcutBinding(
@@ -72,6 +112,12 @@ List<RoomShortcutBinding> roomShortcutBindings(
       action: RoomShortcutAction.volumeDown,
       keys: const [SingleActivator(LogicalKeyboardKey.arrowDown)],
       label: t.room.shortcutVolumeDown,
+    ),
+    RoomShortcutBinding(
+      action: RoomShortcutAction.mute,
+      // The M every other player in the app answers to.
+      keys: const [SingleActivator(LogicalKeyboardKey.keyM)],
+      label: t.room.shortcutMute,
     ),
   ],
   if (chatColumn)
@@ -120,6 +166,7 @@ String roomShortcutKeyLabel(SingleActivator activator, Translations t) {
   if (key == LogicalKeyboardKey.escape) return t.room.keyEscape;
   if (key == LogicalKeyboardKey.arrowUp) return '↑';
   if (key == LogicalKeyboardKey.arrowDown) return '↓';
+  if (key == LogicalKeyboardKey.f11) return 'F11';
   if (key == LogicalKeyboardKey.question || key == LogicalKeyboardKey.slash) return '?';
   return key.keyLabel;
 }

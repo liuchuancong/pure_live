@@ -28,6 +28,7 @@ import 'package:pure_live/modules/live/room/controller/room_open_timing.dart'
     show RoomOpenProxy, RoomOpenStage, RoomOpenTiming, kSlowEntryBudget;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/shared/network/failure_text.dart';
 import 'package:pure_live/shared/rooms/auto_room_switch.dart';
 
 /// How many chat lines the page keeps; older leave first.
@@ -844,9 +845,7 @@ final roomChatProvider = NotifierProvider<RoomChatController, List<LiveMessage>>
 /// room's state, so a glance surface does not rebuild for every playback
 /// twitch the room publishes. The panel's own list watches [roomProvider]
 /// directly; the overlay's wants are smaller than the room.
-final roomChatStandingProvider = Provider<RoomChat>(
-  (ref) => ref.watch(roomProvider.select((state) => state.chat)),
-);
+final roomChatStandingProvider = Provider<RoomChat>((ref) => ref.watch(roomProvider.select((state) => state.chat)));
 
 /// The room's anchor name as the overlay reads it: a gift line names its
 /// receiver only when it differs, and the name is the room's own fact.
@@ -1726,7 +1725,7 @@ final class RoomController extends Notifier<RoomState> {
       // The column says so too: the viewer who comes back reads the failure
       // row with its retry, not a chat that pretends to be alive.
       appLog.forCategory('room.chat').warning('background danmaku reconnect failed', fields: {'error': '$error'});
-      _setChat(RoomChatStatus.failed, error: '$error');
+      _setChat(RoomChatStatus.failed, error: networkFailureText(error));
     }
   }
 
@@ -2004,7 +2003,7 @@ final class RoomController extends Notifier<RoomState> {
             stackTrace: stack,
           );
       if (epoch == _openEpoch) {
-        state = _with(error: '$error');
+        state = _with(error: networkFailureText(error));
         _reportOpenTiming(failed: true);
       }
       return;

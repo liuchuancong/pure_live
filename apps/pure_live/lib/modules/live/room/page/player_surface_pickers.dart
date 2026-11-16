@@ -234,7 +234,7 @@ extension _PlayerSurfaceStreamPickers on _PlayerSurfaceState {
 
   /// The open picker's catalogue.
   Widget _pickerPanel(Translations t, _Picker picker) {
-    final room = widget.roomState;
+    final room = ref.watch(roomProvider);
     final controller = ref.read(roomProvider.notifier);
     switch (picker) {
       case _Picker.quality:

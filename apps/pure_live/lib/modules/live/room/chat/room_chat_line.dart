@@ -299,10 +299,15 @@ final class _ChatName extends StatelessWidget {
       child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
     );
     if (onPressed == null) return text;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    // The name opens a user card: a reader gets the verb as a tap action.
+    return Semantics(
+      button: true,
       onTap: onPressed,
-      child: MouseRegion(cursor: SystemMouseCursors.click, child: text),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: MouseRegion(cursor: SystemMouseCursors.click, child: text),
+      ),
     );
   }
 }

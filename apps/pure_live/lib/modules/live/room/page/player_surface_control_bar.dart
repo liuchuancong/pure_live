@@ -321,12 +321,16 @@ final class _IdleWakeStrip extends StatelessWidget {
   final VoidCallback onWake;
 
   @override
-  Widget build(BuildContext context) => MouseRegion(
-    onEnter: (_) => onWake(),
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onWake,
-      child: const SizedBox(height: 14, width: double.infinity),
+  Widget build(BuildContext context) => ExcludeSemantics(
+    // A wake strip is a pointer's door, not a control: the verbs it
+    // reveals are all named on the bar itself.
+    child: MouseRegion(
+      onEnter: (_) => onWake(),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onWake,
+        child: const SizedBox(height: 14, width: double.infinity),
+      ),
     ),
   );
 }

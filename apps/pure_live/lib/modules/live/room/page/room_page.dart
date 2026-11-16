@@ -12,7 +12,7 @@ import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart';
-import 'package:media_core/media_core.dart' show PlayerHandleLifecycle, PlayerId, PresentationMode;
+import 'package:media_core/media_core.dart' show PlayerHandle, PlayerHandleLifecycle, PlayerId, PresentationMode;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -34,7 +34,7 @@ import 'package:pure_live/modules/live/room/page/room_glass_card.dart';
 import 'package:pure_live/modules/live/room/page/room_refresh_rate.dart' show roomRefreshRateProvider;
 import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show takeRoomScreenshot;
 import 'package:pure_live/modules/live/room/page/room_shortcuts.dart'
-    show RoomShortcutAction, roomShortcutBindings, showRoomShortcuts;
+    show NotWhileEditingActivator, RoomShortcutAction, roomShortcutBindings, showRoomShortcuts;
 import 'package:pure_live/modules/live/room/page/room_status.dart' show roomSlowProvider, slowAfter;
 import 'package:pure_live/modules/live/room/panels/room_panel.dart'
     show
@@ -129,6 +129,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// frame).
   bool _floatingArmed = false;
   Size? _floatingArmedSize;
+
+  /// Whether the last arm was refused for a missing grant. While it stands
+  /// the page stops re-asking every build — the grant's own callback (see
+  /// [_onFloatingWindowPermitted]) clears it, and that rebuild arms again.
+  bool _floatingArmRefused = false;
 
   /// Whether this visit already handled the auto-fullscreen preference: the
   /// room asks once, when its stream first plays, and a later exit stays.
@@ -400,7 +405,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final state = ref.read(roomProvider);
     final handle = state.handle;
     if (handle == null) return;
-    if (_pictureRatio(state) < 1) {
+    if (_pictureRatio(state.handle) < 1) {
       _setPortraitFullscreen(true);
       return;
     }
@@ -596,15 +601,20 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // pixels and draw underneath it.
     if (FloatingOverlay.active.value) return const ColoredBox(color: kPlayerStageColor);
     final t = context.t;
-    final room = ref.watch(roomProvider);
+    // The skeleton answers to three facts only — the handle, whether the
+    // stream plays, and which room it is. Everything else the state carries
+    // (the tick, the catalogue, the chat) is the picture's and the panels'
+    // to watch, so their streams stop rebuilding this layout.
+    final (handle, playing, roomIdentity) = ref.watch(
+      roomProvider.select((state) => (state.handle, state.playback.playing, state.room?.ref.identityKey)),
+    );
     // Declares the playing line's frame rate to the display while this page
     // exists; disposing the page releases it.
     ref.watch(roomRefreshRateProvider);
-    _syncScreenWake(room.playback.playing && ref.watch(keepScreenOnProvider));
+    _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
     final presentation = ref.watch(roomPresentationProvider);
-    _maybeAutoFullscreen(room, presentation);
+    _maybeAutoFullscreen(presentation);
     _syncFloatingWindowArm(
-      room,
       screen: MediaQuery.sizeOf(context),
       // The room must be what the viewer sees: leaving the app from settings
       // or a dialog pushed over the room is not leaving the room.
@@ -673,10 +683,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       }
     }
 
-    _watchSlow(room);
+    _watchSlow();
     final presentationController = ref.read(roomPresentationProvider.notifier);
     _presentationController = presentationController;
-    _player = room.handle?.id;
+    _player = handle?.id;
     // Fullscreen and the desktop compact window take the app's window and
     // lay out the bare picture. A phone's picture-in-picture is the system's
     // window over the app, so this page keeps the layout it had.
@@ -696,7 +706,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         _setPortraitFullscreen(false);
         return;
       }
-      final player = room.handle?.id;
+      final player = handle?.id;
       final mode = ref.read(roomPresentationProvider);
       if (mode == PresentationMode.windowFullscreen && player != null) {
         unawaited(presentationController.toggleWindowFullscreen(player));
@@ -724,7 +734,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     /// where the back arrow means "put the page back".
     void closeRoom() {
       _closingRoom = true;
-      final player = room.handle?.id;
+      final player = handle?.id;
       if (player != null) unawaited(presentationController.exit(player));
       if (ref.read(roomLeaveProvider) case final closeWindow?) {
         unawaited(_roomNotifier.close());
@@ -742,7 +752,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // own layout, the room), Space plays and pauses. A focused text field
     // consumes the keys first, so the composer never flips the playback.
     void nudgeVolume(double delta) {
-      final handle = room.handle;
       if (handle == null) return;
       final next = (handle.volume + delta).clamp(0.0, 1.0);
       _surfaceHud.show(next);
@@ -762,7 +771,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       t,
       tv: tv,
       chatColumn: wideWindow,
-      canCaptureScreenshot: room.handle?.canCaptureScreenshot ?? false,
+      canCaptureScreenshot: handle?.canCaptureScreenshot ?? false,
     );
     VoidCallback shortcutAction(RoomShortcutAction action) => switch (action) {
       RoomShortcutAction.playPause => () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
@@ -770,6 +779,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       RoomShortcutAction.leave => leave,
       RoomShortcutAction.volumeUp => () => nudgeVolume(volumeStep),
       RoomShortcutAction.volumeDown => () => nudgeVolume(-volumeStep),
+      RoomShortcutAction.mute => () => unawaited(
+        ref.read(roomProvider.notifier).setMuted(value: !ref.read(roomProvider).muted),
+      ),
       RoomShortcutAction.chatColumn => toggleChatColumn,
       // A frame of the stream, for when it misbehaves.
       RoomShortcutAction.screenshot => () {
@@ -781,20 +793,27 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       RoomShortcutAction.retry => () => unawaited(ref.read(roomProvider.notifier).retry()),
       RoomShortcutAction.help => () => unawaited(showRoomShortcuts(context, shortcuts)),
     };
-    final keys = <SingleActivator, VoidCallback>{
+    final keys = <ShortcutActivator, VoidCallback>{
       for (final binding in shortcuts)
-        for (final activator in binding.keys) activator: shortcutAction(binding.action),
+        for (final activator in binding.keys)
+          // A character key stands down while the viewer types in the chat
+          // field, or the matched shortcut would mark the key handled and
+          // the letter would never land in the message. Escape keeps its
+          // way out from under the field.
+          binding.action == RoomShortcutAction.leave ? activator : NotWhileEditingActivator(activator): shortcutAction(
+            binding.action,
+          ),
     };
 
-    final pictureRatio = _pictureRatio(room);
+    final pictureRatio = _pictureRatio(handle);
     final swipeSwitch = ref.watch(portraitSwipeSwitchProvider);
-    final roomKey = room.room?.ref.identityKey ?? '';
+    final roomKey = roomIdentity ?? '';
     // A source that rotates back to landscape leaves the portrait surface,
     // unless the viewer swiped to it: the reference keeps that room on the
     // portrait surface (ambient) while the list still has neighbours. The
     // post-frame callback keeps setState out of build.
     final keepPortrait = swipeSwitch && _portraitSwipeTarget == roomKey;
-    if (_portraitFullscreen && room.handle != null && !keepPortrait && !_switchingPortraitRoom && pictureRatio >= 1) {
+    if (_portraitFullscreen && handle != null && !keepPortrait && !_switchingPortraitRoom && pictureRatio >= 1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _portraitFullscreen) _setPortraitFullscreen(false);
       });
@@ -833,7 +852,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       VoidCallback? onMoreOverride,
     }) => PlayerSurface(
       key: _playerKey,
-      roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
       onLeave: leave,
       onCloseRoom: closeRoom,
@@ -885,10 +903,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // the app bar pins the follow pill to the picture's right edge, this
     // many pixels from the window's end.
     final barChatWidth =
-        !tv &&
-        !landscapePhone &&
-        (MediaQuery.sizeOf(context).width >= _wideBreakpoint || tabletSized) &&
-        !chatCollapsed
+        !tv && !landscapePhone && (MediaQuery.sizeOf(context).width >= _wideBreakpoint || tabletSized) && !chatCollapsed
         ? ref
               .watch(chatPanelWidthProvider)
               .clamp(
@@ -942,15 +957,16 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     });
                   }
 
-                  VoidCallback openMore() => () => unawaited(
-                    showRoomMore(
-                      context,
-                      shortcuts: shortcuts,
-                      cleanScreen: true,
-                      onCleanScreen: (value) => setCleanScreen(value: value),
-                      onOpenChat: () => setState(() => _immersiveChatOpen = true),
-                    ),
-                  );
+                  VoidCallback openMore() =>
+                      () => unawaited(
+                        showRoomMore(
+                          context,
+                          shortcuts: shortcuts,
+                          cleanScreen: true,
+                          onCleanScreen: (value) => setCleanScreen(value: value),
+                          onOpenChat: () => setState(() => _immersiveChatOpen = true),
+                        ),
+                      );
                   final padding = MediaQuery.paddingOf(context);
                   return _buildPhoneImmersivePortrait(
                     context,

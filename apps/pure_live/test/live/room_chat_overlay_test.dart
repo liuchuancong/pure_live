@@ -36,7 +36,9 @@ Future<void> show(WidgetTester tester, ProviderContainer container) async {
         child: UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: Scaffold(body: ColoredBox(color: Color(0xFF000000), child: RoomChatOverlay())),
+            home: Scaffold(
+              body: ColoredBox(color: Color(0xFF000000), child: RoomChatOverlay()),
+            ),
           ),
         ),
       ),
@@ -59,8 +61,7 @@ ProviderContainer _container() {
 void main() {
   testWidgets('the pills carry the talk, and super chats keep their tab', (tester) async {
     final container = _container();
-    container
-        .read(roomChatProvider.notifier)
+    container.read(roomChatProvider.notifier)
       ..add(_talk('a', 'Bob'))
       ..add(LiveMessage.normalized(type: LiveMessageType.superChat, text: 'paid words', messageId: 'sc'));
     await show(tester, container);

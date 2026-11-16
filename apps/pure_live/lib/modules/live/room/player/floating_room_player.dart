@@ -328,9 +328,12 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                             );
                           }
                         },
-                        child: const Padding(
-                          padding: EdgeInsets.all(DsSpace.s4),
-                          child: DsIcon(DsIcons.expand, size: 12, color: OnVideoColors.inkFaint),
+                        child: Semantics(
+                          label: context.t.common.resizeWindow,
+                          child: const Padding(
+                            padding: EdgeInsets.all(DsSpace.s12),
+                            child: DsIcon(DsIcons.expand, size: 12, color: OnVideoColors.inkFaint),
+                          ),
                         ),
                       ),
                     ),

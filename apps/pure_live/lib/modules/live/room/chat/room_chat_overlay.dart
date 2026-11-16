@@ -122,7 +122,10 @@ final class _RoomChatOverlayState extends ConsumerState<RoomChatOverlay> {
     if (_chat.removals != _removals) {
       final tests = _chat.removalsSince(_removals) ?? const [];
       _removals = _chat.removals;
-      shown = [for (final line in shown) if (!tests.any((test) => test(line))) line];
+      shown = [
+        for (final line in shown)
+          if (!tests.any((test) => test(line))) line,
+      ];
     }
     shown = [for (final line in shown) _chat.replacementOf(line) ?? line];
     final arrivals = _chat.added - _seen;
@@ -227,7 +230,10 @@ final class _RoomChatOverlayState extends ConsumerState<RoomChatOverlay> {
     // the newest line belongs, and the picture above them stays clear.
     return Align(
       alignment: AlignmentDirectional.bottomStart,
-      child: ConstrainedBox(constraints: BoxConstraints(maxHeight: maxHeight), child: content),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: content,
+      ),
     );
   }
 
@@ -314,18 +320,24 @@ final class _OverlayLine extends ConsumerWidget {
         ...chatWordSpans(words, lineStyle, fontPx * 1.2, emotes: message.emotes.toList(growable: false)),
       ],
     ];
+    void open() =>
+        unawaited(showRoomMessageActions(context, ref, text: words, userName: senderName, isLocal: message.isLocal));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s3),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () =>
-              unawaited(showRoomMessageActions(context, ref, text: words, userName: senderName, isLocal: message.isLocal)),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: 3),
-            decoration: BoxDecoration(color: OnVideoColors.panel, borderRadius: BorderRadius.circular(8)),
-            child: Text.rich(TextSpan(style: lineStyle, children: spans)),
+        // The row's verb reaches a reader as a tap action, not just a gesture.
+        child: Semantics(
+          button: true,
+          onTap: open,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: open,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: 3),
+              decoration: BoxDecoration(color: OnVideoColors.panel, borderRadius: BorderRadius.circular(8)),
+              child: Text.rich(TextSpan(style: lineStyle, children: spans)),
+            ),
           ),
         ),
       ),

@@ -98,7 +98,9 @@ final class _RoomMoreContent extends ConsumerWidget {
             children: [
               Expanded(
                 child: _Circle(
-                  color: const Color(0xFF3ECF8E),
+                  // The hues are the mockup's own; these four sit deep enough for the
+                  // white glyph's 3:1, the palette's lighter originals fell under.
+                  color: const Color(0xFF1F9D63),
                   icon: DsIcons.share2,
                   label: t.room.share,
                   onTap: detail == null ? null : () => unawaited(shareRoom(context, detail)),
@@ -114,7 +116,7 @@ final class _RoomMoreContent extends ConsumerWidget {
               ),
               Expanded(
                 child: _Circle(
-                  color: const Color(0xFFF5A623),
+                  color: const Color(0xFFB45309),
                   icon: DsIcons.appWindow,
                   label: t.room.openExternal,
                   onTap: detail == null ? null : () => unawaited(openRoomExternally(context, detail)),
@@ -146,7 +148,7 @@ final class _RoomMoreContent extends ConsumerWidget {
               ),
               Expanded(
                 child: _Circle(
-                  color: const Color(0xFF38BDF8),
+                  color: const Color(0xFF0284C7),
                   icon: DsIcons.arrowLeftRight,
                   label: t.room.switchRoom,
                   onTap: detail == null ? null : () => unawaited(showRoomSwitcher(context, current: detail)),
@@ -154,7 +156,7 @@ final class _RoomMoreContent extends ConsumerWidget {
               ),
               Expanded(
                 child: _Circle(
-                  color: const Color(0xFFFB7185),
+                  color: const Color(0xFFE11D48),
                   icon: DsIcons.headphones,
                   label: room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
                   lit: room.audioOnly,

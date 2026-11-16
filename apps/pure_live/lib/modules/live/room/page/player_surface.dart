@@ -177,9 +177,8 @@ final class PlayerSurfaceHud {
 /// picture-in-picture — each routed through media_core's presentation
 /// drivers. It hides while the stream plays and a tap wakes it.
 final class PlayerSurface extends ConsumerStatefulWidget {
-  /// Shows [roomState]'s stream with the room's own controls.
+  /// Shows the room's stream with the room's own controls.
   const PlayerSurface({
-    required this.roomState,
     required this.barrage,
     required this.onLeave,
     this.onMore,
@@ -206,9 +205,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onFullscreen,
     super.key,
   });
-
-  /// The room's state (the picture and the playback facts).
-  final RoomState roomState;
 
   /// The room's flying danmaku engine; null until the pipeline exists.
   final BarrageController? barrage;
@@ -589,7 +585,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   void _scheduleHide() {
     _hideTimer?.cancel();
     if (_panelOpen || _danmakuSettingsOpen) return;
-    if (!widget.roomState.playback.playing) return;
+    if (!ref.read(roomProvider).playback.playing) return;
     // A TV room keeps its bars: with no pointer there is no way to wake a
     // hidden bar, and the focused control would go with it.
     if (widget.keepControls || _controlsFocus.hasFocus) return;
@@ -598,7 +594,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
     if (seconds <= 0) return;
     _hideTimer = Timer(Duration(seconds: seconds), () {
-      if (mounted && widget.roomState.playback.playing && !_controlsFocus.hasFocus) {
+      if (mounted && ref.read(roomProvider).playback.playing && !_controlsFocus.hasFocus) {
         setState(() => _controlsVisible = false);
       }
     });
@@ -649,7 +645,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
         });
       });
     });
-    final room = widget.roomState;
+    // The surface watches the room's state itself: the page skeleton above
+    // selects only the fields its layout answers to, so the playback tick
+    // reaches the picture through this watch, not through the page's build.
+    final room = ref.watch(roomProvider);
     // A local for the room itself: a record field is not promotable, and the
     // picture states need to know the cover's owner is there.
     final roomInfo = room.room;
@@ -839,7 +838,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                           _releaseDanmaku();
                           if (_locked || mini) return;
                           _hidePicker();
-                          final committed = widget.roomState.handle?.id;
+                          final committed = ref.read(roomProvider).handle?.id;
                           if (committed == null) return;
                           unawaited(ref.read(roomPresentationProvider.notifier).toggleWindowFullscreen(committed));
                         },
@@ -867,7 +866,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                             onFullscreen();
                             return;
                           }
-                          final committed = widget.roomState.handle?.id;
+                          final committed = ref.read(roomProvider).handle?.id;
                           if (committed == null) return;
                           unawaited(ref.read(roomPresentationProvider.notifier).toggleFullscreen(committed));
                         },

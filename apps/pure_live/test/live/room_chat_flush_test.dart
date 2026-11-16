@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/modules/live/room/controller/room_controller.dart'
-    show roomChatProvider;
+import 'package:pure_live/modules/live/room/controller/room_controller.dart' show roomChatProvider;
 
 LiveMessage _chat(String id) => LiveMessage.normalized(
   text: 'line $id',

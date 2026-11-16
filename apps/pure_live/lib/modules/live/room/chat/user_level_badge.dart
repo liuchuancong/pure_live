@@ -41,7 +41,12 @@ final class UserLevelBadge extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: height * 0.26, vertical: (height - icon) / 2),
           background: style.background,
           foreground: style.ink,
-          borderColor: const Color(0x38FFFFFF),
+          // The hairline was drawn for the dark panel the badge sits on in
+          // the room; a themed light panel loses it, so the ink flips with
+          // the brightness.
+          borderColor: DsTheme.of(context).brightness == Brightness.dark
+              ? const Color(0x38FFFFFF)
+              : const Color(0x38000000),
           borderRadius: BorderRadius.circular(height * 0.30),
           textStyle: TextStyle(fontSize: height * 0.46, fontWeight: FontWeight.w800, height: 1, letterSpacing: -0.2),
           iconSize: icon,

@@ -146,18 +146,13 @@ final class RoomEmotePanelState extends ConsumerState<RoomEmotePanel> {
       ),
       child: faces.isEmpty
           ? Center(
-              child: Text(
-                t.room.emotesEmpty,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
+              child: Text(t.room.emotesEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
             )
           : SingleChildScrollView(
               child: Wrap(
                 spacing: DsSpace.s4,
                 runSpacing: DsSpace.s4,
-                children: [
-                  for (final code in faces) _EmoteTile(code: code, emotes: emotes, onPick: widget.onPick),
-                ],
+                children: [for (final code in faces) _EmoteTile(code: code, emotes: emotes, onPick: widget.onPick)],
               ),
             ),
     );
@@ -185,8 +180,7 @@ final class _EmoteTile extends StatelessWidget {
         width: 48,
         alignment: Alignment.center,
         decoration: DsBoxDecoration(
-          color:
-              states.contains(WidgetState.hovered) || states.contains(WidgetState.focused) ? colors.hover : null,
+          color: states.contains(WidgetState.hovered) || states.contains(WidgetState.focused) ? colors.hover : null,
           borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
         ),
         child: RichText(
