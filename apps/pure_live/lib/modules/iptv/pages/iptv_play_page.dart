@@ -235,6 +235,28 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// and retrying it five times only delays the error.
   bool _hadPlayed = false;
 
+  /// Whether the "channel missing" error on screen came from a deep link
+  /// that outran the library's load (the library's first value retries the
+  /// open), rather than from a channel that truly is not there.
+  bool _missingChannel = false;
+
+  /// The zap order, cached against the library instance and the reversal it
+  /// was sorted with: the build runs on every pointer wake and every typed
+  /// digit, and sorting the whole library for each of those is work the
+  /// "can I step at all" answer never needed.
+  IptvLibrary? _zapLibrary;
+  bool? _zapReverse;
+  List<IptvChannel>? _zapOrder;
+
+  List<IptvChannel> _zapSequenceOf(IptvLibrary library, bool reverse) {
+    if (!identical(_zapLibrary, library) || _zapReverse != reverse) {
+      _zapOrder = library.zapSequence(reverse: reverse).channels;
+      _zapLibrary = library;
+      _zapReverse = reverse;
+    }
+    return _zapOrder ?? const [];
+  }
+
   /// The auto-reconnect state: how many times in a row the controller has
   /// given up on this channel, the timer holding the next attempt, and the
   /// steady-playback window that clears the count.
@@ -358,9 +380,15 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   }
 
   Future<void> _open() async {
+    // A deep link that beat the library's load finds its channel here on the
+    // retry: the library was behind the play, not gone.
+    _channel ??= ref.read(iptvLibraryProvider).value?.channelById(widget.channelId);
     final channel = _channel;
     if (channel == null) {
-      setState(() => _error = context.t.iptv.playerChannelMissing);
+      setState(() {
+        _error = context.t.iptv.playerChannelMissing;
+        _missingChannel = true;
+      });
       return;
     }
     _favourite = channel.favorite;
@@ -440,10 +468,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final playback = _playback ?? LivePlaybackController(ref.read(playerKernelProvider));
     _playback = playback;
     // A fresh play (a channel switch, a line pick, back to live) supersedes
-    // whatever reconnect was waiting; the failure count restarts with it.
+    // whatever reconnect was waiting; the failure count restarts with it,
+    // and the new stream must prove itself again before the ladder revives
+    // it — an embedded switch to a dead address fails fast, not twenty
+    // seconds of silent retries late.
     _cancelReconnect();
     _reconnectStableTimer?.cancel();
     _reconnectAttempts = 0;
+    _hadPlayed = false;
     _states ??= playback.onStateChanged.listen(_onPlaybackState);
     _handles ??= playback.onHandleChanged.listen((handle) {
       // The audio and engine options below read the stored settings off
@@ -744,6 +776,19 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       await _playCatchup(programme);
       return;
     }
+    if (widget.embedded) {
+      // The embedded pane switches in place (see _switchTo): the host page
+      // stays, and the named channel opens on its replay right here — a
+      // route replacement would throw the browser away.
+      if (!mounted) return;
+      setState(() => _channel = channel);
+      _favourite = channel.favorite;
+      _nowPlaying.set(channel.id);
+      _showInfo();
+      unawaited(ref.read(iptvRecentProvider.notifier).record(channel.id));
+      unawaited(_playCatchup(programme));
+      return;
+    }
     if (!mounted) return;
     context.pushReplacement(
       RouteNames.iptvPlay.replaceFirst(':channelId', channel.id),
@@ -845,11 +890,20 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         .read(recordingTasksProvider)
         .tasks
         .any((task) => task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording);
-    final failure = await _toggleRecording();
+    // The toast is this verb's only answer, so a throw must land in it too.
+    String? failure;
+    try {
+      failure = await _toggleRecording();
+    } on Object catch (error) {
+      appLog.forCategory('recorder').warning('iptv recording toggle threw', fields: {'error': '$error'});
+      failure = 'cannot start: $error';
+    }
     if (!mounted) return;
     showDsToast(
       context: context,
-      title: failure == null ? (wasRecording ? t.room.recordStopped : t.room.recordStarted) : t.room.recordFailed,
+      title: failure == null
+          ? (wasRecording ? t.room.recordStopped : t.room.recordStarted)
+          : recorderFailureText(t, failure),
       status: failure == null ? DsStatus.success : DsStatus.danger,
     );
   }
@@ -889,6 +943,11 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// stage is the page's own (a multi-view tile does not float away from
   /// its grid).
   bool get _miniWindowReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return !widget.embedded &&
         handle != null &&
@@ -1129,6 +1188,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       if (next != PresentationMode.fullscreen || previous == PresentationMode.fullscreen) return;
       applyFullscreenOrientation(_screenOrientation, aspectRatio: _aspectRatio);
     });
+    // A deep link that beat the library's load said "channel missing" too
+    // soon; the library's first value re-runs the open on its own, without
+    // asking the viewer to press retry for a race they never saw.
+    ref.listen(iptvLibraryProvider, (previous, next) {
+      if (_channel != null || !_missingChannel || !next.hasValue) return;
+      unawaited(_open());
+    });
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     // A full header outruns a narrow window: first the clock steps out, then
@@ -1144,31 +1210,39 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final handle = _handle;
     final muted = _effectivelyMuted;
     // The task store is the truth the record button follows, so a recording
-    // started in an earlier visit still reads as running.
-    final recordingTask = channel == null
+    // started in an earlier visit still reads as running. The facts select
+    // down to scalars: the store re-emits about once a second while a take
+    // writes, and this whole page must not follow every tick of it.
+    final recordingStart = channel == null
         ? null
-        : ref
-              .watch(recordingTasksProvider)
-              .tasks
-              .where((task) => task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording)
-              .firstOrNull;
-    final recording = recordingTask != null;
+        : ref.watch(
+            recordingTasksProvider.select((state) {
+              for (final task in state.tasks) {
+                if (task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording) {
+                  return task.startedAt;
+                }
+              }
+              return null;
+            }),
+          );
+    final recording = recordingStart != null;
     // The door stands where the store files a settled take under this channel.
     // Only the store's own facts are read here — this header redraws on the
     // minute tick, and a walk of the recordings folder would then run per
     // frame rather than per press.
     final hasTake =
         channel != null &&
-        ref
-            .watch(recordingTasksProvider)
-            .tasks
-            .any(
+        ref.watch(
+          recordingTasksProvider.select(
+            (state) => state.tasks.any(
               (task) =>
                   task.id == 'iptv:${channel.id}' &&
                   task.state != RecordingTaskState.recording &&
                   !task.postProcessing &&
                   (task.filePath ?? '').trim().isNotEmpty,
-            );
+            ),
+          ),
+        );
     final presentation = ref.watch(roomPresentationProvider);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     // Fullscreen and the desktop compact window take the app's window; a
@@ -1180,7 +1254,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // 左上。嵌入式面板不参与——它的宿主页自己排版。
     final windowSize = MediaQuery.sizeOf(context);
     final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
-    final sizeStage = !widget.embedded &&
+    final sizeStage =
+        !widget.embedded &&
         (playbackLayout.windowClass == PlaybackWindowClass.compact || playbackLayout.landscapeImmersive);
     final fullscreen = presentation != PresentationMode.normal;
     final playing = _playbackState.playing;
@@ -1188,7 +1263,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final library = ref.watch(iptvLibraryProvider).value;
     final browse = ref.watch(iptvBrowseSettingsProvider);
     final slot = channel == null ? null : library?.programmeSlot(channel);
-    final canStep = channel != null && (library?.zapSequence(reverse: browse.reverseChannels).length ?? 0) > 1;
+    final canStep = channel != null && library != null && _zapSequenceOf(library, browse.reverseChannels).length > 1;
     final replay = _catchup;
     // The line under the title: a status pill (on air, upcoming, replaying)
     // followed by the programme's name — the reference's ON AIR tag inside a
@@ -1353,6 +1428,15 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         // between the last key and the switch.
         for (final (key, digit) in _kDigitKeys) SingleActivator(key): () => _typeDigit(digit),
         const SingleActivator(LogicalKeyboardKey.keyF): () {
+          if (handle == null) return;
+          final controller = ref.read(roomPresentationProvider.notifier);
+          unawaited(
+            presentation == PresentationMode.normal
+                ? controller.toggleFullscreen(handle.id)
+                : controller.exit(handle.id),
+          );
+        },
+        const SingleActivator(LogicalKeyboardKey.f11): () {
           if (handle == null) return;
           final controller = ref.read(roomPresentationProvider.notifier);
           unawaited(
@@ -1556,12 +1640,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                             // The capture's own mark: a breathing red point, the
                             // minutes it has run, and the tap that ends it — the
                             // live room's marker read on this page's own recording.
-                            if (recordingTask != null && handle != null)
+                            if (recordingStart case final startedAt? when handle != null)
                               PositionedDirectional(
                                 top: DsSpace.s12,
                                 end: DsSpace.s12,
                                 child: RecordingIndicator(
-                                  startedAt: recordingTask.startedAt,
+                                  startedAt: startedAt,
                                   label: t.room.stopRecording,
                                   onStop: () => unawaited(_recordWithToast()),
                                 ),
@@ -1685,7 +1769,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                 start: 0,
                                 child: SafeArea(
                                   child: Padding(
-                                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, 0),
+                                    padding: const EdgeInsetsDirectional.fromSTEB(
+                                      DsSpace.s12,
+                                      DsSpace.s8,
+                                      DsSpace.s12,
+                                      0,
+                                    ),
                                     child: PlayerGlassPill(
                                       child: PlayerBarButton(
                                         icon: DsIcons.arrowLeft,

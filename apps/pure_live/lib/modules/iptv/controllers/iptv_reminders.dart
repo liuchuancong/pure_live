@@ -61,6 +61,18 @@ final class IptvReminder {
   }
 }
 
+/// What setting a reminder did.
+enum IptvReminderToggle {
+  /// The reminder is now armed.
+  set,
+
+  /// The reminder was removed.
+  cleared,
+
+  /// The programme has already started; a reminder for it cannot be set.
+  refused,
+}
+
 /// The viewer's reminders, soonest first.
 ///
 /// A reminder is a moment, so the controller arms one timer for the next one
@@ -85,12 +97,40 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
       unawaited(_fired.close());
     });
     final now = DateTime.now();
+    final storedAll = _read();
     final stored = [
-      for (final reminder in _read())
+      for (final reminder in storedAll)
         if (reminder.start.isAfter(now)) reminder,
     ]..sort((a, b) => a.start.compareTo(b.start));
-    unawaited(Future<void>.microtask(_arm));
+    // A reminder that came due while the app was closed never rang — the
+    // timer only lives while this controller is watched. Saying so once
+    // beats dropping the viewer's own ask without a trace.
+    final missed = [
+      for (final reminder in storedAll)
+        if (!reminder.start.isAfter(now)) reminder,
+    ];
+    unawaited(
+      Future<void>.microtask(() {
+        _announceMissed(missed);
+        _arm();
+      }),
+    );
     return stored;
+  }
+
+  /// Says the reminders that came due while the app was closed, in one
+  /// toast — the programme's name when it was one, the count otherwise.
+  void _announceMissed(List<IptvReminder> missed) {
+    if (_disposed || missed.isEmpty) return;
+    final context = rootNavigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    showDsToast(
+      context: context,
+      title: missed.length == 1
+          ? t.iptv.reminderMissed(title: missed.first.title)
+          : t.iptv.reminderMissedMany(count: missed.length),
+      status: DsStatus.warning,
+    );
   }
 
   /// Whether the programme starting at [start] on [channelId] already has a
@@ -99,9 +139,10 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
 
   /// Sets a reminder for [reminder], or clears the one that answers it.
   ///
-  /// Returns whether the reminder is now set, so the caller's toast says what
-  /// actually happened.
-  Future<bool> toggle(IptvReminder reminder) async {
+  /// Answers what happened, so the caller's toast says it: a programme that
+  /// has already started refuses the reminder rather than silently flipping
+  /// to "removed".
+  Future<IptvReminderToggle> toggle(IptvReminder reminder) async {
     final exists = contains(reminder.channelId, reminder.start);
     if (exists) {
       state = [
@@ -109,7 +150,7 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
           if (!entry.isFor(reminder.channelId, reminder.start)) entry,
       ];
     } else {
-      if (!reminder.start.isAfter(DateTime.now())) return false;
+      if (!reminder.start.isAfter(DateTime.now())) return IptvReminderToggle.refused;
       state = [
         for (final entry in state)
           if (!entry.isFor(reminder.channelId, reminder.start)) entry,
@@ -118,7 +159,7 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
     }
     await _save();
     _arm();
-    return !exists;
+    return exists ? IptvReminderToggle.cleared : IptvReminderToggle.set;
   }
 
   void _arm() {

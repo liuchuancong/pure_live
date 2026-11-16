@@ -484,10 +484,10 @@ final class _StepStrip extends StatelessWidget {
         spacing: DsSpace.s6,
         children: [
           for (final (index, label) in labels.indexed) ...[
-            if (index > 0) Container(width: 16, height: 1, color: colors.border),
+            if (index > 0) Container(width: DsSpace.s4, height: 1, color: colors.border),
             Container(
-              width: 20,
-              height: 20,
+              width: DsSpace.s5,
+              height: DsSpace.s5,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: index <= current ? colors.accent : colors.control,

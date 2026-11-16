@@ -14,6 +14,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart' show iptvUserAgentProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupLabel, iptvGroupsListed;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The IPTV module's own settings: the guide-update interval, the bulk
 /// automatic-update switch and the two subpages the reference keeps beside
@@ -205,7 +206,17 @@ final class IptvBrowsePane extends ConsumerWidget {
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
               title: Text(t.iptv.browseReset),
-              onPressed: () => unawaited(controller.reset()),
+              onPressed: () => unawaited(() async {
+                final confirmed = await showAppConfirm(
+                  context: context,
+                  title: t.iptv.browseReset,
+                  description: t.iptv.browseResetDesc,
+                  confirmLabel: t.common.confirm,
+                  cancelLabel: t.common.cancel,
+                  destructive: true,
+                );
+                if (confirmed) await controller.reset();
+              }()),
             ),
           ],
         ),

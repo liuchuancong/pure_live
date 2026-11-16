@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
-import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart'
+    show IptvReminder, IptvReminderToggle, iptvRemindersProvider;
 import 'package:pure_live/shared/widgets/app_panel.dart';
 
 /// Opens the channel's guide: one day of programmes, the one on air marked
@@ -348,17 +349,18 @@ Future<void> toggleIptvReminder(
   EpgProgramme programme,
 ) async {
   final t = context.t;
-  final added = await ref
+  final result = await ref
       .read(iptvRemindersProvider.notifier)
       .toggle(
         IptvReminder(channelId: channel.id, title: programme.title, start: programme.start, stop: programme.stop),
       );
   if (!context.mounted) return;
-  showDsToast(
-    context: context,
-    title: added ? t.iptv.reminderSet(title: programme.title) : t.iptv.reminderRemoved,
-    status: added ? DsStatus.success : DsStatus.neutral,
-  );
+  final (title, status) = switch (result) {
+    IptvReminderToggle.set => (t.iptv.reminderSet(title: programme.title), DsStatus.success),
+    IptvReminderToggle.cleared => (t.iptv.reminderRemoved, DsStatus.neutral),
+    IptvReminderToggle.refused => (t.iptv.reminderAlreadyStarted, DsStatus.warning),
+  };
+  showDsToast(context: context, title: title, status: status);
 }
 
 /// The instant [time]'s day begins, in the device's own calendar.

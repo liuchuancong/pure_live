@@ -5,6 +5,10 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 
+/// The order the channels page lists under: the library's own ranking
+/// (pinned, dial number, group), or the alphabet.
+enum IptvChannelOrder { defaultOrder, name }
+
 /// What the module's channel lists and zapping show: the four switches the
 /// my-tv reference puts in its settings dialog — the dial number, the
 /// direction the up and down keys walk, the corner clock — plus the guide's
@@ -21,6 +25,7 @@ final class IptvBrowseSettings {
     required this.reverseChannels,
     required this.showClock,
     required this.showProgrammeLine,
+    this.order = IptvChannelOrder.defaultOrder,
   });
 
   /// The reference's defaults: number and clock on, the keys walking
@@ -41,6 +46,9 @@ final class IptvBrowseSettings {
   /// Whether the player draws its corner clock.
   final bool showClock;
 
+  /// The order the channels page lists under.
+  final IptvChannelOrder order;
+
   /// Whether the on-air programme is named under the channel.
   final bool showProgrammeLine;
 
@@ -50,11 +58,13 @@ final class IptvBrowseSettings {
     bool? reverseChannels,
     bool? showClock,
     bool? showProgrammeLine,
+    IptvChannelOrder? order,
   }) => IptvBrowseSettings(
     showChannelNumber: showChannelNumber ?? this.showChannelNumber,
     reverseChannels: reverseChannels ?? this.reverseChannels,
     showClock: showClock ?? this.showClock,
     showProgrammeLine: showProgrammeLine ?? this.showProgrammeLine,
+    order: order ?? this.order,
   );
 
   @override
@@ -63,10 +73,11 @@ final class IptvBrowseSettings {
       other.showChannelNumber == showChannelNumber &&
       other.reverseChannels == reverseChannels &&
       other.showClock == showClock &&
-      other.showProgrammeLine == showProgrammeLine;
+      other.showProgrammeLine == showProgrammeLine &&
+      other.order == order;
 
   @override
-  int get hashCode => Object.hash(showChannelNumber, reverseChannels, showClock, showProgrammeLine);
+  int get hashCode => Object.hash(showChannelNumber, reverseChannels, showClock, showProgrammeLine, order);
 }
 
 /// The keys the four switches are kept under.
@@ -74,6 +85,8 @@ const String kIptvShowNumberPrefsKey = 'iptv.browse.channelNumber';
 const String kIptvReverseChannelsPrefsKey = 'iptv.browse.channelReversal';
 const String kIptvShowClockPrefsKey = 'iptv.browse.clock';
 const String kIptvShowProgrammePrefsKey = 'iptv.browse.programmeLine';
+
+const String kIptvOrderPrefsKey = 'iptv.channel.order';
 
 /// Owns the browse switches, one preference each.
 final class IptvBrowseSettingsController extends Notifier<IptvBrowseSettings> {
@@ -83,7 +96,18 @@ final class IptvBrowseSettingsController extends Notifier<IptvBrowseSettings> {
     reverseChannels: _flag(kIptvReverseChannelsPrefsKey, fallback: false),
     showClock: _flag(kIptvShowClockPrefsKey, fallback: true),
     showProgrammeLine: _flag(kIptvShowProgrammePrefsKey, fallback: true),
+    order: _order(),
   );
+
+  static IptvChannelOrder _order() {
+    try {
+      return StoragePrefs.getString(kIptvOrderPrefsKey) == IptvChannelOrder.name.name
+          ? IptvChannelOrder.name
+          : IptvChannelOrder.defaultOrder;
+    } on Object {
+      return IptvChannelOrder.defaultOrder;
+    }
+  }
 
   static bool _flag(String key, {required bool fallback}) {
     try {
@@ -119,6 +143,18 @@ final class IptvBrowseSettingsController extends Notifier<IptvBrowseSettings> {
     await _write(kIptvShowClockPrefsKey, value);
   }
 
+  /// Lists the channels under the chosen order — the library's ranking or the
+  /// alphabet. The change lands on the next mirror, like every field here.
+  Future<void> setOrder({required IptvChannelOrder value}) async {
+    if (state.order == value) return;
+    state = state.copyWith(order: value);
+    try {
+      await StoragePrefs.setString(kIptvOrderPrefsKey, value.name);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
   /// Names or stays quiet about the programme on air.
   Future<void> setShowProgrammeLine({required bool value}) async {
     state = state.copyWith(showProgrammeLine: value);
@@ -132,6 +168,11 @@ final class IptvBrowseSettingsController extends Notifier<IptvBrowseSettings> {
     await _write(kIptvReverseChannelsPrefsKey, false);
     await _write(kIptvShowClockPrefsKey, true);
     await _write(kIptvShowProgrammePrefsKey, true);
+    try {
+      await StoragePrefs.remove(kIptvOrderPrefsKey);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
   }
 }
 

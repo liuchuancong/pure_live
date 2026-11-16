@@ -70,7 +70,10 @@ class _IptvChannelHoverPreviewState extends State<IptvChannelHoverPreview> {
         width: 320,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
-          child: AspectRatio(aspectRatio: 16 / 9, child: IptvChannelPreviewVideo(channel: widget.channel)),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: IptvChannelPreviewVideo(channel: widget.channel),
+          ),
         ),
       ),
       child: MouseRegion(onEnter: (_) => _enter(), onExit: (_) => _exit(), child: widget.child),
@@ -188,7 +191,9 @@ final class _IptvChannelPreviewVideoState extends ConsumerState<IptvChannelPrevi
     if (handle == null) {
       return _failed
           ? const SizedBox.shrink()
-          : const Center(child: IgnorePointer(child: DsSpinner(style: DsSpinnerStyle(size: 20))));
+          : const Center(
+              child: IgnorePointer(child: DsSpinner(style: DsSpinnerStyle(size: 20))),
+            );
     }
     return IgnorePointer(
       child: MediaPlayerView(

@@ -5,7 +5,6 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
-import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider, iptvPlaylistIsRemote;
@@ -14,7 +13,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart'
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport, runIptvPlaylistImport;
 import 'package:pure_live/modules/iptv/views/iptv_import_preview_pane.dart' show iptvImportFailureWords;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
@@ -23,8 +22,8 @@ import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 enum _SourceFilter { all, playlists, guides }
 
 /// The preference the viewer's source order is kept under: a string list of
-/// `p:<playlist id>` and `g:<guide id>` keys, first shown first.
-const String _sourceOrderPref = 'iptv.sources.order';
+/// `p:<playlist id>` and `g:<guide id>` keys, first shown first. The key
+/// itself and its read/write live on [iptvSourceOrderProvider].
 
 /// The kind filter's tab bar: 44 tall, starting flush with the strip that
 /// holds it, and no hairline under the row — the panel's own rule below the
@@ -62,21 +61,10 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   final TextEditingController _search = TextEditingController();
   _SourceFilter _filter = _SourceFilter.all;
   String _query = '';
-  List<String> _savedOrder = const [];
   List<Object> _draft = const [];
   List<String> _draftStart = const [];
   bool _sorting = false;
   bool _savingOrder = false;
-
-  @override
-  void initState() {
-    super.initState();
-    try {
-      _savedOrder = StoragePrefs.getStringList(_sourceOrderPref) ?? const [];
-    } on Object {
-      // A closed store starts with the natural order.
-    }
-  }
 
   @override
   void dispose() {
@@ -134,6 +122,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
           controller: field,
           autofocus: true,
           semanticLabel: t.iptv.renameSourceTitle,
+          onSubmitted: (word) => Navigator.of(dialogContext).pop(word.trim()),
         ),
         actions: [
           DsButton(
@@ -141,10 +130,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(t.common.cancel),
           ),
-          DsButton(
-            onPressed: () => Navigator.of(dialogContext).pop(field.text.trim()),
-            child: Text(t.common.save),
-          ),
+          DsButton(onPressed: () => Navigator.of(dialogContext).pop(field.text.trim()), child: Text(t.common.save)),
         ],
       ),
     );
@@ -248,8 +234,9 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
   /// name kept after the named ones in their natural (playlist, guide)
   /// order.
   List<Object> _ordered(List<Object> all) {
-    if (_savedOrder.isEmpty) return all;
-    final rank = {for (final (index, key) in _savedOrder.indexed) key: index};
+    final savedOrder = ref.watch(iptvSourceOrderProvider);
+    if (savedOrder.isEmpty) return all;
+    final rank = {for (final (index, key) in savedOrder.indexed) key: index};
     final natural = {for (final (index, item) in all.indexed) _keyOf(item): index};
     return [...all]..sort((a, b) {
       final aKey = _keyOf(a);
@@ -296,14 +283,9 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     if (_savingOrder || !_dirty) return;
     final keys = [for (final item in _draft) _keyOf(item)];
     setState(() => _savingOrder = true);
-    try {
-      await StoragePrefs.setStringList(_sourceOrderPref, keys);
-    } on Object {
-      // The new order still holds for this run; the next boot falls back.
-    }
+    await ref.read(iptvSourceOrderProvider.notifier).save(keys);
     if (!mounted) return;
     setState(() {
-      _savedOrder = keys;
       _savingOrder = false;
       _sorting = false;
       _draft = const [];
@@ -329,7 +311,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     final sources = ref.watch(iptvSourcesProvider);
     final epg = ref.watch(iptvEpgProvider);
     if (!sources.ready || !epg.ready) {
-      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
+      return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 6));
     }
     final active = _activeOf(epg);
     final round = sources.syncAll;

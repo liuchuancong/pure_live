@@ -62,7 +62,9 @@ final class IptvUpdateIntervalController extends Notifier<IptvUpdateInterval> {
     return IptvUpdateInterval.day;
   }
 
-  /// Chooses [interval] and stores it for the next start.
+  /// Chooses [interval]. The updater reads the choice every tick, so a
+  /// change lands within a minute — the earlier note about the next start
+  /// was wrong, and so was the sibling comment above the class.
   void select(IptvUpdateInterval interval) {
     if (interval == state) return;
     state = interval;

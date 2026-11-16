@@ -16,7 +16,7 @@ import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart'
     show IptvChannelLogo, IptvNowCell, IptvOnAirEqualizer, IptvPageHead;
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// One watched channel and the record that says when.
@@ -93,7 +93,12 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
     // scrolls, and a provider watched then would be watched outside the page's
     // own build.
     final browse = ref.watch(iptvBrowseSettingsProvider);
-    final library = ref.watch(iptvLibraryProvider).value;
+    // The whole answer: a library still reading holds its rows back with a
+    // skeleton — a null value here must not read as "nothing watched".
+    final libraryAsync = ref.watch(iptvLibraryProvider);
+    final library = libraryAsync.value;
+    final libraryLoading = libraryAsync.isLoading && library == null;
+    final libraryFailed = libraryAsync.hasError && library == null;
     final channels = {for (final channel in library?.channels ?? const <IptvChannel>[]) channel.id: channel};
     final rows = [
       for (final entry in recent)
@@ -160,7 +165,20 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
           ),
         ),
         Expanded(
-          child: shown.isEmpty
+          child: libraryLoading
+              ? const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 7))
+              : libraryFailed
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.cloudOff),
+                    title: Text(t.iptv.openFailed),
+                    description: Text(t.iptv.openFailedDescription),
+                    actions: [
+                      DsButton(onPressed: () => ref.invalidate(iptvLibraryProvider), child: Text(t.common.retry)),
+                    ],
+                  ),
+                )
+              : shown.isEmpty
               ? Center(
                   child: DsEmptyState(
                     icon: const DsIcon(DsIcons.history),

@@ -5,6 +5,8 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart'
+    show IptvChannelOrder, iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
     show iptvUserAgentProvider, normalizedIptvUserAgent;
 import 'package:pure_live/modules/iptv/data/iptv_fetch_routes.dart' show routedIptvBytesFetcher, routedIptvFetcher;
@@ -164,6 +166,9 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
   @override
   IptvChannelsState build() {
     final library = ref.watch(iptvLibraryProvider).value;
+    // The page's own order rides the browse settings: a change rebuilds this
+    // mirror, the same way a library change does.
+    ref.watch(iptvBrowseSettingsProvider.select((settings) => settings.order));
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
     if (library == null) {
       return _initial();
@@ -321,6 +326,12 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
       for (final channel in library.zapSequence(group: selected, favouritesOnly: favouritesOnly).channels)
         if (mine(channel) && _matches(channel, current.query)) channel,
     ];
+    // The page's own order: the library's ranking, or the alphabet over the
+    // filtered list — applied before the reveal slices it, so a page holds
+    // neighbours under either order.
+    if (ref.read(iptvBrowseSettingsProvider).order == IptvChannelOrder.name) {
+      channels.sort((a, b) => a.entry.name.toLowerCase().compareTo(b.entry.name.toLowerCase()));
+    }
     // A search is complete at once — the viewer names what they look for —
     // while browsing reveals a page at a time. A list that just gained its
     // first channels opens on the first page; an established reveal

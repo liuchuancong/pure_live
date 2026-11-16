@@ -12,7 +12,8 @@ import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/layouts/tv/tv_input_field.dart' show TvInputField;
 
-import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart'
+    show IptvChannelOrder, iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
@@ -447,7 +448,7 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
   Widget build(BuildContext context) {
     final channels = widget.channels;
     if (!channels.ready) {
-      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
+      return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows());
     }
     if (channels.libraryCount == 0) {
       return const _StartView();
@@ -599,11 +600,44 @@ final class _ChannelsToolbar extends ConsumerWidget {
                 semanticLabel: t.iptv.sourceLabel,
                 leading: const DsIcon(DsIcons.server, size: 14),
                 onPressed: controller.toggle,
-                child: Text(current),
+                // A source's name is whatever the playlist called it; a cap
+                // and an ellipsis keep the toolbar's line from bursting on a
+                // long one.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Text(current, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
               );
             },
           )
         : null;
+    // The list's order: the library's ranking or the alphabet — a menu,
+    // the same two choices a settings pane would carry, said beside the
+    // list they act on.
+    final order = ref.watch(iptvBrowseSettingsProvider.select((settings) => settings.order));
+    final orderButton = DsMenuAnchor(
+      semanticLabel: t.iptv.sort,
+      items: [
+        DsMenuItem(
+          checked: order == IptvChannelOrder.defaultOrder,
+          label: Text(t.iptv.sortDefault),
+          onPressed: () => ref.read(iptvBrowseSettingsProvider.notifier).setOrder(value: IptvChannelOrder.defaultOrder),
+        ),
+        DsMenuItem(
+          checked: order == IptvChannelOrder.name,
+          label: Text(t.iptv.sortByName),
+          onPressed: () => ref.read(iptvBrowseSettingsProvider.notifier).setOrder(value: IptvChannelOrder.name),
+        ),
+      ],
+      builder: (context, menuController, _) => DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: t.iptv.sort,
+        leading: const DsIcon(DsIcons.arrowDownUp, size: 14),
+        onPressed: menuController.toggle,
+        child: Text(order == IptvChannelOrder.name ? t.iptv.sortByName : t.iptv.sortDefault),
+      ),
+    );
     final count = Text(
       progress != null
           ? t.iptv.syncAllRunning(done: progress!.done, total: progress!.total)
@@ -637,6 +671,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
             children: [
               scope,
               ?sourceButton,
+              orderButton,
               const Spacer(),
               count,
               SizedBox(width: 200, child: field),
@@ -653,6 +688,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
               children: [
                 scope,
                 ?sourceButton,
+                orderButton,
                 Flexible(child: count),
               ],
             ),
@@ -745,6 +781,10 @@ final class _ChannelsList extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final browse = ref.watch(iptvBrowseSettingsProvider);
     final rows = channels.channels.take(channels.shown).toList(growable: false);
+    // The stacked list answers the same three empties the three-pane's
+    // column does — a search that matched nothing, a favourites scope with
+    // nothing in it, a library with no channels at all.
+    if (rows.isEmpty) return _channelsEmptyView(context, channels);
     return ListView.separated(
       controller: scrollController,
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
@@ -988,7 +1028,12 @@ final class _PlayerIdle extends StatelessWidget {
               decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
               child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
             ),
-            Text(t.iptv.playerIdleTitle, style: theme.typography.title.copyWith(color: colors.text)),
+            Text(
+              // The selection named a channel the library dropped: that is
+              // said outright, not with the never-picked words.
+              broken ? t.iptv.playerChannelMissing : t.iptv.playerIdleTitle,
+              style: theme.typography.title.copyWith(color: colors.text),
+            ),
             Text(
               t.iptv.playerIdleHint,
               textAlign: TextAlign.center,

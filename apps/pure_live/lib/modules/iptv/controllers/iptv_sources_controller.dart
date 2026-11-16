@@ -3,6 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:live_log/live_log.dart' show LogLevel;
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
@@ -285,3 +286,40 @@ final class IptvSourcesController extends Notifier<IptvSourcesState> {
 
 /// The playlist source manager's state.
 final iptvSourcesProvider = NotifierProvider<IptvSourcesController, IptvSourcesState>(IptvSourcesController.new);
+
+/// The preference key the sources' order lives under, named here so the
+/// backup manifest's entry has one owner.
+const String iptvSourcesOrderPref = 'iptv.sources.order';
+
+/// The viewer's own ordering of the module's sources: the playlist and
+/// guide ids in the order the manager's drag left them, first shown
+/// first. The library keeps no opinion; this mirrors the preference and
+/// writes it.
+final class IptvSourceOrderController extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    try {
+      return StoragePrefs.getStringList(iptvSourcesOrderPref) ?? const [];
+    } on Object {
+      // A closed store starts with the natural order.
+      return const [];
+    }
+  }
+
+  /// Stores [keys] as the order; false when the store refused — the new
+  /// order still holds for this run, and the next boot falls back.
+  Future<bool> save(List<String> keys) async {
+    state = keys;
+    try {
+      await StoragePrefs.setStringList(iptvSourcesOrderPref, keys);
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+}
+
+/// The source manager's remembered order.
+final iptvSourceOrderProvider = NotifierProvider<IptvSourceOrderController, List<String>>(
+  IptvSourceOrderController.new,
+);

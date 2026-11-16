@@ -18,7 +18,8 @@ import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show IptvGuideRow, iptvClockLabel, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPageHead;
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/modules/iptv/views/iptv_reminders_panel.dart' show showIptvReminders;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows;
 
 /// Where the guide page pays for a group column of its own beside the picker.
 /// The channel page takes its column at [LiveWindow.expanded] because the table
@@ -177,7 +178,13 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final library = ref.watch(iptvLibraryProvider).value;
+    // The whole answer, not its bare value: a library still reading is a
+    // skeleton, and a library that failed gets its retry — neither may pose
+    // as "no channels" through a null value.
+    final libraryAsync = ref.watch(iptvLibraryProvider);
+    final library = libraryAsync.value;
+    final libraryLoading = libraryAsync.isLoading && library == null;
+    final libraryFailed = libraryAsync.hasError && library == null;
     // The head names the guide the days are read from: the source the manager
     // holds as active, quiet while none stands — the count the picker walks
     // is the coverage line either way.
@@ -233,6 +240,13 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
             title: t.iptv.guideTitle,
             description: activeGuide == null ? coverage : '${activeGuide.name} · $coverage',
             actions: [
+              DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                semanticLabel: t.iptv.remindersTitle,
+                onPressed: () => unawaited(showIptvReminders(context)),
+                icon: const DsIcon(DsIcons.bell),
+              ),
               _DayStepper(
                 label: iptvDayLabel(t, _day, now),
                 isToday: _day == iptvStartOfDay(now),
@@ -248,6 +262,19 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s16),
             child: LayoutBuilder(
               builder: (context, constraints) {
+                if (libraryLoading) return const SkeletonRows();
+                if (libraryFailed) {
+                  return Center(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.cloudOff),
+                      title: Text(t.iptv.openFailed),
+                      description: Text(t.iptv.openFailedDescription),
+                      actions: [
+                        DsButton(onPressed: () => ref.invalidate(iptvLibraryProvider), child: Text(t.common.retry)),
+                      ],
+                    ),
+                  );
+                }
                 // A single group has nothing to choose, and a window that
                 // cannot pay for three panes keeps the same list behind one
                 // entry over the search field.

@@ -11,7 +11,9 @@ import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvPageHead;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
+import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
+import 'package:pure_live/shared/shared.dart'
+    show LiveWindow, NavigationItem, SectionHeader, recorderFailureText, showAppConfirm;
 
 /// The IPTV module's own recording centre: the channels this module recorded,
 /// and nothing else.
@@ -28,8 +30,6 @@ final class IptvRecordingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
     final store = ref.watch(recordingTasksProvider);
     final engine = ref.read(recorderEngineProvider);
     final moduleName = t.common.moduleIptv;
@@ -72,12 +72,16 @@ final class IptvRecordingsPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s4,
               children: [
-                Text(t.recorder.runningTitle, style: theme.typography.labelStrong.copyWith(color: colors.textMuted)),
+                SectionHeader(title: t.recorder.runningTitle, count: attention.isEmpty ? null : attention.length),
                 for (final task in attention)
                   DsListRow(
                     leading: const DsIcon(DsIcons.disc3),
                     title: Text(task.roomTitle.isEmpty ? task.roomId : task.roomTitle),
-                    description: Text(_stateLabel(t, task)),
+                    description: Text(
+                      task.isRunning
+                          ? '${_stateLabel(t, task)} · ${t.iptv.recordedDuration(elapsed: RecordingIndicator.formatElapsed(DateTime.now().difference(task.startedAt)))}'
+                          : _stateLabel(t, task),
+                    ),
                     trailing: engine.isRecording(task.id)
                         ? DsButton(
                             variant: DsButtonVariant.secondary,
@@ -88,7 +92,7 @@ final class IptvRecordingsPage extends ConsumerWidget {
                         : DsButton.icon(
                             variant: DsButtonVariant.ghost,
                             size: DsSize.sm,
-                            onPressed: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
+                            onPressed: () => unawaited(_confirmRemove(context, ref, task)),
                             icon: const DsIcon(DsIcons.trash2, size: 16),
                             semanticLabel: t.recorder.delete,
                           ),
@@ -136,9 +140,27 @@ final class IptvRecordingsPage extends ConsumerWidget {
     if (!context.mounted) return;
     showDsToast(
       context: context,
-      title: failure ?? t.recorder.stateSaved,
+      title: failure == null ? t.recorder.stateSaved : recorderFailureText(t, failure),
       status: failure == null ? DsStatus.success : DsStatus.danger,
     );
+  }
+
+  /// Asks before dropping the subscription: the entry goes, the files stay.
+  Future<void> _confirmRemove(BuildContext context, WidgetRef ref, RecordingTask task) async {
+    final t = context.t;
+    final name = task.roomTitle.trim().isNotEmpty ? task.roomTitle.trim() : task.roomId;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.recorder.deleteTitle(name: name),
+      description: t.recorder.deleteBody,
+      confirmLabel: t.recorder.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    // The tap can land after the dialog's host is gone; a dead context must
+    // not reach the store callback.
+    if (!confirmed || !context.mounted) return;
+    await ref.read(recordingTasksProvider.notifier).remove(task.id);
   }
 
   /// Back to the channel the take was made from. The recorder files a channel
