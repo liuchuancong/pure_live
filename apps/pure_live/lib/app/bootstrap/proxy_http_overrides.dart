@@ -51,10 +51,9 @@ final class AppProxyHttpOverrides extends HttpOverrides {
       } on Object catch (error) {
         // A failing lookup must not take the request down with it — but the
         // request will go out direct, and the viewer should know why.
-        appLog.forCategory('network.proxy').warning(
-          'proxy lookup failed; requests fall back to direct',
-          fields: {'error': '$error'},
-        );
+        appLog
+            .forCategory('network.proxy')
+            .warning('proxy lookup failed; requests fall back to direct', fields: {'error': '$error'});
       }
     }
     return client;

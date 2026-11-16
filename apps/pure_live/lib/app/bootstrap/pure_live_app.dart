@@ -41,7 +41,7 @@ import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/music/controller/music_deeplink_binding.dart';
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicModulePlayerGuardProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicModulePlayerGuardProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
@@ -83,13 +83,18 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
   @override
   void initState() {
     super.initState();
-    // The process-wide proxy hook: a client created by any package asks here
-    // which route is in force at the moment it opens its connection.
-    appProxyLookup = () => ref.read(appProxyRouteProvider);
-    // A recording's toast names its take, but the path it carries is the one the
-    // post-recording rename moves: the recorder centre is where the viewer can
-    // still act on it, and it is one route away from wherever they are.
-    recordingTapHandler = () => ref.read(appRouterProvider).go(const RecorderRoute().location);
+    // The process-wide seams bind once, and only from the primary: a
+    // secondary window binding them would point the proxy ask and the
+    // recording toast at its own hidden router.
+    if (ref.read(isPrimaryWindowProvider)) {
+      // The process-wide proxy hook: a client created by any package asks here
+      // which route is in force at the moment it opens its connection.
+      appProxyLookup = () => ref.read(appProxyRouteProvider);
+      // A recording's toast names its take, but the path it carries is the one the
+      // post-recording rename moves: the recorder centre is where the viewer can
+      // still act on it, and it is one route away from wherever they are.
+      recordingTapHandler = () => ref.read(appRouterProvider).go(const RecorderRoute().location);
+    }
     // The stored choices land before the first frame builds, so the boot
     // never flashes the defaults. The settings' own builder hook supplies
     // the defaults; the store only overrides what the viewer pinned.

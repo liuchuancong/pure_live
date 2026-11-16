@@ -67,12 +67,39 @@ const double kBackgroundGlassOpacityDefault = 0.8;
 
 /// The image formats the importer accepts, in the order the page names them.
 const List<String> kBackgroundImageExtensions = [
-  'jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'ico',
+  'jpg',
+  'jpeg',
+  'jfif',
+  'png',
+  'webp',
+  'gif',
+  'bmp',
+  'avif',
+  'heic',
+  'heif',
+  'tif',
+  'tiff',
+  'ico',
 ];
 
 /// The video formats the importer accepts, in the order the page names them.
 const List<String> kBackgroundVideoExtensions = [
-  'mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'flv', 'ts', 'm2ts', 'wmv', '3gp', 'ogv', 'mpg', 'mpeg', 'vob', 'asf',
+  'mp4',
+  'm4v',
+  'mov',
+  'webm',
+  'mkv',
+  'avi',
+  'flv',
+  'ts',
+  'm2ts',
+  'wmv',
+  '3gp',
+  'ogv',
+  'mpg',
+  'mpeg',
+  'vob',
+  'asf',
 ];
 
 /// What [path]'s extension says it is; null when neither table knows it.

@@ -61,6 +61,10 @@ abstract final class RouteNames {
   /// One cinema title's page (its blurb, episodes and player).
   static const String vodSeason = '/vod/season/:seasonId';
 
+  /// One Bilibili uploader's space page (their published videos); a live
+  /// room's anchor door opens it.
+  static const String vodUploader = '/vod/u/:mid';
+
   /// One Huya video's own page, pushed on the root navigator above the
   /// shell: the site's cards open it.
   static const String huyaVideo = '/huya/:vid';

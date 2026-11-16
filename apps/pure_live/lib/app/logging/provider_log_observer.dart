@@ -8,18 +8,11 @@ import 'package:pure_live/app/logging/app_log.dart' show appLog;
 /// catches and re-reports already log on their own paths.
 final class LogProviderObserver extends ProviderObserver {
   @override
-  void providerDidFail(
-    ProviderObserverContext context,
-    Object error,
-    StackTrace stackTrace,
-  ) {
+  void providerDidFail(ProviderObserverContext context, Object error, StackTrace stackTrace) {
     final provider = context.provider;
     final name = provider.name ?? provider.runtimeType.toString();
-    appLog.forCategory('providers.$name').error(
-      'provider failed',
-      fields: {'provider': name},
-      error: error,
-      stackTrace: stackTrace,
-    );
+    appLog
+        .forCategory('providers.$name')
+        .error('provider failed', fields: {'provider': name}, error: error, stackTrace: stackTrace);
   }
 }

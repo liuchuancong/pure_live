@@ -32,10 +32,7 @@ void main() {
   });
 
   test('auto with nothing measured keeps the custom wash instead of flashing bare', () {
-    expect(
-      backgroundScrimOpacityFor(settings: const BackgroundSettings(), plans: null, dark: false),
-      0.45,
-    );
+    expect(backgroundScrimOpacityFor(settings: const BackgroundSettings(), plans: null, dark: false), 0.45);
   });
 
   test('custom uses the value exactly', () {

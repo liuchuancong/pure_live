@@ -12,8 +12,9 @@ final storagePathsProvider = Provider<StoragePaths>(
 
 /// The viewer's chosen folders; every reader goes through [appPathsProvider],
 /// which lays this over the device defaults.
-final storageFolderOverridesProvider =
-    NotifierProvider<StorageFolderOverrides, Map<StorageFolder, String>>(StorageFolderOverrides.new);
+final storageFolderOverridesProvider = NotifierProvider<StorageFolderOverrides, Map<StorageFolder, String>>(
+  StorageFolderOverrides.new,
+);
 
 /// The named folders the app writes: the storage layout's defaults with the
 /// viewer's choices on top, so a subsystem asks one vocabulary instead of

@@ -218,7 +218,8 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // rail's first entry is a page to open, not where the switcher drops you.
     // Three blocks in a listener's own order: what the source suggests, the
     // library the viewer works through, then the tools. The equaliser is not
-    // a menu row: its only door is the settings group's 音效 page.
+    // a menu row: the settings group's 音效 page is its home, and the
+    // player's bar and page push it directly as well.
     menu: [
       [NavigationItem.musicRecommend, NavigationItem.musicFeatured, NavigationItem.music],
       [

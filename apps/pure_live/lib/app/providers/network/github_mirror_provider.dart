@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/shared/network/failure_text.dart';
 
 /// The official host a mirror rewrites.
 const String kGithubRawOrigin = 'https://raw.githubusercontent.com';
@@ -309,11 +311,16 @@ final class GithubMirrorController extends Notifier<GithubMirrorState> {
         _persist(state.copyWith(remote: remote, loading: false, updatedAt: DateTime.now()));
         return;
       } on Object catch (error) {
+        // One dead candidate is normal (a mirror gone); the walk names
+        // it and moves on.
+        appLog
+            .forCategory('network.mirror')
+            .warning('mirror candidate failed', fields: {'url': candidate, 'error': '$error'});
         failure = error;
       }
     }
     if (!ref.mounted) return;
-    state = state.copyWith(loading: false, error: '$failure');
+    state = state.copyWith(loading: false, error: failure == null ? null : networkFailureText(failure));
   }
 
   /// The feed's raw mirror presets this app can apply.

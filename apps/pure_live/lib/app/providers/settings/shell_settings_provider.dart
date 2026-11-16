@@ -71,8 +71,7 @@ final class ShellWindowSettingsController extends Notifier<ShellWindowSettings> 
   Future<void> rememberCloseChoice({required CloseAction action, required bool dontAskAgain}) async {
     state = (closeAction: action, dontAskExit: dontAskAgain);
     try {
-      await StoragePrefs.setString(kCloseActionPref, action.name);
-      await StoragePrefs.setBool(kDontAskExitPref, dontAskAgain);
+      await StoragePrefs.setPrefs({kCloseActionPref: action.name, kDontAskExitPref: dontAskAgain});
     } on Object {
       // The choice is a preference; a closed store loses it.
     }

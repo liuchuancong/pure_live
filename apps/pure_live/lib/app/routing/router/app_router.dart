@@ -574,6 +574,12 @@ GoRouter buildAppRouter({
         path: RouteNames.huyaUploader,
         builder: (context, state) => WindowChromeFrame(child: HuyaUploaderPage(uid: state.pathParameters['uid']!)),
       ),
+      // One Bilibili uploader's space: a live room's anchor door opens it,
+      // the same hand-written shape the Huya uploader's route keeps.
+      GoRoute(
+        path: RouteNames.vodUploader,
+        builder: (context, state) => WindowChromeFrame(child: VodUploaderPage(mid: state.pathParameters['mid']!)),
+      ),
       GoRoute(
         path: RouteNames.musicPlayer,
         builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),

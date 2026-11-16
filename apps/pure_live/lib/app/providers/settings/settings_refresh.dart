@@ -32,6 +32,8 @@ import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart' show hongguoCardSettingsProvider;
 import 'package:pure_live/modules/hongguo/hongguo.dart';
+import 'package:pure_live/modules/huya/controller/huya_downloads.dart' show huyaDownloadsProvider;
+import 'package:pure_live/modules/huya/huya.dart' show huyaBatchProvider;
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/areas/controllers/areas_controller.dart' show areaLayoutProvider;
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -39,21 +41,23 @@ import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/search/search_scope.dart' show searchExcludedProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart' show musicEqProvider;
-import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart' show musicCustomPresetsProvider;
-import 'package:pure_live/modules/music/controller/music_open_api.dart'
+import 'package:pure_live/modules/music/controller/browse/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart' show musicEqProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_custom_presets.dart'
+    show musicCustomPresetsProvider;
+import 'package:pure_live/modules/music/controller/playback/music_open_api.dart'
     show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider;
-import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
-import 'package:pure_live/modules/music/controller/music_sync_server.dart'
+import 'package:pure_live/modules/music/controller/settings/music_ui_settings.dart'
+    show musicPlayerModeProvider, musicUiSettingsProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart'
     show
         musicSyncServerAuthCodeProvider,
         musicSyncServerGateProvider,
         musicSyncServerLanProvider,
         musicSyncServerPortProvider,
         musicSyncServerStatusProvider;
-import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
-    show musicPlayerModeProvider, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/music.dart';
+import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppSessionProvider;
 import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -112,6 +116,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   followTagsProvider,
   iptvUpdateIntervalProvider,
   iptvBrowseSettingsProvider,
+  iptvSourceOrderProvider,
   iptvRecentProvider,
   iptvRemindersProvider,
   iptvAutoSyncProvider,
@@ -201,6 +206,15 @@ final List<ProviderOrFamily> kSettingsProviders = [
   vodDownloadRetryProvider,
   vodDownloadRetryDelayProvider,
   vodDownloadDanmakuProvider,
+  // The stations' own prefs readers this pass had left out: the huya video's
+  // column choice and download shelf, the live search's picked surface, the
+  // vod app session, the vod search words and the seasons' checkpoints.
+  huyaBatchProvider,
+  huyaDownloadsProvider,
+  searchProvider,
+  vodAppSessionProvider,
+  vodSearchHistoryProvider,
+  vodSeasonProgressProvider,
 ];
 
 /// Marks the settings revision and rebuilds every cached settings provider.

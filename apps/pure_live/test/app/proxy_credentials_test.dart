@@ -48,7 +48,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// would hide the very header these tests are looking for.
 const String _credential = 'proxy-authorization: basic dxnlcjpzzwnyzxq=';
 
-
 /// How long one request is given before it counts as never completing.
 const Duration _patience = Duration(seconds: 3);
 

@@ -98,6 +98,4 @@ final class ModuleSettings {
 
 /// The selected module's settings namespace; rebuilding when the shell moves
 /// to another module is what makes every settings provider read its own copy.
-final moduleSettingsProvider = Provider<ModuleSettings>(
-  (ref) => ModuleSettings(ref.watch(selectedModuleProvider)),
-);
+final moduleSettingsProvider = Provider<ModuleSettings>((ref) => ModuleSettings(ref.watch(selectedModuleProvider)));

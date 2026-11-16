@@ -61,9 +61,11 @@ final class FollowsAutoRefreshController extends Notifier<FollowsAutoRefresh> {
   Future<void> _write(FollowsAutoRefresh next) async {
     state = next;
     try {
-      await StoragePrefs.setBool('refresh.follows.auto', next.enabled);
-      await StoragePrefs.setInt('refresh.follows.minutes', next.minutes);
-      await StoragePrefs.setBool('refresh.follows.onResume', next.onResume);
+      await StoragePrefs.setPrefs({
+        'refresh.follows.auto': next.enabled,
+        'refresh.follows.minutes': next.minutes,
+        'refresh.follows.onResume': next.onResume,
+      });
     } on Object {
       // The choice is a preference; a closed store loses it.
     }

@@ -236,10 +236,14 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
   Future<void> _write(ProxySettings next) async {
     state = next;
     try {
-      await StoragePrefs.setString('proxy.mode', proxyModeKey(next.mode));
-      await StoragePrefs.setString('proxy.host', next.host);
-      await StoragePrefs.setInt('proxy.port', next.port);
-      await StoragePrefs.setString('proxy.username', next.username);
+      // One transaction: a crash mid-write must not leave an endpoint
+      // whose host answers to one choice and port to another.
+      await StoragePrefs.setPrefs({
+        'proxy.mode': proxyModeKey(next.mode),
+        'proxy.host': next.host,
+        'proxy.port': next.port,
+        'proxy.username': next.username,
+      });
     } on Object {
       // The choice is a preference; a closed store loses it.
     }
@@ -302,8 +306,10 @@ final nativeTlsPlatformsProvider = Provider<Set<String>>((ref) {
 /// so the player-adjacent modules (vod, iptv, backups) all honour the
 /// same network settings.
 final networkFactoryProvider = Provider<DioFactory>((ref) {
-  return DioFactory(
+  final factory = DioFactory(
     log: appLog.forCategory('network'),
     proxyPolicy: _SettingsProxyPolicy(() => ref.read(proxySettingsProvider.notifier).route),
   );
+  ref.onDispose(factory.close);
+  return factory;
 });

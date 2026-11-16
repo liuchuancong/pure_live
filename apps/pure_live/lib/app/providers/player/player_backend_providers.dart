@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/settings/module_settings.dart' show ModuleSettings, moduleSettingsProvider;
 
 /// The player backends this build can choose between.
@@ -62,11 +63,18 @@ final class PlayerKernelBackendController extends Notifier<PlayerKernelBackend> 
   }
 
   /// Stores the choice; new players use it.
+  ///
+  /// The engine choice is the app's own, not one module's: it writes the
+  /// manifest's bare key — the one the backup, the restore and the LAN
+  /// sync carry — and retires a module-scoped copy a pre-sandbox build
+  /// may have left, whose first read would otherwise shadow this one
+  /// forever.
   Future<void> select(PlayerKernelBackend backend) async {
     if (!availablePlayerKernelBackends().contains(backend) || backend == state) return;
     state = backend;
     try {
-      await _scope.setString(_key, backend.id);
+      await StoragePrefs.setString(_key, backend.id);
+      await StoragePrefs.remove(_scope.storeKey(_key));
     } on Object {
       // A preference; a closed store loses it.
     }
