@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
+import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/archive/archive_catalog_controller.dart';
 import 'package:pure_live/modules/live/archive/archive_navigation.dart';
@@ -106,19 +108,20 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
     final state = ref.watch(archiveCatalogProvider);
     final controller = ref.read(archiveCatalogProvider.notifier);
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final name = (widget.arguments.room?.anchor?.name ?? '').trim();
 
     final Widget body;
     if (state.opening) {
-      body = const Center(child: DsSpinner());
+      // The wall the catalog settles into: cover blocks where the picks
+      // will stand, not a lone spinner on a dark page.
+      body = const SkeletonGrid();
     } else if (state.openingError != null) {
       body = Center(
         child: DsAlert(
           status: DsStatus.danger,
           title: Text(t.room.replayFailed),
+          description: '${state.openingError}'.isEmpty ? null : Text('$state.openingError'),
           action: DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
@@ -130,11 +133,26 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
         ),
       );
     } else if (state.collections.isEmpty) {
+      // A signed-out viewer reads as a short shelf, not an empty one: the
+      // door to the account page stands in the empty state itself.
+      final signedIn = ref.watch(accountsProvider).credentials[_siteId] != null;
       body = Center(
-        child: Text(
-          t.room.replayEmpty,
-          style: theme.typography.body.copyWith(color: colors.textMuted),
-          textAlign: TextAlign.center,
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.film),
+          title: Text(t.room.replayEmpty),
+          description: signedIn ? null : Text(t.room.replayLoginHint),
+          actions: [
+            if (!signedIn)
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () {
+                  openSettingsSection(ref, SettingsSection.accounts);
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.accounts.name).location));
+                },
+                child: Text(t.room.replayLoginAction),
+              ),
+          ],
         ),
       );
     } else {

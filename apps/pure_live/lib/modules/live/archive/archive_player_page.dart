@@ -603,6 +603,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   /// Whether the 小窗 verb may show: the handle carries a source to hand
   /// over, no window-owning mode stands, and no mini window is up yet.
   bool get _miniWindowReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return handle != null &&
         handle.source != null &&
@@ -645,9 +650,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         context: context,
         // A replay the downloader cannot rebuild says so; only a broken
         // request reads as a plain failure worth trying again.
-        title: failure.code == ArchiveReplayDownloadFailure.network
-            ? t.vod.downloadFailed
-            : t.vod.downloadUnsupported,
+        title: failure.code == ArchiveReplayDownloadFailure.network ? t.vod.downloadFailed : t.vod.downloadUnsupported,
         status: DsStatus.danger,
       );
     }
@@ -758,8 +761,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     // 走，返回从条上的胶囊走。
     final windowSize = MediaQuery.sizeOf(context);
     final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
-    final sizeStage =
-        playbackLayout.windowClass == PlaybackWindowClass.compact || playbackLayout.landscapeImmersive;
+    final sizeStage = playbackLayout.windowClass == PlaybackWindowClass.compact || playbackLayout.landscapeImmersive;
     // A TV sits far from the screen: the bar's controls grow, its buttons
     // draw the focus ring a remote needs, and the space key reaches the
     // transport without the pointer the page otherwise assumes.
@@ -820,6 +822,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
               _wake();
               unawaited(_toggleFullscreen());
             },
+            // The window variant of the same verb, on the desktop's own chord.
+            const SingleActivator(LogicalKeyboardKey.f11): () {
+              _wake();
+              unawaited(_toggleFullscreen());
+            },
             // The stream's own figures: the key every player answers to.
             if (!tv)
               const SingleActivator(LogicalKeyboardKey.keyI): () =>
@@ -864,6 +871,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
               },
           },
           child: Scaffold(
+            backgroundColor: colors.canvas,
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

@@ -214,11 +214,17 @@ final class ArchiveReplayDownloader {
         final count = playlist.segments.length;
         for (var index = 0; index < count; index++) {
           _throwIfCancelled();
-          await _pipe(client, playlist.segments[index], headers, sink, onProgress: (value) {
-            // A segment whose length the server withheld reports null; the
-            // walk stays honest rather than inventing a fraction.
-            onProgress(value == null ? null : (index + value) / count);
-          });
+          await _pipe(
+            client,
+            playlist.segments[index],
+            headers,
+            sink,
+            onProgress: (value) {
+              // A segment whose length the server withheld reports null; the
+              // walk stays honest rather than inventing a fraction.
+              onProgress(value == null ? null : (index + value) / count);
+            },
+          );
         }
       }
       await sink.flush();
