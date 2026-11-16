@@ -205,6 +205,7 @@
   "shortcutLeave": "Leave fullscreen, or the room",
   "shortcutVolumeUp": "Volume up",
   "shortcutVolumeDown": "Volume down",
+  "shortcutMute": "Mute or unmute",
   "keySpace": "Space",
   "keyEscape": "Esc",
   "switchRoom": "Switch room",
@@ -254,5 +255,13 @@
   "shortcutChatColumn": "Fold/unfold the chat column",
   "danmakuChip": "Danmaku",
   "danmakuChipOff": "Danmaku off",
-  "fullscreenChip": "Fullscreen"
+  "fullscreenChip": "Fullscreen",
+  "anchorVideos": "Their videos",
+  "areaEntry": "Category",
+  "anchorVideosHint": "Their videos on this platform",
+  "areaHint": "Open this category's rooms",
+  "anchorVideosUnavailable": "This streamer has nothing to watch yet",
+  "areaUnavailable": "That category could not be found",
+  "replayLoginHint": "Replays show their full content once signed in; you can sign in first.",
+  "replayLoginAction": "Sign in"
 }

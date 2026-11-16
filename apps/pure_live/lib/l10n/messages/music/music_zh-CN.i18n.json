@@ -613,6 +613,8 @@
   "syncStatusFailed": "连接失败",
   "syncStatusIdle": "未连接",
   "syncStatusHint": "连接后拉取服务端歌单并推送本地改动。",
+  "syncForgetCleared": "已清除服务器授权",
+  "syncInvalidAddress": "服务器地址不合法",
   "syncForgetKey": "清除授权",
   "syncForgetKeyDesc": "删除已保存的密钥，下次连接用连接码重新授权。",
   "syncNote": "与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。",
@@ -709,5 +711,13 @@
   "audioCacheClear": "清空音频缓存",
   "audioCacheCleared": "音频缓存已清空",
   "audioCacheMb": "{count} MB",
-  "audioCacheClearAction": "清空"
+  "audioCacheClearAction": "清空",
+  "favouritesClear": "清空收藏",
+  "favouritesClearDesc": "把整个收藏歌单清空？此操作不可撤销。",
+  "playlistLimitReached": "歌单已达上限",
+  "playlistClearTitle": "清空「{name: String}」？",
+  "playlistClearDesc": "将移除歌单里的全部歌曲，歌曲文件本身不受影响。",
+  "playlistClearDone": "已清空「{name: String}」",
+  "audioCacheNothingToClear": "没有可清除的缓存",
+  "audioCacheFreed": "已清除 {size: String} 的缓存"
 }

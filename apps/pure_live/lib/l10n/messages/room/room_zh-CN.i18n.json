@@ -205,6 +205,7 @@
   "shortcutLeave": "退出全屏，或离开房间",
   "shortcutVolumeUp": "增大音量",
   "shortcutVolumeDown": "减小音量",
+  "shortcutMute": "静音 / 取消静音",
   "keySpace": "空格",
   "keyEscape": "Esc",
   "switchRoom": "切换直播间",
@@ -254,5 +255,13 @@
   "shortcutChatColumn": "收起/展开聊天栏",
   "danmakuChip": "弹幕",
   "danmakuChipOff": "弹幕 关",
-  "fullscreenChip": "全屏"
+  "fullscreenChip": "全屏",
+  "anchorVideos": "TA 的视频",
+  "areaEntry": "所属分区",
+  "anchorVideosHint": "查看 TA 在本平台的视频",
+  "areaHint": "打开该分区的直播间",
+  "anchorVideosUnavailable": "该主播暂时没有可看的视频",
+  "areaUnavailable": "没能找到这个分类",
+  "replayLoginHint": "回放需要登录后才能看到完整内容，可以先去登录。",
+  "replayLoginAction": "去登录"
 }

@@ -256,6 +256,8 @@
   "appLoginTitle": "App 扫码登录",
   "appLoginHint": "用哔哩哔哩手机客户端扫码",
   "appLoginScanned": "已扫码，请在手机上确认",
+  "favouritesRemoveDesc": "移除后不可恢复，确定移出所选收藏吗？",
+  "searchHistoryRemove": "删除搜索词「{word}」",
   "appLoginExpired": "二维码已过期，请重试",
   "appLoginFailed": "登录失败：{message}",
   "appLoginDone": "App 接口已登录",
@@ -267,5 +269,10 @@
   "linkCopied": "链接已复制",
   "episodeNo": "第 {index: String} 话",
   "partsPlaylist": "播放列表",
-  "partsCount": "共 {count: int} 个"
+  "partsCount": "共 {count: int} 个",
+  "uploads": "投稿视频",
+  "continueWatching": "继续观看",
+  "seasonEpisodeProgress": "第 {index: int} 集，共 {total: int} 集",
+  "searchHistory": "搜索历史",
+  "searchHistoryClear": "清除搜索历史"
 }

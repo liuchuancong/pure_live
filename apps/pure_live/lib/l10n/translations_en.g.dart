@@ -241,7 +241,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get importFileNote => 'Picking a local file arrives with the file picker dependency; paste the content or use WebDAV for now.';
 	@override String get importConfirmTitle => 'Overwrite the current data?';
 	@override String get importConfirmDesc => 'Importing clears and rewrites follows, watch history, followed areas and settings. The current data cannot be recovered.';
-	@override String get importDone => 'Restored; restart the app to apply everything';
+	@override String get importDone => 'Restored and applied; a few items like the window size land on the next start';
 	@override String get importBadData => 'This is not a valid backup';
 	@override String get importFailed => 'Import failed';
 	@override String summary({required Object follows, required Object history, required Object areas, required Object recordings, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Recordings ${recordings} · Settings ${settings}';
@@ -445,6 +445,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	// Translations
 	@override String get appTitle => 'Pure Live';
 	@override String get empty => 'Nothing here yet';
+	@override String get loadFailed => 'Could not load';
 	@override String get comingSoon => 'Coming soon';
 	@override String get close => 'Close';
 	@override String get cancel => 'Cancel';
@@ -529,6 +530,19 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get exitAppTitle => 'Exit Pure Live';
 	@override String get exitAppMessage => 'Exit the app?';
 	@override String get exitApp => 'Exit';
+	@override String get manage => 'Manage';
+	@override String get manageDone => 'Done';
+	@override String deleteSelected({required int count}) => 'Delete selected (${count})';
+	@override String get networkTimeout => 'The network request timed out';
+	@override String get networkUnreachable => 'The network is unreachable';
+	@override String get networkSecure => 'The secure connection failed';
+	@override String get networkRateLimited => 'Too many requests — try again later';
+	@override String get networkFailed => 'The network request failed';
+	@override String get sidebarWidth => 'Sidebar width';
+	@override String get resizeWindow => 'Resize the floating window';
+	@override String get previewSplitter => 'Preview pane width';
+	@override String get clearSearchHistoryTitle => 'Clear search history?';
+	@override String get clearSearchHistoryBody => 'This removes every search from the history; it cannot be undone.';
 }
 
 // Path: favorites
@@ -729,6 +743,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get accountSignInTitle => 'Scan to sign in';
 	@override String get accountSignInDesc => 'Scan with the Hongguo phone app; favorites, history and reservations follow the account';
 	@override String get accountQrRefresh => 'New code';
+	@override String get accountQrLabel => 'Sign-in QR code — scan it with your phone';
 	@override String get accountSignedInAs => 'Signed in';
 	@override String get accountSignOut => 'Sign out';
 	@override String get accountSignOutDesc => 'Signs out of Hongguo only; local favorites and history stay';
@@ -921,6 +936,7 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get orderMost => 'Most played';
 	@override String get more => 'View all';
 	@override String get related => 'Related videos';
+	@override String get relatedEmpty => 'Nothing related here yet';
 	@override String get live => 'Live';
 	@override String searchResults({required int count, required String word}) => '${count} videos for “${word}”';
 	@override String get searchEmpty => 'No videos found';
@@ -1139,6 +1155,7 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get browseProgrammeLine => 'Show the current programme';
 	@override String get browseProgrammeLineDesc => 'Shows the current or next programme under the channel name.';
 	@override String get browseReset => 'Reset to defaults';
+	@override String get browseResetDesc => 'Restore the zapping and display settings to their defaults.';
 	@override String get groupsEmpty => 'No groups yet — import a playlist first.';
 	@override String get groupsHint => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.';
 	@override String get recentTitle => 'Recently watched';
@@ -1293,6 +1310,16 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String nameClashReplace({required Object name}) => 'Replace the existing “${name}”';
 	@override String nameClashRename({required Object name}) => 'Save as “${name}”';
 	@override String guideNameOf({required Object name}) => '${name} guide';
+	@override String get sort => 'Sort';
+	@override String get sortDefault => 'Default order';
+	@override String get sortByName => 'By name';
+	@override String get remindersTitle => 'Programme reminders';
+	@override String get remindersEmpty => 'No programme reminders yet';
+	@override String get remindersEmptyDescription => 'Book a programme in the guide and this app reminds you before it starts.';
+	@override String recordedDuration({required Object elapsed}) => 'Recorded ${elapsed}';
+	@override String reminderMissed({required Object title}) => 'Missed “${title}” while the app was closed';
+	@override String reminderMissedMany({required int count}) => '${count} reminders were missed while the app was closed';
+	@override String get reminderAlreadyStarted => 'The programme has already started';
 }
 
 // Path: multiview
@@ -1965,6 +1992,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncStatusFailed => 'Failed';
 	@override String get syncStatusIdle => 'Not connected';
 	@override String get syncStatusHint => 'Connect to pull the server\'s lists and push local changes back.';
+	@override String get syncForgetCleared => 'Server authorization cleared';
+	@override String get syncInvalidAddress => 'Invalid server address';
 	@override String get syncForgetKey => 'Forget authorization';
 	@override String get syncForgetKeyDesc => 'Drop the stored key and re-auth with the code next time.';
 	@override String get syncNote => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.';
@@ -2054,7 +2083,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get sourcesImported => 'Imported sources';
 	@override String get hotSongs => 'Top songs';
 	@override String songsSection({required int count}) => 'Songs · ${count}';
-	@override String albumTotalDuration({required Object count}) => 'About ${count} min';
+	@override String albumTotalDuration({required int count}) => 'About ${count} min';
 	@override String get audioCacheTitle => 'Audio cache';
 	@override String get audioCacheDesc => 'Songs you have played stay on disk and keep playing when their CDN link expires';
 	@override String get audioCacheOff => 'Off';
@@ -2062,6 +2091,14 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get audioCacheCleared => 'Audio cache cleared';
 	@override String audioCacheMb({required Object count}) => '${count} MB';
 	@override String get audioCacheClearAction => 'Clear';
+	@override String get favouritesClear => 'Clear favourites';
+	@override String get favouritesClearDesc => 'Empty the whole favourites playlist? This cannot be undone.';
+	@override String get playlistLimitReached => 'The playlist shelf is full';
+	@override String playlistClearTitle({required String name}) => 'Clear “${name}”?';
+	@override String get playlistClearDesc => 'This removes every song from the playlist; the songs themselves stay.';
+	@override String playlistClearDone({required String name}) => 'Cleared “${name}”';
+	@override String get audioCacheNothingToClear => 'Nothing to clear';
+	@override String audioCacheFreed({required String size}) => 'Cleared ${size} of cache';
 }
 
 // Path: navigation
@@ -2200,7 +2237,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get saveDirResetTitle => 'Use the default folder';
 	@override String get saveDirResetDesc => 'Back to the default under the download folder; recordings already saved stay where they are.';
 	@override String get folderInUseTitle => 'A recording is in progress';
-	@override String folderInUseBody({required Object count}) => '${count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.';
+	@override String folderInUseBody({required int count}) => '${count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.';
 	@override String get folderInUseConfirm => 'Change anyway';
 	@override String get folderChangedActive => 'New folder saved; the running takes are still in the old folder';
 	@override String get saveDirDefaultInUse => 'The default folder is already in use.';
@@ -2489,6 +2526,17 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get detailsMetrics => 'Recording';
 	@override String get detailsLocation => 'File';
 	@override String get startRecording => 'Start recording';
+	@override String get failureGone => 'The room is gone; the recording cannot start';
+	@override String get failureBusy => 'A recording for this room is already running';
+	@override String get failureNoLine => 'There is no line to record';
+	@override String get failureStoreClosed => 'The recordings library is not ready yet; try again';
+	@override String get failureTooMany => 'The concurrent recordings have reached their limit';
+	@override String get failureCustomCa => 'Recording cannot run under the custom certificate';
+	@override String get failureNotRecording => 'Nothing is being recorded here';
+	@override String get failureStartFailed => 'The recording failed to start';
+	@override String get failureStopFailed => 'The recording failed to stop';
+	@override String get failureGeneric => 'The recording action failed';
+	@override String get warningSizeCap => 'The take reached its size cap and stopped; the segments are kept';
 }
 
 // Path: room
@@ -2704,6 +2752,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get shortcutLeave => 'Leave fullscreen, or the room';
 	@override String get shortcutVolumeUp => 'Volume up';
 	@override String get shortcutVolumeDown => 'Volume down';
+	@override String get shortcutMute => 'Mute or unmute';
 	@override String get keySpace => 'Space';
 	@override String get keyEscape => 'Esc';
 	@override String get switchRoom => 'Switch room';
@@ -2754,6 +2803,14 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get danmakuChip => 'Danmaku';
 	@override String get danmakuChipOff => 'Danmaku off';
 	@override String get fullscreenChip => 'Fullscreen';
+	@override String get anchorVideos => 'Their videos';
+	@override String get areaEntry => 'Category';
+	@override String get anchorVideosHint => 'Their videos on this platform';
+	@override String get areaHint => 'Open this category\'s rooms';
+	@override String get anchorVideosUnavailable => 'This streamer has nothing to watch yet';
+	@override String get areaUnavailable => 'That category could not be found';
+	@override String get replayLoginHint => 'Replays show their full content once signed in; you can sign in first.';
+	@override String get replayLoginAction => 'Sign in';
 }
 
 // Path: search
@@ -3721,6 +3778,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get miniDanmakuVisible => 'Danmaku in the mini window';
 	@override String get miniDanmakuVisibleDesc => 'Whether the flying layer still draws in the compact window.';
 	@override String get miniDanmakuHint => 'The look is shared with the Danmaku page.';
+	@override String get kernelDeferredTip => 'These changes take effect the next time a player opens';
 	@override String get engineTitle => 'Playback engine';
 	@override String get engineDesc => 'Kernel for live and video; mpv by default, IJK or BetterPlayer on mobile.';
 	@override String get playerEngineMpv => 'MPV Player';
@@ -4906,6 +4964,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get appLoginTitle => 'App sign-in';
 	@override String get appLoginHint => 'Scan with the Bilibili mobile app';
 	@override String get appLoginScanned => 'Scanned — confirm on your phone';
+	@override String get favouritesRemoveDesc => 'Removed for good — take the selected archives out of your saved list?';
+	@override String searchHistoryRemove({required Object word}) => 'Remove the search word ‘${word}’';
 	@override String get appLoginExpired => 'The code expired — try again';
 	@override String appLoginFailed({required Object message}) => 'Sign-in failed: ${message}';
 	@override String get appLoginDone => 'App interface signed in';
@@ -4918,6 +4978,11 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String episodeNo({required String index}) => 'EP ${index}';
 	@override String get partsPlaylist => 'Playlist';
 	@override String partsCount({required int count}) => '${count} parts';
+	@override String get uploads => 'Uploads';
+	@override String get continueWatching => 'Continue watching';
+	@override String seasonEpisodeProgress({required int index, required int total}) => 'Episode ${index} of ${total}';
+	@override String get searchHistory => 'Search history';
+	@override String get searchHistoryClear => 'Clear search history';
 }
 
 // Path: wallpaper
@@ -5046,6 +5111,7 @@ class _Translations$backup$preview$en extends Translations$backup$preview$zh_CN 
 	@override String get same => 'No change';
 	@override String items({required int count}) => '${count} items';
 	@override String settingsChanged({required int count}) => '${count} differ from the current ones';
+	@override String settingsUnknown({required int count}) => 'Plus ${count} settings written by a newer build, kept as they are';
 	@override String get settingsSame => 'All match the current ones';
 	@override String get accounts => 'Writes these credentials only; the others on this device stay';
 	@override String kept({required String sections}) => 'Kept as they are: ${sections}';
@@ -5369,7 +5435,7 @@ extension on TranslationsEn {
 			'backup.importFileNote' => 'Picking a local file arrives with the file picker dependency; paste the content or use WebDAV for now.',
 			'backup.importConfirmTitle' => 'Overwrite the current data?',
 			'backup.importConfirmDesc' => 'Importing clears and rewrites follows, watch history, followed areas and settings. The current data cannot be recovered.',
-			'backup.importDone' => 'Restored; restart the app to apply everything',
+			'backup.importDone' => 'Restored and applied; a few items like the window size land on the next start',
 			'backup.importBadData' => 'This is not a valid backup',
 			'backup.importFailed' => 'Import failed',
 			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object recordings, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Recordings ${recordings} · Settings ${settings}',
@@ -5567,6 +5633,7 @@ extension on TranslationsEn {
 			'backup.preview.same' => 'No change',
 			'backup.preview.items' => ({required int count}) => '${count} items',
 			'backup.preview.settingsChanged' => ({required int count}) => '${count} differ from the current ones',
+			'backup.preview.settingsUnknown' => ({required int count}) => 'Plus ${count} settings written by a newer build, kept as they are',
 			'backup.preview.settingsSame' => 'All match the current ones',
 			'backup.preview.accounts' => 'Writes these credentials only; the others on this device stay',
 			'backup.preview.kept' => ({required String sections}) => 'Kept as they are: ${sections}',
@@ -5713,6 +5780,7 @@ extension on TranslationsEn {
 			'backup.cloud.errUnknown' => ({required String code}) => 'The action failed (${code})',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
+			'common.loadFailed' => 'Could not load',
 			'common.comingSoon' => 'Coming soon',
 			'common.close' => 'Close',
 			'common.cancel' => 'Cancel',
@@ -5728,10 +5796,10 @@ extension on TranslationsEn {
 			'common.retry' => 'Retry',
 			'common.moduleComingSoon' => 'This module is on its way',
 			'common.back' => 'Back',
-			'common.forward' => 'Forward',
-			'common.searchHint' => 'Search rooms or streamers',
 			_ => null,
 		} ?? switch (path) {
+			'common.forward' => 'Forward',
+			'common.searchHint' => 'Search rooms or streamers',
 			'common.switchModule' => 'Switch content type',
 			'common.openNavigation' => 'Open navigation',
 			'common.refreshFailed' => 'Refresh failed',
@@ -5799,6 +5867,19 @@ extension on TranslationsEn {
 			'common.exitAppTitle' => 'Exit Pure Live',
 			'common.exitAppMessage' => 'Exit the app?',
 			'common.exitApp' => 'Exit',
+			'common.manage' => 'Manage',
+			'common.manageDone' => 'Done',
+			'common.deleteSelected' => ({required int count}) => 'Delete selected (${count})',
+			'common.networkTimeout' => 'The network request timed out',
+			'common.networkUnreachable' => 'The network is unreachable',
+			'common.networkSecure' => 'The secure connection failed',
+			'common.networkRateLimited' => 'Too many requests — try again later',
+			'common.networkFailed' => 'The network request failed',
+			'common.sidebarWidth' => 'Sidebar width',
+			'common.resizeWindow' => 'Resize the floating window',
+			'common.previewSplitter' => 'Preview pane width',
+			'common.clearSearchHistoryTitle' => 'Clear search history?',
+			'common.clearSearchHistoryBody' => 'This removes every search from the history; it cannot be undone.',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -5972,6 +6053,7 @@ extension on TranslationsEn {
 			'hongguo.accountSignInTitle' => 'Scan to sign in',
 			'hongguo.accountSignInDesc' => 'Scan with the Hongguo phone app; favorites, history and reservations follow the account',
 			'hongguo.accountQrRefresh' => 'New code',
+			'hongguo.accountQrLabel' => 'Sign-in QR code — scan it with your phone',
 			'hongguo.accountSignedInAs' => 'Signed in',
 			'hongguo.accountSignOut' => 'Sign out',
 			'hongguo.accountSignOutDesc' => 'Signs out of Hongguo only; local favorites and history stay',
@@ -6155,6 +6237,7 @@ extension on TranslationsEn {
 			'huya.orderMost' => 'Most played',
 			'huya.more' => 'View all',
 			'huya.related' => 'Related videos',
+			'huya.relatedEmpty' => 'Nothing related here yet',
 			'huya.live' => 'Live',
 			'huya.searchResults' => ({required int count, required String word}) => '${count} videos for “${word}”',
 			'huya.searchEmpty' => 'No videos found',
@@ -6227,6 +6310,8 @@ extension on TranslationsEn {
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} h',
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} d',
 			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} guides refresh at this interval',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.autoUpdateStatusNone' => 'No guide updates automatically yet.',
 			'iptv.autoUpdateNoRemote' => 'No network guide to update',
 			'iptv.select' => 'Choose',
@@ -6244,8 +6329,6 @@ extension on TranslationsEn {
 			'iptv.guideNameHint' => 'e.g. My EPG',
 			'iptv.guideSelected' => ({required String name}) => 'Switched to “${name}”',
 			'iptv.importAction' => 'Import',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importAddressInvalid' => 'Enter a valid subscription address',
 			'iptv.importAddressRequired' => 'Enter the subscription address first',
 			'iptv.importFailed' => 'Import failed',
@@ -6366,6 +6449,7 @@ extension on TranslationsEn {
 			'iptv.browseProgrammeLine' => 'Show the current programme',
 			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			'iptv.browseReset' => 'Reset to defaults',
+			'iptv.browseResetDesc' => 'Restore the zapping and display settings to their defaults.',
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'iptv.recentTitle' => 'Recently watched',
@@ -6520,6 +6604,16 @@ extension on TranslationsEn {
 			'iptv.nameClashReplace' => ({required Object name}) => 'Replace the existing “${name}”',
 			'iptv.nameClashRename' => ({required Object name}) => 'Save as “${name}”',
 			'iptv.guideNameOf' => ({required Object name}) => '${name} guide',
+			'iptv.sort' => 'Sort',
+			'iptv.sortDefault' => 'Default order',
+			'iptv.sortByName' => 'By name',
+			'iptv.remindersTitle' => 'Programme reminders',
+			'iptv.remindersEmpty' => 'No programme reminders yet',
+			'iptv.remindersEmptyDescription' => 'Book a programme in the guide and this app reminds you before it starts.',
+			'iptv.recordedDuration' => ({required Object elapsed}) => 'Recorded ${elapsed}',
+			'iptv.reminderMissed' => ({required Object title}) => 'Missed “${title}” while the app was closed',
+			'iptv.reminderMissedMany' => ({required int count}) => '${count} reminders were missed while the app was closed',
+			'iptv.reminderAlreadyStarted' => 'The programme has already started',
 			'multiview.layoutLabel' => 'Layout',
 			'multiview.pickRoom' => 'Pick a room',
 			'multiview.openRoom' => 'Open room',
@@ -6730,6 +6824,8 @@ extension on TranslationsEn {
 			'music.nowPlaying' => 'Now playing',
 			'music.stagePanels' => 'Lyrics & queue',
 			'music.volume' => 'Volume',
+			_ => null,
+		} ?? switch (path) {
 			'music.progress' => 'Progress',
 			'music.lyrics' => 'Lyrics',
 			'music.lyricsEmpty' => 'This song has no lyrics yet.',
@@ -6758,8 +6854,6 @@ extension on TranslationsEn {
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
 			'music.songDetailEmpty' => '—',
-			_ => null,
-		} ?? switch (path) {
 			'music.albumPageTitle' => 'Album',
 			'music.artistPageTitle' => 'Artist',
 			'music.viewAlbum' => 'View album',
@@ -7176,6 +7270,8 @@ extension on TranslationsEn {
 			'music.syncStatusFailed' => 'Failed',
 			'music.syncStatusIdle' => 'Not connected',
 			'music.syncStatusHint' => 'Connect to pull the server\'s lists and push local changes back.',
+			'music.syncForgetCleared' => 'Server authorization cleared',
+			'music.syncInvalidAddress' => 'Invalid server address',
 			'music.syncForgetKey' => 'Forget authorization',
 			'music.syncForgetKeyDesc' => 'Drop the stored key and re-auth with the code next time.',
 			'music.syncNote' => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.',
@@ -7242,6 +7338,8 @@ extension on TranslationsEn {
 			'music.tagEditSinger' => 'Artist',
 			'music.tagEditAlbum' => 'Album',
 			'music.tagEditLyric' => 'LRC lyric',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditPic' => 'Album cover',
 			'music.tagEditParseName' => 'Parse title and artist from the file name',
 			'music.tagParseNameSinger' => 'Title - Artist',
@@ -7265,16 +7363,22 @@ extension on TranslationsEn {
 			'music.sourcesImported' => 'Imported sources',
 			'music.hotSongs' => 'Top songs',
 			'music.songsSection' => ({required int count}) => 'Songs · ${count}',
-			'music.albumTotalDuration' => ({required Object count}) => 'About ${count} min',
+			'music.albumTotalDuration' => ({required int count}) => 'About ${count} min',
 			'music.audioCacheTitle' => 'Audio cache',
 			'music.audioCacheDesc' => 'Songs you have played stay on disk and keep playing when their CDN link expires',
 			'music.audioCacheOff' => 'Off',
 			'music.audioCacheClear' => 'Clear the audio cache',
 			'music.audioCacheCleared' => 'Audio cache cleared',
 			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
-			_ => null,
-		} ?? switch (path) {
 			'music.audioCacheClearAction' => 'Clear',
+			'music.favouritesClear' => 'Clear favourites',
+			'music.favouritesClearDesc' => 'Empty the whole favourites playlist? This cannot be undone.',
+			'music.playlistLimitReached' => 'The playlist shelf is full',
+			'music.playlistClearTitle' => ({required String name}) => 'Clear “${name}”?',
+			'music.playlistClearDesc' => 'This removes every song from the playlist; the songs themselves stay.',
+			'music.playlistClearDone' => ({required String name}) => 'Cleared “${name}”',
+			'music.audioCacheNothingToClear' => 'Nothing to clear',
+			'music.audioCacheFreed' => ({required String size}) => 'Cleared ${size} of cache',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -7368,7 +7472,7 @@ extension on TranslationsEn {
 			'recorder.saveDirResetTitle' => 'Use the default folder',
 			'recorder.saveDirResetDesc' => 'Back to the default under the download folder; recordings already saved stay where they are.',
 			'recorder.folderInUseTitle' => 'A recording is in progress',
-			'recorder.folderInUseBody' => ({required Object count}) => '${count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.',
+			'recorder.folderInUseBody' => ({required int count}) => '${count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.',
 			'recorder.folderInUseConfirm' => 'Change anyway',
 			'recorder.folderChangedActive' => 'New folder saved; the running takes are still in the old folder',
 			'recorder.saveDirDefaultInUse' => 'The default folder is already in use.',
@@ -7657,6 +7761,17 @@ extension on TranslationsEn {
 			'recorder.detailsMetrics' => 'Recording',
 			'recorder.detailsLocation' => 'File',
 			'recorder.startRecording' => 'Start recording',
+			'recorder.failureGone' => 'The room is gone; the recording cannot start',
+			'recorder.failureBusy' => 'A recording for this room is already running',
+			'recorder.failureNoLine' => 'There is no line to record',
+			'recorder.failureStoreClosed' => 'The recordings library is not ready yet; try again',
+			'recorder.failureTooMany' => 'The concurrent recordings have reached their limit',
+			'recorder.failureCustomCa' => 'Recording cannot run under the custom certificate',
+			'recorder.failureNotRecording' => 'Nothing is being recorded here',
+			'recorder.failureStartFailed' => 'The recording failed to start',
+			'recorder.failureStopFailed' => 'The recording failed to stop',
+			'recorder.failureGeneric' => 'The recording action failed',
+			'recorder.warningSizeCap' => 'The take reached its size cap and stopped; the segments are kept',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7737,6 +7852,8 @@ extension on TranslationsEn {
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
+			_ => null,
+		} ?? switch (path) {
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
 			'room.copyName' => 'Copy name',
@@ -7786,8 +7903,6 @@ extension on TranslationsEn {
 			'room.blockKeywordHint' => 'Enter the keyword to block',
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
-			_ => null,
-		} ?? switch (path) {
 			'room.danmakuSettings' => 'Danmaku settings',
 			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chat',
@@ -7865,6 +7980,7 @@ extension on TranslationsEn {
 			'room.shortcutLeave' => 'Leave fullscreen, or the room',
 			'room.shortcutVolumeUp' => 'Volume up',
 			'room.shortcutVolumeDown' => 'Volume down',
+			'room.shortcutMute' => 'Mute or unmute',
 			'room.keySpace' => 'Space',
 			'room.keyEscape' => 'Esc',
 			'room.switchRoom' => 'Switch room',
@@ -7915,6 +8031,14 @@ extension on TranslationsEn {
 			'room.danmakuChip' => 'Danmaku',
 			'room.danmakuChipOff' => 'Danmaku off',
 			'room.fullscreenChip' => 'Fullscreen',
+			'room.anchorVideos' => 'Their videos',
+			'room.areaEntry' => 'Category',
+			'room.anchorVideosHint' => 'Their videos on this platform',
+			'room.areaHint' => 'Open this category\'s rooms',
+			'room.anchorVideosUnavailable' => 'This streamer has nothing to watch yet',
+			'room.areaUnavailable' => 'That category could not be found',
+			'room.replayLoginHint' => 'Replays show their full content once signed in; you can sign in first.',
+			'room.replayLoginAction' => 'Sign in',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -8242,6 +8366,8 @@ extension on TranslationsEn {
 			'settings.githubMirrorOff' => 'Default (no acceleration)',
 			'settings.githubMirrorOfficial' => 'Official source · may be slow',
 			'settings.githubMirrorCustom' => 'Custom…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorCustomDetail' => 'Type a mirror domain',
 			'settings.githubMirrorCustomDomain' => 'Custom mirror domain',
 			'settings.githubMirrorCustomDesc' => 'Starts with https:// and prefixes the original address.',
@@ -8300,8 +8426,6 @@ extension on TranslationsEn {
 			'settings.danmakuColorHex' => 'Hex colour',
 			'settings.danmakuColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
 			'settings.danmakuColorHue' => 'Hue',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuColorSaturation' => 'Saturation and brightness',
 			'settings.danmakuFixedGroup' => 'Pinned danmaku',
 			'settings.chatListFixedTitle' => 'Chat list is fixed',
@@ -8756,6 +8880,8 @@ extension on TranslationsEn {
 			'settings.mpvResetDone' => 'Defaults restored',
 			'settings.mpvDocs' => 'Open the mpv manual',
 			'settings.mpvDocsDesc' => 'Full descriptions for every property.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuide' => 'Player guide',
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
@@ -8814,8 +8940,6 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymGlitchBody' => 'Android: switch to the compat preset. Elsewhere: turn hardware decoding off, or set the decoder to auto-safe under Custom drivers and hardware acceleration.',
 			'settings.playerGuideEntrySymBlurryTitle' => 'Low-res sources look soft on a sharp screen',
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA: use the RTX VSR preset. Other GPUs: switch the scale kernel to ewa_lanczossharp.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
 			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
 			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
@@ -8868,6 +8992,7 @@ extension on TranslationsEn {
 			'settings.miniDanmakuVisible' => 'Danmaku in the mini window',
 			'settings.miniDanmakuVisibleDesc' => 'Whether the flying layer still draws in the compact window.',
 			'settings.miniDanmakuHint' => 'The look is shared with the Danmaku page.',
+			'settings.kernelDeferredTip' => 'These changes take effect the next time a player opens',
 			'settings.engineTitle' => 'Playback engine',
 			'settings.engineDesc' => 'Kernel for live and video; mpv by default, IJK or BetterPlayer on mobile.',
 			'settings.playerEngineMpv' => 'MPV Player',
@@ -9269,6 +9394,8 @@ extension on TranslationsEn {
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_zh' => 'Chinese',
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
@@ -9328,8 +9455,6 @@ extension on TranslationsEn {
 			'settings.navHongguoDanmaku' => 'Danmaku',
 			'settings.navHongguoDevice' => 'Device & identity',
 			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
 			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
 			'settings.hongguoDeviceDesc' => 'The device identity this install registered; reset it here.',
@@ -9783,6 +9908,8 @@ extension on TranslationsEn {
 			'vod.regionAnimation' => 'Animation',
 			'vod.regionGames' => 'Gaming',
 			'vod.regionGuichu' => 'Guichu',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regionMusic' => 'Music',
 			'vod.regionDance' => 'Dance',
 			'vod.regionFilm' => 'Film & TV',
@@ -9842,8 +9969,6 @@ extension on TranslationsEn {
 			'vod.changeRelated' => 'Shuffle',
 			'vod.expand' => 'More',
 			'vod.collapse' => 'Less',
-			_ => null,
-		} ?? switch (path) {
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
 			'vod.score' => 'Rating',
@@ -10021,6 +10146,8 @@ extension on TranslationsEn {
 			'vod.appLoginTitle' => 'App sign-in',
 			'vod.appLoginHint' => 'Scan with the Bilibili mobile app',
 			'vod.appLoginScanned' => 'Scanned — confirm on your phone',
+			'vod.favouritesRemoveDesc' => 'Removed for good — take the selected archives out of your saved list?',
+			'vod.searchHistoryRemove' => ({required Object word}) => 'Remove the search word ‘${word}’',
 			'vod.appLoginExpired' => 'The code expired — try again',
 			'vod.appLoginFailed' => ({required Object message}) => 'Sign-in failed: ${message}',
 			'vod.appLoginDone' => 'App interface signed in',
@@ -10033,6 +10160,11 @@ extension on TranslationsEn {
 			'vod.episodeNo' => ({required String index}) => 'EP ${index}',
 			'vod.partsPlaylist' => 'Playlist',
 			'vod.partsCount' => ({required int count}) => '${count} parts',
+			'vod.uploads' => 'Uploads',
+			'vod.continueWatching' => 'Continue watching',
+			'vod.seasonEpisodeProgress' => ({required int index, required int total}) => 'Episode ${index} of ${total}',
+			'vod.searchHistory' => 'Search history',
+			'vod.searchHistoryClear' => 'Clear search history',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

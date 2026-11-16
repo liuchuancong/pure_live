@@ -9,6 +9,7 @@
   "orderMost": "最多播放",
   "more": "查看全部",
   "related": "相关视频",
+  "relatedEmpty": "暂时没有相关视频",
   "live": "直播中",
   "searchResults": "找到 {count: int} 个与“{word: String}”相关的视频",
   "searchEmpty": "没有找到相关视频",

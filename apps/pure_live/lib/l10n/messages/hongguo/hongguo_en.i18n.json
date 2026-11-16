@@ -87,6 +87,7 @@
   "accountSignInTitle": "Scan to sign in",
   "accountSignInDesc": "Scan with the Hongguo phone app; favorites, history and reservations follow the account",
   "accountQrRefresh": "New code",
+  "accountQrLabel": "Sign-in QR code — scan it with your phone",
   "accountSignedInAs": "Signed in",
   "accountSignOut": "Sign out",
   "accountSignOutDesc": "Signs out of Hongguo only; local favorites and history stay",

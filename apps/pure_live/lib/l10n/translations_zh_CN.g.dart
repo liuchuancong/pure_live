@@ -546,8 +546,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '导入会先清空再写入关注、观看历史、关注分区与设置，当前数据无法找回。'
 	String get importConfirmDesc => '导入会先清空再写入关注、观看历史、关注分区与设置，当前数据无法找回。';
 
-	/// zh-CN: '恢复完成，重启应用后全部生效'
-	String get importDone => '恢复完成，重启应用后全部生效';
+	/// zh-CN: '恢复完成，设置已即时应用；窗口尺寸等少数项下次启动生效'
+	String get importDone => '恢复完成，设置已即时应用；窗口尺寸等少数项下次启动生效';
 
 	/// zh-CN: '这不是有效的备份内容'
 	String get importBadData => '这不是有效的备份内容';
@@ -1135,6 +1135,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '这里还没有内容'
 	String get empty => '这里还没有内容';
 
+	/// zh-CN: '加载失败'
+	String get loadFailed => '加载失败';
+
 	/// zh-CN: '即将推出'
 	String get comingSoon => '即将推出';
 
@@ -1386,6 +1389,45 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '退出'
 	String get exitApp => '退出';
+
+	/// zh-CN: '管理'
+	String get manage => '管理';
+
+	/// zh-CN: '完成'
+	String get manageDone => '完成';
+
+	/// zh-CN: '删除选中（{count: int}）'
+	String deleteSelected({required int count}) => '删除选中（${count}）';
+
+	/// zh-CN: '网络请求超时'
+	String get networkTimeout => '网络请求超时';
+
+	/// zh-CN: '网络无法连接'
+	String get networkUnreachable => '网络无法连接';
+
+	/// zh-CN: '安全连接失败'
+	String get networkSecure => '安全连接失败';
+
+	/// zh-CN: '请求过于频繁，请稍后再试'
+	String get networkRateLimited => '请求过于频繁，请稍后再试';
+
+	/// zh-CN: '网络请求失败'
+	String get networkFailed => '网络请求失败';
+
+	/// zh-CN: '侧栏宽度'
+	String get sidebarWidth => '侧栏宽度';
+
+	/// zh-CN: '调整浮窗大小'
+	String get resizeWindow => '调整浮窗大小';
+
+	/// zh-CN: '预览分栏宽度'
+	String get previewSplitter => '预览分栏宽度';
+
+	/// zh-CN: '清空搜索历史？'
+	String get clearSearchHistoryTitle => '清空搜索历史？';
+
+	/// zh-CN: '将删除全部搜索历史，删除后不可恢复。'
+	String get clearSearchHistoryBody => '将删除全部搜索历史，删除后不可恢复。';
 }
 
 // Path: favorites
@@ -1932,6 +1974,9 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '刷新二维码'
 	String get accountQrRefresh => '刷新二维码';
+
+	/// zh-CN: '登录二维码，请用手机扫码'
+	String get accountQrLabel => '登录二维码，请用手机扫码';
 
 	/// zh-CN: '已登录'
 	String get accountSignedInAs => '已登录';
@@ -2490,6 +2535,9 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '相关视频'
 	String get related => '相关视频';
+
+	/// zh-CN: '暂时没有相关视频'
+	String get relatedEmpty => '暂时没有相关视频';
 
 	/// zh-CN: '直播中'
 	String get live => '直播中';
@@ -3127,6 +3175,9 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '恢复默认'
 	String get browseReset => '恢复默认';
 
+	/// zh-CN: '把换台与显示的设置恢复为默认值。'
+	String get browseResetDesc => '把换台与显示的设置恢复为默认值。';
+
 	/// zh-CN: '还没有分组：先导入一份播放列表。'
 	String get groupsEmpty => '还没有分组：先导入一份播放列表。';
 
@@ -3588,6 +3639,36 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '{name} 节目单'
 	String guideNameOf({required Object name}) => '${name} 节目单';
+
+	/// zh-CN: '排序'
+	String get sort => '排序';
+
+	/// zh-CN: '默认排序'
+	String get sortDefault => '默认排序';
+
+	/// zh-CN: '按名称'
+	String get sortByName => '按名称';
+
+	/// zh-CN: '节目提醒'
+	String get remindersTitle => '节目提醒';
+
+	/// zh-CN: '还没有节目提醒'
+	String get remindersEmpty => '还没有节目提醒';
+
+	/// zh-CN: '在节目单里预订想看的节目，开播前会提醒你。'
+	String get remindersEmptyDescription => '在节目单里预订想看的节目，开播前会提醒你。';
+
+	/// zh-CN: '已录 {elapsed}'
+	String recordedDuration({required Object elapsed}) => '已录 ${elapsed}';
+
+	/// zh-CN: '已错过「{title}」的预约（应用关闭期间）'
+	String reminderMissed({required Object title}) => '已错过「${title}」的预约（应用关闭期间）';
+
+	/// zh-CN: '{count: int} 个预约在应用关闭期间已错过'
+	String reminderMissedMany({required int count}) => '${count} 个预约在应用关闭期间已错过';
+
+	/// zh-CN: '节目已开播，不能预约'
+	String get reminderAlreadyStarted => '节目已开播，不能预约';
 }
 
 // Path: multiview
@@ -5569,6 +5650,12 @@ class Translations$music$zh_CN {
 	/// zh-CN: '连接后拉取服务端歌单并推送本地改动。'
 	String get syncStatusHint => '连接后拉取服务端歌单并推送本地改动。';
 
+	/// zh-CN: '已清除服务器授权'
+	String get syncForgetCleared => '已清除服务器授权';
+
+	/// zh-CN: '服务器地址不合法'
+	String get syncInvalidAddress => '服务器地址不合法';
+
 	/// zh-CN: '清除授权'
 	String get syncForgetKey => '清除授权';
 
@@ -5859,6 +5946,30 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '清空'
 	String get audioCacheClearAction => '清空';
+
+	/// zh-CN: '清空收藏'
+	String get favouritesClear => '清空收藏';
+
+	/// zh-CN: '把整个收藏歌单清空？此操作不可撤销。'
+	String get favouritesClearDesc => '把整个收藏歌单清空？此操作不可撤销。';
+
+	/// zh-CN: '歌单已达上限'
+	String get playlistLimitReached => '歌单已达上限';
+
+	/// zh-CN: '清空「{name: String}」？'
+	String playlistClearTitle({required String name}) => '清空「${name}」？';
+
+	/// zh-CN: '将移除歌单里的全部歌曲，歌曲文件本身不受影响。'
+	String get playlistClearDesc => '将移除歌单里的全部歌曲，歌曲文件本身不受影响。';
+
+	/// zh-CN: '已清空「{name: String}」'
+	String playlistClearDone({required String name}) => '已清空「${name}」';
+
+	/// zh-CN: '没有可清除的缓存'
+	String get audioCacheNothingToClear => '没有可清除的缓存';
+
+	/// zh-CN: '已清除 {size: String} 的缓存'
+	String audioCacheFreed({required String size}) => '已清除 ${size} 的缓存';
 }
 
 // Path: navigation
@@ -7050,6 +7161,39 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '开始录制'
 	String get startRecording => '开始录制';
+
+	/// zh-CN: '房间已关闭，无法开始录制'
+	String get failureGone => '房间已关闭，无法开始录制';
+
+	/// zh-CN: '这个房间已有录制在进行'
+	String get failureBusy => '这个房间已有录制在进行';
+
+	/// zh-CN: '没有可以录制的线路'
+	String get failureNoLine => '没有可以录制的线路';
+
+	/// zh-CN: '录制库还没有就绪，稍后再试'
+	String get failureStoreClosed => '录制库还没有就绪，稍后再试';
+
+	/// zh-CN: '同时录制的任务已达上限'
+	String get failureTooMany => '同时录制的任务已达上限';
+
+	/// zh-CN: '自定义证书下无法录制'
+	String get failureCustomCa => '自定义证书下无法录制';
+
+	/// zh-CN: '这个房间没有正在进行的录制'
+	String get failureNotRecording => '这个房间没有正在进行的录制';
+
+	/// zh-CN: '录制启动失败'
+	String get failureStartFailed => '录制启动失败';
+
+	/// zh-CN: '录制停止失败'
+	String get failureStopFailed => '录制停止失败';
+
+	/// zh-CN: '录制操作失败'
+	String get failureGeneric => '录制操作失败';
+
+	/// zh-CN: '到达单个文件大小上限，这段录制已停止；分段已保留'
+	String get warningSizeCap => '到达单个文件大小上限，这段录制已停止；分段已保留';
 }
 
 // Path: room
@@ -7678,6 +7822,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '减小音量'
 	String get shortcutVolumeDown => '减小音量';
 
+	/// zh-CN: '静音 / 取消静音'
+	String get shortcutMute => '静音 / 取消静音';
+
 	/// zh-CN: '空格'
 	String get keySpace => '空格';
 
@@ -7827,6 +7974,30 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '全屏'
 	String get fullscreenChip => '全屏';
+
+	/// zh-CN: 'TA 的视频'
+	String get anchorVideos => 'TA 的视频';
+
+	/// zh-CN: '所属分区'
+	String get areaEntry => '所属分区';
+
+	/// zh-CN: '查看 TA 在本平台的视频'
+	String get anchorVideosHint => '查看 TA 在本平台的视频';
+
+	/// zh-CN: '打开该分区的直播间'
+	String get areaHint => '打开该分区的直播间';
+
+	/// zh-CN: '该主播暂时没有可看的视频'
+	String get anchorVideosUnavailable => '该主播暂时没有可看的视频';
+
+	/// zh-CN: '没能找到这个分类'
+	String get areaUnavailable => '没能找到这个分类';
+
+	/// zh-CN: '回放需要登录后才能看到完整内容，可以先去登录。'
+	String get replayLoginHint => '回放需要登录后才能看到完整内容，可以先去登录。';
+
+	/// zh-CN: '去登录'
+	String get replayLoginAction => '去登录';
 }
 
 // Path: search
@@ -10692,6 +10863,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '弹幕样式与「弹幕」页共用。'
 	String get miniDanmakuHint => '弹幕样式与「弹幕」页共用。';
+
+	/// zh-CN: '以上改动在下一次打开播放器时生效'
+	String get kernelDeferredTip => '以上改动在下一次打开播放器时生效';
 
 	/// zh-CN: '播放内核'
 	String get engineTitle => '播放内核';
@@ -14176,6 +14350,12 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '已扫码，请在手机上确认'
 	String get appLoginScanned => '已扫码，请在手机上确认';
 
+	/// zh-CN: '移除后不可恢复，确定移出所选收藏吗？'
+	String get favouritesRemoveDesc => '移除后不可恢复，确定移出所选收藏吗？';
+
+	/// zh-CN: '删除搜索词「{word}」'
+	String searchHistoryRemove({required Object word}) => '删除搜索词「${word}」';
+
 	/// zh-CN: '二维码已过期，请重试'
 	String get appLoginExpired => '二维码已过期，请重试';
 
@@ -14211,6 +14391,21 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '共 {count: int} 个'
 	String partsCount({required int count}) => '共 ${count} 个';
+
+	/// zh-CN: '投稿视频'
+	String get uploads => '投稿视频';
+
+	/// zh-CN: '继续观看'
+	String get continueWatching => '继续观看';
+
+	/// zh-CN: '第 {index: int} 集，共 {total: int} 集'
+	String seasonEpisodeProgress({required int index, required int total}) => '第 ${index} 集，共 ${total} 集';
+
+	/// zh-CN: '搜索历史'
+	String get searchHistory => '搜索历史';
+
+	/// zh-CN: '清除搜索历史'
+	String get searchHistoryClear => '清除搜索历史';
 }
 
 // Path: wallpaper
@@ -14559,6 +14754,9 @@ class Translations$backup$preview$zh_CN {
 
 	/// zh-CN: '其中 {count: int} 项与当前不同'
 	String settingsChanged({required int count}) => '其中 ${count} 项与当前不同';
+
+	/// zh-CN: '另有 {count: int} 项为较新版本写入，本次恢复原样保留'
+	String settingsUnknown({required int count}) => '另有 ${count} 项为较新版本写入，本次恢复原样保留';
 
 	/// zh-CN: '都与当前相同'
 	String get settingsSame => '都与当前相同';
@@ -15170,7 +15368,7 @@ extension on Translations {
 			'backup.importFileNote' => '直接选择本地文件要等文件选择器依赖接入；目前可粘贴内容或走 WebDAV。',
 			'backup.importConfirmTitle' => '覆盖当前数据？',
 			'backup.importConfirmDesc' => '导入会先清空再写入关注、观看历史、关注分区与设置，当前数据无法找回。',
-			'backup.importDone' => '恢复完成，重启应用后全部生效',
+			'backup.importDone' => '恢复完成，设置已即时应用；窗口尺寸等少数项下次启动生效',
 			'backup.importBadData' => '这不是有效的备份内容',
 			'backup.importFailed' => '导入失败',
 			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object recordings, required Object settings}) => '关注 ${follows} · 历史 ${history} · 分区 ${areas} · 录制 ${recordings} · 设置 ${settings} 项',
@@ -15368,6 +15566,7 @@ extension on Translations {
 			'backup.preview.same' => '无变化',
 			'backup.preview.items' => ({required int count}) => '${count} 项',
 			'backup.preview.settingsChanged' => ({required int count}) => '其中 ${count} 项与当前不同',
+			'backup.preview.settingsUnknown' => ({required int count}) => '另有 ${count} 项为较新版本写入，本次恢复原样保留',
 			'backup.preview.settingsSame' => '都与当前相同',
 			'backup.preview.accounts' => '只写入文件里的这些凭据，本机其他凭据不变',
 			'backup.preview.kept' => ({required String sections}) => '保持不变：${sections}',
@@ -15514,6 +15713,7 @@ extension on Translations {
 			'backup.cloud.errUnknown' => ({required String code}) => '操作失败（${code}）',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
+			'common.loadFailed' => '加载失败',
 			'common.comingSoon' => '即将推出',
 			'common.close' => '关闭',
 			'common.cancel' => '取消',
@@ -15529,10 +15729,10 @@ extension on Translations {
 			'common.retry' => '重试',
 			'common.moduleComingSoon' => '这个模块还在路上',
 			'common.back' => '后退',
-			'common.forward' => '前进',
-			'common.searchHint' => '搜索房间或主播',
 			_ => null,
 		} ?? switch (path) {
+			'common.forward' => '前进',
+			'common.searchHint' => '搜索房间或主播',
 			'common.switchModule' => '切换内容类型',
 			'common.openNavigation' => '打开导航',
 			'common.refreshFailed' => '刷新失败',
@@ -15600,6 +15800,19 @@ extension on Translations {
 			'common.exitAppTitle' => '退出 Pure Live',
 			'common.exitAppMessage' => '确认退出应用吗？',
 			'common.exitApp' => '退出',
+			'common.manage' => '管理',
+			'common.manageDone' => '完成',
+			'common.deleteSelected' => ({required int count}) => '删除选中（${count}）',
+			'common.networkTimeout' => '网络请求超时',
+			'common.networkUnreachable' => '网络无法连接',
+			'common.networkSecure' => '安全连接失败',
+			'common.networkRateLimited' => '请求过于频繁，请稍后再试',
+			'common.networkFailed' => '网络请求失败',
+			'common.sidebarWidth' => '侧栏宽度',
+			'common.resizeWindow' => '调整浮窗大小',
+			'common.previewSplitter' => '预览分栏宽度',
+			'common.clearSearchHistoryTitle' => '清空搜索历史？',
+			'common.clearSearchHistoryBody' => '将删除全部搜索历史，删除后不可恢复。',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -15773,6 +15986,7 @@ extension on Translations {
 			'hongguo.accountSignInTitle' => '扫码登录红果',
 			'hongguo.accountSignInDesc' => '用手机红果 App 扫二维码确认登录；账户收藏、历史与预约随账号同步',
 			'hongguo.accountQrRefresh' => '刷新二维码',
+			'hongguo.accountQrLabel' => '登录二维码，请用手机扫码',
 			'hongguo.accountSignedInAs' => '已登录',
 			'hongguo.accountSignOut' => '退出登录',
 			'hongguo.accountSignOutDesc' => '只退出红果账号，本机收藏与历史保留',
@@ -15956,6 +16170,7 @@ extension on Translations {
 			'huya.orderMost' => '最多播放',
 			'huya.more' => '查看全部',
 			'huya.related' => '相关视频',
+			'huya.relatedEmpty' => '暂时没有相关视频',
 			'huya.live' => '直播中',
 			'huya.searchResults' => ({required int count, required String word}) => '找到 ${count} 个与“${word}”相关的视频',
 			'huya.searchEmpty' => '没有找到相关视频',
@@ -16028,6 +16243,8 @@ extension on Translations {
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
 			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} 个节目单会按此间隔自动刷新',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.autoUpdateStatusNone' => '还没有节目单开启自动更新。',
 			'iptv.autoUpdateNoRemote' => '还没有网络节目单',
 			'iptv.select' => '选择',
@@ -16045,8 +16262,6 @@ extension on Translations {
 			'iptv.guideNameHint' => '例如：我的 EPG',
 			'iptv.guideSelected' => ({required String name}) => '已切换到“${name}”',
 			'iptv.importAction' => '导入',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.importAddressInvalid' => '请输入有效的订阅地址',
 			'iptv.importAddressRequired' => '请先输入订阅地址',
 			'iptv.importFailed' => '导入失败',
@@ -16167,6 +16382,7 @@ extension on Translations {
 			'iptv.browseProgrammeLine' => '显示当前节目',
 			'iptv.browseProgrammeLineDesc' => '频道名下方显示当前或下一档节目。',
 			'iptv.browseReset' => '恢复默认',
+			'iptv.browseResetDesc' => '把换台与显示的设置恢复为默认值。',
 			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
 			'iptv.recentTitle' => '最近观看',
@@ -16321,6 +16537,16 @@ extension on Translations {
 			'iptv.nameClashReplace' => ({required Object name}) => '替换已有的“${name}”',
 			'iptv.nameClashRename' => ({required Object name}) => '另存为“${name}”',
 			'iptv.guideNameOf' => ({required Object name}) => '${name} 节目单',
+			'iptv.sort' => '排序',
+			'iptv.sortDefault' => '默认排序',
+			'iptv.sortByName' => '按名称',
+			'iptv.remindersTitle' => '节目提醒',
+			'iptv.remindersEmpty' => '还没有节目提醒',
+			'iptv.remindersEmptyDescription' => '在节目单里预订想看的节目，开播前会提醒你。',
+			'iptv.recordedDuration' => ({required Object elapsed}) => '已录 ${elapsed}',
+			'iptv.reminderMissed' => ({required Object title}) => '已错过「${title}」的预约（应用关闭期间）',
+			'iptv.reminderMissedMany' => ({required int count}) => '${count} 个预约在应用关闭期间已错过',
+			'iptv.reminderAlreadyStarted' => '节目已开播，不能预约',
 			'multiview.layoutLabel' => '布局',
 			'multiview.pickRoom' => '选择房间',
 			'multiview.openRoom' => '进入直播间',
@@ -16531,6 +16757,8 @@ extension on Translations {
 			'music.nowPlaying' => '正在播放',
 			'music.stagePanels' => '歌词与队列',
 			'music.volume' => '音量',
+			_ => null,
+		} ?? switch (path) {
 			'music.progress' => '播放进度',
 			'music.lyrics' => '歌词',
 			'music.lyricsEmpty' => '这首歌还没有歌词。',
@@ -16559,8 +16787,6 @@ extension on Translations {
 			'music.songDetailSource' => '来源',
 			'music.songDetailPath' => '文件',
 			'music.songDetailEmpty' => '—',
-			_ => null,
-		} ?? switch (path) {
 			'music.albumPageTitle' => '专辑',
 			'music.artistPageTitle' => '歌手',
 			'music.viewAlbum' => '查看专辑',
@@ -16977,6 +17203,8 @@ extension on Translations {
 			'music.syncStatusFailed' => '连接失败',
 			'music.syncStatusIdle' => '未连接',
 			'music.syncStatusHint' => '连接后拉取服务端歌单并推送本地改动。',
+			'music.syncForgetCleared' => '已清除服务器授权',
+			'music.syncInvalidAddress' => '服务器地址不合法',
 			'music.syncForgetKey' => '清除授权',
 			'music.syncForgetKeyDesc' => '删除已保存的密钥，下次连接用连接码重新授权。',
 			'music.syncNote' => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。',
@@ -17043,6 +17271,8 @@ extension on Translations {
 			'music.tagEditSinger' => '艺术家',
 			'music.tagEditAlbum' => '专辑名',
 			'music.tagEditLyric' => 'LRC 歌词',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditPic' => '歌曲专辑封面',
 			'music.tagEditParseName' => '从文件名解析歌曲名、艺术家',
 			'music.tagParseNameSinger' => '歌曲名 - 艺术家',
@@ -17073,9 +17303,15 @@ extension on Translations {
 			'music.audioCacheClear' => '清空音频缓存',
 			'music.audioCacheCleared' => '音频缓存已清空',
 			'music.audioCacheMb' => ({required Object count}) => '${count} MB',
-			_ => null,
-		} ?? switch (path) {
 			'music.audioCacheClearAction' => '清空',
+			'music.favouritesClear' => '清空收藏',
+			'music.favouritesClearDesc' => '把整个收藏歌单清空？此操作不可撤销。',
+			'music.playlistLimitReached' => '歌单已达上限',
+			'music.playlistClearTitle' => ({required String name}) => '清空「${name}」？',
+			'music.playlistClearDesc' => '将移除歌单里的全部歌曲，歌曲文件本身不受影响。',
+			'music.playlistClearDone' => ({required String name}) => '已清空「${name}」',
+			'music.audioCacheNothingToClear' => '没有可清除的缓存',
+			'music.audioCacheFreed' => ({required String size}) => '已清除 ${size} 的缓存',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -17458,6 +17694,17 @@ extension on Translations {
 			'recorder.detailsMetrics' => '录制数据',
 			'recorder.detailsLocation' => '文件',
 			'recorder.startRecording' => '开始录制',
+			'recorder.failureGone' => '房间已关闭，无法开始录制',
+			'recorder.failureBusy' => '这个房间已有录制在进行',
+			'recorder.failureNoLine' => '没有可以录制的线路',
+			'recorder.failureStoreClosed' => '录制库还没有就绪，稍后再试',
+			'recorder.failureTooMany' => '同时录制的任务已达上限',
+			'recorder.failureCustomCa' => '自定义证书下无法录制',
+			'recorder.failureNotRecording' => '这个房间没有正在进行的录制',
+			'recorder.failureStartFailed' => '录制启动失败',
+			'recorder.failureStopFailed' => '录制停止失败',
+			'recorder.failureGeneric' => '录制操作失败',
+			'recorder.warningSizeCap' => '到达单个文件大小上限，这段录制已停止；分段已保留',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -17538,6 +17785,8 @@ extension on Translations {
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
 			'room.offlineReason' => '开播后这里会看到直播画面',
+			_ => null,
+		} ?? switch (path) {
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
 			'room.copyName' => '复制昵称',
@@ -17587,8 +17836,6 @@ extension on Translations {
 			'room.blockKeywordHint' => '输入要屏蔽的关键词',
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
-			_ => null,
-		} ?? switch (path) {
 			'room.danmakuSettings' => '弹幕设置',
 			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '醒目留言',
@@ -17666,6 +17913,7 @@ extension on Translations {
 			'room.shortcutLeave' => '退出全屏，或离开房间',
 			'room.shortcutVolumeUp' => '增大音量',
 			'room.shortcutVolumeDown' => '减小音量',
+			'room.shortcutMute' => '静音 / 取消静音',
 			'room.keySpace' => '空格',
 			'room.keyEscape' => 'Esc',
 			'room.switchRoom' => '切换直播间',
@@ -17716,6 +17964,14 @@ extension on Translations {
 			'room.danmakuChip' => '弹幕',
 			'room.danmakuChipOff' => '弹幕 关',
 			'room.fullscreenChip' => '全屏',
+			'room.anchorVideos' => 'TA 的视频',
+			'room.areaEntry' => '所属分区',
+			'room.anchorVideosHint' => '查看 TA 在本平台的视频',
+			'room.areaHint' => '打开该分区的直播间',
+			'room.anchorVideosUnavailable' => '该主播暂时没有可看的视频',
+			'room.areaUnavailable' => '没能找到这个分类',
+			'room.replayLoginHint' => '回放需要登录后才能看到完整内容，可以先去登录。',
+			'room.replayLoginAction' => '去登录',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -18043,6 +18299,8 @@ extension on Translations {
 			'settings.githubMirrorOff' => '默认（不加速）',
 			'settings.githubMirrorOfficial' => '官方源 · 可能较慢',
 			'settings.githubMirrorCustom' => '自定义…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorCustomDetail' => '自填镜像域名',
 			'settings.githubMirrorCustomDomain' => '自定义加速域名',
 			'settings.githubMirrorCustomDesc' => '以 https:// 开头，拼在原始地址前。',
@@ -18101,8 +18359,6 @@ extension on Translations {
 			'settings.danmakuColorHex' => '十六进制颜色',
 			'settings.danmakuColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.danmakuColorHue' => '色相',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuColorSaturation' => '饱和度与明度',
 			'settings.danmakuFixedGroup' => '固定弹幕',
 			'settings.chatListFixedTitle' => '聊天列表已固定',
@@ -18557,6 +18813,8 @@ extension on Translations {
 			'settings.mpvResetDone' => '已恢复默认设置',
 			'settings.mpvDocs' => '打开 mpv 官方文档',
 			'settings.mpvDocsDesc' => '每个属性的完整说明。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
@@ -18615,8 +18873,6 @@ extension on Translations {
 			'settings.playerGuideEntrySymGlitchBody' => 'Android：一键方案切「安卓兼容」。其它平台：关闭硬解开关走软解，或在自定义驱动与硬件加速里把解码器改 auto-safe。',
 			'settings.playerGuideEntrySymBlurryTitle' => '低清源在高分屏发糊',
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：把放大算法改成 ewa_lanczossharp。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
 			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
 			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
@@ -18669,6 +18925,7 @@ extension on Translations {
 			'settings.miniDanmakuVisible' => '小窗显示弹幕',
 			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
 			'settings.miniDanmakuHint' => '弹幕样式与「弹幕」页共用。',
+			'settings.kernelDeferredTip' => '以上改动在下一次打开播放器时生效',
 			'settings.engineTitle' => '播放内核',
 			'settings.engineDesc' => '直播与视频的播放内核；默认 mpv，移动端可选 IJK 或 BetterPlayer。',
 			'settings.playerEngineMpv' => 'mpv 播放器',
@@ -19070,6 +19327,8 @@ extension on Translations {
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_zh' => '中文',
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
@@ -19129,8 +19388,6 @@ extension on Translations {
 			'settings.navHongguoDanmaku' => '弹幕',
 			'settings.navHongguoDevice' => '设备与身份',
 			'settings.hongguoDescription' => '红果伴侣服务与播放偏好。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoInterfaceDesc' => '海报卡片上显示哪些信息。',
 			'settings.hongguoDanmakuDesc' => '弹幕开关与字号、透明度、速度、密度。',
 			'settings.hongguoDeviceDesc' => '本机注册的设备身份，可在这里重置。',
@@ -19584,6 +19841,8 @@ extension on Translations {
 			'vod.regionAnimation' => '动画',
 			'vod.regionGames' => '游戏',
 			'vod.regionGuichu' => '鬼畜',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regionMusic' => '音乐',
 			'vod.regionDance' => '舞蹈',
 			'vod.regionFilm' => '影视',
@@ -19643,8 +19902,6 @@ extension on Translations {
 			'vod.changeRelated' => '换一换',
 			'vod.expand' => '展开',
 			'vod.collapse' => '收起',
-			_ => null,
-		} ?? switch (path) {
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
 			'vod.score' => '评分',
@@ -19822,6 +20079,8 @@ extension on Translations {
 			'vod.appLoginTitle' => 'App 扫码登录',
 			'vod.appLoginHint' => '用哔哩哔哩手机客户端扫码',
 			'vod.appLoginScanned' => '已扫码，请在手机上确认',
+			'vod.favouritesRemoveDesc' => '移除后不可恢复，确定移出所选收藏吗？',
+			'vod.searchHistoryRemove' => ({required Object word}) => '删除搜索词「${word}」',
 			'vod.appLoginExpired' => '二维码已过期，请重试',
 			'vod.appLoginFailed' => ({required Object message}) => '登录失败：${message}',
 			'vod.appLoginDone' => 'App 接口已登录',
@@ -19834,6 +20093,11 @@ extension on Translations {
 			'vod.episodeNo' => ({required String index}) => '第 ${index} 话',
 			'vod.partsPlaylist' => '播放列表',
 			'vod.partsCount' => ({required int count}) => '共 ${count} 个',
+			'vod.uploads' => '投稿视频',
+			'vod.continueWatching' => '继续观看',
+			'vod.seasonEpisodeProgress' => ({required int index, required int total}) => '第 ${index} 集，共 ${total} 集',
+			'vod.searchHistory' => '搜索历史',
+			'vod.searchHistoryClear' => '清除搜索历史',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

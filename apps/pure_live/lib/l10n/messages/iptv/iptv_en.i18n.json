@@ -176,6 +176,7 @@
   "browseProgrammeLine": "Show the current programme",
   "browseProgrammeLineDesc": "Shows the current or next programme under the channel name.",
   "browseReset": "Reset to defaults",
+  "browseResetDesc": "Restore the zapping and display settings to their defaults.",
   "groupsEmpty": "No groups yet — import a playlist first.",
   "groupsHint": "Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.",
   "recentTitle": "Recently watched",
@@ -329,5 +330,15 @@
   "previewMore": "{count: int} more channels",
   "nameClashReplace": "Replace the existing “{name}”",
   "nameClashRename": "Save as “{name}”",
-  "guideNameOf": "{name} guide"
+  "guideNameOf": "{name} guide",
+  "sort": "Sort",
+  "sortDefault": "Default order",
+  "sortByName": "By name",
+  "remindersTitle": "Programme reminders",
+  "remindersEmpty": "No programme reminders yet",
+  "remindersEmptyDescription": "Book a programme in the guide and this app reminds you before it starts.",
+  "recordedDuration": "Recorded {elapsed}",
+  "reminderMissed": "Missed “{title}” while the app was closed",
+  "reminderMissedMany": "{count: int} reminders were missed while the app was closed",
+  "reminderAlreadyStarted": "The programme has already started"
 }

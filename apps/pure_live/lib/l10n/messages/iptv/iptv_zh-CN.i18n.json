@@ -176,6 +176,7 @@
   "browseProgrammeLine": "显示当前节目",
   "browseProgrammeLineDesc": "频道名下方显示当前或下一档节目。",
   "browseReset": "恢复默认",
+  "browseResetDesc": "把换台与显示的设置恢复为默认值。",
   "groupsEmpty": "还没有分组：先导入一份播放列表。",
   "groupsHint": "关掉的分组从频道列表和换台里消失；重开即恢复。",
   "recentTitle": "最近观看",
@@ -329,5 +330,15 @@
   "previewMore": "另有 {count: int} 个频道",
   "nameClashReplace": "替换已有的“{name}”",
   "nameClashRename": "另存为“{name}”",
-  "guideNameOf": "{name} 节目单"
+  "guideNameOf": "{name} 节目单",
+  "sort": "排序",
+  "sortDefault": "默认排序",
+  "sortByName": "按名称",
+  "remindersTitle": "节目提醒",
+  "remindersEmpty": "还没有节目提醒",
+  "remindersEmptyDescription": "在节目单里预订想看的节目，开播前会提醒你。",
+  "recordedDuration": "已录 {elapsed}",
+  "reminderMissed": "已错过「{title}」的预约（应用关闭期间）",
+  "reminderMissedMany": "{count: int} 个预约在应用关闭期间已错过",
+  "reminderAlreadyStarted": "节目已开播，不能预约"
 }

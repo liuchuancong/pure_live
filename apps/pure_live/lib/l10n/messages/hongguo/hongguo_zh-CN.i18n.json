@@ -87,6 +87,7 @@
   "accountSignInTitle": "扫码登录红果",
   "accountSignInDesc": "用手机红果 App 扫二维码确认登录；账户收藏、历史与预约随账号同步",
   "accountQrRefresh": "刷新二维码",
+  "accountQrLabel": "登录二维码，请用手机扫码",
   "accountSignedInAs": "已登录",
   "accountSignOut": "退出登录",
   "accountSignOutDesc": "只退出红果账号，本机收藏与历史保留",

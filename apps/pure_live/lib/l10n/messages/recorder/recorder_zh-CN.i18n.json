@@ -322,5 +322,16 @@
   "detailsTitle": "录制详情",
   "detailsMetrics": "录制数据",
   "detailsLocation": "文件",
-  "startRecording": "开始录制"
+  "startRecording": "开始录制",
+  "failureGone": "房间已关闭，无法开始录制",
+  "failureBusy": "这个房间已有录制在进行",
+  "failureNoLine": "没有可以录制的线路",
+  "failureStoreClosed": "录制库还没有就绪，稍后再试",
+  "failureTooMany": "同时录制的任务已达上限",
+  "failureCustomCa": "自定义证书下无法录制",
+  "failureNotRecording": "这个房间没有正在进行的录制",
+  "failureStartFailed": "录制启动失败",
+  "failureStopFailed": "录制停止失败",
+  "failureGeneric": "录制操作失败",
+  "warningSizeCap": "到达单个文件大小上限，这段录制已停止；分段已保留"
 }

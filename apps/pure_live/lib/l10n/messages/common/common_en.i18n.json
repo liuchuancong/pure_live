@@ -1,6 +1,7 @@
 {
   "appTitle": "Pure Live",
   "empty": "Nothing here yet",
+  "loadFailed": "Could not load",
   "comingSoon": "Coming soon",
   "close": "Close",
   "cancel": "Cancel",
@@ -84,5 +85,18 @@
   "rename": "Rename",
   "exitAppTitle": "Exit Pure Live",
   "exitAppMessage": "Exit the app?",
-  "exitApp": "Exit"
+  "exitApp": "Exit",
+  "manage": "Manage",
+  "manageDone": "Done",
+  "deleteSelected": "Delete selected ({count: int})",
+  "networkTimeout": "The network request timed out",
+  "networkUnreachable": "The network is unreachable",
+  "networkSecure": "The secure connection failed",
+  "networkRateLimited": "Too many requests — try again later",
+  "networkFailed": "The network request failed",
+  "sidebarWidth": "Sidebar width",
+  "resizeWindow": "Resize the floating window",
+  "previewSplitter": "Preview pane width",
+  "clearSearchHistoryTitle": "Clear search history?",
+  "clearSearchHistoryBody": "This removes every search from the history; it cannot be undone."
 }

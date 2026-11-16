@@ -1,6 +1,7 @@
 {
   "appTitle": "Pure Live",
   "empty": "这里还没有内容",
+  "loadFailed": "加载失败",
   "comingSoon": "即将推出",
   "close": "关闭",
   "cancel": "取消",
@@ -84,5 +85,18 @@
   "rename": "重命名",
   "exitAppTitle": "退出 Pure Live",
   "exitAppMessage": "确认退出应用吗？",
-  "exitApp": "退出"
+  "exitApp": "退出",
+  "manage": "管理",
+  "manageDone": "完成",
+  "deleteSelected": "删除选中（{count: int}）",
+  "networkTimeout": "网络请求超时",
+  "networkUnreachable": "网络无法连接",
+  "networkSecure": "安全连接失败",
+  "networkRateLimited": "请求过于频繁，请稍后再试",
+  "networkFailed": "网络请求失败",
+  "sidebarWidth": "侧栏宽度",
+  "resizeWindow": "调整浮窗大小",
+  "previewSplitter": "预览分栏宽度",
+  "clearSearchHistoryTitle": "清空搜索历史？",
+  "clearSearchHistoryBody": "将删除全部搜索历史，删除后不可恢复。"
 }

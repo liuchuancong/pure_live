@@ -34,7 +34,7 @@
   "saveDirResetTitle": "Use the default folder",
   "saveDirResetDesc": "Back to the default under the download folder; recordings already saved stay where they are.",
   "folderInUseTitle": "A recording is in progress",
-  "folderInUseBody": "{count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.",
+  "folderInUseBody": "{count: int} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.",
   "folderInUseConfirm": "Change anyway",
   "folderChangedActive": "New folder saved; the running takes are still in the old folder",
   "saveDirDefaultInUse": "The default folder is already in use.",
@@ -322,5 +322,16 @@
   "detailsTitle": "Recording details",
   "detailsMetrics": "Recording",
   "detailsLocation": "File",
-  "startRecording": "Start recording"
+  "startRecording": "Start recording",
+  "failureGone": "The room is gone; the recording cannot start",
+  "failureBusy": "A recording for this room is already running",
+  "failureNoLine": "There is no line to record",
+  "failureStoreClosed": "The recordings library is not ready yet; try again",
+  "failureTooMany": "The concurrent recordings have reached their limit",
+  "failureCustomCa": "Recording cannot run under the custom certificate",
+  "failureNotRecording": "Nothing is being recorded here",
+  "failureStartFailed": "The recording failed to start",
+  "failureStopFailed": "The recording failed to stop",
+  "failureGeneric": "The recording action failed",
+  "warningSizeCap": "The take reached its size cap and stopped; the segments are kept"
 }

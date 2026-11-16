@@ -857,6 +857,7 @@
   "miniDanmakuVisible": "小窗显示弹幕",
   "miniDanmakuVisibleDesc": "缩成小窗时是否继续显示飞行弹幕。",
   "miniDanmakuHint": "弹幕样式与「弹幕」页共用。",
+  "kernelDeferredTip": "以上改动在下一次打开播放器时生效",
   "engineTitle": "播放内核",
   "engineDesc": "直播与视频的播放内核；默认 mpv，移动端可选 IJK 或 BetterPlayer。",
   "playerEngineMpv": "mpv 播放器",

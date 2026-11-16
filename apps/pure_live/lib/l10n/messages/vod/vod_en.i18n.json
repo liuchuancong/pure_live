@@ -256,6 +256,8 @@
   "appLoginTitle": "App sign-in",
   "appLoginHint": "Scan with the Bilibili mobile app",
   "appLoginScanned": "Scanned — confirm on your phone",
+  "favouritesRemoveDesc": "Removed for good — take the selected archives out of your saved list?",
+  "searchHistoryRemove": "Remove the search word ‘{word}’",
   "appLoginExpired": "The code expired — try again",
   "appLoginFailed": "Sign-in failed: {message}",
   "appLoginDone": "App interface signed in",
@@ -267,5 +269,10 @@
   "linkCopied": "Link copied",
   "episodeNo": "EP {index: String}",
   "partsPlaylist": "Playlist",
-  "partsCount": "{count: int} parts"
+  "partsCount": "{count: int} parts",
+  "uploads": "Uploads",
+  "continueWatching": "Continue watching",
+  "seasonEpisodeProgress": "Episode {index: int} of {total: int}",
+  "searchHistory": "Search history",
+  "searchHistoryClear": "Clear search history"
 }

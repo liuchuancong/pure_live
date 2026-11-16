@@ -857,6 +857,7 @@
   "miniDanmakuVisible": "Danmaku in the mini window",
   "miniDanmakuVisibleDesc": "Whether the flying layer still draws in the compact window.",
   "miniDanmakuHint": "The look is shared with the Danmaku page.",
+  "kernelDeferredTip": "These changes take effect the next time a player opens",
   "engineTitle": "Playback engine",
   "engineDesc": "Kernel for live and video; mpv by default, IJK or BetterPlayer on mobile.",
   "playerEngineMpv": "MPV Player",
