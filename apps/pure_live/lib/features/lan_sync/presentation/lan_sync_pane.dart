@@ -107,6 +107,7 @@ final class LanSyncPane extends ConsumerWidget {
         ],
       ),
     );
+    controller.dispose();
     if (saved == null || !context.mounted) return;
     await ref.read(lanSyncSettingsProvider.notifier).setDeviceName(saved);
     if (context.mounted) {

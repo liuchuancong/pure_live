@@ -8,13 +8,14 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/settings/settings_refresh.dart' show refreshSettings;
 import 'package:pure_live/features/lan_sync/data/scoped_sync.dart' show ScopeSnapshotLedger, ScopeSource;
 import 'package:pure_live/features/lan_sync/data/sync_scopes.dart' show LanSyncScope;
-import 'package:pure_live/modules/music/controller/music_dislikes.dart' show kMusicDislikeLimit, kMusicDislikesKey;
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart'
+    show kMusicDislikeLimit, kMusicDislikesKey;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show kMusicFavouritesKey, kMusicRecentKey, kMusicRecentLimit, musicTrackFromJson, musicTrackKey, musicTrackToJson;
-import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart'
-    show kMusicLyricOverrideLimit, kMusicLyricOverridesKey;
-import 'package:pure_live/modules/music/controller/music_playlists.dart'
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart'
     show MusicPlaylist, kMusicPlaylistLimit, kMusicPlaylistsKey;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_overrides.dart'
+    show kMusicLyricOverrideLimit, kMusicLyricOverridesKey;
 
 /// The music library's entity ids. One playlist, one collected song, one
 /// recently played song, one dislike rule and one linked lyric each carry

@@ -1,4 +1,6 @@
-import 'package:pure_live/features/backup/document/backup_settings.dart' show kBackedUpPrefs;
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
+
+import 'package:pure_live/features/backup/document/backup_settings.dart' show kBackedUpPrefFamilies, kBackedUpPrefs;
 
 /// The preference keys the music library scope carries; they hold the
 /// lists the module's own LX sync exchanges, so they travel as entities
@@ -126,7 +128,12 @@ enum LanSyncScope {
     settingsDanmaku: {'danmaku'},
     settingsMusic: {'music'},
     settingsRecorder: {'recorder'},
-    settingsModules: {'iptv', 'hongguo', 'vod', 'sites', 'browse', 'areas', 'follow', 'history', 'cache'},
+    settingsModules: {
+      'iptv', 'hongguo', 'vod', 'sites', 'browse', 'areas', 'follow', 'history', 'cache',
+      // The archive's replay progress and the huya video page's column are
+      // the modules' own, like the rest of this scope.
+      'archive', 'huya',
+    },
   };
 
   /// The settings scope a pref [key] belongs to, or null when it is this
@@ -145,6 +152,13 @@ enum LanSyncScope {
   List<String> get prefKeys => [
     for (final (key, _) in kBackedUpPrefs)
       if (ofPrefKey(key) == this && !(this == settingsMusic && kMusicLibraryPrefKeys.contains(key))) key,
+    // The computed families ride their prefix's scope: the VOD players'
+    // per-video keys belong to the modules' settings like any vod pref.
+    for (final prefix in kBackedUpPrefFamilies)
+      if (ofPrefKey(prefix) == this) ...[
+        for (final entry in StoragePrefs.snapshot().entries)
+          if (entry.key.startsWith(prefix)) entry.key,
+      ],
   ];
 }
 
