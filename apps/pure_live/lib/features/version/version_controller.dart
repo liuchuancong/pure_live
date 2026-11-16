@@ -36,9 +36,7 @@ final class VersionCheckController extends Notifier<VersionCheck> {
         installed: installed.version,
       );
     } on Object catch (error) {
-      appLog
-          .forCategory('version')
-          .warning('update check failed', fields: {'error': '$error'});
+      appLog.forCategory('version').warning('update check failed', fields: {'error': '$error'});
       if (!ref.mounted) return;
       state = (
         checking: false,

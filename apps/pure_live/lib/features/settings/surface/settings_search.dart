@@ -5,10 +5,23 @@ import 'package:pure_live/l10n/translations.dart';
 /// own words, and the words a viewer might type for it. The catalogue is
 /// the search's memory of rows — the panes themselves stay widgets, so a
 /// row that exists here is a row the viewer can be taken to.
-typedef SettingsSearchHit = ({SettingsSection section, String title, String keywords});
+typedef SettingsSearchHit = ({
+  SettingsSection section,
+  String title,
+  String keywords,
+  String lowerTitle,
+  String lowerKeywords,
+});
 
-SettingsSearchHit _hit(SettingsSection section, String title, String keywords) =>
-    (section: section, title: title, keywords: keywords);
+SettingsSearchHit _hit(SettingsSection section, String title, String keywords) => (
+  section: section,
+  title: title,
+  keywords: keywords,
+  // The lowered forms are the match's own currency; lowering once at
+  // build spares every keystroke two lowerings per row.
+  lowerTitle: title.toLowerCase(),
+  lowerKeywords: keywords.toLowerCase(),
+);
 
 /// Every row the settings search knows, in section order.
 ///
@@ -17,9 +30,15 @@ SettingsSearchHit _hit(SettingsSection section, String title, String keywords) =
 /// the label itself does not (English names, synonyms, the thing being
 /// configured). The search result opens the row's section; the exact-row
 /// jump waits for the panes to expose row keys.
+late Translations _catalogBuiltFor;
+late List<SettingsSearchHit> _catalogCache;
+
 List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
+  // One catalogue per Translations instance: a keystroke asks for it
+  // again, a locale switch hands a different instance and rebuilds.
+  if (identical(_catalogBuiltFor, t)) return _catalogCache;
   final s = t.settings;
-  return [
+  final catalog = [
     _hit(
       SettingsSection.fontApp,
       s.fontManagerTitle,
@@ -221,67 +240,81 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.shield, t.shield.coloredOnly, 'colour colored gray grey danmaku 彩色 灰色 弹幕 只显示'),
     _hit(SettingsSection.shield, t.shield.minUserLevel, 'user level floor minimum 等级 下限 用户 级'),
     _hit(SettingsSection.shield, t.shield.minFansLevel, 'fans badge level floor minimum 粉丝 等级 下限 粉丝牌'),
-    _hit(SettingsSection.danmaku, s.styleTapInteraction, 'tap click interaction actions copy block 点按 点击 弹幕 操作 复制 屏蔽'),
-    _hit(SettingsSection.danmaku, s.styleLongPressInteraction, 'long press interaction actions 长按 弹幕 操作 复制 屏蔽'),
-    _hit(SettingsSection.danmaku, s.holdDanmakuOnPress, 'hold freeze press danmaku 按住 冻结 弹幕'),
-    _hit(SettingsSection.danmaku, s.danmakuChatGiftLines, 'gift lines chat show 礼物 行 聊天 列 显示'),
+    // The danmaku group's own landing row, above its pane's rows.
+    _hit(SettingsSection.danmaku, s.navDanmaku, 'danmaku settings 弹幕 设置 显示'),
     _hit(
-      SettingsSection.danmaku,
+      SettingsSection.danmakuDisplay,
+      s.styleTapInteraction,
+      'tap click interaction actions copy block 点按 点击 弹幕 操作 复制 屏蔽',
+    ),
+    _hit(SettingsSection.danmakuDisplay, s.styleLongPressInteraction, 'long press interaction actions 长按 弹幕 操作 复制 屏蔽'),
+    _hit(SettingsSection.danmakuDisplay, s.holdDanmakuOnPress, 'hold freeze press danmaku 按住 冻结 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.danmakuChatGiftLines, 'gift lines chat show 礼物 行 聊天 列 显示'),
+    _hit(
+      SettingsSection.danmakuDisplay,
       s.danmakuChatGiftsAboveTier,
       'valuable gifts only tier cheap free combo 值钱 贵 礼物 只看 聊天 列',
     ),
-    _hit(SettingsSection.danmaku, s.danmakuFont, 'danmaku font typeface family flying 弹幕 字体 字族 飞行'),
-    _hit(SettingsSection.danmaku, s.styleFontSize, 'font size type size 字体大小 字号 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleFontWeight, 'font weight thickness bold thin 字重 粗细 字体 加粗 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleLetterSpacing, 'letter spacing tracking gap tight loose 文字间距 字距 间距 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleSpeed, 'speed px/s range 速度 弹幕 范围'),
-    _hit(SettingsSection.danmaku, s.styleNoEmoji, 'pure text emoji hide 纯文字 表情 隐藏 弹幕 emoji'),
-    _hit(SettingsSection.danmaku, s.styleArea, 'area screen top height ratio percent occupied 显示区域 画面顶部 占用 高度 比例 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleTopMargin, 'top margin inset pixels free space 顶部 留白 边距 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleBottomMargin, 'bottom margin inset pixels free space subtitle 底部 留白 边距 字幕 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleOpacity, 'opacity 透明 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleStroke, 'stroke outline bright light contrast 描边 浅色 清晰 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleStrokeWidth, 'stroke width outline border thickness px 描边 宽度 粗细 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.danmakuFont, 'danmaku font typeface family flying 弹幕 字体 字族 飞行'),
+    _hit(SettingsSection.danmakuDisplay, s.styleFontSize, 'font size type size 字体大小 字号 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleFontWeight, 'font weight thickness bold thin 字重 粗细 字体 加粗 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleLetterSpacing, 'letter spacing tracking gap tight loose 文字间距 字距 间距 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleSpeed, 'speed px/s range 速度 弹幕 范围'),
+    _hit(SettingsSection.danmakuDisplay, s.styleNoEmoji, 'pure text emoji hide 纯文字 表情 隐藏 弹幕 emoji'),
     _hit(
-      SettingsSection.danmaku,
+      SettingsSection.danmakuDisplay,
+      s.styleArea,
+      'area screen top height ratio percent occupied 显示区域 画面顶部 占用 高度 比例 弹幕',
+    ),
+    _hit(SettingsSection.danmakuDisplay, s.styleTopMargin, 'top margin inset pixels free space 顶部 留白 边距 弹幕'),
+    _hit(
+      SettingsSection.danmakuDisplay,
+      s.styleBottomMargin,
+      'bottom margin inset pixels free space subtitle 底部 留白 边距 字幕 弹幕',
+    ),
+    _hit(SettingsSection.danmakuDisplay, s.styleOpacity, 'opacity 透明 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleStroke, 'stroke outline bright light contrast 描边 浅色 清晰 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleStrokeWidth, 'stroke width outline border thickness px 描边 宽度 粗细 弹幕'),
+    _hit(
+      SettingsSection.danmakuDisplay,
       s.styleFpsFollow,
       'frame rate fps refresh display follow auto smooth 帧率 刷新率 跟随 自动 流畅 弹幕',
     ),
-    _hit(SettingsSection.danmaku, s.styleFps, 'frame rate fps manual limit 帧率 手动 上限 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleFps, 'frame rate fps manual limit 帧率 手动 上限 弹幕'),
     _hit(
-      SettingsSection.danmaku,
+      SettingsSection.danmakuDisplay,
       s.styleMaxVisible,
       'max visible count on screen same time limit density 同屏 最大 数量 条数 上限 弹幕',
     ),
-    _hit(SettingsSection.danmaku, s.styleMassMode, 'mass realtime density 海量 密度 实时 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleItalic, 'italic slanted style text 斜体 倾斜 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleTextColor, 'text color fill ink colour 文字 颜色 填充 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleStrokeColor, 'stroke outline color colour 描边 颜色 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleShadow, 'shadow drop shadow text 阴影 投影 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleShadowColor, 'shadow color colour 阴影 颜色 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleShadowBlur, 'shadow blur radius soft 阴影 模糊 半径 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleShadowOffsetX, 'shadow offset x horizontal 阴影 水平 偏移 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleShadowOffsetY, 'shadow offset y vertical 阴影 垂直 偏移 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleTrackHeight, 'lane track height row line 轨道 高度 行高 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleEmojiSize, 'emoji size picture edge 表情 大小 图片 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleOverlapGap, 'gap clearance overlap safe distance 间距 重叠 安全 距离 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleSafeArea, 'safe area notch inset edge 安全区 刘海 边距 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleMaxPending, 'pending queue limit waiting 队列 上限 等待 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleMaxPendingAge, 'pending age wait timeout stale 队列 等待 超时 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleEmitInterval, 'emit interval dispatch tick throttle 发送 间隔 节流 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleRasterize, 'rasterize bitmap gpu cache render 光栅化 位图 缓存 渲染 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleBarragePool, 'pool recycle object 对象池 复用 弹幕'),
-    _hit(SettingsSection.danmaku, s.stylePictureCache, 'picture image cache 图片 缓存 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleTextCache, 'text paragraph cache 文字 排版 缓存 弹幕'),
-    _hit(SettingsSection.danmaku, s.styleRasterCache, 'raster cache memory budget mb 光栅 缓存 显存 上限 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleMassMode, 'mass realtime density 海量 密度 实时 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleItalic, 'italic slanted style text 斜体 倾斜 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleTextColor, 'text color fill ink colour 文字 颜色 填充 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleStrokeColor, 'stroke outline color colour 描边 颜色 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleShadow, 'shadow drop shadow text 阴影 投影 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleShadowColor, 'shadow color colour 阴影 颜色 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleShadowBlur, 'shadow blur radius soft 阴影 模糊 半径 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleShadowOffsetX, 'shadow offset x horizontal 阴影 水平 偏移 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleShadowOffsetY, 'shadow offset y vertical 阴影 垂直 偏移 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleTrackHeight, 'lane track height row line 轨道 高度 行高 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleEmojiSize, 'emoji size picture edge 表情 大小 图片 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleOverlapGap, 'gap clearance overlap safe distance 间距 重叠 安全 距离 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleSafeArea, 'safe area notch inset edge 安全区 刘海 边距 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleMaxPending, 'pending queue limit waiting 队列 上限 等待 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleMaxPendingAge, 'pending age wait timeout stale 队列 等待 超时 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleEmitInterval, 'emit interval dispatch tick throttle 发送 间隔 节流 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleRasterize, 'rasterize bitmap gpu cache render 光栅化 位图 缓存 渲染 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleBarragePool, 'pool recycle object 对象池 复用 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.stylePictureCache, 'picture image cache 图片 缓存 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleTextCache, 'text paragraph cache 文字 排版 缓存 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.styleRasterCache, 'raster cache memory budget mb 光栅 缓存 显存 上限 弹幕'),
     _hit(
-      SettingsSection.danmaku,
+      SettingsSection.danmakuDisplay,
       s.pipDanmakuScaleAuto,
       'pip compact picture-in-picture small window danmaku scale auto 小窗 画中画 弹幕 比例 自动',
     ),
-    _hit(SettingsSection.danmaku, s.pipDanmakuScale, 'pip compact danmaku scale factor 小窗 画中画 弹幕 比例 缩放'),
-    _hit(SettingsSection.danmaku, s.styleReset, 'reset default 恢复默认 弹幕'),
-    _hit(SettingsSection.danmaku, s.miniDanmakuVisible, 'pip danmaku 小窗 弹幕 画中画'),
+    _hit(SettingsSection.danmakuDisplay, s.pipDanmakuScale, 'pip compact danmaku scale factor 小窗 画中画 弹幕 比例 缩放'),
+    _hit(SettingsSection.danmakuDisplay, s.styleReset, 'reset default 恢复默认 弹幕'),
+    _hit(SettingsSection.danmakuDisplay, s.miniDanmakuVisible, 'pip danmaku 小窗 弹幕 画中画'),
     // Kernel.
     _hit(SettingsSection.kernel, s.engineTitle, 'player kernel engine mpv ijk better_player exo 播放内核 引擎 切换播放器'),
     _hit(SettingsSection.kernel, s.hardwareDecoding, 'hardware decoder hwdec gpu 硬件解码'),
@@ -744,6 +777,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.about, s.aboutProject, 'project github 项目 主页'),
     _hit(SettingsSection.about, s.aboutLicense, 'license open source 开源 许可'),
   ];
+  _catalogBuiltFor = t;
+  return _catalogCache = catalog;
 }
 
 /// The catalogue's rows whose title or keywords contain [query] (already

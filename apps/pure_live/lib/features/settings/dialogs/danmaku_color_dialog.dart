@@ -128,6 +128,9 @@ final class _DanmakuColorDialogState extends State<_DanmakuColorDialog> {
                   semanticLabel: t.settings.danmakuColorHex,
                   error: _hexInvalid,
                   onChanged: _onHexChanged,
+                  onSubmitted: (_) {
+                    if (!_hexInvalid) Navigator.of(context).pop(_color);
+                  },
                 ),
               ),
             ],

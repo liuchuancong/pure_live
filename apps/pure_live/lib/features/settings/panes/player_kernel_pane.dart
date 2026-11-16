@@ -89,6 +89,16 @@ final class _PlayerKernelPaneState extends ConsumerState<PlayerKernelPane> {
       spacing: DsSpace.s16,
       children: [
         if (_slot == null && reset != null) Align(alignment: AlignmentDirectional.centerEnd, child: reset),
+        // These knobs are read when a player opens, not while one runs; the
+        // page says so beside its rows, so a change mid-playback is not read
+        // as lost.
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
+          child: Text(
+            t.settings.kernelDeferredTip,
+            style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
+          ),
+        ),
         DsListSection(
           header: Text(t.settings.navKernel),
           children: [

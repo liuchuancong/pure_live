@@ -158,11 +158,23 @@ Future<List<ReleaseInfo>> fetchReleases(LiveHttp http) async {
 /// Reads [url], retrying once on `<default branch>/main` when the raw file
 /// is missing (a fork that renamed its branch).
 Future<String> _read(LiveHttp http, String url) async {
-  var response = await http.send(LiveRequest.get(Uri.parse(url), headers: const {'accept': 'application/json'}));
+  var response = await http.send(
+    LiveRequest.get(
+      Uri.parse(url),
+      headers: const {'accept': 'application/json'},
+      timeout: const Duration(seconds: 20),
+    ),
+  );
   if (response.statusCode == 404) {
     final main = url.replaceFirst('/master/', '/main/');
     if (main != url) {
-      response = await http.send(LiveRequest.get(Uri.parse(main), headers: const {'accept': 'application/json'}));
+      response = await http.send(
+        LiveRequest.get(
+          Uri.parse(main),
+          headers: const {'accept': 'application/json'},
+          timeout: const Duration(seconds: 20),
+        ),
+      );
     }
   }
   if (!response.isOk) throw UpdateFeedException('HTTP ${response.statusCode}');

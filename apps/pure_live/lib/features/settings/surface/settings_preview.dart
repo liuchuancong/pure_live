@@ -2,7 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/app.dart' show RouteCaptionTail, routeCaptionTitle;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, OnVideoColors;
 
 /// The visual language the settings previews share with the wallpaper preview
 /// page: a stage with a chip in its corner and round controls over it, under a
@@ -413,7 +413,9 @@ final class SettingsPreviewCircleButton extends StatelessWidget {
       glyph = selected
           ? const Color(0xFF000000)
           : onPressed == null
-          ? colors.textSubtle
+          // Over the picture the muted ink is a surface token — invisible on
+          // the scrim in the light theme. The picture's own dim ink stands in.
+          ? OnVideoColors.iconDim
           : const Color(0xFFFFFFFF);
     }
     return DsPressable(

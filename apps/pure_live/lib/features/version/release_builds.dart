@@ -148,14 +148,18 @@ Future<List<ReleaseBuild>> fetchReleaseBuilds(LiveHttp http, {String? version}) 
 ReleaseBuild? recommendedBuild(List<ReleaseBuild> builds) {
   if (builds.isEmpty) return null;
   final own = currentReleasePlatform();
-  final mine = [for (final build in builds) if (build.platform == own) build];
+  final mine = [
+    for (final build in builds)
+      if (build.platform == own) build,
+  ];
   if (mine.isEmpty) return null;
   final arch = preferredArch(own);
-  final ranked = [...mine]..sort((a, b) {
-    final byArch = (b.arch == arch ? 1 : 0) - (a.arch == arch ? 1 : 0);
-    if (byArch != 0) return byArch;
-    return _kindRank(a.kind).compareTo(_kindRank(b.kind));
-  });
+  final ranked = [...mine]
+    ..sort((a, b) {
+      final byArch = (b.arch == arch ? 1 : 0) - (a.arch == arch ? 1 : 0);
+      if (byArch != 0) return byArch;
+      return _kindRank(a.kind).compareTo(_kindRank(b.kind));
+    });
   return ranked.first;
 }
 

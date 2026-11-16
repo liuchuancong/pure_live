@@ -6,8 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest, LiveStreamedResponse;
 import 'package:path/path.dart' as p;
-import 'package:pure_live/app/app.dart'
-    show appPathsProvider, networkFactoryProvider;
+import 'package:pure_live/app/app.dart' show appPathsProvider, networkFactoryProvider;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/version/release_builds.dart' show ReleaseBuild, formatReleaseSize;
@@ -121,9 +120,7 @@ final class _UpdateDownloadDialogState extends ConsumerState<UpdateDownloadDialo
       _savedPath = target.path;
       _setPhase(UpdateDownloadPhase.done);
     } on Object catch (error) {
-      appLog
-          .forCategory('version.download')
-          .warning('update download failed', fields: {'error': '$error'});
+      appLog.forCategory('version.download').warning('update download failed', fields: {'error': '$error'});
       await _discard(part);
       if (_cancelled) {
         _setPhase(UpdateDownloadPhase.cancelled);
@@ -210,10 +207,7 @@ final class _UpdateDownloadDialogState extends ConsumerState<UpdateDownloadDialo
           if (_phase == UpdateDownloadPhase.failed && failure != null)
             Text(failure, style: theme.typography.caption.copyWith(color: colors.danger.text)),
           if (_phase == UpdateDownloadPhase.cancelled)
-            Text(
-              t.settings.downloadCancelled,
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
+            Text(t.settings.downloadCancelled, style: theme.typography.caption.copyWith(color: colors.textMuted)),
           if (done && directory != null)
             Text(
               t.settings.downloadSavedTo(path: directory),

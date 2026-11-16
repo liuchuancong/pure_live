@@ -244,6 +244,9 @@ final class _ThemeColorDialogState extends State<_ThemeColorDialog> {
                   semanticLabel: t.settings.themeColorHex,
                   error: _hexInvalid,
                   onChanged: _onHexChanged,
+                  onSubmitted: (_) {
+                    if (!_hexInvalid) _apply();
+                  },
                 ),
               ),
             ],
