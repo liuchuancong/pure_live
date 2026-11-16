@@ -4,12 +4,11 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart' show musicFavouritesProvider;
+import 'package:pure_live/modules/music/controller/library/music_online_playlists.dart'
     show
         musicOnlineHotTagsProvider,
         musicOnlinePlaylistDetailProvider,
@@ -17,18 +16,19 @@ import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
         musicPlaylistSortLabel,
         musicPlaylistSortsProvider,
         musicPlaylistTagGroupsProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists;
 import 'package:pure_live/modules/music/music_page.dart' show MusicView;
-import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
+import 'package:pure_live/modules/music/views/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
-import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseLoading, MusicToolAction;
+import 'package:pure_live/modules/music/widgets/music_detail_hero.dart' show MusicDetailHero;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show AudienceFormat, CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/shared.dart' show AudienceFormat, LiveWindow, SkeletonRows;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:pure_live/shared/widgets/app_panel.dart';
 
@@ -106,6 +106,7 @@ final class MusicDetailBackRow extends StatelessWidget {
               onPressed: onBack,
               icon: const DsIcon(DsIcons.chevronLeft),
             ),
+
             Flexible(
               child: Text(
                 title,
@@ -329,7 +330,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
                           widget.heading ?? '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.of(context).colors.text),
+                          style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.colorsOf(context).text),
                         ),
                       ),
                       ...headActions,
@@ -344,7 +345,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               summary,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.of(context).colors.textMuted),
+              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
             ),
           ),
         if (!supported)
@@ -360,7 +361,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               // The tags have not named a board yet: the first page waits
               // for them, loading or honestly failed.
               (null, AsyncValue(:final isLoading), _, _, _) when isLoading => const Center(
-                child: DsSpinner(style: DsSpinnerStyle(size: 28)),
+                child: SkeletonRows(rows: 6),
               ),
               (null, AsyncValue(hasError: true), _, _, _) => Center(
                 child: DsEmptyState(
@@ -630,8 +631,6 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     // The page's gutter, the same measure the live module's pages keep.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final detail = ref.watch(musicOnlinePlaylistDetailProvider(info.id));
@@ -668,7 +667,7 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
         Expanded(
           child: detail.when(
             skipLoadingOnReload: true,
-            loading: () => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
+            loading: () => const MusicBrowseLoading(),
             error: (error, stackTrace) => Center(
               child: DsEmptyState(icon: DsIcon(MusicView.songlists.icon), title: Text(t.music.onlineLoadFailed)),
             ),
@@ -684,92 +683,34 @@ final class MusicOnlinePlaylistDetail extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // The detail head's rhythm, the mockup's measure: the
-                  // cover leads, the name and its facts line follow, and the
-                  // play verbs close the block — bottom-set so the verbs sit
-                  // on the cover's edge.
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      spacing: DsSpace.s16,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(theme.radii.card),
-                          child: SizedBox(
-                            width: 72,
-                            height: 72,
-                            child: first == null
-                                ? CoverFallback(title: info.name)
-                                : DsImage(
-                                    image: first.coverUri == null
-                                        ? null
-                                        : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
-                                    aspectRatio: 1,
-                                    semanticLabel: info.name,
-                                    fallback: CoverFallback(title: first.title),
-                                  ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: DsSpace.s4),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              spacing: DsSpace.s6,
-                              children: [
-                                Text(
-                                  info.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.heading.copyWith(color: colors.text),
-                                ),
-                                Text(
-                                  // Creator, plays, size, length — each part only
-                                  // when the platform said it, so the line never
-                                  // opens with a bare separator.
-                                  [
-                                    if (info.author.isNotEmpty) info.author,
-                                    if (info.playCount > 0)
-                                      t.music.playsCount(count: AudienceFormat.format(info.playCount)),
-                                    t.music.songsCount(count: tracks.length),
-                                    if (total > Duration.zero) musicDurationText(total),
-                                  ].join(' · '),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                ),
-                                const SizedBox(height: DsSpace.s4),
-                                Wrap(
-                                  spacing: DsSpace.s8,
-                                  runSpacing: DsSpace.s8,
-                                  children: [
-                                    DsButton(
-                                      variant: DsButtonVariant.primary,
-                                      size: DsSize.sm,
-                                      leading: const DsIcon(DsIcons.play, size: 16),
-                                      onPressed: () => unawaited(player.playAll(tracks)),
-                                      child: Text(t.music.playAll),
-                                    ),
-                                    DsButton(
-                                      variant: DsButtonVariant.secondary,
-                                      size: DsSize.sm,
-                                      leading: const DsIcon(DsIcons.shuffle, size: 16),
-                                      onPressed: () => unawaited(player.playAll([...tracks]..shuffle(math.Random()))),
-                                      child: Text(t.music.modeRandom),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  // The one detail head: the cover blurred into the block's own
+                  // backdrop, the name and its facts on it, one play disc
+                  // anchoring the verbs.
+                  MusicDetailHero(
+                    coverUri: first?.coverUri,
+                    fallbackTitle: info.name,
+                    title: info.name,
+                    facts: [
+                      if (info.author.isNotEmpty) info.author,
+                      if (info.playCount > 0) t.music.playsCount(count: AudienceFormat.format(info.playCount)),
+                      t.music.songsCount(count: tracks.length),
+                      if (total > Duration.zero) musicDurationText(total),
+                    ],
+                    onPlayAll: () => unawaited(player.playAll(tracks)),
+                    playSemanticLabel: t.music.playAll,
+                    actions: [
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        leading: const DsIcon(DsIcons.shuffle, size: 16),
+                        onPressed: () => unawaited(player.playAll([...tracks]..shuffle(math.Random()))),
+                        child: Text(t.music.modeRandom),
+                      ),
+                    ],
                   ),
                   Expanded(
                     child: ListView.builder(
-                      padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s16),
                       itemCount: tracks.length + 1,
                       itemBuilder: (context, offset) {
                         if (offset == 0) return const MusicSongTableHeader();

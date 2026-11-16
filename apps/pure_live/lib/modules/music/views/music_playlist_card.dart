@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_playlists.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -309,6 +310,22 @@ final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T
             );
             if (capped > 0) columns = capped;
           }
+          // The wall's own silhouette before the covers arrive: poster
+          // blocks, not a lone spinner in the first cell.
+          if (items.isEmpty && widget.isLoading) {
+            return GridView.builder(
+              padding: padding,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: columnExtentForWidth(content, columns, spacing),
+                mainAxisSpacing: browse.mainSpacing,
+                crossAxisSpacing: spacing,
+                childAspectRatio: 3 / 4.2,
+              ),
+              itemCount: columns * 3,
+              itemBuilder: (context, index) => const DsSkeleton.block(width: double.infinity),
+            );
+          }
           return GridView.builder(
             padding: padding,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -320,7 +337,7 @@ final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T
             itemCount: items.length + (widget.isLoading && hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index >= items.length) {
-                return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                return const DsSkeleton.block(width: double.infinity);
               }
               return widget.itemBuilder(context, items[index]);
             },
@@ -332,7 +349,7 @@ final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T
 
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
+    final wide = PageLayoutScope.isPaging(context);
     // The grid keeps the page's gutter, the live module's measure.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     if (!wide) return _grid(widget.items, pagesOnScrollToEnd: false, hasMore: widget.hasMore);

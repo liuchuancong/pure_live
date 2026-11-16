@@ -11,9 +11,10 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassCoverFrostSigma;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart';
-import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_custom_presets.dart';
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart'
+    show MusicPlayerController, musicPlayerProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseHeader;
@@ -1020,32 +1021,38 @@ final class _CompareButtonState extends ConsumerState<_CompareButton> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return GestureDetector(
-      onTapDown: (_) {
-        setState(() => _held = true);
-        widget.player.setCompareBypass(bypass: true);
-      },
-      onTapUp: (_) {
-        if (!_held) return;
-        setState(() => _held = false);
-        widget.player.setCompareBypass(bypass: false);
-      },
-      onTapCancel: () {
-        if (!_held) return;
-        setState(() => _held = false);
-        widget.player.setCompareBypass(bypass: false);
-      },
-      child: Container(
-        height: 44,
-        decoration: BoxDecoration(
-          color: _held ? colors.accent : colors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: colors.border),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          _held ? t.music.eqCompareHeld : t.music.eqCompare,
-          style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
+    return Semantics(
+      // A press-and-hold reads as a pressed button: activation by a
+      // reader is a tap, which bypasses until the next activation —
+      // usable, and the text names the trade.
+      button: true,
+      child: GestureDetector(
+        onTapDown: (_) {
+          setState(() => _held = true);
+          widget.player.setCompareBypass(bypass: true);
+        },
+        onTapUp: (_) {
+          if (!_held) return;
+          setState(() => _held = false);
+          widget.player.setCompareBypass(bypass: false);
+        },
+        onTapCancel: () {
+          if (!_held) return;
+          setState(() => _held = false);
+          widget.player.setCompareBypass(bypass: false);
+        },
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: _held ? colors.accent : colors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: colors.border),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            _held ? t.music.eqCompareHeld : t.music.eqCompare,
+            style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
+          ),
         ),
       ),
     );

@@ -11,9 +11,9 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
+import 'package:pure_live/modules/music/controller/library/music_local.dart' show musicLocalProvider;
+import 'package:pure_live/modules/music/controller/library/music_tag_writer.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
-import 'package:pure_live/modules/music/controller/music_tag_writer.dart';
 import 'package:pure_live/modules/music/controller/sources/music_source_match.dart' show findSameSong;
 import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 import 'package:pure_live/shared/widgets/app_dialog.dart';

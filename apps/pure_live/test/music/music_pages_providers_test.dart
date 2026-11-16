@@ -1,22 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart' show musicEqProvider;
-import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
-    show musicDesktopLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_download_settings.dart' show musicDownloadSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart'
-    show musicFavouritesProvider, musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' show musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
-import 'package:pure_live/modules/music/controller/music_search.dart'
+import 'package:pure_live/modules/music/controller/browse/music_search.dart'
     show musicSearchHistoryProvider, musicSearchProvider;
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/library/music_download_settings.dart'
+    show musicDownloadSettingsProvider;
+import 'package:pure_live/modules/music/controller/library/music_downloads.dart' show musicDownloadsProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicRecentProvider;
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show musicPlaylistsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_desktop_lyric_settings.dart'
+    show musicDesktopLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart' show musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
-import 'package:pure_live/modules/music/controller/music_sync.dart' show musicSyncProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart' show musicEqProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync.dart' show musicSyncProvider;
 
 void main() {
   setUpAll(() async {

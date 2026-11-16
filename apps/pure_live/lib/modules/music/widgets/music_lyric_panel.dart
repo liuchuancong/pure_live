@@ -1,13 +1,14 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart'
     show MusicLyricAlignment, musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show musicDurationText;
 
 /// The lyric panel: the current line highlighted, the panel following the
@@ -18,14 +19,20 @@ import 'package:pure_live/modules/music/widgets/music_widgets.dart' show musicDu
 /// panel, so the viewer can read the words without leaving the list they are
 /// browsing.
 final class MusicLyricsPanel extends ConsumerStatefulWidget {
-  const MusicLyricsPanel({super.key});
+  const MusicLyricsPanel({super.key, this.transparent = false});
+
+  /// Draws without the panel fill: the player's stage already carries the
+  /// blurred cover, and a grey card over it dulled the whole mode.
+  final bool transparent;
 
   @override
   ConsumerState<MusicLyricsPanel> createState() => MusicLyricsPanelState();
 }
 
 final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
-  static const double _baseLineHeight = 46;
+  /// Two text lines fit the slot, so a long verse wraps instead of
+  /// vanishing behind an ellipsis.
+  static const double _baseLineHeight = 72;
 
   final ScrollController _scroll = ScrollController();
   audio.LyricDocument? _document;
@@ -189,11 +196,14 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final state = ref.watch(musicPlayerProvider);
+    // The panel rides the track, the offset and the revision only: those
+    // decide what is loaded. The position tick reaches in through the
+    // listener below (the singing line) and the singing row's own watch
+    // (the sweep), so the column rebuilds once per song, not once per tick.
+    final (trackId, offset, revision) = ref.watch(
+      musicPlayerProvider.select((state) => (state.track?.id, state.lyricOffset.inMilliseconds, state.lyricRevision)),
+    );
     final settings = ref.watch(musicLyricsSettingsProvider);
-    final trackId = state.track?.id;
-    final offset = state.lyricOffset.inMilliseconds;
-    final revision = state.lyricRevision;
     final scale = settings.lyricFontScale / 100;
     final lineHeight = _baseLineHeight * scale;
     final (alignment, crossAlignment, textAlign) = switch (settings.lyricAlignment) {
@@ -212,10 +222,24 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
       _scrubbing = false;
       if (trackId != null) unawaited(_load(trackId));
     }
+    // The singing line moves off the tick without rebuilding the column:
+    // this listen fires per tick but only carries the line (and its reveal)
+    // forward when the line index changed. The check under it is the
+    // catch-up for a freshly loaded document, where no tick has come yet.
+    ref.listen(musicPlayerProvider.select((state) => state.position), (previous, next) {
+      final loaded = _document;
+      if (loaded == null || !loaded.isSynchronized || loaded.isEmpty) return;
+      final active = loaded.indexAt(next);
+      if (active == _active) return;
+      setState(() {
+        _active = active;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(active, lineHeight));
+      });
+    });
     final document = _document;
     final lines = document?.lines ?? const <audio.LyricLine>[];
     if (document != null && document.isSynchronized && !document.isEmpty) {
-      final active = document.indexAt(state.position);
+      final active = document.indexAt(ref.read(musicPlayerProvider).position);
       if (active != _active) {
         _active = active;
         WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(active, lineHeight));
@@ -228,10 +252,18 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,
         children: [
-          if (settings.lyricProgress && state.duration > Duration.zero)
-            DsProgressBar(
-              value: (state.position.inMilliseconds / state.duration.inMilliseconds).clamp(0.0, 1.0),
-              semanticLabel: t.music.lyricProgress,
+          if (settings.lyricProgress && ref.read(musicPlayerProvider).duration > Duration.zero)
+            Consumer(
+              builder: (context, ref, _) {
+                final (position, duration) = ref.watch(
+                  musicPlayerProvider.select((state) => (state.position, state.duration)),
+                );
+                if (duration <= Duration.zero) return const SizedBox.shrink();
+                return DsProgressBar(
+                  value: (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0),
+                  semanticLabel: t.music.lyricProgress,
+                );
+              },
             ),
           Expanded(
             child: document == null
@@ -266,79 +298,143 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
                   )
                 : Stack(
                     children: [
-                      NotificationListener<ScrollNotification>(
-                        onNotification: (notification) =>
-                            _onScroll(notification, synced: document.isSynchronized, lineHeight: lineHeight),
-                        child: ListView.builder(
-                          controller: _scroll,
-                          itemExtent: lineHeight,
-                          itemCount: lines.length,
-                          itemBuilder: (context, index) {
-                            final line = lines[index];
-                            final current = index == _active;
-                            final text = line.text.trim();
-                            final secondary = line.secondaryTexts(
-                              showTranslation: settings.showTranslation,
-                              showRomanization: settings.showRomanization,
-                              swap: settings.swapLyricSecondary,
-                            );
-                            final zoom = settings.lyricZoomActive && current ? 1.1 : 1.0;
-                            final content = Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: crossAlignment,
-                              children: [
-                                Text(
-                                  text.isEmpty ? '♪' : text,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: textAlign,
-                                  style: theme.typography.body.copyWith(
-                                    fontSize: (theme.typography.body.fontSize ?? 14) * scale * zoom,
-                                    color: current ? colors.text : colors.textMuted,
-                                    fontWeight: current ? FontWeight.w600 : null,
+                      // The column fades out at both edges, so lines walk
+                      // in and out of view instead of being cut by the box.
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
+                          stops: [0.0, 0.07, 0.93, 1.0],
+                        ).createShader(bounds),
+                        blendMode: BlendMode.dstIn,
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) =>
+                              _onScroll(notification, synced: document.isSynchronized, lineHeight: lineHeight),
+                          child: ListView.builder(
+                            controller: _scroll,
+                            itemExtent: lineHeight,
+                            itemCount: lines.length,
+                            itemBuilder: (context, index) {
+                              final line = lines[index];
+                              final current = index == _active;
+                              final text = line.text.trim();
+                              final secondary = line.secondaryTexts(
+                                showTranslation: settings.showTranslation,
+                                showRomanization: settings.showRomanization,
+                                swap: settings.swapLyricSecondary,
+                              );
+                              final zoom = settings.lyricZoomActive && current ? 1.1 : 1.0;
+                              final lineText = Text(
+                                text.isEmpty ? '♪' : text,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: textAlign,
+                                style: theme.typography.body.copyWith(
+                                  fontSize: (theme.typography.body.fontSize ?? 14) * scale,
+                                  height: 1.3,
+                                  color: colors.text,
+                                  fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+                                ),
+                              );
+                              final secondaryText = secondary.isEmpty
+                                  ? null
+                                  : Text(
+                                      secondary.join(' · '),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: textAlign,
+                                      style: theme.typography.caption.copyWith(
+                                        fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
+                                        color: colors.textSubtle,
+                                      ),
+                                    );
+                              // Which line is singing is the one thing the
+                              // words alone cannot say: the current line
+                              // carries selected in the semantics.
+                              // The sung part rides ahead of the unsung one
+                              // across the active line — the sweep the word-
+                              // level timeline affords, read off the line's
+                              // own progress so plain LRC sweeps too.
+                              Widget contentOf(double? sweep) => Semantics(
+                                selected: current,
+                                child: AnimatedOpacity(
+                                  opacity: current ? 1.0 : 0.52,
+                                  duration: const Duration(milliseconds: 260),
+                                  child: AnimatedScale(
+                                    scale: zoom,
+                                    duration: const Duration(milliseconds: 260),
+                                    curve: Curves.easeOutCubic,
+                                    alignment: alignment,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: crossAlignment,
+                                      children: [
+                                        if (sweep == null)
+                                          lineText
+                                        else
+                                          ShaderMask(
+                                            shaderCallback: (bounds) => LinearGradient(
+                                              begin: AlignmentDirectional.centerStart,
+                                              end: AlignmentDirectional.centerEnd,
+                                              colors: const [Colors.white, Colors.white, Colors.black, Colors.black],
+                                              stops: [0.0, sweep, sweep, 1.0],
+                                            ).createShader(bounds),
+                                            blendMode: BlendMode.dstIn,
+                                            child: lineText,
+                                          ),
+                                        ?secondaryText,
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                if (secondary.isNotEmpty)
-                                  Text(
-                                    secondary.join(' · '),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: textAlign,
-                                    style: theme.typography.caption.copyWith(
-                                      fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
-                                      color: colors.textSubtle,
-                                    ),
-                                  ),
-                              ],
-                            );
-                            // A synchronized line is a seek target: pressing
-                            // it plays from there. Unsynced words have no
-                            // time to jump to, so they stay plain text.
-                            if (!document.isSynchronized) {
-                              return Align(alignment: alignment, child: content);
-                            }
-                            return DsPressable(
-                              onPressed: () => unawaited(_seekToLine(index)),
-                              builder: (context, states, child) {
-                                final lit =
-                                    states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                                return DsFocusRing(
-                                  focused: states.contains(WidgetState.focused),
-                                  borderRadius: BorderRadius.circular(theme.radii.card),
-                                  child: Container(
-                                    alignment: alignment,
-                                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
-                                    decoration: DsBoxDecoration(
-                                      color: lit ? colors.hover : null,
-                                      borderRadius: BorderRadius.circular(theme.radii.card),
-                                    ),
-                                    child: child,
-                                  ),
+                              );
+                              // Only the singing line follows the word sweep,
+                              // so only it watches the position tick; every
+                              // other row stays off it.
+                              final Widget content;
+                              if (!current || !document.isSynchronized) {
+                                content = contentOf(null);
+                              } else {
+                                content = Consumer(
+                                  builder: (context, rowRef, _) {
+                                    final position = rowRef.watch(
+                                      musicPlayerProvider.select((state) => state.position),
+                                    );
+                                    final progress = document.positionAt(position).lineProgress;
+                                    return contentOf(progress > 0.02 && progress < 0.98 ? progress : null);
+                                  },
                                 );
-                              },
-                              child: content,
-                            );
-                          },
+                              }
+                              // A synchronized line is a seek target: pressing
+                              // it plays from there. Unsynced words have no
+                              // time to jump to, so they stay plain text.
+                              if (!document.isSynchronized) {
+                                return Align(alignment: alignment, child: content);
+                              }
+                              return DsPressable(
+                                onPressed: () => unawaited(_seekToLine(index)),
+                                builder: (context, states, child) {
+                                  final lit =
+                                      states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+                                  return DsFocusRing(
+                                    focused: states.contains(WidgetState.focused),
+                                    borderRadius: BorderRadius.circular(theme.radii.card),
+                                    child: Container(
+                                      alignment: alignment,
+                                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+                                      decoration: DsBoxDecoration(
+                                        color: lit ? colors.hover : null,
+                                        borderRadius: BorderRadius.circular(theme.radii.card),
+                                      ),
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: content,
+                              );
+                            },
+                          ),
                         ),
                       ),
                       if (_scrubbing && settings.lyricDragSeek) _scrubRule(context, colors, theme, document.lines),

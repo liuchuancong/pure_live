@@ -3,11 +3,11 @@ import 'dart:convert' show jsonDecode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_search.dart' show musicSearchProvider;
+import 'package:pure_live/modules/music/controller/browse/music_search.dart' show musicSearchProvider;
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show OnlinePlaylists;
 
@@ -180,7 +180,12 @@ MusicDeeplinkAction _parseMusicLink(String action, List<String> paths, Map<Strin
       } else {
         final data = params['data'];
         if (data == null) throw const MusicDeeplinkException('searchPlay without name');
-        final decoded = jsonDecode(data);
+        final Object? decoded;
+        try {
+          decoded = jsonDecode(data);
+        } on FormatException {
+          throw const MusicDeeplinkException('searchPlay data is not JSON');
+        }
         if (decoded is! Map) throw const MusicDeeplinkException('searchPlay data is not an object');
         name = '${decoded['name'] ?? ''}'.trim();
         singer = '${decoded['singer'] ?? ''}'.trim();
@@ -197,7 +202,12 @@ MusicDeeplinkAction _parseMusicLink(String action, List<String> paths, Map<Strin
 
 bool _jsonFlag(String? raw, String key) {
   if (raw == null || raw.isEmpty) return false;
-  final decoded = jsonDecode(raw);
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(raw);
+  } on FormatException {
+    throw const MusicDeeplinkException('Link data is not JSON');
+  }
   return decoded is Map && decoded[key] == true;
 }
 
@@ -260,7 +270,12 @@ MusicDeeplinkAction _parseSonglistLink(String action, List<String> paths, Map<St
   int? index;
   final raw = params['data'];
   if (raw != null && raw.isNotEmpty) {
-    final decoded = jsonDecode(raw);
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      throw const MusicDeeplinkException('Songlist data is not JSON');
+    }
     if (decoded is! Map) throw const MusicDeeplinkException('Songlist data is not an object');
     source = decoded['source'] == null ? null : '${decoded['source']}';
     id = decoded['id'] == null ? null : '${decoded['id']}';
@@ -302,7 +317,9 @@ Future<void> executeMusicDeeplink(Ref ref, MusicDeeplinkAction action) async {
       final query = singer.isEmpty ? name : '$name $singer';
       final answer = await source.search(query);
       final hit = answer.items.firstOrNull;
-      if (hit == null) return;
+      // A silent return would leave the link's promise unkept; the caller's
+      // message path says why nothing played.
+      if (hit == null) throw MusicDeeplinkException('No match for $query');
       final player = ref.read(musicPlayerProvider.notifier);
       if (playLater) {
         await player.playNext(hit);
@@ -311,38 +328,49 @@ Future<void> executeMusicDeeplink(Ref ref, MusicDeeplinkAction action) async {
       }
 
     case MusicDeeplinkOpenSonglist():
-      // The songlist surface is the online-playlist layer's route; the
-      // parser validated the shape, navigation is the caller's concern.
-      break;
+      // The songlist surface is an in-view state of the module's featured
+      // page, not a route a link can land on; saying so beats a link that
+      // parses fine and then does nothing at all.
+      throw const MusicDeeplinkException('Opening a songlist page is not supported yet');
 
     case MusicDeeplinkPlaySonglist(:final id, :final index):
       // OnlinePlaylists is a mixin carried by the platform under the lyric
       // wrappers, so the walk is the only way to reach its methods.
       final playlists = musicCapabilityOf<OnlinePlaylists>(ref.read(musicSourceProvider));
-      if (playlists == null) return;
+      if (playlists == null) throw const MusicDeeplinkException('This source has no songlists');
       final (_, tracks) = await playlists.playlistDetail(id);
-      if (tracks.isEmpty) return;
+      if (tracks.isEmpty) throw const MusicDeeplinkException('The songlist is empty');
       await ref.read(musicPlayerProvider.notifier).playAll(tracks, index: index ?? 0);
 
     case MusicDeeplinkPlayer(:final command):
       final player = ref.read(musicPlayerProvider.notifier);
       switch (command) {
+        // Play and pause mean what they say: a play link into a playing
+        // player does not pause it, and the other way round.
         case MusicDeeplinkPlayerCommand.play:
-          await player.toggle();
+          if (!ref.read(musicPlayerProvider).playing) await player.toggle();
         case MusicDeeplinkPlayerCommand.pause:
-          await player.toggle();
+          if (ref.read(musicPlayerProvider).playing) await player.toggle();
         case MusicDeeplinkPlayerCommand.togglePlay:
           await player.toggle();
         case MusicDeeplinkPlayerCommand.skipNext:
           await player.next();
         case MusicDeeplinkPlayerCommand.skipPrev:
           await player.previous();
+        // Collect and uncollect are directional too: an uncollect link into
+        // an uncollected song must not collect it.
         case MusicDeeplinkPlayerCommand.collect:
           final track = ref.read(musicPlayerProvider).track;
-          if (track != null) await ref.read(musicFavouritesProvider.notifier).toggle(track);
+          final favourites = ref.read(musicFavouritesProvider);
+          if (track != null && !favourites.contains(track)) {
+            await ref.read(musicFavouritesProvider.notifier).toggle(track);
+          }
         case MusicDeeplinkPlayerCommand.uncollect:
           final track = ref.read(musicPlayerProvider).track;
-          if (track != null) await ref.read(musicFavouritesProvider.notifier).toggle(track);
+          final favourites = ref.read(musicFavouritesProvider);
+          if (track != null && favourites.contains(track)) {
+            await ref.read(musicFavouritesProvider.notifier).toggle(track);
+          }
         case MusicDeeplinkPlayerCommand.dislike:
           final track = ref.read(musicPlayerProvider).track;
           if (track != null) await ref.read(musicDislikesProvider.notifier).toggle(track);

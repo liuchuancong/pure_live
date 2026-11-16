@@ -8,11 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart'
     show AudioPlaybackState, GlobalHotkeyEvent, MethodChannelGlobalHotkeysTransport, MusicTrack;
-import 'package:pure_live/modules/music/controller/music_dislikes.dart'
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart'
     show MusicDislikesController, musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show MusicFavouritesController, musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart'
+    show MusicPlayerController, musicPlayerProvider;
 
 /// One shortcut the module answers to, the reference's HOTKEY_PLAYER set.
 /// Window verbs (minimize, hide, close) and the desktop-lyric toggles are

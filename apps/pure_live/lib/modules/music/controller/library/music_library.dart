@@ -104,6 +104,24 @@ final class MusicFavouritesController extends Notifier<List<audio.MusicTrack>> {
     ];
     await _writeTracks(kMusicFavouritesKey, state);
   }
+
+  /// Drops the selected tracks, one write for the tick — the batch manage's
+  /// own verb.
+  Future<void> removeMany(Iterable<audio.MusicTrack> tracks) async {
+    final dropped = tracks.toSet();
+    if (dropped.isEmpty) return;
+    state = [
+      for (final entry in state)
+        if (!dropped.contains(entry)) entry,
+    ];
+    await _writeTracks(kMusicFavouritesKey, state);
+  }
+
+  /// Empties the whole collection — the shelf's 清空, behind its own confirm.
+  Future<void> clear() async {
+    state = const [];
+    await _writeTracks(kMusicFavouritesKey, state);
+  }
 }
 
 /// The module's collected songs.

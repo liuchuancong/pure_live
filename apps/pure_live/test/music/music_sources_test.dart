@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
+import 'package:pure_live/modules/music/controller/browse/music_source_catalog.dart'
     show MusicCatalogFetchException, fetchCatalogScript, kMusicSourceCatalog, musicCatalogScriptUrl;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 
@@ -73,15 +73,11 @@ void main() {
   group('fetchCatalogScript', () {
     test('returns the first route that answers', () async {
       final seen = <Uri>[];
-      final body = await fetchCatalogScript(
-        kMusicSourceCatalog.first,
-        (uri) async {
-          seen.add(uri);
-          if (seen.length == 1) throw const FormatException('blocked');
-          return '// script';
-        },
-        routes: (raw) => [Uri.parse('https://mirror.test/one'), raw],
-      );
+      final body = await fetchCatalogScript(kMusicSourceCatalog.first, (uri) async {
+        seen.add(uri);
+        if (seen.length == 1) throw const FormatException('blocked');
+        return '// script';
+      }, routes: (raw) => [Uri.parse('https://mirror.test/one'), raw]);
       expect(body, '// script');
       expect(seen, hasLength(2));
     });

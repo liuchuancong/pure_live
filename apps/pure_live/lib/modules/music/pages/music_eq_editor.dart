@@ -6,8 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_dsp.dart';
 
 /// The ten-band graphic equalizer: the predicted response curve drawn over
 /// the bands, each band a vertical drag handle.
@@ -98,6 +98,9 @@ final class _EqBoardState extends ConsumerState<_EqBoard> {
                         gain: widget.eq.gains[band],
                         size: size,
                         colors: colors,
+                        // The band's own name for a reader: the axis
+                        // label the editor draws.
+                        semanticLabel: '${MusicEqEditor.bandLabel(kMusicEqFrequencies[band])} Hz',
                         enabled: widget.eq.enabled,
                         dragging: _dragBand == band,
                         onDragState: (active) => setState(() => _dragBand = active ? band : null),
@@ -184,6 +187,7 @@ final class _EqBandHandle extends StatelessWidget {
   const _EqBandHandle({
     required this.gain,
     required this.size,
+    required this.semanticLabel,
     required this.colors,
     required this.enabled,
     required this.dragging,
@@ -194,6 +198,10 @@ final class _EqBandHandle extends StatelessWidget {
   final double gain;
   final Size size;
   final DsColors colors;
+
+  /// The band's axis label, read before the gain.
+  final String semanticLabel;
+
   final bool enabled;
 
   /// Whether this column is the finger's band — the chip and the ring ride
@@ -221,56 +229,63 @@ final class _EqBandHandle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final y = _yOf(gain, size.height);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onVerticalDragStart: enabled
-          ? (details) {
-              onDragState(true);
-              onChanged(_gainOf(details.localPosition.dy, size.height));
-            }
-          : null,
-      onVerticalDragUpdate: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
-      onVerticalDragEnd: enabled ? (_) => onDragState(false) : null,
-      onVerticalDragCancel: enabled ? () => onDragState(false) : null,
-      onTapDown: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
-      onDoubleTap: enabled ? () => onChanged(0) : null,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          CustomPaint(
-            size: Size.infinite,
-            painter: _BandPainter(
-              knobY: y,
-              knobRadius: _knobRadius,
-              colors: colors,
-              enabled: enabled,
-              dragging: dragging,
+    // A drag-only knob is a wall to a reader: the band reads as an
+    // adjustable whose steps walk the same ladder a drag does.
+    return Semantics(
+      label: '$semanticLabel $_label dB',
+      onIncrease: enabled ? () => onChanged((gain + 0.5).clamp(kMusicEqMinGain, kMusicEqMaxGain)) : null,
+      onDecrease: enabled ? () => onChanged((gain - 0.5).clamp(kMusicEqMinGain, kMusicEqMaxGain)) : null,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragStart: enabled
+            ? (details) {
+                onDragState(true);
+                onChanged(_gainOf(details.localPosition.dy, size.height));
+              }
+            : null,
+        onVerticalDragUpdate: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
+        onVerticalDragEnd: enabled ? (_) => onDragState(false) : null,
+        onVerticalDragCancel: enabled ? () => onDragState(false) : null,
+        onTapDown: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
+        onDoubleTap: enabled ? () => onChanged(0) : null,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CustomPaint(
+              size: Size.infinite,
+              painter: _BandPainter(
+                knobY: y,
+                knobRadius: _knobRadius,
+                colors: colors,
+                enabled: enabled,
+                dragging: dragging,
+              ),
             ),
-          ),
-          // The dragged band's own reading: one chip above the knob, kept on
-          // the board even when the knob nears its top edge.
-          if (dragging)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: math.max(0, y - 30),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
-                  decoration: DsBoxDecoration(
-                    color: colors.accentTint,
-                    borderRadius: BorderRadius.circular(theme.radii.control(20)),
-                  ),
-                  child: Text(
-                    _label,
-                    style: theme.typography.numeric(
-                      theme.typography.caption.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
+            // The dragged band's own reading: one chip above the knob, kept on
+            // the board even when the knob nears its top edge.
+            if (dragging)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: math.max(0, y - 30),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
+                    decoration: DsBoxDecoration(
+                      color: colors.accentTint,
+                      borderRadius: BorderRadius.circular(theme.radii.control(20)),
+                    ),
+                    child: Text(
+                      _label,
+                      style: theme.typography.numeric(
+                        theme.typography.caption.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

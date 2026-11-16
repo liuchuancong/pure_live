@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_library.dart';
-import 'package:pure_live/modules/music/controller/music_playback.dart';
+import 'package:pure_live/modules/music/controller/library/music_library.dart';
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart';
 import 'package:pure_live/modules/music/widgets/music_actions.dart' show listenPlaybackErrors;
 import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
@@ -105,26 +105,37 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
           // The hairline: tap anywhere on it to seek without opening
           // the player page.
           LayoutBuilder(
-            builder: (context, constraints) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: duration <= 0
+            builder: (context, constraints) => Semantics(
+              // The hairline is the mini bar's only seek: a reader
+              // walks it as an adjustable, a nudge a second either way.
+              label: t.music.progress,
+              onIncrease: duration <= 0
                   ? null
-                  : (details) => unawaited(
-                      controller.seek(
-                        Duration(milliseconds: (details.localPosition.dx / constraints.maxWidth * duration).round()),
+                  : () => unawaited(controller.seek(Duration(milliseconds: (progress * duration).round() + 1000))),
+              onDecrease: duration <= 0
+                  ? null
+                  : () => unawaited(controller.seek(Duration(milliseconds: (progress * duration).round() - 1000))),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapDown: duration <= 0
+                    ? null
+                    : (details) => unawaited(
+                        controller.seek(
+                          Duration(milliseconds: (details.localPosition.dx / constraints.maxWidth * duration).round()),
+                        ),
                       ),
-                    ),
-              child: SizedBox(
-                height: 3,
-                child: Stack(
-                  children: [
-                    Container(color: colors.surface),
-                    FractionallySizedBox(
-                      widthFactor: progress,
-                      alignment: Alignment.centerLeft,
-                      child: Container(color: colors.accent),
-                    ),
-                  ],
+                child: SizedBox(
+                  height: 3,
+                  child: Stack(
+                    children: [
+                      Container(color: colors.surface),
+                      FractionallySizedBox(
+                        widthFactor: progress,
+                        alignment: Alignment.centerLeft,
+                        child: Container(color: colors.accent),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

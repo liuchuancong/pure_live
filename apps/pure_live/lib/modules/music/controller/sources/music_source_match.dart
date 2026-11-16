@@ -67,7 +67,10 @@ bool isSameSong(audio.MusicTrack target, audio.MusicTrack candidate) {
 /// as the hard gate. Search answers are ranked, so the first candidate of the
 /// best pass wins.
 audio.MusicTrack? findSameSong(audio.MusicTrack target, Iterable<audio.MusicTrack> candidates) {
-  final pool = [for (final candidate in candidates) if (candidate.sourceId != target.sourceId) candidate];
+  final pool = [
+    for (final candidate in candidates)
+      if (candidate.sourceId != target.sourceId) candidate,
+  ];
   if (pool.isEmpty) return null;
   for (final pass in _passes) {
     for (final candidate in pool) {
@@ -78,11 +81,13 @@ audio.MusicTrack? findSameSong(audio.MusicTrack target, Iterable<audio.MusicTrac
 }
 
 /// Whether the two durations agree, or one side has none to disagree with.
-bool _durationsAgree(audio.MusicTrack target, audio.MusicTrack candidate) {
+/// The tolerance is a named value so the lyric walk can read wider — a
+/// 重制版 between platforms drifts further than a plain re-encode.
+bool _durationsAgree(audio.MusicTrack target, audio.MusicTrack candidate, {int toleranceMs = 5000}) {
   final targetDuration = target.duration?.inMilliseconds;
   final candidateDuration = candidate.duration?.inMilliseconds;
   if (targetDuration == null || candidateDuration == null) return true;
-  return (targetDuration - candidateDuration).abs() <= 5000;
+  return (targetDuration - candidateDuration).abs() <= toleranceMs;
 }
 
 /// The concession ladder, strictest first: everything the target names, then
@@ -102,3 +107,41 @@ bool _sameNameAndSinger(audio.MusicTrack target, audio.MusicTrack candidate) {
 /// that still finds a song whose singer string no two sites write alike.
 bool _sameName(audio.MusicTrack target, audio.MusicTrack candidate) =>
     normalizeSongName(target.title) == normalizeSongName(candidate.title) && _durationsAgree(target, candidate);
+
+/// The singers, read as a set: the platforms write the same credits in every
+/// order (`A、B` vs `B、A` vs `A/B`), and a feat. is a credit, not a new song.
+Set<String> _artistSet(String artist) {
+  final split = artist.replaceAll(RegExp(r'feat\.?|ft\.', caseSensitive: false), ',');
+  return {
+    for (final part in split.split(RegExp('[,、，/&+]')))
+      if (normalizeSongName(part).isNotEmpty) normalizeSongName(part),
+  };
+}
+
+/// Whether the two singer sets share a name, or one side named none to
+/// disagree with.
+bool _artistsAgree(audio.MusicTrack target, audio.MusicTrack candidate) {
+  final targetSet = _artistSet(target.artist);
+  final candidateSet = _artistSet(candidate.artist);
+  if (targetSet.isEmpty || candidateSet.isEmpty) return true;
+  return targetSet.intersection(candidateSet).isNotEmpty;
+}
+
+/// lx-music's `findMusic` with the lyric walk's own concessions: the singers
+/// may write the same credits in any order and a 重制版's twelve seconds of
+/// drift still counts as the song — a lyric needs the right *words*, and the
+/// strict gate was refusing the recording that had them.
+///
+/// Used only where the answer is a lyric (the cross-source fallback and the
+/// lyric walk); 换源 keeps [findSameSong]'s strict ladder, where a wrong
+/// recording plays instead of merely singing the wrong words.
+audio.MusicTrack? findSameSongLenient(audio.MusicTrack target, Iterable<audio.MusicTrack> candidates) {
+  for (final candidate in candidates) {
+    if (candidate.sourceId == target.sourceId) continue;
+    if (normalizeSongName(target.title) != normalizeSongName(candidate.title)) continue;
+    if (!_artistsAgree(target, candidate)) continue;
+    if (!_durationsAgree(target, candidate, toleranceMs: 12000)) continue;
+    return candidate;
+  }
+  return null;
+}

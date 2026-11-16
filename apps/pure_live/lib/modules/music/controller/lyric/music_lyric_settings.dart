@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_settings_store.dart';
+import 'package:pure_live/modules/music/controller/settings/music_settings_store.dart';
 
 /// Where a lyric line sits inside the player's lyric panel — lx-music's
 /// 播放详情 alignment.

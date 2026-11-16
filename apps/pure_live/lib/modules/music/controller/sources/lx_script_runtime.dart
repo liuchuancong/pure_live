@@ -7,8 +7,8 @@ import 'package:live_net/live_net.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/modules/music/controller/lx_script_prelude.dart' show lxScriptPrelude;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show MusicCustomSource, musicSourcesProvider;
+import 'package:pure_live/modules/music/controller/sources/lx_script_prelude.dart' show lxScriptPrelude;
 
 /// A source a script declared in its `inited` event.
 final class LxScriptSource {
@@ -210,9 +210,7 @@ final class LxScriptRuntime {
     try {
       await _ensureLib();
     } on Object catch (failure) {
-      appLog
-          .forCategory('music.script')
-          .warning('script runtime step failed', fields: {'error': '$failure'});
+      appLog.forCategory('music.script').warning('script runtime step failed', fields: {'error': '$failure'});
       _errors = ['fjs: $failure'];
       _loaded = true;
       return;
@@ -236,9 +234,7 @@ final class LxScriptRuntime {
         loaded.add(instance);
         if (instance.error != null) errors.add('${source.name}: ${instance.error}');
       } on Object catch (failure) {
-      appLog
-          .forCategory('music.script')
-          .warning('script runtime step failed', fields: {'error': '$failure'});
+        appLog.forCategory('music.script').warning('script runtime step failed', fields: {'error': '$failure'});
         errors.add('${source.name}: $failure');
       }
     }
@@ -289,9 +285,7 @@ final class LxScriptRuntime {
         if (!instance.ready.isCompleted) instance.ready.complete();
       }
     } on Object catch (failure) {
-      appLog
-          .forCategory('music.script')
-          .warning('script runtime step failed', fields: {'error': '$failure'});
+      appLog.forCategory('music.script').warning('script runtime step failed', fields: {'error': '$failure'});
       instance.error ??= '$failure';
       if (!instance.ready.isCompleted) instance.ready.complete();
     }
@@ -452,7 +446,7 @@ Map<String, Object?> lxMusicInfo(audio.MusicTrack track, {Iterable<String> quali
 
 /// The lx runtime over the imported scripts.
 final lxScriptRuntimeProvider = Provider<LxScriptRuntime>((ref) {
-  final runtime = LxScriptRuntime(transport: ref.watch(networkFactoryProvider).create(profile: ClientProfile.api));
+  final runtime = LxScriptRuntime(transport: ref.watch(networkFactoryProvider).create(profile: ClientProfile.plugin));
   ref.onDispose(runtime.dispose);
   unawaited(runtime.load(ref.read(musicSourcesProvider)));
   ref.listen(musicSourcesProvider, (_, next) => unawaited(runtime.load(next)));

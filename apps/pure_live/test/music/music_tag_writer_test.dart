@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_tag_writer.dart';
+import 'package:pure_live/modules/music/controller/library/music_tag_writer.dart';
 
 void main() {
   const picture = [0xFF, 0xD8, 0xFF, 0xE0, 0x10, 0x20, 0x30];
@@ -84,10 +84,19 @@ void main() {
 
     test('flac drops the picture block on removal', () async {
       final file = await fileOf('e.flac', [
-        0x66, 0x4C, 0x61, 0x43,
-        0x80, 0x00, 0x00, 0x22,
+        0x66,
+        0x4C,
+        0x61,
+        0x43,
+        0x80,
+        0x00,
+        0x00,
+        0x22,
         ...List.filled(34, 0x00),
-        0xFF, 0xF8, 0x99, 0xAA,
+        0xFF,
+        0xF8,
+        0x99,
+        0xAA,
       ]);
       await writeAudioTags(file.path, MusicTagWrite(title: '宝贝', picture: Uint8List.fromList(picture)));
       await writeAudioTags(file.path, MusicTagWrite(picture: Uint8List(0)));
@@ -98,10 +107,7 @@ void main() {
 
     test('formats without a writer refuse', () async {
       final file = await fileOf('f.m4a', List.filled(32, 0x00));
-      await expectLater(
-        writeAudioTags(file.path, const MusicTagWrite(title: 'x')),
-        throwsUnsupportedError,
-      );
+      await expectLater(writeAudioTags(file.path, const MusicTagWrite(title: 'x')), throwsUnsupportedError);
     });
   });
 }

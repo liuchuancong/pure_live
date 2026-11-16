@@ -7,21 +7,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart' show PageLayoutScope;
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_online_playlists.dart' show musicSonglistSearchProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
-import 'package:pure_live/modules/music/controller/music_search.dart';
+import 'package:pure_live/modules/music/controller/browse/music_search.dart';
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_online_playlists.dart'
+    show musicSonglistSearchProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, SonglistSearch;
 import 'package:pure_live/modules/music/music_page.dart' show MusicView;
-import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
+import 'package:pure_live/modules/music/views/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows, showAppConfirm;
 
 /// The library: a search, its history and the songs it answers, each row
 /// playing the answer from that song on. Another view can hand it a word to
@@ -81,6 +83,17 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     super.initState();
     _focus = FocusNode()..addListener(_onFocusChanged);
     _seedQuery();
+    // Re-entering the view shows the last search's results; the field then
+    // names the words they answer to, instead of sitting empty under them.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.search.text.isNotEmpty) return;
+      final query = ref.read(musicSearchProvider).query;
+      if (query.isEmpty) return;
+      widget.search.value = TextEditingValue(
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
+      );
+    });
   }
 
   /// Searches the word another view handed this one — 推荐's hot chip — once
@@ -112,6 +125,21 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     super.dispose();
   }
 
+  /// Asks before the whole wall goes: a full clear cannot be undone.
+  Future<void> _clearHistory(BuildContext context) async {
+    final t = context.t;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.clearSearchHistoryTitle,
+      description: t.common.clearSearchHistoryBody,
+      confirmLabel: t.music.searchHistoryClear,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    unawaited(ref.read(musicSearchHistoryProvider.notifier).clear());
+  }
+
   void _onFocusChanged() {
     if (mounted) setState(() {});
   }
@@ -130,11 +158,14 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
   }
 
   /// Commits [word] as the search: the field reads it, the query moves, and
-  /// the overlay goes away because the word is the query now.
+  /// the overlay goes away because the word is the query now. A new ask is
+  /// also a new first page — the wide pager never opens on the old query's
+  /// page number (a merged 'all' page alone can outgrow one display page).
   void _runSearch(String word, MusicSearchController controller) {
     widget.search
       ..text = word
       ..selection = TextSelection.collapsed(offset: word.length);
+    if (_asked != 1) setState(() => _asked = 1);
     setState(() => _typed = word);
     unawaited(controller.search(word));
   }
@@ -172,7 +203,9 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     final state = ref.watch(musicSearchProvider);
     final controller = ref.read(musicSearchProvider.notifier);
     final history = ref.watch(musicSearchHistoryProvider);
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final playerController = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
@@ -188,6 +221,25 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     };
     void play(int index) => unawaited(playerController.playAll(state.songs, index: index));
     void runHistory(String query) => _runSearch(query, controller);
+    // The load-more failure said at the list's end, with a retry for the one
+    // page that failed — what the search already answered stays on the list.
+    Widget loadMoreError() => Column(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s8,
+      children: [
+        Text(
+          state.error!,
+          textAlign: TextAlign.center,
+          style: theme.typography.caption.copyWith(color: colors.textMuted),
+        ),
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          onPressed: () => unawaited(controller.retryPage()),
+          child: Text(t.common.retry),
+        ),
+      ],
+    );
     // The tip list lives while the field holds the focus and a word that is
     // not the committed query yet — the reference's typing overlay.
     final word = _typed.trim();
@@ -202,7 +254,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       return MusicSongRow(
         track: song,
         number: index + 1,
-        playing: playingId == song.id,
+        playing: playingKey == musicTrackKey(song),
         favourite: favourites.contains(song),
         subtitle: subtitle.isEmpty ? null : subtitle,
         onPlay: () => play(index),
@@ -231,7 +283,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                 t.music.songsCount(count: songs.length),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
               ),
             ),
             Wrap(
@@ -277,7 +329,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                 if (hot.isNotEmpty) ...[
                   Padding(
                     padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
-                    child: Text(t.music.searchHot, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+                    child: Text(t.music.searchHot, style: theme.typography.caption.copyWith(color: colors.textMuted)),
                   ),
                   Padding(
                     padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
@@ -305,13 +357,13 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                         Expanded(
                           child: Text(
                             t.music.searchHistory,
-                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
                           ),
                         ),
                         DsButton(
                           variant: DsButtonVariant.secondary,
                           size: DsSize.sm,
-                          onPressed: () => unawaited(ref.read(musicSearchHistoryProvider.notifier).clear()),
+                          onPressed: () => unawaited(_clearHistory(context)),
                           child: Text(t.music.searchHistoryClear),
                         ),
                       ],
@@ -339,7 +391,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
               ],
             );
     } else if (state.songs.isEmpty && state.loading) {
-      body = const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
+      body = const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows());
     } else if (state.songs.isEmpty && state.error != null) {
       body = Center(
         child: DsEmptyState(
@@ -361,7 +413,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       // A wide window pages the answers by number — one display page is the
       // local slice, the pager asks the source for one more page past the
       // hand — and a narrow one appends as the viewer scrolls.
-      final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
+      final wide = PageLayoutScope.isPaging(context);
       final page = _pageOf(state.songs.length);
       if (!wide) {
         body = NotificationListener<ScrollNotification>(
@@ -378,14 +430,18 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.only(bottom: DsSpace.s16),
-                  itemCount: state.songs.length + (state.hasMore ? 1 : 0) + 1,
+                  itemCount: state.songs.length + 1 + (state.hasMore || state.error != null ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == 0) return const MusicSongTableHeader();
                     final item = index - 1;
-                    if (item >= state.songs.length) {
-                      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                    if (item < state.songs.length) return songAt(item);
+                    if (state.error != null) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s8),
+                        child: loadMoreError(),
+                      );
                     }
-                    return songAt(item);
+                    return const SkeletonRows(rows: 3, trailing: false);
                   },
                 ),
               ),
@@ -432,6 +488,8 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
                   ),
                 ),
               ),
+            if (!state.loading && state.error != null)
+              Padding(padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12), child: loadMoreError()),
           ],
         );
       }
@@ -470,19 +528,26 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-          child: DsSearchField(
-            controller: search,
-            autofocus: true,
-            focusNode: _focus,
-            placeholder: t.music.searchHint,
-            onChanged: _onTyped,
-            onSubmitted: (value) {
-              // The submit commits at once: the pending debounce ask drops
-              // and the overlay closes because the word is the query now.
-              _suggestDebounce?.cancel();
-              setState(() => _typed = value);
-              unawaited(controller.search(value));
-            },
+          // The settings page's own column: a field and its suggestions read
+          // as one column, not a line stretched across the window.
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: DsSearchField(
+                controller: search,
+                autofocus: true,
+                focusNode: _focus,
+                placeholder: t.music.searchHint,
+                onChanged: _onTyped,
+                onSubmitted: (value) {
+                  // The submit commits at once: the pending debounce ask drops
+                  // and the overlay closes because the word is the query now.
+                  _suggestDebounce?.cancel();
+                  setState(() => _typed = value);
+                  unawaited(controller.search(value));
+                },
+              ),
+            ),
           ),
         ),
         // The head's one 44px line, the module's own tab grammar: the
@@ -528,7 +593,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
         if (narrow && !_songlist)
           Padding(padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8), child: sourceRail()),
         Expanded(
-          child: showTips
+          child: showTips && (ref.watch(musicSearchSuggestionsProvider(word)).value ?? const <String>[]).isNotEmpty
               ? _tips(word)
               : _songlist
               ? _SonglistResults(query: state.query, onOpen: widget.onOpenSonglist)
@@ -644,14 +709,49 @@ final class _SonglistResultsState extends ConsumerState<_SonglistResults> {
         ),
       );
     }
-    return MusicPlaylistGrid<MusicPlaylistInfo>(
-      items: items,
-      isLoading: loading,
-      hasMore: (statedMore ?? true) && (total == 0 || items.length < total),
-      onLoadMore: () async {
-        setState(() => _page += 1);
-      },
-      itemBuilder: (context, info) => MusicPlaylistCard.online(info: info, onOpen: () => widget.onOpen(info)),
+    // The last page's own failure closes the road and says itself above the
+    // grid: silently skipped rows read as a short answer, and the load-more
+    // would keep asking the page that just refused.
+    final lastFailed = pages.lastOrNull?.hasError ?? false;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (lastFailed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s4),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    t.music.onlineLoadFailed,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  // Only the page that failed asks again; the pages in hand stay.
+                  onPressed: () => ref.invalidate(musicSonglistSearchProvider((keyword: widget.query, page: _page))),
+                  child: Text(t.common.retry),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: MusicPlaylistGrid<MusicPlaylistInfo>(
+            items: items,
+            isLoading: loading,
+            hasMore: !lastFailed && (statedMore ?? true) && (total == 0 || items.length < total),
+            onLoadMore: () async {
+              setState(() => _page += 1);
+            },
+            itemBuilder: (context, info) => MusicPlaylistCard.online(info: info, onOpen: () => widget.onOpen(info)),
+          ),
+        ),
+      ],
     );
   }
 }

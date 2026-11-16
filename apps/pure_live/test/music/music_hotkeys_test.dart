@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/modules/music/controller/music_hotkeys.dart';
+import 'package:pure_live/modules/music/controller/playback/music_hotkeys.dart';
 
 void main() {
   group('MusicHotkeyCombo', () {
@@ -55,10 +55,7 @@ void main() {
 
     test('assigning a held combo steals it from the other action', () {
       const config = MusicHotkeyConfig(enabled: true, globalEnabled: false, assignments: MusicHotkeyConfig.standard);
-      final moved = config.withAssignment(
-        MusicHotkeyAction.volumeMute,
-        MusicHotkeyCombo.parse('mod+alt+arrowup'),
-      );
+      final moved = config.withAssignment(MusicHotkeyAction.volumeMute, MusicHotkeyCombo.parse('mod+alt+arrowup'));
       expect(moved.assignments[MusicHotkeyAction.volumeMute]!.serialize(), 'mod+alt+arrowup');
       expect(moved.assignments.containsKey(MusicHotkeyAction.volumeUp), isFalse);
     });

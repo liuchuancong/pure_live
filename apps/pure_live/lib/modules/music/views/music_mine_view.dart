@@ -8,13 +8,14 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_library.dart'
-    show musicFavouritesProvider, musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicRecentProvider, musicTrackKey;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// 我的列表: the songs this module collected and played, each section playing
 /// its own list from the chosen row.
@@ -28,7 +29,9 @@ final class MusicMineView extends ConsumerWidget {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final favourites = ref.watch(musicFavouritesProvider);
     final recent = ref.watch(musicRecentProvider);
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final playerController = ref.read(musicPlayerProvider.notifier);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     final recentController = ref.read(musicRecentProvider.notifier);
@@ -63,7 +66,7 @@ final class MusicMineView extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     '$title · ${t.music.songsCount(count: songs.length)}',
-                    style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+                    style: DsTheme.of(context).typography.heading.copyWith(color: DsTheme.colorsOf(context).text),
                   ),
                 ),
                 ?trailing,
@@ -77,7 +80,7 @@ final class MusicMineView extends ConsumerWidget {
               MusicSongRow(
                 track: song,
                 number: index + 1,
-                playing: playingId == song.id,
+                playing: playingKey == musicTrackKey(song),
                 favourite: favourites.contains(song),
                 onPlay: () => unawaited(playerController.playAll(songs, index: index)),
                 onFavourite: () => unawaited(favouriteController.toggle(song)),
@@ -134,7 +137,7 @@ final class MusicMineView extends ConsumerWidget {
                     total > Duration.zero
                         ? '${t.music.songsCount(count: favourites.length)} · ${musicDurationText(total)}'
                         : t.music.songsCount(count: favourites.length),
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
                   ),
                   Row(
                     spacing: DsSpace.s8,
@@ -163,6 +166,21 @@ final class MusicMineView extends ConsumerWidget {
       );
     }
 
+    /// Empties the favourites shelf after its confirmation, the recent list's
+    /// own 清空 with the guard a whole-shelf wipe owes.
+    Future<void> clearFavourites() async {
+      final t = context.t;
+      final confirmed = await showAppConfirm(
+        context: context,
+        title: t.music.favouritesClear,
+        description: t.music.favouritesClearDesc,
+        confirmLabel: t.common.delete,
+        cancelLabel: t.common.cancel,
+        destructive: true,
+      );
+      if (confirmed) await favouriteController.clear();
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: DsSpace.s16),
       child: Column(
@@ -171,7 +189,18 @@ final class MusicMineView extends ConsumerWidget {
         children: [
           if (favourites.isNotEmpty) favouritesHeader(),
           if (favourites.isNotEmpty)
-            section(t.music.mineFavourites, favourites, remove: favouriteController.remove, caption: false),
+            section(
+              t.music.mineFavourites,
+              favourites,
+              remove: favouriteController.remove,
+              caption: false,
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(clearFavourites()),
+                child: Text(t.music.favouritesClear),
+              ),
+            ),
           if (recent.isNotEmpty)
             // The 清空 verb belongs on the section's own tool line, at its end
             // where the rest of the module puts the verbs that act on the

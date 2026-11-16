@@ -2,17 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+import 'package:pure_live/modules/music/controller/browse/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart'
     show MusicLyricsSettings, musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/sources/lx_script_runtime.dart';
 import 'package:pure_live/modules/music/controller/sources/music_display_lyric.dart' show DisplayLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart' show CachedLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart' show noteMusicSourceSilence;
 import 'package:pure_live/modules/music/controller/sources/music_source_kg.dart' show KgMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_kw.dart' show KwMusicSource;
-import 'package:pure_live/modules/music/controller/sources/music_source_match.dart' show findSameSong;
+import 'package:pure_live/modules/music/controller/sources/music_source_match.dart'
+    show findSameSong, findSameSongLenient;
 import 'package:pure_live/modules/music/controller/sources/music_source_mg.dart' show MgMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_tx.dart' show TxMusicSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_wy.dart' show WyMusicSource;
@@ -26,13 +28,38 @@ final musicSourceListProvider = Provider<List<audio.MusicSource>>((ref) {
   final runtime = ref.watch(lxScriptRuntimeProvider);
   final transport = ref.watch(networkFactoryProvider).create(profile: ClientProfile.api);
   MusicLyricsSettings settingsOf() => ref.read(musicLyricsSettingsProvider);
-  return [
-    DisplayLyricSource(CachedLyricSource(KwMusicSource(runtime, transport)), settingsOf: settingsOf),
-    DisplayLyricSource(CachedLyricSource(KgMusicSource(runtime, transport)), settingsOf: settingsOf),
-    DisplayLyricSource(CachedLyricSource(TxMusicSource(runtime, transport)), settingsOf: settingsOf),
-    DisplayLyricSource(CachedLyricSource(WyMusicSource(runtime, transport)), settingsOf: settingsOf),
-    DisplayLyricSource(CachedLyricSource(MgMusicSource(runtime, transport)), settingsOf: settingsOf),
+  final cached = [
+    CachedLyricSource(KwMusicSource(runtime, transport)),
+    CachedLyricSource(KgMusicSource(runtime, transport)),
+    CachedLyricSource(TxMusicSource(runtime, transport)),
+    CachedLyricSource(WyMusicSource(runtime, transport)),
+    CachedLyricSource(MgMusicSource(runtime, transport)),
   ];
+
+  // The lyric walk: when a track's own platform holds no words, the other
+  // platforms are searched for the same song (the lenient reading —
+  // singer sets in any order, twelve seconds of 重制版 drift) and the first
+  // one that captions it wins. The walk resolves on the raw cached sources,
+  // so it never re-enters the display wrappers.
+  Future<audio.MusicLyricPayload?> lyricWalk(audio.MusicTrack track) async {
+    for (final source in cached) {
+      if (source.id == track.sourceId) continue;
+      try {
+        final page = await source.search('${track.title} ${track.artist}', pageSize: 10);
+        final match = findSameSongLenient(track, page.items);
+        if (match == null) continue;
+        final payload = await source.resolveLyric(match);
+        if (payload != null) return payload;
+      } on Object {
+        // One platform refusing leaves the others; the failure says so in
+        // the log the same way a 换源 walk's does.
+        continue;
+      }
+    }
+    return null;
+  }
+
+  return [for (final inner in cached) DisplayLyricSource(inner, settingsOf: settingsOf, lyricFallback: lyricWalk)];
 });
 
 /// The module's active source: the viewer's default, or Kuwo when unset.

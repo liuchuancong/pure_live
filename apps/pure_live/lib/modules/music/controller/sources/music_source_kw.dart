@@ -3,7 +3,7 @@ import 'dart:math' show Random;
 
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment;
+import 'package:pure_live/modules/music/controller/library/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';

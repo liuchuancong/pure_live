@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_dsp.dart';
 
 void main() {
   group('musicEqBandGainAt', () {
@@ -42,11 +42,7 @@ void main() {
 
   group('musicEqResponseCurve', () {
     test('a flat configuration stays near zero across the band', () {
-      const config = MusicEqConfig(
-        enabled: true,
-        preampDb: 0,
-        gains: <double>[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      );
+      const config = MusicEqConfig(enabled: true, preampDb: 0, gains: <double>[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
       for (final point in musicEqResponseCurve(config)) {
         expect(point.gainDb.abs(), lessThan(0.01));
       }
@@ -75,7 +71,9 @@ void main() {
 
     test('the vocal effect adds its presence ridge around 3 kHz', () {
       final plain = MusicEqConfig(enabled: true, preampDb: 0, gains: List.filled(kMusicEqFrequencies.length, 0));
-      final vocal = plain.copyWith(effects: <String, MusicFxNode>{'vocal': const MusicFxNode(enabled: true, amount: 1)});
+      final vocal = plain.copyWith(
+        effects: <String, MusicFxNode>{'vocal': const MusicFxNode(enabled: true, amount: 1)},
+      );
 
       final baseCurve = musicEqResponseCurve(plain);
       final vocalCurve = musicEqResponseCurve(vocal);

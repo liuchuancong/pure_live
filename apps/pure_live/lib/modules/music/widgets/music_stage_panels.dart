@@ -7,9 +7,10 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment, musicCommentsProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/library/music_comments.dart'
+    show MusicComment, musicCommentsProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart' show musicRecentProvider, musicTrackKey;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
@@ -92,7 +93,9 @@ final class _RecentPanel extends ConsumerWidget {
     final recent = ref.watch(musicRecentProvider);
     final recentController = ref.read(musicRecentProvider.notifier);
     final player = ref.read(musicPlayerProvider.notifier);
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     return DsSurface(
       decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s4, DsSpace.s4),
@@ -138,8 +141,8 @@ final class _RecentPanel extends ConsumerWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.typography.body.copyWith(
-                                  color: song.id == playingId ? colors.accent : colors.text,
-                                  fontWeight: song.id == playingId ? FontWeight.w600 : null,
+                                  color: musicTrackKey(song) == playingKey ? colors.accent : colors.text,
+                                  fontWeight: musicTrackKey(song) == playingKey ? FontWeight.w600 : null,
                                 ),
                               ),
                               description: song.artist.isEmpty
@@ -149,7 +152,8 @@ final class _RecentPanel extends ConsumerWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 spacing: DsSpace.s4,
                                 children: [
-                                  if (song.id == playingId) DsIcon(DsIcons.audioLines, size: 14, color: colors.accent),
+                                  if (musicTrackKey(song) == playingKey)
+                                    DsIcon(DsIcons.audioLines, size: 14, color: colors.accent),
                                   if (song.duration case final length?)
                                     Text(
                                       musicDurationText(length),

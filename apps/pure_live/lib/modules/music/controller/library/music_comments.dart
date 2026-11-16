@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_library.dart' show musicTrackKey;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart' show MusicCommentsSource;

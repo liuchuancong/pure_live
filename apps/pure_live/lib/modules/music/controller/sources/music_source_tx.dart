@@ -3,7 +3,7 @@ import 'dart:convert' show base64Encode, jsonDecode, jsonEncode, utf8;
 import 'package:crypto/crypto.dart' show sha1;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment;
+import 'package:pure_live/modules/music/controller/library/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/comment_emojis.dart' show kTxCommentEmojis;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' show decodeQrc, parseQrc;

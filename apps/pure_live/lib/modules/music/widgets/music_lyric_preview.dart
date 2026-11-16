@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
+import 'package:pure_live/modules/music/controller/lyric/music_desktop_lyric_settings.dart'
     show musicDesktopLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart'
     show MusicLyricAlignment, musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/chinese_s2t.dart' show traditionalize;
 

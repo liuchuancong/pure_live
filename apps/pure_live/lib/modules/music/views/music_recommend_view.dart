@@ -7,28 +7,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_browse.dart'
+import 'package:pure_live/modules/music/controller/browse/music_browse.dart'
     show musicHistoryAlbumsProvider, musicHistoryArtistsProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart'
-    show musicFavouritesProvider, musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
-    show musicOnlineHotTagsProvider, musicOnlinePlaylistsProvider, musicPlaylistSortsProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_search.dart'
+import 'package:pure_live/modules/music/controller/browse/music_search.dart'
     show musicCatalogsProvider, musicHotSearchesProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicRecentProvider, musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_online_playlists.dart'
+    show musicOnlineHotTagsProvider, musicOnlinePlaylistsProvider, musicPlaylistSortsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistTag, OnlinePlaylists;
-import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
+import 'package:pure_live/modules/music/views/music_playlist_card.dart'
     show MusicPlaylistCard, kMusicPlaylistInfoHeight;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicAlbum, openMusicArtist;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart'
     show MusicAlbumCard, MusicArtistCard, musicBrowseSourceLabel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, buildDsRefreshIndicator;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows, buildDsRefreshIndicator;
 
 /// 推荐: the module's own home. Nothing here is invented — the strip of
 /// playlists is the plaza's first page, the boards are the source's own, the
@@ -97,7 +98,9 @@ final class MusicRecommendView extends ConsumerWidget {
     // that serves no album or artist page contributes nothing here.
     final albums = ref.watch(musicHistoryAlbumsProvider);
     final artists = ref.watch(musicHistoryArtistsProvider);
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final playerController = ref.read(musicPlayerProvider.notifier);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     // The strip is asked in two steps — the hot tags, then the first page
@@ -133,7 +136,7 @@ final class MusicRecommendView extends ConsumerWidget {
         spacing: DsSpace.s8,
         children: [
           Expanded(
-            child: Text(title, style: theme.typography.title.copyWith(color: colors.text)),
+            child: Text(title, style: theme.typography.heading.copyWith(color: colors.text)),
           ),
           ?trailing,
         ],
@@ -181,7 +184,7 @@ final class MusicRecommendView extends ConsumerWidget {
                 else if (waitingForPlaza)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
-                    child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
+                    child: SkeletonRows(rows: 3, trailing: false),
                   )
                 else
                   Padding(
@@ -192,7 +195,7 @@ final class MusicRecommendView extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             t.music.onlineLoadFailed,
-                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
                           ),
                         ),
                         DsButton(
@@ -230,7 +233,7 @@ final class MusicRecommendView extends ConsumerWidget {
                     MusicSongRow(
                       track: song,
                       number: index + 1,
-                      playing: playingId == song.id,
+                      playing: playingKey == musicTrackKey(song),
                       favourite: favourites.contains(song),
                       onPlay: () => unawaited(playerController.playAll(recent, index: index)),
                       onFavourite: () => unawaited(favouriteController.toggle(song)),
@@ -273,6 +276,7 @@ final class MusicRecommendView extends ConsumerWidget {
                       MusicArtistCard(
                         name: link.name,
                         sourceLabel: musicBrowseSourceLabel(ref, t, link.sourceId),
+                        avatarUri: link.avatarUri,
                         onPressed: () => openMusicArtist(
                           context,
                           sourceId: link.sourceId,

@@ -7,15 +7,16 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show musicPlaybackSettingsProvider, musicSourceDisplayName;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicTrackKey;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show MusicAlbum;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, SkeletonRows, cachedImage;
 
 /// The platform a browse page reads its data from, in the viewer's own
 /// wording — the alias choice applies here as it does in the lists.
@@ -87,21 +88,27 @@ final class MusicToolAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!available) return const SizedBox.shrink();
-    if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) {
-      return DsButton.icon(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        semanticLabel: label,
-        onPressed: onPressed,
-        icon: DsIcon(icon, size: 16),
-      );
-    }
-    return DsButton(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      leading: DsIcon(icon, size: 16),
-      onPressed: onPressed,
-      child: Text(label),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The rail's own width decides the verb's dress — the window's width
+        // includes a sidebar the rail does not get.
+        if (LiveWindow.isCompact(constraints.maxWidth)) {
+          return DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: label,
+            onPressed: onPressed,
+            icon: DsIcon(icon, size: 16),
+          );
+        }
+        return DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: DsIcon(icon, size: 16),
+          onPressed: onPressed,
+          child: Text(label),
+        );
+      },
     );
   }
 }
@@ -152,13 +159,17 @@ final class MusicBrowseFailure extends StatelessWidget {
   }
 }
 
-/// A browse page's loading state, the size every list in the module uses.
+/// A browse page's loading state, the size every list in the module uses:
+/// the rows of face and words the list settles into.
 final class MusicBrowseLoading extends StatelessWidget {
-  /// The spinner.
+  /// The loading rows.
   const MusicBrowseLoading({super.key});
 
   @override
-  Widget build(BuildContext context) => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s16),
+    child: SkeletonRows(),
+  );
 }
 
 /// A section's words over a browse page's list.
@@ -196,14 +207,16 @@ final class MusicBrowseRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final song = tracks[index];
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final player = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     return MusicSongRow(
       track: song,
       number: index + 1,
-      playing: playingId == song.id,
+      playing: playingKey == musicTrackKey(song),
       favourite: favourites.contains(song),
       onPlay: () => unawaited(player.playAll(tracks, index: index)),
       onFavourite: () => unawaited(favouriteController.toggle(song)),
@@ -219,7 +232,13 @@ final class MusicBrowseRow extends ConsumerWidget {
 /// name and the platform that serves their page.
 final class MusicArtistCard extends StatelessWidget {
   /// The card for [name], served by the platform called [sourceLabel].
-  const MusicArtistCard({required this.name, required this.sourceLabel, required this.onPressed, super.key});
+  const MusicArtistCard({
+    required this.name,
+    required this.sourceLabel,
+    required this.onPressed,
+    this.avatarUri,
+    super.key,
+  });
 
   /// The width a card keeps inside a home rail.
   static const double width = 128;
@@ -229,6 +248,10 @@ final class MusicArtistCard extends StatelessWidget {
 
   /// The platform that serves [name]'s page, in the viewer's own wording.
   final String sourceLabel;
+
+  /// The singer picture the history row carried, when it has one — without
+  /// it the card keeps the initial's own stand-in.
+  final String? avatarUri;
 
   final VoidCallback onPressed;
 
@@ -249,7 +272,9 @@ final class MusicArtistCard extends StatelessWidget {
             children: [
               ClipOval(
                 child: DsImage(
-                  image: null,
+                  image: avatarUri == null || avatarUri!.isEmpty
+                      ? null
+                      : cachedImage(avatarUri!, policy: ImageCachePolicies.avatar),
                   width: 96,
                   height: 96,
                   semanticLabel: name,

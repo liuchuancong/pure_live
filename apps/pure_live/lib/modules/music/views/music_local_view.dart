@@ -10,15 +10,16 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_local.dart' show musicLocalProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/music_page.dart' show MusicView;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_tag_edit.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem, SkeletonRows;
 
 /// 本地音乐: the folders the viewer added, the files they hold, and the way
 /// to add or drop a folder.
@@ -140,7 +141,9 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
       for (final root in state.roots)
         if (root.trim().isNotEmpty && p.canonicalize(root) != downloadKey) root,
     ];
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final player = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouritesController = ref.read(musicFavouritesProvider.notifier);
@@ -183,7 +186,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                   state.tracks.isEmpty ? t.music.localHint : t.music.localFiles(count: state.tracks.length),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
                 ),
               ),
               if (!narrow) ...actions,
@@ -210,7 +213,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                 ),
                 Text(
                   t.music.selectionCount(count: _selected.length),
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
                 ),
                 DsButton(
                   variant: DsButtonVariant.secondary,
@@ -271,7 +274,7 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
           ),
         Expanded(
           child: state.loading
-              ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+              ? const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 6))
               : state.error != null
               ? Center(
                   child: DsEmptyState(
@@ -296,54 +299,54 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                     ],
                   ),
                 )
-              : ListView(
+              : ListView.builder(
                   padding: const EdgeInsets.only(bottom: DsSpace.s16),
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-                      child: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: DsButton(
-                          variant: DsButtonVariant.secondary,
-                          size: DsSize.sm,
-                          leading: const DsIcon(DsIcons.play, size: 16),
-                          onPressed: () => unawaited(player.playAll(state.tracks)),
-                          child: Text(t.music.playAll),
-                        ),
-                      ),
-                    ),
-                    DsListSection(
-                      children: [
-                        const MusicSongTableHeader(),
-                        for (final (index, song) in state.tracks.indexed)
-                          MusicSongRow(
-                            track: song,
-                            number: index + 1,
-                            playing: playingId == song.id,
-                            favourite: favourites.contains(song),
-                            selecting: _selecting,
-                            selected: _selected.contains(song),
-                            onSelected: _rangeMode
-                                ? () => _selectRange(state.tracks, index)
-                                : () => _toggleSelected(song, index),
-                            // Tags name the song; the file name is the fallback
-                            // for the files that carry none.
-                            // Credits the module says one way; a file the tags
-                            // never named falls back to its own file name.
-                            subtitle:
-                                musicTrackCredits(song) ??
-                                (song.localPath == null ? null : musicFileNameOf(song.localPath!)),
-                            onPlay: () => unawaited(player.playAll(state.tracks, index: index)),
-                            onFavourite: () => unawaited(favouritesController.toggle(song)),
-                            onPlayNext: () => unawaited(player.playNext(song)),
-                            onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
-                            onEditTags: song.isLocal
-                                ? () => unawaited(showEditTrackTagsDialog(context, ref, song))
-                                : null,
+                  itemCount: state.tracks.length + 2,
+                  // The Play All verb, then the table's header, then the rows
+                  // — built on demand like the songlists' table, so a library
+                  // of thousands of files lays out a screen at a time.
+                  itemBuilder: (context, offset) {
+                    if (offset == 0) {
+                      return Padding(
+                        padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: DsButton(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            leading: const DsIcon(DsIcons.play, size: 16),
+                            onPressed: () => unawaited(player.playAll(state.tracks)),
+                            child: Text(t.music.playAll),
                           ),
-                      ],
-                    ),
-                  ],
+                        ),
+                      );
+                    }
+                    if (offset == 1) return const MusicSongTableHeader();
+                    final index = offset - 2;
+                    final song = state.tracks[index];
+                    return MusicSongRow(
+                      track: song,
+                      number: index + 1,
+                      playing: playingKey == musicTrackKey(song),
+                      favourite: favourites.contains(song),
+                      selecting: _selecting,
+                      selected: _selected.contains(song),
+                      onSelected: _rangeMode
+                          ? () => _selectRange(state.tracks, index)
+                          : () => _toggleSelected(song, index),
+                      // Tags name the song; the file name is the fallback
+                      // for the files that carry none.
+                      // Credits the module says one way; a file the tags
+                      // never named falls back to its own file name.
+                      subtitle:
+                          musicTrackCredits(song) ?? (song.localPath == null ? null : musicFileNameOf(song.localPath!)),
+                      onPlay: () => unawaited(player.playAll(state.tracks, index: index)),
+                      onFavourite: () => unawaited(favouritesController.toggle(song)),
+                      onPlayNext: () => unawaited(player.playNext(song)),
+                      onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
+                      onEditTags: song.isLocal ? () => unawaited(showEditTrackTagsDialog(context, ref, song)) : null,
+                    );
+                  },
                 ),
         ),
       ],

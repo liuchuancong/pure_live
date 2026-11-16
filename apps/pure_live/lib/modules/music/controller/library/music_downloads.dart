@@ -6,10 +6,12 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
-import 'package:pure_live/modules/music/controller/music_download_settings.dart' show musicDownloadSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicQualityOf;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/library/music_download_settings.dart'
+    show musicDownloadSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, resolveWithToggle;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicQualityOf;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_source_failure.dart' show noteMusicSourceSilence;
 
 /// The preference the download queue is kept under.
@@ -154,10 +156,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       );
       return (outcome: MusicDownloadStart.queued, error: null);
     } on Object catch (failure) {
-      appLog.forCategory('music.download').warning(
-        'download enqueue failed',
-        fields: {'error': '$failure'},
-      );
+      appLog.forCategory('music.download').warning('download enqueue failed', fields: {'error': '$failure'});
       return (outcome: MusicDownloadStart.failed, error: '$failure');
     }
   }

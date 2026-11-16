@@ -22,16 +22,18 @@ import 'dart:math' show Random;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
-import 'package:pure_live/modules/music/controller/music_sync.dart' show kMusicDislikeRemoteRulesKey, musicSyncProvider;
-import 'package:pure_live/modules/music/controller/music_sync_client.dart'
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show musicPlaylistsProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync.dart'
+    show kMusicDislikeRemoteRulesKey, musicSyncProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync_client.dart'
     show kMusicSyncAuthMsg, kMusicSyncCloseFailed, kMusicSyncHelloMsg, kMusicSyncIdPrefix, kMusicSyncMsgConnect;
-import 'package:pure_live/modules/music/controller/music_sync_codec.dart';
-import 'package:pure_live/modules/music/controller/music_sync_data.dart';
-import 'package:pure_live/modules/music/controller/music_sync_wire.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_wire.dart';
 
 /// The preference keys the server keeps.
 const String kMusicSyncServerEnabledKey = 'music.sync.server.enabled';
@@ -874,12 +876,15 @@ final musicSyncServerProvider = Provider<MusicSyncServer>((ref) {
   // synchronously, and Riverpod forbids modifying the status provider while
   // this provider is still initializing.
   unawaited(Future<void>.microtask(sync));
-  Timer(const Duration(seconds: 2), () => unawaited(sync()));
+  // The one deferred retry: cancelled on rebuild so a disposed ref never
+  // runs it (a gate/port flip within the two seconds rebuilds this provider).
+  final retry = Timer(const Duration(seconds: 2), () => unawaited(sync()));
   ref
     ..listen(musicRecentProvider, (_, _) => server.pushLocalListChanges())
     ..listen(musicFavouritesProvider, (_, _) => server.pushLocalListChanges())
     ..listen(musicPlaylistsProvider, (_, _) => server.pushLocalListChanges())
     ..onDispose(() {
+      retry.cancel();
       server.onStatus = null;
       unawaited(server.stop());
     });

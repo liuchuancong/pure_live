@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_settings_store.dart';
+import 'package:pure_live/modules/music/controller/settings/music_settings_store.dart';
 
 /// The rendition a custom source is asked for — lx-music's own four steps,
 /// which its scripts answer through the `musicUrl` request.
@@ -360,7 +360,7 @@ final class MusicPlaybackSettingsController extends Notifier<MusicPlaybackSettin
     await setDefaultSource('');
     await setQuality(MusicQuality.standard);
     await setSkipOnError(value: true);
-    await setAutoplay(value: false);
+    await setAutoplay(value: true);
     await setRememberProgress(value: true);
     await setAddToTop(value: true);
     await setShowSource(value: true);

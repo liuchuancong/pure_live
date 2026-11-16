@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show MusicFavouritesController, musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart';
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart';
 
 /// The preference the open-API switch is kept under.
 const String kMusicOpenApiEnabledKey = 'music.openapi.enabled';
@@ -471,20 +471,28 @@ final musicOpenApiProvider = Provider<MusicOpenApi>((ref) {
     favourites: ref.read(musicFavouritesProvider.notifier),
     isFavourite: (track) => ref.read(musicFavouritesProvider).contains(track),
   );
+  // Read, not watch: this runs from build's own microtask and from the
+  // deferred retry below, both outside the build — and a gate/port flip
+  // that lands inside the retry's window rebuilds this provider anyway.
   Future<void> sync() async {
-    if (ref.watch(musicOpenApiGateProvider)) {
-      await api.start(ref.watch(musicOpenApiPortProvider), lan: ref.watch(musicOpenApiLanProvider));
+    if (ref.read(musicOpenApiGateProvider)) {
+      await api.start(ref.read(musicOpenApiPortProvider), lan: ref.read(musicOpenApiLanProvider));
     } else {
       await api.stop();
     }
   }
 
   unawaited(sync());
-  Timer(const Duration(seconds: 2), () => unawaited(sync()));
+  // The one deferred retry: cancelled on rebuild so a disposed ref never
+  // runs it.
+  final retry = Timer(const Duration(seconds: 2), () => unawaited(sync()));
   ref
     ..listen(musicPlayerProvider, (_, _) => api.pushPlayerStatus())
     ..listen(musicFavouritesProvider, (_, _) => api.pushPlayerStatus())
-    ..onDispose(api.stop);
+    ..onDispose(() {
+      retry.cancel();
+      unawaited(api.stop());
+    });
   return api;
 });
 

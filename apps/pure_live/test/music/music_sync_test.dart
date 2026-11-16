@@ -2,12 +2,13 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show MusicPlaylist;
-import 'package:pure_live/modules/music/controller/music_sync.dart' show kMusicSyncHostHistoryLimit, musicSyncNextHostHistory;
-import 'package:pure_live/modules/music/controller/music_sync_client.dart';
-import 'package:pure_live/modules/music/controller/music_sync_codec.dart';
-import 'package:pure_live/modules/music/controller/music_sync_data.dart';
-import 'package:pure_live/modules/music/controller/music_sync_wire.dart';
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show MusicPlaylist;
+import 'package:pure_live/modules/music/controller/sync/music_sync.dart'
+    show kMusicSyncHostHistoryLimit, musicSyncNextHostHistory;
+import 'package:pure_live/modules/music/controller/sync/music_sync_client.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_wire.dart';
 
 void main() {
   group('codec', () {
@@ -44,10 +45,11 @@ void main() {
     });
 
     test('request encode/parse round-trips with a callback slot', () {
-      final text = musicSyncEncodeRequest('list_sync_get_sync_mode_abc', [
-        'arg',
-        MusicSyncRpcCallback('func_0_abc'),
-      ], [1]);
+      final text = musicSyncEncodeRequest(
+        'list_sync_get_sync_mode_abc',
+        ['arg', MusicSyncRpcCallback('func_0_abc')],
+        [1],
+      );
       final parsed = musicSyncParseMessage(text)! as MusicSyncRpcRequest;
       expect(parsed.name, 'list_sync_get_sync_mode_abc');
       expect(parsed.args[0], 'arg');
@@ -56,15 +58,40 @@ void main() {
     });
 
     test('response frames parse', () {
-      final parsed = musicSyncParseMessage(jsonEncode([1, 'n', null, <String, Object?>{'a': 1}]))! as MusicSyncRpcResponse;
+      final parsed =
+          musicSyncParseMessage(
+                jsonEncode([
+                  1,
+                  'n',
+                  null,
+                  <String, Object?>{'a': 1},
+                ]),
+              )!
+              as MusicSyncRpcResponse;
       expect(parsed.error, isNull);
       expect(parsed.result, <String, Object?>{'a': 1});
-      final failed = musicSyncParseMessage(jsonEncode([1, 'n', <String, Object?>{'message': 'boom'}]))! as MusicSyncRpcResponse;
+      final failed =
+          musicSyncParseMessage(
+                jsonEncode([
+                  1,
+                  'n',
+                  <String, Object?>{'message': 'boom'},
+                ]),
+              )!
+              as MusicSyncRpcResponse;
       expect(failed.errorMessage, 'boom');
     });
 
     test('callback frames parse and answer', () {
-      final parsed = musicSyncParseMessage(jsonEncode([2, 'func_0_abc', ['merge_remote_local']]))! as MusicSyncRpcCallbackRequest;
+      final parsed =
+          musicSyncParseMessage(
+                jsonEncode([
+                  2,
+                  'func_0_abc',
+                  ['merge_remote_local'],
+                ]),
+              )!
+              as MusicSyncRpcCallbackRequest;
       expect(parsed.name, 'func_0_abc');
       expect(parsed.args, ['merge_remote_local']);
       expect(parsed.reply(null), jsonEncode([3, 'func_0_abc', null, null]));

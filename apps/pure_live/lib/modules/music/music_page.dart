@@ -2,19 +2,19 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:pure_live/modules/music/controller/music_hotkeys.dart' show musicHotkeyBindings;
-import 'package:pure_live/modules/music/controller/music_open_api.dart' show musicOpenApiProvider;
-import 'package:pure_live/modules/music/controller/music_search.dart' show musicSearchHandoffProvider;
-import 'package:pure_live/modules/music/controller/music_sync_server.dart' show musicSyncServerProvider;
+import 'package:pure_live/modules/music/controller/browse/music_search.dart' show musicSearchHandoffProvider;
+import 'package:pure_live/modules/music/controller/playback/music_hotkeys.dart' show musicHotkeyBindings;
+import 'package:pure_live/modules/music/controller/playback/music_open_api.dart' show musicOpenApiProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
-import 'package:pure_live/modules/music/pages/music_charts_view.dart';
-import 'package:pure_live/modules/music/pages/music_downloads_view.dart';
-import 'package:pure_live/modules/music/pages/music_featured_view.dart';
-import 'package:pure_live/modules/music/pages/music_library_view.dart';
-import 'package:pure_live/modules/music/pages/music_local_view.dart';
-import 'package:pure_live/modules/music/pages/music_mine_view.dart';
-import 'package:pure_live/modules/music/pages/music_recommend_view.dart';
-import 'package:pure_live/modules/music/pages/music_songlists_view.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart' show musicSyncServerProvider;
+import 'package:pure_live/modules/music/views/music_charts_view.dart';
+import 'package:pure_live/modules/music/views/music_downloads_view.dart';
+import 'package:pure_live/modules/music/views/music_featured_view.dart';
+import 'package:pure_live/modules/music/views/music_library_view.dart';
+import 'package:pure_live/modules/music/views/music_local_view.dart';
+import 'package:pure_live/modules/music/views/music_mine_view.dart';
+import 'package:pure_live/modules/music/views/music_recommend_view.dart';
+import 'package:pure_live/modules/music/views/music_songlists_view.dart';
 
 /// The music module's views. The reference's rail — 推荐 / 精选 / 搜索 / 歌单 /
 /// 排行榜 / 我的列表 — is what the module's menu lists, and the app's own

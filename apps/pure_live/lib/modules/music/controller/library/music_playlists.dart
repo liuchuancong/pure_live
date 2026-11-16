@@ -7,10 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_library.dart'
-    show musicFavouritesProvider, musicRecentProvider, musicTrackFromJson, musicTrackToJson;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_sync_data.dart' show musicSyncTrackFromInfo;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart' show musicSyncTrackFromInfo;
 
 /// The preference the viewer's own playlists are kept under.
 const String kMusicPlaylistsKey = 'music.playlists';
@@ -212,30 +213,36 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
 
   /// Links a playlist to an online playlist — the reference stores the
   /// platform and its list id on `my_list` so the link survives a restart.
+  /// The link is part of what LAN sync reconciles by `locationUpdateTime`,
+  /// so the change stamps it like a move does.
   Future<void> linkSource(String id, {required String source, required String sourceListId}) async {
     state = [
       for (final playlist in state)
-        if (playlist.id == id) playlist.copyWith(source: source, sourceListId: sourceListId) else playlist,
+        if (playlist.id == id)
+          playlist.copyWith(source: source, sourceListId: sourceListId, locationUpdateTime: DateTime.now())
+        else
+          playlist,
     ];
     await _save();
   }
 
-  /// Unlinks a playlist from its online source.
+  /// Unlinks a playlist from its online source; the unlink stamps too.
   Future<void> unlinkSource(String id) async {
     state = [
       for (final playlist in state)
-        if (playlist.id == id) playlist.copyWith(clearLink: true) else playlist,
+        if (playlist.id == id) playlist.copyWith(clearLink: true, locationUpdateTime: DateTime.now()) else playlist,
     ];
     await _save();
   }
 
-  /// Renames a playlist.
+  /// Renames a playlist; the rename stamps `locationUpdateTime`, so LAN sync
+  /// merges it as the newer name instead of resurrecting the old one.
   Future<void> rename(String id, String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
     state = [
       for (final playlist in state)
-        if (playlist.id == id) playlist.copyWith(name: trimmed) else playlist,
+        if (playlist.id == id) playlist.copyWith(name: trimmed, locationUpdateTime: DateTime.now()) else playlist,
     ];
     await _save();
   }
@@ -370,7 +377,9 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
           playlist.copyWith(
             tracks: [
               for (final entry in playlist.tracks)
-                if (identical(entry, from)) to else entry,
+                // Key equality, the way every other playlist edit matches —
+                // an equal-value copy of the row must swap just the same.
+                if (musicTrackKey(entry) == musicTrackKey(from)) to else entry,
             ],
           )
         else

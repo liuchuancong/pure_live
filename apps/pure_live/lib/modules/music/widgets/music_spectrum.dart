@@ -7,8 +7,8 @@ import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_mpv_audio/media_core_mpv_audio.dart' show FftFrame, PcmFrame;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/settings/music_ui_settings.dart'
     show MusicSpectrumStyle, MusicUiElement, musicUiSettingsProvider;
 
 /// The stage's live visualiser: the engine's own taps, drawn as bars, a
@@ -111,10 +111,10 @@ final class _MusicSpectrumState extends ConsumerState<MusicSpectrum> {
       _bind();
       return const SizedBox.shrink();
     }
-    // A state watch re-runs this when the engine appears or is replaced and
-    // when the listener pauses or mutes — exactly when the taps or the
-    // quiet verdict change.
-    final player = ref.watch(musicPlayerProvider);
+    // The watch carries the track beside the quiet verdict: a replaced
+    // engine (a new track under unchanged pause/mute facts) must rebind the
+    // taps, while the tick and the catalogue never reach this paint.
+    final (_, quiet) = ref.watch(musicPlayerProvider.select((state) => (state.track, !state.playing || state.muted)));
     final controller = ref.read(musicPlayerProvider.notifier);
     final wantsWave = ui.spectrumStyle == MusicSpectrumStyle.wave;
     final fft = wantsWave ? null : controller.spectrum;
@@ -135,7 +135,7 @@ final class _MusicSpectrumState extends ConsumerState<MusicSpectrum> {
           style: ui.spectrumStyle,
           color: colors.accent,
           quietColor: colors.textSubtle,
-          quiet: !player.playing || player.muted,
+          quiet: quiet,
         ),
       ),
     );

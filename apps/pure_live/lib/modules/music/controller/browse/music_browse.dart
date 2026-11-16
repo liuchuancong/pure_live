@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart';
@@ -51,8 +51,9 @@ final FutureProviderFamily<MusicArtistDetail, MusicArtistRequest> musicArtistPro
 /// as the viewer's own history named it.
 typedef MusicAlbumLink = ({String sourceId, MusicAlbum album});
 
-/// One artist a home rail can open.
-typedef MusicArtistLink = ({String sourceId, String name, String? artistId});
+/// One artist a home rail can open; the avatar is the singer picture a
+/// history row carried, when it has one to carry.
+typedef MusicArtistLink = ({String sourceId, String name, String? artistId, String? avatarUri});
 
 /// How many cards one home rail holds, the playlist strip's taste.
 const int kMusicBrowseRailSize = 12;
@@ -93,7 +94,16 @@ final Provider<List<MusicArtistLink>> musicHistoryArtistsProvider = Provider<Lis
     if (musicArtistSourceIn(sources, track.sourceId) == null) continue;
     if (!seen.add('${track.sourceId}/$name')) continue;
     final artistId = '${track.metadata['artistId'] ?? ''}'.trim();
-    artists.add((sourceId: track.sourceId, name: name, artistId: artistId.isEmpty ? null : artistId));
+    // The singer picture the row carried, when this very artist headlines it
+    // — a featured player's photo is not this page's, the same rule the
+    // artist pages themselves read by.
+    final avatar = name == track.artist.trim() ? '${track.metadata['artistPic'] ?? ''}'.trim() : '';
+    artists.add((
+      sourceId: track.sourceId,
+      name: name,
+      artistId: artistId.isEmpty ? null : artistId,
+      avatarUri: avatar.isEmpty ? null : avatar,
+    ));
   }
   return artists;
 });

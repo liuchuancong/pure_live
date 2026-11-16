@@ -6,13 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_downloads.dart';
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show musicPlaybackSettingsProvider, musicSourceDisplayName;
-import 'package:pure_live/modules/music/controller/music_playlists.dart';
+import 'package:pure_live/modules/music/controller/browse/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/library/music_downloads.dart';
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
-import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// Asks for a playlist name and makes one; null when cancelled or blank.
@@ -42,7 +42,13 @@ Future<MusicPlaylist?> showCreatePlaylistDialog(BuildContext context, WidgetRef 
   );
   field.dispose();
   if (name == null || name.trim().isEmpty) return null;
-  return await ref.read(musicPlaylistsProvider.notifier).create(name);
+  final playlist = await ref.read(musicPlaylistsProvider.notifier).create(name);
+  if (playlist == null && context.mounted) {
+    // The shelf is full: the dialog's null used to read as "cancelled", so
+    // the real reason gets its own word.
+    showDsToast(context: context, title: context.t.music.playlistLimitReached, status: DsStatus.warning);
+  }
+  return playlist;
 }
 
 /// Asks which playlist should take [tracks], offering a new one when there is

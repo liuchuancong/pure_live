@@ -3,7 +3,7 @@ import 'dart:math' show Random;
 import 'package:live_net/live_net.dart';
 import 'package:media_core/media_core.dart' show SourceFormat;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
+import 'package:pure_live/modules/music/controller/sources/lx_script_runtime.dart';
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart'
     show MusicAlbumSource, MusicArtistDetail, MusicArtistSource, musicArtistPageFromSearch;
 

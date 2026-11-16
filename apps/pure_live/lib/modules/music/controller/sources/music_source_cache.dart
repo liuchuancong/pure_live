@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_library.dart' show musicTrackKey;
 
 /// The preference the fetched lyrics are cached under.
 const String kMusicLyricCacheKey = 'music.lyrics.cache';

@@ -2,7 +2,9 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 
 /// Where an imported script came from, kept so the list can say it and so a
 /// re-import can be traced back to the page it was copied from.
@@ -270,6 +272,14 @@ final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
       return null;
     }
   }
+
+  /// Fetches a custom-source script's body over the plugin network profile —
+  /// the settings page's import verbs hand the words over without the page
+  /// touching the wire itself. Throws; the caller words the failure.
+  Future<String> fetchScript(Uri uri) => ref
+      .read(networkFactoryProvider)
+      .create(profile: ClientProfile.plugin)
+      .getText(uri, timeout: const Duration(seconds: 20));
 }
 
 /// The preference the imported scripts are kept under.

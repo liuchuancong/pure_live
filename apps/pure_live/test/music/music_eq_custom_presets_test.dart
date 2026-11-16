@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_storage/live_storage.dart';
 
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_custom_presets.dart';
 
 void main() {
   setUpAll(() async {

@@ -7,45 +7,48 @@ import 'package:flutter/services.dart'
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/boot/storage_providers.dart'
     show appPathsProvider, storageFolderOverridesProvider;
 import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
-import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection, settingsChildrenOf;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
-    show MusicEqConfig, MusicEqController, MusicEqPreset, kMusicEqPresets, musicEqApplyFailedProvider, musicEqProvider;
-import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show kMusicFxCosts;
-import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
-import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
-    show musicDesktopLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_download_settings.dart'
-    show MusicDownloadType, musicDownloadSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
-    show MusicHotkeyAction, MusicHotkeyCombo, musicHotkeysProvider;
-import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
-    show MusicLyricAlignment, musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_open_api.dart'
-    show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart'
-    show musicAudioDevicesProvider, musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show MusicQuality, MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
-import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
-import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
+import 'package:pure_live/modules/music/controller/browse/music_source_catalog.dart'
     show MusicCatalogEntry, fetchCatalogScript, kMusicSourceCatalog;
-import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/browse/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/library/music_download_settings.dart'
+    show MusicDownloadType, musicDownloadSettingsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_desktop_lyric_settings.dart'
+    show musicDesktopLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_overrides.dart' show musicLyricOverridesProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart'
+    show MusicLyricAlignment, musicLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
-import 'package:pure_live/modules/music/controller/music_sync.dart'
-    show MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
-import 'package:pure_live/modules/music/controller/music_sync_server.dart'
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart'
+    show MusicEqConfig, MusicEqController, MusicEqPreset, kMusicEqPresets, musicEqApplyFailedProvider, musicEqProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_dsp.dart' show kMusicFxCosts;
+import 'package:pure_live/modules/music/controller/playback/music_hotkeys.dart'
+    show MusicHotkeyAction, MusicHotkeyCombo, musicHotkeysProvider;
+import 'package:pure_live/modules/music/controller/playback/music_open_api.dart'
+    show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart'
+    show musicAudioDevicesProvider, musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show MusicQuality, MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
+import 'package:pure_live/modules/music/controller/settings/music_ui_settings.dart'
+    show MusicPlayerMode, MusicSpectrumStyle, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
+import 'package:pure_live/modules/music/controller/sources/lx_script_runtime.dart' show lxScriptRuntimeProvider;
+import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart' show MusicAudioCacheBox;
+import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
+    show CachedLyricSource, musicLyricCacheCountProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync.dart'
+    show MusicSyncNote, MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart'
     show
         musicSyncServerAuthCodeProvider,
         musicSyncServerGateProvider,
@@ -53,11 +56,6 @@ import 'package:pure_live/modules/music/controller/music_sync_server.dart'
         musicSyncServerPortProvider,
         musicSyncServerProvider,
         musicSyncServerStatusProvider;
-import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
-    show MusicPlayerMode, MusicSpectrumStyle, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
-import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart' show MusicAudioCacheBox;
-import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
-    show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
@@ -157,10 +155,18 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
                   onPressed: () async {
+                    // The toast says what actually left the disk: an empty
+                    // cache "cleared successfully" reads as a lie.
+                    final before = await MusicAudioCacheBox.instance.usageBytes();
                     await MusicAudioCacheBox.instance.clear();
-                    if (context.mounted) {
-                      showDsToast(context: context, title: t.music.audioCacheCleared);
-                    }
+                    if (!context.mounted) return;
+                    final megabytes = before == null ? null : before ~/ (1024 * 1024);
+                    showDsToast(
+                      context: context,
+                      title: megabytes == null || megabytes == 0
+                          ? t.music.audioCacheNothingToClear
+                          : t.music.audioCacheFreed(size: '$megabytes MB'),
+                    );
                   },
                   child: Text(t.music.audioCacheClearAction),
                 ),
@@ -299,7 +305,17 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
                 leading: const DsIcon(DsIcons.rotateCcw),
                 title: Text(t.music.uiReset),
                 description: Text(t.music.uiResetDesc),
-                onPressed: () => unawaited(uiController.reset()),
+                onPressed: () => unawaited(() async {
+                  final confirmed = await showAppConfirm(
+                    context: context,
+                    title: t.music.uiReset,
+                    description: t.music.uiResetDesc,
+                    confirmLabel: t.common.confirm,
+                    cancelLabel: t.common.cancel,
+                    destructive: true,
+                  );
+                  if (confirmed) await uiController.reset();
+                }()),
               ),
             ],
           ),
@@ -418,7 +434,17 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
                 leading: const DsIcon(DsIcons.rotateCcw),
                 title: Text(t.music.playbackReset),
                 description: Text(t.music.playbackResetDesc),
-                onPressed: () => unawaited(controller.reset()),
+                onPressed: () => unawaited(() async {
+                  final confirmed = await showAppConfirm(
+                    context: context,
+                    title: t.music.playbackReset,
+                    description: t.music.playbackResetDesc,
+                    confirmLabel: t.common.confirm,
+                    cancelLabel: t.common.cancel,
+                    destructive: true,
+                  );
+                  if (confirmed) await controller.reset();
+                }()),
               ),
             ],
           ),
@@ -585,10 +611,7 @@ final class MusicSourcesPane extends ConsumerWidget {
     String? script;
     String? failure;
     try {
-      script = await ref
-          .read(networkFactoryProvider)
-          .create(profile: ClientProfile.plugin)
-          .getText(uri, timeout: const Duration(seconds: 20));
+      script = await ref.read(musicSourcesProvider.notifier).fetchScript(uri);
     } on Object catch (error) {
       failure = '$error';
     }
@@ -797,10 +820,7 @@ final class _MusicSourceCatalogSectionState extends ConsumerState<MusicSourceCat
     try {
       final script = await fetchCatalogScript(
         entry,
-        (uri) => ref
-            .read(networkFactoryProvider)
-            .create(profile: ClientProfile.plugin)
-            .getText(uri, timeout: const Duration(seconds: 20)),
+        (uri) => ref.read(musicSourcesProvider.notifier).fetchScript(uri),
         // The app's GitHub-acceleration setting orders the routes — the
         // chosen mirror first, the raw address as the fallback.
         routes: (raw) => [
@@ -1766,7 +1786,17 @@ final class MusicHotkeysPane extends ConsumerWidget {
               control: DsButton(
                 variant: DsButtonVariant.secondary,
                 size: DsSize.sm,
-                onPressed: () => unawaited(controller.reset()),
+                onPressed: () => unawaited(() async {
+                  final confirmed = await showAppConfirm(
+                    context: context,
+                    title: t.music.eqReset,
+                    description: t.music.hkResetDesc,
+                    confirmLabel: t.common.confirm,
+                    cancelLabel: t.common.cancel,
+                    destructive: true,
+                  );
+                  if (confirmed) await controller.reset();
+                }()),
                 child: Text(t.music.eqReset),
               ),
             ),
@@ -1973,7 +2003,11 @@ final class MusicSyncPane extends ConsumerWidget {
                 MusicSyncStatus.failed => t.music.syncStatusFailed,
                 MusicSyncStatus.idle => t.music.syncStatusIdle,
               },
-              description: state.message ?? state.serverName ?? t.music.syncStatusHint,
+              description: switch (state.note) {
+                MusicSyncNote.forgotKey => t.music.syncForgetCleared,
+                MusicSyncNote.invalidAddress => t.music.syncInvalidAddress,
+                null => state.message ?? state.serverName ?? t.music.syncStatusHint,
+              },
               control: DsButton(
                 variant: state.status == MusicSyncStatus.connected
                     ? DsButtonVariant.secondary

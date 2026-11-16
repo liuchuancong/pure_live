@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
+import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,20 +15,22 @@ import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassH
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart';
+import 'package:pure_live/modules/music/controller/lyric/music_desktop_lyric_settings.dart'
     show musicDesktopLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart';
-import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_overrides.dart' show musicLyricOverridesProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart'
     show MusicLyricAlignment, MusicLyricsSettings, musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart'
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart'
     show musicAudioDevicesProvider, musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/settings/music_ui_settings.dart'
     show MusicPlayerMode, MusicUiElement, musicPlayerModeProvider, musicStageOverrideProvider, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
     show musicTrackArtistId, openMusicAlbum, openMusicArtist;
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show musicBrowseSourceLabel;
 import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_spectrum.dart';
@@ -98,7 +101,10 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                   gradient: LinearGradient(
                     begin: AlignmentDirectional.topCenter,
                     end: AlignmentDirectional.bottomCenter,
-                    colors: [colors.canvas.withValues(alpha: 0.92), colors.canvas.withValues(alpha: 0.76)],
+                    // The backdrop leads and the scrim only keeps the
+                    // words readable — the old wall hid the cover's own
+                    // colour behind a near-opaque sheet.
+                    colors: [colors.canvas.withValues(alpha: 0.70), colors.canvas.withValues(alpha: 0.42)],
                   ),
                 ),
               ),
@@ -261,14 +267,25 @@ final class _StageState extends ConsumerState<_Stage> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final state = ref.watch(musicPlayerProvider);
-    final track = state.track!;
+    // The stage rides the track and the play state alone; the tick and the
+    // catalogue belong to the bar below. The track stays nullable: clearing
+    // the queue fires this selector before the page above can rebuild.
+    final (track, playing) = ref.watch(musicPlayerProvider.select((state) => (state.track, state.playing)));
+    if (track == null) return const SizedBox.shrink();
     // The settings hold the default; the switch under the stage sets this
     // run's own choice without rewriting that default.
     final playerMode = _stageMode();
     return LayoutBuilder(
       builder: (context, constraints) {
-        final size = (constraints.maxHeight >= 560 ? 320 : 216).toDouble();
+        // The stage breathes with the window instead of snapping: three
+        // stops the animated container glides between.
+        final size =
+            (constraints.maxHeight >= 620
+                    ? 340
+                    : constraints.maxHeight >= 480
+                    ? 280
+                    : 216)
+                .toDouble();
         final disc = playerMode == MusicPlayerMode.vinyl && constraints.maxWidth >= 640;
         final words = playerMode == MusicPlayerMode.lyrics;
         return SingleChildScrollView(
@@ -278,14 +295,22 @@ final class _StageState extends ConsumerState<_Stage> {
             spacing: DsSpace.s16,
             children: [
               if (words)
-                SizedBox(height: size, child: const MusicLyricsPanel())
+                // The words get the stage's whole height: a lyric column
+                // boxed at the cover's square wasted the room the mode
+                // exists to use.
+                SizedBox(
+                  height: constraints.maxHeight.clamp(300.0, 640.0),
+                  child: const MusicLyricsPanel(transparent: true),
+                )
               else
                 Center(
-                  child: disc
-                      ? SizedBox(
-                          width: size * 1.32,
-                          height: size,
-                          child: Stack(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    width: disc ? size * 1.32 : size,
+                    height: size,
+                    child: disc
+                        ? Stack(
                             alignment: AlignmentDirectional.centerStart,
                             clipBehavior: Clip.none,
                             children: [
@@ -296,25 +321,29 @@ final class _StageState extends ConsumerState<_Stage> {
                               PositionedDirectional(
                                 start: 0,
                                 top: 0,
-                                child: _VinylDisc(size: size * 0.92, track: track, playing: state.playing),
+                                child: _VinylDisc(size: size * 0.92, track: track, playing: playing),
                               ),
                               PositionedDirectional(
                                 start: size * 0.62,
                                 top: -size * 0.02,
-                                child: _Tonearm(size: size),
+                                child: _Tonearm(size: size, playing: playing),
                               ),
                             ],
+                          )
+                        : DecoratedBox(
+                            decoration: DsBoxDecoration(
+                              borderRadius: BorderRadius.circular(theme.radii.overlay),
+                              shadows: [
+                                DsShadow(
+                                  color: colors.overlay,
+                                  blur: DsSpace.s40,
+                                  offset: const Offset(0, DsSpace.s16),
+                                ),
+                              ],
+                            ),
+                            child: _Artwork(track: track, size: size),
                           ),
-                        )
-                      : DecoratedBox(
-                          decoration: DsBoxDecoration(
-                            borderRadius: BorderRadius.circular(theme.radii.overlay),
-                            shadows: [
-                              DsShadow(color: colors.overlay, blur: DsSpace.s40, offset: const Offset(0, DsSpace.s16)),
-                            ],
-                          ),
-                          child: _Artwork(track: track, size: size),
-                        ),
+                  ),
                 ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -494,47 +523,40 @@ final class _VinylDiscState extends State<_VinylDisc> with SingleTickerProviderS
     final colors = DsTheme.colorsOf(context);
     final size = widget.size;
     final label = size * 0.42;
-    final groove = size * 0.86;
     final cover = widget.track.coverUri;
     return SizedBox(
       width: size,
       height: size,
       child: RotationTransition(
         turns: _spin,
+        // The pressing itself: a near-black disc whose grooves tighten
+        // towards the label under one soft sheen — a flat coloured circle
+        // never read as a record.
         child: DecoratedBox(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: colors.control,
-            border: Border.all(color: colors.border),
             boxShadow: [BoxShadow(color: colors.overlay, blurRadius: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
           ),
-          child: Center(
-            child: Container(
-              width: groove,
-              height: groove,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: colors.border.withValues(alpha: 0.55)),
-              ),
-              child: Center(
-                child: ClipOval(
-                  child: SizedBox(
-                    width: label,
-                    height: label,
-                    child: cover == null
-                        ? ColoredBox(
-                            color: colors.surface,
-                            child: Center(
-                              child: DsIcon(DsIcons.music, size: label * 0.5, color: colors.textSubtle),
-                            ),
-                          )
-                        : DsImage(
-                            image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover),
-                            width: label,
-                            height: label,
-                            semanticLabel: widget.track.title,
+          child: CustomPaint(
+            painter: _VinylPainter(colors: colors),
+            child: Center(
+              child: ClipOval(
+                child: SizedBox(
+                  width: label,
+                  height: label,
+                  child: cover == null
+                      ? ColoredBox(
+                          color: colors.surface,
+                          child: Center(
+                            child: DsIcon(DsIcons.music, size: label * 0.5, color: colors.textSubtle),
                           ),
-                  ),
+                        )
+                      : DsImage(
+                          image: cachedImage(cover.toString(), policy: ImageCachePolicies.albumCover),
+                          width: label,
+                          height: label,
+                          semanticLabel: widget.track.title,
+                        ),
                 ),
               ),
             ),
@@ -545,13 +567,70 @@ final class _VinylDiscState extends State<_VinylDisc> with SingleTickerProviderS
   }
 }
 
+/// The pressing's own ink: the disc body, its groove rings, the sheen that
+/// breaks them up, and the well the cover label sits in.
+final class _VinylPainter extends CustomPainter {
+  const _VinylPainter({required this.colors});
+
+  final DsColors colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    canvas.drawCircle(center, radius, Paint()..color = const Color(0xFF151515));
+    // Grooves tighten towards the label, the way a real pressing reads.
+    final groove = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (var ring = 0; ring < 14; ring++) {
+      final t = ring / 13;
+      groove.color = Colors.white.withValues(alpha: ring.isEven ? 0.05 : 0.02);
+      canvas.drawCircle(center, radius * (0.47 + 0.44 * t), groove);
+    }
+    // One soft light across the upper half keeps the black from flattening.
+    canvas
+      ..drawCircle(
+        center,
+        radius,
+        Paint()
+          ..shader = SweepGradient(
+            colors: [
+              Colors.white.withValues(alpha: 0.11),
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: 0.05),
+              Colors.white.withValues(alpha: 0.11),
+            ],
+            transform: const GradientRotation(-2.2),
+          ).createShader(Rect.fromCircle(center: center, radius: radius)),
+      )
+      ..drawCircle(
+        center,
+        radius - 0.5,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = Colors.black.withValues(alpha: 0.65),
+      )
+      ..drawCircle(center, radius * 0.46, Paint()..color = Colors.black.withValues(alpha: 0.5));
+  }
+
+  @override
+  bool shouldRepaint(_VinylPainter oldDelegate) => oldDelegate.colors != colors;
+}
+
 /// The tonearm resting on the record: a pivot at the top, the arm reaching
-/// down onto the disc and the cartridge at its end.
+/// down onto the disc and the cartridge at its end. Playing swings the arm
+/// onto the record; a pause lifts it a breath off the grooves.
 final class _Tonearm extends StatelessWidget {
-  const _Tonearm({required this.size});
+  const _Tonearm({required this.size, this.playing = true});
 
   /// The disc's side; the arm is drawn in proportion to it.
   final double size;
+
+  /// Whether the record is turning — the needle down or lifted.
+  final bool playing;
 
   @override
   Widget build(BuildContext context) {
@@ -559,19 +638,35 @@ final class _Tonearm extends StatelessWidget {
     return SizedBox(
       width: size * 0.5,
       height: size * 0.78,
-      child: CustomPaint(painter: _TonearmPainter(colors: colors)),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: playing ? 1.0 : 0.0),
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeOutCubic,
+        builder: (context, progress, _) => CustomPaint(
+          painter: _TonearmPainter(colors: colors, progress: progress),
+        ),
+      ),
     );
   }
 }
 
 final class _TonearmPainter extends CustomPainter {
-  const _TonearmPainter({required this.colors});
+  const _TonearmPainter({required this.colors, this.progress = 1.0});
 
   final DsColors colors;
+
+  /// 1 = needle resting on the grooves, 0 = arm lifted off.
+  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
     final pivot = Offset(size.width * 0.74, size.height * 0.10);
+    // The lift: the whole arm swings a breath back from the record.
+    canvas
+      ..save()
+      ..translate(pivot.dx, pivot.dy)
+      ..rotate((1 - progress) * -0.14)
+      ..translate(-pivot.dx, -pivot.dy);
     final needle = Offset(size.width * 0.30, size.height * 0.80);
     final arm = Paint()
       ..color = colors.textMuted
@@ -598,11 +693,12 @@ final class _TonearmPainter extends CustomPainter {
     canvas
       ..drawCircle(pivot, 13, base)
       ..drawCircle(pivot, 13, ring)
-      ..drawCircle(pivot, 5, cap);
+      ..drawCircle(pivot, 5, cap)
+      ..restore();
   }
 
   @override
-  bool shouldRepaint(_TonearmPainter oldDelegate) => oldDelegate.colors != colors;
+  bool shouldRepaint(_TonearmPainter oldDelegate) => oldDelegate.colors != colors || oldDelegate.progress != progress;
 }
 
 /// The player's more menu: the reference's runtime verbs — the effect centre,
@@ -1124,7 +1220,15 @@ final class _LyricSearchDialogState extends ConsumerState<_LyricSearchDialog> {
                               leading: const DsIcon(DsIcons.fileMusic),
                               title: Text(song.title),
                               description: Text(
-                                [song.artist, song.album].where((part) => part.isNotEmpty).join(' · '),
+                                // The platform rides with the credits: a
+                                // cross-source search answers with several
+                                // sites' takes, and the pick names where the
+                                // words will come from.
+                                [
+                                  song.artist,
+                                  song.album,
+                                  musicBrowseSourceLabel(ref, t, song.sourceId),
+                                ].where((part) => part.isNotEmpty).join(' · '),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1145,6 +1249,56 @@ final class _LyricSearchDialogState extends ConsumerState<_LyricSearchDialog> {
           child: Text(t.common.cancel),
         ),
       ],
+    );
+  }
+}
+
+/// The transport's anchor: one large accent disc for play and pause —
+/// the weight the reference's play bar carries, so the eye lands on it
+/// first and the movement verbs read as its satellites.
+final class _PlayButton extends StatelessWidget {
+  const _PlayButton({required this.playing, required this.semanticLabel, required this.onTap});
+
+  final bool playing;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    return DsPressable(
+      onPressed: onTap,
+      semanticLabel: semanticLabel,
+      builder: (context, states, _) {
+        final pressed = states.contains(WidgetState.pressed);
+        final hovered = states.contains(WidgetState.hovered);
+        return AnimatedScale(
+          scale: pressed
+              ? 0.94
+              : hovered
+              ? 1.05
+              : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colors.accent,
+              boxShadow: [
+                BoxShadow(
+                  color: colors.accent.withValues(alpha: hovered ? 0.45 : 0.28),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: Center(child: DsIcon(playing ? DsIcons.pause : DsIcons.play, size: 30, color: colors.onAccent)),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1199,14 +1353,26 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final state = ref.watch(musicPlayerProvider);
+    // The bar is where the tick is wanted: the slider and the clock redraw
+    // off it. The tuple keeps every other state change — a chat message, a
+    // lyric revision, a volume echo — from rebuilding the movement with it.
+    // The track stays nullable: clearing the queue fires this selector
+    // before the page above can rebuild.
+    final (track, duration, livePosition, mode, playing) = ref.watch(
+      musicPlayerProvider.select((state) => (state.track, state.duration, state.position, state.mode, state.playing)),
+    );
     final controller = ref.read(musicPlayerProvider.notifier);
+    // A switch to another song retires the drag in progress: the held
+    // seconds belong to the song the viewer started dragging, and applying
+    // them to the next one seeks the wrong song.
+    ref.listen(musicPlayerProvider.select((state) => state.track), (previous, next) {
+      if (!identical(previous, next) && _dragSeconds != null) setState(() => _dragSeconds = null);
+    });
+    if (track == null) return const SizedBox.shrink();
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
-    final track = state.track!;
     final loved = favourites.contains(track);
-    final duration = state.duration;
-    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : state.position;
+    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : livePosition;
     final total = duration.inMilliseconds;
     Widget clock(Duration value, {bool end = false}) => SizedBox(
       width: 48,
@@ -1225,6 +1391,8 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
             value: total <= 0 ? 0 : position.inMilliseconds.clamp(0, total).toDouble(),
             max: total <= 0 ? 1 : total.toDouble(),
             semanticLabel: t.music.progress,
+            // A thin accent rail rather than the dialog-sized default.
+            style: DsSliderStyle(trackHeight: 4, thumbSize: 14, fillColor: colors.accent, thumbColor: colors.accent),
             onChanged: total <= 0 ? null : (value) => setState(() => _dragSeconds = value / 1000),
             onChangeEnd: total <= 0
                 ? null
@@ -1244,9 +1412,9 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
         DsButton.icon(
           variant: DsButtonVariant.ghost,
           size: DsSize.lg,
-          semanticLabel: musicPlayModeLabel(t, state.mode),
+          semanticLabel: musicPlayModeLabel(t, mode),
           onPressed: controller.cycleMode,
-          icon: DsIcon(musicPlayModeIcon(state.mode)),
+          icon: DsIcon(musicPlayModeIcon(mode)),
         ),
         DsButton.icon(
           variant: DsButtonVariant.ghost,
@@ -1255,12 +1423,10 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
           onPressed: () => unawaited(controller.previous()),
           icon: const DsIcon(DsIcons.skipBack),
         ),
-        DsButton.icon(
-          variant: DsButtonVariant.primary,
-          size: DsSize.lg,
-          semanticLabel: state.playing ? t.music.pause : t.music.play,
-          onPressed: () => unawaited(controller.toggle()),
-          icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
+        _PlayButton(
+          playing: playing,
+          semanticLabel: playing ? t.music.pause : t.music.play,
+          onTap: () => unawaited(controller.toggle()),
         ),
         DsButton.icon(
           variant: DsButtonVariant.ghost,
@@ -1313,11 +1479,18 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
                     favourite,
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 180),
-                      child: _Volume(
-                        volume: state.volume,
-                        muted: state.muted,
-                        onVolume: (value) => unawaited(controller.setVolume(value)),
-                        onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final (volume, muted) = ref.watch(
+                            musicPlayerProvider.select((state) => (state.volume, state.muted)),
+                          );
+                          return _Volume(
+                            volume: volume,
+                            muted: muted,
+                            onVolume: (value) => unawaited(controller.setVolume(value)),
+                            onMute: () => unawaited(controller.setMuted(muted: !muted)),
+                          );
+                        },
                       ),
                     ),
                   ],

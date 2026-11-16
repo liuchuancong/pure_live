@@ -23,20 +23,20 @@ import 'package:pure_live/app/app.dart' show playerKernelProvider, selectedModul
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
-    show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
-import 'package:pure_live/modules/music/controller/eq/music_eq_engine_effects.dart'
-    show musicEqAudioEffects, musicEqPitchRate;
-import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
-    show MusicDesktopLyricsSettings, musicDesktopLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
-import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
-import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' show musicLyricsSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show MusicQuality, musicPlaybackSettingsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_desktop_lyric_settings.dart'
+    show MusicDesktopLyricsSettings, musicDesktopLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_overrides.dart' show musicLyricOverridesProvider;
+import 'package:pure_live/modules/music/controller/lyric/music_lyric_settings.dart' show musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart'
+    show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_engine_effects.dart'
+    show musicEqAudioEffects, musicEqPitchRate;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show MusicQuality, musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_audio_cache.dart'
     show CachedTrackSource, MusicAudioCacheBox;
 import 'package:pure_live/shared/shared.dart' show AppModule;
@@ -340,7 +340,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
                 previous.$6 != next.$6 ||
                 previous.$8 != next.$8 ||
                 previous.$9 != next.$9 ||
-                previous.$10 != next.$10);
+                previous.$10 != next.$10 ||
+                previous.$11 != next.$11);
         if (restyled) {
           unawaited(desktop.setStyle(_desktopStyle(ref.read(musicDesktopLyricsSettingsProvider))));
         }
@@ -428,7 +429,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // Only the music module's instance resumes: the idle one built while
     // another module is on screen stays silent.
     if (_module == AppModule.music) unawaited(_restore());
-    unawaited(_restoreDesktopLyric());
+    // The lyric window is the process's one native overlay; only the music
+    // module's instance restores it, so an idle controller built beside
+    // another module never claims it.
+    if (_module == AppModule.music) unawaited(_restoreDesktopLyric());
     return _audio.state;
   }
 
@@ -746,6 +750,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// restored overlay that cannot draw simply stays hidden.
   Future<void> _restoreDesktopLyric() async {
     if (!ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
+    // A window with no song under it is noise; the lyric overlay follows the
+    // first track, and the explicit toggle shows it without one.
+    if (_audio.state.track == null) return;
     try {
       final desktop = _desktopController();
       if (!await desktop.hasPermission()) return;
@@ -894,20 +901,39 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     }
   }
 
-  /// Searches the module's source for songs matching [keyword], so a viewer
-  /// can pick the lyric of the right recording.
+  /// Searches every platform for songs matching [keyword], so a viewer can
+  /// pick the lyric of the right recording — one platform's index often
+  /// misses the very recording another holds.
   Future<List<audio.MusicTrack>> searchLyricCandidates(String keyword) async {
     final query = keyword.trim();
     if (query.isEmpty) return const [];
-    final page = await ref.read(musicSourceProvider).search(query, pageSize: 20);
-    return page.items;
+    final sources = ref.read(musicSourceListProvider);
+    final pages = await Future.wait([
+      for (final source in sources)
+        source
+            .search(query, pageSize: 12)
+            .then<audio.MusicSourcePage<audio.MusicTrack>?>((page) => page)
+            .catchError((Object _) => null),
+    ]);
+    final seen = <String>{};
+    return [
+      for (var i = 0; i < pages.length; i++)
+        for (final track in pages[i]?.items ?? const <audio.MusicTrack>[])
+          if (seen.add('${track.sourceId}:${track.id}')) track,
+    ];
   }
 
   /// Uses [candidate]'s lyric for [track] — the song on screen — remembering
-  /// it the way a manually linked file is; false when it has no lyric.
+  /// it the way a manually linked file is; false when it has no lyric. The
+  /// lyric is asked of [candidate]'s own platform, not the active one: a
+  /// candidate found on another source was the whole point of the search.
   Future<bool> useLyricFrom(audio.MusicTrack track, audio.MusicTrack candidate) async {
     try {
-      final payload = await ref.read(musicSourceProvider).resolveLyric(candidate);
+      var own = ref.read(musicSourceProvider);
+      for (final source in ref.read(musicSourceListProvider)) {
+        if (source.id == candidate.sourceId) own = source;
+      }
+      final payload = await own.resolveLyric(candidate);
       if (payload == null) return false;
       final translation = payload.translation?.trim() ?? '';
       final text = [payload.lyric, if (translation.isNotEmpty) translation].join('\n');

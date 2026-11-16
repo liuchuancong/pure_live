@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
 
 /// The preference the viewer's own presets are kept under.
 const String kMusicCustomPresetsKey = 'music.eq.customPresets';

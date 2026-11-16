@@ -9,7 +9,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
-import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
+import 'package:pure_live/modules/music/controller/library/music_downloads.dart' show musicDownloadsProvider;
 
 /// The preference the local-music folders are kept under.
 const String kMusicLocalRootsKey = 'music.local.roots';

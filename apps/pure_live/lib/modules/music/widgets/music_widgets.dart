@@ -8,13 +8,13 @@ import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
-import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalCoverProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show MusicQuality, musicPlaybackSettingsProvider, musicQualityByScriptName, musicSourceDisplayName;
+import 'package:pure_live/modules/music/controller/library/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart' show musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_local.dart' show musicLocalCoverProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show MusicQuality, musicPlaybackSettingsProvider, musicQualityByScriptName, musicSourceDisplayName;
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
     show musicTrackArtistId, openMusicAlbum, openMusicArtist;
 import 'package:pure_live/shared/shared.dart' show avatarInitials, cachedImage;

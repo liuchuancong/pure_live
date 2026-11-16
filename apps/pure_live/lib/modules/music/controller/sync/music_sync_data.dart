@@ -9,7 +9,7 @@ import 'package:crypto/crypto.dart' show md5;
 
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show MusicPlaylist;
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show MusicPlaylist;
 
 /// The bridge between the module's own stores and the reference sync
 

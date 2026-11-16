@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_settings_store.dart';
+import 'package:pure_live/modules/music/controller/settings/music_settings_store.dart';
 
 /// The container a download is written in; [original] keeps whatever the
 /// source already served (lx-music's 原格式).

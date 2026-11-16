@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show immutable;
 
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
 
 /// The sample rate the theoretical response assumes.
 ///

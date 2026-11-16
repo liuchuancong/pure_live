@@ -6,30 +6,31 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
-import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
-    show musicPlaybackSettingsProvider, musicSourceDisplayName;
-import 'package:pure_live/modules/music/controller/music_playlists.dart';
+import 'package:pure_live/modules/music/controller/library/music_downloads.dart' show musicDownloadsProvider;
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
+    show musicFavouritesProvider, musicTrackKey;
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, OnlinePlaylists;
 import 'package:pure_live/modules/music/music_page.dart' show MusicView;
-import 'package:pure_live/modules/music/pages/music_online_playlists_view.dart';
-import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
+import 'package:pure_live/modules/music/views/music_online_playlists_view.dart';
+import 'package:pure_live/modules/music/views/music_playlist_card.dart'
     show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
+import 'package:pure_live/modules/music/widgets/music_detail_hero.dart' show MusicDetailHero;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, NavigationItem, cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, NavigationItem;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 final class MusicPlaylistsView extends ConsumerStatefulWidget {
@@ -198,6 +199,28 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
       title: t.music.downloadAllQueued(count: queued),
       status: queued > 0 ? DsStatus.success : DsStatus.warning,
     );
+  }
+
+  /// Asks before the songs go: a full clear cannot be undone, and it sits in
+  /// the same menu as the delete that does ask.
+  Future<void> _clear(MusicPlaylist playlist) async {
+    final t = context.t;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.music.playlistClearTitle(name: playlist.name),
+      description: t.music.playlistClearDesc,
+      confirmLabel: t.music.playlistClear,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    await ref.read(musicPlaylistsProvider.notifier).clear(playlist.id);
+    if (mounted) {
+      showDsToast(
+        context: context,
+        title: t.music.playlistClearDone(name: playlist.name),
+      );
+    }
   }
 
   Future<void> _delete(MusicPlaylist playlist) async {
@@ -565,7 +588,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
             if (!_online)
               Text(
                 t.music.playlistsCount(count: playlists.length),
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
               ),
             if (!narrow) ...[importButton, createButton],
           ],
@@ -676,7 +699,9 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
     final theme = DsTheme.of(context);
     // The page's gutter, the same measure the live module's pages keep.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final player = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouritesController = ref.read(musicFavouritesProvider.notifier);
@@ -756,7 +781,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                 DsMenuItem(
                   leading: const DsIcon(DsIcons.x),
                   label: Text(t.music.playlistClear),
-                  onPressed: () => unawaited(controller.clear(playlist.id)),
+                  onPressed: () => unawaited(_clear(playlist)),
                 ),
                 DsMenuItem(
                   leading: const DsIcon(DsIcons.trash2),
@@ -775,93 +800,39 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
             ),
           ],
         ),
-        // The detail head's rhythm, the mockup's measure: the cover leads,
-        // the name and its facts line follow, and the play verbs close the
-        // block — bottom-set so the verbs sit on the cover's edge.
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            spacing: DsSpace.s16,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(theme.radii.card),
-                child: SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: first == null
-                      ? CoverFallback(title: playlist.name)
-                      : DsImage(
-                          image: first.coverUri == null
-                              ? null
-                              : cachedImage(first.coverUri.toString(), policy: ImageCachePolicies.albumCover),
-                          aspectRatio: 1,
-                          semanticLabel: playlist.name,
-                          fallback: CoverFallback(title: first.title),
-                        ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: DsSpace.s4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s6,
-                    children: [
-                      Text(
-                        playlist.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.heading.copyWith(color: colors.text),
-                      ),
-                      Text(
-                        total > Duration.zero
-                            ? '${t.music.songsCount(count: playlist.tracks.length)} · ${musicDurationText(total)}'
-                            : t.music.songsCount(count: playlist.tracks.length),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                      const SizedBox(height: DsSpace.s4),
-                      Wrap(
-                        spacing: DsSpace.s8,
-                        runSpacing: DsSpace.s8,
-                        children: [
-                          DsButton(
-                            variant: DsButtonVariant.primary,
-                            size: DsSize.sm,
-                            leading: const DsIcon(DsIcons.play, size: 16),
-                            onPressed: playlist.tracks.isEmpty
-                                ? null
-                                : () => unawaited(player.playAll(playlist.tracks)),
-                            child: Text(t.music.playAll),
-                          ),
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            leading: const DsIcon(DsIcons.shuffle, size: 16),
-                            onPressed: playlist.tracks.isEmpty
-                                ? null
-                                : () => unawaited(player.playAll([...playlist.tracks]..shuffle(math.Random()))),
-                            child: Text(t.music.modeRandom),
-                          ),
-                          // The reference's header row: the whole list can be
-                          // taken offline from here, not only from the menu.
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            leading: const DsIcon(DsIcons.download, size: 16),
-                            onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_downloadAll(playlist)),
-                            child: Text(t.music.downloadAll),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+        // The one detail head: the cover blurred into the block's own
+        // backdrop, the name and its facts on it, one play disc anchoring
+        // the verbs.
+        MusicDetailHero(
+          coverUri: first?.coverUri,
+          fallbackTitle: playlist.name,
+          title: playlist.name,
+          facts: [
+            t.music.songsCount(count: playlist.tracks.length),
+            if (total > Duration.zero) musicDurationText(total),
+          ],
+          onPlayAll: playlist.tracks.isEmpty ? null : () => unawaited(player.playAll(playlist.tracks)),
+          playSemanticLabel: t.music.playAll,
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.shuffle, size: 16),
+              onPressed: playlist.tracks.isEmpty
+                  ? null
+                  : () => unawaited(player.playAll([...playlist.tracks]..shuffle(math.Random()))),
+              child: Text(t.music.modeRandom),
+            ),
+            // The reference's header row: the whole list can be
+            // taken offline from here, not only from the menu.
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.download, size: 16),
+              onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_downloadAll(playlist)),
+              child: Text(t.music.downloadAll),
+            ),
+          ],
         ),
         if (_searching)
           Padding(
@@ -894,7 +865,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                 ),
                 Text(
                   t.music.selectionCount(count: _selected.length),
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
                 ),
                 DsButton(
                   variant: DsButtonVariant.secondary,
@@ -975,7 +946,7 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                   return MusicSongRow(
                     track: song,
                     number: position + 1,
-                    playing: playingId == song.id,
+                    playing: playingKey == musicTrackKey(song),
                     favourite: favourites.contains(song),
                     selecting: _selecting,
                     selected: _selected.contains(song),
@@ -1060,7 +1031,9 @@ final class _DuplicateTracksDialogState extends ConsumerState<_DuplicateTracksDi
       for (final source in ref.watch(musicSourceListProvider))
         source.id: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
     };
-    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final playingKey = ref.watch(
+      musicPlayerProvider.select((state) => (state.track == null ? null : musicTrackKey(state.track!))),
+    );
     final favourites = ref.watch(musicFavouritesProvider);
     return AppDialog(
       title: Text(playlist?.name ?? t.music.duplicateTracks),
@@ -1070,7 +1043,7 @@ final class _DuplicateTracksDialogState extends ConsumerState<_DuplicateTracksDi
         children: [
           Text(
             t.music.duplicatesFound(count: duplicates.length),
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+            style: theme.typography.caption.copyWith(color: colors.textMuted),
           ),
           SizedBox(
             height: 360,
@@ -1090,7 +1063,7 @@ final class _DuplicateTracksDialogState extends ConsumerState<_DuplicateTracksDi
                       return MusicSongRow(
                         track: track,
                         number: index + 1,
-                        playing: playingId == track.id,
+                        playing: playingKey == musicTrackKey(track),
                         favourite: favourites.contains(track),
                         subtitle: subtitle.isEmpty ? null : subtitle,
                         onPlay: () => _play(track, tracks),

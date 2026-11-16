@@ -4,18 +4,18 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_browse.dart';
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/browse/music_browse.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/widgets/music_actions.dart' show showAddTracksToPlaylistDialog;
 import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicAlbum;
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart';
+import 'package:pure_live/modules/music/widgets/music_detail_hero.dart' show MusicDetailHero;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show MusicSongTableHeader;
-import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// One artist's page: who they are, the songs the platform credits to them,
 /// and their albums — each album opening its own page.
@@ -183,73 +183,30 @@ final class _ArtistHero extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    // The hero keeps the page's gutter, the live module's measure.
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final facts = [
       musicBrowseSourceLabel(ref, t, sourceId),
       if (albumCount > 0) t.music.albumsCount(count: albumCount),
       if (songs.isNotEmpty) t.music.songsCount(count: songs.length),
-    ].join(' · ');
+    ];
     final player = ref.read(musicPlayerProvider.notifier);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s16,
-        children: [
-          ClipOval(
-            child: DsImage(
-              image: avatarUri == null ? null : cachedImage(avatarUri.toString(), policy: ImageCachePolicies.avatar),
-              width: 112,
-              height: 112,
-              semanticLabel: name,
-              fallback: CoverFallback(title: name, padding: const EdgeInsets.all(DsSpace.s12)),
-            ),
+    return MusicDetailHero(
+      coverUri: avatarUri,
+      fallbackTitle: name,
+      title: name,
+      facts: facts,
+      roundCover: true,
+      onPlayAll: songs.isEmpty ? null : () => unawaited(player.playAll(songs)),
+      playSemanticLabel: t.music.hotSongs,
+      actions: [
+        if (songs.isNotEmpty)
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.listPlus, size: 16),
+            onPressed: () => unawaited(showAddTracksToPlaylistDialog(context, ref, songs)),
+            child: Text(t.music.addToPlaylist),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s6,
-              children: [
-                Text(
-                  name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.heading.copyWith(color: colors.text),
-                ),
-                Text(
-                  facts,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-                if (songs.isNotEmpty) ...[
-                  const SizedBox(height: DsSpace.s4),
-                  Wrap(
-                    spacing: DsSpace.s8,
-                    runSpacing: DsSpace.s8,
-                    children: [
-                      DsButton(
-                        leading: const DsIcon(DsIcons.play),
-                        onPressed: () => unawaited(player.playAll(songs)),
-                        child: Text(t.music.hotSongs),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.secondary,
-                        leading: const DsIcon(DsIcons.listPlus),
-                        onPressed: () => unawaited(showAddTracksToPlaylistDialog(context, ref, songs)),
-                        child: Text(t.music.addToPlaylist),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

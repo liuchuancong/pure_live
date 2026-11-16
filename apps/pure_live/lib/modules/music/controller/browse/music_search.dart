@@ -7,10 +7,11 @@ import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicTextSimilarity;
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show musicTextSimilarity;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart' show MusicHotWords;
+import 'package:pure_live/shared/network/failure_text.dart';
 
 /// What the library view holds: the committed query, its songs, where the
 /// next page asks, the in-flight flag and the last failure.
@@ -56,6 +57,10 @@ final musicSearchSourceIdProvider = NotifierProvider<MusicSearchSourceController
 final class MusicSearchController extends Notifier<MusicSearchState> {
   int _generation = 0;
 
+  /// How many pages in a row came back without one new row: a source that
+  /// ignores the page number keeps the scroll asking forever otherwise.
+  int _stagnant = 0;
+
   @override
   MusicSearchState build() => _initial();
 
@@ -67,6 +72,7 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
       state = _initial();
       return Future.value();
     }
+    _stagnant = 0;
     unawaited(ref.read(musicSearchHistoryProvider.notifier).record(word));
     return _load(word, 1);
   }
@@ -81,6 +87,13 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
   Future<void> retry() {
     if (state.query.isEmpty) return Future.value();
     return _load(state.query, 1);
+  }
+
+  /// Loads the page that failed again, keeping what the search already has —
+  /// the tail error row's own verb.
+  Future<void> retryPage() {
+    if (state.loading || state.query.isEmpty) return Future.value();
+    return _load(state.query, state.nextPage);
   }
 
   Future<void> _load(String query, int page) async {
@@ -99,13 +112,32 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
           ? await _searchAll(query, page)
           : await _sourceOf(sourceId).search(query, page: page);
       if (!ref.mounted || generation != _generation) return;
-      final songs = page == 1 ? <audio.MusicTrack>[] : [...state.songs];
+      final previous = page == 1 ? const <audio.MusicTrack>[] : state.songs;
+      final songs = [...previous];
       final seen = {for (final song in songs) '${song.sourceId}:${song.id}'};
       songs.addAll(answer.items.where((song) => seen.add('${song.sourceId}:${song.id}')));
-      state = (query: query, songs: songs, nextPage: page + 1, hasMore: answer.hasMore, loading: false, error: null);
+      // A page that returned nothing the list had not seen is stagnant; two
+      // in a row close the paging, so the scroll's end stops asking (the
+      // vod search's own fresh-wins rule).
+      _stagnant = page > 1 && songs.length == previous.length ? _stagnant + 1 : 0;
+      state = (
+        query: query,
+        songs: songs,
+        nextPage: page + 1,
+        hasMore: answer.hasMore && _stagnant < 2,
+        loading: false,
+        error: null,
+      );
     } on Object catch (failure) {
       if (!ref.mounted || generation != _generation) return;
-      state = (query: query, songs: state.songs, nextPage: page, hasMore: false, loading: false, error: '$failure');
+      state = (
+        query: query,
+        songs: state.songs,
+        nextPage: page,
+        hasMore: false,
+        loading: false,
+        error: networkFailureText(failure),
+      );
     }
   }
 
@@ -215,12 +247,17 @@ final class MusicSearchHistoryController extends Notifier<List<String>> {
     }
   }
 
-  /// Puts [query] at the front, dropping an older copy.
+  /// Puts [query] at the front, dropping an older copy. The duplicate test
+  /// reads case-insensitively, the way the live search's history does — a
+  /// re-ask of "abc" after "ABC" is one search said twice, not two words.
   Future<void> record(String query) async {
     final word = query.trim();
     if (word.isEmpty) return;
-    if (state.isNotEmpty && state.first == word) return;
-    state = [word, ...state.where((entry) => entry != word)].take(kMusicSearchHistoryLimit).toList();
+    if (state.isNotEmpty && state.first.toLowerCase() == word.toLowerCase()) return;
+    state = [
+      word,
+      ...state.where((entry) => entry.toLowerCase() != word.toLowerCase()),
+    ].take(kMusicSearchHistoryLimit).toList();
     await _save();
   }
 

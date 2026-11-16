@@ -1,3 +1,4 @@
+import 'dart:async' show Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter/foundation.dart' show immutable;
@@ -5,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_custom_presets.dart';
 
 /// The preference the sound-effect configuration is kept under.
 const String kMusicEqKey = 'music.eq';
@@ -329,11 +330,19 @@ final class MusicEqController extends Notifier<MusicEqConfig> {
     }
   }
 
-  /// Replaces the whole configuration and persists it.
+  /// Replaces the whole configuration and persists it. The write trails the
+  /// last change: a band drag lands here on every tick, and a ten-band sweep
+  /// is one preference write, not one per frame.
   Future<void> update(MusicEqConfig next) async {
     state = next;
-    await _save();
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(const Duration(milliseconds: 300), () {
+      _saveDebounce = null;
+      unawaited(_save());
+    });
   }
+
+  Timer? _saveDebounce;
 
   /// Sets one band's gain; the curve stops being a preset's.
   Future<void> setGain(int band, double gain) async {

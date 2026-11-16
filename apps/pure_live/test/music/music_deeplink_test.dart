@@ -12,8 +12,8 @@ void main() {
     });
 
     test('search by keywords param and 128-character cap', () {
-      final action = parseMusicDeeplink('lxmusic://music/search?keywords=${Uri.encodeComponent('稻香')}')
-          as MusicDeeplinkSearch;
+      final action =
+          parseMusicDeeplink('lxmusic://music/search?keywords=${Uri.encodeComponent('稻香')}') as MusicDeeplinkSearch;
       expect(action.keywords, '稻香');
 
       final long = 'a' * 200;
@@ -40,8 +40,7 @@ void main() {
           {'type': 'flac'},
         ],
       });
-      final action = parseMusicDeeplink('lxmusic://music/play?data=${Uri.encodeComponent(data)}')
-          as MusicDeeplinkPlay;
+      final action = parseMusicDeeplink('lxmusic://music/play?data=${Uri.encodeComponent(data)}') as MusicDeeplinkPlay;
       final track = action.track;
       expect(track.id, 'abc123');
       expect(track.sourceId, 'kw');
@@ -61,8 +60,7 @@ void main() {
         'strMediaMid': '0039MnYb0qxYhV_mid',
         'name': '晴天',
       });
-      final action = parseMusicDeeplink('lxmusic://music/play?data=${Uri.encodeComponent(data)}')
-          as MusicDeeplinkPlay;
+      final action = parseMusicDeeplink('lxmusic://music/play?data=${Uri.encodeComponent(data)}') as MusicDeeplinkPlay;
       expect(action.track.metadata['strMediaMid'], '0039MnYb0qxYhV_mid');
     });
 
@@ -81,15 +79,13 @@ void main() {
 
     test('play without data or with broken JSON is rejected', () {
       expect(() => parseMusicDeeplink('lxmusic://music/play'), throwsA(isA<MusicDeeplinkException>()));
-      expect(
-        () => parseMusicDeeplink('lxmusic://music/play?data=%7Bbroken'),
-        throwsA(isA<MusicDeeplinkException>()),
-      );
+      expect(() => parseMusicDeeplink('lxmusic://music/play?data=%7Bbroken'), throwsA(isA<MusicDeeplinkException>()));
     });
 
     test('searchPlay splits name - singer from the path', () {
-      final action = parseMusicDeeplink('lxmusic://music/searchPlay/${Uri.encodeComponent('稻香 - 周杰伦')}')
-          as MusicDeeplinkSearchPlay;
+      final action = parseMusicDeeplink(
+        'lxmusic://music/searchPlay/${Uri.encodeComponent('稻香 - 周杰伦')}',
+      ) as MusicDeeplinkSearchPlay;
       expect(action.name, '稻香');
       expect(action.singer, '周杰伦');
       expect(action.playLater, isFalse);
@@ -97,9 +93,8 @@ void main() {
 
     test('searchPlay reads playLater from data', () {
       final data = jsonEncode({'name': '稻香', 'singer': '周杰伦', 'playLater': true});
-      final action = parseMusicDeeplink(
-        'lxmusic://music/searchPlay?data=${Uri.encodeComponent(data)}',
-      ) as MusicDeeplinkSearchPlay;
+      final action =
+          parseMusicDeeplink('lxmusic://music/searchPlay?data=${Uri.encodeComponent(data)}') as MusicDeeplinkSearchPlay;
       expect(action.name, '稻香');
       expect(action.singer, '周杰伦');
       expect(action.playLater, isTrue);
@@ -107,14 +102,15 @@ void main() {
 
     test('songlist open/play from data, url standing in for id', () {
       final data = jsonEncode({'source': 'kg', 'id': '123'});
-      final open = parseMusicDeeplink('lxmusic://songlist/open?data=${Uri.encodeComponent(data)}')
-          as MusicDeeplinkOpenSonglist;
+      final open =
+          parseMusicDeeplink('lxmusic://songlist/open?data=${Uri.encodeComponent(data)}') as MusicDeeplinkOpenSonglist;
       expect(open.sourceId, 'kg');
       expect(open.id, '123');
 
       final playData = jsonEncode({'source': 'kg', 'url': 'https://h5.kg.com/456', 'index': 2});
-      final play = parseMusicDeeplink('lxmusic://songlist/play?data=${Uri.encodeComponent(playData)}')
-          as MusicDeeplinkPlaySonglist;
+      final play = parseMusicDeeplink(
+        'lxmusic://songlist/play?data=${Uri.encodeComponent(playData)}',
+      ) as MusicDeeplinkPlaySonglist;
       expect(play.id, 'https://h5.kg.com/456');
       expect(play.index, 2);
     });

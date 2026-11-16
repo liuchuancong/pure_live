@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_settings_store.dart';
+import 'package:pure_live/modules/music/controller/settings/music_settings_store.dart';
 
 /// The desktop lyric overlay's half of the music module's preferences: its
 /// on/off state, its look and how it sits on the screen. The player's own
@@ -26,7 +26,8 @@ final class MusicDesktopLyricsSettings {
   });
 
   /// The reference's defaults: the overlay off until it is asked for, a 40 px
-  /// white line with a 2 px black outline, stacked 15 px apart.
+  /// white line with a hairline outline (the soft shadow carries legibility
+  /// now, so the rim stays thin), stacked 15 px apart.
   static const MusicDesktopLyricsSettings standard = MusicDesktopLyricsSettings(
     desktopLyrics: false,
     desktopLyricLocked: false,
@@ -34,7 +35,7 @@ final class MusicDesktopLyricsSettings {
     desktopLyricOpacity: 1,
     desktopLyricTextColor: 0xFFFFFFFF,
     desktopLyricStrokeColor: 0xFF000000,
-    desktopLyricStrokeWidth: 2,
+    desktopLyricStrokeWidth: 1,
     desktopLyricLineGap: 15,
     desktopLyricBoldLine: true,
     desktopLyricBoldExtended: true,

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/modules/music/controller/music_sync_codec.dart';
-import 'package:pure_live/modules/music/controller/music_sync_data.dart';
-import 'package:pure_live/modules/music/controller/music_sync_server.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart';
 
 Map<String, Object?> _song(String id) => <String, Object?>{'id': id, 'name': 'Song $id'};
 
@@ -17,12 +17,16 @@ void main() {
     final local = <String, Object?>{
       'defaultList': [_song('a'), _song('b')],
       'loveList': [_song('love-1')],
-      'userList': [_userList('u1', songs: [_song('x')])],
+      'userList': [
+        _userList('u1', songs: [_song('x')]),
+      ],
     };
     final remote = <String, Object?>{
       'defaultList': [_song('b'), _song('c')],
       'loveList': <Object?>[],
-      'userList': [_userList('u2', songs: [_song('y')])],
+      'userList': [
+        _userList('u2', songs: [_song('y')]),
+      ],
     };
 
     test('merge keeps both sides and dedupes by song id', () {
@@ -51,7 +55,14 @@ void main() {
 
     test('partial payloads patch to empty lists', () {
       expect(musicSyncListDataIsEmpty(musicSyncPatchListData(null)), isTrue);
-      expect(musicSyncListDataIsEmpty(musicSyncPatchListData(<String, Object?>{'loveList': [_song('a')]})), isFalse);
+      expect(
+        musicSyncListDataIsEmpty(
+          musicSyncPatchListData(<String, Object?>{
+            'loveList': [_song('a')],
+          }),
+        ),
+        isFalse,
+      );
     });
 
     test('a target-only user list with a remembered position joins at it', () {

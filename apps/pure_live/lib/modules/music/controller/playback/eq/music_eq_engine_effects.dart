@@ -18,7 +18,7 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
 // layer's shape is written out in full so a reader compares it against the
 // lavfi dialect it replaced, argument by argument.
 // ignore_for_file: avoid_redundant_argument_values
-import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
+import 'package:pure_live/modules/music/controller/playback/eq/music_eq_config.dart';
 
 /// The typed-effects view of a sound-effect configuration, for the
 /// mpv_audio engine.

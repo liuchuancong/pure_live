@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
-import 'package:pure_live/modules/music/pages/music_online_playlists_view.dart'
+import 'package:pure_live/modules/music/views/music_online_playlists_view.dart'
     show MusicOnlinePlaylistBrowse, MusicOnlinePlaylistDetail;
 
 /// 精选: the plaza's own browser on a rail entry of its own — the page the

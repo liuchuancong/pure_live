@@ -24,10 +24,12 @@ void noteMusicSourceSilence(String where, Object error, StackTrace stackTrace) {
     _ => 'reader',
   };
   if (!_notedSilences.add('$where|$kind|${error.runtimeType}')) return;
-  appLog.forCategory('music.source').error(
-    'music source $where silenced a $kind failure',
-    fields: {'where': where, 'kind': kind},
-    error: error,
-    stackTrace: stackTrace,
-  );
+  appLog
+      .forCategory('music.source')
+      .error(
+        'music source $where silenced a $kind failure',
+        fields: {'where': where, 'kind': kind},
+        error: error,
+        stackTrace: stackTrace,
+      );
 }

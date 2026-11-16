@@ -3,6 +3,7 @@ import 'dart:io' show Directory, File, FileSystemException, Platform;
 
 import 'package:live_net/live_net.dart' show CancelToken, LiveHttp, LiveRequest;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
 
 /// A file in the cache directory.
 typedef CachedAudioFile = ({String name, int size, DateTime modified});
@@ -293,7 +294,15 @@ final class CachedTrackSource extends audio.MusicSource {
     final token = CancelToken();
     try {
       final response = await env.http.open(
-        LiveRequest.custom(method: 'GET', url: source.uri, headers: source.headers, cancelToken: token),
+        LiveRequest.custom(
+          method: 'GET',
+          url: source.uri,
+          headers: source.headers,
+          // A CDN stall must end the download, or the key stays parked
+          // in the in-flight set until the app restarts.
+          timeout: const Duration(seconds: 120),
+          cancelToken: token,
+        ),
       );
       if (response.statusCode != 200) {
         throw StateError('HTTP ${response.statusCode}');
@@ -305,7 +314,10 @@ final class CachedTrackSource extends audio.MusicSource {
         await sink.close();
       }
       await cache.commit(key);
-    } on Object {
+    } on Object catch (error) {
+      // A dead download says so: an abort that only freed the key read
+      // as never having started, and the next play re-flew it.
+      appLog.forCategory('music.cache').warning('audio cache download failed', fields: {'key': key, 'error': '$error'});
       token.cancel();
       await cache.abort(key);
     }

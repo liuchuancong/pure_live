@@ -3,27 +3,26 @@
 /// server's calls against the module's providers.
 library;
 
-import 'dart:async' show unawaited;
+import 'dart:async' show StreamSubscription, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/modules/music/controller/music_library.dart'
+import 'package:pure_live/modules/music/controller/library/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
-import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
-import 'package:pure_live/modules/music/controller/music_sync_client.dart';
-import 'package:pure_live/modules/music/controller/music_sync_data.dart';
+import 'package:pure_live/modules/music/controller/library/music_playlists.dart' show musicPlaylistsProvider;
+import 'package:pure_live/modules/music/controller/sync/music_sync_client.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_data.dart';
 
-export 'package:pure_live/modules/music/controller/music_sync_client.dart' show MusicSyncStatus;
-export 'package:pure_live/modules/music/controller/music_sync_data.dart' show kMusicSyncModes;
+export 'package:pure_live/modules/music/controller/sync/music_sync_client.dart' show MusicSyncStatus;
+export 'package:pure_live/modules/music/controller/sync/music_sync_data.dart' show kMusicSyncModes;
 
 /// The preference keys the feature keeps.
 const String kMusicSyncHostKey = 'music.sync.host';
 const String kMusicSyncAuthCodeKey = 'music.sync.authCode';
 const String kMusicSyncModeKey = 'music.sync.mode';
-const String kMusicSyncAutoKey = 'music.sync.auto';
 
 /// The connection history's preference, the reference's `@sync_host_history`.
 const String kMusicSyncHostHistoryKey = 'music.sync.hostHistory';
@@ -39,6 +38,10 @@ const String kMusicSyncDefaultMode = 'merge_remote_local';
 const String kMusicDislikeRemoteRulesKey = 'music.sync.dislikeRules';
 
 /// What the settings surface watches.
+/// The sync's own notes, the ones the settings page names in the viewer's
+/// language; an error keeps its raw text in [MusicSyncState.message].
+enum MusicSyncNote { forgotKey, invalidAddress }
+
 final class MusicSyncState {
   const MusicSyncState({
     required this.host,
@@ -47,6 +50,7 @@ final class MusicSyncState {
     required this.status,
     required this.hostHistory,
     this.message,
+    this.note,
     this.serverName,
   });
 
@@ -58,6 +62,10 @@ final class MusicSyncState {
   /// Addresses used before, newest first, the reference's syncHostHistory.
   final List<String> hostHistory;
   final String? message;
+
+  /// The domain note to name in the viewer's language, in place of a
+  /// stored sentence.
+  final MusicSyncNote? note;
   final String? serverName;
 
   MusicSyncState copyWith({
@@ -67,6 +75,7 @@ final class MusicSyncState {
     MusicSyncStatus? status,
     List<String>? hostHistory,
     String? message,
+    MusicSyncNote? note,
     String? serverName,
   }) => MusicSyncState(
     host: host ?? this.host,
@@ -75,6 +84,7 @@ final class MusicSyncState {
     status: status ?? this.status,
     hostHistory: hostHistory ?? this.hostHistory,
     message: message,
+    note: note,
     serverName: serverName ?? this.serverName,
   );
 }
@@ -82,6 +92,10 @@ final class MusicSyncState {
 /// The sync session's controller.
 final class MusicSyncController extends Notifier<MusicSyncState> {
   MusicSyncClient? _client;
+
+  /// The live client's status pipe; cancelled with the client itself in
+  /// [_teardown], so a replaced session leaves no listening tail.
+  StreamSubscription<MusicSyncStatus>? _statusSubscription;
 
   @override
   MusicSyncState build() {
@@ -180,14 +194,14 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
     await musicSyncWriteKeyInfo(null);
     // copyWith clears by assignment; passing null is deliberate.
     // ignore: avoid_redundant_argument_values
-    state = state.copyWith(serverName: null, message: '已清除服务器授权');
+    state = state.copyWith(serverName: null, note: MusicSyncNote.forgotKey);
   }
 
   /// Connects, auths, opens the socket and wires the handlers.
   Future<void> connect() async {
     final address = MusicSyncAddress.parse(state.host);
     if (address == null) {
-      state = state.copyWith(status: MusicSyncStatus.failed, message: '服务器地址不合法');
+      state = state.copyWith(status: MusicSyncStatus.failed, note: MusicSyncNote.invalidAddress);
       return;
     }
     // The reference records the address the moment sync is switched on,
@@ -197,7 +211,7 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
     final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
     final client = MusicSyncClient(http: http, deviceName: musicSyncDeviceName());
     _client = client;
-    client.status.listen((status) {
+    _statusSubscription = client.status.listen((status) {
       if (_client == client) state = state.copyWith(status: status);
     });
     _registerHandlers(client);
@@ -207,9 +221,16 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
       await musicSyncWriteKeyInfo(keyInfo);
       await client.connect(address, keyInfo);
       if (_client == client) {
-        // copyWith clears by assignment; passing null is deliberate.
-        // ignore: avoid_redundant_argument_values
-        state = state.copyWith(status: MusicSyncStatus.connected, serverName: keyInfo.serverName, message: null);
+        state = state.copyWith(
+          status: MusicSyncStatus.connected,
+          serverName: keyInfo.serverName,
+          // copyWith clears by assignment; passing null is deliberate.
+          // ignore: avoid_redundant_argument_values
+          message: null,
+          // The note clears the same way — null is the deliberate value.
+          // ignore: avoid_redundant_argument_values
+          note: null,
+        );
       }
     } on Object catch (error) {
       if (_client == client) state = state.copyWith(status: MusicSyncStatus.failed, message: error.toString());
@@ -303,9 +324,11 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
   }
 
   Future<void> _teardown() async {
+    unawaited(_statusSubscription?.cancel() ?? Future<void>.value());
+    _statusSubscription = null;
     final client = _client;
     _client = null;
-    if (client != null) await client.disconnect();
+    if (client != null) await client.dispose();
   }
 
   /// Pushes the module's current lists at the server — the local-change

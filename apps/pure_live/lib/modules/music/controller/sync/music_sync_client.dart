@@ -12,8 +12,8 @@ import 'package:live_net/live_net.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_websocket/live_websocket.dart' show LiveWebSocketClient;
 
-import 'package:pure_live/modules/music/controller/music_sync_codec.dart';
-import 'package:pure_live/modules/music/controller/music_sync_wire.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_codec.dart';
+import 'package:pure_live/modules/music/controller/sync/music_sync_wire.dart';
 
 /// The LX sync protocol's client: HTTP auth against a lx-music desktop
 
@@ -159,6 +159,7 @@ final class MusicSyncClient {
     final text = await _http.getText(
       Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/ah'),
       headers: {'m': message},
+      timeout: const Duration(seconds: 10),
     );
     final answer = pair.decryptOaep(text);
     final keyInfo = MusicSyncKeyInfo.fromJson(jsonDecode(answer));
@@ -171,6 +172,7 @@ final class MusicSyncClient {
     final text = await _http.getText(
       Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/ah'),
       headers: {'i': keyInfo.clientId, 'm': message},
+      timeout: const Duration(seconds: 10),
     );
     if (musicSyncAesDecrypt(text, keyInfo.key) != kMusicSyncHelloMsg) throw Exception('认证失败');
     return keyInfo;
@@ -181,10 +183,12 @@ final class MusicSyncClient {
     _emit(MusicSyncStatus.connecting);
     final hello = await _http.getText(
       Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/hello'),
+      timeout: const Duration(seconds: 10),
     );
     if (hello != kMusicSyncHelloMsg) throw Exception('不是 lx-music 同步服务');
     final id = await _http.getText(
       Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/id'),
+      timeout: const Duration(seconds: 10),
     );
     return id.startsWith(kMusicSyncIdPrefix) ? id.substring(kMusicSyncIdPrefix.length) : id;
   }
@@ -212,6 +216,14 @@ final class MusicSyncClient {
   }
 
   /// Closes the socket and clears the engine.
+  /// Ends the session and closes the streams: a client the controller
+  /// has stopped listening to leaves nothing behind to drain.
+  Future<void> dispose() async {
+    await disconnect();
+    await _status.close();
+    await _messages.close();
+  }
+
   Future<void> disconnect() async {
     _idleTimer?.cancel();
     final socket = _socket;
