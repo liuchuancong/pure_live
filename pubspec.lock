@@ -585,6 +585,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.0"
+  csslib:
+    dependency: transitive
+    description:
+      name: csslib
+      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   cupertino_icons:
     dependency: transitive
     description:
@@ -1311,6 +1319,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  fvp:
+    dependency: transitive
+    description:
+      name: fvp
+      sha256: "1ee9df424ace41988c2e10ed01f35b170d9ef00c62330acd1b97f007ca56ec99"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.40.0"
   glob:
     dependency: transitive
     description:
@@ -1407,6 +1423,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  html:
+    dependency: transitive
+    description:
+      name: html
+      sha256: "43b67b8f43321ab066817dfac5619596c98bb1b61624e77203bb4351785f9699"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.7"
   http:
     dependency: transitive
     description:
@@ -1650,191 +1674,191 @@ packages:
   media_core:
     dependency: "direct overridden"
     description:
-      path: "packages/media_core"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_audio:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_audio"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_audio"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_better_player:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_better_player"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_cast_dlna:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_cast_dlna"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_cast_dlna"
+      relative: false
+    source: path
     version: "0.8.0"
   media_core_danmaku:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_danmaku"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_download:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_download"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_download"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_feed:
+    dependency: "direct overridden"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_feed"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_fullscreen:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_fullscreen"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_fvp:
+    dependency: "direct overridden"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fvp"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_ijk_player:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_ijk_player"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_ingest:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_ingest"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ingest"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_list_playback:
+    dependency: "direct overridden"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_list_playback"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_live:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_live"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_logging:
     dependency: "direct overridden"
     description:
-      path: "packages/media_core_logging"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_media_activity:
+    dependency: "direct overridden"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_activity"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_media_kit:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_media_kit"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_mediasession:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_mediasession"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_memory:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_memory"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_memory"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_mpv_audio:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_mpv_audio"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mpv_audio"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_multiview:
+    dependency: "direct overridden"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_native:
     dependency: "direct overridden"
     description:
-      path: "packages/media_core_native"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_native"
+      relative: false
+    source: path
     version: "0.2.0"
   media_core_notify:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_notify"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_notify"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_pip:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_pip"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_presentation:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_presentation"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_recording_ffmpeg:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_recording_ffmpeg"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_recording_ffmpeg"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_ui:
+    dependency: "direct overridden"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ui"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_win32:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: "packages/media_core_win32"
-      ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      resolved-ref: "64d35eb5753ec846d768777305eec5d2348bafec"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_win32"
+      relative: false
+    source: path
     version: "0.1.0"
   media_kit:
     dependency: transitive
@@ -2827,6 +2851,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.1"
+  video_player:
+    dependency: transitive
+    description:
+      name: video_player
+      sha256: "07ae1e03f2d4c8e2e9a75ee678f90acbc4506d4458a9c628512d119a1eee5754"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.14.1"
+  video_player_android:
+    dependency: transitive
+    description:
+      name: video_player_android
+      sha256: "73af648c6fbd0ced6b4863b3ae995bf86e9f976544891d92a3e38452647b91c5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.4"
+  video_player_avfoundation:
+    dependency: transitive
+    description:
+      name: video_player_avfoundation
+      sha256: "5af728d811c218fdc100b7e89bcda789fe34d36d53a968912011bc2d7df14b46"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.4"
+  video_player_platform_interface:
+    dependency: transitive
+    description:
+      name: video_player_platform_interface
+      sha256: "92c0fbabe20c788e71fd10d26cea998d0d253282e65d145aed0818731cf593ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.9.0"
+  video_player_web:
+    dependency: transitive
+    description:
+      name: video_player_web
+      sha256: "9f3c00be2ef9b76a95d94ac5119fb843dca6f2c69e6c9968f6f2b6c9e7afbdeb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
   visibility_detector:
     dependency: transitive
     description:

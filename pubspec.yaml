@@ -63,12 +63,37 @@ dependency_overrides:
   # 3.1.0-pre.4 解析（与 media_core_mediasession 的约束一致；它的 init_apartment 处理与 3.0.9 相同）。Windows 真机若复现启动即死，要么补回 fork，要么在本机重建它。
   flutter_media_session: ^3.1.0-pre.4
   hooks: ^2.2.0
-  # 播放内核走 github liuchuancong/media_core（整仓同 pin a682384f，与应用侧同 ref，避免 git/path 双源冲突）
-  media_core: { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core, ref: 64d35eb5753ec846d768777305eec5d2348bafec } }
-  media_core_logging:
-    { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_logging, ref: 64d35eb5753ec846d768777305eec5d2348bafec } }
-  media_core_native:
-    { git: { url: https://github.com/liuchuancong/media_core, path: packages/media_core_native, ref: 64d35eb5753ec846d768777305eec5d2348bafec } }
+  # 播放内核整组走本地 checkout C:/Users/XA-158/projects/flutter/media_core（桌面歌词
+  # 重绘在 C++ 侧、尚未回推上游 github；本地 HEAD = pin 的 64d35eb，Dart 代码一致）。
+  # 本地包之间是 path 依赖，git/path 双源会在闭包里层层冲突，因此整仓 27 个包
+  # 一并 path。上游合入重绘后整组换回 git ref（64d35eb 后的新 commit）再 pub get。
+  media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core }
+  media_core_audio: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_audio }
+  media_core_better_player: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player }
+  media_core_cast_dlna: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_cast_dlna }
+  media_core_danmaku: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku }
+  media_core_download: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_download }
+  media_core_feed: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_feed }
+  media_core_fullscreen: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen }
+  media_core_fvp: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fvp }
+  media_core_ijk_player: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player }
+  media_core_ingest: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ingest }
+  media_core_list_playback: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_list_playback }
+  media_core_live: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live }
+  media_core_logging: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging }
+  media_core_media_activity: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_activity }
+  media_core_media_kit: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit }
+  media_core_mediasession: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession }
+  media_core_memory: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_memory }
+  media_core_mpv_audio: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mpv_audio }
+  media_core_multiview: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview }
+  media_core_native: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_native }
+  media_core_notify: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_notify }
+  media_core_pip: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip }
+  media_core_presentation: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation }
+  media_core_recording_ffmpeg: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_recording_ffmpeg }
+  media_core_ui: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ui }
+  media_core_win32: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_win32 }
   platform: ^3.2.0
   test_api: ^0.7.15
   wakelock_plus: 1.8.1

@@ -370,6 +370,14 @@ $unbackedAllowed = @{
     "backup.webdav.auto.lastAttempt" = "the run record's last attempt, the backoff's anchor; device-local like lastSuccess."
     "backup.webdav.auto.failures" = "the run record's consecutive failures; device-local like lastSuccess."
     "backup.webdav.auto.lastTarget" = "the run record's target fingerprint of the last success; device-local like lastSuccess."
+    "vod.app.accessKey" = "the bilibili app sign-in's token; a backup document must not carry it, like the hongguo sign-in cookie."
+    "vod.app.deviceId" = "the app client's device id; restoring it would clone another device's identity."
+    "vod.app.mid" = "the signed-in account's id, which means nothing without the token kept out above."
+    "m.player.backend" = "a pre-sandbox scoped copy the player backend retires on its next write; the live, backed-up value travels as the bare player.backend key."
+    "huya.downloads" = "the download queue's tasks point at files that exist on this machine only."
+    "danmaku.chatAvatars" = "a retired key the boot sweep deletes from older installs; nothing reads it any more."
+    "danmaku.giftValueInYuan" = "a retired key the boot sweep deletes from older installs; nothing reads it any more."
+    "room.orientation" = "a retired key the boot sweep deletes from older installs; nothing reads it any more."
 }
 
 foreach ($key in ($observedKinds.Keys | Sort-Object)) {
@@ -439,8 +447,18 @@ if ($issues.Count -gt 0) {
 
 Write-Host "Prefs manifest checks passed: $($observedKinds.Count) prefs keys, $($backupKinds.Count) backup entries, $($listed.Count) invalidations." -ForegroundColor Green
 if ($dynamicSites.Count -gt 0) {
+    # The computed-key families a backup family entry carries
+    # (backup_settings.darts kBackedUpPrefFamilies): keys under these
+    # prefixes travel in the document, so their call sites are covered.
+    $familyPrefixes = @("vod.progress.", "vod.season.progress.", "vod.skip.")
     Write-Host "Computed-key call sites, for review rather than failure:" -ForegroundColor DarkGray
-    foreach ($site in ($dynamicSites | Sort-Object -Unique | Select-Object -First 15)) {
+    foreach ($site in ($dynamicSites | Sort-Object -Unique | Where-Object {
+            $covered = $false
+            foreach ($prefix in $familyPrefixes) {
+                if ($_.Contains($prefix)) { $covered = $true; break }
+            }
+            -not $covered
+        })) {
         Write-Host " - $site" -ForegroundColor DarkGray
     }
 }

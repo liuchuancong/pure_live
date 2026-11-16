@@ -191,6 +191,8 @@ dev_dependencies:
   slang_mcp: ^0.2.1 # 多语言开发辅助工具（MCP 服务器）
 dependency_overrides:
   flutter_local_notifications_windows: ^4.0.0
+  # 桌面歌词重绘的 media_core 本地源 override 在工作区根 pubspec（本包若重复
+  # override 同一包会被 pub 拒绝）。
 
 flutter:
   uses-material-design: true
