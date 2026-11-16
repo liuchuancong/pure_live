@@ -5,8 +5,10 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/l10n/translations.dart';
 
 /// The resizer's hit strip; the visible line sits centered in it. Wide on
 /// purpose: the line is 1px, the hand should not have to be.
@@ -50,6 +52,39 @@ final class _SidebarResizerState extends State<SidebarResizer> {
   bool _hovering = false;
   bool _dragging = false;
 
+  /// The keyboard's own drag: the arrows walk the width the way a drag
+  /// does, Shift coarsening the step — the chat seam's own rule.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'sidebar-resizer');
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  /// One arrow's worth of width, measured like a drag's.
+  void _nudged(double delta) => widget.onWidthChanged(
+    (widget.width + delta).clamp(
+      kSidebarMinWidth,
+      math.max(kSidebarMinWidth, math.min(kSidebarMaxWidth, MediaQuery.sizeOf(context).width - kSidebarContentFloor)),
+    ),
+  );
+
+  KeyEventResult _keyed(KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
+    final step = HardwareKeyboard.instance.isShiftPressed ? 32.0 : 8.0;
+    // The sidebar sits left of the seam: right widens it, left narrows.
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      _nudged(step);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      _nudged(-step);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   /// Set when the drag collapsed the sidebar: the rest of that gesture
   /// then reports nothing, so the rail is not dragged about.
   bool _sentCollapse = false;
@@ -88,34 +123,43 @@ final class _SidebarResizerState extends State<SidebarResizer> {
     final colors = DsTheme.colorsOf(context);
     final motion = DsTheme.of(context).motion;
     final active = _hovering || _dragging;
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeLeftRight,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        dragStartBehavior: DragStartBehavior.down,
-        onHorizontalDragStart: (details) {
-          _dragStartWidth = widget.width;
-          _dragStartX = details.globalPosition.dx;
-          _sentCollapse = false;
-          widget.onDragging(true);
-          setState(() => _dragging = true);
-        },
-        onHorizontalDragUpdate: _dragged,
-        onHorizontalDragEnd: (_) => _ended(),
-        onHorizontalDragCancel: _ended,
-        onDoubleTap: widget.onReset,
-        child: SizedBox(
-          width: _kResizerStripWidth,
-          height: double.infinity,
-          child: Center(
-            child: AnimatedContainer(
-              duration: active ? motion.toneDuration : Duration.zero,
-              curve: motion.toneCurve,
-              width: active ? 2.0 : 1.0,
+    final t = context.t;
+    return Semantics(
+      label: t.common.sidebarWidth,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeLeftRight,
+        onEnter: (_) => setState(() => _hovering = true),
+        onExit: (_) => setState(() => _hovering = false),
+        child: Focus(
+          focusNode: _focusNode,
+          onKeyEvent: (_, event) => _keyed(event),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            dragStartBehavior: DragStartBehavior.down,
+            onHorizontalDragStart: (details) {
+              _dragStartWidth = widget.width;
+              _dragStartX = details.globalPosition.dx;
+              _sentCollapse = false;
+              widget.onDragging(true);
+              setState(() => _dragging = true);
+            },
+            onHorizontalDragUpdate: _dragged,
+            onHorizontalDragEnd: (_) => _ended(),
+            onHorizontalDragCancel: _ended,
+            onDoubleTap: widget.onReset,
+            onTap: _focusNode.requestFocus,
+            child: SizedBox(
+              width: _kResizerStripWidth,
               height: double.infinity,
-              color: active ? colors.accent : colors.border,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: active ? motion.toneDuration : Duration.zero,
+                  curve: motion.toneCurve,
+                  width: active ? 2.0 : 1.0,
+                  height: double.infinity,
+                  color: active ? colors.accent : colors.border,
+                ),
+              ),
             ),
           ),
         ),

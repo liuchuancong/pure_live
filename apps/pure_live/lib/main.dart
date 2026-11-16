@@ -1,3 +1,4 @@
+import 'package:desen_ui/desen_ui.dart' show DsThemeMode;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,7 +108,16 @@ void _runDesktop(Boot boot) {
 
   const mainSize = Size(1280, 800);
   const minimumSize = Size(300, 600);
-  const background = Color(0xFF101418);
+  // The native window's first frame follows the stored theme mode, so a
+  // light-theme viewer does not meet a dark flash on the way in. The
+  // system setting and an unanswered store keep the brand's dark — the
+  // splash the app has always shown; the light value approximates that
+  // theme's canvas, close enough for the frame Flutter replaces at once.
+  const darkBackground = Color(0xFF101418);
+  final background = switch (ThemePersistence.readMode()) {
+    DsThemeMode.light => const Color(0xFFF4F4F5),
+    _ => darkBackground,
+  };
   runMultiApp(
     home: (context, id) =>
         AppWindowRoot(viewId: id, role: WindowRole.main, initialRoute: const PopularRoute().location),

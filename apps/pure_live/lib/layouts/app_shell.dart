@@ -333,11 +333,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
   List<NavigationItem> _bottomTabs() => switch (widget.module) {
     AppModule.live =>
       (widget.homeMenuItems.isEmpty ? kHomeMenuItems : widget.homeMenuItems).take(_kMaxBottomTabs).toList(),
-    AppModule.iptv => const [
-      NavigationItem.channels,
-      NavigationItem.iptvRecent,
-      NavigationItem.iptvGuide,
-    ],
+    AppModule.iptv => const [NavigationItem.channels, NavigationItem.iptvRecent, NavigationItem.iptvGuide],
     AppModule.vod => const [
       NavigationItem.vodSearch,
       NavigationItem.vod,
@@ -392,8 +388,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // a desktop window narrowed under the breakpoint keeps the bottom bar it
     // has always taken.
     final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
-    final tablet =
-        (formFactor == FormFactor.phone || formFactor == FormFactor.tablet) && isTabletSized(size);
+    final tablet = (formFactor == FormFactor.phone || formFactor == FormFactor.tablet) && isTabletSized(size);
     final narrow = width < kBottomBarBreakpoint.breakpoint && !widget.tv && !tablet;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
@@ -420,6 +415,10 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // toolbar breakpoint the page stacks its row and the head carries its
     // verbs; above it the page keeps them itself.
     final pageNarrow = LiveWindow.stacksToolbar(headWidth - 2 * LiveWindow.pageInset(width));
+    // The same width decides the paging mode the pages show (see
+    // PageLayoutScope.paging): measured here once, against the content
+    // area the pages actually get.
+    final pagePaging = headWidth >= LiveWindow.paging;
     // A page may hand its own verbs up instead of drawing them (see
     // PageHeadActions); the built-in feeds also offer theirs by name.
     final published = ref.watch(pageHeadActionsProvider);
@@ -456,6 +455,10 @@ final class _AppShellState extends ConsumerState<AppShell> {
       const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _focusSearch,
       const SingleActivator(LogicalKeyboardKey.comma, control: true): () => widget.onMenu(NavigationItem.settings),
       const SingleActivator(LogicalKeyboardKey.comma, meta: true): () => widget.onMenu(NavigationItem.settings),
+      // The trail the title bar's arrows walk, from the keyboard: the
+      // back/forward chord desktop viewers already carry.
+      if (widget.canBack) const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): widget.onBack,
+      if (widget.canForward) const SingleActivator(LogicalKeyboardKey.arrowRight, alt: true): widget.onForward,
     };
 
     if (narrow) {
@@ -482,7 +485,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
       );
       final scaffold = Scaffold(
         extendBody: glass,
-        backgroundColor: wallpaper ? const Color(0x00000000) : colors.surface,
+        backgroundColor: wallpaper ? const Color(0x00000000) : colors.canvas,
         appBar: AppBar(
           automaticallyImplyLeading: false,
           backgroundColor: chrome,
@@ -540,6 +543,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
         drawer: _drawer(context, t, tabs, rail, wallpaper),
         body: PageLayoutScope(
           narrow: pageNarrow,
+          paging: pagePaging,
           child: WindowClassScope(
             child: glass && atTab
                 ? MediaQuery(
@@ -579,7 +583,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
       child: Focus(
         skipTraversal: true,
         child: ColoredBox(
-          color: wallpaper ? const Color(0x00000000) : colors.surface,
+          color: wallpaper ? const Color(0x00000000) : colors.canvas,
           child: Column(
             children: [
               if (WindowChromeState.drawsStrip)
@@ -704,6 +708,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
                             Expanded(
                               child: PageLayoutScope(
                                 narrow: pageNarrow,
+                                paging: pagePaging,
                                 // A TV build hangs the page shell here, so the
                                 // route-stable content keeps its own focus
                                 // plumbing: covered pages leave the tree, the

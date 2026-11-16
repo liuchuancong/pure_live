@@ -13,12 +13,20 @@ import 'package:pure_live/shared/focus/tv_dialog_lock.dart';
 /// The lock releases a beat after the dialog's future completes, because a
 /// dialog's focus tree dies only when its exit transition ends — a select
 /// landing in that window must still find the lock up.
+/// The unlock scheduled when the last TV dialog closed; cancelled by the
+/// next open so two dialogs closing in a row cannot free each other's
+/// guard early.
+Timer? _tvDialogUnlock;
+
 Future<T?> showTvDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool dismissible = true,
 }) async {
   final invoking = FocusManager.instance.primaryFocus;
+  // The one deferred unlock: a dialog opened inside the last one's
+  // window cancels it, so a stale timer never frees the lock early.
+  _tvDialogUnlock?.cancel();
   tvDialogLock.lock();
   try {
     return await showDsDialog<T>(
@@ -27,7 +35,7 @@ Future<T?> showTvDialog<T>({
       builder: (context) => TvDialogFocusGuard(child: builder(context)),
     );
   } finally {
-    Timer(const Duration(milliseconds: 350), tvDialogLock.unlock);
+    _tvDialogUnlock = Timer(const Duration(milliseconds: 350), tvDialogLock.unlock);
     _restoreInvokingFocus(invoking);
   }
 }

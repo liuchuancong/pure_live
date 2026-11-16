@@ -258,10 +258,7 @@ final class _SidebarToggleButton extends ConsumerWidget {
             return Padding(
               padding: const EdgeInsets.all(DsSpace.s4),
               child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: background,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(6)),
                 child: Center(
                   child: DsIcon(
                     hovered ? (expanded ? DsIcons.panelLeftClose : DsIcons.panelLeftOpen) : DsIcons.tv,

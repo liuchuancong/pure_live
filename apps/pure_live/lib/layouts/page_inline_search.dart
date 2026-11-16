@@ -11,7 +11,7 @@ import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview.dart' show multiviewSearchHandoffProvider;
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/modules/music/controller/music_search.dart';
+import 'package:pure_live/modules/music/controller/browse/music_search.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/shared/shared.dart';
 
