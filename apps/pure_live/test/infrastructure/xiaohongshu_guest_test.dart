@@ -46,7 +46,6 @@ final class _KeptPage implements XiaohongshuKeptGuestPage {
   final Uri page;
   bool released = false;
 
-
   @override
   Future<Object?> run({required String script, CancelToken? cancel}) async {
     browser.calls.add((page: page, script: script, cancel: cancel));
