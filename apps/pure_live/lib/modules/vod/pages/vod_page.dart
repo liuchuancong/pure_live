@@ -206,7 +206,7 @@ final class _VodFeedView extends ConsumerWidget {
     final t = context.t;
     final browse = ref.watch(browseSettingsProvider);
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
-    final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
+    final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: true, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
     final grid = PagedCardGrid<VodVideo>(
       scrollController: scrollController,
@@ -248,11 +248,16 @@ final class _VodFeedView extends ConsumerWidget {
 }
 
 /// The viewer's dynamic feed: sign-in gated, cursored, read page by page.
-final class _VodDynamicsView extends ConsumerWidget {
+final class _VodDynamicsView extends ConsumerStatefulWidget {
   const _VodDynamicsView({required this.onOpen});
 
   final ValueChanged<VodVideo> onOpen;
 
+  @override
+  ConsumerState<_VodDynamicsView> createState() => _VodDynamicsViewState();
+}
+
+final class _VodDynamicsViewState extends ConsumerState<_VodDynamicsView> {
   void _openPost(BuildContext context, VodDynamic post) {
     final bvid = post.bvid;
     if (bvid == null || bvid.isEmpty) return;
@@ -260,13 +265,22 @@ final class _VodDynamicsView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(vodDynamicsProvider.notifier).open());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
+    final ref = this.ref;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final account = ref.watch(vodAccountProvider);
     final login = account.value;
     if (account.isLoading && login == null) {
-      return const Center(child: DsSpinner());
+      return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 5));
     }
     if (login == null || !login.isLogin) {
       return Center(
@@ -286,9 +300,6 @@ final class _VodDynamicsView extends ConsumerWidget {
     }
     final state = ref.watch(vodDynamicsProvider);
     final controller = ref.read(vodDynamicsProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) unawaited(controller.open());
-    });
     if (state.error != null && state.items.isEmpty) {
       return Center(
         child: DsEmptyState(
@@ -306,7 +317,7 @@ final class _VodDynamicsView extends ConsumerWidget {
       );
     }
     if (state.loading && state.items.isEmpty) {
-      return const Center(child: DsSpinner());
+      return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 6));
     }
     if (state.items.isEmpty) {
       return Center(
@@ -328,7 +339,7 @@ final class _VodDynamicsView extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
             child: Center(
               child: state.loading
-                  ? const DsSpinner()
+                  ? const SkeletonRows(rows: 2, trailing: false)
                   : DsButton(
                       variant: DsButtonVariant.secondary,
                       onPressed: () => unawaited(controller.loadMore()),
@@ -393,7 +404,7 @@ final class _VodCarouselState extends State<_VodCarousel> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: inset),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(DsTheme.of(context).radii.overlay),
         child: SizedBox(
           height: 200,
           child: Stack(

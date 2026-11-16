@@ -1,6 +1,9 @@
+import 'dart:convert' show jsonDecode, jsonEncode;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttp;
 import 'package:live_sites/live_sites.dart' show SiteIds;
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
@@ -395,6 +398,173 @@ final class VodPendingSearchController extends Notifier<String?> {
 }
 
 /// The word the station's search page should run next.
-final vodPendingSearchProvider = NotifierProvider<VodPendingSearchController, String?>(
-  VodPendingSearchController.new,
+final vodPendingSearchProvider = NotifierProvider<VodPendingSearchController, String?>(VodPendingSearchController.new);
+
+/// One UP主's space videos, paged: what a live room's anchor door opens
+/// onto, and the station's own space listing besides.
+final class VodUploaderState {
+  /// A page over [mid]'s uploads.
+  const VodUploaderState({
+    this.mid = '',
+    this.videos = const [],
+    this.nextPage = 1,
+    this.hasMore = true,
+    this.loading = false,
+    this.error,
+    this.total,
+  });
+
+  /// The uploader's mid, as the route carried it.
+  final String mid;
+
+  /// Every page answered so far, in order.
+  final List<VodVideo> videos;
+
+  /// The next page the source is asked for.
+  final int nextPage;
+
+  /// Whether the source may still have more.
+  final bool hasMore;
+
+  /// Whether a page is in flight.
+  final bool loading;
+
+  /// The last failure; a [VodFailure] carries its own sentence.
+  final Object? error;
+
+  /// The space's whole size, said by the source's first page.
+  final int? total;
+}
+
+/// One UP主's space videos, paged.
+final class VodUploaderController extends Notifier<VodUploaderState> {
+  @override
+  VodUploaderState build() => const VodUploaderState();
+
+  /// Opens [mid]'s space; another mid starts it over.
+  Future<void> open(String mid) async {
+    if (state.mid == mid && (state.videos.isNotEmpty || state.loading)) return;
+    state = VodUploaderState(mid: mid);
+    await _load(1);
+  }
+
+  /// Loads the next page.
+  Future<void> loadMore() async {
+    if (state.loading || !state.hasMore) return;
+    await _load(state.nextPage);
+  }
+
+  /// Reads the page again from its first page.
+  Future<void> refresh() => _load(1);
+
+  Future<void> _load(int page) async {
+    if (state.loading) return;
+    final mid = state.mid;
+    state = VodUploaderState(
+      mid: mid,
+      videos: state.videos,
+      nextPage: state.nextPage,
+      hasMore: state.hasMore,
+      loading: true,
+    );
+    try {
+      final number = int.tryParse(mid) ?? 0;
+      final answer = number <= 0
+          ? const VodSearchPage(videos: [])
+          : await ref.read(vodClientProvider).spaceVideos(number, page: page);
+      if (!ref.mounted || state.mid != mid) return;
+      final merged = page == 1 ? [...answer.videos] : [...state.videos];
+      if (page > 1) {
+        final seen = {for (final video in merged) video.id};
+        merged.addAll(answer.videos.where((video) => seen.add(video.id)));
+      }
+      state = VodUploaderState(
+        mid: mid,
+        videos: List<VodVideo>.unmodifiable(merged),
+        nextPage: page + 1,
+        hasMore: answer.hasMore,
+        total: page == 1 ? answer.total : state.total,
+      );
+    } on Object catch (failure) {
+      if (!ref.mounted || state.mid != mid) return;
+      state = VodUploaderState(
+        mid: mid,
+        videos: state.videos,
+        nextPage: state.nextPage,
+        hasMore: false,
+        error: failure,
+      );
+    }
+  }
+}
+
+/// One UP主's space page.
+final vodUploaderProvider = NotifierProvider<VodUploaderController, VodUploaderState>(VodUploaderController.new);
+
+/// The preference key the viewer's recent vod searches live under.
+const String kVodSearchHistoryKey = 'vod.search.history';
+
+/// How many searches the station page remembers.
+const int kVodSearchHistoryLimit = 20;
+
+/// The queries the viewer searched, newest first — the reference's
+/// 搜索历史, the same list the other stations keep about themselves.
+final class VodSearchHistoryController extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    try {
+      final raw = StoragePrefs.getString(kVodSearchHistoryKey);
+      if (raw == null || raw.isEmpty) return const [];
+      final json = jsonDecode(raw);
+      if (json is! List) return const [];
+      return [
+        for (final entry in json)
+          if (entry is String && entry.trim().isNotEmpty) entry,
+      ];
+    } on Object {
+      return const [];
+    }
+  }
+
+  /// Puts [query] at the front, dropping an older copy. The duplicate test
+  /// reads case-insensitively, the way the live search's history does — a
+  /// re-ask of "abc" after "ABC" is one search said twice, not two words.
+  Future<void> record(String query) async {
+    final word = query.trim();
+    if (word.isEmpty) return;
+    if (state.isNotEmpty && state.first.toLowerCase() == word.toLowerCase()) return;
+    state = [
+      word,
+      ...state.where((entry) => entry.toLowerCase() != word.toLowerCase()),
+    ].take(kVodSearchHistoryLimit).toList();
+    await _save();
+  }
+
+  /// Forgets one query.
+  Future<void> remove(String query) async {
+    state = [
+      for (final entry in state)
+        if (entry != query) entry,
+    ];
+    await _save();
+  }
+
+  /// Forgets every query.
+  Future<void> clear() async {
+    state = const [];
+    await _save();
+  }
+
+  Future<void> _save() async {
+    try {
+      await StoragePrefs.setString(kVodSearchHistoryKey, jsonEncode(state));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The viewer's recent searches.
+final vodSearchHistoryProvider = NotifierProvider<VodSearchHistoryController, List<String>>(
+  VodSearchHistoryController.new,
 );

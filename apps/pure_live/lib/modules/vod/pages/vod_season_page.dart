@@ -3,8 +3,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show Scaffold;
-import 'package:flutter/services.dart'
-    show Clipboard, ClipboardData, FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -16,13 +15,16 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
 import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
+import 'package:pure_live/modules/vod/controller/vod_library.dart' show VodSeasonProgress, vodSeasonProgressProvider;
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart'
     show VodApiType, VodFinishAction, VodSpeedChoice, vodPlaybackSettingsProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
+import 'package:pure_live/modules/vod/widgets/vod_jump_dialog.dart' show showVodJumpDialog;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
     show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
@@ -30,23 +32,27 @@ import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
 import 'package:pure_live/shared/player/on_video_colors.dart';
+import 'package:pure_live/shared/player/playback_layout.dart' show kPlaybackWideBreakpoint;
 import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton;
 import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPill;
 import 'package:pure_live/shared/shared.dart'
     show
         AudienceFormat,
         CoverFallback,
+        DetailHeroBackdrop,
         FloatingVideoHandoff,
         FloatingVideoWindow,
+        HeroPlayDisc,
         LiveWindow,
         PlaybackLayout,
         PlayerIdleProgress,
         RoomCoverChip,
+        SectionHeader,
         cachedImage,
         capturePlayerFrame,
+        kPlaybackCompactBreakpoint,
         kRoomCoverScrim,
         silencePlayer;
-import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
 /// One cinema title's page: the player over media_core, the season's blurb,
@@ -132,6 +138,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   StreamSubscription<PlayerAdapterEvent>? _eventSub;
   StreamSubscription<void>? _geometrySub;
 
+  /// The last moment the continue checkpoint's seconds were written; the
+  /// picture's ticks arrive far faster than a preference write should.
+  DateTime _lastPositionSave = DateTime(0);
+
   /// The picture's own shape, followed from the engine's geometry: the
   /// stage sizes itself to the episode, not to a hardcoded 16:9 that
   /// letterboxes a vertical episode wrong on a portrait phone.
@@ -203,6 +213,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   @override
   void dispose() {
     _disposed = true;
+    // The page's last position lands while its ref still answers; the
+    // code below this line must not read it again.
+    _savePosition(force: true);
     // The player goes quiet before anything else: the route's leave animation
     // runs while the release's queue drains, and the episode must not be heard
     // over the page the viewer returned to. Everything the leaving page needs
@@ -228,7 +241,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     super.dispose();
   }
 
-  Future<void> _openEpisode(VodEpisode episode, {int? qn}) async {
+  Future<void> _openEpisode(VodEpisode episode, {int? qn, Duration? resumeFrom}) async {
     if (_opening) return;
     setState(() {
       _opening = true;
@@ -240,6 +253,44 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       _error = null;
       _finished = false;
     });
+    // The checkpoint the cinema's continue card reads: where this series
+    // was left, rewritten at every episode open so the card always names
+    // the ladder's current position.
+    final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+    final index = detail?.episodes.indexOf(episode) ?? -1;
+    // The continue position rides its episode: an episode re-opened
+    // carries on from its checkpoint seconds (the UGC page's rule), an
+    // explicit resume — a quality switch — uses the picture's own
+    // position, a fresh episode starts at its opening.
+    VodSeasonProgress? checkpoint;
+    for (final entry in ref.read(vodSeasonProgressProvider)) {
+      if (entry.seasonId == '${widget.seasonId}') {
+        checkpoint = entry;
+        break;
+      }
+    }
+    final Duration? from;
+    if (resumeFrom != null) {
+      from = resumeFrom;
+    } else if (checkpoint != null && checkpoint.episodeIndex == index && (checkpoint.positionSeconds ?? 0) > 5) {
+      from = Duration(seconds: checkpoint.positionSeconds!.round());
+    } else {
+      from = null;
+    }
+    if (detail != null && index >= 0) {
+      unawaited(
+        ref
+            .read(vodSeasonProgressProvider.notifier)
+            .save(
+              seasonId: '${widget.seasonId}',
+              title: detail.title,
+              cover: detail.coverUrl,
+              episodeIndex: index,
+              total: detail.episodes.length,
+              positionSeconds: from == null ? null : from.inMilliseconds / 1000,
+            ),
+      );
+    }
     // The next episode has its own ladder, its own position and its own held
     // rate, so none of this one's gestures or countdown carries over.
     _resetScrub();
@@ -317,6 +368,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       // episode too; an engine that kept the old handle remembers neither.
       await handle.setVolume(_volume);
       await handle.setRate(_speed);
+      // A continue position outranks the opening titles; the fresh
+      // episode skips none.
+      if (from != null && from.inMilliseconds > 5000) {
+        await handle.seek(from);
+      }
+      // A seek on a stalled source can outlast the page; the video page's
+      // own guard applies here too.
+      if (!mounted || _disposed) return;
       setState(() {
         _play = info;
         _silent = info.silent;
@@ -331,6 +390,40 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         _error = failure is VodFailure ? failure.message : '$failure';
       });
     }
+  }
+
+  /// The continue checkpoint's seconds: written at most once every few
+  /// seconds while the picture plays, and once more on the way out. The
+  /// open-time write names the ladder's position; this one adds the
+  /// where within the episode.
+  void _savePosition({bool force = false, Duration? positionOverride}) {
+    final episode = _episode;
+    final transport = _transport;
+    if (episode == null || transport == null) return;
+    final total = transport.duration.inMilliseconds;
+    // The floating mini window hands its last second over on the way out;
+    // this page's own transport stopped at the handoff, so the override
+    // is the only record of what the window played since.
+    final position = positionOverride?.inMilliseconds ?? transport.position.inMilliseconds;
+    if (total <= 0 || position <= 0) return;
+    final now = DateTime.now();
+    if (!force && now.difference(_lastPositionSave) < const Duration(seconds: 5)) return;
+    _lastPositionSave = now;
+    final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+    final index = detail?.episodes.indexOf(episode) ?? -1;
+    if (detail == null || index < 0) return;
+    unawaited(
+      ref
+          .read(vodSeasonProgressProvider.notifier)
+          .save(
+            seasonId: '${widget.seasonId}',
+            title: detail.title,
+            cover: detail.coverUrl,
+            episodeIndex: index,
+            total: detail.episodes.length,
+            positionSeconds: position / 1000,
+          ),
+    );
   }
 
   /// The share of the range one arrow key or wheel step takes, the figure the
@@ -697,6 +790,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         if (state.isPlaying) _error = null;
       });
       if (state.isPlaying) _scheduleHide();
+      _savePosition();
     });
     // The end of an episode is the station's own event, not a position the
     // page has to guess at: it is what the finish action waits for.
@@ -788,6 +882,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// no window-owning mode standing (the picture-in-picture small window
   /// already is a small window).
   bool get _pictureVerbsReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return handle != null &&
         handle.source != null &&
@@ -805,7 +904,13 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     if (handle == null || source == null) return;
     final t = context.t;
     final backend = ref.read(playerKernelBackendProvider).id;
-    final title = ref.read(vodSeasonDetailProvider(widget.seasonId)).value?.title ?? t.vod.opening;
+    // The window's close path runs after this page is gone: the
+    // checkpoint's writer and the ladder it names are captured now.
+    final progress = ref.read(vodSeasonProgressProvider.notifier);
+    final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+    final episode = _episode;
+    final index = episode == null || detail == null ? -1 : detail.episodes.indexOf(episode);
+    final title = detail?.title ?? t.vod.opening;
     final ok = await FloatingVideoWindow.show(
       FloatingVideoHandoff(
         title: title,
@@ -821,6 +926,20 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
           return fresh;
         },
         onClose: (position, {required reopen}) {
+          // The window's last second lands where a return to the season
+          // resumes from.
+          if (detail != null && index >= 0 && position.inMilliseconds > 0) {
+            unawaited(
+              progress.save(
+                seasonId: '${widget.seasonId}',
+                title: detail.title,
+                cover: detail.coverUrl,
+                episodeIndex: index,
+                total: detail.episodes.length,
+                positionSeconds: position.inMilliseconds / 1000,
+              ),
+            );
+          }
           if (reopen) {
             final root = rootNavigatorKey.currentContext;
             if (root != null && root.mounted) {
@@ -906,8 +1025,18 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final season = detail.value;
     if (season != null && !_autoOpened && season.episodes.isNotEmpty) {
       _autoOpened = true;
+      // The continue checkpoint names the ladder's position: the episode
+      // the card promised is the one that opens, not episode one again.
+      VodSeasonProgress? checkpoint;
+      for (final entry in ref.read(vodSeasonProgressProvider)) {
+        if (entry.seasonId == '${widget.seasonId}') {
+          checkpoint = entry;
+          break;
+        }
+      }
+      final index = checkpoint == null ? 0 : checkpoint.episodeIndex.clamp(0, season.episodes.length - 1);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(_openEpisode(season.episodes.first));
+        if (mounted) unawaited(_openEpisode(season.episodes[index]));
       });
     }
     final Widget body;
@@ -926,7 +1055,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
         ),
       );
     } else if (season == null) {
-      body = const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
+      body = _SeasonSkeleton(posterWidth: LiveWindow.isCompact(windowSize.width) ? 110 : 216);
     } else if (immersive) {
       body = _player(immersive: true);
     } else if (sizeStage) {
@@ -943,6 +1072,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       bindings: {
         const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
         const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
+        const SingleActivator(LogicalKeyboardKey.f11): _toggleFullscreen,
         // The same keys the archive page answers with: the arrows step the
         // episode and the sound, the comma and the period walk the rate,
         // and a held arrow keeps growing the step so a long skip is one key.
@@ -970,7 +1100,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          backgroundColor: immersive ? colors.canvas : colors.surface,
+          backgroundColor: colors.canvas,
           // The immersive body keeps the whole surface; the page body wears
           // no pane header any more — the strip over the picture carries the
           // way back and the season's name, as the archive page's strip does.
@@ -981,48 +1111,137 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   }
 
   Widget _page(VodSeasonDetail detail) {
+    final t = context.t;
     final window = MediaQuery.sizeOf(context).width;
     final inset = LiveWindow.pageInset(window);
     final showDetails = ref.watch(vodPlaybackSettingsProvider).showDetails;
     final episode = _episode;
     final episodes = detail.episodes;
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s16,
-            children: [
-              _player(immersive: false),
-              _SeasonHead(
-                season: detail,
-                episode: episode,
-                showDetails: showDetails,
-                // The head's poster keeps the mockup's two sizes: the wall
-                // card's measure beside the words on a desk, a phone's
-                // narrower tile where the column cannot spare the room.
-                posterWidth: LiveWindow.isCompact(window) ? 110 : 216,
-                canPlay: episodes.isNotEmpty,
-                onPlay: _playNow,
-                canDownload: (episode?.cid ?? 0) > 0,
-                onDownload: () => unawaited(_startDownload()),
-                onShare: () => unawaited(_share()),
-              ),
-              const DsDivider(),
-              if (episodes.isNotEmpty)
-                _EpisodesSection(
-                  episodes: episodes,
-                  current: episode,
-                  onOpen: (candidate) => unawaited(_openEpisode(candidate)),
-                ),
-            ],
-          ),
+    // The stage: the picture and the season's head. The ladder's shelf
+    // travels beside it on a wide window and under it otherwise.
+    Widget stage() => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s20,
+      children: [
+        _player(immersive: false),
+        _SeasonHead(
+          season: detail,
+          episode: episode,
+          showDetails: showDetails,
+          // The head's poster keeps the mockup's two sizes: the wall
+          // card's measure beside the words on a desk, a phone's
+          // narrower tile where the column cannot spare the room.
+          posterWidth: LiveWindow.isCompact(window) ? 110 : 216,
+          canPlay: episodes.isNotEmpty,
+          onPlay: _playNow,
+          canDownload: (episode?.cid ?? 0) > 0,
+          onDownload: () => unawaited(_startDownload()),
+          onShare: () => unawaited(_share()),
         ),
-      ),
+        const DsDivider(),
+      ],
+    );
+    Widget shelf() => _EpisodesSection(
+      episodes: episodes,
+      current: episode,
+      onOpen: (candidate) => unawaited(_openEpisode(candidate)),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // A season without episodes is one column at any width. A wide one
+        // with them splits like the video page: the stage beside a
+        // draggable, foldable episodes rail — the same seam — and a folded
+        // rail leaves its door at the stage's end edge.
+        if (episodes.isEmpty || constraints.maxWidth < kPlaybackWideBreakpoint) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: DsSpace.s20,
+                  children: [stage(), if (episodes.isNotEmpty) shelf()],
+                ),
+              ),
+            ),
+          );
+        }
+        final railMax = (constraints.maxWidth - _railStageFloor).clamp(_railMin, _railMax);
+        final railWidth = _railWidth.clamp(_railMin, railMax);
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s12, DsSpace.s24, DsSpace.s24),
+                    child: Center(
+                      child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1100), child: stage()),
+                    ),
+                  ),
+                  if (!_railOpen) _SeasonRailDoor(onOpen: () => setState(() => _railOpen = true)),
+                ],
+              ),
+            ),
+            if (_railOpen) ...[
+              ChatSplitter(
+                width: railWidth,
+                minWidth: _railMin,
+                maxWidth: railMax,
+                onResize: (value) => setState(() => _railWidth = value),
+                onResizeEnd: (value) => setState(() => _railWidth = value),
+                onReset: () => setState(() => _railWidth = _railDefaultWidth),
+                label: t.vod.episodes,
+              ),
+              SizedBox(
+                width: railWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s8, 0),
+                      child: Row(
+                        children: [
+                          const Spacer(),
+                          DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            onPressed: () => setState(() => _railOpen = false),
+                            icon: const DsIcon(DsIcons.panelRightClose),
+                            semanticLabel: t.common.previewCollapseList,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s24),
+                        child: shelf(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
+
+  // The wide window's episodes rail: open or folded to its door, and the
+  // width the seam's drag left it at — the video page's rail, pointed at
+  // the ladder.
+  bool _railOpen = true;
+  double _railWidth = _railDefaultWidth;
+  static const double _railMin = 280;
+  static const double _railMax = 520;
+  static const double _railDefaultWidth = 340;
+
+  /// The least width the stage keeps beside the rail.
+  static const double _railStageFloor = 420;
 
   /// Puts a picture on: the episode already on the player resumes, and before
   /// one has opened, the season's first does — the head's 立即播放 verb.
@@ -1220,10 +1439,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                         // the stage that shows it.
                         if (handle != null)
                           PlayerGlassPill(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: _pictureVerbs(t),
-                            ),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: _pictureVerbs(t)),
                           ),
                       ],
                     ),
@@ -1402,7 +1618,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                       checked: quality.qn == _openedQn,
                                       onPressed: () {
                                         final current = _episode;
-                                        if (current != null) unawaited(_openEpisode(current, qn: quality.qn));
+                                        if (current != null) {
+                                          unawaited(
+                                            _openEpisode(current, qn: quality.qn, resumeFrom: _transport?.position),
+                                          );
+                                        }
                                       },
                                     ),
                                 ],
@@ -1527,130 +1747,154 @@ final class _SeasonHead extends StatelessWidget {
     final current = episode;
     final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
     final cover = season.coverUrl;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s16,
-      children: [
-        SizedBox(
-          width: posterWidth,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            child: AspectRatio(
-              aspectRatio: 3 / 4,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (cover == null || cover.isEmpty)
-                    fallback
-                  else
-                    DsImage(
-                      image: cachedImage(cover, policy: ImageCachePolicies.videoCover),
-                      aspectRatio: 3 / 4,
-                      semanticLabel: season.title,
-                      fallback: fallback,
-                    ),
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+    // The cover leads the head the way the music module's record does:
+    // frosted behind the block, the poster carrying its shadow in front.
+    return DetailHeroBackdrop(
+      coverImage: cover == null || cover.isEmpty ? null : cachedImage(cover, policy: ImageCachePolicies.videoCover),
+      child: Padding(
+        padding: const EdgeInsets.all(DsSpace.s20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s16,
+          children: [
+            SizedBox(
+              width: posterWidth,
+              child: DecoratedBox(
+                decoration: DsBoxDecoration(
+                  borderRadius: BorderRadius.circular(theme.radii.card),
+                  shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(theme.radii.card),
+                  child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (cover == null || cover.isEmpty)
+                          fallback
+                        else
+                          DsImage(
+                            image: cachedImage(cover, policy: ImageCachePolicies.videoCover),
+                            aspectRatio: 3 / 4,
+                            semanticLabel: season.title,
+                            fallback: fallback,
+                          ),
+                        // The poster is 3:4, not the covers' 16:9: a fade that
+                        // rises from the foot by its own height, not a cover scrim
+                        // stretched over a taller shape.
+                        const PositionedDirectional(
+                          bottom: 0,
+                          start: 0,
+                          end: 0,
+                          height: 96,
+                          child: IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: AlignmentDirectional.bottomCenter,
+                                  end: AlignmentDirectional.topCenter,
+                                  colors: [Color(0x99000000), Color(0x00000000)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // The score on the poster's corner, the mockup's accent
+                        // stamp: the one figure worth reading before the words.
+                        if (rating.isNotEmpty)
+                          PositionedDirectional(top: DsSpace.s6, end: DsSpace.s6, child: _scoreBadge(context, rating)),
+                      ],
                     ),
                   ),
-                  // The score on the poster's corner, the mockup's accent
-                  // stamp: the one figure worth reading before the words.
-                  if (rating.isNotEmpty)
-                    PositionedDirectional(top: DsSpace.s6, end: DsSpace.s6, child: _scoreBadge(context, rating)),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s8,
+                children: [
+                  Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          season.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.title.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                        ),
+                      ),
+                      if (season.followed) DsBadge(label: Text(t.vod.following), dot: false),
+                    ],
+                  ),
+                  if (chips.isNotEmpty)
+                    Wrap(
+                      spacing: DsSpace.s6,
+                      runSpacing: DsSpace.s6,
+                      children: [
+                        // The score stays on the poster's corner — the accent
+                        // stamp says it once, not twice on one screen.
+                        for (final chip in chips)
+                          if (!chip.score) DsBadge(label: Text(chip.text), dot: false),
+                      ],
+                    ),
+                  if (facts.isNotEmpty)
+                    Text(
+                      facts.join(' · '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  if (current != null)
+                    Row(
+                      spacing: DsSpace.s6,
+                      children: [
+                        Flexible(
+                          child: DsBadge(label: Text(t.vod.episodeNo(index: current.index)), dot: false),
+                        ),
+                        Expanded(
+                          child: Text(
+                            current.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.copyWith(color: colors.text),
+                          ),
+                        ),
+                      ],
+                    ),
+                  Wrap(
+                    spacing: DsSpace.s8,
+                    runSpacing: DsSpace.s8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      // The head's anchor: the play disc carries the verb's
+                      // weight the music module's records do.
+                      HeroPlayDisc(onPressed: canPlay ? onPlay : null, semanticLabel: t.vod.playNow),
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        leading: const DsIcon(DsIcons.download, size: 14),
+                        onPressed: canDownload ? onDownload : null,
+                        child: Text(t.vod.download),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        semanticLabel: t.vod.share,
+                        onPressed: onShare,
+                        icon: const DsIcon(DsIcons.share),
+                      ),
+                    ],
+                  ),
+                  if (showDetails && season.evaluate.isNotEmpty) _SeasonBlurb(text: season.evaluate),
                 ],
               ),
             ),
-          ),
+          ],
         ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s8,
-            children: [
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: Text(
-                      season.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.heading.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                    ),
-                  ),
-                  if (season.followed) DsBadge(label: Text(t.vod.following), dot: false),
-                ],
-              ),
-              if (chips.isNotEmpty)
-                Wrap(
-                  spacing: DsSpace.s6,
-                  runSpacing: DsSpace.s6,
-                  children: [
-                    for (final chip in chips)
-                      if (chip.score)
-                        _scoreBadge(context, '${t.vod.score} ${chip.text}')
-                      else
-                        DsBadge(label: Text(chip.text), dot: false),
-                  ],
-                ),
-              if (facts.isNotEmpty)
-                Text(
-                  facts.join(' · '),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              if (current != null)
-                Row(
-                  spacing: DsSpace.s6,
-                  children: [
-                    Flexible(
-                      child: DsBadge(label: Text(t.vod.episodeNo(index: current.index)), dot: false),
-                    ),
-                    Expanded(
-                      child: Text(
-                        current.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(color: colors.text),
-                      ),
-                    ),
-                  ],
-                ),
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  DsButton(
-                    variant: DsButtonVariant.primary,
-                    size: DsSize.sm,
-                    leading: const DsIcon(DsIcons.play, size: 14),
-                    onPressed: canPlay ? onPlay : null,
-                    child: Text(t.vod.playNow),
-                  ),
-                  DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    leading: const DsIcon(DsIcons.download, size: 14),
-                    onPressed: canDownload ? onDownload : null,
-                    child: Text(t.vod.download),
-                  ),
-                  DsButton.icon(
-                    variant: DsButtonVariant.ghost,
-                    size: DsSize.sm,
-                    semanticLabel: t.vod.share,
-                    onPressed: onShare,
-                    icon: const DsIcon(DsIcons.share),
-                  ),
-                ],
-              ),
-              if (showDetails && season.evaluate.isNotEmpty) _SeasonBlurb(text: season.evaluate),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -1737,7 +1981,7 @@ const int kVodEpisodeGroup = 20;
 /// The information line under an episode card's cover: one caption line held
 /// at a fixed height, so a row's cards all end at the same line whatever the
 /// column width — the season card's own measure, at an episode's size.
-const double kVodEpisodeInfoExtent = 30;
+const double kVodEpisodeInfoExtent = 46;
 
 /// The widest an episode card gets before the shelf takes another column, and
 /// the bounds it keeps whatever the window says: four across on a desktop,
@@ -1806,41 +2050,20 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
   Future<void> _jump() async {
     final episodes = widget.episodes;
     if (episodes.isEmpty) return;
-    final controller = TextEditingController();
-    int? parse() {
-      final typed = int.tryParse(controller.text.trim());
-      if (typed == null) return null;
-      final byIndex = episodes.where((episode) => int.tryParse(episode.index) == typed);
+    int? parse(String typed) {
+      final number = int.tryParse(typed.trim());
+      if (number == null) return null;
+      final byIndex = episodes.where((episode) => int.tryParse(episode.index) == number);
       if (byIndex.isNotEmpty) return episodes.indexOf(byIndex.first);
-      return typed >= 1 && typed <= episodes.length ? typed - 1 : null;
+      return number >= 1 && number <= episodes.length ? number - 1 : null;
     }
 
-    final position = await showAppDialog<int>(
-      context: context,
-      builder: (dialogContext) {
-        final t = dialogContext.t;
-        return AppDialog(
-          title: Text(t.vod.episodesJump),
-          description: DsTextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            placeholder: '1–${episodes.length}',
-            onSubmitted: (_) => Navigator.of(dialogContext).pop(parse()),
-          ),
-          actions: [
-            DsButton(
-              variant: DsButtonVariant.ghost,
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(t.common.cancel),
-            ),
-            DsButton(onPressed: () => Navigator.of(dialogContext).pop(parse()), child: Text(t.common.confirm)),
-          ],
-        );
-      },
+    final position = await showVodJumpDialog(
+      context,
+      title: context.t.vod.episodesJump,
+      count: episodes.length,
+      parse: parse,
     );
-    controller.dispose();
     if (position == null || position < 0 || position >= episodes.length || !mounted) return;
     widget.onOpen(episodes[position]);
   }
@@ -1861,24 +2084,19 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
     final first = group * kVodEpisodeGroup;
     final shown = episodes.skip(first).take(kVodEpisodeGroup).toList();
     final last = first + shown.length;
-    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
+    // A phone's width cannot carry five controls in one row: the
+    // paging arrows fold away there, the range text and the jump stay.
+    final narrow = MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                '${t.vod.episodes} · ${episodes.length}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-            ),
-            if (groups > 1) ...[
-              Text('$first–$last / ${episodes.length}', style: muted),
+        SectionHeader(
+          title: t.vod.episodes,
+          count: episodes.length,
+          hint: groups > 1 ? '$first–$last / ${episodes.length}' : null,
+          trailing: [
+            if (groups > 1 && !narrow) ...[
               DsButton.icon(
                 icon: const DsIcon(DsIcons.chevronLeft),
                 semanticLabel: t.vod.episodesPrevious,
@@ -1893,14 +2111,14 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
                 size: DsSize.sm,
                 onPressed: group < groups - 1 ? () => setState(() => _group = group + 1) : null,
               ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.listOrdered, size: 16),
-                onPressed: () => unawaited(_jump()),
-                child: Text(t.vod.episodesJump),
-              ),
             ],
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.listOrdered, size: 16),
+              onPressed: () => unawaited(_jump()),
+              child: Text(t.vod.episodesJump),
+            ),
           ],
         ),
         LayoutBuilder(
@@ -1983,17 +2201,28 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
                         height: kVodEpisodeInfoExtent,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(DsSpace.s6, DsSpace.s4, DsSpace.s6, DsSpace.s4),
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              candidate.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(
-                                color: playing ? colors.accent : colors.text,
-                                fontWeight: playing ? FontWeight.w600 : null,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: DsSpace.s3,
+                            children: [
+                              Text(
+                                candidate.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(
+                                  color: playing ? colors.accent : colors.text,
+                                  fontWeight: playing ? FontWeight.w600 : null,
+                                ),
                               ),
-                            ),
+                              if (candidate.duration != null)
+                                Text(
+                                  vodDurationText(candidate.duration!),
+                                  style: theme.typography.numeric(
+                                    theme.typography.caption.copyWith(color: colors.textMuted),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
@@ -2018,6 +2247,136 @@ final class _EpisodesSectionState extends ConsumerState<_EpisodesSection> {
       aspectRatio: 16 / 9,
       semanticLabel: episode.title,
       fallback: fallback,
+    );
+  }
+}
+
+/// The season's loading shape: the poster's own 3:4, the title and its
+/// chips as bars, the episode wall as a block — the page opens shaped like
+/// itself instead of a spinner on an empty canvas.
+final class _SeasonSkeleton extends StatelessWidget {
+  const _SeasonSkeleton({required this.posterWidth});
+
+  /// The poster's width, the same two measures the head itself draws at.
+  final double posterWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final inset = LiveWindow.pageInset(width);
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s20,
+            children: [
+              const AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ColoredBox(color: OnVideoColors.ground),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s16,
+                children: [
+                  SizedBox(
+                    width: posterWidth,
+                    child: const AspectRatio(
+                      aspectRatio: 3 / 4,
+                      child: DsSkeleton.block(width: double.infinity),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s12,
+                      children: [
+                        DsSkeleton(width: double.infinity, height: 22, strong: true),
+                        DsSkeleton(width: 200, height: 12),
+                        Row(
+                          spacing: DsSpace.s6,
+                          children: [
+                            DsSkeleton(width: 56, height: 22),
+                            DsSkeleton(width: 72, height: 22),
+                            DsSkeleton(width: 64, height: 22),
+                          ],
+                        ),
+                        Row(
+                          spacing: DsSpace.s8,
+                          children: [
+                            DsSkeleton(width: 96, height: 30),
+                            DsSkeleton(width: 88, height: 30),
+                            DsSkeleton.circle(size: 30),
+                          ],
+                        ),
+                        DsSkeleton.block(width: double.infinity, height: 48),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const DsSkeleton.block(width: double.infinity, height: 160),
+              const Align(
+                alignment: AlignmentDirectional.center,
+                child: DsSpinner(style: DsSpinnerStyle(size: 24)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The door a folded rail leaves at the stage's end edge — the video
+/// page's rail door read on the season page: a narrow upright tab at the
+/// end edge, its chevron pointing the way the ladder comes back from.
+final class _SeasonRailDoor extends StatelessWidget {
+  const _SeasonRailDoor({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return PositionedDirectional(
+      top: 0,
+      bottom: 0,
+      end: 0,
+      child: DsTooltip(
+        message: t.vod.episodes,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpen,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface.withValues(alpha: 0.92),
+                border: BorderDirectional(start: BorderSide(color: colors.border)),
+              ),
+              child: SizedBox(
+                width: 28,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
+                    RotatedBox(
+                      quarterTurns: 1,
+                      child: Text(t.vod.episodes, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

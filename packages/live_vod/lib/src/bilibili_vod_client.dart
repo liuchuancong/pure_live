@@ -169,6 +169,49 @@ final class BilibiliVodClient {
     );
   }
 
+  /// One space page: the videos a member has published, newest first —
+  /// the list a live room's anchor door opens onto.
+  ///
+  /// The space listing is a WBI-signed endpoint; the request signs with the
+  /// cached key pair and reads as the space page itself (`referer`), which
+  /// is what the endpoint expects of a browser.
+  Future<VodSearchPage> spaceVideos(int mid, {int page = 1, int pageSize = 30}) async {
+    final window = pageSize.clamp(1, 50);
+    final signed = await _signed({
+      'mid': '$mid',
+      'pn': '$page',
+      'ps': '$window',
+      'order': 'pubdate',
+    });
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/space/wbi/arc/search', signed),
+        headers: {..._headers, 'referer': 'https://space.bilibili.com/$mid/'},
+      ),
+    );
+    final data = _body(response)['data'];
+    if (data is! Map) {
+      return const VodSearchPage(videos: []);
+    }
+    final rows = ((data['list'] as Map?)?['vlist'] as List<Object?>?) ?? const [];
+    final videos = [
+      for (final row in rows)
+        if (row is Map) ?_spaceVideoOf(row.cast<Object?, Object?>()),
+    ];
+    final total = _intOf((data['page'] as Map?)?['count']) ?? videos.length;
+    return VodSearchPage(videos: videos, hasMore: page * window < total, total: total);
+  }
+
+  /// One row of the space listing: the search row's fields under other
+  /// names (`length` where search says `duration`).
+  VodVideo? _spaceVideoOf(Map<Object?, Object?> row) {
+    return _videoOf({
+      ...row,
+      'duration': row['length'],
+    });
+  }
+
   /// A creator's replay collections (`seasons_series_list`), paged.
   ///
   /// Only collections the station labels as broadcast recordings qualify —
@@ -391,7 +434,7 @@ final class BilibiliVodClient {
         if (hit is Map) ?_videoOf(hit),
     ];
     final numResults = _intOf(data['numResults']) ?? videos.length;
-    return VodSearchPage(videos: videos, hasMore: page * window < numResults);
+    return VodSearchPage(videos: videos, hasMore: page * window < numResults, total: numResults);
   }
 
   /// Resolves [video]'s first part to a progressive address.

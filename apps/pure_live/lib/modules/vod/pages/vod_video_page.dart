@@ -1,12 +1,11 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
-import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show Scaffold;
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -22,11 +21,11 @@ import 'package:live_device/live_device.dart'
         ScreenOrientationService;
 import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show FormFactor;
-import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart' show BarrageItemMapper, DanmakuPlayerBinding;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/account/account.dart' show showBilibiliWebLoginPage;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
@@ -39,6 +38,7 @@ import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/controller/vod_social.dart' show VodCommentsController, vodCommentsProvider;
+import 'package:pure_live/modules/vod/widgets/vod_jump_dialog.dart' show showVodJumpDialog;
 import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
     show vodDashSourceOf, vodDashVideoOf, vodQualityLabel;
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
@@ -1104,32 +1104,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   /// The archive's opening and ending, kept on this device: Bilibili marks
   /// them for its own cinema titles and nothing at all for a posted archive,
-  /// so the points a viewer sets here are the only ones there are.
-  String get _skipKey => 'vod.skip.${widget.bvid}';
-
+  /// so the points a viewer sets here are the only ones there are. The store
+  /// seam lives on the history controller; the page keeps only the marks.
   void _readSkipPoints() {
-    try {
-      final raw = StoragePrefs.getString(_skipKey);
-      if (raw == null || raw.isEmpty) return;
-      final json = jsonDecode(raw);
-      if (json is! Map) return;
-      _headSeconds = (json['head'] as num?)?.toDouble();
-      _tailSeconds = (json['tail'] as num?)?.toDouble();
-    } on Object {
-      // No points is the ordinary answer.
-    }
+    final points = ref.read(vodHistoryProvider.notifier).skipPoints(widget.bvid);
+    _headSeconds = points?.headSeconds;
+    _tailSeconds = points?.tailSeconds;
   }
 
-  Future<void> _writeSkipPoints() async {
-    try {
-      await StoragePrefs.setString(
-        _skipKey,
-        jsonEncode({'head': _headSeconds?.round(), 'tail': _tailSeconds?.round()}),
-      );
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
+  Future<void> _writeSkipPoints() => ref
+      .read(vodHistoryProvider.notifier)
+      .saveSkipPoints(widget.bvid, headSeconds: _headSeconds, tailSeconds: _tailSeconds);
 
   /// Marks the moment the picture stands on as the end of its opening, or the
   /// start of its ending.
@@ -1354,6 +1339,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// mode stands — the picture-in-picture small window already is a small
   /// window.
   bool get _miniWindowReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return handle != null &&
         handle.source != null &&
@@ -1419,6 +1409,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     context.pop();
   }
 
+  /// Passes the archive on: the share panel's shape here is the clipboard,
+  /// the way the hongguo page passes a series on — a link and a word that it
+  /// is on the clipboard.
+  Future<void> _share() async {
+    final detail = _detail;
+    if (detail == null) return;
+    await Clipboard.setData(ClipboardData(text: 'https://www.bilibili.com/video/${detail.bvid}'));
+    if (!mounted) return;
+    showDsToast(context: context, title: context.t.common.copied, status: DsStatus.success);
+  }
+
   /// Collects the archive, or drops it; the station's 个人 page lists what
   /// this writes.
   Future<void> _toggleFavourite() async {
@@ -1433,24 +1434,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  String get _progressKey => 'vod.progress.${widget.bvid}';
-
-  ({int cid, double seconds})? _readProgress() {
-    try {
-      final raw = StoragePrefs.getString(_progressKey);
-      if (raw == null || raw.isEmpty) return null;
-      final json = jsonDecode(raw);
-      if (json is! Map) return null;
-      // A finished archive keeps its history entry but is not resumed.
-      if (json['completed'] == true) return null;
-      final cid = (json['cid'] as num?)?.toInt();
-      final seconds = (json['seconds'] as num?)?.toDouble();
-      if (cid == null || seconds == null || seconds <= 0) return null;
-      return (cid: cid, seconds: seconds);
-    } on Object {
-      return null;
-    }
-  }
+  ({int cid, double seconds})? _readProgress() => ref.read(vodHistoryProvider.notifier).resumePoint(widget.bvid);
 
   /// Saves the part and position at most once every few seconds. The entry is
   /// also the history record the station's 个人 page reads, so it carries the
@@ -1469,27 +1453,21 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final now = DateTime.now();
     if (!force && now.difference(_lastSave) < const Duration(seconds: 5)) return;
     _lastSave = now;
-    final completed = position >= total - 5000;
     final detail = _detail;
-    try {
-      unawaited(
-        StoragePrefs.setString(
-          _progressKey,
-          jsonEncode({
-            'cid': part.cid,
-            'seconds': completed ? total / 1000 : position / 1000,
-            'title': detail?.title ?? part.title,
-            'cover': detail?.coverUrl,
-            'uploader': detail?.uploader,
-            'durationSeconds': total / 1000,
-            'updatedAt': now.millisecondsSinceEpoch,
-            if (completed) 'completed': true,
-          }),
-        ),
-      );
-    } on Object {
-      // A preference; a closed store loses it.
-    }
+    unawaited(
+      ref
+          .read(vodHistoryProvider.notifier)
+          .save(
+            bvid: widget.bvid,
+            cid: part.cid,
+            seconds: position / 1000,
+            title: detail?.title ?? part.title,
+            cover: detail?.coverUrl,
+            uploader: detail?.uploader,
+            durationSeconds: total / 1000,
+            completed: position >= total - 5000,
+          ),
+    );
   }
 
   @override
@@ -1605,6 +1583,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             _wake();
             unawaited(_toggleFullscreen());
           },
+          // The window variant of the same verb, on the desktop's own chord.
+          const SingleActivator(LogicalKeyboardKey.f11): () {
+            _wake();
+            unawaited(_toggleFullscreen());
+          },
           // The stream's own figures: the key every player answers to, over
           // the same panel the bar's menu item opens.
           if (!tv)
@@ -1652,14 +1635,14 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             },
         },
         child: Scaffold(
-          backgroundColor: colors.surface,
+          backgroundColor: colors.canvas,
           // The page header is gone: the strip over the picture carries the
           // way back and the name, the room's own shape — the picture reads
           // from the page's first pixel.
           body: SafeArea(
             bottom: false,
             child: _loading && detail == null
-                ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+                ? const _VideoSkeleton()
                 : _error != null && detail == null
                 ? Center(
                     child: DsEmptyState(
@@ -1678,7 +1661,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   Widget _body(BuildContext context, VodDetail? detail, Translations t) {
     if (detail == null) return const SizedBox.shrink();
-    final colors = DsTheme.colorsOf(context);
     // 排版与直播间同一台机器，按窗口的形状判定（与平台无关）：矮窗（高
     // <480）横屏沉浸——满铺画面加覆盖条，页面内容退场，分P与画质都在
     // 条上；窄窗（宽 <600）竖屏沉浸——画面满宽贴顶；宽窗（≥840）舞台
@@ -1691,21 +1673,30 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final compact = playbackLayout.windowClass == PlaybackWindowClass.compact;
     final player = _playerSurface(context, immersive: false, flush: compact);
     final window = _relatedWindow;
-    final related = window.isEmpty
-        ? null
+    // The rail's cut of the same list reads in a 280–380px column, where the
+    // page-width cover of 148 would leave the words sixty points of room.
+    Widget relatedList({required bool compact}) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        for (final video in window)
+          VodVideoRow(
+            video: video,
+            compact: compact,
+            onOpen: () => unawaited(context.push('/vod/${video.bvid ?? video.id}')),
+          ),
+      ],
+    );
+
+    Widget related({required bool compact}) => window.isEmpty
+        ? const SizedBox.shrink()
         : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
+            spacing: DsSpace.s12,
             children: [
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: Text(
-                      t.vod.related,
-                      style: DsTheme.of(context).typography.title.copyWith(color: colors.text),
-                    ),
-                  ),
+              SectionHeader(
+                title: t.vod.related,
+                trailing: [
                   // The reference's rail turns the page of twenty.
                   if (_relatedPool.length > 20)
                     DsButton(
@@ -1717,8 +1708,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     ),
                 ],
               ),
-              for (final video in window)
-                VodVideoRow(video: video, onOpen: () => unawaited(context.push('/vod/${video.bvid ?? video.id}'))),
+              relatedList(compact: compact),
             ],
           );
     // The parts shelf sits in the rail beside the picture on a wide window —
@@ -1732,9 +1722,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             onOpen: (part) => unawaited(_openPart(part, resume: _resumeFor(part))),
           )
         : null;
-    final rail = parts == null && related == null
+    final railRelated = related(compact: true);
+    final rail = parts == null && window.isEmpty
         ? null
-        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s16, children: [?parts, ?related]);
+        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: DsSpace.s16, children: [?parts, railRelated]);
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= kPlaybackWideBreakpoint;
@@ -1748,11 +1739,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               padding: const EdgeInsets.only(bottom: DsSpace.s24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s16,
+                spacing: DsSpace.s20,
                 children: [
                   player,
                   Padding(padding: gutter, child: info),
-                  if (related != null) Padding(padding: gutter, child: related),
+                  Padding(padding: gutter, child: related(compact: false)),
                 ],
               ),
             );
@@ -1762,8 +1753,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s16,
-              children: [player, info, ?related],
+              spacing: DsSpace.s20,
+              children: [player, info, related(compact: false)],
             ),
           );
         }
@@ -2912,9 +2903,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             if (tracks.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s6),
-                child: Text(
-                  _extra.needsLoginForSubtitles ? t.vod.subtitleNeedsLogin : t.vod.subtitleNone,
-                  style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkSubtle),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s6,
+                  children: [
+                    Text(
+                      _extra.needsLoginForSubtitles ? t.vod.subtitleNeedsLogin : t.vod.subtitleNone,
+                      style: DsTheme.of(context).typography.caption.copyWith(color: OnVideoColors.inkSubtle),
+                    ),
+                    // The caption alone was a dead end: the sign-in the
+                    // notice asks for sits beside it.
+                    if (_extra.needsLoginForSubtitles)
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(showBilibiliWebLoginPage(context)),
+                        child: Text(t.vod.signIn),
+                      ),
+                  ],
                 ),
               ),
           ],
@@ -3048,7 +3054,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             ),
             if (overflows)
               DsButton(
-                variant: DsButtonVariant.secondary,
+                variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
                 onPressed: () => setState(() => _introExpanded = !_introExpanded),
                 child: Text(_introExpanded ? t.vod.collapse : t.vod.expand),
@@ -3080,127 +3086,139 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     ];
     final uploader = detail.uploader ?? '';
     final avatar = detail.uploaderAvatar;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        if (_error != null)
-          DsAlert(
-            status: DsStatus.danger,
-            title: Text(t.vod.openFailed),
-            description: Text(_error!),
-            action: _part == null
-                ? null
-                : DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: () => unawaited(_openPart(_part!)),
-                    child: Text(t.vod.retry),
-                  ),
-          ),
-        if (silent) DsAlert(status: DsStatus.warning, title: Text(t.vod.silentNotice)),
-        Column(
+    // The archive's own cover frosted behind its details: the page's
+    // words sit on the picture they belong to, the season head's way.
+    final cover = detail.coverUrl;
+    return DetailHeroBackdrop(
+      coverImage: cover == null || cover.isEmpty ? null : cachedImage(cover, policy: ImageCachePolicies.videoCover),
+      child: Padding(
+        padding: const EdgeInsets.all(DsSpace.s20),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s6,
+          spacing: DsSpace.s20,
           children: [
-            Text(detail.title, style: theme.typography.title.copyWith(color: colors.text)),
-            if (meta.isNotEmpty)
-              Text(meta.join(' · '), style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-          ],
-        ),
-        // Actions on one line, the crowd's numbers on the next: the buttons
-        // are things the viewer does, the stats are things that happened,
-        // and one Wrap mixed them into a single unordered strip.
-        Wrap(
-          spacing: DsSpace.s8,
-          runSpacing: DsSpace.s8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              onPressed: () => unawaited(_toggleFavourite()),
-              leading: DsIcon(DsIcons.heart, size: 14, color: saved ? colors.accent : colors.textMuted),
-              child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
-            ),
-            // The bar's download without opening the bar: the reference's
-            // own action row names it, and the address is resolved on press.
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              onPressed: _part == null ? null : () => unawaited(_startDownload()),
-              leading: const DsIcon(DsIcons.download, size: 14),
-              child: Text(t.vod.download),
-            ),
-          ],
-        ),
-        if (detail.likeCount != null || detail.coinCount != null || detail.favoriteCount != null)
-          Wrap(
-            spacing: DsSpace.s16,
-            runSpacing: DsSpace.s8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (detail.likeCount case final count?)
-                _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
-              if (detail.coinCount case final count?) _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
-              if (detail.favoriteCount case final count?)
-                _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),
-            ],
-          ),
-        if (showDetails && uploader.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
-            child: Row(
-              spacing: DsSpace.s12,
-              children: [
-                DsAvatar(
-                  initials: avatarInitials(uploader),
-                  image: avatar == null || avatar.isEmpty
-                      ? null
-                      : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-                  size: DsSize.sm,
-                  toneIndex: DsAvatar.toneFor(uploader),
-                  semanticLabel: uploader,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s3,
-                    children: [
-                      Text(
-                        uploader,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+            if (_error != null)
+              DsAlert(
+                status: DsStatus.danger,
+                title: Text(t.vod.openFailed),
+                description: Text(_error!),
+                action: _part == null
+                    ? null
+                    : DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(_openPart(_part!)),
+                        child: Text(t.vod.retry),
                       ),
-                      Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-                    ],
-                  ),
+              ),
+            if (silent) DsAlert(status: DsStatus.warning, title: Text(t.vod.silentNotice)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s6,
+              children: [
+                Text(detail.title, style: theme.typography.title.copyWith(color: colors.text)),
+                if (meta.isNotEmpty)
+                  Text(meta.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
+              ],
+            ),
+            // Actions on one line, the crowd's numbers on the next: the buttons
+            // are things the viewer does, the stats are things that happened,
+            // and one Wrap mixed them into a single unordered strip.
+            // The season page's three voices: the thing a viewer keeps, the
+            // thing a viewer takes, the thing a viewer passes on.
+            Wrap(
+              spacing: DsSpace.s8,
+              runSpacing: DsSpace.s8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                // The verb under the picture for the states the picture's own
+                // chrome is away in: paused or ended, this disc is the one
+                // play on the page.
+                if (_part != null && _play != null && !(_transport?.isPlaying ?? false))
+                  HeroPlayDisc(onPressed: () => unawaited(_togglePlay()), semanticLabel: t.vod.continueWatching),
+                DsButton(
+                  variant: saved ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(_toggleFavourite()),
+                  leading: DsIcon(DsIcons.heart, size: 14, color: saved ? null : colors.textMuted),
+                  child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
+                ),
+                // The bar's download without opening the bar: the reference's
+                // own action row names it, and the address is resolved on press.
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: _part == null ? null : () => unawaited(_startDownload()),
+                  leading: const DsIcon(DsIcons.download, size: 14),
+                  child: Text(t.vod.download),
+                ),
+                DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(_share()),
+                  icon: const DsIcon(DsIcons.share, size: 16),
+                  semanticLabel: t.vod.share,
                 ),
               ],
             ),
-          ),
-        if (showParts && detail.parts.length > 1)
-          _PartsSection(
-            parts: detail.parts,
-            current: _part,
-            onOpen: (part) => unawaited(_openPart(part, resume: _resumeFor(part))),
-          ),
-        if (showDetails) ...[
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              Text(t.vod.description, style: theme.typography.title.copyWith(color: colors.text)),
-              DsCard(
-                style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-                child: _description(context, detail, t),
+            if (detail.likeCount != null || detail.coinCount != null || detail.favoriteCount != null)
+              Wrap(
+                spacing: DsSpace.s16,
+                runSpacing: DsSpace.s8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (detail.likeCount case final count?)
+                    _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
+                  if (detail.coinCount case final count?)
+                    _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
+                  if (detail.favoriteCount case final count?)
+                    _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),
+                ],
               ),
+            if (showDetails && uploader.isNotEmpty)
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  DsAvatar(
+                    initials: avatarInitials(uploader),
+                    image: avatar == null || avatar.isEmpty
+                        ? null
+                        : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+                    size: DsSize.md,
+                    toneIndex: DsAvatar.toneFor(uploader),
+                    semanticLabel: uploader,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s3,
+                      children: [
+                        Text(
+                          uploader,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                        ),
+                        Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            const DsDivider(),
+            if (showParts && detail.parts.length > 1)
+              _PartsSection(
+                parts: detail.parts,
+                current: _part,
+                onOpen: (part) => unawaited(_openPart(part, resume: _resumeFor(part))),
+              ),
+            if (showDetails) ...[
+              _description(context, detail, t),
+              if (detail.aid > 0) _CommentsSection(aid: detail.aid),
             ],
-          ),
-          if (detail.aid > 0) _CommentsSection(aid: detail.aid),
-        ],
-      ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -3263,7 +3281,7 @@ final class _VodStat extends StatelessWidget {
           child: Text(
             AudienceFormat.format(value),
             style: theme.typography.numeric(
-              theme.typography.caption.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+              theme.typography.caption.copyWith(color: colors.textMuted, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -3341,41 +3359,20 @@ final class _PartsSectionState extends State<_PartsSection> {
   Future<void> _jump() async {
     final parts = widget.parts;
     if (parts.isEmpty) return;
-    final controller = TextEditingController();
-    int? parse() {
-      final typed = int.tryParse(controller.text.trim());
-      if (typed == null) return null;
-      final byPage = parts.where((part) => part.page == typed);
+    int? parse(String typed) {
+      final number = int.tryParse(typed.trim());
+      if (number == null) return null;
+      final byPage = parts.where((part) => part.page == number);
       if (byPage.isNotEmpty) return parts.indexOf(byPage.first);
-      return typed >= 1 && typed <= parts.length ? typed - 1 : null;
+      return number >= 1 && number <= parts.length ? number - 1 : null;
     }
 
-    final position = await showAppDialog<int>(
-      context: context,
-      builder: (dialogContext) {
-        final t = dialogContext.t;
-        return AppDialog(
-          title: Text(t.vod.partsJump),
-          description: DsTextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            placeholder: '1–${parts.length}',
-            onSubmitted: (_) => Navigator.of(dialogContext).pop(parse()),
-          ),
-          actions: [
-            DsButton(
-              variant: DsButtonVariant.ghost,
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(t.common.cancel),
-            ),
-            DsButton(onPressed: () => Navigator.of(dialogContext).pop(parse()), child: Text(t.common.confirm)),
-          ],
-        );
-      },
+    final position = await showVodJumpDialog(
+      context,
+      title: context.t.vod.partsJump,
+      count: parts.length,
+      parse: parse,
     );
-    controller.dispose();
     if (position == null || position < 0 || position >= parts.length) return;
     widget.onOpen(parts[position]);
   }
@@ -3392,18 +3389,10 @@ final class _PartsSectionState extends State<_PartsSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                t.vod.partsPlaylist,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-            ),
-            Text(t.vod.partsCount(count: parts.length), style: muted),
+        SectionHeader(
+          title: t.vod.partsPlaylist,
+          count: parts.length,
+          trailing: [
             DsButton(
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
@@ -3413,72 +3402,70 @@ final class _PartsSectionState extends State<_PartsSection> {
             ),
           ],
         ),
-        Container(
-          height: math.min(parts.length * _rowHeight + DsSpace.s8 * 2, _listMaxHeight),
-          decoration: BoxDecoration(
-            color: colors.canvas,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            border: Border.all(color: colors.border),
-          ),
-          child: ListView.builder(
-            controller: _scroll,
-            itemExtent: _rowHeight,
-            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
-            itemCount: parts.length,
-            itemBuilder: (context, index) {
-              final part = parts[index];
-              final playing = index == current;
-              return DsPressable(
-                semanticLabel: 'P${part.page} ${part.title}',
-                onPressed: () => widget.onOpen(part),
-                builder: (context, states, child) => ColoredBox(
-                  color: playing
-                      ? colors.accent.withValues(alpha: 0.14)
-                      : states.contains(WidgetState.hovered)
-                      ? colors.hover
-                      : OnVideoColors.clear,
-                  child: child,
-                ),
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s12),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 36,
-                        child: Text(
-                          'P${part.page}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.numeric(
-                            theme.typography.caption.copyWith(
-                              color: playing ? colors.accent : colors.textSubtle,
+        DsCard(
+          style: const DsCardStyle(padding: EdgeInsets.zero),
+          child: SizedBox(
+            height: math.min(parts.length * _rowHeight + DsSpace.s8 * 2, _listMaxHeight),
+            child: ListView.builder(
+              controller: _scroll,
+              itemExtent: _rowHeight,
+              padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+              itemCount: parts.length,
+              itemBuilder: (context, index) {
+                final part = parts[index];
+                final playing = index == current;
+                return DsPressable(
+                  semanticLabel: 'P${part.page} ${part.title}',
+                  onPressed: () => widget.onOpen(part),
+                  builder: (context, states, child) => ColoredBox(
+                    color: playing
+                        ? colors.accent.withValues(alpha: 0.14)
+                        : states.contains(WidgetState.hovered)
+                        ? colors.hover
+                        : OnVideoColors.clear,
+                    child: child,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s12),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 36,
+                          child: Text(
+                            'P${part.page}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(
+                                color: playing ? colors.accent : colors.textSubtle,
+                                fontWeight: playing ? FontWeight.w600 : null,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            part.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(
+                              color: playing ? colors.accent : colors.text,
                               fontWeight: playing ? FontWeight.w600 : null,
                             ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          part.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(
-                            color: playing ? colors.accent : colors.text,
-                            fontWeight: playing ? FontWeight.w600 : null,
-                          ),
-                        ),
-                      ),
-                      if (part.duration != null)
-                        Text(vodDurationText(part.duration!), style: theme.typography.numeric(muted)),
-                      if (playing) ...[
-                        const SizedBox(width: DsSpace.s6),
-                        DsIcon(DsIcons.play, size: 12, color: colors.accent),
+                        if (part.duration != null)
+                          Text(vodDurationText(part.duration!), style: theme.typography.numeric(muted)),
+                        if (playing) ...[
+                          const SizedBox(width: DsSpace.s6),
+                          DsIcon(DsIcons.play, size: 12, color: colors.accent),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -3519,15 +3506,10 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                count == null ? t.vod.comments : '${t.vod.comments} · ${AudienceFormat.format(count)}',
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-            ),
+        SectionHeader(
+          title: t.vod.comments,
+          count: count,
+          trailing: [
             // The reference's two orders; a pick restarts from the first page.
             DsSegmentedControl<int>(
               value: state?.sort ?? VodCommentsController.sortHot,
@@ -3556,7 +3538,10 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
           const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)))
         else if (state != null && state.error == null && comments.isEmpty)
           Text(t.vod.commentsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
-        for (final comment in comments) _CommentRow(comment: comment),
+        for (final (index, comment) in comments.indexed) ...[
+          if (index > 0) const DsDivider(),
+          _CommentRow(comment: comment),
+        ],
         if ((state?.hasMore ?? false) && comments.isNotEmpty)
           Center(
             child: (state?.loading ?? false)
@@ -3610,7 +3595,7 @@ final class _CommentRow extends StatelessWidget {
                   comment.author,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.link, fontWeight: FontWeight.w600),
+                  style: theme.typography.caption.copyWith(color: colors.text, fontWeight: FontWeight.w600),
                 ),
                 Text(comment.message, style: theme.typography.body.copyWith(color: colors.text)),
                 Row(
@@ -3684,10 +3669,7 @@ final class _RailDoor extends StatelessWidget {
                     DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
                     RotatedBox(
                       quarterTurns: 1,
-                      child: Text(
-                        t.vod.related,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
+                      child: Text(t.vod.related, style: theme.typography.caption.copyWith(color: colors.textMuted)),
                     ),
                   ],
                 ),
@@ -3695,6 +3677,64 @@ final class _RailDoor extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The archive's loading shape: bars where the title, its meta and the
+/// verbs will stand, a block where the blurb goes, the stage's own box
+/// first — the page opens already shaped like itself, not as a spinner on
+/// an empty canvas.
+final class _VideoSkeleton extends StatelessWidget {
+  const _VideoSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final windowSize = MediaQuery.sizeOf(context);
+    final playbackLayout = PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height);
+    final compact = playbackLayout.windowClass == PlaybackWindowClass.compact;
+    final gutter = compact ? DsSpace.s12 : LiveWindow.pageInset(windowSize.width);
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s12,
+        children: [
+          // The stage's own box: a 16:9 frame at the top, flush on the
+          // phone the way the playing page stands.
+          const AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(color: OnVideoColors.ground),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: gutter),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s12,
+              children: [
+                DsSkeleton(width: double.infinity, height: 20, strong: true),
+                DsSkeleton(width: 220, height: 12),
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [DsSkeleton(width: 88, height: 14), DsSkeleton(width: 88, height: 14)],
+                ),
+                DsSkeleton.block(width: double.infinity, height: 64),
+                DsSkeleton.block(width: double.infinity, height: 120),
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [DsSkeleton(width: 160, height: 14), DsSkeleton(width: 200, height: 14)],
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: DsSpace.s12),
+            child: Align(
+              alignment: AlignmentDirectional.center,
+              child: DsSpinner(style: DsSpinnerStyle(size: 24)),
+            ),
+          ),
+        ],
       ),
     );
   }

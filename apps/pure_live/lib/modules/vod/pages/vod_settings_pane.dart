@@ -12,6 +12,7 @@ import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart';
 import 'package:pure_live/modules/vod/pages/vod_card_preview_page.dart' show showVodCardPreview;
 import 'package:pure_live/modules/vod/widgets/vod_app_login_dialog.dart' show showVodAppLogin;
+import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The Bilibili station's own settings: the Bilibili account the station
 /// reads (and only that account — the live platforms' sign-ins stay in the
@@ -180,7 +181,17 @@ final class VodPlaybackPane extends ConsumerWidget {
               leading: const DsIcon(DsIcons.rotateCcw),
               title: Text(t.vod.playbackReset),
               description: Text(t.vod.playbackResetDesc),
-              onPressed: () => unawaited(controller.reset()),
+              onPressed: () => unawaited(() async {
+                final confirmed = await showAppConfirm(
+                  context: context,
+                  title: t.vod.playbackReset,
+                  description: t.vod.playbackResetDesc,
+                  confirmLabel: t.common.confirm,
+                  cancelLabel: t.common.cancel,
+                  destructive: true,
+                );
+                if (confirmed) await controller.reset();
+              }()),
             ),
           ],
         ),

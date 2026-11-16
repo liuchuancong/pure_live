@@ -49,6 +49,11 @@ String vodSearchDurationLabel(Translations t, int duration) => switch (duration)
   _ => t.vod.durationAny,
 };
 
+/// The search head's column: a wide window reads a field and its verbs in
+/// one line, the settings page's own measure — not a field stretched
+/// across the window.
+const double _kSearchHeadMaxWidth = 960;
+
 /// The station's search page: two head rows over the results — the
 /// reference's search screen. The first row is the field, its search verb
 /// and the archive tab's condition entry (the panel behind it carries the
@@ -77,7 +82,19 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
     // searched as though typed here. The listener catches a word handed
     // while the page is already showing.
     ref.listenManual(vodPendingSearchProvider, (_, _) => _takePending());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _takePending());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _takePending();
+      // Re-entering the page shows the last search's results; the field then
+      // names the words they answer to, instead of sitting empty under a
+      // full screen of answers.
+      if (!mounted || _search.text.isNotEmpty) return;
+      final query = ref.read(vodProvider).query;
+      if (query.isEmpty) return;
+      _search.value = TextEditingValue(
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
+      );
+    });
   }
 
   /// Runs the handed word: the field reads it, the search answers it.
@@ -98,14 +115,35 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   }
 
   void _run() {
-    unawaited(ref.read(vodProvider.notifier).search(_search.text, kind: _kind, order: _order, duration: _duration));
+    // The words join the history wall before the search answers: a re-ask
+    // of the front word is the record's own no-op. An empty ask is not
+    // one at all — the same quiet stand-down the huya search keeps.
+    final word = _search.text.trim();
+    if (word.isEmpty) return;
+    unawaited(ref.read(vodSearchHistoryProvider.notifier).record(word));
+    unawaited(ref.read(vodProvider.notifier).search(word, kind: _kind, order: _order, duration: _duration));
+  }
+
+  /// Puts a history word back in the field and asks it again — the chip's
+  /// own path, the same one a typed submit walks.
+  void _pickHistory(String word) {
+    _search.value = TextEditingValue(
+      text: word,
+      selection: TextSelection.collapsed(offset: word.length),
+    );
+    _run();
   }
 
   void _selectKind(VodSearchKind kind) {
     if (kind == _kind) return;
     setState(() => _kind = kind);
-    // The same words, the other result kind: a committed query is re-asked.
-    unawaited(ref.read(vodProvider.notifier).search(_search.text, kind: kind, order: _order, duration: _duration));
+    // The same committed words, the other result kind — the query on screen
+    // is the one re-asked, not the field: the field may hold nothing (an
+    // empty ask would wipe the results this switch sits above) or a draft
+    // the viewer never submitted.
+    final query = ref.read(vodProvider).query;
+    if (query.isEmpty) return;
+    unawaited(ref.read(vodProvider.notifier).search(query, kind: kind, order: _order, duration: _duration));
   }
 
   /// Asks the station the query on the screen again, with the conditions the
@@ -176,31 +214,41 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
         // condition stands away from its default.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: Row(
-            children: [
-              Expanded(
-                child: DsSearchField(
-                  controller: _search,
-                  autofocus: true,
-                  placeholder: t.vod.searchHint,
-                  onSubmitted: (_) => _run(),
-                ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _kSearchHeadMaxWidth),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DsSearchField(
+                      controller: _search,
+                      autofocus: true,
+                      placeholder: t.vod.searchHint,
+                      onSubmitted: (_) => _run(),
+                    ),
+                  ),
+                  if (!narrow) ...[
+                    const SizedBox(width: DsSpace.s8),
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      onPressed: _run,
+                      child: Text(t.vod.search),
+                    ),
+                  ],
+                  if (filterable) ...[
+                    const SizedBox(width: DsSpace.s8),
+                    DsButton.icon(
+                      variant: _filtered ? DsButtonVariant.tinted : DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      semanticLabel: t.vod.searchFilterTitle,
+                      onPressed: () => unawaited(_openFilters()),
+                      icon: const DsIcon(DsIcons.listFilter, size: 16),
+                    ),
+                  ],
+                ],
               ),
-              if (!narrow) ...[
-                const SizedBox(width: DsSpace.s8),
-                DsButton(variant: DsButtonVariant.ghost, size: DsSize.sm, onPressed: _run, child: Text(t.vod.search)),
-              ],
-              if (filterable) ...[
-                const SizedBox(width: DsSpace.s8),
-                DsButton.icon(
-                  variant: _filtered ? DsButtonVariant.tinted : DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  semanticLabel: t.vod.searchFilterTitle,
-                  onPressed: () => unawaited(_openFilters()),
-                  icon: const DsIcon(DsIcons.listFilter, size: 16),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
         Padding(
@@ -244,16 +292,20 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
           ),
         ),
         Expanded(
-          child: _SearchResults(
-            state: vod,
-            controller: ref.read(vodProvider.notifier),
-            settings: settings,
-            layout: layout,
-            onRefresh: _rerun,
-            onVideo: _openVideo,
-            onSeason: _openSeason,
-            onRoom: _openRoom,
-          ),
+          // No query on the screen yet: the history wall is the page's first
+          // face, and the station's empty state stands in while it is bare.
+          child: searched
+              ? _SearchResults(
+                  state: vod,
+                  controller: ref.read(vodProvider.notifier),
+                  settings: settings,
+                  layout: layout,
+                  onRefresh: _rerun,
+                  onVideo: _openVideo,
+                  onSeason: _openSeason,
+                  onRoom: _openRoom,
+                )
+              : _SearchIdleHistory(onPick: _pickHistory),
         ),
       ],
     );
@@ -502,3 +554,100 @@ LiveRoom _liveRoomOf(VodLiveRoom room) => LiveRoom.normalized(
   audience: RoomAudience.of(onlineViewers: room.online),
   broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
 );
+
+/// The search page's first face: the words this device searched, each
+/// one a chip that asks again, with the wall's own way out beside it —
+/// the reference's 搜索历史, one wall, one verb.
+final class _SearchIdleHistory extends ConsumerWidget {
+  const _SearchIdleHistory({required this.onPick});
+
+  final ValueChanged<String> onPick;
+
+  /// Asks before the whole wall goes: a full clear cannot be undone, and
+  /// the button sits beside chips a slip of the finger can reach.
+  Future<void> _clearHistory(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.clearSearchHistoryTitle,
+      description: t.common.clearSearchHistoryBody,
+      confirmLabel: t.vod.searchHistoryClear,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    unawaited(ref.read(vodSearchHistoryProvider.notifier).clear());
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    final history = ref.watch(vodSearchHistoryProvider);
+    if (history.isEmpty) {
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.search),
+          title: Text(t.vod.idleTitle),
+          description: Text(t.vod.idleDescription),
+        ),
+      );
+    }
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return ListView(
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s12),
+      children: [
+        // The wall reads as one column on a wide window — the clear verb
+        // stays beside the words it clears, not at the window's far edge.
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _kSearchHeadMaxWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.vod.searchHistory, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                const SizedBox(height: DsSpace.s8),
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: DsSpace.s8,
+                        runSpacing: DsSpace.s8,
+                        children: [
+                          for (final word in history)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: DsSpace.s4,
+                              children: [
+                                DsChip(label: Text(word), selected: false, onChanged: (_) => onPick(word)),
+                                DsButton.icon(
+                                  variant: DsButtonVariant.ghost,
+                                  size: DsSize.sm,
+                                  semanticLabel: t.vod.searchHistoryRemove(word: word),
+                                  onPressed: () => ref.read(vodSearchHistoryProvider.notifier).remove(word),
+                                  icon: const DsIcon(DsIcons.x, size: 14),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      onPressed: () => unawaited(_clearHistory(context, ref)),
+                      child: Text(t.vod.searchHistoryClear),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

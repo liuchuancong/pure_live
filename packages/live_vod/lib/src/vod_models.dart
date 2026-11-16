@@ -316,13 +316,17 @@ final class VodFailure implements Exception {
 /// The result of a search: the hits and whether another page exists.
 final class VodSearchPage {
   /// A page of hits.
-  const new({required this.videos, this.hasMore = false});
+  const new({required this.videos, this.hasMore = false, this.total});
 
   /// The hits, in the source's order.
   final List<VodVideo> videos;
 
   /// Whether the source says another page follows.
   final bool hasMore;
+
+  /// The whole list's size, when the source names one — the figure a page's
+  /// head reads; null keeps the count off.
+  final int? total;
 }
 
 /// One user a search returned.

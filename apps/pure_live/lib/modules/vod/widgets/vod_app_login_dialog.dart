@@ -123,10 +123,13 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
               width: 184,
               height: 184,
               child: DecoratedBox(
-                decoration: DsBoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: theme.radii.controlCorners(null, 16)),
+                decoration: DsBoxDecoration(
+                  color: const Color(0xFFFFFFFF),
+                  borderRadius: theme.radii.controlCorners(null, 16),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(DsSpace.s8),
-                  child: Center(child: _qrBody(t)),
+                  child: Center(child: _qrState(context, t)),
                 ),
               ),
             ),
@@ -156,11 +159,39 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
     );
   }
 
-  Widget _qrBody(Translations t) {
+  Widget _qrState(BuildContext context, Translations t) {
     final url = _url;
+    if (url != null && _scanned && !_expired) {
+      // The phone has confirmed: the code's work is done — a veil and
+      // the word say so while the session lands.
+      final colors = DsTheme.colorsOf(context);
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          PrettyQrView.data(data: url),
+          DecoratedBox(
+            decoration: BoxDecoration(color: const Color(0xCCFFFFFF), borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s8,
+              children: [
+                DsIcon(DsIcons.circleCheck, size: 40, color: colors.success.signal),
+                Text(
+                  t.vod.appLoginScanned,
+                  textAlign: TextAlign.center,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: colors.text),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
     if (url == null) {
       return _expired
-          ? Center(child: DsEmptyState(icon: const DsIcon(DsIcons.qrCode), title: Text(t.vod.appLoginExpired)))
+          ? Center(
+              child: DsEmptyState(icon: const DsIcon(DsIcons.qrCode), title: Text(t.vod.appLoginExpired)),
+            )
           : const SizedBox(width: 28, height: 28, child: DsSpinner());
     }
     return PrettyQrView.data(data: url);

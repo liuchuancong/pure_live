@@ -85,8 +85,7 @@ final class _VodSeasonPreviewState extends ConsumerState<VodSeasonPreview> {
   Future<CoverPreviewSource?> _resolve() async {
     final client = ref.read(vodClientProvider);
     final season = widget.season;
-    final episodeId =
-        season.episodeId ?? (await client.seasonDetail(seasonId: season.seasonId)).episodes.first.id;
+    final episodeId = season.episodeId ?? (await client.seasonDetail(seasonId: season.seasonId)).episodes.first.id;
     final info = await client.pgcPlay(episodeId: episodeId);
     if (info.videos.isEmpty) return null;
     final picture = [...info.videos]..sort((a, b) => a.quality.compareTo(b.quality));

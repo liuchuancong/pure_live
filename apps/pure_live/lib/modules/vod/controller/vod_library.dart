@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter/foundation.dart' show immutable;
@@ -12,6 +12,11 @@ const String kVodFavouritesKey = 'vod.favourites';
 /// Where the player writes one archive's playback position; the history page
 /// reads every entry under this prefix.
 const String kVodProgressPrefix = 'vod.progress.';
+
+/// How many archives' checkpoints the record keeps; the overflow's oldest
+/// keys leave the store, so years of watching do not grow the settings
+/// document without end.
+const int kVodHistoryLimit = 200;
 
 /// An archive as the station keeps it: enough to draw its row and open its
 /// page without asking the source again.
@@ -143,6 +148,14 @@ final class VodFavouritesController extends Notifier<List<VodSavedVideo>> {
     await _save();
   }
 
+  /// Drops the selected archives, one removal each — the history's
+  /// 管理 mode shares this verb.
+  Future<void> removeMany(Iterable<String> bvids) async {
+    for (final bvid in bvids) {
+      await remove(bvid);
+    }
+  }
+
   Future<void> _save() async {
     try {
       await StoragePrefs.setString(kVodFavouritesKey, jsonEncode([for (final video in state) video.toJson()]));
@@ -185,13 +198,127 @@ final class VodHistoryEntry {
 final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
   StreamSubscription<Set<String>>? _subscription;
 
+  /// The read after a write: playback stores a checkpoint every few
+  /// seconds, and each store broadcast would otherwise re-read the whole
+  /// snapshot — a burst of writes settles on one read, shortly after the
+  /// last.
+  Timer? _reload;
+
   @override
   List<VodHistoryEntry> build() {
     _subscription = StoragePrefs.watch().listen((keys) {
-      if (keys.any((key) => key.startsWith(kVodProgressPrefix))) state = _read();
+      if (!keys.any((key) => key.startsWith(kVodProgressPrefix))) return;
+      _reload?.cancel();
+      _reload = Timer(const Duration(milliseconds: 800), () => state = _read());
     });
-    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
+    ref.onDispose(() {
+      unawaited(_subscription?.cancel() ?? Future<void>.value());
+      _reload?.cancel();
+    });
     return _read();
+  }
+
+  /// Writes one archive's checkpoint — the video page calls it on a throttle
+  /// as playback runs. The entry doubles as the history record the station's
+  /// 个人 page reads, so it carries the archive's metadata; finishing marks
+  /// the record done rather than clearing it.
+  Future<void> save({
+    required String bvid,
+    required int cid,
+    required double seconds,
+    required String title,
+    required double durationSeconds,
+    String? cover,
+    String? uploader,
+    bool completed = false,
+  }) async {
+    final key = '$kVodProgressPrefix$bvid';
+    try {
+      await StoragePrefs.setString(
+        key,
+        jsonEncode({
+          'cid': cid,
+          'seconds': completed ? durationSeconds : seconds,
+          'title': title,
+          'cover': cover,
+          'uploader': uploader,
+          'durationSeconds': durationSeconds,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+          if (completed) 'completed': true,
+        }),
+      );
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+    await _prune(
+      written: VodHistoryEntry(
+        video: VodSavedVideo(
+          bvid: bvid,
+          title: title,
+          coverUrl: cover,
+          uploader: uploader,
+          durationSeconds: durationSeconds,
+          updatedAt: DateTime.now(),
+        ),
+        positionSeconds: completed ? durationSeconds : seconds,
+        completed: completed,
+      ),
+    );
+  }
+
+  /// Caps the record at [kVodHistoryLimit]: the overflow's oldest
+  /// checkpoints leave the store after each write. The in-memory list
+  /// plus the entry just written decides — a full-store rescan on every
+  /// five-second checkpoint is the expensive kind of tidiness.
+  Future<void> _prune({required VodHistoryEntry written}) async {
+    final merged = [written, ...state.where((entry) => entry.video.bvid != written.video.bvid)]
+      ..sort((a, b) => b.video.updatedAt.compareTo(a.video.updatedAt));
+    for (final entry in merged.skip(kVodHistoryLimit)) {
+      try {
+        await StoragePrefs.remove('$kVodProgressPrefix${entry.video.bvid}');
+      } on Object {
+        // A preference; a closed store loses it.
+      }
+    }
+  }
+
+  /// The place to resume [bvid] from — which part and how far in. A finished
+  /// archive keeps its history entry but is not resumed.
+  ({int cid, double seconds})? resumePoint(String bvid) {
+    try {
+      final raw = StoragePrefs.getString('$kVodProgressPrefix$bvid');
+      if (raw == null || raw.isEmpty) return null;
+      final json = jsonDecode(raw);
+      if (json is! Map) return null;
+      if (json['completed'] == true) return null;
+      final cid = (json['cid'] as num?)?.toInt();
+      final seconds = (json['seconds'] as num?)?.toDouble();
+      if (cid == null || seconds == null || seconds <= 0) return null;
+      return (cid: cid, seconds: seconds);
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Reads one archive's viewer-set opening and ending points.
+  VodSkipPoints? skipPoints(String bvid) {
+    try {
+      return VodSkipPoints.parse(StoragePrefs.getString('$kVodSkipPrefix$bvid'));
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Writes one archive's opening and ending points.
+  Future<void> saveSkipPoints(String bvid, {double? headSeconds, double? tailSeconds}) async {
+    try {
+      await StoragePrefs.setString(
+        '$kVodSkipPrefix$bvid',
+        jsonEncode({'head': headSeconds?.round(), 'tail': tailSeconds?.round()}),
+      );
+    } on Object {
+      // A preference; a closed store loses it.
+    }
   }
 
   /// Drops one archive's entry.
@@ -204,6 +331,14 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
       await StoragePrefs.remove(key);
     } on Object {
       // A preference; a closed store loses it.
+    }
+  }
+
+  /// Drops the selected entries, one removal each — the batch management
+  /// own verb.
+  Future<void> removeMany(Iterable<String> bvids) async {
+    for (final bvid in bvids) {
+      await remove(bvid);
     }
   }
 
@@ -225,6 +360,7 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
       return const [];
     }
     entries.sort((a, b) => b.video.updatedAt.compareTo(a.video.updatedAt));
+    if (entries.length > kVodHistoryLimit) return entries.take(kVodHistoryLimit).toList();
     return entries;
   }
 
@@ -260,3 +396,223 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
 
 /// The archive history.
 final vodHistoryProvider = NotifierProvider<VodHistoryController, List<VodHistoryEntry>>(VodHistoryController.new);
+
+/// The preference prefix one series' continue checkpoint lives under — the
+/// season page writes one per series, and the manifest gate reviews the
+/// prefix as a computed key, the way it reviews the archive history's.
+const String kVodSeasonProgressPrefix = 'vod.season.progress.';
+
+/// How many series' checkpoints the store keeps; an older one is dropped
+/// when the shelf outgrows it.
+const int kVodSeasonProgressLimit = 100;
+
+/// One series' checkpoint: where the season page last opened an episode —
+/// the cinema page's continue card reads the newest one that is not done.
+@immutable
+final class VodSeasonProgress {
+  /// A checkpoint.
+  const VodSeasonProgress({
+    required this.seasonId,
+    required this.title,
+    required this.episodeIndex,
+    required this.updatedAt,
+    this.cover,
+    this.positionSeconds,
+    this.total,
+  });
+
+  /// The season the checkpoint belongs to.
+  final String seasonId;
+
+  /// The series' title.
+  final String title;
+
+  /// The series' poster, when the detail had one.
+  final String? cover;
+
+  /// The zero-based position of the last-opened episode.
+  final int episodeIndex;
+
+  /// The seconds into that episode the checkpoint carried — the season
+  /// page's ticks write it while the picture runs; an open-time write
+  /// carries none, and a return to the season resumes from it.
+  final double? positionSeconds;
+
+  /// How many episodes the ladder had when the checkpoint was written.
+  final int? total;
+
+  /// When the checkpoint was written.
+  final DateTime updatedAt;
+
+  /// Whether the last-opened episode was the ladder's last one — a
+  /// finished series leaves the continue card alone.
+  bool get completed => total != null && episodeIndex >= total! - 1;
+}
+
+/// The preference prefix one archive's viewer-set opening and ending points
+/// live under — the video page writes one per archive, and the manifest
+/// gate reviews the prefix as a computed key.
+const String kVodSkipPrefix = 'vod.skip.';
+
+/// One archive's viewer-set opening and ending points, in seconds.
+@immutable
+final class VodSkipPoints {
+  /// Creates the points.
+  const VodSkipPoints({this.headSeconds, this.tailSeconds});
+
+  /// Where the archive's opening ends, or null when none was set.
+  final double? headSeconds;
+
+  /// Where the archive's ending starts, or null when none was set.
+  final double? tailSeconds;
+
+  /// Parses the stored JSON, or returns null — no points is the ordinary
+  /// answer, and a malformed one reads as none.
+  static VodSkipPoints? parse(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    try {
+      final json = jsonDecode(value);
+      if (json is! Map) return null;
+      return VodSkipPoints(
+        headSeconds: (json['head'] as num?)?.toDouble(),
+        tailSeconds: (json['tail'] as num?)?.toDouble(),
+      );
+    } on Object {
+      return null;
+    }
+  }
+}
+
+/// The seasons' checkpoints, latest first.
+///
+/// The season page writes one checkpoint per series on every episode open;
+/// this notifier reads them out of the preference store and follows the
+/// store's change stream, the same way the archive history does.
+final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>> {
+  StreamSubscription<Set<String>>? _subscription;
+
+  /// The read after a write, settled like the history's — one read shortly
+  /// after a burst of checkpoints instead of one per broadcast.
+  Timer? _reload;
+
+  @override
+  List<VodSeasonProgress> build() {
+    _subscription = StoragePrefs.watch().listen((keys) {
+      if (!keys.any((key) => key.startsWith(kVodSeasonProgressPrefix))) return;
+      _reload?.cancel();
+      _reload = Timer(const Duration(milliseconds: 800), () => state = _read());
+    });
+    ref.onDispose(() {
+      unawaited(_subscription?.cancel() ?? Future<void>.value());
+      _reload?.cancel();
+    });
+    return _read();
+  }
+
+  /// Writes one series' checkpoint — the season page calls it at each
+  /// episode open, so the shelf and the continue card never disagree.
+  Future<void> save({
+    required String seasonId,
+    required String title,
+    required int episodeIndex,
+    String? cover,
+    int? total,
+    double? positionSeconds,
+  }) async {
+    final key = '$kVodSeasonProgressPrefix$seasonId';
+    final written = VodSeasonProgress(
+      seasonId: seasonId,
+      title: title,
+      cover: cover,
+      episodeIndex: episodeIndex,
+      updatedAt: DateTime.now(),
+      positionSeconds: positionSeconds,
+      total: total,
+    );
+    try {
+      await StoragePrefs.setString(
+        key,
+        jsonEncode({
+          'title': title,
+          if (cover != null && cover.isNotEmpty) 'cover': cover,
+          'episodeIndex': episodeIndex,
+          'total': ?total,
+          'positionSeconds': ?positionSeconds,
+          'updatedAt': written.updatedAt.millisecondsSinceEpoch,
+        }),
+      );
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+    await _prune(written: written);
+  }
+
+  /// Drops the oldest checkpoints once the shelf passes its limit, so a
+  /// viewer who opens a hundred series does not keep a thousand entries.
+  /// The in-memory shelf plus the entry just written decides — the
+  /// prune runs after every checkpoint write and must not rescan the
+  /// whole store each time.
+  Future<void> _prune({required VodSeasonProgress written}) async {
+    final merged = [written, ...state.where((entry) => entry.seasonId != written.seasonId)]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    for (final entry in merged.skip(kVodSeasonProgressLimit)) {
+      try {
+        await StoragePrefs.remove('$kVodSeasonProgressPrefix${entry.seasonId}');
+      } on Object {
+        // A preference; a closed store loses it.
+      }
+    }
+  }
+
+  /// Drops one series' checkpoint.
+  Future<void> remove(String seasonId) async {
+    try {
+      await StoragePrefs.remove('$kVodSeasonProgressPrefix$seasonId');
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  static List<VodSeasonProgress> _read() {
+    final List<VodSeasonProgress> entries;
+    try {
+      entries = [
+        for (final MapEntry(:key, :value) in StoragePrefs.snapshot().entries)
+          if (key.startsWith(kVodSeasonProgressPrefix)) ?_parse(key, value),
+      ];
+    } on Object {
+      return const [];
+    }
+    entries.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return entries;
+  }
+
+  static VodSeasonProgress? _parse(String key, Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    try {
+      final json = jsonDecode(value);
+      if (json is! Map) return null;
+      final seasonId = key.substring(kVodSeasonProgressPrefix.length);
+      final title = json['title'];
+      final index = json['episodeIndex'];
+      if (seasonId.isEmpty || title is! String || title.isEmpty || index is! num) return null;
+      final updatedAt = (json['updatedAt'] as num?)?.toInt();
+      return VodSeasonProgress(
+        seasonId: seasonId,
+        title: title,
+        cover: json['cover'] is String ? json['cover'] as String : null,
+        episodeIndex: index.toInt(),
+        positionSeconds: (json['positionSeconds'] as num?)?.toDouble(),
+        total: json['total'] is num ? (json['total'] as num).toInt() : null,
+        updatedAt: updatedAt == null ? DateTime.now() : DateTime.fromMillisecondsSinceEpoch(updatedAt),
+      );
+    } on Object {
+      return null;
+    }
+  }
+}
+
+/// The seasons' continue checkpoints.
+final vodSeasonProgressProvider = NotifierProvider<VodSeasonProgressController, List<VodSeasonProgress>>(
+  VodSeasonProgressController.new,
+);

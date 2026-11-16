@@ -253,10 +253,7 @@ final class _VodVideoCardState extends ConsumerState<VodVideoCard> with CoverPre
       ),
     );
   }
-
 }
-
-
 
 /// The cover, or the theme's stand-in.
 Widget vodCover(VodVideo video, BuildContext context) {
@@ -921,6 +918,7 @@ final class VodVideoRow extends ConsumerWidget {
     this.progress,
     this.stamp,
     this.trailing,
+    this.compact = false,
     super.key,
   });
 
@@ -945,6 +943,11 @@ final class VodVideoRow extends ConsumerWidget {
   /// The row's action at its end: the way to drop the archive from the list
   /// it is being read out of.
   final Widget? trailing;
+
+  /// The rail cut of the row: a narrower cover and one line of title, the
+  /// shape a 280–380px side column needs to keep its words readable. The
+  /// page-width row keeps [trailing] intact; the rail cut drops it.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -972,10 +975,10 @@ final class VodVideoRow extends ConsumerWidget {
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s12,
+        spacing: compact ? DsSpace.s8 : DsSpace.s12,
         children: [
           SizedBox(
-            width: 148,
+            width: compact ? 104 : 148,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(theme.radii.control(84)),
               child: AspectRatio(
@@ -1017,29 +1020,41 @@ final class VodVideoRow extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: DsSpace.s4,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          video.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                  // The rail cut keeps the words to one line — a 300px column
+                  // cannot afford two-line titles fighting the stamp's digits.
+                  if (compact)
+                    Text(
+                      video.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    )
+                  else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            video.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                          ),
                         ),
-                      ),
-                      if (stamp case final value? when value.isNotEmpty)
-                        // The record's moment keeps its own digits in a line of
-                        // words, the way the station's own history rows do.
-                        Text(
-                          value,
-                          maxLines: 1,
-                          softWrap: false,
-                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                        ),
-                    ],
-                  ),
+                        if (stamp case final value? when value.isNotEmpty)
+                          // The record's moment keeps its own digits in a line of
+                          // words, the way the station's own history rows do.
+                          Text(
+                            value,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
+                          ),
+                      ],
+                    ),
                   if (note.isNotEmpty || plays.isNotEmpty || danmaku.isNotEmpty)
                     _VodRowMeta(note: note, plays: plays, danmaku: danmaku),
                 ],

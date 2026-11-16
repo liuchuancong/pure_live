@@ -330,6 +330,58 @@ void main() {
     expect(page.videos.single.duration, const Duration(minutes: 5));
   });
 
+  test('a space page reads the uploads an anchor door opens onto', () async {
+    final http = _FakeHttp({
+      '/x/web-interface/nav': {
+        'code': -101,
+        'data': {
+          'isLogin': false,
+          'wbi_img': {
+            'img_url': 'https://i0.hdslb.com/bfs/wbi/7cd084941338484aae1ad9425b84077c.png',
+            'sub_url': 'https://i0.hdslb.com/bfs/wbi/4932caff0ff746eab6f01bf08b70ac45.png',
+          },
+        },
+      },
+      '/x/space/wbi/arc/search': {
+        'code': 0,
+        'data': {
+          'list': {
+            'vlist': [
+              {
+                'bvid': 'BV1space',
+                'title': '投稿 &amp; 一',
+                'pic': '//i0.hdslb.com/space.jpg',
+                'author': 'up',
+                'length': '5:12',
+                'play': 321,
+                'aid': 7,
+              },
+              {'bvid': '', 'title': 'no id'},
+            ],
+          },
+          'page': {'count': 31},
+        },
+      },
+    });
+
+    final page = await BilibiliVodClient(http).spaceVideos(9);
+
+    final index = http.asked.indexWhere((uri) => uri.path == '/x/space/wbi/arc/search');
+    final space = http.asked[index];
+    expect(space.queryParameters['w_rid'], isNotEmpty, reason: 'the ask is signed');
+    expect(space.queryParameters['mid'], '9');
+    expect(space.queryParameters['order'], 'pubdate');
+    expect(space.queryParameters['ps'], '30');
+    expect(http.askedHeaders[index]['referer'], 'https://space.bilibili.com/9/');
+    // 31 uploads over a 30-wide page: more may follow.
+    expect(page.hasMore, isTrue);
+    expect(page.total, 31);
+    expect(page.videos.single.title, '投稿 &amp; 一');
+    expect(page.videos.single.duration, const Duration(minutes: 5, seconds: 12));
+    expect(page.videos.single.playCount, 321);
+    expect(page.videos.single.uploader, 'up');
+  });
+
   test('a dynamics page reads its posts and its cursor', () async {
     final http = _FakeHttp({
       '/x/polymer/web-dynamic/v1/feed/all': {

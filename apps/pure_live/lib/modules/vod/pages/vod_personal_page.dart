@@ -75,13 +75,23 @@ final class VodPersonalPage extends ConsumerStatefulWidget {
 final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
   late VodPersonalTab _tab = widget.tab;
 
+  /// The history's batch mode: the ticked bvids go with one confirmed press.
+  bool _managing = false;
+  final Set<String> _selected = {};
+
   /// The season type the 追番 tab lists: 1 番剧, 2 影视.
   int _seasonType = 1;
 
   @override
   void didUpdateWidget(VodPersonalPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.tab != _tab) setState(() => _tab = widget.tab);
+    if (widget.tab != _tab) {
+      setState(() {
+        _tab = widget.tab;
+        _managing = false;
+        _selected.clear();
+      });
+    }
   }
 
   void _open(String bvid) {
@@ -112,6 +122,85 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     onPressed: () => unawaited(onRemove()),
     icon: const DsIcon(DsIcons.trash2, size: 16),
   );
+
+  /// Leaves the batch mode, the ticked set with it.
+  void _leaveManaging() => setState(() {
+    _managing = false;
+    _selected.clear();
+  });
+
+  /// The head's 管理 toggle: entering hands the rows their checkboxes,
+  /// leaving clears what was ticked.
+  void _toggleManaging() {
+    if (_managing) {
+      _leaveManaging();
+      return;
+    }
+    setState(() => _managing = true);
+  }
+
+  /// Deletes the ticked rows after their confirmation, then leaves the mode.
+  Future<void> _removeSelected() async {
+    final t = context.t;
+    if (_selected.isEmpty) return;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.deleteSelected(count: _selected.length),
+      description: _tab == VodPersonalTab.favourites ? t.vod.favouritesRemoveDesc : t.vod.clearHistoryDesc,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final selected = Set<String>.from(_selected);
+    if (_tab == VodPersonalTab.favourites) {
+      await ref.read(vodFavouritesProvider.notifier).removeMany(selected);
+    } else {
+      await ref.read(vodHistoryProvider.notifier).removeMany(selected);
+    }
+    _leaveManaging();
+  }
+
+  /// The batch bar under the history list: the ticked count, the delete, the
+  /// way out — the hongguo history page's own foot.
+  Widget _manageBar(double inset) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Container(
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: Text(
+              t.vod.personalCount(count: _selected.length),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+          ),
+          DsButton(
+            variant: DsButtonVariant.dangerSoft,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.trash2, size: 14),
+            onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected()),
+            child: Text(t.common.deleteSelected(count: _selected.length)),
+          ),
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: _leaveManaging,
+            child: Text(t.common.manageDone),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _clearHistory() async {
     final t = context.t;
@@ -211,8 +300,20 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
           : t.vod.historyProgress(position: position, total: total),
       progress: _watched(entry),
       stamp: vodWatchStamp(entry.video.updatedAt, namedDay: namedDay),
-      onOpen: () => _open(entry.bvid),
-      trailing: _drop(t.vod.historyRemove, () => ref.read(vodHistoryProvider.notifier).remove(entry.bvid)),
+      onOpen: _managing ? null : () => _open(entry.bvid),
+      trailing: _managing
+          ? DsCheckbox(
+              value: _selected.contains(entry.bvid),
+              semanticLabel: entry.video.title,
+              onChanged: (value) => setState(() {
+                if (value ?? false) {
+                  _selected.add(entry.bvid);
+                } else {
+                  _selected.remove(entry.bvid);
+                }
+              }),
+            )
+          : _drop(t.vod.historyRemove, () => ref.read(vodHistoryProvider.notifier).remove(entry.bvid)),
     );
   }
 
@@ -227,10 +328,15 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     final name = account.value?.name;
     final history = ref.watch(vodHistoryProvider);
     final favourites = ref.watch(vodFavouritesProvider);
-    final watchLater = ref.watch(vodWatchLaterProvider);
-    final seasons = ref.watch(vodFollowingSeasonsProvider(_seasonType));
-    final toView = watchLater.value ?? const <VodVideo>[];
-    final following = seasons.value;
+    // The platform's two lists are asked on their first watch: read
+    // them only while their own tab is the one on the screen, so a
+    // guest opening the page fetches one list, not four.
+    final watchLater = _tab == VodPersonalTab.toView ? ref.watch(vodWatchLaterProvider) : null;
+    final seasons = _tab == VodPersonalTab.following && loggedIn
+        ? ref.watch(vodFollowingSeasonsProvider(_seasonType))
+        : null;
+    final toView = watchLater?.value ?? const <VodVideo>[];
+    final following = seasons?.value;
     final browse = ref.watch(browseSettingsProvider);
     final layout = ref.watch(browseLayoutProvider);
     final count = switch (_tab) {
@@ -250,7 +356,14 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
           label: t.vod.searchFilterTitle,
           onPressed: () => unawaited(_openSeasonFilter()),
         ),
-      if (_tab == VodPersonalTab.history && history.isNotEmpty)
+      if ((_tab == VodPersonalTab.history && history.isNotEmpty) ||
+          (_tab == VodPersonalTab.favourites && favourites.isNotEmpty))
+        VodFeedAction(
+          icon: DsIcons.listChecks,
+          label: _managing ? t.common.manageDone : t.common.manage,
+          onPressed: _toggleManaging,
+        ),
+      if (_tab == VodPersonalTab.history && history.isNotEmpty && !_managing)
         VodFeedAction(icon: DsIcons.trash2, label: t.vod.clearHistory, onPressed: () => unawaited(_clearHistory())),
     ];
     final summary = <String>[
@@ -300,8 +413,8 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
               : switch (_tab) {
                   VodPersonalTab.toView => _RemoteVideoList(
                     videos: toView,
-                    loading: watchLater.isLoading,
-                    error: watchLater.error,
+                    loading: watchLater?.isLoading ?? false,
+                    error: watchLater?.error,
                     onOpen: _open,
                     onRetry: () => ref.invalidate(vodWatchLaterProvider),
                     emptyIcon: DsIcons.clock3,
@@ -317,37 +430,64 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                               description: Text(t.vod.historyEmptyDescription),
                             ),
                           )
-                        : _historyList(history, inset),
-                  VodPersonalTab.favourites => PagedCardGrid<VodSavedVideo>(
-                    items: favourites,
-                    layout: layout,
-                    // The archive row is a cover beside two text lines: a hair
-                    // taller than the room row so a two-line title never
-                    // presses on its edge.
-                    listMainAxisExtent: 104,
-                    listItemBuilder: (context, video) => VodVideoRow(
-                      video: video.video,
-                      onOpen: () => _open(video.bvid),
-                      trailing: _drop(
-                        t.vod.favouriteRemove,
-                        () => ref.read(vodFavouritesProvider.notifier).remove(video.bvid),
+                        : Column(
+                            children: [
+                              Expanded(child: _historyList(history, inset)),
+                              if (_managing) _manageBar(inset),
+                            ],
+                          ),
+                  VodPersonalTab.favourites => Column(
+                    children: [
+                      Expanded(
+                        child: PagedCardGrid<VodSavedVideo>(
+                          items: favourites,
+                          // The tick boxes live on rows: managing reads
+                          // the collection as rows, the history's own
+                          // 管理 shape.
+                          layout: _managing ? CardLayout.list : layout,
+                          // The archive row is a cover beside two text lines: a hair
+                          // taller than the room row so a two-line title never
+                          // presses on its edge.
+                          listMainAxisExtent: 104,
+                          listItemBuilder: (context, video) => VodVideoRow(
+                            video: video.video,
+                            onOpen: _managing ? null : () => _open(video.bvid),
+                            trailing: _managing
+                                ? DsCheckbox(
+                                    value: _selected.contains(video.bvid),
+                                    semanticLabel: video.video.title,
+                                    onChanged: (value) => setState(() {
+                                      if (value ?? false) {
+                                        _selected.add(video.bvid);
+                                      } else {
+                                        _selected.remove(video.bvid);
+                                      }
+                                    }),
+                                  )
+                                : _drop(
+                                    t.vod.favouriteRemove,
+                                    () => ref.read(vodFavouritesProvider.notifier).remove(video.bvid),
+                                  ),
+                          ),
+                          infoExtent: kVodCardInfoExtent,
+                          crossSpacing: browse.crossSpacing,
+                          mainSpacing: browse.mainSpacing,
+                          // The collection is this device's own and whole in hand:
+                          // nothing loads behind the grid, the pager counts its
+                          // local pages and the narrow end reveals the next block
+                          // of them.
+                          isLoading: false,
+                          hasMore: false,
+                          onLoadMore: () async {},
+                          emptyIcon: DsIcons.heart,
+                          emptyTitle: t.vod.favouritesEmptyTitle,
+                          emptyDescription: t.vod.favouritesEmptyDescription,
+                          itemBuilder: (context, video) =>
+                              VodVideoCard(video: video.video, onOpen: () => _open(video.bvid), preview: true),
+                        ),
                       ),
-                    ),
-                    infoExtent: kVodCardInfoExtent,
-                    crossSpacing: browse.crossSpacing,
-                    mainSpacing: browse.mainSpacing,
-                    // The collection is this device's own and whole in hand:
-                    // nothing loads behind the grid, the pager counts its
-                    // local pages and the narrow end reveals the next block
-                    // of them.
-                    isLoading: false,
-                    hasMore: false,
-                    onLoadMore: () async {},
-                    emptyIcon: DsIcons.heart,
-                    emptyTitle: t.vod.favouritesEmptyTitle,
-                    emptyDescription: t.vod.favouritesEmptyDescription,
-                    itemBuilder: (context, video) =>
-                        VodVideoCard(video: video.video, onOpen: () => _open(video.bvid), preview: true),
+                      if (_managing) _manageBar(inset),
+                    ],
                   ),
                   VodPersonalTab.following => PagedCardGrid<VodSeason>(
                     items: following?.seasons ?? const <VodSeason>[],
@@ -355,10 +495,10 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                     aspectRatio: kVodSeasonTileAspect,
                     crossSpacing: browse.crossSpacing,
                     mainSpacing: browse.mainSpacing,
-                    isLoading: seasons.isLoading,
+                    isLoading: seasons?.isLoading ?? false,
                     hasMore: false,
                     onLoadMore: () async {},
-                    error: switch (seasons.error) {
+                    error: switch (seasons?.error) {
                       null => null,
                       final failure => failure.toString(),
                     },
@@ -418,15 +558,7 @@ final class _DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        Text(label, style: theme.typography.labelStrong.copyWith(color: colors.text)),
-        DsBadge(label: Text('$count'), dot: false),
-      ],
-    );
+    return SectionHeader(title: label, count: count);
   }
 }
 
@@ -492,7 +624,9 @@ final class _RemoteVideoList extends StatelessWidget {
         ),
       );
     }
-    if (loading && videos.isEmpty) return const Center(child: DsSpinner());
+    if (loading && videos.isEmpty) {
+      return const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 5));
+    }
     if (videos.isEmpty) {
       return Center(
         child: DsEmptyState(icon: DsIcon(emptyIcon), title: Text(emptyTitle), description: Text(emptyDescription)),
