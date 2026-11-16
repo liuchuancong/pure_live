@@ -1,5 +1,5 @@
 import 'dart:async' show TimeoutException, Timer, unawaited;
-import 'dart:io' show File;
+import 'dart:io' show Directory, File;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -91,6 +91,41 @@ enum _RecorderFilter {
     failed => DsIcons.circleAlert,
   };
 }
+
+/// The page's own cut of the recorder's stores, derived once per change
+/// instead of once per build: the room snapshots joined from the follows
+/// and history stores (the tasks keep only their room's identity), the
+/// live rows alone — the IPTV half records through the same engine but
+/// shows on its own page — and the rows the platform chip has cut.
+final recorderJoinedRoomsProvider = Provider<Map<String, LiveRoom>>((ref) {
+  String keyOf(LiveRoom room) => '${room.ref.platform}:${room.ref.roomId}';
+  final follows = ref.watch(followsProvider);
+  final history = ref.watch(historyProvider);
+  return <String, LiveRoom>{
+    for (final (room, _) in history.records) keyOf(room): room,
+    for (final room in follows.rooms) keyOf(room): room,
+  };
+});
+
+/// The tasks the page owns, IPTV's half cut away.
+final recorderLiveTasksProvider = Provider<List<RecordingTask>>(
+  (ref) => [
+    for (final task in ref.watch(recordingTasksProvider).tasks)
+      if (task.platform != kIptvRecordingPlatform) task,
+  ],
+);
+
+/// The live rows under the centre's platform filter.
+final recorderListedTasksProvider = Provider<List<RecordingTask>>((ref) {
+  final tasks = ref.watch(recorderLiveTasksProvider);
+  final platformFilter = ref.watch(recorderPlatformFilterProvider);
+  return platformFilter == kAllPlatforms
+      ? tasks
+      : [
+          for (final task in tasks)
+            if (task.platform == platformFilter) task,
+        ];
+});
 
 final class _RecorderPageState extends ConsumerState<RecorderPage> {
   _RecorderFilter _filter = _RecorderFilter.all;
@@ -224,39 +259,15 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final store = ref.watch(recordingTasksProvider);
-    // The tasks store their room's identity only; the room itself (cover,
-    // streamer, audience) is the snapshot the follows and history stores
-    // keep under the same key (`platform:roomId`), so the card shows real
-    // room facts without the recording model growing copies of them.
-    final follows = ref.watch(followsProvider);
-    final history = ref.watch(historyProvider);
-    String keyOf(LiveRoom room) => '${room.ref.platform}:${room.ref.roomId}';
-    final rooms = <String, LiveRoom>{
-      for (final (room, _) in history.records) keyOf(room): room,
-      for (final room in follows.rooms) keyOf(room): room,
-    };
-    // Live's own rows. The IPTV module records through the same engine and the
-    // same store — one tree, one task list — and it shows its recordings on its
-    // own page, so nothing here may pick a channel up: 停止全部 would stop
+    final rooms = ref.watch(recorderJoinedRoomsProvider);
+    // Live's own rows, IPTV's half already cut away: 停止全部 would stop
     // channels, a chip's count would include rows no card shows, and 进入直播间
-    // has no channel behind an IPTV take.
-    final liveTasks = [
-      for (final task in store.tasks)
-        if (task.platform != kIptvRecordingPlatform) task,
-    ];
-    // A chip's count is a count of the rows that chip can show — the tasks the
-    // page still owns. Counting every stored row instead would print a number
-    // the list under it never reaches, because a saved take lives in the library.
-    // One platform cuts both lists — the subscriptions here and the files
-    // pane below — through the centre's own filter.
+    // has no channel behind an IPTV take. One platform cuts both lists —
+    // the subscriptions here and the files pane below — through the
+    // centre's own filter.
+    final liveTasks = ref.watch(recorderLiveTasksProvider);
     final platformFilter = ref.watch(recorderPlatformFilterProvider);
-    final listed = platformFilter == kAllPlatforms
-        ? liveTasks
-        : [
-            for (final task in liveTasks)
-              if (task.platform == platformFilter) task,
-          ];
+    final listed = ref.watch(recorderListedTasksProvider);
     final taskPlatforms = recorderPlatformsOf(liveTasks.map((task) => task.platform), _platformName);
     final counts = <_RecorderFilter, int>{
       for (final filter in _RecorderFilter.values) filter: listed.where(filter.matches).length,
@@ -412,6 +423,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     required Map<String, LiveRoom> rooms,
   }) {
     final t = context.t;
+    // The store's own failure is not an empty list: saying so beats an
+    // empty state that reads as "nothing recorded".
+    final store = ref.watch(recordingRepositoryProvider);
     final pageCount = math.max(1, (attention.length / _taskPageSize).ceil());
     final page = _taskPage.clamp(1, pageCount);
     final shown = attention.skip((page - 1) * _taskPageSize).take(_taskPageSize).toList();
@@ -443,7 +457,22 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             // wide window and the cards on a narrow one. This is the whole
             // tasks page now — the library below became its own page.
             Expanded(
-              child: attention.isEmpty
+              child: store.hasError
+                  ? Center(
+                      child: DsEmptyState(
+                        icon: const DsIcon(DsIcons.trash2),
+                        title: Text(t.recorder.libraryFailedTitle),
+                        description: Text(t.recorder.libraryFailedBody(error: '${store.error}')),
+                        actions: [
+                          DsButton(
+                            variant: DsButtonVariant.secondary,
+                            onPressed: () => ref.invalidate(recordingRepositoryProvider),
+                            child: Text(t.recorder.refresh),
+                          ),
+                        ],
+                      ),
+                    )
+                  : attention.isEmpty
                   ? Center(
                       child: DsEmptyState(
                         icon: const DsIcon(DsIcons.video),
@@ -882,9 +911,11 @@ final class _TaskDetailsPanel extends ConsumerWidget {
         (state) => state.tasks.where((item) => item.id == this.task.id).firstOrNull ?? this.task,
       ),
     );
-    final liveElapsed = task.isRunning
-        ? DateTime.now().difference(task.startedAt)
-        : (task.durationMs > 0 ? Duration(milliseconds: task.durationMs) : Duration.zero);
+    // Media time over the wall clock: a stalled stream writes fewer bytes
+    // than the clock says, and the length and the average should say what
+    // landed. The clock stays for the running indicator's own line.
+    final mediaTime = task.durationMs > 0 ? Duration(milliseconds: task.durationMs) : null;
+    final liveElapsed = mediaTime ?? (task.isRunning ? DateTime.now().difference(task.startedAt) : Duration.zero);
     final size = task.bytes > 0 ? formatRecordingBytes(task.bytes) : t.recorder.statSavedEmpty;
     final bitrate = task.bytes > 0 && liveElapsed.inSeconds > 0 ? formatRecordingBitrate(task.bytes, liveElapsed) : '—';
     final fps = task.frameRate > 0 ? task.frameRate : task.liveFps;
@@ -940,9 +971,7 @@ final class _TaskDetailsPanel extends ConsumerWidget {
                     : DsButton.icon(
                         variant: DsButtonVariant.ghost,
                         size: DsSize.sm,
-                        onPressed: () => unawaited(
-                          openDownloadedPath(context, p.dirname(saved), failedTitle: t.recorder.openFolderFailed),
-                        ),
+                        onPressed: () => unawaited(openSavedLocation(context, saved)),
                         icon: const DsIcon(DsIcons.folderOpen, size: 16),
                         semanticLabel: t.recorder.openFolder,
                       ),
@@ -985,6 +1014,20 @@ final class _TaskDetailsPanel extends ConsumerWidget {
 
 /// How the saved file reads in the panel: its size, then the container and the
 /// segment count while the take is still being written.
+/// Opens the folder a finished take lies in, saying so plainly when the
+/// drive no longer holds it — the take was moved or deleted under the
+/// sheet, and OpenFile would only guess.
+Future<void> openSavedLocation(BuildContext context, String saved) async {
+  final folder = p.dirname(saved);
+  if (Directory(folder).existsSync()) {
+    await openDownloadedPath(context, folder, failedTitle: context.t.recorder.openFolderFailed);
+    return;
+  }
+  if (context.mounted) {
+    showDsToast(context: context, title: context.t.recorder.openFolderFailed, status: DsStatus.danger);
+  }
+}
+
 String savingNote({required RecordingTask task, required String size, required String empty}) {
   final container = task.container.toUpperCase();
   if (task.bytes <= 0) return empty;
@@ -1265,7 +1308,7 @@ final class _TaskCard extends ConsumerWidget {
                 spacing: DsSpace.s16,
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(theme.radii.card),
                     child: DsImage(
                       image: cover.isEmpty ? null : cachedImage(cover, policy: ImageCachePolicies.videoCover),
                       width: coverWidth,
@@ -1296,7 +1339,7 @@ final class _TaskCard extends ConsumerWidget {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: 1,
+                                spacing: DsSpace.s3,
                                 children: [
                                   Text(
                                     title,
@@ -1609,6 +1652,7 @@ String _warningLabel(Translations t, String warning) => switch (warning) {
   'transcode-failed' => t.recorder.warningTranscodeFailed,
   'stale' => t.recorder.warningStaleProcessing,
   'disk-low' => t.recorder.warningDiskLow,
+  'size-cap' => t.recorder.warningSizeCap,
   'canceled' => t.recorder.warningCanceled,
   'file-deleted' => t.recorder.warningFileDeleted,
   _ => t.recorder.warningFinalizeFailed,

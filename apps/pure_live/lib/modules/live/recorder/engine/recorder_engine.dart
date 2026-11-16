@@ -692,12 +692,14 @@ final class RecorderEngine {
       await releaseRecordingClaim(session.claim);
       unawaited(manager.dispose());
       await repo.setEnded(task.id, RecordingTaskState.failed, errorText: _errorOf(error));
-      appLog.forCategory('recorder').error(
-        'capture start failed',
-        fields: {'task': task.id, 'platform': task.platform, 'room': task.roomId},
-        error: error,
-        stackTrace: stack,
-      );
+      appLog
+          .forCategory('recorder')
+          .error(
+            'capture start failed',
+            fields: {'task': task.id, 'platform': task.platform, 'room': task.roomId},
+            error: error,
+            stackTrace: stack,
+          );
       return 'cannot start: ${_errorOf(error)}';
     }
 
@@ -792,9 +794,7 @@ final class RecorderEngine {
     } on Object catch (error) {
       // A chat file that cannot be opened never affects the video — but the
       // take's chat sidecar silently missing is worth a line in the log.
-      appLog
-          .forCategory('recorder.chat')
-          .warning('chat bypass file failed to open', fields: {'error': '$error'});
+      appLog.forCategory('recorder.chat').warning('chat bypass file failed to open', fields: {'error': '$error'});
     } finally {
       session.chatOpening = false;
     }
@@ -962,14 +962,19 @@ final class RecorderEngine {
     final usable = state.status == RecordingStatus.completed && (check?.isUsable ?? true);
     // The take ended without the viewer's hand — a stream that gave up, an
     // input that ran out. This line is the only honest record of it.
-    appLog.forCategory('recorder').warning('capture ended on its own', fields: {
-      'task': taskId,
-      'status': state.status.name,
-      'usable': usable,
-      'bytes': state.bytesWritten,
-      'durationMs': state.duration.inMilliseconds,
-      if (state.error != null) 'error': _errorOf(state.error!),
-    });
+    appLog
+        .forCategory('recorder')
+        .warning(
+          'capture ended on its own',
+          fields: {
+            'task': taskId,
+            'status': state.status.name,
+            'usable': usable,
+            'bytes': state.bytesWritten,
+            'durationMs': state.duration.inMilliseconds,
+            if (state.error != null) 'error': _errorOf(state.error!),
+          },
+        );
     await _persist(
       session,
       success: usable,
@@ -1033,7 +1038,9 @@ final class RecorderEngine {
         droppedFrames: dropped,
       );
     }
-    if (session.capBytes > 0 && bytes >= session.capBytes) await stop(taskId);
+    // The cap stops the take on purpose: naming the reason lets the task
+    // card say so, where a bare stop would read like a failure.
+    if (session.capBytes > 0 && bytes >= session.capBytes) await stop(taskId, warning: 'size-cap');
     // A take that outlives the free-space check at start is caught here: once
     // a minute is often enough to stop before the disk fills, and cheap enough
     // to run beside the progress write.

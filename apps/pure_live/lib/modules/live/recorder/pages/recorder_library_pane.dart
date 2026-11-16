@@ -25,6 +25,7 @@ import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
 import 'package:pure_live/shared/shared.dart'
     show
         LiveWindow,
+        SkeletonRows,
         avatarInitials,
         cachedImage,
         kAllPlatforms,
@@ -199,7 +200,7 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
           ),
         Expanded(
           child: switch ((library.isLoading && takes.isEmpty, library.hasError)) {
-            (true, _) => Center(child: DsSpinner(semanticLabel: t.recorder.libraryTitle)),
+            (true, _) => const Padding(padding: EdgeInsets.all(DsSpace.s16), child: SkeletonRows(rows: 7)),
             (false, true) => Center(
               child: DsEmptyState(
                 icon: const DsIcon(DsIcons.trash2),
@@ -497,58 +498,64 @@ final class RecorderLibraryToolbar extends ConsumerWidget {
     final t = context.t;
     final library = ref.watch(recordingLibraryProvider);
     final root = ref.watch(appPathsProvider).recordings.path;
-    final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s8,
-      children: [
-        RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
-        // The order reads straight from this menu: it was the filter's only
-        // condition, so a panel in between only added a step.
-        DsMenuAnchor(
-          semanticLabel: t.recorder.filterLabel,
-          align: DsAlign.end,
-          items: _sortItems(context, ref),
-          builder: (context, menu, _) => compact
-              ? DsButton.icon(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: menu.toggle,
-                  icon: const DsIcon(DsIcons.filter, size: 16),
-                  semanticLabel: t.recorder.filterLabel,
-                )
-              : DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.filter, size: 14),
-                  onPressed: menu.toggle,
-                  child: Text(t.recorder.filterLabel),
-                ),
-        ),
-        if (!compact)
-          DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(openDownloadedPath(context, root)),
-            icon: const DsIcon(DsIcons.folderOpen, size: 16),
-            semanticLabel: t.recorder.openFolder,
-          ),
-        DsButton.icon(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          onPressed: library.isLoading
-              ? null
-              : () {
-                  // Walking the tree again is also the moment a take that could
-                  // not be read last time gets asked again — a file that has
-                  // since been joined or finished writing answers now.
-                  ref.read(recordingCoversProvider.notifier).resetAttempts();
-                  unawaited(ref.read(recordingLibraryProvider.notifier).refresh());
-                },
-          icon: const DsIcon(DsIcons.refresh, size: 16),
-          semanticLabel: t.recorder.refresh,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The pane's own width decides the verbs' dress — the window's width
+        // includes a sidebar the pane does not get.
+        final compact = LiveWindow.isCompact(constraints.maxWidth);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s8,
+          children: [
+            RecorderPlatformFilterButton(platforms: platforms, nameOf: nameOf, compact: compact),
+            // The order reads straight from this menu: it was the filter's only
+            // condition, so a panel in between only added a step.
+            DsMenuAnchor(
+              semanticLabel: t.recorder.filterLabel,
+              align: DsAlign.end,
+              items: _sortItems(context, ref),
+              builder: (context, menu, _) => compact
+                  ? DsButton.icon(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: menu.toggle,
+                      icon: const DsIcon(DsIcons.filter, size: 16),
+                      semanticLabel: t.recorder.filterLabel,
+                    )
+                  : DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.filter, size: 14),
+                      onPressed: menu.toggle,
+                      child: Text(t.recorder.filterLabel),
+                    ),
+            ),
+            if (!compact)
+              DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(openDownloadedPath(context, root)),
+                icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                semanticLabel: t.recorder.openFolder,
+              ),
+            DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: library.isLoading
+                  ? null
+                  : () {
+                      // Walking the tree again is also the moment a take that could
+                      // not be read last time gets asked again — a file that has
+                      // since been joined or finished writing answers now.
+                      ref.read(recordingCoversProvider.notifier).resetAttempts();
+                      unawaited(ref.read(recordingLibraryProvider.notifier).refresh());
+                    },
+              icon: const DsIcon(DsIcons.refresh, size: 16),
+              semanticLabel: t.recorder.refresh,
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -93,23 +93,24 @@ final class _MemoryStore implements JsonStore {
   }
 }
 
-RecordingTask _task({required DateTime startedAt, RecordingTaskState state = RecordingTaskState.stopped}) => RecordingTask(
-  id: 'bili:1',
-  platform: 'bili',
-  roomId: '1',
-  roomTitle: '房间',
-  quality: '原画',
-  state: state,
-  startedAt: startedAt,
-  filePath: r'D:\rec\take_a',
-  bytes: 100,
-  durationMs: 1000,
-  scheduleEnabled: true,
-  scheduleDays: const [1, 3, 5],
-  scheduleStartMinutes: 1260,
-  scheduleEndMinutes: 1320,
-  stopAtWindowEnd: true,
-);
+RecordingTask _task({required DateTime startedAt, RecordingTaskState state = RecordingTaskState.stopped}) =>
+    RecordingTask(
+      id: 'bili:1',
+      platform: 'bili',
+      roomId: '1',
+      roomTitle: '房间',
+      quality: '原画',
+      state: state,
+      startedAt: startedAt,
+      filePath: r'D:\rec\take_a',
+      bytes: 100,
+      durationMs: 1000,
+      scheduleEnabled: true,
+      scheduleDays: const [1, 3, 5],
+      scheduleStartMinutes: 1260,
+      scheduleEndMinutes: 1320,
+      stopAtWindowEnd: true,
+    );
 
 void main() {
   final first = DateTime.utc(2026, 10, 31, 12);
@@ -140,11 +141,19 @@ void main() {
     final repo = RecordingTaskRepository(_MemoryStore());
     await repo.save(_task(startedAt: first));
 
-    expect(await repo.beginPostProcessing('bili:1', expectedStartedAt: second), isFalse, reason: 'a newer take owns the row');
+    expect(
+      await repo.beginPostProcessing('bili:1', expectedStartedAt: second),
+      isFalse,
+      reason: 'a newer take owns the row',
+    );
     expect(repo.taskById('bili:1')!.postProcessing, isFalse);
 
     await repo.save(_task(startedAt: first, state: RecordingTaskState.recording));
-    expect(await repo.beginPostProcessing('bili:1', expectedStartedAt: first), isFalse, reason: 'a running take is not ended');
+    expect(
+      await repo.beginPostProcessing('bili:1', expectedStartedAt: first),
+      isFalse,
+      reason: 'a running take is not ended',
+    );
 
     await repo.save(_task(startedAt: first).copyWith(warning: 'join-failed'));
     expect(await repo.beginPostProcessing('bili:1', expectedStartedAt: first), isTrue);

@@ -107,9 +107,7 @@ final class RecordingLiveMonitor {
       }
     } on Object catch (error) {
       // A store that cannot open leaves the tasks as they were.
-      appLog
-          .forCategory('recorder.monitor')
-          .warning('recording store failed to open', fields: {'error': '$error'});
+      appLog.forCategory('recorder.monitor').warning('recording store failed to open', fields: {'error': '$error'});
     }
   }
 
@@ -412,9 +410,7 @@ final class RecordingLiveMonitor {
       }
     } on Object catch (error, stack) {
       // A failing check must never stop the clock; the next tick tries again.
-      appLog
-          .forCategory('recorder.monitor')
-          .error('recording monitor check failed', error: error, stackTrace: stack);
+      appLog.forCategory('recorder.monitor').error('recording monitor check failed', error: error, stackTrace: stack);
     } finally {
       _checking = false;
     }
