@@ -606,7 +606,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if (widget.items.isEmpty && widget.error != null) {
       return _MessagePane(
         icon: const DsIcon(DsIcons.cloudOff),
-        title: Text(context.t.common.empty),
+        title: Text(context.t.common.loadFailed),
         description: Text(widget.error!),
         action: widget.onRetry == null
             ? null

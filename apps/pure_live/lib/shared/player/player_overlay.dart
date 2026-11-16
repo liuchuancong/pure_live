@@ -69,31 +69,34 @@ final class PlayerIdleProgress extends StatelessWidget {
     final played = total <= 0 ? null : ((position?.inMilliseconds ?? 0) / total).clamp(0.0, 1.0);
     final track = Container(height: 3, color: OnVideoColors.track);
     final fill = Container(height: 3, color: OnVideoColors.foreground);
-    return MouseRegion(
-      onHover: (_) => onWake(),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onWake,
-        child: SizedBox(
-          height: 14,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: SizedBox(
-              height: 3,
-              width: double.infinity,
-              child: played == null
-                  ? track
-                  : Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        track,
-                        FractionallySizedBox(
-                          alignment: AlignmentDirectional.centerStart,
-                          widthFactor: played,
-                          child: fill,
-                        ),
-                      ],
-                    ),
+    return ExcludeSemantics(
+      // A wake strip is a pointer's door, not a control.
+      child: MouseRegion(
+        onHover: (_) => onWake(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onWake,
+          child: SizedBox(
+            height: 14,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: 3,
+                width: double.infinity,
+                child: played == null
+                    ? track
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          track,
+                          FractionallySizedBox(
+                            alignment: AlignmentDirectional.centerStart,
+                            widthFactor: played,
+                            child: fill,
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),

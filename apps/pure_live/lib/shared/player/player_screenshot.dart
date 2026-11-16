@@ -33,13 +33,9 @@ Future<File?> capturePlayerFrame(PlayerHandle handle, Directory folder, {require
     // A capture that throws or a folder that refuses the write both answer "no
     // file"; the caller's toast then says the capture did not land — and the
     // log keeps the cause the toast cannot hold.
-    appLog.forCategory('player.screenshot').log(
-      LogLevel.warning,
-      'screenshot failed',
-      fields: {'prefix': prefix},
-      error: error,
-      stackTrace: stack,
-    );
+    appLog
+        .forCategory('player.screenshot')
+        .log(LogLevel.warning, 'screenshot failed', fields: {'prefix': prefix}, error: error, stackTrace: stack);
     return null;
   }
 }

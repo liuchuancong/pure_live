@@ -142,7 +142,11 @@ final class _RoomLivePreviewState extends ConsumerState<RoomLivePreview> {
     final answer = await capability.getLines(room: room, quality: quality);
     final lines = answer.fold((_) => <LivePlayLine>[], (lines) => lines);
     if (lines.isEmpty || site == null || site.runtimeInfo.ingest == null) return lines;
-    final ingest = await startLiveIngest(proxyRoute: () => ref.read(appProxyRouteProvider), site: site, line: lines.first);
+    final ingest = await startLiveIngest(
+      proxyRoute: () => ref.read(appProxyRouteProvider),
+      site: site,
+      line: lines.first,
+    );
     if (ingest == null) return lines;
     final previous = _ingest;
     _ingest = ingest;
@@ -175,12 +179,19 @@ final class _RoomLivePreviewState extends ConsumerState<RoomLivePreview> {
       // not be opened leaves the cover alone.
       return _failed
           ? const SizedBox.shrink()
-          : const Center(child: IgnorePointer(child: DsSpinner(style: DsSpinnerStyle(size: 20))));
+          : const Center(
+              child: IgnorePointer(child: DsSpinner(style: DsSpinnerStyle(size: 20))),
+            );
     }
     // The card's tap opens the room: the preview is a picture only, never a
     // pointer's stop.
     return IgnorePointer(
-      child: MediaPlayerView(handle: handle, fit: BoxFit.cover, backgroundColor: const Color(0x00000000), captureBoundary: false),
+      child: MediaPlayerView(
+        handle: handle,
+        fit: BoxFit.cover,
+        backgroundColor: const Color(0x00000000),
+        captureBoundary: false,
+      ),
     );
   }
 }

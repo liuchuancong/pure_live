@@ -81,3 +81,21 @@ enum RecordingDisplayState {
     RecordingDisplayState.waiting => context.t.recorder.stateWaiting,
   };
 }
+
+/// The recording verbs' failure reasons, said in words. The engine answers
+/// with its own vocabulary (`busy`, `recording-busy`, `cannot start: …`) —
+/// fine for a log, but a toast that prints it reads like a bug, not a
+/// message. Every reason the engine and the two toggles answer with maps
+/// here; anything unknown falls to the generic failure word.
+String recorderFailureText(Translations t, String reason) => switch (reason) {
+  'no room' || 'gone' || 'no channel' => t.recorder.failureGone,
+  'busy' || 'already recording' || 'recording-busy' => t.recorder.failureBusy,
+  'nothing' || 'no line to record' || 'the room has no line to record' => t.recorder.failureNoLine,
+  'the recordings store is not open' => t.recorder.failureStoreClosed,
+  final String reason when reason.startsWith('too many recordings') => t.recorder.failureTooMany,
+  'custom-ca' => t.recorder.failureCustomCa,
+  'not recording' => t.recorder.failureNotRecording,
+  final String reason when reason.startsWith('cannot start') => t.recorder.failureStartFailed,
+  final String reason when reason.startsWith('cannot stop') => t.recorder.failureStopFailed,
+  _ => t.recorder.failureGeneric,
+};

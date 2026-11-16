@@ -343,21 +343,22 @@ void main() {
     var exhaustedCount = 0;
     final follows = [_room('1', status: LiveStatus.offline), _room('2', status: LiveStatus.live)];
     // A lost network: the ask dies the way a timed-out one does.
-    final switcher = AutoRoomSwitch(
-      enabled: () => true,
-      followsOf: () => follows,
-      isFollowed: (_) => true,
-      lookupRoom: (_) => Future<LiveRoom?>.error(TimeoutException('network lost')),
-      onSwitch: switched.add,
-      maySwitch: () => true,
-      onExhausted: () => exhaustedCount++,
-      timer: timers.create,
-    )..update(
-      room: _room('1', status: LiveStatus.offline),
-      playback: PlayerCoreState.idle,
-      resolving: false,
-      unavailable: false,
-    );
+    final switcher =
+        AutoRoomSwitch(
+          enabled: () => true,
+          followsOf: () => follows,
+          isFollowed: (_) => true,
+          lookupRoom: (_) => Future<LiveRoom?>.error(TimeoutException('network lost')),
+          onSwitch: switched.add,
+          maySwitch: () => true,
+          onExhausted: () => exhaustedCount++,
+          timer: timers.create,
+        )..update(
+          room: _room('1', status: LiveStatus.offline),
+          playback: PlayerCoreState.idle,
+          resolving: false,
+          unavailable: false,
+        );
     timers.fire(const Duration(seconds: 1));
     await _pump();
     expect(switcher.exhausted, isTrue);

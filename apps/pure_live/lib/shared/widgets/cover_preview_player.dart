@@ -140,7 +140,9 @@ final class _CoverPreviewPlayerState extends ConsumerState<CoverPreviewPlayer> {
       // could not be played leaves the cover alone.
       return _failed
           ? const SizedBox.shrink()
-          : const Center(child: IgnorePointer(child: DsSpinner(style: DsSpinnerStyle(size: 20))));
+          : const Center(
+              child: IgnorePointer(child: DsSpinner(style: DsSpinnerStyle(size: 20))),
+            );
     }
     // The card's tap opens the content: the preview is a picture only,
     // never a pointer's stop.

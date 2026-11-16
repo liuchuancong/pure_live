@@ -181,20 +181,14 @@ final class AutoRoomSwitch {
     _resolving = resolving;
     _unavailable = unavailable;
     _replay = replay;
-    if (playback.paused ||
-        (playback.stopped && !resolving && !unavailable && !room.broadcast.isExplicitlyOfflineNow)) {
+    if (playback.paused || (playback.stopped && !resolving && !unavailable && !room.broadcast.isExplicitlyOfflineNow)) {
       // A stopped room the viewer (or the platform's lifecycle) left on
       // purpose is theirs; only a stop the failure explains counts.
       _held = true;
     } else if (playback.opening || playback.playing || playback.buffering || playback.seeking) {
       _held = false;
     }
-    if (enabled() &&
-        playback.playing &&
-        room.broadcast.isLiveNow &&
-        !replay &&
-        !unavailable &&
-        !playback.hasError) {
+    if (enabled() && playback.playing && room.broadcast.isLiveNow && !replay && !unavailable && !playback.hasError) {
       _healthy ??= timer(const Duration(seconds: 30), () {
         _healthy = null;
         _attempted.clear();

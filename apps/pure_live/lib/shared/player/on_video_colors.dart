@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Brightness, ColorScheme, LinearGradient, VerticalDirection;
+import 'package:flutter/material.dart' show LinearGradient, VerticalDirection;
 import 'package:flutter/painting.dart' show Alignment, Color;
 
 /// Colours of everything drawn over the picture: the control bars, their ink,
@@ -83,11 +83,6 @@ abstract final class OnVideoColors {
   /// The menu plate over the picture (nearly opaque, so the video never
   /// reads through a word list).
   static const Color menuPlate = Color(0xF2131519);
-
-  /// The user's colour on the picture (a picked cell's frame): the light
-  /// tone of the primary in a light app, the primary itself in a dark one.
-  static Color accent(ColorScheme scheme) =>
-      scheme.brightness == Brightness.light ? scheme.inversePrimary : scheme.primary;
 
   /// The shade a bar hangs along [edge] of the picture: [strong] at the
   /// edge, fading straight out into the picture (the reference shades with

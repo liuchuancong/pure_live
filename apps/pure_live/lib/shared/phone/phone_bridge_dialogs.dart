@@ -26,19 +26,20 @@ Future<Map<String, String>?> showTvPhoneInput(BuildContext context, PhoneInputRe
 
 /// Shows [text] on a phone: the code of a one-off page on this network (a
 /// log is easier to read there).
-Future<void> showTvPhoneView(BuildContext context, {required String title, required String text}) => showAppDialog<void>(
-  context: context,
-  builder: (context) => _PhoneServerDialog(
-    title: title,
-    start: () => TvPhoneServer.start(
-      text: text,
-      title: title,
-      doneText: context.t.phone.doneSent,
-      htmlTitle: context.t.phone.htmlTitle,
-    ),
-    steps: [context.t.phone.stepScan, context.t.phone.stepRead],
-  ),
-);
+Future<void> showTvPhoneView(BuildContext context, {required String title, required String text}) =>
+    showAppDialog<void>(
+      context: context,
+      builder: (context) => _PhoneServerDialog(
+        title: title,
+        start: () => TvPhoneServer.start(
+          text: text,
+          title: title,
+          doneText: context.t.phone.doneSent,
+          htmlTitle: context.t.phone.htmlTitle,
+        ),
+        steps: [context.t.phone.stepScan, context.t.phone.stepRead],
+      ),
+    );
 
 final class _PhoneServerDialog extends StatefulWidget {
   const _PhoneServerDialog({required this.title, required this.start, required this.steps});

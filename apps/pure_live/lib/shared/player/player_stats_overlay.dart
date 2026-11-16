@@ -137,7 +137,10 @@ final class _PlayerStatsOverlayState extends State<PlayerStatsOverlay> {
                   Expanded(
                     child: Text(label, style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted)),
                   ),
-                  Text(value, style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground))),
+                  Text(
+                    value,
+                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
+                  ),
                 ],
               ),
           ],

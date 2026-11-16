@@ -83,11 +83,10 @@ final class ChromeIconButton extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.all(DsSpace.s4),
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: background,
-                borderRadius: BorderRadius.circular(6),
+              decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(6)),
+              child: Center(
+                child: DsIcon(icon, size: iconSize, color: glyph),
               ),
-              child: Center(child: DsIcon(icon, size: iconSize, color: glyph)),
             ),
           );
         },

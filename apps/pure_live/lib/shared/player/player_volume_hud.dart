@@ -40,7 +40,11 @@ final class PlayerVolumeHud extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s4,
             children: [
-              DsIcon(icon ?? (value <= 0.001 ? DsIcons.volumeX : DsIcons.volume2), size: 24, color: OnVideoColors.foreground),
+              DsIcon(
+                icon ?? (value <= 0.001 ? DsIcons.volumeX : DsIcons.volume2),
+                size: 24,
+                color: OnVideoColors.foreground,
+              ),
               Text(
                 '${(value * 100).round()}%',
                 style: theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
