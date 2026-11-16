@@ -75,14 +75,17 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     // A word handed from outside (the toolbar): taken once on arrival,
     // searched as though typed here.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final word = ref.read(pendingSearchProvider.notifier).take();
-      if (word == null || word.isEmpty || !mounted) return;
+      if (!mounted) return;
+      // Re-entering the page shows the last search's results; the field then
+      // names the words they answer to, instead of sitting empty under a
+      // full screen of answers.
+      if (_field.text.isNotEmpty) return;
+      final query = ref.read(searchProvider).query;
+      if (query.isEmpty) return;
       _field.value = TextEditingValue(
-        text: word,
-        selection: TextSelection.collapsed(offset: word.length),
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
       );
-      unawaited(ref.read(searchProvider.notifier).search(word));
-      unawaited(ref.read(searchHistoryProvider.notifier).commit(word));
     });
   }
 
@@ -91,6 +94,22 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     _suggestDebounce?.cancel();
     _field.dispose();
     super.dispose();
+  }
+
+  /// Asks before the whole wall goes: a full clear cannot be undone.
+  Future<void> _clearHistory() async {
+    final t = context.t;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.clearSearchHistoryTitle,
+      description: t.common.clearSearchHistoryBody,
+      confirmLabel: t.search.clearHistory,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    unawaited(ref.read(searchHistoryProvider.notifier).clear());
+    setState(() {});
   }
 
   /// Asks for completions once the typing has rested: a change in the
@@ -381,13 +400,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
         if (_showHistory(search))
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
-            child: _SearchHistory(
-              onPicked: _onSuggestionPicked,
-              onCleared: () {
-                unawaited(ref.read(searchHistoryProvider.notifier).clear());
-                setState(() {});
-              },
-            ),
+            child: _SearchHistory(onPicked: _onSuggestionPicked, onCleared: () => unawaited(_clearHistory())),
           ),
         // The narrow page keeps the target switch beside the results: its
         // head row is the scope tabs alone, the areas head's own answer.
@@ -1351,7 +1364,7 @@ final class _AnchorCard extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 4,
+                  spacing: DsSpace.s4,
                   children: [
                     Row(
                       spacing: DsSpace.s3,

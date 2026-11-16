@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart' show Either, left;
+import 'package:live_net/live_net.dart' show CancelToken;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
@@ -71,6 +72,11 @@ String _queryFor(String siteId, String query) => siteId == 'twitcasting' && quer
 /// over the newer one's results.
 final class SearchController extends Notifier<SearchState> {
   int _searchGeneration = 0;
+
+  /// The token this generation's requests ride: a newer search (or a
+  /// disposed notifier) ends the old one's wire time, not just its
+  /// right to write results.
+  CancelToken _searchCancel = CancelToken();
   int _suggestGeneration = 0;
 
   /// Search pages in a row that brought no new result; two end the walk
@@ -103,6 +109,9 @@ final class SearchController extends Notifier<SearchState> {
     final scope = ref.watch(searchSiteIdProvider);
     _ensureToken++;
     _resetWalks();
+    // The notifier going away ends whatever this scope's search still
+    // had in flight.
+    ref.onDispose(_searchCancel.cancel);
     return _initial(_targetOf(scope));
   }
 
@@ -151,6 +160,7 @@ final class SearchController extends Notifier<SearchState> {
     final word = query.trim();
     if (word.isEmpty) {
       _searchGeneration++;
+      _searchCancel.cancel();
       _resetWalks();
       state = _initial(state.target);
       return Future.value();
@@ -275,6 +285,10 @@ final class SearchController extends Notifier<SearchState> {
 
   Future<void> _load({required String query, required LiveSearchTarget target, required int page}) async {
     final generation = ++_searchGeneration;
+    // The previous generation's wire time ends here; its answers were
+    // already going to be dropped.
+    _searchCancel.cancel();
+    final cancel = _searchCancel = CancelToken();
     // The call continues the current walk, or jumps (the pager) and
     // replaces the page whole.
     final replace = page == 1 || page != state.nextPage;
@@ -308,7 +322,14 @@ final class SearchController extends Notifier<SearchState> {
     // capability would have made the all-platform scope answer "no search
     // capability" before it ever fanned out.
     if (site == null) {
-      await _loadEverywhere(query: query, target: target, page: page, generation: generation, replace: replace);
+      await _loadEverywhere(
+        query: query,
+        target: target,
+        page: page,
+        generation: generation,
+        replace: replace,
+        cancel: cancel,
+      );
       return;
     }
     final capability = site.capability<LiveSearchProvider>();
@@ -332,18 +353,20 @@ final class SearchController extends Notifier<SearchState> {
     }
     // A fixed request window: a viewer's display page size never moves a
     // server page boundary mid-search (the reference's search page size).
+    LiveSearchRequest requestOf() => LiveSearchRequest.of(
+      query: _queryFor(site.manifest.id, query),
+      target: target,
+      page: page,
+      pageSize: searchRequestSize,
+    );
     Either<LiveSiteError, LivePage<LiveSearchResult>> answer;
     try {
-      answer = await capability
-          .search(
-            LiveSearchRequest.of(
-              query: _queryFor(site.manifest.id, query),
-              target: target,
-              page: page,
-              pageSize: searchRequestSize,
-            ),
-          )
-          .timeout(_searchRequestTimeout);
+      // A site that declares the stronger signature has its transport cut
+      // with the generation; the rest honour the token between answers.
+      final ask = capability is LiveCancellableSearch
+          ? capability.search(requestOf(), cancel: cancel)
+          : capability.search(requestOf());
+      answer = await ask.timeout(_searchRequestTimeout);
     } on TimeoutException catch (error) {
       answer = left(LiveSiteError.network(siteId: site.manifest.id, message: 'search timed out', cause: error));
     } on Object catch (error) {
@@ -415,6 +438,7 @@ final class SearchController extends Notifier<SearchState> {
     required int page,
     required int generation,
     required bool replace,
+    required CancelToken cancel,
   }) async {
     final visible = ref.read(sitesDisplayProvider.notifier).visibleIds();
     final excluded = ref.read(searchExcludedProvider);
@@ -502,17 +526,14 @@ final class SearchController extends Notifier<SearchState> {
         final candidate = candidates[index];
         final id = candidate.site.manifest.id;
         Either<LiveSiteError, LivePage<LiveSearchResult>> answer;
+        LiveSearchRequest requestOf() =>
+            LiveSearchRequest.of(query: _queryFor(id, query), target: target, page: page, pageSize: searchRequestSize);
         try {
-          answer = await candidate.capability
-              .search(
-                LiveSearchRequest.of(
-                  query: _queryFor(id, query),
-                  target: target,
-                  page: page,
-                  pageSize: searchRequestSize,
-                ),
-              )
-              .timeout(_searchRequestTimeout);
+          final capability = candidate.capability;
+          final ask = capability is LiveCancellableSearch
+              ? capability.search(requestOf(), cancel: cancel)
+              : capability.search(requestOf());
+          answer = await ask.timeout(_searchRequestTimeout);
         } on TimeoutException catch (error) {
           answer = left(LiveSiteError.network(siteId: id, message: 'search timed out', cause: error));
         } on Object catch (error) {
@@ -762,25 +783,3 @@ final class SearchHistoryController extends Notifier<List<String>> {
 
 /// The search history.
 final searchHistoryProvider = NotifierProvider<SearchHistoryController, List<String>>(SearchHistoryController.new);
-
-/// A word handed to the search page from outside (the toolbar's field):
-/// the page takes it on arrival — submitting it and recording the
-/// history — and clears it, so a back-and-fororth never replays it.
-final class PendingSearchController extends Notifier<String?> {
-  @override
-  String? build() => null;
-
-  /// Hands [word] to the next search page (taken once on arrival).
-  // ignore: use_setters_to_change_properties
-  void hand(String word) => state = word;
-
-  /// Takes the word (null when none was handed).
-  String? take() {
-    final word = state;
-    state = null;
-    return word;
-  }
-}
-
-/// The word the next search page should run.
-final pendingSearchProvider = NotifierProvider<PendingSearchController, String?>(PendingSearchController.new);

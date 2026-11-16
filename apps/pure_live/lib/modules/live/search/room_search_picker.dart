@@ -50,6 +50,11 @@ final class _RoomSearchPickerPanelState extends ConsumerState<_RoomSearchPickerP
   late final TextEditingController _field = TextEditingController(text: widget.query);
   final ScrollController _scroll = ScrollController();
 
+  /// The scope the app was showing before the picker forced "all": the
+  /// picker's scope is this session's choice, and a picker passing by must
+  /// not write the persisted preference over the viewer's own.
+  String? _savedScope;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +62,7 @@ final class _RoomSearchPickerPanelState extends ConsumerState<_RoomSearchPickerP
     // from the toolbar is a room to find, not a platform to browse.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _savedScope ??= ref.read(searchSiteIdProvider);
       ref.read(searchSiteIdProvider.notifier).selected = kSearchAllPlatforms;
       unawaited(ref.read(searchProvider.notifier).search(widget.query));
     });
@@ -64,6 +70,10 @@ final class _RoomSearchPickerPanelState extends ConsumerState<_RoomSearchPickerP
 
   @override
   void dispose() {
+    final saved = _savedScope;
+    if (saved != null && saved != ref.read(searchSiteIdProvider)) {
+      ref.read(searchSiteIdProvider.notifier).selected = saved;
+    }
     _field.dispose();
     _scroll.dispose();
     super.dispose();
