@@ -14,7 +14,8 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse, LiveStreamedResponse;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart' show hongguoFailureText;
-import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoOfficialClient, HongguoOfficialFailure;
+import 'package:pure_live/modules/hongguo/official/hongguo_official.dart'
+    show HongguoOfficialClient, HongguoOfficialFailure;
 
 /// A transport that answers 200 with [body] to everything.
 final class _StubHttp implements LiveHttp {

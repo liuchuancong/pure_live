@@ -974,7 +974,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   _hongguoEpisodeLabel(t, task),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
+                  style: theme.typography.small.copyWith(color: theme.colors.textMuted),
                 ),
               ],
             ),
@@ -1398,7 +1398,7 @@ final class _HongguoTaskRow extends ConsumerWidget {
                   child: DsIcon(
                     DsIcons.ellipsisVertical,
                     size: theme.sizes.iconSm,
-                    color: lit ? colors.text : colors.textSubtle,
+                    color: lit ? colors.text : colors.textMuted,
                   ),
                 );
               },

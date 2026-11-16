@@ -119,7 +119,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     final colors = DsTheme.colorsOf(context);
     final detail = _detail;
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: colors.canvas,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -399,7 +399,7 @@ final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
                     Text(
                       '${t.hongguo.episodeLabel(index: row.episodeIndex)} · '
                       '${hongguoDurationText(Duration(milliseconds: row.positionMs))}',
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
                     ),
                     HongguoProgressStripe(fraction: row.fraction),
                   ],

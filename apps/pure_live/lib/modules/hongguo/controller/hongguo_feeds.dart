@@ -595,7 +595,13 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
 
   /// The committed word moves to the head of the history, once each.
   List<String> _remember(String query) {
-    final history = [query, ...state.history.where((word) => word != query)].take(kHongguoHistoryCount).toList();
+    // The duplicate test reads case-insensitively, the way the live
+    // search's history does — one search said twice, not two words.
+    final lowered = query.toLowerCase();
+    final history = [
+      query,
+      ...state.history.where((word) => word.toLowerCase() != lowered),
+    ].take(kHongguoHistoryCount).toList();
     try {
       unawaited(StoragePrefs.setString(_kHistoryKey, jsonEncode(history)).catchError((Object _) => false));
     } on Object {

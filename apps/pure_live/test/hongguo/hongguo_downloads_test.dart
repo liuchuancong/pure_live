@@ -50,10 +50,7 @@ void main() {
   });
 
   test('a phase name the app does not know reads as paused', () {
-    final restored = HongguoDownloadItem.fromJson(
-      item('7100001:1').toJson()
-        ..['phase'] = 'something-new',
-    );
+    final restored = HongguoDownloadItem.fromJson(item('7100001:1').toJson()..['phase'] = 'something-new');
     expect(restored.phase, HongguoDownloadPhase.paused);
   });
 
@@ -131,15 +128,9 @@ void main() {
   });
 
   test('the file name names the episode in a series and sanitizes itself', () {
-    expect(
-      hongguoDownloadFileName(title: '剧名', part: '第一话', parts: 12),
-      '剧名 - EP1 第一话.mp4',
-    );
+    expect(hongguoDownloadFileName(title: '剧名', part: '第一话', parts: 12), '剧名 - EP1 第一话.mp4');
     expect(hongguoDownloadFileName(title: '单集', part: '正片'), '单集.mp4');
     // Windows' reserved characters never reach the file system.
-    expect(
-      hongguoDownloadFileName(title: '剧:名/上', part: '第一话', index: 2, parts: 12),
-      '剧 名 上 - EP2 第一话.mp4',
-    );
+    expect(hongguoDownloadFileName(title: '剧:名/上', part: '第一话', index: 2, parts: 12), '剧 名 上 - EP2 第一话.mp4');
   });
 }

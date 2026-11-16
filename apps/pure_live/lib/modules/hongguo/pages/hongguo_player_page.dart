@@ -377,6 +377,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _sleepTicker = null;
     _recoveryTimer?.cancel();
     _recoveryTimer = null;
+    _keySeekTimer?.cancel();
+    _keySeekTimer = null;
     _networkWait?.close();
     _networkWait = null;
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
@@ -979,6 +981,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// over, no window-owning mode stands (the picture-in-picture small window
   /// already is a small window), and no mini window is up yet.
   bool get _miniWindowReady {
+    // The 小窗 overlay belongs to the primary window: its root navigator
+    // is the only one registered as the app's, so a secondary's handoff
+    // would land its picture on the primary's overlay. Secondary windows
+    // keep their own picture instead.
+    if (!ref.read(isPrimaryWindowProvider)) return false;
     final handle = _handle;
     return handle != null &&
         handle.source != null &&
@@ -1022,8 +1029,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             if (root != null && root.mounted) {
               final resume = (position.inMilliseconds / 1000).toStringAsFixed(1);
               final vid = Uri.encodeComponent(episode.vid);
-              final route =
-                  '/hongguo/${Uri.encodeComponent(widget.seriesId)}?vid=$vid&resume=$resume';
+              final route = '/hongguo/${Uri.encodeComponent(widget.seriesId)}?vid=$vid&resume=$resume';
               unawaited(root.push(route));
             }
           }
@@ -1305,8 +1311,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     // 矮窗（高 <480）横屏沉浸：满铺画面加覆盖控件，页头退场——判定是
     // 窗口的形状，与平台无关（与直播间同一台排版机）。
     final windowSize = MediaQuery.sizeOf(context);
-    final landscapeImmersive =
-        PlaybackLayout.resolve(width: windowSize.width, height: windowSize.height).landscapeImmersive;
+    final landscapeImmersive = PlaybackLayout.resolve(
+      width: windowSize.width,
+      height: windowSize.height,
+    ).landscapeImmersive;
     // The arrows mirror the room page: up and down take the wheel's step (the
     // 画质与音频 setting) toward the volume, left and right skip five seconds.
     // A TV keeps its arrows for focus; the remote drives the volume itself.
@@ -1378,6 +1386,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             _wake();
             unawaited(_toggleFullscreen());
           },
+          // The window variant of the same verb, on the desktop's own chord.
+          const SingleActivator(LogicalKeyboardKey.f11): () {
+            _wake();
+            unawaited(_toggleFullscreen());
+          },
           // The stream's own figures: the key every player answers to, over
           // the same panel the bar's menu item opens.
           if (!tv)
@@ -1408,7 +1421,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             },
         },
         child: Scaffold(
-          backgroundColor: colors.surface,
+          backgroundColor: colors.canvas,
           body: landscapeImmersive
               ? Stack(
                   fit: StackFit.expand,
@@ -1423,11 +1436,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                           child: Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: PlayerGlassPill(
-                              child: PlayerBarButton(
-                                icon: DsIcons.arrowLeft,
-                                label: t.common.back,
-                                onPressed: _leave,
-                              ),
+                              child: PlayerBarButton(icon: DsIcons.arrowLeft, label: t.common.back, onPressed: _leave),
                             ),
                           ),
                         ),
@@ -1436,29 +1445,29 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   ],
                 )
               : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PageHeader(
-                title: _episode == null
-                    ? detail?.meta.title ?? t.hongguo.opening
-                    : '${detail?.meta.title ?? ''} · ${t.hongguo.episodeLabel(index: _episode!.index)}',
-              ),
-              Expanded(
-                child: _loading && detail == null
-                    ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
-                    : _error != null && detail == null
-                    ? Center(
-                        child: DsEmptyState(
-                          icon: const DsIcon(DsIcons.cloudOff),
-                          title: Text(t.hongguo.loadFailed),
-                          description: Text(_error!),
-                          actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
-                        ),
-                      )
-                    : _body(context, detail),
-              ),
-            ],
-          ),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    PageHeader(
+                      title: _episode == null
+                          ? detail?.meta.title ?? t.hongguo.opening
+                          : '${detail?.meta.title ?? ''} · ${t.hongguo.episodeLabel(index: _episode!.index)}',
+                    ),
+                    Expanded(
+                      child: _loading && detail == null
+                          ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+                          : _error != null && detail == null
+                          ? Center(
+                              child: DsEmptyState(
+                                icon: const DsIcon(DsIcons.cloudOff),
+                                title: Text(t.hongguo.loadFailed),
+                                description: Text(_error!),
+                                actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
+                              ),
+                            )
+                          : _body(context, detail),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -1490,28 +1499,41 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     // other page's 16.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final player = Center(child: _stage(context));
-    final head = detail == null ? const SizedBox.shrink() : _watchHead(context, detail, t);
+    final head = detail == null ? const _HeadSkeleton() : _watchHead(context, detail, t);
     final shelf = detail == null
-        ? const SizedBox.shrink()
-        : HongguoEpisodeShelf(detail: detail, current: _episode, onOpen: (episode) => unawaited(_openEpisode(episode)));
+        ? const _ShelfSkeleton()
+        : HongguoEpisodeShelf(
+            detail: detail,
+            current: _episode,
+            rail: true,
+            onOpen: (episode) => unawaited(_openEpisode(episode)),
+          );
     final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
     if (MediaQuery.sizeOf(context).width < kPlaybackWideBreakpoint) {
       return SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s16,
+          spacing: DsSpace.s20,
           children: [player, head, shelf, comments],
         ),
       );
     }
+    // The wide window keeps the watch head and the comments with the stage —
+    // the title and the verbs belong to what is playing, wherever the window
+    // is wide enough for a shelf beside it — and the shelf reads as the
+    // rail's rows, one episode a line, not the page grid squeezed to 340.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(inset, DsSpace.s16, DsSpace.s16, DsSpace.s16),
-            child: player,
+          child: SingleChildScrollView(
+            padding: EdgeInsetsDirectional.fromSTEB(inset, DsSpace.s16, DsSpace.s16, DsSpace.s24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s20,
+              children: [player, head, comments],
+            ),
           ),
         ),
         SizedBox(
@@ -1539,6 +1561,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     );
   }
 
+  /// Whether the watch head's blurb stands unfolded. Two lines are the
+  /// shelf's read; the rest waits for the viewer's ask.
+  bool _introExpanded = false;
+
   /// What is playing, under the stage on the stacked layout: the series'
   /// name, the episode and the figures it carries, and the verbs inline — the
   /// local favorite, the next episode, the download and the share — plus the
@@ -1549,7 +1575,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final colors = DsTheme.colorsOf(context);
     final meta = detail.meta;
     final episode = _episode;
-    final total = meta.episodeCount > 0 ? meta.episodeCount : detail.episodes.length;
+    final total = detail.episodes.length;
     final duration =
         _transport?.duration ??
         (episode != null && episode.durationSeconds > 0 ? Duration(seconds: episode.durationSeconds) : null);
@@ -1594,7 +1620,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             title: meta.title,
                             cover: meta.cover,
                             intro: meta.intro,
-                            episodeCount: total,
+                            episodeCount: meta.episodeCount > 0 ? meta.episodeCount : detail.episodes.length,
                           ),
                         );
                     showDsToast(
@@ -1625,11 +1651,40 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           ],
         ),
         if (meta.intro.isNotEmpty)
-          Text(
-            meta.intro,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(color: colors.textMuted),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Two lines until the viewer asks for the rest, the video
+              // page's own fold — the words measured so the verb only shows
+              // when they really run past.
+              final style = theme.typography.body.copyWith(color: colors.textMuted);
+              final painter = TextPainter(
+                text: TextSpan(text: meta.intro, style: style),
+                maxLines: 2,
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+              )..layout(maxWidth: constraints.maxWidth);
+              final overflows = painter.didExceedMaxLines;
+              painter.dispose();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s4,
+                children: [
+                  Text(
+                    meta.intro,
+                    maxLines: _introExpanded ? null : 2,
+                    overflow: _introExpanded ? null : TextOverflow.ellipsis,
+                    style: style,
+                  ),
+                  if (overflows)
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      onPressed: () => setState(() => _introExpanded = !_introExpanded),
+                      child: Text(_introExpanded ? t.hongguo.collapse : t.hongguo.expand),
+                    ),
+                ],
+              );
+            },
           ),
       ],
     );
@@ -1768,7 +1823,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 onPressed: () => showDsToast(context: context, title: t.hongguo.likesReadonly),
               ),
             _RailAction(
-              icon: DsIcons.star,
+              icon: favored ? DsIcons.heart : DsIcons.heartOff,
               label: favored ? t.hongguo.favorited : t.hongguo.favorite,
               count: meta.followedCount > 0 ? AudienceFormat.format(meta.followedCount) : null,
               selected: favored,
@@ -3064,4 +3119,63 @@ final class _FramedPicture extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       fills ? SizedBox.expand(child: child) : AspectRatio(aspectRatio: aspectRatio, child: child);
+}
+
+/// The watch head's loading shape: the title, the figures and the verbs as
+/// bars where their words will stand, the blurb as its block.
+final class _HeadSkeleton extends StatelessWidget {
+  const _HeadSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s12,
+      children: [
+        DsSkeleton(width: double.infinity, height: 20, strong: true),
+        DsSkeleton(width: 260, height: 12),
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            DsSkeleton(width: 88, height: 30),
+            DsSkeleton(width: 88, height: 30),
+            DsSkeleton(width: 88, height: 30),
+            DsSkeleton.circle(size: 30),
+          ],
+        ),
+        DsSkeleton.block(width: double.infinity, height: 44),
+      ],
+    );
+  }
+}
+
+/// The episode shelf's loading shape: the header bar and three of the rail
+/// rows — cover block at the head, two lines beside.
+final class _ShelfSkeleton extends StatelessWidget {
+  const _ShelfSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s8,
+      children: [
+        const DsSkeleton(width: 160, height: 18, strong: true),
+        for (final _ in const [1, 2, 3])
+          const Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsSkeleton.block(width: 120, height: 68),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s6,
+                  children: [DsSkeleton(width: 140, height: 14), DsSkeleton(width: 64, height: 12)],
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
 }

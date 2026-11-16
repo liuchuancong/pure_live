@@ -1,6 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -107,6 +108,7 @@ final class _HongguoPhoneSignInState extends ConsumerState<HongguoPhoneSignIn> {
               child: DsTextField(
                 controller: _phone,
                 keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
                 placeholder: t.hongguo.phonePlaceholder,
                 semanticLabel: t.hongguo.phonePlaceholder,
               ),

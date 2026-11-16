@@ -4,6 +4,7 @@
 // the session cookie — its CSRF cookies surviving across the three steps.
 // A dedicated dart:io client: redirects are followed by hand so every
 // Set-Cookie on the chain is kept.
+import 'dart:async' show TimeoutException;
 import 'dart:convert' show base64Decode, jsonDecode, utf8;
 import 'dart:io' show HttpClient, HttpClientResponse, HttpHeaders;
 import 'dart:typed_data' show Uint8List;
@@ -90,7 +91,12 @@ final class HongguoWebLogin {
         request.headers.contentLength = bytes.length;
         request.add(bytes);
       }
-      final response = await request.close();
+      final HttpClientResponse response;
+      try {
+        response = await request.close().timeout(const Duration(seconds: 15));
+      } on TimeoutException {
+        throw const HongguoLoginFailure('连接官网超时，请重试');
+      }
       _absorb(
         response.cookies.map(
           (cookie) => _LoginCookie(cookie.name, cookie.value, (cookie.expires?.millisecondsSinceEpoch ?? 0) ~/ 1000),
@@ -130,7 +136,12 @@ final class HongguoWebLogin {
     };
     final uri = Uri.https('hongguoduanju.com', path, query);
     final response = await _send(uri, form: data);
-    final text = await response.transform(utf8.decoder).join();
+    final String text;
+    try {
+      text = await response.transform(utf8.decoder).join().timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw const HongguoLoginFailure('官网登录响应超时，请重试');
+    }
     Object? decoded;
     try {
       decoded = jsonDecode(text);

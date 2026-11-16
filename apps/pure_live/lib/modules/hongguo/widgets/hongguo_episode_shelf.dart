@@ -71,15 +71,23 @@ int hongguoEpisodeGroupOf(List<HongguoEpisode> episodes, HongguoEpisode? episode
 /// jump box. The episode being watched stands lit at its number and its name
 /// and gives up its press; the rest of the cards open the player.
 /// [onOpen] runs when the viewer picks another.
+///
+/// [rail] draws the player page's side-column cut instead: one episode a
+/// line — cover at the row's head, name and length beside it — the shape a
+/// 340px column reads comfortably, where the page grid's two squeezed
+/// columns would not.
 final class HongguoEpisodeShelf extends ConsumerStatefulWidget {
   /// The shelf for the series' own episodes.
-  const HongguoEpisodeShelf({required this.detail, required this.onOpen, this.current, super.key});
+  const HongguoEpisodeShelf({required this.detail, required this.onOpen, this.current, this.rail = false, super.key});
 
   /// The series whose episodes are listed.
   final HongguoSeriesDetail detail;
 
   /// The episode the viewer is on, when one is.
   final HongguoEpisode? current;
+
+  /// Whether the shelf draws the side-column rows rather than the page grid.
+  final bool rail;
 
   /// Runs when the viewer picks an episode.
   final void Function(HongguoEpisode episode) onOpen;
@@ -157,8 +165,6 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final current = widget.current;
     final episodes = widget.detail.episodes;
     final groups = (episodes.length + kHongguoEpisodeGroup - 1) ~/ kHongguoEpisodeGroup;
@@ -167,26 +173,20 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
     final shown = episodes.skip(first).take(kHongguoEpisodeGroup).toList();
     final last = first + shown.length;
     bool isCurrent(HongguoEpisode episode) => episode.vid == current?.vid && episode.index == current?.index;
-    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
+    // A 340px rail cannot carry the paging arrows beside the title and the
+    // range; the page grid's full width can, below the app's compact width
+    // it folds them the same way the season page's own shelf does.
+    final narrow = widget.rail || MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            // The total rides the title as the season page's does — a series
-            // that fits one page otherwise never says how many it holds.
-            Expanded(
-              child: Text(
-                '${t.hongguo.episodes} · ${episodes.length}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-            ),
-            if (groups > 1) ...[
-              Text('$first–$last / ${episodes.length}', style: muted),
+        SectionHeader(
+          title: t.hongguo.episodes,
+          count: episodes.length,
+          hint: groups > 1 ? '$first–$last / ${episodes.length}' : null,
+          trailing: [
+            if (groups > 1 && !narrow) ...[
               DsButton.icon(
                 icon: const DsIcon(DsIcons.chevronLeft),
                 semanticLabel: t.hongguo.episodesPrevious,
@@ -201,48 +201,166 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
                 size: DsSize.sm,
                 onPressed: group < groups - 1 ? () => setState(() => _group = group + 1) : null,
               ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.listOrdered, size: 16),
-                onPressed: _jump,
-                child: Text(t.hongguo.episodesJump),
-              ),
             ],
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.listOrdered, size: 16),
+              onPressed: _jump,
+              child: Text(t.hongguo.episodesJump),
+            ),
           ],
         ),
-        // The columns come from the pane this shelf lands in — the series
-        // page's reading column, the player's own panel — so the same widget
-        // lays a phone's pair and a desktop's four out of one reading. The
-        // cards stand in a shrink-wrap row set, the page's scroll carrying
-        // them, because a group of the shelf is a block of the page, not a
-        // feed of its own.
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
-            final spacing = ref.watch(browseSettingsProvider).crossSpacing;
-            final columns = hongguoEpisodeColumns(content, spacing: spacing);
-            final cardWidth = content > 0
-                ? columnExtentForWidth(content, columns, spacing) - .01
-                : kHongguoEpisodeCardWidth;
-            return Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: [
-                for (final episode in shown)
-                  SizedBox(
-                    width: cardWidth,
-                    child: _HongguoEpisodeCard(
-                      episode: episode,
-                      current: isCurrent(episode),
-                      onOpen: isCurrent(episode) ? null : () => widget.onOpen(episode),
+        if (widget.rail)
+          for (final episode in shown)
+            _HongguoEpisodeRow(
+              episode: episode,
+              current: isCurrent(episode),
+              onOpen: isCurrent(episode) ? null : () => widget.onOpen(episode),
+            )
+        else
+          // The columns come from the pane this shelf lands in — the series
+          // page's reading column, the player's own panel — so the same widget
+          // lays a phone's pair and a desktop's four out of one reading. The
+          // cards stand in a shrink-wrap row set, the page's scroll carrying
+          // them, because a group of the shelf is a block of the page, not a
+          // feed of its own.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
+              final spacing = ref.watch(browseSettingsProvider).crossSpacing;
+              final columns = hongguoEpisodeColumns(content, spacing: spacing);
+              final cardWidth = content > 0
+                  ? columnExtentForWidth(content, columns, spacing) - .01
+                  : kHongguoEpisodeCardWidth;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  for (final episode in shown)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _HongguoEpisodeCard(
+                        episode: episode,
+                        current: isCurrent(episode),
+                        onOpen: isCurrent(episode) ? null : () => widget.onOpen(episode),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+/// One episode in the rail cut: the picture at the row's head, the number
+/// over it, the name and the length beside — what a 340px column reads
+/// without squeezing a grid built for a page.
+final class _HongguoEpisodeRow extends StatelessWidget {
+  const _HongguoEpisodeRow({required this.episode, required this.current, required this.onOpen});
+
+  final HongguoEpisode episode;
+
+  /// Whether this is the episode the viewer is on: lit, and inert.
+  final bool current;
+
+  /// Opens the episode; null leaves the row inert.
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final label = t.hongguo.episodeLabel(index: episode.index);
+    final name = episode.title.isNotEmpty ? episode.title : label;
+    final fallback = CoverFallback(title: name, padding: const EdgeInsets.all(DsSpace.s8));
+    return DsCard(
+      onPressed: onOpen,
+      semanticLabel: label,
+      style: DsCardStyle(
+        padding: const EdgeInsets.all(DsSpace.s4),
+        hovered: DsCardStyle(background: colors.hover),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s8,
+        children: [
+          SizedBox(
+            width: 120,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(theme.radii.control(84)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (episode.cover.isEmpty)
+                      fallback
+                    else
+                      DsImage(
+                        image: hongguoCoverImage(episode.cover),
+                        aspectRatio: 16 / 9,
+                        semanticLabel: label,
+                        fallback: fallback,
+                      ),
+                    const Positioned.fill(
+                      child: IgnorePointer(
+                        child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      top: DsSpace.s4,
+                      start: DsSpace.s4,
+                      child: current
+                          ? DsBadge(
+                              label: Text(t.hongguo.episodeNo(index: episode.index)),
+                              dot: false,
+                              style: DsBadgeStyle(
+                                height: 20,
+                                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6),
+                                background: colors.accent,
+                                foreground: colors.onAccent,
+                                borderRadius: BorderRadius.circular(6),
+                                textStyle: theme.typography.labelStrong,
+                              ),
+                            )
+                          : RoomCoverChip(text: t.hongguo.episodeNo(index: episode.index), compact: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(top: DsSpace.s3, bottom: DsSpace.s3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s3,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.small.copyWith(
+                      color: current ? colors.accentText : colors.text,
+                      fontWeight: current ? FontWeight.w600 : null,
                     ),
                   ),
-              ],
-            );
-          },
-        ),
-      ],
+                  if (episode.durationSeconds > 0)
+                    Text(
+                      hongguoDurationText(Duration(seconds: episode.durationSeconds)),
+                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -82,11 +82,20 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
   @override
   void dispose() {
     _ticker.dispose();
+    // Every flight carries a laid-out paragraph; dropping the references
+    // alone leaves them to the finalizer.
+    for (final flight in _flights) {
+      flight.painter.dispose();
+    }
+    _flights.clear();
     _frame.dispose();
     super.dispose();
   }
 
   void _rewind() {
+    for (final flight in _flights) {
+      flight.painter.dispose();
+    }
     _flights.clear();
     _planner.reset();
     _lastSample = widget.positionMs();
@@ -94,6 +103,8 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
     _anchorTick = _lastElapsed;
     _currentMs = _lastSample;
     _cursor = _indexAt(_lastSample);
+    // The cleared sky must reach the screen even while the ticks are frozen.
+    _frame.value++;
   }
 
   int _indexAt(int positionMs) {
@@ -111,6 +122,11 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
       _anchorMs = real;
       _anchorTick = elapsed;
     }
+    // Paused with an empty sky and nothing left to spawn: the last frame
+    // these ticks drew is the frame they would draw, so stop paying for
+    // them. A seek rewinds (and bumps the frame below) even while paused,
+    // so a jumped-to position still shows its own words.
+    if (!widget.playing() && _flights.isEmpty && _cursor >= widget.items.length) return;
     _currentMs = widget.playing() ? _anchorMs + (elapsed - _anchorTick).inMilliseconds : _anchorMs;
     _travel = _travelMs / widget.settings.speed;
 
@@ -130,7 +146,11 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
     }
 
     if (_size.width > 0) {
-      _flights.removeWhere((flight) => flight.painter.width + _xOf(flight) < -12);
+      _flights.removeWhere((flight) {
+        final gone = flight.painter.width + _xOf(flight) < -12;
+        if (gone) flight.painter.dispose();
+        return gone;
+      });
     }
     _frame.value++;
   }

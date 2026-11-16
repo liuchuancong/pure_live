@@ -3,11 +3,11 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
     show hongguoCommentsProvider, hongguoPublicReviewsProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_public_reviews.dart' show HongguoPublicReview;
+import 'package:pure_live/shared/shared.dart' show SectionHeader;
 import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 
 /// One episode's comments and the series' reviews, behind the reference's two
@@ -51,8 +51,6 @@ final class _HongguoCommentPanelState extends ConsumerState<HongguoCommentPanel>
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final comments = ref.watch(hongguoCommentsProvider);
     final reviews = ref.watch(hongguoPublicReviewsProvider).data;
     final title = _episodeTab ? t.hongguo.comments : t.hongguo.reviews;
@@ -63,24 +61,14 @@ final class _HongguoCommentPanelState extends ConsumerState<HongguoCommentPanel>
         if (widget.showTitle)
           Semantics(
             header: true,
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                Expanded(
-                  child: Text(title, style: theme.typography.title.copyWith(color: colors.text)),
-                ),
-                if (_episodeTab && comments.total > 0)
-                  DsBadge(label: Text('${comments.total}'), dot: false)
-                else if (!_episodeTab && reviews != null && reviews.rating > 0)
-                  DsBadge(
-                    label: Text(
-                      reviews.ratingCount > 0
-                          ? '${t.hongguo.rating(score: reviews.rating.toStringAsFixed(1))} · ${t.hongguo.ratingCount(count: reviews.ratingCount)}'
-                          : t.hongguo.rating(score: reviews.rating.toStringAsFixed(1)),
-                    ),
-                    dot: false,
-                  ),
-              ],
+            child: SectionHeader(
+              title: title,
+              count: _episodeTab && comments.total > 0 ? comments.total : null,
+              hint: !_episodeTab && reviews != null && reviews.rating > 0
+                  ? (reviews.ratingCount > 0
+                        ? '${t.hongguo.rating(score: reviews.rating.toStringAsFixed(1))} · ${t.hongguo.ratingCount(count: reviews.ratingCount)}'
+                        : t.hongguo.rating(score: reviews.rating.toStringAsFixed(1)))
+                  : null,
             ),
           ),
         Align(

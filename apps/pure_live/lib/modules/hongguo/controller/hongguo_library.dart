@@ -321,6 +321,25 @@ final class HongguoLibraryController extends Notifier<HongguoLibraryState> {
     return added;
   }
 
+  /// Drops the selected series from the local shelf — the batch manage's
+  /// own verb, one write for the whole tick.
+  void removeFavorites(Iterable<String> ids) {
+    final dropped = ids.toSet();
+    if (dropped.isEmpty) return;
+    final favorites = [
+      for (final kept in state.favorites)
+        if (!dropped.contains(kept.seriesId)) kept,
+    ];
+    // A series that leaves the shelf leaves its update row behind, the way
+    // a single untoggle drops it.
+    final updates = {
+      for (final entry in state.updates.entries)
+        if (!dropped.contains(entry.key)) entry.key: entry.value,
+    };
+    state = state.copyWith(favorites: favorites, updates: updates);
+    _persist();
+  }
+
   /// Acknowledges what a check found when the viewer opens the series: the
   /// shelf's `新增 N 集` line stops at the count read.
   void acknowledgeUpdates(String seriesId) {

@@ -18,7 +18,7 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_card_menu.dart' show H
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
 import 'package:pure_live/shared/shared.dart'
-    show LiveWindow, NavigationItem, PagedCardGrid, avatarInitials, feedGutter;
+    show CardLayout, LiveWindow, NavigationItem, PagedCardGrid, avatarInitials, feedGutter;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:pure_live/shared/widgets/app_panel.dart';
 
@@ -332,7 +332,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
         (
           items: const <HongguoSeries>[],
           cursor: null,
-          loading: false,
+          loading: true,
           hasMore: true,
           error: null,
           selection: const <String, String>{},
@@ -787,6 +787,83 @@ final class _FavoritesView extends ConsumerStatefulWidget {
 final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
   bool _account = false;
 
+  /// The local shelf's batch mode; the account shelf's rows answer to the
+  /// station, so they never join it.
+  bool _managing = false;
+  final Set<String> _selected = {};
+
+  void _leaveManaging() => setState(() {
+    _managing = false;
+    _selected.clear();
+  });
+
+  void _toggleManaging() {
+    if (_managing) {
+      _leaveManaging();
+      return;
+    }
+    setState(() => _managing = true);
+  }
+
+  /// Deletes the ticked series off the local shelf after their confirmation.
+  Future<void> _removeSelected() async {
+    final t = context.t;
+    if (_selected.isEmpty) return;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.deleteSelected(count: _selected.length),
+      description: t.hongguo.favoriteToggleOff,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    ref.read(hongguoLibraryProvider.notifier).removeFavorites(_selected);
+    showDsToast(context: context, title: t.hongguo.favoriteToggleOff);
+    _leaveManaging();
+  }
+
+  /// The batch foot under the local shelf, the hongguo history page's own.
+  Widget _manageBar() {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final inset = _hongguoPageInset(context);
+    return Container(
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: Text(
+              t.common.deleteSelected(count: _selected.length),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+          ),
+          DsButton(
+            variant: DsButtonVariant.dangerSoft,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.trash2, size: 14),
+            onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected()),
+            child: Text(t.common.deleteSelected(count: _selected.length)),
+          ),
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: _leaveManaging,
+            child: Text(t.common.manageDone),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -810,7 +887,11 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               final tabs = DsTabs<bool>(
                 value: _account,
                 onChanged: (account) {
-                  setState(() => _account = account);
+                  setState(() {
+                    _account = account;
+                    _managing = false;
+                    _selected.clear();
+                  });
                   if (account && ref.read(hongguoAccountProvider).signedIn && shelf.items.isEmpty && !shelf.loading) {
                     unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
                   }
@@ -825,10 +906,17 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                 size: DsSize.sm,
                 variant: DsButtonVariant.secondary,
                 leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                onPressed: library.favorites.isEmpty || library.checking
+                onPressed: library.favorites.isEmpty || library.checking || _managing
                     ? null
                     : () => unawaited(ref.read(hongguoLibraryProvider.notifier).checkUpdates(force: true)),
                 child: Text(t.hongguo.favoriteCheck),
+              );
+              final manage = DsButton(
+                size: DsSize.sm,
+                variant: _managing ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                leading: const DsIcon(DsIcons.listChecks, size: 14),
+                onPressed: library.favorites.isEmpty && !_managing ? null : _toggleManaging,
+                child: Text(_managing ? t.common.manageDone : t.common.manage),
               );
               // The local shelf's one reading of itself; the account tab has
               // nothing to say until its read answers.
@@ -836,7 +924,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               // The shelf's one verb rides the shell's head on a narrow page,
               // the live module's phone rule; beside the bar on a wide one.
               if (narrow && !_account) {
-                publishPageHeadActions(context, ref, NavigationItem.hongguoFavorites, [check]);
+                publishPageHeadActions(context, ref, NavigationItem.hongguoFavorites, [if (!_managing) check, manage]);
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -859,7 +947,8 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                               style: theme.typography.caption.copyWith(color: colors.textMuted),
                             ),
                           ),
-                          check,
+                          if (!_managing) check,
+                          manage,
                         ],
                       ],
                     ),
@@ -879,90 +968,113 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
           ),
         ),
         Expanded(
-          child: switch (true) {
-            _ when _account && !account.signedIn => _SignInGate(message: t.hongguo.favoritesAccountOff),
-            _ => LayoutBuilder(
-              builder: (context, constraints) {
-                final content = constraints.maxWidth - feedGutter(context).horizontal;
-                final local = !_account;
-                final rows = local
-                    ? [
-                        for (final series in library.favorites)
-                          series.copyWith(hot: hongguoFavoriteLine(t, library, series)),
-                      ]
-                    : [for (final favorite in shelf.items) favorite.series];
-                return PagedCardGrid<HongguoSeries>(
-                  items: rows,
-                  layout: ref.watch(browseLayoutProvider),
-                  cardExtent: hongguoPosterExtentForWidth(
-                    content,
-                    spacing: browse.crossSpacing,
-                    ceiling: browse.gridColumns,
-                  ),
-                  crossSpacing: browse.crossSpacing,
-                  mainSpacing: browse.mainSpacing,
-                  aspectRatio: kHongguoSeriesTileAspect,
-                  listMainAxisExtent: kHongguoSeriesRowExtent,
-                  itemBuilder: (context, series) => HongguoCardMenu(
-                    series: series,
-                    onOpen: () => _open(context, series),
-                    child: HongguoSeriesCard(
-                      preview: true,
-                      series: series,
-                      // The local shelf's card keeps its corner heart; an
-                      // account row's kept state is the account's, and its
-                      // row's end — not a local heart — is how it leaves.
-                      favoritable: local,
-                      watched: local ? watchedById[series.seriesId] : null,
-                      onOpen: () => _open(context, series),
-                    ),
-                  ),
-                  listItemBuilder: (context, series) => HongguoCardMenu(
-                    series: series,
-                    onOpen: () => _open(context, series),
-                    child: local
-                        ? HongguoSeriesRow(
+          child: Column(
+            children: [
+              Expanded(
+                child: switch (true) {
+                  _ when _account && !account.signedIn => _SignInGate(message: t.hongguo.favoritesAccountOff),
+                  _ => LayoutBuilder(
+                    builder: (context, constraints) {
+                      final content = constraints.maxWidth - feedGutter(context).horizontal;
+                      final local = !_account;
+                      final rows = local
+                          ? [
+                              for (final series in library.favorites)
+                                series.copyWith(hot: hongguoFavoriteLine(t, library, series)),
+                            ]
+                          : [for (final favorite in shelf.items) favorite.series];
+                      return PagedCardGrid<HongguoSeries>(
+                        items: rows,
+                        // The tick lives on the row's end, so the batch mode draws
+                        // the list cut whatever the viewer's wall says.
+                        layout: _managing && local ? CardLayout.list : ref.watch(browseLayoutProvider),
+                        cardExtent: hongguoPosterExtentForWidth(
+                          content,
+                          spacing: browse.crossSpacing,
+                          ceiling: browse.gridColumns,
+                        ),
+                        crossSpacing: browse.crossSpacing,
+                        mainSpacing: browse.mainSpacing,
+                        aspectRatio: kHongguoSeriesTileAspect,
+                        listMainAxisExtent: kHongguoSeriesRowExtent,
+                        itemBuilder: (context, series) => HongguoCardMenu(
+                          series: series,
+                          onOpen: _managing && local ? null : () => _open(context, series),
+                          child: HongguoSeriesCard(
+                            preview: true,
                             series: series,
-                            watched: watchedById[series.seriesId],
-                            onOpen: () => _open(context, series),
-                            // That line already reads 「共 80 集（+3）」; the
-                            // count is said by it, not again in front of it.
-                            withEpisodeCount: false,
-                            trailing: _IconAction(
-                              icon: DsIcons.heartOff,
-                              semanticLabel: t.hongguo.unfavorite,
-                              onPressed: () {
-                                ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
-                                showDsToast(context: context, title: t.hongguo.favoriteToggleOff);
-                              },
-                            ),
-                          )
-                        : HongguoSeriesRow(
-                            series: series,
-                            onOpen: () => _open(context, series),
-                            trailing: _IconAction(
-                              icon: DsIcons.heartOff,
-                              semanticLabel: t.hongguo.cloudFavoriteOff,
-                              onPressed: () => unawaited(
-                                ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(series, add: false),
-                              ),
-                            ),
+                            // The local shelf's card keeps its corner heart; an
+                            // account row's kept state is the account's, and its
+                            // row's end — not a local heart — is how it leaves.
+                            favoritable: local && !_managing,
+                            watched: local ? watchedById[series.seriesId] : null,
+                            onOpen: _managing && local ? null : () => _open(context, series),
                           ),
+                        ),
+                        listItemBuilder: (context, series) => HongguoCardMenu(
+                          series: series,
+                          onOpen: _managing && local ? null : () => _open(context, series),
+                          child: local
+                              ? HongguoSeriesRow(
+                                  series: series,
+                                  watched: watchedById[series.seriesId],
+                                  onOpen: _managing ? null : () => _open(context, series),
+                                  // That line already reads 「共 80 集（+3）」; the
+                                  // count is said by it, not again in front of it.
+                                  withEpisodeCount: false,
+                                  trailing: _managing
+                                      ? DsCheckbox(
+                                          value: _selected.contains(series.seriesId),
+                                          semanticLabel: series.title,
+                                          onChanged: (value) => setState(() {
+                                            if (value ?? false) {
+                                              _selected.add(series.seriesId);
+                                            } else {
+                                              _selected.remove(series.seriesId);
+                                            }
+                                          }),
+                                        )
+                                      : _IconAction(
+                                          icon: DsIcons.heartOff,
+                                          semanticLabel: t.hongguo.unfavorite,
+                                          onPressed: () {
+                                            ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
+                                            showDsToast(context: context, title: t.hongguo.favoriteToggleOff);
+                                          },
+                                        ),
+                                )
+                              : HongguoSeriesRow(
+                                  series: series,
+                                  onOpen: () => _open(context, series),
+                                  trailing: _IconAction(
+                                    icon: DsIcons.heartOff,
+                                    semanticLabel: t.hongguo.cloudFavoriteOff,
+                                    onPressed: () => unawaited(
+                                      ref
+                                          .read(hongguoAccountFavoritesProvider.notifier)
+                                          .setFavorite(series, add: false),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                        // Both shelves are whole in hand: the pager slices what is
+                        // there, nothing asks for a next block behind it.
+                        hasMore: false,
+                        isLoading: !local && shelf.loading,
+                        onLoadMore: () async {},
+                        error: local ? null : shelf.error,
+                        onRefresh: local ? null : () => ref.read(hongguoAccountFavoritesProvider.notifier).refresh(),
+                        refreshError: local ? null : shelf.error,
+                        emptyIcon: HongguoView.favorites.icon,
+                        emptyTitle: local ? t.hongguo.favoritesLocalEmpty : t.hongguo.favoritesAccountEmpty,
+                      );
+                    },
                   ),
-                  // Both shelves are whole in hand: the pager slices what is
-                  // there, nothing asks for a next block behind it.
-                  hasMore: false,
-                  isLoading: !local && shelf.loading,
-                  onLoadMore: () async {},
-                  error: local ? null : shelf.error,
-                  onRefresh: local ? null : () => ref.read(hongguoAccountFavoritesProvider.notifier).refresh(),
-                  refreshError: local ? null : shelf.error,
-                  emptyIcon: HongguoView.favorites.icon,
-                  emptyTitle: local ? t.hongguo.favoritesLocalEmpty : t.hongguo.favoritesAccountEmpty,
-                );
-              },
-            ),
-          },
+                },
+              ),
+              if (_managing && !_account) _manageBar(),
+            ],
+          ),
         ),
       ],
     );
@@ -1653,7 +1765,17 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
                   leading: const DsIcon(DsIcons.logOut),
                   title: Text(t.hongguo.accountSignOut),
                   description: Text(t.hongguo.accountSignOutDesc),
-                  onPressed: () => unawaited(ref.read(hongguoAccountProvider.notifier).signOut()),
+                  onPressed: () => unawaited(() async {
+                    final confirmed = await showAppConfirm(
+                      context: context,
+                      title: t.hongguo.accountSignOut,
+                      description: t.hongguo.accountSignOutDesc,
+                      confirmLabel: t.common.confirm,
+                      cancelLabel: t.common.cancel,
+                      destructive: true,
+                    );
+                    if (confirmed) await ref.read(hongguoAccountProvider.notifier).signOut();
+                  }()),
                 ),
               ],
             ),
@@ -1707,7 +1829,14 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
               if (session.qr != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(theme.radii.card),
-                  child: Image(image: MemoryImage(session.qr!.image), width: 240, height: 240, fit: BoxFit.contain),
+                  child: Image(
+                    image: MemoryImage(session.qr!.image),
+                    width: 240,
+                    height: 240,
+                    fit: BoxFit.contain,
+                    // A reader hears what the picture is for.
+                    semanticLabel: t.hongguo.accountQrLabel,
+                  ),
                 )
               else if (session.error != null)
                 Padding(
@@ -1754,7 +1883,18 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
     // searched as though typed here. The listener catches a word handed
     // while the view is already showing.
     ref.listenManual(hongguoSearchHandoffProvider, (_, _) => _takeHandoff());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _takeHandoff();
+      // Re-entering the view shows the last search's results; the field then
+      // names the words they answer to, instead of sitting empty under them.
+      if (!mounted || _query.text.isNotEmpty) return;
+      final query = ref.read(hongguoSearchProvider).query;
+      if (query.isEmpty) return;
+      _query.value = TextEditingValue(
+        text: query,
+        selection: TextSelection.collapsed(offset: query.length),
+      );
+    });
   }
 
   /// Runs the handed word: the field reads it, the search answers it.
@@ -1766,6 +1906,21 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
       selection: TextSelection.collapsed(offset: word.length),
     );
     unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
+  }
+
+  /// Asks before the whole wall goes: a full clear cannot be undone.
+  Future<void> _clearSearchHistory(BuildContext context) async {
+    final t = context.t;
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.common.clearSearchHistoryTitle,
+      description: t.common.clearSearchHistoryBody,
+      confirmLabel: t.hongguo.searchHistoryClear,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    ref.read(hongguoSearchProvider.notifier).clearHistory();
   }
 
   @override
@@ -1881,7 +2036,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                     DsButton(
                       size: DsSize.sm,
                       variant: DsButtonVariant.ghost,
-                      onPressed: controller.clearHistory,
+                      onPressed: () => unawaited(_clearSearchHistory(context)),
                       child: Text(t.hongguo.searchHistoryClear),
                     ),
                   ],
@@ -2085,7 +2240,13 @@ final class _QrLoginCardState extends ConsumerState<_QrLoginCard> {
           Center(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(theme.radii.card),
-              child: Image(image: MemoryImage(session.qr!.image), width: 220, height: 220, fit: BoxFit.contain),
+              child: Image(
+                image: MemoryImage(session.qr!.image),
+                width: 220,
+                height: 220,
+                fit: BoxFit.contain,
+                semanticLabel: t.hongguo.accountQrLabel,
+              ),
             ),
           )
         else
