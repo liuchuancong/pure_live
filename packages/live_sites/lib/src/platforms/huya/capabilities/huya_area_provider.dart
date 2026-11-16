@@ -34,12 +34,31 @@ final class HuyaAreaProvider implements LiveCancellableArea {
         for (final top in huyaTopCategories)
           site
               .httpGet(HuyaEndpoints.areaList(top.id), headers: const {'user-agent': HuyaEndpoints.userAgent})
-              .then((response) => (top: top, response: response)),
+              .then<Object>((response) => (top: top, response: response), onError: (Object error) => error),
       ]);
-      return right([
-        for (final (:top, :response) in fetched)
-          ...HuyaRoomParser.areas(response.text, categoryId: top.id, categoryName: top.name, status: response.status),
-      ]);
+      // One refusing category leaves the tree partial rather than blank
+      // (Kick's walk is the same): only a total failure reports.
+      final areas = <LiveArea>[];
+      Object? failure;
+      for (final result in fetched) {
+        if (result is! ({({String id, String name}) top, ({String text, int status}) response})) {
+          failure ??= result;
+          continue;
+        }
+        areas.addAll(
+          HuyaRoomParser.areas(
+            result.response.text,
+            categoryId: result.top.id,
+            categoryName: result.top.name,
+            status: result.response.status,
+          ),
+        );
+      }
+      if (areas.isEmpty && failure != null) {
+        if (failure is HuyaFailure) throw failure;
+        throw HuyaFailure(HuyaFailureKind.network, 'area listings: $failure', cause: failure);
+      }
+      return right(areas);
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {

@@ -315,11 +315,7 @@ abstract final class BilibiliRoomParser {
           avatarUrl: sizedImage(base?['face'], '@100w.jpg'),
           liveStatus: state,
         ),
-        area: LiveArea.normalized(
-          platform: bilibiliSiteId,
-          areaId: jsonString(room['area_id']) ?? '',
-          areaName: jsonString(room['area_name']) ?? '',
-        ),
+        area: _roomArea(room),
         audience: _audience(
           online: online,
           total: _watched(data['watched_show'], state: state),
@@ -331,6 +327,22 @@ abstract final class BilibiliRoomParser {
         ),
         links: RoomLinks.of(webUrl: '${BilibiliEndpoints.origin}/$id'),
       ),
+    );
+  }
+
+  /// The room's own area, in the same id shape the areas catalog speaks:
+  /// `parent,leaf` when the detail names the parent, the leaf alone when it
+  /// does not (the area provider's unsigned request then fills it in).
+  static LiveArea _roomArea(Map<String, dynamic> room) {
+    final leafId = jsonString(room['area_id']) ?? '';
+    final parent = jsonString(room['parent_area_id'])?.trim();
+    final parentName = decodeHtmlEntities(jsonString(room['parent_area_name']) ?? '');
+    return LiveArea.normalized(
+      platform: bilibiliSiteId,
+      areaId: parent == null || parent.isEmpty || parent == '0' ? leafId : '$parent,$leafId',
+      areaName: jsonString(room['area_name']) ?? '',
+      parentAreaId: parent ?? '',
+      parentAreaName: parentName,
     );
   }
 

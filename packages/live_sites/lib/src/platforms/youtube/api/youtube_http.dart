@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 
@@ -37,7 +38,7 @@ final class YouTubeHttp {
           site: youtubeSiteId,
           url: url,
           headers: headers,
-          timeout: timeout,
+          timeout: timeout ?? YoutubeEndpoints.requestTimeout,
           cancelToken: cancel,
         ),
       );
@@ -61,7 +62,7 @@ final class YouTubeHttp {
   }) async {
     try {
       final response = await http.send(
-        LiveRequest.json(url, body: json, site: youtubeSiteId, headers: headers, timeout: timeout, cancelToken: cancel),
+        LiveRequest.json(url, body: json, site: youtubeSiteId, headers: headers, timeout: timeout ?? YoutubeEndpoints.requestTimeout, cancelToken: cancel),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {

@@ -13,6 +13,10 @@ abstract final class YoutubeEndpoints {
   /// Host of the watch pages and the InnerTube API.
   static const String host = 'www.youtube.com';
 
+  /// The ceiling every InnerTube call, page GET and media GET waits for a
+  /// response — the platform-wide default the other transports carry.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// The public WEB `INNERTUBE_API_KEY`; also scraped from a watch page when
   /// one is read ([YoutubeEndpoints.apiKeyPattern]).
   static const String apiKey = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';

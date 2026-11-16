@@ -75,6 +75,10 @@ abstract final class ChzzkEndpoints {
   /// request.
   static const int maxSearchOffset = 1000000;
 
+  /// The ceiling every API GET waits for a response — the platform-wide
+  /// default the other transports carry.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// How long before its token expires a line is renewed (at most a quarter of
   /// its lifetime).
   static const Duration leaseLead = Duration(minutes: 10);

@@ -22,6 +22,8 @@ Map<String, Object?> _detailData({
   Object? watched,
   String? description,
   String title = 'a &amp; b',
+  Object? parentAreaId,
+  Object? parentAreaName,
 }) => {
   'room_info': {
     'room_id': ?roomId,
@@ -31,6 +33,8 @@ Map<String, Object?> _detailData({
     'online': ?online,
     'area_id': 1,
     'area_name': '网格直播',
+    'parent_area_id': ?parentAreaId,
+    'parent_area_name': ?parentAreaName,
     'title': title,
     'cover': '//i0.hdslb.com/cover.png',
     'description': ?description,
@@ -135,6 +139,27 @@ void main() {
       expect(room.broadcast.restriction, isNull, reason: 'the answer wrote no special_type at all');
       expect(room.links.webUrl, '${BilibiliEndpoints.origin}/23058');
       expect(room.links.webUrl, isNot(contains(read.longId)));
+    });
+
+    test('an area is the pair the areas list request needs', () {
+      // The parent rides along in the detail answer; the id comes out in the
+      // composite shape the areas catalogue speaks, so the room's own area
+      // line can open the partition's room list directly.
+      final room = _room(
+        _detailData(parentAreaId: 2, parentAreaName: '交友'),
+      );
+      expect(room.area!.areaId, '2,1');
+      expect(room.area!.areaName, '网格直播');
+      expect(room.area!.parentAreaId, '2');
+      expect(room.area!.parentAreaName, '交友');
+      // A detail that names only the leaf keeps the leaf alone (the area
+      // request's unsigned shape fills the parent in).
+      final leaf = _room(_detailData());
+      expect(leaf.area!.areaId, '1');
+      expect(leaf.area!.parentAreaId, isEmpty);
+      // A parent of zero is no parent.
+      final zero = _room(_detailData(parentAreaId: 0));
+      expect(zero.area!.areaId, '1');
     });
 
     test('the carousel is not live, and only a live paid room is restricted', () {

@@ -20,6 +20,10 @@ abstract final class PicartoEndpoints {
   /// Host of the chat sockets; the token is part of the path.
   static const String chatHost = 'chat.picarto.tv';
 
+  /// The ceiling every API GET and token POST waits for a response — the
+  /// platform-wide default the other transports carry.
+  static const Duration requestTimeout = Duration(seconds: 20);
+
   /// Desktop Chrome 140, the user agent the player sent to the media
   /// servers and every API request carries.
   static const String userAgent =

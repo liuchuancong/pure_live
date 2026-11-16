@@ -30,11 +30,17 @@ final class PicartoHttp {
   final LiveHttp http;
 
   /// GETs [url] with the platform's headers.
-  Future<PicartoResponse> get(Uri url, {CancelToken? cancel}) async {
+  Future<PicartoResponse> get(Uri url, {Duration? timeout, CancelToken? cancel}) async {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.get(url, headers: PicartoEndpoints.headers, site: picartoSiteId, cancelToken: cancel),
+        LiveRequest.get(
+          url,
+          headers: PicartoEndpoints.headers,
+          site: picartoSiteId,
+          timeout: timeout ?? PicartoEndpoints.requestTimeout,
+          cancelToken: cancel,
+        ),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -59,7 +65,7 @@ final class PicartoHttp {
           body: body,
           headers: PicartoEndpoints.headers,
           site: picartoSiteId,
-          timeout: timeout,
+          timeout: timeout ?? PicartoEndpoints.requestTimeout,
           cancelToken: cancel,
         ),
       );

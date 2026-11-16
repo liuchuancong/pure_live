@@ -41,7 +41,7 @@ final class ChzzkHttp {
           url: url,
           headers: headers ?? ChzzkEndpoints.headers,
           cancelToken: cancel,
-          timeout: timeout,
+          timeout: timeout ?? ChzzkEndpoints.requestTimeout,
         ),
       );
     } on TransportFailure catch (failure) {

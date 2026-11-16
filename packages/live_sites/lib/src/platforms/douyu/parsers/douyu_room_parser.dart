@@ -277,10 +277,17 @@ abstract final class DouyuRoomParser {
         ),
         anchor: LiveAnchor.normalized(
           platform: douyuSiteId,
+          // The room names no presenter id; the rid is what the replay
+          // catalog and the author lookup behind it go by.
+          anchorId: rid,
           name: decodeHtmlEntities(jsonString(room['owner_name']) ?? ''),
           avatarUrl: anchorAvatar(room['owner_avatar']),
         ),
-        area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(room['second_lvl_name']) ?? ''),
+        area: LiveArea.normalized(
+          platform: douyuSiteId,
+          areaId: jsonString(room['cate2Id']) ?? '',
+          areaName: jsonString(room['second_lvl_name']) ?? '',
+        ),
         audience: RoomAudience.of(
           popularity: parseAudienceNumberOrNull(hot),
           primaryMetric: LiveAudienceMetricType.popularity,

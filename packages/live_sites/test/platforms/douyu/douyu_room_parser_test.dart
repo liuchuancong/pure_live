@@ -37,6 +37,7 @@ Map<String, Object?> _roomJson({
   String ownerName = 'Ann',
   String ownerAvatar = 'avatar_v3/2026/face.jpg',
   String? pic = 'https://rs.douyucdn.cn/cover.jpg',
+  Object? cate2Id,
 }) => {
   'room': {
     'room_id': ?roomId,
@@ -47,6 +48,7 @@ Map<String, Object?> _roomJson({
     'room_biz_all': {'hot': ?hot},
     'owner_name': ownerName,
     'owner_avatar': ownerAvatar,
+    'cate2Id': ?cate2Id,
     'second_lvl_name': '手游分区',
     'show_details': 'desc &amp; more',
     'room_pic': ?pic,
@@ -267,7 +269,14 @@ void main() {
       expect(read.room.content.title, '直播中 & 好');
       expect(read.room.content.introduction, 'desc & more');
       expect(read.room.anchor!.name, 'Ann');
+      // The room names no presenter id, so the rid is what the replay
+      // catalogue and the author lookup behind it go by.
+      expect(read.room.anchor!.anchorId, '123456');
       expect(read.room.area!.areaName, '手游分区');
+      // The area id, when the answer names one, is the category list's own
+      // leaf id — the partition page the room's area line opens onto.
+      expect(read.room.area!.areaId, isEmpty, reason: 'the answer wrote no cate2Id at all');
+      expect(detail(jsonEncode(_roomJson(cate2Id: 3206))).room.area!.areaId, '3206');
       expect(read.room.audience.popularity, 4321);
       expect(read.room.audience.primaryMetric, LiveAudienceMetricType.popularity);
       expect(read.room.broadcast.liveStatus, LiveStatus.live);

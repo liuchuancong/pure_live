@@ -46,7 +46,7 @@ final class BilibiliDiscoveryProvider implements LiveDiscoveryProvider {
     final size = request.pageSize.clamp(1, 30);
     BilibiliFailure? ranked;
     for (var attempt = 0; attempt < 2; attempt++) {
-      if (attempt > 0) await site.sleep(BilibiliEndpoints.retryDelay);
+      if (attempt > 0) await site.sleep(BilibiliEndpoints.retryDelay * attempt);
       try {
         final response = await site.unsignedGet(BilibiliEndpoints.recommend(page: number, pageSize: size));
         final list = BilibiliRoomParser.roomList(response.text, status: response.status);
