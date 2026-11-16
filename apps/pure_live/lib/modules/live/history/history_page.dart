@@ -215,7 +215,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     // block as the viewer reaches the end and pulls to refresh them all.
     // The day sections are cut from the shown slice, so a day that spans
     // two pages is headed on both.
-    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
+    final wide = PageLayoutScope.isPaging(context);
     final lastPage = (shown.length + _pageSize - 1) ~/ _pageSize;
     final page = _asked.clamp(1, lastPage);
     final start = wide ? (page - 1) * _pageSize : 0;

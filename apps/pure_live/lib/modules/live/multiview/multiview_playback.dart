@@ -366,7 +366,9 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       session.capability = capability;
       final qualities = await capability
           .getQualities(room: room)
-          .then((answer) => answer.fold((error) => throw _PaneOpenFailure(error.message, error), (qualities) => qualities));
+          .then(
+            (answer) => answer.fold((error) => throw _PaneOpenFailure(error.message, error), (qualities) => qualities),
+          );
       if (stale()) return;
       session.qualities = qualities;
       final layout = ref.read(multiviewProvider).layout;
@@ -421,7 +423,11 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     final lines = answer.fold((error) => throw _PaneOpenFailure(error.message, error), (lines) => lines);
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     if (site == null || site.runtimeInfo.ingest == null || lines.isEmpty) return lines;
-    final ingest = await startLiveIngest(proxyRoute: () => ref.read(appProxyRouteProvider), site: site, line: lines.first);
+    final ingest = await startLiveIngest(
+      proxyRoute: () => ref.read(appProxyRouteProvider),
+      site: site,
+      line: lines.first,
+    );
     if (ingest == null) return lines;
     if (session.disposed) {
       await ingest.close();

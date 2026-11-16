@@ -54,9 +54,8 @@ final class PopularTopBarActions extends ConsumerWidget {
           current: platform,
           nameOf: nameOf,
           onChanged: choose,
-          onManagePlatforms: () => unawaited(
-            context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-          ),
+          onManagePlatforms: () =>
+              unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
         ),
       ],
     );

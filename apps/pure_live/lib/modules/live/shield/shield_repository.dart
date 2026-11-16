@@ -13,6 +13,11 @@ const ShieldRules _defaults = (enabled: true, keywords: <String>[], users: <Stri
 
 const String _keywordsKey = 'danmaku.block.keywords';
 const String _usersKey = 'danmaku.block.users';
+
+/// The block list's ceiling: one runaway paste must not turn the
+/// settings document (and every backup and sync after it) into a
+/// dump. The oldest entries give way first.
+const int kShieldBlockLimit = 5000;
 const String _enabledKey = 'danmaku.block.enabled';
 
 /// Owns the danmaku shield's rules: every edit moves the state first and
@@ -69,7 +74,7 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
   /// Replaces the blocked keywords with [values] — the list editor's save:
   /// the draft carries the order the viewer chose and the rows they kept.
   Future<void> setKeywords(List<String> values) async {
-    state = (enabled: state.enabled, keywords: List.unmodifiable(values), users: state.users);
+    state = (enabled: state.enabled, keywords: List.unmodifiable(values.take(kShieldBlockLimit)), users: state.users);
     await persist(_keywordsKey, state.keywords);
   }
 
@@ -78,6 +83,7 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
   Future<bool> addUser(String raw) async {
     final value = raw.trim();
     if (value.isEmpty || state.users.contains(value)) return false;
+    if (state.users.length >= kShieldBlockLimit) return false;
     state = (enabled: state.enabled, keywords: state.keywords, users: [...state.users, value]);
     await persist(_usersKey, state.users);
     return true;
@@ -103,7 +109,11 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
 
   /// Replaces the blocked users with [values] — the list editor's save.
   Future<void> setUsers(List<String> values) async {
-    state = (enabled: state.enabled, keywords: state.keywords, users: List.unmodifiable(values));
+    state = (
+      enabled: state.enabled,
+      keywords: state.keywords,
+      users: List.unmodifiable(values.take(kShieldBlockLimit)),
+    );
     await persist(_usersKey, state.users);
   }
 

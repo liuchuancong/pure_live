@@ -77,7 +77,15 @@ final class _FollowTagsPaneState extends ConsumerState<FollowTagsPane> {
     final colors = DsTheme.colorsOf(context);
     final tags = ref.watch(followTagsProvider);
     final rooms = ref.watch(followsProvider).rooms;
-    int countOf(String id) => rooms.where((room) => room.local.tagIds.contains(id)).length;
+    // One pass over the rooms answers every tag's count; the per-row scans
+    // used to ask the whole list three times a row.
+    final countsById = <String, int>{};
+    for (final room in rooms) {
+      for (final id in room.local.tagIds) {
+        countsById.update(id, (count) => count + 1, ifAbsent: () => 1);
+      }
+    }
+    int countOf(String id) => countsById[id] ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,

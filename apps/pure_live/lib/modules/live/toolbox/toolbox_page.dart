@@ -374,10 +374,13 @@ final class _SupportPlatforms extends StatelessWidget {
             children: [
               const DsIcon(DsIcons.antenna, size: 16),
               Expanded(child: Text(t.toolbox.linkSupportTitle, style: theme.typography.body)),
-              Text('${sites.length}', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+              Text(
+                '${sites.length}',
+                style: theme.typography.numeric(theme.typography.caption).copyWith(color: colors.textMuted),
+              ),
             ],
           ),
-          Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
+          Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textMuted)),
           Wrap(
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
@@ -522,12 +525,9 @@ final class _PlatformNodeCard extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: theme.typography.small.copyWith(color: failure != null ? colors.danger.text : colors.textMuted),
     );
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
-      decoration: DsBoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        shadows: [DsShadow.innerRing(colors.border)],
+    return DsCard(
+      style: const DsCardStyle(
+        padding: EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -697,7 +697,8 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final records = ref.watch(appLogRecordsProvider).value ?? const <LogRecord>[];
+    final logState = ref.watch(appLogRecordsProvider);
+    final records = logState.value ?? const <LogRecord>[];
     final query = _search.text.trim().toLowerCase();
     final shown = [
       for (final record in records)
@@ -769,7 +770,23 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
                   ),
                 ),
                 Expanded(
-                  child: shown.isEmpty
+                  child: logState.hasError
+                      // A diagnostic page reading an error as a clean sheet
+                      // would lie twice: the ring is there, the read broke.
+                      ? Center(
+                          child: DsEmptyState(
+                            icon: const DsIcon(DsIcons.terminal),
+                            title: Text(t.common.loadFailed),
+                            description: Text('${logState.error}'),
+                            actions: [
+                              DsButton(
+                                onPressed: () => ref.invalidate(appLogRecordsProvider),
+                                child: Text(t.common.retry),
+                              ),
+                            ],
+                          ),
+                        )
+                      : shown.isEmpty
                       ? Center(
                           child: DsEmptyState(
                             icon: const DsIcon(DsIcons.terminal),

@@ -89,6 +89,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     // The catalogue never loads from inside its own build; the page asks,
     // and only for the platform the viewer is looking at.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       unawaited(ref.read(areasCatalogProvider.notifier).open(ref.read(areasSiteProvider)));
     });
     // A word from the toolbar searches this page's areas, which the
@@ -269,14 +270,6 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     );
   }
 }
-
-/// The catalogue tile's width over height in each form: the poster is the
-/// full-width square picture plus the name and group under it (at the tile's
-/// 170 width: 12 + 146 + 8 + 20 + 2 + 16 + 12 = 216), the row keeps its wide
-/// band.
-
-/// The widest a poster tile gets; the window fits as many as it can side by
-/// side.
 
 /// How many areas one display page (a wide window's page, a narrow one's
 /// block) holds: the tiles are small, so a page is two of the room feeds'.

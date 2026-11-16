@@ -275,16 +275,22 @@ class FollowsController extends Notifier<FollowsState> {
                 // A platform may answer under another id for the same
                 // room; the merge must land on the follow's identity, or
                 // it would grow a second entry and leave the card stale.
-                fresh.add(
-                  detail.ref == room.ref ? detail : detail.rebuild((b) => b..ref.replace(room.ref)),
-                );
+                fresh.add(detail.ref == room.ref ? detail : detail.rebuild((b) => b..ref.replace(room.ref)));
               },
             );
           }
-        } on Object {
+        } on Object catch (error) {
           failed++;
           failedKeys.add(room.ref.identityKey);
           _refreshFailedAt[room.ref.identityKey] = DateTime.now();
+          // The platform and the room go in the log: a follow that
+          // never refreshes must name the site that refuses it.
+          appLog
+              .forCategory('follows.refresh')
+              .warning(
+                'follow refresh failed',
+                fields: {'platform': room.ref.platform, 'room': room.ref.roomId, 'error': '$error'},
+              );
         } finally {
           onProgress?.call(++done, queue.length);
         }
@@ -327,12 +333,15 @@ class FollowsController extends Notifier<FollowsState> {
           final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
           if (provider == null) continue;
           final answer = await provider.getRoom(room.ref.roomId);
-          await answer.match<Future<void>>((_) async {
-            _refreshFailedAt[room.ref.identityKey] = DateTime.now();
-          }, (detail) async {
-            _refreshFailedAt.remove(room.ref.identityKey);
-            fresh.add(detail.ref == room.ref ? detail : detail.rebuild((b) => b..ref.replace(room.ref)));
-          });
+          await answer.match<Future<void>>(
+            (_) async {
+              _refreshFailedAt[room.ref.identityKey] = DateTime.now();
+            },
+            (detail) async {
+              _refreshFailedAt.remove(room.ref.identityKey);
+              fresh.add(detail.ref == room.ref ? detail : detail.rebuild((b) => b..ref.replace(room.ref)));
+            },
+          );
         } on Object {
           _refreshFailedAt[room.ref.identityKey] = DateTime.now();
         }

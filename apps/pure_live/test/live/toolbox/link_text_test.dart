@@ -19,8 +19,10 @@ void main() {
     });
 
     test('a xiaohongshu dot segment is route structure, not a stray dot', () {
-      expect(LinkText.httpUrls('https://www.xiaohongshu.com/user/profile/.').single,
-          'https://www.xiaohongshu.com/user/profile/.');
+      expect(
+        LinkText.httpUrls('https://www.xiaohongshu.com/user/profile/.').single,
+        'https://www.xiaohongshu.com/user/profile/.',
+      );
     });
 
     test('a link with user info or a foreign scheme is skipped', () {

@@ -40,7 +40,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   double? _progress;
 
   /// The tag shown, or null for every tag.
-  String? _tag;
 
   /// The grid's position, so a new slice starts at its top.
   final ScrollController _gridScroll = ScrollController();
@@ -294,27 +293,19 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final view = ref.watch(favoritesViewProvider);
     final group = view.group;
     final platform = platformTabs.contains(view.platform) ? view.platform : kAllPlatforms;
-    final scope = platform == kAllPlatforms ? null : platform;
     final tags = ref.watch(followTagsProvider);
     // A tag removed while selected falls back to every tag rather than
     // showing an empty page nobody can explain.
-    final selectedTag = tags.any((tag) => tag.id == _tag) ? _tag : null;
+    final selectedTag = tags.any((tag) => tag.id == view.tag) ? view.tag : null;
     final tagNames = {for (final tag in tags) tag.id: tag.name};
-    final counts = followGroupCounts(follows.rooms, scope);
-    final total = followCount(follows.rooms, platform: scope);
-    // The toolbar's word narrows the slice like the group and the tag do:
-    // the title or the anchor answering it is what stays. The word reads as
-    // typed; the matching itself is case-blind.
+    final counts = ref.watch(favoritesGroupCountsProvider);
+    final total = ref.watch(favoritesTotalProvider);
+    // The view's three cuts and the toolbar's word are applied upstream —
+    // the page reads a finished list.
+    final rooms = ref.watch(favoritesListedRoomsProvider);
+    // The toolbar's word reads as typed; the matching itself is case-blind.
     final inlineWord = ref.watch(favoritesInlineSearchProvider);
     final query = (inlineWord ?? '').toLowerCase();
-    final rooms = [
-      for (final room in follows.rooms)
-        if (onFollowPlatform(room, scope) &&
-            (group == null || followGroupOf(room) == group) &&
-            (selectedTag == null || room.local.tagIds.contains(selectedTag)) &&
-            followMatchesQuery(room, query))
-          room,
-    ];
     // The feed pages the loaded follows locally — the popular page's rule:
     // a wide window pages by number, a narrow one appends and pulls to
     // refresh. The page is measured in the shown platform's own feed window
@@ -416,7 +407,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
               if (tags.isNotEmpty)
                 DsChoiceChips<String?>(
                   value: selectedTag,
-                  onChanged: (value) => setState(() => _tag = value),
+                  onChanged: (value) => ref.read(favoritesViewProvider.notifier).selectTag(value),
                   semanticLabel: t.favorites.tagsFilter,
                   options: [
                     DsChipOption(value: null, label: Text(t.favorites.allTags)),

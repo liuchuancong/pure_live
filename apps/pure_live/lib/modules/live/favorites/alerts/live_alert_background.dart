@@ -47,10 +47,9 @@ Future<void> initializeLiveAlertBackground() async {
     await Workmanager().initialize(liveAlertCallbackDispatcher);
   } on Object catch (error) {
     // The in-app watcher still covers the room checks while the app runs.
-    appLog.forCategory('alerts').warning(
-      'WorkManager init failed; background alerts will not run',
-      fields: {'error': '$error'},
-    );
+    appLog
+        .forCategory('alerts')
+        .warning('WorkManager init failed; background alerts will not run', fields: {'error': '$error'});
   }
 }
 

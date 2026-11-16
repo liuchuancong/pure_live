@@ -2,9 +2,11 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_sites/live_sites.dart' show LivePlayQuality, LiveRoom, LiveRoomRefIdentity;
 import 'package:media_core/media_core.dart' show MediaPlayerView;
@@ -228,7 +230,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           ),
         );
       }
-      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+      return const SkeletonGrid();
     }
     final rooms = ref.watch(followsProvider.select((state) => state.rooms));
     final playback = ref.watch(multiviewPlaybackProvider);
@@ -249,62 +251,88 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     // selection without a place in the wall (a layout just shrunk) shows
     // nothing rather than a stale name.
     final audibleName = selected == null || selected < 0 || selected >= slots.length ? null : slots[selected].title;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              _header(wall, playback, activePanes: activePanes, anyPlaying: anyPlaying, audibleName: audibleName),
-              if (selectedPane != null && selectedPane.stage == MultiviewPaneStage.playing)
-                _PaneControls(
-                  pane: selectedPane,
-                  onPause: () => unawaited(controls.togglePause(selectedPane.slot)),
-                  onQuality: (quality) => unawaited(_selectQuality(selectedPane.slot, quality)),
-                  onLine: (index) => unawaited(controls.selectLine(selectedPane.slot, index)),
-                  onVolume: (value) => unawaited(controls.setVolume(selectedPane.slot, value, commit: false)),
-                  onVolumeCommit: (value) => unawaited(controls.setVolume(selectedPane.slot, value)),
-                ),
-            ],
+    return CallbackShortcuts(
+      // Escape walks out the way the title bar's back arrow does: a
+      // pending swap or an open picker dock folds first, then a pushed
+      // page pops and a destination branch goes home.
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (_swapSource != null || _pickingSlot != null) {
+            setState(() {
+              _swapSource = null;
+              _pickingSlot = null;
+            });
+            return;
+          }
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go(RouteNames.popular);
+          }
+        },
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+              DsSpace.s12,
+              LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+              DsSpace.s8,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s8,
+              children: [
+                _header(wall, playback, activePanes: activePanes, anyPlaying: anyPlaying, audibleName: audibleName),
+                if (selectedPane != null && selectedPane.stage == MultiviewPaneStage.playing)
+                  _PaneControls(
+                    pane: selectedPane,
+                    onPause: () => unawaited(controls.togglePause(selectedPane.slot)),
+                    onQuality: (quality) => unawaited(_selectQuality(selectedPane.slot, quality)),
+                    onLine: (index) => unawaited(controls.selectLine(selectedPane.slot, index)),
+                    onVolume: (value) => unawaited(controls.setVolume(selectedPane.slot, value, commit: false)),
+                    onVolumeCommit: (value) => unawaited(controls.setVolume(selectedPane.slot, value)),
+                  ),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final picking = _pickingSlot;
-              if (picking == null || picking >= slots.length) {
-                return _wall(wall, slots, playback);
-              }
-              final dock = _PanePickerDock(
-                slotIndex: picking,
-                onAssign: (room) => unawaited(_assign(picking, room)),
-                onClose: () => setState(() => _pickingSlot = null),
-              );
-              // A wide window docks the picker beside the wall so the
-              // cell it fills stays in sight; a narrow one is already
-              // stacked, so the picker goes under it.
-              if (constraints.maxWidth >= 760) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final picking = _pickingSlot;
+                if (picking == null || picking >= slots.length) {
+                  return _wall(wall, slots, playback);
+                }
+                final dock = _PanePickerDock(
+                  slotIndex: picking,
+                  onAssign: (room) => unawaited(_assign(picking, room)),
+                  onClose: () => setState(() => _pickingSlot = null),
+                );
+                // A wide window docks the picker beside the wall so the
+                // cell it fills stays in sight; a narrow one is already
+                // stacked, so the picker goes under it.
+                if (constraints.maxWidth >= 760) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: _wall(wall, slots, playback)),
+                      SizedBox(width: 340, child: dock),
+                    ],
+                  );
+                }
+                return Column(
                   children: [
                     Expanded(child: _wall(wall, slots, playback)),
-                    SizedBox(width: 340, child: dock),
+                    SizedBox(height: 300, child: dock),
                   ],
                 );
-              }
-              return Column(
-                children: [
-                  Expanded(child: _wall(wall, slots, playback)),
-                  SizedBox(height: 300, child: dock),
-                ],
-              );
-            },
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -544,7 +572,12 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   /// selected pane the large place and the other three a rail.
   Widget _wall(MultiviewState wall, List<_Slot> slots, MultiviewPlaybackState playback) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s20),
+      padding: EdgeInsets.fromLTRB(
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s4,
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s20,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Tight windows tighten the gaps before the panes give up
@@ -1295,11 +1328,7 @@ final class _PaneStreamBadge extends StatelessWidget {
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.typography.caption.copyWith(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: OnVideoColors.inkMuted,
-        ),
+        style: theme.typography.overline.copyWith(color: OnVideoColors.inkMuted),
       ),
     );
   }
@@ -1749,7 +1778,7 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
     final loading = !follows.ready || !history.ready;
     return Container(
       decoration: DsBoxDecoration(
-        color: colors.channel,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(theme.radii.card),
         shadows: [DsShadow.innerRing(colors.border)],
       ),
@@ -1826,7 +1855,7 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
           ),
           Expanded(
             child: loading
-                ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 22)))
+                ? const Padding(padding: EdgeInsets.all(DsSpace.s8), child: SkeletonRows(rows: 6))
                 : rooms.isEmpty
                 ? Center(
                     child: DsEmptyState(
@@ -1836,7 +1865,9 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
                     ),
                   )
                 : visible.isEmpty
-                ? Center(child: Text(t.multiview.pickerNoMatch, style: theme.typography.caption))
+                ? Center(
+                    child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.multiview.pickerNoMatch)),
+                  )
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s8),
                     children: [

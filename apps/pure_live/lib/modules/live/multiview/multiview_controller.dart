@@ -83,7 +83,7 @@ final class MultiviewRepository {
         error: null,
       );
     }
-    final json = _jsonOf(stored);
+    final json = jsonOf(stored);
     if (json == null) {
       // A document this build cannot read is an empty wall, not a broken
       // page: the layout and the slots both have honest defaults.
@@ -101,7 +101,7 @@ final class MultiviewRepository {
   /// The stored document as a map, however the store handed it over: a map
   /// of its own, any other map shape, or JSON text. Anything else is no
   /// document.
-  static Map<String, Object?>? _jsonOf(Object? value) {
+  static Map<String, Object?>? jsonOf(Object? value) {
     if (value is Map<String, Object?>) return value;
     if (value is Map) return Map<String, Object?>.from(value);
     if (value is String && value.trim().isNotEmpty) {

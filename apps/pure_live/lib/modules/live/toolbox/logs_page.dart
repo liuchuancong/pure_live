@@ -15,9 +15,6 @@ final class LogsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s24, inset, DsSpace.s24),
-      child: const LogsPane(),
-    );
+    return Padding(padding: EdgeInsets.fromLTRB(inset, DsSpace.s24, inset, DsSpace.s24), child: const LogsPane());
   }
 }

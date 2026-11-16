@@ -7,6 +7,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/page_layout_scope.dart';
 import 'package:pure_live/modules/live/areas/controllers/area_rooms_controller.dart';
 import 'package:pure_live/modules/live/areas/data/area_follow_repository.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
@@ -74,11 +75,20 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     final colors = DsTheme.colorsOf(context);
     final wallpaper = BackgroundActiveScope.isActiveOf(context);
     final settings = ref.watch(browseSettingsProvider);
-    final title = state?.area.areaName ?? widget.areaId;
+    // The parent's name rides along when the area knows it: a partition
+    // jumped to from a room reads "网游 · 英雄联盟", not a bare leaf.
+    final area = state?.area;
+    final parent = (area?.parentAreaName ?? '').trim();
+    final leaf = (area?.areaName ?? '').trim();
+    final title = leaf.isEmpty
+        ? widget.areaId
+        : parent.isEmpty || parent == leaf
+        ? leaf
+        : '$parent · $leaf';
     final controller = ref.read(areaRoomsProvider.notifier);
     // The display page size is the platform's own area window (the
     // controller seeds and slices it); nothing re-measures a page here.
-    final wide = MediaQuery.sizeOf(context).width >= LiveWindow.paging;
+    final wide = PageLayoutScope.isPaging(context);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final showUnplayable = ref.watch(showUnplayableProvider);
 
@@ -169,8 +179,9 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     final Widget body;
     if (state == null) {
       // `init` has not answered yet: this is loading, not emptiness — the
-      // empty state would flash "no rooms" over every area open.
-      body = const Center(child: DsSpinner());
+      // empty state would flash "no rooms" over every area open. The wall's
+      // own silhouette stands in until the rooms arrive.
+      body = const SkeletonGrid();
     } else if (!wide) {
       body = withHiddenNote(state, grid(state, state.rooms, endless: true));
     } else {
@@ -219,7 +230,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     }
 
     return Scaffold(
-      backgroundColor: wallpaper ? const Color(0x00000000) : colors.surface,
+      backgroundColor: wallpaper ? const Color(0x00000000) : colors.canvas,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

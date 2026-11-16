@@ -51,7 +51,10 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     return !cannotPlayHere(room, signedIn: signedIn);
   }
 
-  List<LiveRoom> _visibleOf(List<LiveRoom> full) => [for (final room in full) if (_playable(room)) room];
+  List<LiveRoom> _visibleOf(List<LiveRoom> full) => [
+    for (final room in full)
+      if (_playable(room)) room,
+  ];
 
   @override
   AreaRoomsState? build() {
@@ -212,13 +215,7 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
       );
     }
 
-    final failure = await _collect(
-      walk: walk,
-      rooms: rooms,
-      seen: seen,
-      target: target,
-      onProgress: publishProgress,
-    );
+    final failure = await _collect(walk: walk, rooms: rooms, seen: seen, target: target, onProgress: publishProgress);
     final open = state;
     if (open == null || open.area != current.area) return;
     if (failure != null) {
@@ -288,12 +285,7 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     final visible = _visibleOf(_fullRooms);
     final last = roomLastPage(visible.length, current.pageSize);
     final page = current.hasMore ? current.page : math.min(current.page, last);
-    state = _with(
-      current,
-      rooms: List.unmodifiable(visible),
-      hidden: _fullRooms.length - visible.length,
-      page: page,
-    );
+    state = _with(current, rooms: List.unmodifiable(visible), hidden: _fullRooms.length - visible.length, page: page);
   }
 
   AreaRoomsState _with(
