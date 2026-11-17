@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,41 @@ import 'package:pure_live/shared/shared.dart';
 
 /// One card in a Huya grid, with the stand it holds on a board.
 typedef HuyaCard = ({VodVideo video, int rank});
+
+/// The widest a video card gets on the station's pages: denser than the
+/// shared browse ceiling, because the station's cards are a 16:9 cover over
+/// one title line — at the shared 340 a wide window shows six enormous
+/// frames where the station's own home shows eight modest ones.
+const double kHuyaVideoCardWidth = 260;
+
+/// The narrowest that card may get before the row takes a column back
+/// rather than thinning the covers into slivers.
+const double kHuyaVideoCardMinWidth = 200;
+
+/// The card extent the station's grids give themselves over [content]
+/// pixels, or null where the shared measure should answer: a window too
+/// narrow for two cards is the phone's, whose own column count speaks.
+/// The viewer's own column count may only densify this wall — it raises the
+/// station's count when it asks for more — never fatten it: a low count on
+/// a wide window is exactly the fat-cover wall this station's measure
+/// exists to answer, so the station's cap always governs.
+double? huyaVideoCardExtent(double content, BrowseSettings browse) {
+  if (content < kBrowseCardMinWidth * 2 + browse.crossSpacing) return null;
+  double width(int columns) => (content - browse.crossSpacing * (columns - 1)) / columns;
+  var columns = math.max(1, ((content + browse.crossSpacing) / (kHuyaVideoCardWidth + browse.crossSpacing)).ceil());
+  if (columns > 1 && width(columns) < kHuyaVideoCardMinWidth) columns--;
+  return columnExtentForWidth(
+    content,
+    pinnedColumnsForWidth(
+      content,
+      spacing: browse.crossSpacing,
+      pinned: browse.gridColumns,
+      base: columns,
+      minWidth: kHuyaVideoCardMinWidth,
+    ),
+    browse.crossSpacing,
+  );
+}
 
 /// The module's one in-place state pane: the spinner a first read waits
 /// under, or the failure with its way back in. Every surface the grid does
@@ -112,27 +149,38 @@ final class HuyaVideoGrid extends ConsumerWidget {
     final cards = <HuyaCard>[
       for (final (index, video) in videos.indexed) (video: video.asVideo(), rank: ranked ? index + 1 : 0),
     ];
-    return PagedCardGrid<HuyaCard>(
-      scrollController: scrollController,
-      items: cards,
-      layout: ref.watch(browseLayoutProvider),
-      listMainAxisExtent: 104,
-      listItemBuilder: (context, card) => VodVideoRow(video: card.video, onOpen: () => onOpen(card.video.id)),
-      infoExtent: kVodCardInfoExtent,
-      crossSpacing: browse.crossSpacing,
-      mainSpacing: browse.mainSpacing,
-      isLoading: loading,
-      hasMore: hasMore,
-      onLoadMore: onLoadMore,
-      error: error,
-      onRetry: onRetry,
-      onRefresh: onRefresh,
-      refreshError: error,
-      emptyIcon: DsIcons.film,
-      emptyTitle: emptyTitle ?? t.common.empty,
-      emptyDescription: emptyDescription,
-      itemBuilder: (context, card) =>
-          VodVideoCard(video: card.video, rank: card.rank == 0 ? null : card.rank, onOpen: () => onOpen(card.video.id)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The station's own measure, over the content the page really has;
+        // the shared answer stands where the viewer's cap or a phone speaks.
+        final content = constraints.maxWidth - feedGutter(context).horizontal;
+        return PagedCardGrid<HuyaCard>(
+          scrollController: scrollController,
+          items: cards,
+          layout: ref.watch(browseLayoutProvider),
+          cardExtent: huyaVideoCardExtent(content, browse),
+          listMainAxisExtent: 104,
+          listItemBuilder: (context, card) => VodVideoRow(video: card.video, onOpen: () => onOpen(card.video.id)),
+          infoExtent: kVodCardInfoExtent,
+          crossSpacing: browse.crossSpacing,
+          mainSpacing: browse.mainSpacing,
+          isLoading: loading,
+          hasMore: hasMore,
+          onLoadMore: onLoadMore,
+          error: error,
+          onRetry: onRetry,
+          onRefresh: onRefresh,
+          refreshError: error,
+          emptyIcon: DsIcons.film,
+          emptyTitle: emptyTitle ?? t.common.empty,
+          emptyDescription: emptyDescription,
+          itemBuilder: (context, card) => VodVideoCard(
+            video: card.video,
+            rank: card.rank == 0 ? null : card.rank,
+            onOpen: () => onOpen(card.video.id),
+          ),
+        );
+      },
     );
   }
 }

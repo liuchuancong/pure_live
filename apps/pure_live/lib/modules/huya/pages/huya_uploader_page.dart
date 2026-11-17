@@ -243,16 +243,12 @@ final class _HomeTab extends ConsumerWidget {
             final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
             if (content <= 0) return const SizedBox.shrink();
             final spacing = browse.crossSpacing;
-            final columns = math.max(
-              1,
-              cappedColumnsForWidth(
-                content,
-                spacing: spacing,
-                ceiling: browse.gridColumns,
-                minWidth: kBrowseCardMinWidth,
-              ),
-            );
-            final width = columnExtentForWidth(content, columns, spacing) - .01;
+            // The station's own card measure, so the shelf follows the
+            // grids' density; a pane too narrow for two cards falls to the
+            // shared answer, as the grids themselves do.
+            final width =
+                huyaVideoCardExtent(content, browse) ??
+                browseSettingsExtentForWidth(content, browse, crossSpacing: spacing) - .01;
             final height = width * 9 / 16 + kVodCardInfoExtent;
             return Wrap(
               spacing: spacing,
