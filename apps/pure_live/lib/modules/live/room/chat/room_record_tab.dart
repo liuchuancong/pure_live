@@ -5,22 +5,27 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
+import 'package:pure_live/app/app.dart' show RouteNames, SettingsSectionRoute, sitesProvider;
+import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart' show roomProvider;
 import 'package:pure_live/modules/live/room/page/player_surface.dart' show toggleRoomRecording;
 import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
+import 'package:pure_live/shared/shared.dart' show AppPanel, localizedSiteName, showAppPanel;
 
-/// The room's own recording panel: what this room's capture has written, and
-/// the verbs on it — start and stop right here, so managing this room's take
-/// never means leaving the room.
+/// The room's own recording panel: what this room's capture has written and
+/// what it has already written, with the verbs on both — start and stop and
+/// play right here, so managing this room's takes never means leaving the
+/// room.
 ///
 /// The verbs are the player bar's own ([toggleRoomRecording]), called with
-/// this panel's ref: one switch, one truth, two doors. The recording centre
-/// stays a quiet line at the foot — the queue, the schedule and the finished
-/// files live there, and this panel says so without sending the viewer off
-/// for a button press.
+/// this panel's ref: one switch, one truth, two doors. The foot carries the
+/// two doors the panel itself does not replace: the recorder's settings page
+/// (the quality, the segments, the schedule's shape) and the recording centre
+/// (the queue and every room's files together). Settings goes to the settings
+/// page, not to the centre — a change of quality is not a walk through the
+/// library.
 ///
 /// The figures come from the task store, which the engine writes once a second
 /// while bytes move. The clock is the exception and ticks on its own: a number
@@ -97,9 +102,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
                 onPressed: _toggle,
                 child: Text(t.room.recordStarted),
               ),
-              _centreButton(t),
             ],
           ),
+          const SizedBox(height: DsSpace.s24),
+          _takesSection(room: room),
+          const SizedBox(height: DsSpace.s16),
+          _footer(),
         ],
       );
     }
@@ -183,9 +191,110 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(top: DsSpace.s8),
-          child: Align(alignment: AlignmentDirectional.centerStart, child: _centreButton(t)),
+          padding: const EdgeInsets.only(top: DsSpace.s24, bottom: DsSpace.s16),
+          child: _takesSection(room: room),
         ),
+        _footer(),
+      ],
+    );
+  }
+
+  /// The takes the capture has already filed for this room, newest first —
+  /// the room's own shelf, so a finished take plays without a trip to the
+  /// centre. The walk runs once per settled session; while it first runs the
+  /// section keeps quiet rather than promising rows it cannot name yet.
+  Widget _takesSection({required LiveRoom? room}) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final platform = room?.ref.platform;
+    final roomId = room?.ref.roomId;
+    final takesAsync = ref.watch(recordingLibraryProvider);
+    final takes = [
+      for (final take in takesAsync.value ?? const <RecordingTake>[])
+        if (take.playable && platform != null && take.platformId == platform && take.roomId == roomId) take,
+    ];
+    if (takes.isEmpty) {
+      // A walk still in flight says nothing: "no recordings" before the
+      // first answer lands is a lie the next frame corrects.
+      if (takesAsync.isLoading && takesAsync.value == null) return const SizedBox.shrink();
+      return Text(t.room.roomRecordTakesEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s4,
+      children: [
+        Text(
+          t.room.roomRecordTakes(count: takes.length),
+          style: theme.typography.overline.copyWith(color: colors.textSubtle),
+        ),
+        for (final take in takes) _takeRow(take, takes),
+      ],
+    );
+  }
+
+  /// One finished take: when it was taken, how long and how heavy it is —
+  /// the whole line is the way in, the same preview player the centre opens.
+  Widget _takeRow(RecordingTake take, List<RecordingTake> around) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final facts = [
+      formatRecordingMoment(take.takenAt),
+      if (take.duration case final duration?) formatRecordingDuration(duration),
+      if (take.bytes > 0) formatRecordingBytes(take.bytes),
+    ].join(' · ');
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            DsIcon(DsIcons.play, size: 16, color: colors.textMuted),
+            Expanded(
+              child: Text(
+                facts,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.text),
+              ),
+            ),
+            DsIcon(DsIcons.chevronRight, size: 14, color: colors.textSubtle),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// A platform id's display name, or the id itself when the registry does
+  /// not know it — the preview player's group labels speak the site's name.
+  String _platformName(String id) {
+    final site = ref.read(sitesProvider).getById(id);
+    return site == null ? id : localizedSiteName(site);
+  }
+
+  /// The quiet foot: the recorder's settings page and the centre. Settings
+  /// is the section's own page — quality, segments, schedule shape — not a
+  /// walk through the library; the centre keeps the queue and every room's
+  /// files together. A push, not a `go`: the room stays under them.
+  Widget _footer() {
+    final t = context.t;
+    return Wrap(
+      spacing: DsSpace.s8,
+      runSpacing: DsSpace.s6,
+      children: [
+        DsButton(
+          variant: DsButtonVariant.ghost,
+          size: DsSize.sm,
+          onPressed: () {
+            openSettingsSection(ref, SettingsSection.recording);
+            unawaited(context.push(SettingsSectionRoute(section: SettingsSection.recording.name).location));
+          },
+          leading: const DsIcon(DsIcons.settings, size: 15),
+          child: Text(t.recorder.settingsOpen),
+        ),
+        _centreButton(t),
       ],
     );
   }
@@ -265,3 +374,17 @@ Future<void> toggleRoomAutoRecord(BuildContext context, WidgetRef ref, LiveRoom 
     status: DsStatus.success,
   );
 }
+
+/// Opens the room's recording management as its own panel: the same surface
+/// the chat side's 录制 tab carries — this room's capture, its facts and its
+/// finished takes — reached straight from the more menu, no chat drawer in
+/// between. The content keeps its tab body's height so its list scrolls in
+/// place; the sheet's own width rule stands.
+Future<void> showRoomRecordManager(BuildContext context) => showAppPanel<void>(
+  context: context,
+  builder: (sheetContext) => AppPanel(
+    title: Text(sheetContext.t.room.tabRecording),
+    minChildHeight: 0,
+    child: const SizedBox(height: 480, child: RoomRecordTab()),
+  ),
+);

@@ -42,9 +42,13 @@ enum _ChatTab { danmaku, superChats, recording, shield }
 /// their tables over inside the messages, so the composer's panel reads
 /// what the column has seen instead of fetching a table of its own. First
 /// sight wins a code's place; the picture travels with it.
-final chatSeenEmotesProvider = Provider<List<LiveEmote>>((ref) {
+final Provider<List<LiveEmote>> chatSeenEmotesProvider = Provider.autoDispose<List<LiveEmote>>((ref) {
   final seen = <String, String>{};
-  for (final message in ref.watch(roomChatProvider)) {
+  final messages = ref.watch(roomChatProvider);
+  // The panel is a moment's view: the newest talk names the codes it
+  // offers, and scanning the whole capped feed per frame (the feed
+  // re-emits that often) buys nothing over the tail.
+  for (final message in messages.length > 60 ? messages.sublist(messages.length - 60) : messages) {
     for (final emote in message.emotes) {
       final code = emote.code.trim();
       if (code.isEmpty || emote.url.trim().isEmpty) continue;
@@ -105,7 +109,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // A line the platform gave no id cannot serve as a mark; fall back to the
     // rows there are, which is right until the feed fills up.
     final unseen = mark == null || mark.isEmpty
-        ? (previous == null || next.length <= previous.length ? _unread : next.length)
+        ? (previous == null || next.length <= previous.length ? _unread : next.where(_countable).length)
         : _after(next, mark);
     if (unseen == _unread) return;
     setState(() => _unread = unseen);
@@ -135,9 +139,14 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     unawaited(writeChatTabName(value.name));
   }
 
+  /// The lines the badge counts: the talk itself. Gifts, paid cards and
+  /// the session's own notices are surfaces of their own, not unread talk.
+  static bool _countable(LiveMessage line) => line.type == LiveMessageType.chat;
+
   static int _after(List<LiveMessage> chat, String mark) {
     final index = chat.lastIndexWhere((line) => line.messageId == mark);
-    return index < 0 ? chat.length : chat.length - index - 1;
+    if (index < 0) return chat.where(_countable).length;
+    return chat.skip(index + 1).where(_countable).length;
   }
 
   @override

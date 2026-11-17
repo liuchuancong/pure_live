@@ -1,6 +1,8 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:pure_live/shared/widgets/app_dialog_host.dart' show appDialogHost;
+
 /// The room a dialog's words keep even when they are one line: below it a
 /// bare confirm reads as a strip, not a card.
 const double kAppDialogContentFloor = 96;
@@ -71,14 +73,23 @@ Future<T?> showAppDialog<T>({
   DsScrim scrim = DsScrim.dim,
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
-}) => showDsDialog<T>(
-  context: context,
-  builder: builder,
-  dismissible: dismissible,
-  scrim: scrim,
-  useRootNavigator: useRootNavigator,
-  routeSettings: routeSettings,
-);
+}) {
+  // A TV window's host takes the dialog first (the remote lock and the
+  // focus guard); off that shape the plain dialog stands.
+  final host = appDialogHost;
+  if (host != null) {
+    final taken = host<T>(context, builder, dismissible: dismissible);
+    if (taken != null) return taken;
+  }
+  return showDsDialog<T>(
+    context: context,
+    builder: builder,
+    dismissible: dismissible,
+    scrim: scrim,
+    useRootNavigator: useRootNavigator,
+    routeSettings: routeSettings,
+  );
+}
 
 /// Asks a yes/no question and returns whether the user confirmed. The safe
 /// choice ([cancelLabel]) comes first and has focus; Escape, a tap on the

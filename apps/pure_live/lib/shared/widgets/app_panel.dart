@@ -1,6 +1,8 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:pure_live/shared/widgets/app_dialog_host.dart' show appDialogHost;
+
 /// The room a sheet's content keeps even when it is a few rows: below it a
 /// short sheet reads as a sliver, not a panel.
 const double kAppPanelContentFloor = 280;
@@ -84,14 +86,23 @@ Future<T?> showAppPanel<T>({
   DsScrim scrim = DsScrim.dim,
   bool useRootNavigator = true,
   RouteSettings? routeSettings,
-}) => showDsPanel<T>(
-  context: context,
-  builder: builder,
-  presentation: presentation,
-  dismissible: dismissible,
-  detents: detents,
-  initialDetent: initialDetent,
-  scrim: scrim,
-  useRootNavigator: useRootNavigator,
-  routeSettings: routeSettings,
-);
+}) {
+  // The TV window's host takes the panel first, the dialog seam's own
+  // rule; off that shape the plain sheet stands.
+  final host = appDialogHost;
+  if (host != null) {
+    final taken = host<T>(context, builder, dismissible: dismissible);
+    if (taken != null) return taken;
+  }
+  return showDsPanel<T>(
+    context: context,
+    builder: builder,
+    presentation: presentation,
+    dismissible: dismissible,
+    detents: detents,
+    initialDetent: initialDetent,
+    scrim: scrim,
+    useRootNavigator: useRootNavigator,
+    routeSettings: routeSettings,
+  );
+}

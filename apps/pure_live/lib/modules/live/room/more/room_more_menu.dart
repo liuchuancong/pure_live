@@ -9,10 +9,11 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/providers/boot/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/chat/room_record_tab.dart' show showRoomRecordManager;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/room_details.dart' show copyRoomLink, openRoomExternally, shareRoom;
 import 'package:pure_live/modules/live/room/page/room_shortcuts.dart' show RoomShortcutBinding, showRoomShortcuts;
-import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomSleepTimer;
+import 'package:pure_live/modules/live/room/panels/room_panel.dart' show showRoomDetails, showRoomSleepTimer;
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show showRoomSwitcher;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart' show sleepTimerProvider;
 import 'package:pure_live/shared/shared.dart';
@@ -179,6 +180,32 @@ final class _RoomMoreContent extends ConsumerWidget {
                   openChat();
                 },
               ),
+            // The room card's facts, from the one container every shape
+            // reaches: a TV's bar has no info verb of its own, so the menu
+            // is where its 详情 lives.
+            DsListRow(
+              title: Text(t.room.details),
+              leading: const DsIcon(DsIcons.info),
+              showChevron: true,
+              onPressed: () {
+                Navigator.of(context).pop();
+                unawaited(showRoomDetails(context));
+              },
+            ),
+            // This room's recording and its finished takes, on a panel of
+            // their own: the same surface the chat side's 录制 tab carries,
+            // reached here so the capture and its files never need the chat
+            // drawer opened first. Settings inside goes to the recorder's
+            // settings page, the centre to the queue and every room's files.
+            DsListRow(
+              title: Text(t.room.tabRecording),
+              leading: const DsIcon(DsIcons.disc),
+              showChevron: true,
+              onPressed: () {
+                Navigator.of(context).pop();
+                unawaited(showRoomRecordManager(context));
+              },
+            ),
             // The bars' auto-hide pace: the row opens its own choice panel —
             // 常显, then the three delays — where the pick lands like every
             // other choice in the menu.

@@ -4,6 +4,7 @@ library;
 
 export 'action_panel.dart';
 export 'app_dialog.dart';
+export 'app_dialog_host.dart';
 export 'app_panel.dart';
 export 'choice_dialog.dart';
 export 'chrome_icon_button.dart';

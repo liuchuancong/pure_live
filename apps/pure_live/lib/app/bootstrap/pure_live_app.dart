@@ -61,6 +61,10 @@ class PureLiveApp extends ConsumerStatefulWidget {
 }
 
 final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
+  /// The dialog seam this window bound, kept so its dispose unbinds only
+  /// its own binding.
+  AppDialogHost? _boundDialogHost;
+
   late AppThemeSettings _settings;
 
   /// The arbitrary accent colour in force; null for a named tone or the
@@ -95,6 +99,14 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       // still act on it, and it is one route away from wherever they are.
       recordingTapHandler = () => ref.read(appRouterProvider).go(const RecorderRoute().location);
     }
+    // The dialog seam binds per window: on this window's TV form factor the
+    // app's dialogs and panels take the TV dialog's shape (the remote lock,
+    // the focus guard); off it the binder declines and the plain ones stand.
+    _boundDialogHost = <T>(context, builder, {dismissible = true}) {
+      if (ref.read(platformRuntimeProvider).environment.runtime.formFactor != FormFactor.tv) return null;
+      return showTvDialog<T>(context: context, builder: builder, dismissible: dismissible);
+    };
+    appDialogHost = _boundDialogHost;
     // The stored choices land before the first frame builds, so the boot
     // never flashes the defaults. The settings' own builder hook supplies
     // the defaults; the store only overrides what the viewer pinned.
@@ -335,6 +347,17 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleNewWindowKey);
+    // Unbind the process-wide seams: a notification tap after teardown
+    // must not reach a dead element. Only the primary ever bound them, so
+    // only the primary unbinds — a secondary window's app closing must not
+    // clear the primary's bindings.
+    if (ref.read(isPrimaryWindowProvider)) {
+      appProxyLookup = null;
+      recordingTapHandler = null;
+    }
+    // The dialog seam is this window's own: unbind it only while it is
+    // still the one bound.
+    if (appDialogHost != null && identical(appDialogHost, _boundDialogHost)) appDialogHost = null;
     super.dispose();
   }
 
