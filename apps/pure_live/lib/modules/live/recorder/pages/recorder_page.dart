@@ -532,6 +532,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     );
   }
 
+  /// The playability answers, one disk walk per task row: the open verb and
+  /// the two preview verbs read the same answer, and the task table's
+  /// re-emits (about once a second while a take writes) hit the cache
+  /// instead of re-walking the folder on the UI thread. The key is the
+  /// row's own identity facts, so a take that changed — a join renamed it,
+  /// the preview deleted its file — walks again.
+  final Map<String, String?> _playableCache = {};
+
+  String? _playableOf(RecordingTask task) {
+    final key = '${task.id}|${task.filePath}|${task.state.name}';
+    if (_playableCache.length > 400) _playableCache.clear();
+    return _playableCache.putIfAbsent(key, () => playableFileAt(task.filePath));
+  }
+
   /// One task as its card, with the actions that depend on the store's answer.
   List<Widget> _taskCards(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
     final engine = ref.read(recorderEngineProvider);
@@ -542,14 +556,14 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         platformName: _platformName(task.platform),
         // The card's press opens the recording, the same door the library's row
         // uses; the room is a menu step away, as it is there.
-        onOpen: playableFileAt(task.filePath) == null
+        onOpen: _playableOf(task) == null
             ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
             : () => unawaited(_openPreview(task)),
         // The menu's room entry always opens the room, never the take.
         onOpenRoom: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
         onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
         onToggleWatch: () => unawaited(_setWatched(task, watched: !task.enabled)),
-        onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
+        onDelete: () => unawaited(_deleteTask(task)),
         onSchedule: () => unawaited(_editSchedule(task)),
         onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
             ? () => unawaited(_startNow(task))
@@ -584,6 +598,16 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   Future<void> _setWatched(RecordingTask task, {required bool watched}) =>
       ref.read(recordingTasksProvider.notifier).setEnabled(task.id, enabled: watched);
 
+  /// Deletes a task. A capture this window is running stops first: a row
+  /// that goes while its capture lives would leave a recording no surface
+  /// can stop, and the library's delete would walk a folder the writer is
+  /// still filling.
+  Future<void> _deleteTask(RecordingTask task) async {
+    final engine = ref.read(recorderEngineProvider);
+    if (engine.isRecording(task.id)) await engine.stop(task.id);
+    await ref.read(recordingTasksProvider.notifier).remove(task.id);
+  }
+
   /// Ends a running capture; its finished segments stay, and the task's
   /// saved state arrives through the store the page already watches.
   Future<void> _stop(String taskId) async {
@@ -591,7 +615,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     if (!mounted) return;
     showDsToast(
       context: context,
-      title: failure ?? context.t.recorder.stateSaved,
+      title: failure == null ? context.t.recorder.stateSaved : recorderFailureText(context.t, failure),
       status: failure == null ? DsStatus.success : DsStatus.danger,
     );
   }
@@ -642,7 +666,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     if (task.postProcessing || task.state == RecordingTaskState.recording) return false;
     // A folder that only holds the archive (its video deleted from the
     // preview) has nothing to play, however much it still exists.
-    return playableFileAt(task.filePath) != null;
+    return _playableOf(task) != null;
   }
 
   /// Opens the built-in preview on [task]'s take, with the centre's other
@@ -672,9 +696,16 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         if (row == null) return;
         // The row keeps naming the take's folder, so 打开文件夹 still works
         // on what is left in it.
-        await ref
-            .read(recordingTasksProvider.notifier)
-            .setStopped(item.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+        if (row.state == RecordingTaskState.stopped) {
+          await ref
+              .read(recordingTasksProvider.notifier)
+              .setStopped(item.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+        } else {
+          // A waiting or failed row keeps its own state — only the gone
+          // file's record clears. A file-deleted verdict here would read
+          // over a subscription that is about to start.
+          await ref.read(recordingTasksProvider.notifier).add(row.copyWith(filePath: row.takeDirectory, bytes: 0));
+        }
       },
     );
   }
@@ -739,7 +770,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       context: context,
       title: failure == null
           ? t.recorder.stopAllDone(count: stopped)
-          : t.recorder.stopAllPartial(count: stopped, error: failure),
+          : t.recorder.stopAllPartial(count: stopped, error: recorderFailureText(t, failure)),
       status: failure == null ? DsStatus.success : DsStatus.warning,
     );
   }
@@ -811,10 +842,15 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     );
     if (draft == null || !mounted) return;
     final days = draft.days.toList()..sort();
+    // The panel's confirmed window lands on the row as it is now, not on
+    // the snapshot the panel opened with: a capture the monitor started in
+    // between must not be written back over.
+    final current = ref.read(recordingTasksProvider).tasks.where((item) => item.id == task.id).firstOrNull;
+    if (current == null) return;
     await ref
         .read(recordingTasksProvider.notifier)
         .add(
-          task.copyWith(
+          current.copyWith(
             enabled: draft.check,
             scheduleEnabled: draft.enabled,
             scheduleDays: days.isEmpty ? const [1, 2, 3, 4, 5, 6, 7] : days,

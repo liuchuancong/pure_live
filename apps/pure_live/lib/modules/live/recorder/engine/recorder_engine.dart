@@ -669,6 +669,16 @@ final class RecorderEngine {
       danmaku: danmaku,
       claim: claim,
     );
+    // The cap was checked before the awaits above; a concurrent start (the
+    // monitor's tick against a manual one) can have taken the slots since.
+    // This re-check and the insert are one synchronous step, so two starts
+    // cannot both slip through.
+    if (settings.maxTasks > 0 && _sessions.length >= settings.maxTasks) {
+      await releaseRecordingClaim(claim);
+      final row = repo.taskById(task.id) ?? task;
+      await repo.save(row.copyWith(state: RecordingTaskState.waiting));
+      return 'too many recordings (${_sessions.length}/${settings.maxTasks})';
+    }
     _sessions[task.id] = session;
 
     try {
@@ -703,11 +713,37 @@ final class RecorderEngine {
       return 'cannot start: ${_errorOf(error)}';
     }
 
-    await repo.setRunning(
-      task.id,
-      takeDirectory: root,
-      container: settings.container == RecordingFileContainer.mp4 ? 'mp4' : 'ts',
-    );
+    try {
+      await repo.setRunning(
+        task.id,
+        takeDirectory: root,
+        container: settings.container == RecordingFileContainer.mp4 ? 'mp4' : 'ts',
+      );
+    } on Object catch (error, stack) {
+      // The capture is live, but the store cannot carry it: the row would
+      // stay a stub — no progress, no size cap, no disk watermark, no state
+      // listener, and no auto-stop when the stream dies. Tearing the take
+      // down is the honest answer; the viewer retries with a store that
+      // works.
+      await session.quiet();
+      _sessions.remove(task.id);
+      await releaseRecordingClaim(session.claim);
+      unawaited(manager.dispose());
+      try {
+        await repo.setEnded(task.id, RecordingTaskState.failed, errorText: _errorOf(error));
+      } on Object {
+        // The store is failing wholesale; the boot recovery settles the row.
+      }
+      appLog
+          .forCategory('recorder')
+          .error(
+            'the running entry could not be written; the take was torn down',
+            fields: {'task': task.id, 'platform': task.platform, 'room': task.roomId},
+            error: error,
+            stackTrace: stack,
+          );
+      return 'cannot start: ${_errorOf(error)}';
+    }
     // The store's running entry is the session's truth, including the start
     // the repository stamped; a later join guards its file update on it.
     session
@@ -1096,16 +1132,24 @@ final class RecorderEngine {
     await releaseRecordingClaim(session.claim);
     final repo = _ref.read(recordingRepositoryProvider).value;
     final directory = session.backend.activeDirectory ?? '';
-    await repo?.setEnded(
-      session.task.id,
-      failed ? RecordingTaskState.failed : RecordingTaskState.stopped,
-      filePath: directory.isEmpty ? null : directory,
-      bytes: bytes,
-      durationMs: durationMs,
-      errorText: errorText,
-      postProcessing: !failed,
-      warning: failed ? '' : warning,
-    );
+    try {
+      await repo?.setEnded(
+        session.task.id,
+        failed ? RecordingTaskState.failed : RecordingTaskState.stopped,
+        filePath: directory.isEmpty ? null : directory,
+        bytes: bytes,
+        durationMs: durationMs,
+        errorText: errorText,
+        postProcessing: !failed,
+        warning: failed ? '' : warning,
+      );
+    } on Object catch (error) {
+      // The row stays recording until the boot recovery settles it; the
+      // manager and the finalize below must run regardless.
+      appLog
+          .forCategory('recorder')
+          .warning('the end entry could not be written', fields: {'task': session.task.id, 'error': '$error'});
+    }
     final settings = _ref.read(recordingSettingsProvider);
     if (!failed) {
       // The task is already saved and visible; the join/transcode/rename

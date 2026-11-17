@@ -300,6 +300,7 @@ typedef RecordingTasksState = ({bool ready, List<RecordingTask> tasks});
 /// room window mirrors the tasks from its seed, as its own subclass does.
 class RecordingTasksController extends Notifier<RecordingTasksState> {
   StreamSubscription<void>? _subscription;
+  RecordingTaskRepository? _subscribedTo;
 
   @override
   RecordingTasksState build() {
@@ -310,7 +311,14 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     // forever.
     var initial = (ready: false, tasks: const <RecordingTask>[]);
     ref.watch(recordingRepositoryProvider).whenData((repository) {
-      _subscription ??= repository.watch().listen((_) => _refresh(repository));
+      // The subscription rides the repository instance: a reopened store
+      // (an invalidated provider) rebinds here instead of listening to the
+      // old instance forever.
+      if (!identical(_subscribedTo, repository)) {
+        unawaited(_subscription?.cancel() ?? Future<void>.value());
+        _subscribedTo = repository;
+        _subscription = repository.watch().listen((_) => _refresh(repository));
+      }
       initial = (ready: true, tasks: repository.list());
     });
     return initial;

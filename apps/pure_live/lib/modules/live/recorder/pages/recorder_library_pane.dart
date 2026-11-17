@@ -20,7 +20,8 @@ import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart'
     show formatRecordingBytes, formatRecordingDuration, formatRecordingMoment;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingTasksProvider;
-import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show kRecordingFileDeletedWarning;
+import 'package:pure_live/modules/live/recorder/data/recording_task.dart'
+    show RecordingTaskState, kRecordingFileDeletedWarning;
 import 'package:pure_live/modules/live/recorder/pages/recorder_card_parts.dart';
 import 'package:pure_live/shared/shared.dart'
     show
@@ -407,7 +408,14 @@ final class _RecorderLibraryPaneState extends ConsumerState<RecorderLibraryPane>
       removed++;
       final row = take.task;
       if (row == null) continue;
-      await store.setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+      if (row.state == RecordingTaskState.stopped) {
+        await store.setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+      } else {
+        // A waiting or failed row keeps its own state — only the gone
+        // file's record clears, or the card reads 文件已删除 over a
+        // subscription that is about to start.
+        await store.add(row.copyWith(filePath: row.takeDirectory, bytes: 0));
+      }
     }
     return removed;
   }

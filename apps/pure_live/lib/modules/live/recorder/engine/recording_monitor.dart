@@ -47,8 +47,7 @@ final class RecordingLiveMonitor {
       recordingSettingsProvider.select((settings) => settings.schedule.pollingEnabled),
       (previous, next) => _arm(immediate: true),
     );
-    unawaited(_recoverInterrupted());
-    unawaited(_recoverStaleProcessing());
+    unawaited(_recover());
     _ref.listen(recordingTasksProvider.select(_monitorKey), (previous, next) => _arm(immediate: true));
     _ref.onDispose(_stop);
     _arm(immediate: true);
@@ -109,6 +108,15 @@ final class RecordingLiveMonitor {
       // A store that cannot open leaves the tasks as they were.
       appLog.forCategory('recorder.monitor').warning('recording store failed to open', fields: {'error': '$error'});
     }
+  }
+
+  /// The boot recovery, in order: the interrupted takes settle first (their
+  /// rows and their finalize writes land), then the stale post-processing
+  /// sweep reads the settled rows — a sweep that ran alongside could clear
+  /// a flag the retry had just raised.
+  Future<void> _recover() async {
+    await _recoverInterrupted();
+    await _recoverStaleProcessing();
   }
 
   /// Clears a `postProcessing` flag left by a process that died.
@@ -240,7 +248,11 @@ final class RecordingLiveMonitor {
   Duration _delayFor(RecordingTask task) {
     if (!task.checkBackoff) return Duration(seconds: task.checkSeconds);
     final failures = _failures[task.id] ?? 0;
-    final stretched = task.checkSeconds * math.pow(2, failures).toInt();
+    // A room that never answers keeps counting failures; past a dozen the
+    // doubling has long crossed the cap, and an unclamped exponent overflows
+    // the int into a negative delay — a room the monitor then probes every
+    // tick, or a sweep that dies on the cast outright.
+    final stretched = task.checkSeconds * math.pow(2, math.min(failures, 16)).toInt();
     return Duration(seconds: math.min(stretched, task.maxCheckSeconds));
   }
 
@@ -401,7 +413,9 @@ final class RecordingLiveMonitor {
         final site = _ref.read(sitesProvider).getById(task.platform);
         if (site == null) continue;
         try {
-          await engine.start(task, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());
+          // `current`, not the sweep's opening snapshot: the platform read
+          // can take seconds, and an edit landing in between must survive.
+          await engine.start(current, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());
         } on Object catch (error, stack) {
           appLog
               .forCategory('recorder.monitor')
