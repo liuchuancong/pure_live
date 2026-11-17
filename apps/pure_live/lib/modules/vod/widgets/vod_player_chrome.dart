@@ -311,23 +311,20 @@ final class _VodSeekBarState extends State<VodSeekBar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.showPreview && picture != null)
-          Container(
-            width: _frameWidth,
-            height: _frameHeight,
-            decoration: DsBoxDecoration(
+          ClipRRect(
+            borderRadius: BorderRadius.circular(theme.radii.control(8)),
+            child: ColoredBox(
               color: OnVideoColors.scrimDeep,
-              borderRadius: BorderRadius.circular(theme.radii.control(8)),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image(
-              image: cachedImage(
-                picture,
-                policy: ImageCachePolicies.videoCover,
-                width: frame == null ? _frameWidth.round() : null,
+              child: Image(
+                image: cachedImage(
+                  picture,
+                  policy: ImageCachePolicies.videoCover,
+                  width: frame == null ? _frameWidth.round() : null,
+                ),
+                fit: BoxFit.cover,
+                width: _frameWidth,
+                height: _frameHeight,
               ),
-              fit: BoxFit.cover,
-              width: _frameWidth,
-              height: _frameHeight,
             ),
           ),
         Padding(
