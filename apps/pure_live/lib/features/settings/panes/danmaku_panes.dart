@@ -279,7 +279,7 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        _coreSection(context),
+        _massModeSection(context),
         DsListSection(
           children: [
             DsListRow(
@@ -331,44 +331,27 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
     );
   }
 
-  /// The five controls most viewers touch: where the layer flies, how dense it
-  /// is, how opaque, how large and how fast. Everything else waits behind the
-  /// advanced row.
-  Widget _coreSection(BuildContext context) {
+  /// The knob the viewer reaches for first — how many lines the layer may
+  /// hold. The density presets that used to stand here only shadowed it:
+  /// mass mode is the ceiling's own switch, so it leads the page, and the
+  /// same-screen count it overrides waits in the performance section.
+  Widget _massModeSection(BuildContext context) {
     final t = context.t;
     final style = ref.watch(danmakuStyleProvider);
     final controller = ref.read(danmakuStyleProvider.notifier);
-    final density = style.massMode ? 2 : (style.maxVisibleCount > 60 ? 1 : 0);
     return DsListSection(
       children: [
         SettingsConfigRow(
-          leading: const DsIcon(DsIcons.layers),
-          title: t.settings.styleDensity,
-          controlWidth: 220,
-          control: DsSegmentedControl<int>(
-            value: density,
-            semanticLabel: t.settings.styleDensity,
-            segments: [
-              DsSegment(value: 0, label: Text(t.settings.styleDensityNormal)),
-              DsSegment(value: 1, label: Text(t.settings.styleDensityMore)),
-              DsSegment(value: 2, label: Text(t.settings.styleDensityOverlap)),
-            ],
-            onChanged: (value) => unawaited(_setDensity(controller, value)),
+          leading: const DsIcon(DsIcons.waves),
+          title: t.settings.styleMassMode,
+          description: t.settings.styleMassModeDesc,
+          control: DsSwitch(
+            value: style.massMode,
+            onChanged: (value) => unawaited(controller.setMassMode(value: value)),
           ),
         ),
       ],
     );
-  }
-
-  Future<void> _setDensity(DanmakuStyleController controller, int value) async {
-    switch (value) {
-      case 2:
-        await controller.setDensity(massMode: true, maxVisibleCount: 120);
-      case 1:
-        await controller.setDensity(massMode: false, maxVisibleCount: 80);
-      default:
-        await controller.setDensity(massMode: false, maxVisibleCount: 48);
-    }
   }
 
   /// Restores every knob the flying layer owns, whichever category shows it.
@@ -771,8 +754,8 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
               semanticFormatter: (value) => t.settings.styleFpsValue(count: '${value.round()}'),
             ),
           ),
-        // Mass mode takes over the same-screen count and the dispatch tick,
-        // so the two knobs it overrides step out while it is on.
+        // Mass mode leads the page above; these are the two knobs it takes
+        // over, so they step out while it is on.
         if (!style.massMode) ...[
           SettingsConfigRow(
             leading: const DsIcon(DsIcons.list),
@@ -790,14 +773,6 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             ),
           ),
         ],
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.waves),
-          title: t.settings.styleMassMode,
-          control: DsSwitch(
-            value: style.massMode,
-            onChanged: (value) => unawaited(controller.setMassMode(value: value)),
-          ),
-        ),
         if (!style.massMode)
           SettingsConfigRow(
             leading: const DsIcon(DsIcons.send),
