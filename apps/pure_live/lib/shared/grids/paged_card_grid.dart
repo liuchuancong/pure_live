@@ -221,7 +221,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       isLoading: widget.isLoading,
       showRefreshProgress: widget.showRefreshProgress,
       hasMore: hasMore,
-      pagesOnScrollToEnd: pages,
+      paged: pages,
       onLoadMore: onLoadMore,
       error: widget.error,
       onRetry: widget.onRetry,

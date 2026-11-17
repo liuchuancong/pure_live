@@ -263,7 +263,7 @@ final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T
     setState(() => _asked = next);
   }
 
-  Widget _grid(List<T> items, {required bool pagesOnScrollToEnd, bool hasMore = false}) {
+  Widget _grid(List<T> items, {required bool paged, bool hasMore = false}) {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         _onScroll(notification);
@@ -352,14 +352,14 @@ final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T
     final wide = PageLayoutScope.isPaging(context);
     // The grid keeps the page's gutter, the live module's measure.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    if (!wide) return _grid(widget.items, pagesOnScrollToEnd: false, hasMore: widget.hasMore);
+    if (!wide) return _grid(widget.items, paged: false, hasMore: widget.hasMore);
     final end = _page * widget.pageSize;
     final shown = widget.items.length <= end ? widget.items : widget.items.sublist(0, end);
     final moreInHand = widget.items.length > end;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: _grid(shown, pagesOnScrollToEnd: true, hasMore: moreInHand || widget.hasMore)),
+        Expanded(child: _grid(shown, paged: true, hasMore: moreInHand || widget.hasMore)),
         // A collection that fills one page never grows a pager.
         if (_inHandPages + (widget.hasMore ? 1 : 0) > 1)
           Padding(

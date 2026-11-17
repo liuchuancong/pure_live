@@ -148,9 +148,10 @@ enum CardLayout {
 /// the first page loads, an honest error or empty state in their place,
 /// and the next page fetched as the viewer nears the end.
 ///
-/// With [CardGrid.pagesOnScrollToEnd] that end-of-list ask pages the feed
-/// instead of growing it: only a real scroll to the bottom moves on, so the
-/// wheel and a number row over the same catalogue stay in step.
+/// A paged feed ([CardGrid.paged]) never asks from the scroll: its pager is
+/// the only thing that advances it, so the wheel can never replace the page
+/// the viewer is reading — the bottom they reached stays on screen until
+/// they themselves turn the page.
 ///
 /// Every room/area feed in the app renders through this one widget, so
 /// paging, spacing and the loading states stay the same everywhere.
@@ -169,7 +170,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.showRefreshProgress = true,
     this.hasMore = false,
     this.onLoadMore,
-    this.pagesOnScrollToEnd = false,
+    this.paged = false,
     this.error,
     this.onRetry,
     this.onRefresh,
@@ -270,11 +271,12 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// Fetches the next page. Fired at most once while [isLoading].
   final Future<void> Function()? onLoadMore;
 
-  /// When true, [onLoadMore] means "show the next page" rather than "append
-  /// more rooms": only the real end of a page the viewer can actually scroll
-  /// asks for it, and a page that fits the viewport never runs on by itself.
-  /// A paged desktop feed sets this so its wheel and its number row agree.
-  final bool pagesOnScrollToEnd;
+  /// Whether this feed is a pager-paged one: the pager is the only thing
+  /// that advances it. Scrolling or focusing to the end asks for nothing —
+  /// a page the wheel silently replaced used to hide its own bottom from
+  /// the viewer, who would only meet that rows again as page two's head.
+  /// Endless feeds (false) append as the viewer nears the end.
+  final bool paged;
 
   /// The failure to show when [items] is empty.
   final String? error;
@@ -318,10 +320,6 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   /// How close to the end the next page may be asked for.
   static const double _loadMoreThreshold = 600;
-
-  /// How close to the end counts as "at the end" when the grid pages
-  /// ([CardGrid.pagesOnScrollToEnd]) instead of appending.
-  static const double _pageEndThreshold = 24;
 
   /// How much room a focused card keeps from the viewport's edge when the
   /// D-pad scrolls it into view.
@@ -451,16 +449,11 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     // bubbles through here too, and its metrics say nothing about this
     // feed's head or end.
     if (notification.depth != 0) return;
+    // A paged feed never asks from the scroll: its pager is the only
+    // advancer, so reaching a page's bottom leaves it on screen until the
+    // viewer turns the page themselves.
+    if (widget.paged) return;
     final offset = notification.metrics.pixels;
-    if (widget.pagesOnScrollToEnd) {
-      // Paging: the ask needs a page that scrolls and an end that is really
-      // reached. A page shorter than the viewport would otherwise chain
-      // forward the moment it is drawn.
-      if (notification.metrics.maxScrollExtent <= 0) return;
-      if (offset < notification.metrics.maxScrollExtent - _pageEndThreshold) return;
-      _askForMore();
-      return;
-    }
     if (offset < notification.metrics.maxScrollExtent - _loadMoreThreshold) return;
     _askForMore();
   }
@@ -474,9 +467,10 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   void _onItemFocus(int index, bool focused) {
     if (!focused) return;
-    // Paging moves only when the viewer reaches the end on purpose: a D-pad
-    // stop in the last row would otherwise flip the page under them.
-    if (widget.pagesOnScrollToEnd) return;
+    // A paged feed moves by its pager alone: a D-pad stop in the last row
+    // must not flip the page under the viewer. An endless one pre-loads,
+    // so the D-pad never stops one row short of the end.
+    if (widget.paged) return;
     // The last two rows pre-load the next page, so the D-pad never stops
     // one row short of the end of an infinite feed.
     final columns = math.max(1, _columns);
@@ -642,7 +636,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         description: widget.emptyDescription == null ? null : Text(widget.emptyDescription!),
       );
     }
-    if (widget.hasMore && widget.onLoadMore != null && !widget.pagesOnScrollToEnd) _fillViewportIfShort();
+    if (widget.hasMore && widget.onLoadMore != null && !widget.paged) _fillViewportIfShort();
     final loadingRow = widget.isLoading && widget.hasMore;
     final refresh = widget.onRefresh;
     final Widget collection;

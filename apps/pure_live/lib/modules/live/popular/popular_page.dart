@@ -321,7 +321,7 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
       hasMore: state.hasMore,
       // Desktop: the wheel's end is the pager's next page, so it only moves
       // on a scroll that really reached the bottom.
-      pagesOnScrollToEnd: wide,
+      paged: wide,
       onLoadMore: () async {
         if (!wide) {
           await controller.loadMore(platform);
@@ -572,7 +572,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       // The end of the results pages them, exactly as the browse feed does:
       // the phone appends, the desktop moves its pager one page.
       hasMore: search.hasMore,
-      pagesOnScrollToEnd: wide,
+      paged: wide,
       onLoadMore: () async {
         if (!wide) {
           await ref.read(searchProvider.notifier).loadMore();

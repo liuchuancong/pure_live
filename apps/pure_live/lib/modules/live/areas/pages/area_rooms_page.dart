@@ -163,7 +163,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         // for its next page — the same ask its arrows and numbers make — and
         // only a scroll that really reached the bottom moves it on.
         hasMore: open.hasMore,
-        pagesOnScrollToEnd: !endless,
+        paged: !endless,
         onLoadMore: () async {
           if (endless) {
             await controller.loadMore();
