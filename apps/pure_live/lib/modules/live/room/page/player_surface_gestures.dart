@@ -30,7 +30,7 @@ extension _PlayerSurfacePictureGestures on _PlayerSurfaceState {
     if (item == null || !shownBefore || !ref.read(roomProvider).playback.playing) {
       // The message was frozen on pointer-down; this tap was never going to
       // open it, so it flies on and the bars take the tap instead.
-      if (item != null) widget.barrage?.resumeAllPaused();
+      if (item != null) ref.read(barrageProvider)?.resumeAllPaused();
       _toggleControls();
       return;
     }
@@ -56,7 +56,7 @@ extension _PlayerSurfacePictureGestures on _PlayerSurfaceState {
     if (item == null && !ref.read(danmakuHoldProvider) && press != null) {
       // Holding is off, so the message was not frozen on pointer-down; find
       // it under the press now, just before the panel opens.
-      item = widget.barrage?.pauseItemAt(press.dx, press.dy);
+      item = ref.read(barrageProvider)?.pauseItemAt(press.dx, press.dy);
     }
     _heldDanmaku = null;
     _holdOrigin = null;
@@ -76,7 +76,7 @@ extension _PlayerSurfacePictureGestures on _PlayerSurfaceState {
         isLocal: item.id?.startsWith('local-') ?? false,
       );
     } finally {
-      widget.barrage?.resumeAllPaused();
+      ref.read(barrageProvider)?.resumeAllPaused();
     }
   }
 
@@ -92,7 +92,7 @@ extension _PlayerSurfacePictureGestures on _PlayerSurfaceState {
     _holdOrigin = event.position;
     _pressLocal = event.localPosition;
     if (!ref.read(danmakuHoldProvider)) return;
-    final item = widget.barrage?.pauseItemAt(event.localPosition.dx, event.localPosition.dy);
+    final item = ref.read(barrageProvider)?.pauseItemAt(event.localPosition.dx, event.localPosition.dy);
     if (item != null) _heldDanmaku = item;
   }
 
@@ -110,7 +110,7 @@ extension _PlayerSurfacePictureGestures on _PlayerSurfaceState {
     _pressLocal = null;
     if (_heldDanmaku == null) return;
     _heldDanmaku = null;
-    widget.barrage?.resumeAllPaused();
+    ref.read(barrageProvider)?.resumeAllPaused();
   }
 
   /// Shows the figure the picture's gesture is setting; [brightness] says which

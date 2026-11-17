@@ -852,7 +852,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       VoidCallback? onMoreOverride,
     }) => PlayerSurface(
       key: _playerKey,
-      barrage: ref.read(roomProvider.notifier).barrage,
       onLeave: leave,
       onCloseRoom: closeRoom,
       immersive: ownsWindow || _portraitFullscreen,

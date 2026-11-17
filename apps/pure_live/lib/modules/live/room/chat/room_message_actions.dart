@@ -85,9 +85,18 @@ Future<void> copyRoomMessageText(BuildContext context, String text) async {
 
 /// Adds a sender name to the shield's user list.
 Future<void> blockRoomMessageSender(BuildContext context, WidgetRef ref, String name) async {
-  final added = await ref.read(shieldRulesProvider.notifier).addUser(name);
+  final shield = ref.read(shieldRulesProvider.notifier);
+  final full = !shield.usersHaveRoom;
+  final added = !full && await shield.addUser(name);
   if (!context.mounted) return;
-  showDsToast(context: context, title: added ? context.t.room.userBlocked : context.t.shield.duplicateEntry);
+  showDsToast(
+    context: context,
+    title: switch ((added, full)) {
+      (true, _) => context.t.room.userBlocked,
+      (_, true) => context.t.shield.listFull,
+      _ => context.t.shield.duplicateEntry,
+    },
+  );
 }
 
 /// Asks for the word to cut out of a line, offering the whole line first,
@@ -118,9 +127,18 @@ Future<void> blockRoomMessageKeyword(BuildContext context, WidgetRef ref, String
     ),
   );
   if (picked == null || picked.isEmpty || !context.mounted) return;
-  final added = await ref.read(shieldRulesProvider.notifier).addKeyword(picked);
+  final shield = ref.read(shieldRulesProvider.notifier);
+  final full = !shield.keywordsHaveRoom;
+  final added = !full && await shield.addKeyword(picked);
   if (!context.mounted) return;
-  showDsToast(context: context, title: added ? t.room.keywordBlocked : t.shield.duplicateEntry);
+  showDsToast(
+    context: context,
+    title: switch ((added, full)) {
+      (true, _) => t.room.keywordBlocked,
+      (_, true) => t.shield.listFull,
+      _ => t.shield.duplicateEntry,
+    },
+  );
 }
 
 /// The keyword field of the block dialog: the whole line is offered, cut

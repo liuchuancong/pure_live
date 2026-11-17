@@ -163,7 +163,7 @@ void main() {
       expect(_ids(container), ['mine', 'g']);
     });
 
-    test('a blocked word takes talk and gift lines, not a paid card nor the local ones', () {
+    test('a blocked word takes talk, gift and paid-card lines, not the local ones', () {
       chat
         ..add(_words('a', 'hello there'))
         ..add(_words('b', 'so secret'))
@@ -172,7 +172,7 @@ void main() {
         ..add(_words('mine', 'my secret words', local: true))
         ..removeKeyword('secret');
 
-      expect(_ids(container), ['a', 'sc', 'mine']);
+      expect(_ids(container), ['a', 'mine']);
     });
 
     test('a blocked word written /…/ matches as a pattern', () {

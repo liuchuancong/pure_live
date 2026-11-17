@@ -179,7 +179,6 @@ final class PlayerSurfaceHud {
 final class PlayerSurface extends ConsumerStatefulWidget {
   /// Shows the room's stream with the room's own controls.
   const PlayerSurface({
-    required this.barrage,
     required this.onLeave,
     this.onMore,
     this.onCloseRoom,
@@ -205,9 +204,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onFullscreen,
     super.key,
   });
-
-  /// The room's flying danmaku engine; null until the pipeline exists.
-  final BarrageController? barrage;
 
   /// Leaves the surface: the page pops in its inline layout, and leaves the
   /// presentation mode while one holds the window.
@@ -371,11 +367,22 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   /// The remote's Up and Down on the TV room's picture: they switch rooms
   /// instead of moving focus, because a bar that never hides has no row the
-  /// arrows should walk to first. An open picker panel owns the keys until
-  /// it is done with them.
+  /// arrows should walk to first. An open picker panel or the danmaku
+  /// settings' own list owns the keys until it is done with them.
   KeyEventResult _onScopeKey(FocusNode node, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
-    if (_panelOpen) return KeyEventResult.ignored;
+    if (_panelOpen || _danmakuSettingsOpen) return KeyEventResult.ignored;
+    // A text field holding the focus keeps its own arrows for the caret —
+    // the composer's line walk must not race the room switch.
+    var editing = false;
+    FocusManager.instance.primaryFocus?.context?.visitAncestorElements((element) {
+      if (element.widget is EditableText) {
+        editing = true;
+        return false;
+      }
+      return true;
+    });
+    if (editing) return KeyEventResult.ignored;
     final step = switch (event.logicalKey) {
       LogicalKeyboardKey.arrowUp => -1,
       LogicalKeyboardKey.arrowDown => 1,
@@ -649,6 +656,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // selects only the fields its layout answers to, so the playback tick
     // reaches the picture through this watch, not through the page's build.
     final room = ref.watch(roomProvider);
+    // The flying danmaku's engine, through the provider: a widget field
+    // would ride the page's last build, and the engine arrives (or is
+    // rebuilt on a login switch) without the page rebuilding — the sky
+    // would go missing, or keep flying on a disposed controller.
+    final barrage = ref.watch(barrageProvider);
     // A local for the room itself: a record field is not promotable, and the
     // picture states need to know the cover's owner is there.
     final roomInfo = room.room;
@@ -770,7 +782,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                           : '',
                       child: MediaPlayerView(handle: player, fit: playback.fit.boxFit),
                     ),
-                  if (widget.barrage case final barrage? when showDanmaku)
+                  if (barrage case final engine? when showDanmaku)
                     Positioned.fill(
                       child: IgnorePointer(
                         child: mini
@@ -794,13 +806,13 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                                     ),
                                   ),
                                   emojiAtlas: EmojiAtlas.instance,
-                                  controller: barrage,
+                                  controller: engine,
                                 ),
                               )
                             : FlameBarrageWidget(
                                 config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: style.area),
                                 emojiAtlas: EmojiAtlas.instance,
-                                controller: barrage,
+                                controller: engine,
                               ),
                       ),
                     ),

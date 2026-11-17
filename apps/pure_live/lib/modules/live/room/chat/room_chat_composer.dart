@@ -26,7 +26,12 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
+    // The chat's standing, watched: watching `.notifier` never re-fires,
+    // so a composer built while the handshake was still connecting would
+    // sit the whole visit out. Connected means the sending session is in —
+    // the session lands before the status is published.
+    final chat = ref.watch(roomProvider.select((room) => room.chat));
+    final canSend = chat.status == RoomChatStatus.connected && ref.read(roomProvider.notifier).canSendDanmaku;
     if (!canSend) {
       // The platform's chat only listens: no composer stands here.
       return const SizedBox.shrink();

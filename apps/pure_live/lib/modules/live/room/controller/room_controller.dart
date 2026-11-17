@@ -200,6 +200,12 @@ final class RoomDanmakuPipeline {
     // collapsed repeat is the room's traffic, not something the viewer asked
     // never to see.
     danmaku.onSuppressed = (_, _) => onShielded();
+    // The gift and paid-card lines are shielded here, outside the pipeline
+    // (a gift never enters it), off the very rules this controller was
+    // built with. Waiting for the first rule change would leave those two
+    // lists unarmed for the whole visit: a blocked name's paid lines would
+    // go through until the viewer touched a rule.
+    setShieldPolicy(shield);
     giftFlights = GiftFlights(
       clock: DateTime.now,
       // Read per gift, so the switch bites the very next one; a gift that
@@ -321,7 +327,10 @@ final class RoomDanmakuPipeline {
       // The shield is consulted here because a gift never enters the pipeline:
       // the block list is the viewer's own words, and paying for a message is
       // not a way back onto a screen they cleared.
-      if ((_shieldRules?.enabled ?? false) && (_shieldBlockList?.blocks(message) ?? false)) return;
+      if ((_shieldRules?.enabled ?? false) && (_shieldBlockList?.blocks(message) ?? false)) {
+        onShielded();
+        return;
+      }
       if (showChatGifts()) {
         final line = chatGifts.add(message);
         if (line != null) onChat(line.message, replaceId: line.replaceId);
@@ -338,7 +347,10 @@ final class RoomDanmakuPipeline {
       // line the pipeline would rebuild from the filters' output carries none
       // of them. The shields are consulted here for the same reason gifts are:
       // paying for a message is no way back onto a screen the viewer cleared.
-      if ((_shieldRules?.enabled ?? false) && (_shieldBlockList?.blocks(message) ?? false)) return;
+      if ((_shieldRules?.enabled ?? false) && (_shieldBlockList?.blocks(message) ?? false)) {
+        onShielded();
+        return;
+      }
       final card = message.payload is LiveSuperChatMessage ? message.payload! as LiveSuperChatMessage : null;
       // Platforms re-send a paid card on every poll until it expires. With an
       // id that arrives as an update to the line already on screen; without
@@ -720,7 +732,9 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
     if (matcher.isEmpty) return;
     bool blocked(LiveMessage line) =>
         !line.isLocal &&
-        (line.type == LiveMessageType.chat || line.type == LiveMessageType.gift) &&
+        (line.type == LiveMessageType.chat ||
+            line.type == LiveMessageType.gift ||
+            line.type == LiveMessageType.superChat) &&
         matcher.matchesText(line.text);
     _removeWhere(blocked);
   }
