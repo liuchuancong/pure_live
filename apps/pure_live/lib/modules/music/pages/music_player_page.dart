@@ -57,9 +57,10 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final (track, sleepRemaining) = ref.watch(
-      musicPlayerProvider.select((state) => (state.track, state.sleepTimerRemaining)),
-    );
+    // The track alone: the sleep timer's remaining line counts down once a
+    // second, and a page-level watch would rebuild the whole stage for one
+    // caption — its own Consumer carries the tick below.
+    final track = ref.watch(musicPlayerProvider.select((state) => state.track));
     final controller = ref.read(musicPlayerProvider.notifier);
     final ui = ref.watch(musicUiSettingsProvider);
     // The bar hides while this page is up, so the failure toast needs this
@@ -150,13 +151,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.typography.title.copyWith(color: colors.text),
                                   ),
-                                  if (sleepRemaining case final remaining?)
-                                    Text(
-                                      t.music.sleepRemaining(value: musicDurationText(remaining)),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                                    ),
+                                  const _SleepRemainingLine(),
                                 ],
                               ),
                             ),
@@ -1353,13 +1348,14 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    // The bar is where the tick is wanted: the slider and the clock redraw
-    // off it. The tuple keeps every other state change — a chat message, a
-    // lyric revision, a volume echo — from rebuilding the movement with it.
-    // The track stays nullable: clearing the queue fires this selector
-    // before the page above can rebuild.
-    final (track, duration, livePosition, mode, playing) = ref.watch(
-      musicPlayerProvider.select((state) => (state.track, state.duration, state.position, state.mode, state.playing)),
+    // The dock watches everything but the tick: the seek row below subscribes
+    // to the position itself, so the verbs and the heart hold still while the
+    // engine advances, and every other state change — a chat message, a lyric
+    // revision, a volume echo — rebuilds nothing here. The track stays
+    // nullable: clearing the queue fires this selector before the page above
+    // can rebuild.
+    final (track, duration, mode, playing) = ref.watch(
+      musicPlayerProvider.select((state) => (state.track, state.duration, state.mode, state.playing)),
     );
     final controller = ref.read(musicPlayerProvider.notifier);
     // A switch to another song retires the drag in progress: the held
@@ -1372,38 +1368,51 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
     final loved = favourites.contains(track);
-    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : livePosition;
-    final total = duration.inMilliseconds;
-    Widget clock(Duration value, {bool end = false}) => SizedBox(
-      width: 48,
-      child: Text(
-        musicDurationText(value),
-        textAlign: end ? TextAlign.end : TextAlign.start,
-        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-      ),
-    );
-    final seek = Row(
-      spacing: DsSpace.s8,
-      children: [
-        clock(position),
-        Expanded(
-          child: DsSlider(
-            value: total <= 0 ? 0 : position.inMilliseconds.clamp(0, total).toDouble(),
-            max: total <= 0 ? 1 : total.toDouble(),
-            semanticLabel: t.music.progress,
-            // A thin accent rail rather than the dialog-sized default.
-            style: DsSliderStyle(trackHeight: 4, thumbSize: 14, fillColor: colors.accent, thumbColor: colors.accent),
-            onChanged: total <= 0 ? null : (value) => setState(() => _dragSeconds = value / 1000),
-            onChangeEnd: total <= 0
-                ? null
-                : (value) {
-                    setState(() => _dragSeconds = null);
-                    unawaited(controller.seek(Duration(milliseconds: value.round())));
-                  },
+    // The seek row is the one place the tick is wanted: it subscribes to the
+    // position itself, so the transport and the heart hold still while the
+    // engine advances. A held drag paints its own seconds over the live one.
+    final seek = Consumer(
+      builder: (context, ref, _) {
+        final livePosition = ref.watch(musicPlayerProvider.select((state) => state.position));
+        final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : livePosition;
+        final total = duration.inMilliseconds;
+        Widget clock(Duration value, {bool end = false}) => SizedBox(
+          width: 48,
+          child: Text(
+            musicDurationText(value),
+            textAlign: end ? TextAlign.end : TextAlign.start,
+            style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
           ),
-        ),
-        clock(duration, end: true),
-      ],
+        );
+        return Row(
+          spacing: DsSpace.s8,
+          children: [
+            clock(position),
+            Expanded(
+              child: DsSlider(
+                value: total <= 0 ? 0 : position.inMilliseconds.clamp(0, total).toDouble(),
+                max: total <= 0 ? 1 : total.toDouble(),
+                semanticLabel: t.music.progress,
+                // A thin accent rail rather than the dialog-sized default.
+                style: DsSliderStyle(
+                  trackHeight: 4,
+                  thumbSize: 14,
+                  fillColor: colors.accent,
+                  thumbColor: colors.accent,
+                ),
+                onChanged: total <= 0 ? null : (value) => setState(() => _dragSeconds = value / 1000),
+                onChangeEnd: total <= 0
+                    ? null
+                    : (value) {
+                        setState(() => _dragSeconds = null);
+                        unawaited(controller.seek(Duration(milliseconds: value.round())));
+                      },
+              ),
+            ),
+            clock(duration, end: true),
+          ],
+        );
+      },
     );
     final transport = Row(
       mainAxisSize: MainAxisSize.min,
@@ -1500,6 +1509,24 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The header's sleep-timer line: the one place the page reads the tick.
+/// Armed, it counts down once a second and this caption alone rebuilds.
+final class _SleepRemainingLine extends ConsumerWidget {
+  const _SleepRemainingLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final remaining = ref.watch(musicPlayerProvider.select((state) => state.sleepTimerRemaining));
+    if (remaining == null) return const SizedBox.shrink();
+    return Text(
+      context.t.music.sleepRemaining(value: musicDurationText(remaining)),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
     );
   }
 }

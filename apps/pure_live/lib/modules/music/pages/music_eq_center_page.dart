@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
@@ -1015,6 +1015,45 @@ final class _CompareButton extends ConsumerStatefulWidget {
 
 final class _CompareButtonState extends ConsumerState<_CompareButton> {
   bool _held = false;
+  late final FocusNode _focus = FocusNode(debugLabel: 'eqCompare')..addListener(_onFocusChange);
+  bool _focused = false;
+
+  void _onFocusChange() {
+    if (!mounted) return;
+    setState(() => _focused = _focus.hasFocus);
+  }
+
+  @override
+  void dispose() {
+    _focus.removeListener(_onFocusChange);
+    _focus.dispose();
+    super.dispose();
+  }
+
+  /// The remote's OK and a keyboard's Enter: the hold begins when the key
+  /// lands and ends when it lifts, mirroring the touch gesture, while the
+  /// node itself takes part in the pane's ordinary focus traversal.
+  static bool _isActivation(LogicalKeyboardKey key) =>
+      key == LogicalKeyboardKey.select ||
+      key == LogicalKeyboardKey.enter ||
+      key == LogicalKeyboardKey.numpadEnter ||
+      key == LogicalKeyboardKey.space ||
+      key == LogicalKeyboardKey.gameButtonA;
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (!_isActivation(event.logicalKey)) return KeyEventResult.ignored;
+    if (event is KeyUpEvent) {
+      if (!_held) return KeyEventResult.ignored;
+      setState(() => _held = false);
+      widget.player.setCompareBypass(bypass: false);
+      return KeyEventResult.handled;
+    }
+    if (event is KeyDownEvent && !_held) {
+      setState(() => _held = true);
+      widget.player.setCompareBypass(bypass: true);
+    }
+    return KeyEventResult.handled;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1026,32 +1065,36 @@ final class _CompareButtonState extends ConsumerState<_CompareButton> {
       // reader is a tap, which bypasses until the next activation —
       // usable, and the text names the trade.
       button: true,
-      child: GestureDetector(
-        onTapDown: (_) {
-          setState(() => _held = true);
-          widget.player.setCompareBypass(bypass: true);
-        },
-        onTapUp: (_) {
-          if (!_held) return;
-          setState(() => _held = false);
-          widget.player.setCompareBypass(bypass: false);
-        },
-        onTapCancel: () {
-          if (!_held) return;
-          setState(() => _held = false);
-          widget.player.setCompareBypass(bypass: false);
-        },
-        child: Container(
-          height: 44,
-          decoration: BoxDecoration(
-            color: _held ? colors.accent : colors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.border),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            _held ? t.music.eqCompareHeld : t.music.eqCompare,
-            style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
+      child: Focus(
+        focusNode: _focus,
+        onKeyEvent: _onKey,
+        child: GestureDetector(
+          onTapDown: (_) {
+            setState(() => _held = true);
+            widget.player.setCompareBypass(bypass: true);
+          },
+          onTapUp: (_) {
+            if (!_held) return;
+            setState(() => _held = false);
+            widget.player.setCompareBypass(bypass: false);
+          },
+          onTapCancel: () {
+            if (!_held) return;
+            setState(() => _held = false);
+            widget.player.setCompareBypass(bypass: false);
+          },
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: _held ? colors.accent : colors.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _focused ? colors.focus : colors.border),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              _held ? t.music.eqCompareHeld : t.music.eqCompare,
+              style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
+            ),
           ),
         ),
       ),

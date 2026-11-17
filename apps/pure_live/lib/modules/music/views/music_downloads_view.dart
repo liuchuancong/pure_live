@@ -290,6 +290,13 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   /// says they are.
   int _recheck = 0;
 
+  /// The missing answers last read, and the queue shape they answer to: the
+  /// disk is asked again only when a row's identity, state or path moved —
+  /// the queue republishes on every progress tick, and a tick must not stat
+  /// a few hundred finished rows per second.
+  Map<String, bool> _missingCache = const {};
+  String _missingFingerprint = '';
+
   /// The rows on screen: searched, cut to the ticked states, and to the files
   /// still on disk when that is ticked — in the order the store keeps them, so
   /// the table's own sort is the only thing that reorders the queue.
@@ -458,9 +465,15 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     // bar would otherwise promise an action on nothing.
     _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
     final shown = _visible(tasks);
-    // One stat per visible row per read, not one per cell: the same song answers
+    // One stat per row per queue shape, not one per tick: the same song answers
     // through its badge, its verb and its menu.
-    final missing = {for (final task in shown) task.id: _musicFileMissing(task)};
+    final fingerprint =
+        '\$directory|\$_recheck|${[for (final task in tasks) '${task.id}:${task.status.index}:${task.outputPath}'].join(',')}';
+    if (fingerprint != _missingFingerprint) {
+      _missingFingerprint = fingerprint;
+      _missingCache = {for (final task in shown) task.id: _musicFileMissing(task)};
+    }
+    final missing = _missingCache;
     final working = tasks.where((task) => !task.isTerminal).toList();
     final pending = working.length;
     final playableCount = tasks.where(_playableTask).length;

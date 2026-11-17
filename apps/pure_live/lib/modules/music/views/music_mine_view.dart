@@ -44,58 +44,124 @@ final class MusicMineView extends ConsumerWidget {
         ),
       );
     }
-    // One section: its tool line — the named count, and the verbs that act on
-    // the whole section beside it, the module's caption-plus-tools row — over
-    // the table itself.
-    Widget section(
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+
+    /// Empties the favourites shelf after its confirmation, the recent list's
+    /// own 清空 with the guard a whole-shelf wipe owes.
+    Future<void> clearFavourites() async {
+      final t = context.t;
+      final confirmed = await showAppConfirm(
+        context: context,
+        title: t.music.favouritesClear,
+        description: t.music.favouritesClearDesc,
+        confirmLabel: t.common.delete,
+        cancelLabel: t.common.cancel,
+        destructive: true,
+      );
+      if (confirmed) await favouriteController.clear();
+    }
+
+    // One section as slivers: the caption over a card whose top carries the
+    // table header and whose rows the SliverList builds as they scroll into
+    // view — favourites are unbounded, and the eager Column built every one
+    // of them at once. The card's look travels with the pieces: the header
+    // and the cap wear the rounded corners and the shadow, the rows carry
+    // the surface between them, dividers where the card's inner padding
+    // starts.
+    List<Widget> songSection(
       String title,
       List<audio.MusicTrack> songs, {
       required Future<void> Function(audio.MusicTrack track) remove,
       Widget? trailing,
       bool caption = true,
-    }) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
-      children: [
-        if (caption)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: inset),
+    }) => [
+      if (caption)
+        SliverPadding(
+          padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, DsSpace.s8),
+          sliver: SliverToBoxAdapter(
             child: Row(
               spacing: DsSpace.s8,
               children: [
                 Expanded(
                   child: Text(
                     '$title · ${t.music.songsCount(count: songs.length)}',
-                    style: DsTheme.of(context).typography.heading.copyWith(color: DsTheme.colorsOf(context).text),
+                    style: theme.typography.heading.copyWith(color: colors.text),
                   ),
                 ),
                 ?trailing,
               ],
             ),
           ),
-        DsListSection(
-          children: [
-            const MusicSongTableHeader(),
-            for (final (index, song) in songs.indexed)
-              MusicSongRow(
-                track: song,
-                number: index + 1,
-                playing: playingKey == musicTrackKey(song),
-                favourite: favourites.contains(song),
-                onPlay: () => unawaited(playerController.playAll(songs, index: index)),
-                onFavourite: () => unawaited(favouriteController.toggle(song)),
-                onRemove: () => unawaited(remove(song)),
-                onPlayNext: () => unawaited(playerController.playNext(song)),
-                onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
-                onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: title)),
-                onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
-              ),
-          ],
         ),
-      ],
-    );
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
+      SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: inset),
+        sliver: SliverToBoxAdapter(
+          child: DecoratedBox(
+            decoration: DsBoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+              shadows: theme.shadows.surface,
+            ),
+            child: const Padding(
+              padding: EdgeInsets.fromLTRB(DsSpace.s5, DsSpace.s5, DsSpace.s5, 0),
+              child: MusicSongTableHeader(),
+            ),
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: inset),
+        sliver: SliverList.builder(
+          itemCount: songs.length,
+          itemBuilder: (context, index) {
+            final song = songs[index];
+            return Container(
+              color: colors.surface,
+              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: DsSpace.s12, end: 10),
+                    child: DsLine(color: colors.border),
+                  ),
+                  MusicSongRow(
+                    track: song,
+                    number: index + 1,
+                    playing: playingKey == musicTrackKey(song),
+                    favourite: favourites.contains(song),
+                    onPlay: () => unawaited(playerController.playAll(songs, index: index)),
+                    onFavourite: () => unawaited(favouriteController.toggle(song)),
+                    onRemove: () => unawaited(remove(song)),
+                    onPlayNext: () => unawaited(playerController.playNext(song)),
+                    onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
+                    onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: title)),
+                    onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+      SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: inset),
+        sliver: SliverToBoxAdapter(
+          child: DecoratedBox(
+            decoration: DsBoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(theme.radii.card)),
+              shadows: theme.shadows.surface,
+            ),
+            child: const Padding(
+              padding: EdgeInsets.fromLTRB(DsSpace.s5, 0, DsSpace.s5, DsSpace.s5),
+              child: SizedBox.shrink(),
+            ),
+          ),
+        ),
+      ),
+    ];
     Widget favouritesHeader() {
       final first = favourites.first;
       final total = favourites.fold(Duration.zero, (sum, track) => sum + (track.duration ?? Duration.zero));
@@ -156,6 +222,15 @@ final class MusicMineView extends ConsumerWidget {
                         onPressed: () => unawaited(playerController.playAll([...favourites]..shuffle(math.Random()))),
                         child: Text(t.music.modeRandom),
                       ),
+                      // The whole-shelf wipe rides beside the other header
+                      // verbs: with the caption row off, the section's own
+                      // tool line never rendered it.
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(clearFavourites()),
+                        child: Text(t.music.favouritesClear),
+                      ),
                     ],
                   ),
                 ],
@@ -166,58 +241,29 @@ final class MusicMineView extends ConsumerWidget {
       );
     }
 
-    /// Empties the favourites shelf after its confirmation, the recent list's
-    /// own 清空 with the guard a whole-shelf wipe owes.
-    Future<void> clearFavourites() async {
-      final t = context.t;
-      final confirmed = await showAppConfirm(
-        context: context,
-        title: t.music.favouritesClear,
-        description: t.music.favouritesClearDesc,
-        confirmLabel: t.common.delete,
-        cancelLabel: t.common.cancel,
-        destructive: true,
-      );
-      if (confirmed) await favouriteController.clear();
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: DsSpace.s16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s16,
-        children: [
-          if (favourites.isNotEmpty) favouritesHeader(),
-          if (favourites.isNotEmpty)
-            section(
-              t.music.mineFavourites,
-              favourites,
-              remove: favouriteController.remove,
-              caption: false,
-              trailing: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => unawaited(clearFavourites()),
-                child: Text(t.music.favouritesClear),
-              ),
+    return CustomScrollView(
+      slivers: [
+        if (favourites.isNotEmpty) SliverToBoxAdapter(child: favouritesHeader()),
+        if (favourites.isNotEmpty)
+          ...songSection(t.music.mineFavourites, favourites, remove: favouriteController.remove, caption: false),
+        if (favourites.isNotEmpty && recent.isNotEmpty) const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s16)),
+        if (recent.isNotEmpty)
+          // The 清空 verb belongs on the section's own tool line, at its end
+          // where the rest of the module puts the verbs that act on the
+          // whole list.
+          ...songSection(
+            t.music.mineRecent,
+            recent,
+            remove: recentController.remove,
+            trailing: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(recentController.clear()),
+              child: Text(t.music.clearRecent),
             ),
-          if (recent.isNotEmpty)
-            // The 清空 verb belongs on the section's own tool line, at its end
-            // where the rest of the module puts the verbs that act on the
-            // whole list.
-            section(
-              t.music.mineRecent,
-              recent,
-              remove: recentController.remove,
-              trailing: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => unawaited(recentController.clear()),
-                child: Text(t.music.clearRecent),
-              ),
-            ),
-        ],
-      ),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s16)),
+      ],
     );
   }
 }

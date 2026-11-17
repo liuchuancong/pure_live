@@ -14,6 +14,7 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         MediaAction,
         MediaSession,
         MediaSessionArtwork,
+        MediaSessionCommand,
         MediaSessionCommandNext,
         MediaSessionCommandPrevious,
         MpvAudioPlayerAdapter,
@@ -49,8 +50,10 @@ const String kMusicQueueKey = 'music.queue';
 /// `audio-device` name, replayed onto every new engine instance.
 const String kMusicAudioDeviceKey = 'music.play.audioDevice';
 
-/// The queue as the last run left it.
-typedef MusicQueueSnapshot = ({List<audio.MusicTrack> tracks, int index});
+/// The queue as the last run left it. The mode rides along: a shuffle or
+/// single-loop the viewer chose is a playback choice, not a default — a
+/// restart that reset it to sequential would silently drop the pick.
+typedef MusicQueueSnapshot = ({List<audio.MusicTrack> tracks, int index, audio.PlayMode mode});
 
 /// The queue's own storage, kept out of the player controller: the controller
 /// owns the engine and the queue, and a settings refresh that rebuilt it would
@@ -71,19 +74,21 @@ final class MusicQueueStore {
       final tracks = [for (final entry in entries) ?musicTrackFromJson(entry)];
       if (tracks.isEmpty) return null;
       final index = ((json['index'] as num?)?.toInt() ?? 0).clamp(0, tracks.length - 1);
-      return (tracks: tracks, index: index);
+      final mode = audio.PlayModeX.fromName(json['mode'] as String?);
+      return (tracks: tracks, index: index, mode: mode);
     } on Object {
       return null;
     }
   }
 
-  /// Keeps [tracks] and the current [index] for the next run.
-  Future<void> write(List<audio.MusicTrack> tracks, int index) async {
+  /// Keeps [tracks], the current [index] and the play [mode] for the next run.
+  Future<void> write(List<audio.MusicTrack> tracks, int index, audio.PlayMode mode) async {
     try {
       await StoragePrefs.setString(
         kMusicQueueKey,
         jsonEncode({
           'index': index,
+          'mode': mode.name,
           'tracks': [for (final track in tracks) musicTrackToJson(track)],
         }),
       );
@@ -396,6 +401,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     });
     ref.onDispose(() {
+      unawaited(_sessionCommands?.cancel() ?? Future<void>.value());
+      _sessionCommands = null;
       // Leave the interruption for the controller the module builds on its
       // way back. A container that is already closing cannot answer the
       // read; the shutdown path loses nothing by keeping the store's own
@@ -412,6 +419,16 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         // The process is going away.
       }
       _eqDebounce?.cancel();
+      // A drag that ended inside the write window still lands.
+      final pendingVolume = _volumeSave;
+      _volumeSave = null;
+      pendingVolume?.cancel();
+      unawaited(
+        ref
+            .read(musicPlaybackSettingsProvider.notifier)
+            .setVolume(_audio.state.volume.clamp(0.0, 1.0))
+            .catchError((Object _) {}),
+      );
       _flushProgress();
       unawaited(_states?.cancel() ?? Future<void>.value());
       unawaited(_desktopVisibleChanges?.cancel() ?? Future<void>.value());
@@ -524,7 +541,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     _engineSessionBound = true;
     final engine = adapter.player;
     if (engine == null) return;
-    engine.stream.mediaSessionCommands.listen((command) {
+    // Kept and cancelled with the container: bounded per engine instance,
+    // but a subscription nobody holds is not one this controller owns.
+    _sessionCommands = engine.stream.mediaSessionCommands.listen((command) {
       if (!ref.mounted) return;
       if (command is MediaSessionCommandNext) {
         unawaited(next());
@@ -533,6 +552,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     });
   }
+
+  StreamSubscription<MediaSessionCommand>? _sessionCommands;
 
   /// The overlay style the preferences describe.
   static audio.DesktopLyricStyle _desktopStyle(MusicDesktopLyricsSettings settings) => audio.DesktopLyricStyle(
@@ -773,6 +794,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       ? _audio.queue.shuffleOrder
       : List<int>.generate(_audio.queue.length, (index) => index);
 
+  /// The queue's ask counter, bumped by every viewer-intent change —
+  /// playAll, play, playTrack-through-queue loads. The boot's restore walk
+  /// reads it between its awaits: a pick the viewer made while the restore
+  /// was in flight wins, and the restore's remaining steps stand down.
+  int _queueEpoch = 0;
+
   /// Replaces the queue with [tracks], starting on [index] and playing.
   ///
   /// Replaying the list already in the queue keeps the random pool unless the
@@ -780,6 +807,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// `if (isAutoCleanPlayedList || prevListId != listId) clearPlayedList()`.
   Future<void> playAll(Iterable<audio.MusicTrack> tracks, {int index = 0}) async {
     final incoming = List<audio.MusicTrack>.of(tracks);
+    _queueEpoch++;
 
     if (incoming.isNotEmpty && _sameQueue(incoming)) {
       await _pick(index.clamp(0, incoming.length - 1));
@@ -798,6 +826,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       return;
     }
 
+    _queueEpoch++;
     await _audio.playTrack(track);
   }
 
@@ -844,9 +873,20 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   Future<void> seek(Duration position) => _audio.seek(position);
 
+  /// The volume's preference write trails the drag: the engine hears every
+  /// step at once, and the store lands one write when the drag settles —
+  /// a slider drag answers once per tick, and one preference write per
+  /// pixel is the kind of housekeeping a tick must not carry.
+  Timer? _volumeSave;
+
   Future<void> setVolume(double volume) async {
     await _audio.setVolume(volume);
-    await ref.read(musicPlaybackSettingsProvider.notifier).setVolume(volume.clamp(0.0, 1.0));
+    _volumeSave?.cancel();
+    final clamped = volume.clamp(0.0, 1.0);
+    _volumeSave = Timer(const Duration(milliseconds: 300), () {
+      _volumeSave = null;
+      unawaited(ref.read(musicPlaybackSettingsProvider.notifier).setVolume(clamped));
+    });
   }
 
   Future<void> setMuted({required bool muted}) => _audio.setMute(muted: muted);
@@ -1067,7 +1107,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   Future<void> _saveQueue() async {
-    await ref.read(musicQueueStoreProvider).write(_audio.queue.tracks, _audio.queue.index);
+    await ref.read(musicQueueStoreProvider).write(_audio.queue.tracks, _audio.queue.index, _audio.queue.mode);
   }
 
   /// Below this a stop is "the song was just opened", not a place to resume.
@@ -1295,8 +1335,14 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (!interrupted && !settings.autoplay) return;
     final snapshot = ref.read(musicQueueStoreProvider).read();
     if (snapshot == null || !ref.mounted) return;
+    final epoch = _queueEpoch;
     await _audio.setQueue(snapshot.tracks, startIndex: snapshot.index, autoPlay: false);
-    if (!ref.mounted) return;
+    // The viewer picked something while the snapshot was loading: theirs
+    // stands, the restore's remaining steps would only talk over it.
+    if (epoch != _queueEpoch || !ref.mounted) return;
+    // The mode is the viewer's own pick, not a default: sequential is
+    // what a fresh queue already is, so only the rest needs the word.
+    if (snapshot.mode != audio.PlayMode.list) _audio.setPlayMode(snapshot.mode);
     var seekTo = interrupted ? position : Duration.zero;
     if (!interrupted && settings.rememberProgress) {
       final saved = _positions[musicTrackKey(snapshot.tracks[snapshot.index])];
@@ -1305,7 +1351,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     }
     if (seekTo > Duration.zero) await _audio.seek(seekTo);
-    if (!ref.mounted) return;
+    if (epoch != _queueEpoch || !ref.mounted) return;
     await _audio.play();
   }
 }

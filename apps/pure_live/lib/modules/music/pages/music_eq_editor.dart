@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -183,7 +184,7 @@ final class _EqCurvePainter extends CustomPainter {
 /// chain follow the finger; while it lasts the band reads its gain in a chip
 /// above the knob and the knob carries the focus ring. A double tap brings
 /// the band back to zero — the reset every band editor offers.
-final class _EqBandHandle extends StatelessWidget {
+final class _EqBandHandle extends StatefulWidget {
   const _EqBandHandle({
     required this.gain,
     required this.size,
@@ -213,6 +214,26 @@ final class _EqBandHandle extends StatelessWidget {
 
   final ValueChanged<double> onChanged;
 
+  @override
+  State<_EqBandHandle> createState() => _EqBandHandleState();
+}
+
+final class _EqBandHandleState extends State<_EqBandHandle> {
+  late final FocusNode _focus = FocusNode(debugLabel: 'eqBandHandle')..addListener(_onFocusChange);
+  bool _focused = false;
+
+  void _onFocusChange() {
+    if (!mounted) return;
+    setState(() => _focused = _focus.hasFocus);
+  }
+
+  @override
+  void dispose() {
+    _focus.removeListener(_onFocusChange);
+    _focus.dispose();
+    super.dispose();
+  }
+
   static const double _knobRadius = 6;
 
   double _yOf(double value, double height) =>
@@ -223,68 +244,103 @@ final class _EqBandHandle extends StatelessWidget {
 
   /// The gain as the chip says it: a sign and one decimal, the axis's own
   /// unit implied.
-  String get _label => '${gain > 0 ? '+' : ''}${gain.toStringAsFixed(1)}';
+  String get _label => '${widget.gain > 0 ? '+' : ''}${widget.gain.toStringAsFixed(1)}';
+
+  /// A single step of the increase/decrease ladder.
+  static const double _step = 0.5;
+
+  /// The D-pad's arrows walk the same ladder a reader's increase and
+  /// decrease do — up raises the band, down lowers it — and a held arrow
+  /// sweeps by the key repeats.
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (!widget.enabled || event is! KeyDownEvent) return KeyEventResult.ignored;
+    final step = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowUp => _step,
+      LogicalKeyboardKey.arrowDown => -_step,
+      _ => null,
+    };
+    if (step == null) return KeyEventResult.ignored;
+    widget.onChanged((widget.gain + step).clamp(kMusicEqMinGain, kMusicEqMaxGain));
+    return KeyEventResult.handled;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
-    final y = _yOf(gain, size.height);
+    final y = _yOf(widget.gain, widget.size.height);
     // A drag-only knob is a wall to a reader: the band reads as an
     // adjustable whose steps walk the same ladder a drag does.
     return Semantics(
-      label: '$semanticLabel $_label dB',
-      onIncrease: enabled ? () => onChanged((gain + 0.5).clamp(kMusicEqMinGain, kMusicEqMaxGain)) : null,
-      onDecrease: enabled ? () => onChanged((gain - 0.5).clamp(kMusicEqMinGain, kMusicEqMaxGain)) : null,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onVerticalDragStart: enabled
-            ? (details) {
-                onDragState(true);
-                onChanged(_gainOf(details.localPosition.dy, size.height));
-              }
-            : null,
-        onVerticalDragUpdate: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
-        onVerticalDragEnd: enabled ? (_) => onDragState(false) : null,
-        onVerticalDragCancel: enabled ? () => onDragState(false) : null,
-        onTapDown: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
-        onDoubleTap: enabled ? () => onChanged(0) : null,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            CustomPaint(
-              size: Size.infinite,
-              painter: _BandPainter(
-                knobY: y,
-                knobRadius: _knobRadius,
-                colors: colors,
-                enabled: enabled,
-                dragging: dragging,
+      label: '${widget.semanticLabel} $_label dB',
+      onIncrease: widget.enabled
+          ? () => widget.onChanged((widget.gain + _step).clamp(kMusicEqMinGain, kMusicEqMaxGain))
+          : null,
+      onDecrease: widget.enabled
+          ? () => widget.onChanged((widget.gain - _step).clamp(kMusicEqMinGain, kMusicEqMaxGain))
+          : null,
+      child: Focus(
+        focusNode: _focus,
+        canRequestFocus: widget.enabled,
+        onKeyEvent: _onKey,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: widget.enabled
+              ? (details) {
+                  widget.onDragState(true);
+                  widget.onChanged(_gainOf(details.localPosition.dy, widget.size.height));
+                }
+              : null,
+          onVerticalDragUpdate: widget.enabled
+              ? (details) => widget.onChanged(_gainOf(details.localPosition.dy, widget.size.height))
+              : null,
+          onVerticalDragEnd: widget.enabled ? (_) => widget.onDragState(false) : null,
+          onVerticalDragCancel: widget.enabled ? () => widget.onDragState(false) : null,
+          onTapDown: widget.enabled
+              ? (details) => widget.onChanged(_gainOf(details.localPosition.dy, widget.size.height))
+              : null,
+          onDoubleTap: widget.enabled ? () => widget.onChanged(0) : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CustomPaint(
+                size: Size.infinite,
+                painter: _BandPainter(
+                  knobY: y,
+                  knobRadius: _knobRadius,
+                  colors: widget.colors,
+                  enabled: widget.enabled,
+                  dragging: widget.dragging,
+                  focused: _focused,
+                ),
               ),
-            ),
-            // The dragged band's own reading: one chip above the knob, kept on
-            // the board even when the knob nears its top edge.
-            if (dragging)
-              Positioned(
-                left: 0,
-                right: 0,
-                top: math.max(0, y - 30),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
-                    decoration: DsBoxDecoration(
-                      color: colors.accentTint,
-                      borderRadius: BorderRadius.circular(theme.radii.control(20)),
-                    ),
-                    child: Text(
-                      _label,
-                      style: theme.typography.numeric(
-                        theme.typography.caption.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
+              // The dragged band's own reading: one chip above the knob, kept on
+              // the board even when the knob nears its top edge.
+              if (widget.dragging)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: math.max(0, y - 30),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 2),
+                      decoration: DsBoxDecoration(
+                        color: widget.colors.accentTint,
+                        borderRadius: BorderRadius.circular(theme.radii.control(20)),
+                      ),
+                      child: Text(
+                        _label,
+                        style: theme.typography.numeric(
+                          theme.typography.caption.copyWith(
+                            color: widget.colors.accentText,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -292,7 +348,7 @@ final class _EqBandHandle extends StatelessWidget {
 }
 
 /// The knob and its vertical track, painted in the band's own column; the
-/// finger's band draws a ring around its knob.
+/// finger's band draws a ring around its knob, and so does the D-pad's.
 final class _BandPainter extends CustomPainter {
   const _BandPainter({
     required this.knobY,
@@ -300,6 +356,7 @@ final class _BandPainter extends CustomPainter {
     required this.colors,
     required this.enabled,
     required this.dragging,
+    this.focused = false,
   });
 
   final double knobY;
@@ -307,6 +364,10 @@ final class _BandPainter extends CustomPainter {
   final DsColors colors;
   final bool enabled;
   final bool dragging;
+
+  /// Whether the band's own focus node holds the pane's focus: the same ring
+  /// the finger wears, in the focus colour instead of the accent.
+  final bool focused;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -333,6 +394,17 @@ final class _BandPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2,
         );
+    } else if (focused) {
+      // The remote's band: the ring alone, in the focus colour, so the
+      // focused column reads at a glance without pretending to be held.
+      canvas.drawCircle(
+        Offset(x, knobY),
+        _dragRadius,
+        Paint()
+          ..color = colors.focus
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
     }
     canvas.drawCircle(Offset(x, knobY), knobRadius, knobPaint);
   }
@@ -342,5 +414,8 @@ final class _BandPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BandPainter oldDelegate) =>
-      oldDelegate.knobY != knobY || oldDelegate.enabled != enabled || oldDelegate.dragging != dragging;
+      oldDelegate.knobY != knobY ||
+      oldDelegate.enabled != enabled ||
+      oldDelegate.dragging != dragging ||
+      oldDelegate.focused != focused;
 }

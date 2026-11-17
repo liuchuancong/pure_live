@@ -100,6 +100,13 @@ final class MusicAudioCache {
   /// Whether [key] is downloading.
   bool isDownloading(String key) => _downloading.contains(key);
 
+  /// Forgets [key]'s entry without touching any file: the hit whose file
+  /// the viewer or a system sweep deleted re-resolves instead of handing
+  /// the engine a dead path.
+  void forget(String key) {
+    _entries.remove(key);
+  }
+
   /// Starts a download of [key]: the partial file name to write, or null
   /// when it is cached or already downloading.
   String? begin(String key) {
@@ -270,8 +277,15 @@ final class CachedTrackSource extends audio.MusicSource {
     final key = MusicAudioCacheKey.of(track, quality);
     final file = cache.lookup(key);
     if (file != null) {
-      final path = (cache.files as DirectoryMusicCacheFiles).pathOf(file);
-      return audio.TrackSource(uri: Uri.file(path), isLocal: true, quality: quality);
+      final files = cache.files as DirectoryMusicCacheFiles;
+      final path = files.pathOf(file);
+      // A hit whose file is gone is a miss: answering it would hand the
+      // engine a dead path, which the playback reads as a failed track
+      // instead of re-resolving.
+      if (File(path).existsSync()) {
+        return audio.TrackSource(uri: Uri.file(path), isLocal: true, quality: quality);
+      }
+      cache.forget(key);
     }
     final source = await inner.resolveTrackSource(track, quality: quality);
     if (!source.isLocal && (source.uri.isScheme('http') || source.uri.isScheme('https'))) {

@@ -1789,7 +1789,7 @@ final class MusicHotkeysPane extends ConsumerWidget {
                 onPressed: () => unawaited(() async {
                   final confirmed = await showAppConfirm(
                     context: context,
-                    title: t.music.eqReset,
+                    title: t.music.hkReset,
                     description: t.music.hkResetDesc,
                     confirmLabel: t.common.confirm,
                     cancelLabel: t.common.cancel,
@@ -1797,7 +1797,7 @@ final class MusicHotkeysPane extends ConsumerWidget {
                   );
                   if (confirmed) await controller.reset();
                 }()),
-                child: Text(t.music.eqReset),
+                child: Text(t.music.hkReset),
               ),
             ),
           ],

@@ -10,6 +10,10 @@ import 'package:pure_live/modules/music/controller/library/music_library.dart'
 /// The preference the manual source swaps are kept under.
 const String kMusicSourceSwapsKey = 'music.source.swaps';
 
+/// How many remembered swaps the shelf keeps, newest first — the module's
+/// other shelves cap at the same scale (dislikes 5000, lyric cache 200).
+const int kMusicSourceSwapLimit = 200;
+
 /// lx-music's manual 换源 cache: a replacement the viewer picked is remembered
 /// per original track, so the next play of that track goes straight to the
 /// swapped one instead of failing on its own platform again.
@@ -33,9 +37,21 @@ final class MusicSourceSwapsController extends Notifier<Map<String, audio.MusicT
   /// The replacement stored for [track], when one is.
   audio.MusicTrack? swappedOf(audio.MusicTrack track) => state[musicTrackKey(track)];
 
-  /// Remembers [to] as the way to play [from].
+  /// Remembers [to] as the way to play [from]. The map is capped newest
+  /// first like every other shelf of this module: a swap list that grew
+  /// forever would be the one unbounded persisted collection.
   Future<void> set(audio.MusicTrack from, audio.MusicTrack to) async {
-    state = {...state, musicTrackKey(from): to};
+    final key = musicTrackKey(from);
+    final next = {
+      key: to,
+      for (final entry in state.entries)
+        if (entry.key != key) entry.key: entry.value,
+    };
+    if (next.length > kMusicSourceSwapLimit) {
+      state = Map.fromEntries(next.entries.take(kMusicSourceSwapLimit));
+    } else {
+      state = next;
+    }
     await _save();
   }
 

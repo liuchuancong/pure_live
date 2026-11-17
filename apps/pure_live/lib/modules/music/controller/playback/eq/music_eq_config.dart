@@ -320,6 +320,14 @@ final List<MusicEqPreset> kMusicEqPresets = <MusicEqPreset>[
 final class MusicEqController extends Notifier<MusicEqConfig> {
   @override
   MusicEqConfig build() {
+    // A change inside the debounce window at container shutdown still
+    // lands: the pending write runs, then the timer goes.
+    ref.onDispose(() {
+      final timer = _saveDebounce;
+      _saveDebounce = null;
+      timer?.cancel();
+      unawaited(_save());
+    });
     try {
       final raw = StoragePrefs.getString(kMusicEqKey);
       if (raw == null || raw.isEmpty) return kMusicEqPresets.last.enabledFlat;

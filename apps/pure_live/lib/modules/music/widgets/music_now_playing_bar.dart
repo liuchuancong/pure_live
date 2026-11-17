@@ -59,15 +59,8 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
     final theme = DsTheme.of(context);
     final state = ref.watch(
       musicPlayerProvider.select(
-        (state) => (
-          track: state.track,
-          playing: state.playing,
-          position: state.position,
-          duration: state.duration,
-          mode: state.mode,
-          volume: state.volume,
-          muted: state.muted,
-        ),
+        (state) =>
+            (track: state.track, playing: state.playing, mode: state.mode, volume: state.volume, muted: state.muted),
       ),
     );
     final controller = ref.read(musicPlayerProvider.notifier);
@@ -78,9 +71,6 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
     listenPlaybackErrors(context, ref);
     final track = state.track;
     if (track == null) return const SizedBox.shrink();
-    final duration = state.duration.inMilliseconds;
-    final shownPosition = state.position.inMilliseconds.clamp(0, duration < 0 ? 0 : duration);
-    final progress = duration <= 0 ? 0.0 : shownPosition / duration;
     // Read only to decide whether a picker is worth showing: a single output
     // offers no choice, the same rule the settings row follows.
     final devices = ref.watch(musicAudioDevicesProvider).value ?? const [];
@@ -102,44 +92,10 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // The hairline: tap anywhere on it to seek without opening
-          // the player page.
-          LayoutBuilder(
-            builder: (context, constraints) => Semantics(
-              // The hairline is the mini bar's only seek: a reader
-              // walks it as an adjustable, a nudge a second either way.
-              label: t.music.progress,
-              onIncrease: duration <= 0
-                  ? null
-                  : () => unawaited(controller.seek(Duration(milliseconds: (progress * duration).round() + 1000))),
-              onDecrease: duration <= 0
-                  ? null
-                  : () => unawaited(controller.seek(Duration(milliseconds: (progress * duration).round() - 1000))),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: duration <= 0
-                    ? null
-                    : (details) => unawaited(
-                        controller.seek(
-                          Duration(milliseconds: (details.localPosition.dx / constraints.maxWidth * duration).round()),
-                        ),
-                      ),
-                child: SizedBox(
-                  height: 3,
-                  child: Stack(
-                    children: [
-                      Container(color: colors.surface),
-                      FractionallySizedBox(
-                        widthFactor: progress,
-                        alignment: Alignment.centerLeft,
-                        child: Container(color: colors.accent),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // The hairline: tap anywhere on it to seek without opening the
+          // player page. The position tick's own strip, isolated below so a
+          // tick redraws these three pixels, not the bar around them.
+          const _BarProgress(),
           // Three groups — the song on the left, the transport in the
           // middle, the sound's own controls on the right — that shed
           // their low-frequency verbs as the bar narrows, never the
@@ -348,22 +304,6 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                 ],
               );
 
-              /// The numbers in the bar's own line, as the reference
-              /// prints them: elapsed / total on a wide bar, elapsed alone
-              /// where the total would squeeze the title.
-              Widget timeText({required bool compact}) {
-                final elapsed = musicDurationText(Duration(milliseconds: shownPosition));
-                return SizedBox(
-                  width: compact ? 48 : 96,
-                  child: Text(
-                    duration <= 0 || compact ? elapsed : '$elapsed / ${musicDurationText(state.duration)}',
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                  ),
-                );
-              }
-
               // A phone keeps the bar to the song, the clock, the tier and
               // the transport; the verbs the wide bar draws as icons move
               // behind one menu rather than falling off the strip.
@@ -436,7 +376,7 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                       spacing: DsSpace.s8,
                       children: [
                         Expanded(child: lead()),
-                        timeText(compact: false),
+                        const _BarClock(compact: false),
                         actions(),
                         transport(),
                       ],
@@ -456,6 +396,91 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The bar's hairline: the position tick's own strip, isolated so a tick
+/// redraws these three pixels, not the bar around them.
+final class _BarProgress extends ConsumerWidget {
+  const _BarProgress();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final controller = ref.read(musicPlayerProvider.notifier);
+    final state = ref.watch(
+      musicPlayerProvider.select((state) => (position: state.position, duration: state.duration)),
+    );
+    final total = state.duration.inMilliseconds;
+    final shownPosition = state.position.inMilliseconds.clamp(0, total < 0 ? 0 : total);
+    final progress = total <= 0 ? 0.0 : shownPosition / total;
+    return LayoutBuilder(
+      builder: (context, constraints) => Semantics(
+        // The hairline is the mini bar's only seek: a reader walks it as an
+        // adjustable, a nudge a second either way.
+        label: t.music.progress,
+        onIncrease: total <= 0
+            ? null
+            : () => unawaited(controller.seek(Duration(milliseconds: (progress * total).round() + 1000))),
+        onDecrease: total <= 0
+            ? null
+            : () => unawaited(controller.seek(Duration(milliseconds: (progress * total).round() - 1000))),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: total <= 0
+              ? null
+              : (details) => unawaited(
+                  controller.seek(
+                    Duration(milliseconds: (details.localPosition.dx / constraints.maxWidth * total).round()),
+                  ),
+                ),
+          child: SizedBox(
+            height: 3,
+            child: Stack(
+              children: [
+                Container(color: colors.surface),
+                FractionallySizedBox(
+                  widthFactor: progress,
+                  alignment: Alignment.centerLeft,
+                  child: Container(color: colors.accent),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The bar's clock, the tick's other reader: elapsed, with the total
+/// beside it where the bar has the room.
+final class _BarClock extends ConsumerWidget {
+  const _BarClock({required this.compact});
+
+  /// Whether the bar is narrow: elapsed alone, in a narrower box.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final state = ref.watch(
+      musicPlayerProvider.select((state) => (position: state.position, duration: state.duration)),
+    );
+    final total = state.duration.inMilliseconds;
+    final shownPosition = state.position.inMilliseconds.clamp(0, total < 0 ? 0 : total);
+    final elapsed = musicDurationText(Duration(milliseconds: shownPosition));
+    return SizedBox(
+      width: compact ? 48 : 96,
+      child: Text(
+        total <= 0 || compact ? elapsed : '$elapsed / ${musicDurationText(state.duration)}',
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
       ),
     );
   }

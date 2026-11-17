@@ -128,16 +128,19 @@ final class _ApiAnswer {
 /// pushing one `event:` per changed status key.
 final class MusicOpenApi {
   /// An open API over the player controller, its current state, the lyric
-  /// loader and the favourites.
+  /// loader and the favourites. The controller is read per route through
+  /// [_playerOf]: the module guard rebuilds the player on every module
+  /// switch, and a controller held from the last session would answer
+  /// every command from a disposed engine.
   MusicOpenApi(
-    this._player,
+    this._playerOf,
     this._readState, {
     required this._loadLyric,
     required this._favourites,
     required this._isFavourite,
   });
 
-  final MusicPlayerController _player;
+  final MusicPlayerController Function() _playerOf;
   final audio.AudioPlaybackState Function() _readState;
   final Future<audio.LyricDocument> Function({bool force}) _loadLyric;
   final MusicFavouritesController _favourites;
@@ -224,21 +227,21 @@ final class MusicOpenApi {
           'lxlyric': status['lxlyric'],
         });
       case '/toggle':
-        await _player.toggle();
+        await _playerOf().toggle();
       case '/play':
-        await _player.toggle();
+        await _playerOf().toggle();
       case '/pause':
-        if (state.playing) await _player.toggle();
+        if (state.playing) await _playerOf().toggle();
       case '/skip':
-        await _player.next();
+        await _playerOf().next();
       case '/back':
-        await _player.previous();
+        await _playerOf().previous();
       case '/seek':
         final seconds = double.tryParse(query['offset'] ?? query['t'] ?? query['time'] ?? '');
         if (seconds == null || seconds < 0 || seconds > state.duration.inMilliseconds / 1000) {
           return const _ApiAnswer(400, 'Invalid offset');
         }
-        await _player.seek(Duration(milliseconds: (seconds * 1000).round()));
+        await _playerOf().seek(Duration(milliseconds: (seconds * 1000).round()));
       case '/volume':
         return await _setVolume(query);
       case '/mute':
@@ -260,11 +263,11 @@ final class MusicOpenApi {
     if (reference != null) {
       final value = int.tryParse(reference);
       if (value == null || value < 0 || value > 100) return const _ApiAnswer(400, 'Invalid volume');
-      await _player.setVolume(value / 100);
+      await _playerOf().setVolume(value / 100);
     } else {
       final legacy = query['v'] ?? query['value'];
       final value = legacy == null ? null : double.tryParse(legacy);
-      if (value != null) await _player.setVolume(value.clamp(0, 1).toDouble());
+      if (value != null) await _playerOf().setVolume(value.clamp(0, 1).toDouble());
     }
     return _ApiAnswer(200, {'code': 0, 'volume': (state.volume.clamp(0, 1) * 100).round()});
   }
@@ -275,10 +278,10 @@ final class MusicOpenApi {
     final reference = query['mute'];
     if (reference != null) {
       if (reference != 'true' && reference != 'false') return const _ApiAnswer(400, 'Invalid mute value');
-      await _player.setMuted(muted: reference == 'true');
+      await _playerOf().setMuted(muted: reference == 'true');
     } else {
       final legacy = query['v'] ?? query['value'];
-      if (legacy != null) await _player.setMuted(muted: legacy == '1' || legacy == 'true');
+      if (legacy != null) await _playerOf().setMuted(muted: legacy == '1' || legacy == 'true');
     }
     return _ApiAnswer(200, {'code': 0, 'mute': state.muted});
   }
@@ -465,7 +468,7 @@ final class MusicOpenApiLan extends Notifier<bool> {
 /// switch; the player and favourites feed the status stream.
 final musicOpenApiProvider = Provider<MusicOpenApi>((ref) {
   final api = MusicOpenApi(
-    ref.read(musicPlayerProvider.notifier),
+    () => ref.read(musicPlayerProvider.notifier),
     () => ref.read(musicPlayerProvider),
     loadLyric: ({force = false}) => ref.read(musicPlayerProvider.notifier).loadLyric(force: force),
     favourites: ref.read(musicFavouritesProvider.notifier),

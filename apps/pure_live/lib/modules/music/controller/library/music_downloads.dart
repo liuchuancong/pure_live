@@ -62,7 +62,10 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       unawaited(_queue.setMaxConcurrent(concurrent));
     });
     ref.onDispose(() {
+      // The last tick's state lands too: a shutdown inside the persist
+      // window must not leave the next run reading stale statuses.
       _persistTimer?.cancel();
+      unawaited(_persist());
       unawaited(_updates?.cancel() ?? Future<void>.value());
       unawaited(_queue.dispose());
     });
@@ -70,8 +73,11 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
   }
 
   /// Adds [track] to the queue; [listName] groups it when the viewer asked
-  /// for one folder per list.
-  Future<MusicDownloadResult> download(audio.MusicTrack track, {String? listName}) async {
+  /// for one folder per list. [batchKeys] lets a bulk caller catch two
+  /// identical songs inside one concurrent batch: the set carries the keys
+  /// already claimed by this call, since the queue only sees a task after
+  /// its own resolve finishes.
+  Future<MusicDownloadResult> download(audio.MusicTrack track, {String? listName, Set<String>? batchKeys}) async {
     if (track.isLocal) {
       return (outcome: MusicDownloadStart.unsupported, error: null);
     }
@@ -122,7 +128,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
         includeRomanization: settings.downloadIncludeRomanization,
       );
       final existing = _queue.pending.where((task) => task.request.dedupeKey == request.dedupeKey).firstOrNull;
-      if (existing != null) {
+      if (existing != null || (batchKeys != null && !batchKeys.add(request.dedupeKey))) {
         return (outcome: MusicDownloadStart.duplicate, error: null);
       }
       _queue.enqueue(
@@ -163,11 +169,24 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
 
   /// Queues every song in [tracks] that can be downloaded; returns how many
   /// new tasks joined.
+  ///
+  /// The resolves run a few at a time, not one by one: a two-hundred-song
+  /// list shows its first rows while the first handful of sources are still
+  /// being asked, where a serial loop made every row wait on every
+  /// round-trip before it. The queue's own resolver runs only on retries,
+  /// so the source of the first attempt is still fetched here — just six
+  /// abreast instead of in single file.
   Future<int> downloadAll(Iterable<audio.MusicTrack> tracks, {String? listName}) async {
+    const width = 6;
     var queued = 0;
-    for (final track in tracks) {
-      final result = await download(track, listName: listName);
-      if (result.outcome == MusicDownloadStart.queued) queued++;
+    final list = tracks.toList();
+    final batchKeys = <String>{};
+    for (var start = 0; start < list.length; start += width) {
+      final batch = [
+        for (final track in list.skip(start).take(width)) download(track, listName: listName, batchKeys: batchKeys),
+      ];
+      final results = await Future.wait(batch);
+      queued += results.where((result) => result.outcome == MusicDownloadStart.queued).length;
     }
     return queued;
   }
