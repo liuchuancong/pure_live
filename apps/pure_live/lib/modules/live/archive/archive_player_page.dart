@@ -257,8 +257,16 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
   void _bind(PlayerHandle handle) {
     _transportSub = handle.playbackStream.listen((state) {
       if (!mounted) return;
-      setState(() => _transport = state);
-      if (state.isPlaying) _scheduleHide();
+      // The tick lands in the field either way — the stream speaks on every
+      // position change. A rebuild is only wanted where the tick is visible:
+      // the bar's clock and slider while the chrome is up, and the moment
+      // playing flips (the paused badge, the hide clock's own stop).
+      final wasPlaying = _transport?.isPlaying ?? false;
+      _transport = state;
+      if (_controlsVisible || wasPlaying != state.isPlaying) {
+        setState(() {});
+      }
+      if (state.isPlaying && wasPlaying != state.isPlaying) _scheduleHide();
     });
     _geometrySub = handle.geometryController.state.listen((state) {
       if (!mounted) return;
@@ -329,6 +337,12 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     _disposed = true;
     _tipTimer?.cancel();
     _hideTimer?.cancel();
+    _keySeekTimer?.cancel();
+    // The awake lock is the app's global: the sibling players release it on
+    // the way out, and a page that leaves it held keeps the screen on until
+    // some other player happens to drop it.
+    unawaited(_screenAwake.disable().catchError((Object _) {}));
+    _screenHeld = false;
     // A download under way stops with the page: its partial file is struck
     // so no half-written take pretends to be a finished one.
     unawaited(_downloader?.dispose() ?? Future<void>.value());
@@ -535,8 +549,16 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     }
   }
 
+  /// Whether this display is the TV form factor: its chrome never hides on
+  /// idle, the room's keepControls rule — the remote's focus walk is the
+  /// only way through the bar, and a bar that folds under a focused button
+  /// strands the walk.
+  bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+
   void _scheduleHide() {
     _hideTimer?.cancel();
+    // The TV's chrome never hides on idle (see _isTv).
+    if (_isTv) return;
     if (_partsOpen || !(_transport?.isPlaying ?? false)) return;
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
     // The setting's zero is 常显: the chrome never hides on idle while the
@@ -1291,6 +1313,9 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
                 ),
             ],
             builder: (context, menu, _) => PlayerBarButton(
+              // The room's quality picker wears the same gauge: the word
+              // names the current choice, the glyph names the verb.
+              icon: DsIcons.gauge,
               label:
                   controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
                   t.room.replayQuality,
@@ -1308,6 +1333,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
               DsMenuItem(label: Text('${rate}x'), onPressed: () => unawaited(controller.setRate(rate))),
           ],
           builder: (context, menu, _) => PlayerBarButton(
+            icon: DsIcons.fastForward,
             label: '${controller.rate}x',
             onPressed: () {
               _wake();

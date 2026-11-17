@@ -128,8 +128,15 @@ final class _SidebarResizerState extends State<SidebarResizer> {
       label: t.common.sidebarWidth,
       child: MouseRegion(
         cursor: SystemMouseCursors.resizeLeftRight,
-        onEnter: (_) => setState(() => _hovering = true),
-        onExit: (_) => setState(() => _hovering = false),
+        // The sidebar can fold under the pointer; the tracker still walks
+        // the lost region's callbacks, and a setState on a disposed state
+        // inside its update phase poisons the whole frame's mouse pass.
+        onEnter: (_) {
+          if (mounted) setState(() => _hovering = true);
+        },
+        onExit: (_) {
+          if (mounted) setState(() => _hovering = false);
+        },
         child: Focus(
           focusNode: _focusNode,
           onKeyEvent: (_, event) => _keyed(event),

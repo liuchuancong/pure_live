@@ -209,6 +209,11 @@ final class _VodSeekBarState extends State<VodSeekBar> {
           final bubble = _hovering && shown != null
               ? PositionedDirectional(
                   bottom: _hitHeight,
+                  // The bubble's own width, pinned: a start-only position lets
+                  // the column size itself against no constraints at all, and
+                  // a box the mouse tracker meets before its layout has a
+                  // size is the hit test that throws.
+                  width: _frameWidth,
                   start: (shown / (_total / 1000) * width - _frameWidth / 2).clamp(
                     0.0,
                     (width - _frameWidth).clamp(0.0, width),
@@ -218,12 +223,24 @@ final class _VodSeekBarState extends State<VodSeekBar> {
               : const SizedBox.shrink();
           return MouseRegion(
             cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _hovering = true),
-            onExit: (_) => setState(() {
-              _hovering = false;
-              _hoverSeconds = null;
-            }),
-            onHover: (event) => setState(() => _hoverSeconds = _secondsAt(event.localPosition.dx, width)),
+            // The bar can fold while the pointer stands on it: the tracker
+            // still walks the callbacks of the region it just lost, and a
+            // setState on a disposed state inside the tracker's own update
+            // phase is the throw the whole frame's mouse pass dies on —
+            // every hover after it re-asserts the poisoned phase.
+            onEnter: (_) {
+              if (mounted) setState(() => _hovering = true);
+            },
+            onExit: (_) {
+              if (!mounted) return;
+              setState(() {
+                _hovering = false;
+                _hoverSeconds = null;
+              });
+            },
+            onHover: (event) {
+              if (mounted) setState(() => _hoverSeconds = _secondsAt(event.localPosition.dx, width));
+            },
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
               // The tap commits when the finger leaves: a press that turns

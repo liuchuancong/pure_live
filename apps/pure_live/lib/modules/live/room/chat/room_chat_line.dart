@@ -336,8 +336,15 @@ final class _ChatHoverState extends State<_ChatHover> {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
+      // Chat lines recycle while the pointer may stand on one; the tracker
+      // still walks the lost region's onExit, and a setState on a disposed
+      // state inside its update phase poisons the whole frame's mouse pass.
+      onEnter: (_) {
+        if (mounted) setState(() => _hovered = true);
+      },
+      onExit: (_) {
+        if (mounted) setState(() => _hovered = false);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,

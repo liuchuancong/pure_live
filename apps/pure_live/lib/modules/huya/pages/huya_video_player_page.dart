@@ -451,8 +451,16 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     }
   }
 
+  /// Whether this display is the TV form factor: its chrome never hides on
+  /// idle, the room's keepControls rule — the remote's focus walk is the
+  /// only way through the bar, and a bar that folds under a focused button
+  /// strands the walk.
+  bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+
   void _scheduleHide() {
     _hideTimer?.cancel();
+    // The TV's chrome never hides on idle (see _isTv).
+    if (_isTv) return;
     if (!(_transport?.isPlaying ?? false)) return;
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
     // The setting's zero is 常显: the bar never hides on idle while the
@@ -1272,6 +1280,9 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
                 ),
             ],
             builder: (context, menu, _) => PlayerBarButton(
+              // The room's quality picker wears the same gauge: the word
+              // names the current choice, the glyph names the verb.
+              icon: DsIcons.gauge,
               label:
                   controller.qualities.where((item) => item.id == controller.qualityId).firstOrNull?.label ??
                   t.huya.quality,
@@ -1289,6 +1300,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
               DsMenuItem(label: Text('${rate}x'), onPressed: () => unawaited(controller.setRate(rate))),
           ],
           builder: (context, menu, _) => PlayerBarButton(
+            icon: DsIcons.fastForward,
             label: '${controller.rate}x',
             onPressed: () {
               _wake();
