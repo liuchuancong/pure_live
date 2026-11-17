@@ -235,7 +235,7 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
                   spacing: browse.crossSpacing,
-                  ceiling: browse.gridColumns,
+                  pinned: browse.gridColumns,
                 ),
                 crossSpacing: browse.crossSpacing,
                 mainSpacing: browse.mainSpacing,
@@ -424,7 +424,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
                   spacing: browse.crossSpacing,
-                  ceiling: browse.gridColumns,
+                  pinned: browse.gridColumns,
                 ),
                 crossSpacing: browse.crossSpacing,
                 mainSpacing: browse.mainSpacing,
@@ -666,7 +666,7 @@ final class _RankViewState extends ConsumerState<_RankView> {
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
                   spacing: browse.crossSpacing,
-                  ceiling: browse.gridColumns,
+                  pinned: browse.gridColumns,
                 ),
                 crossSpacing: browse.crossSpacing,
                 mainSpacing: browse.mainSpacing,
@@ -991,7 +991,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                         cardExtent: hongguoPosterExtentForWidth(
                           content,
                           spacing: browse.crossSpacing,
-                          ceiling: browse.gridColumns,
+                          pinned: browse.gridColumns,
                         ),
                         crossSpacing: browse.crossSpacing,
                         mainSpacing: browse.mainSpacing,
@@ -1301,7 +1301,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                   cardExtent: hongguoPosterExtentForWidth(
                     content,
                     spacing: browse.crossSpacing,
-                    ceiling: browse.gridColumns,
+                    pinned: browse.gridColumns,
                   ),
                   crossSpacing: browse.crossSpacing,
                   mainSpacing: browse.mainSpacing,
@@ -1543,7 +1543,7 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
                       cardExtent: hongguoPosterExtentForWidth(
                         content,
                         spacing: browse.crossSpacing,
-                        ceiling: browse.gridColumns,
+                        pinned: browse.gridColumns,
                       ),
                       crossSpacing: browse.crossSpacing,
                       mainSpacing: browse.mainSpacing,
@@ -1849,6 +1849,10 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
                 variant: DsButtonVariant.secondary,
                 onPressed: () {
                   unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
+                  // A fresh code also needs its poll loop back: the last
+                  // one stopped when the old code settled, failed or was
+                  // left behind.
+                  _startPolling();
                 },
                 child: Text(t.hongguo.accountQrRefresh),
               ),
@@ -1995,7 +1999,9 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                         selected: false,
                         onChanged: (_) {
                           _query.text = word;
-                          unawaited(controller.search(word, genre: state.genre));
+                          // The shelf this view names, not the last ask's:
+                          // the tab may have moved since.
+                          unawaited(controller.search(word, genre: _genre));
                         },
                       ),
                   ],
@@ -2027,7 +2033,9 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                               selected: false,
                               onChanged: (_) {
                                 _query.text = word;
-                                unawaited(controller.search(word, genre: state.genre));
+                                // The shelf this view names, not the last
+                                // ask's: the tab may have moved since.
+                                unawaited(controller.search(word, genre: _genre));
                               },
                             ),
                         ],
@@ -2057,7 +2065,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
                 cardExtent: hongguoPosterExtentForWidth(
                   content,
                   spacing: browse.crossSpacing,
-                  ceiling: browse.gridColumns,
+                  pinned: browse.gridColumns,
                 ),
                 crossSpacing: browse.crossSpacing,
                 mainSpacing: browse.mainSpacing,

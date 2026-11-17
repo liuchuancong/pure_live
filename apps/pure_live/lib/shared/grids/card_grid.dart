@@ -35,8 +35,9 @@ EdgeInsets feedGutter(
 
 /// The widest a feed card gets before the grid takes another column, and the
 /// narrowest one may get: the measure every card grid holds itself. A pinned
-/// column count is a ceiling — a window that cannot hold that many cards at
-/// this width shows fewer instead of squeezing them.
+/// column count densifies — it asks for more columns than the width's own
+/// count, never fewer, so a wider window answers with more cards rather than
+/// wider ones.
 const double kBrowseCardMaxWidth = 340;
 const double kBrowseCardMinWidth = 220;
 
@@ -48,14 +49,22 @@ const int kBrowseCardMaxColumns = 12;
 /// takes the grid's card width instead.
 const double kListCardMinWidth = 360;
 
-/// The columns a viewer's [ceiling] allows in [content] pixels: their number
-/// when the window holds that many cards at [minWidth], fewer when it does
-/// not. 0 — no ceiling — leaves the count to the width alone.
-int cappedColumnsForWidth(double content, {required double spacing, required int ceiling, required double minWidth}) {
-  if (ceiling <= 0) return 0;
-  if (content <= 0) return ceiling;
+/// The columns a wall of [content] pixels takes when the viewer has pinned
+/// [pinned]: the width's own [base] count, raised to their number when it
+/// asks for more and the window still holds that many at [minWidth]. A pin
+/// below the width's count changes nothing — the count keeps growing with
+/// the window, so a low pin cannot become a wall of giant covers. 0 — no
+/// pin — leaves [base] to say.
+int pinnedColumnsForWidth(
+  double content, {
+  required double spacing,
+  required int pinned,
+  required int base,
+  required double minWidth,
+}) {
+  if (pinned <= 0 || content <= 0) return base;
   final fits = math.max(1, ((content + spacing) / (minWidth + spacing)).floor());
-  return math.min(ceiling, fits);
+  return math.max(base, math.min(pinned, fits));
 }
 
 /// One column's width when [columns] share [content] pixels; the hair keeps
@@ -63,32 +72,41 @@ int cappedColumnsForWidth(double content, {required double spacing, required int
 double columnExtentForWidth(double content, int columns, double spacing) =>
     (content - spacing * (columns - 1)) / columns + 0.01;
 
-/// The row width the list layout gives itself in [content] pixels: the
-/// widest that still leaves whole columns at least [kListCardMinWidth] wide.
-double listCardExtentForWidth(double content, {double spacing = DsSpace.s12}) {
-  if (content <= 0) return kListCardMinWidth;
-  final columns = math.max(1, ((content + spacing) / (kListCardMinWidth + spacing)).floor());
-  return (content - spacing * (columns - 1)) / columns + 0.01;
+/// The columns a list of [content] pixels takes on width alone: the most
+/// whole rows of [kListCardMinWidth] the width holds.
+int listCardColumnsForWidth(double content, {double spacing = DsSpace.s12}) {
+  if (content <= 0) return 1;
+  return math.max(1, ((content + spacing) / (kListCardMinWidth + spacing)).floor());
 }
 
-/// The card width a feed of [content] pixels gives itself.
-///
-/// The columns are the fewest that keep a card within [kBrowseCardMaxWidth],
-/// less one when that would leave a card narrower than [kBrowseCardMinWidth] —
-/// so a phone shows a single wide card, a laptop three or four and an
-/// ultrawide six. The answer is the exact width one column then has (plus a
-/// hair), which is what [SliverGridDelegateWithMaxCrossAxisExtent] needs to
-/// stay on that column count instead of tipping into one more.
-double browseCardExtentForWidth(double content, {double crossSpacing = DsSpace.s16}) {
-  if (content <= 0) return kBrowseCardMaxWidth;
+/// The row width the list layout gives itself in [content] pixels: the
+/// widest that still leaves whole columns at least [kListCardMinWidth] wide.
+double listCardExtentForWidth(double content, {double spacing = DsSpace.s12}) => content <= 0
+    ? kListCardMinWidth
+    : columnExtentForWidth(content, listCardColumnsForWidth(content, spacing: spacing), spacing);
+
+/// The columns a feed of [content] pixels takes on width alone: the fewest
+/// that keep a card within [kBrowseCardMaxWidth], less one when that would
+/// leave a card narrower than [kBrowseCardMinWidth] — so a phone shows a
+/// single wide card, a laptop three or four and an ultrawide six.
+int browseCardColumnsForWidth(double content, {double crossSpacing = DsSpace.s16}) {
+  if (content <= 0) return 1;
   double width(int columns) => (content - crossSpacing * (columns - 1)) / columns;
   var columns = 1;
   while (columns < kBrowseCardMaxColumns && width(columns) > kBrowseCardMaxWidth) {
     columns++;
   }
   if (columns > 1 && width(columns) < kBrowseCardMinWidth) columns--;
-  return width(columns) + 0.01;
+  return columns;
 }
+
+/// The card width a feed of [content] pixels gives itself. The answer is the
+/// exact width one column then has (plus a hair), which is what
+/// [SliverGridDelegateWithMaxCrossAxisExtent] needs to stay on that column
+/// count instead of tipping into one more.
+double browseCardExtentForWidth(double content, {double crossSpacing = DsSpace.s16}) => content <= 0
+    ? kBrowseCardMaxWidth
+    : columnExtentForWidth(content, browseCardColumnsForWidth(content, crossSpacing: crossSpacing), crossSpacing);
 
 /// The card width a feed of [content] pixels gives itself under the viewer's
 /// [browse] settings — the one measure every feed that follows the settings
@@ -96,21 +114,21 @@ double browseCardExtentForWidth(double content, {double crossSpacing = DsSpace.s
 ///
 /// A phone cannot hold two cards at [kBrowseCardMinWidth], so there the
 /// viewer's mobile column count speaks directly instead of the grid
-/// collapsing to one wide card; where a ceiling is set it caps the count;
-/// otherwise the window's own count stands.
+/// collapsing to one wide card; a pinned column count raises the width's
+/// own count when it asks for more, and otherwise the width's count stands.
 double browseSettingsExtentForWidth(double content, BrowseSettings browse, {double crossSpacing = DsSpace.s16}) {
   if (content <= 0) return kBrowseCardMaxWidth;
   if (content < kBrowseCardMinWidth * 2 + crossSpacing) {
     return columnExtentForWidth(content, browse.phoneColumns, crossSpacing);
   }
-  final capped = cappedColumnsForWidth(
+  final columns = pinnedColumnsForWidth(
     content,
     spacing: crossSpacing,
-    ceiling: browse.gridColumns,
+    pinned: browse.gridColumns,
+    base: browseCardColumnsForWidth(content, crossSpacing: crossSpacing),
     minWidth: kBrowseCardMinWidth,
   );
-  if (capped > 0) return columnExtentForWidth(content, capped, crossSpacing);
-  return browseCardExtentForWidth(content, crossSpacing: crossSpacing);
+  return columnExtentForWidth(content, columns, crossSpacing);
 }
 
 /// How a collection of items is laid out: the responsive card grid, or the
@@ -374,21 +392,25 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   SliverGridDelegateWithMaxCrossAxisExtent _listDelegate(double width, BrowseSettings browse, double tileAspect) {
     final padding = _gutter;
     final content = math.max(0, width - padding.horizontal).toDouble();
-    final capped = cappedColumnsForWidth(
-      content,
-      spacing: widget.crossSpacing,
-      ceiling: browse.gridColumns,
-      minWidth: kListCardMinWidth,
-    );
     final extent = widget.listFullWidth
         ? content
         : widget.listMatchesGridWidth
         ? content > 0 && content < LiveWindow.compact
               ? columnExtentForWidth(content, 1, widget.crossSpacing)
               : _extentFor(width, browse)
-        : capped > 0 && content > 0
-        ? columnExtentForWidth(content, capped, widget.crossSpacing)
-        : listCardExtentForWidth(content, spacing: widget.crossSpacing);
+        : content <= 0
+        ? listCardExtentForWidth(content, spacing: widget.crossSpacing)
+        : columnExtentForWidth(
+            content,
+            pinnedColumnsForWidth(
+              content,
+              spacing: widget.crossSpacing,
+              pinned: browse.gridColumns,
+              base: listCardColumnsForWidth(content, spacing: widget.crossSpacing),
+              minWidth: kListCardMinWidth,
+            ),
+            widget.crossSpacing,
+          );
     return SliverGridDelegateWithMaxCrossAxisExtent(
       maxCrossAxisExtent: extent,
       mainAxisSpacing: widget.mainSpacing,
@@ -973,12 +995,6 @@ final class _SkeletonGrid extends StatelessWidget {
         final content = math.max(0, constraints.maxWidth - resolved.horizontal).toDouble();
         final compactRow = oneColumnWhenCompact && content > 0 && content < LiveWindow.compact;
         final wideRows = mainAxisExtent != null && !listMatchesGridWidth;
-        final capped = cappedColumnsForWidth(
-          content,
-          spacing: crossSpacing,
-          ceiling: browse.gridColumns,
-          minWidth: kListCardMinWidth,
-        );
         final extent =
             cardExtent ??
             (compactRow
@@ -986,9 +1002,19 @@ final class _SkeletonGrid extends StatelessWidget {
                 : listFullWidth
                 ? content
                 : wideRows
-                ? capped > 0 && content > 0
-                      ? columnExtentForWidth(content, capped, crossSpacing)
-                      : listCardExtentForWidth(content, spacing: crossSpacing)
+                ? content <= 0
+                      ? listCardExtentForWidth(content, spacing: crossSpacing)
+                      : columnExtentForWidth(
+                          content,
+                          pinnedColumnsForWidth(
+                            content,
+                            spacing: crossSpacing,
+                            pinned: browse.gridColumns,
+                            base: listCardColumnsForWidth(content, spacing: crossSpacing),
+                            minWidth: kListCardMinWidth,
+                          ),
+                          crossSpacing,
+                        )
                 : listMatchesGridWidth && content > 0 && content < LiveWindow.compact
                 ? columnExtentForWidth(content, 1, crossSpacing)
                 : browseSettingsExtentForWidth(content, browse, crossSpacing: crossSpacing));

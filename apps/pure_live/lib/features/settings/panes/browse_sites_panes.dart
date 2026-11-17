@@ -78,6 +78,7 @@ final class BrowsingPane extends ConsumerWidget {
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.columns3),
               title: t.settings.browseColumns,
+              description: t.settings.browseColumnsHint,
               value: settings.gridColumns,
               options: [
                 DsSelectOption(value: 0, label: t.settings.browseAuto),

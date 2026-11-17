@@ -294,21 +294,21 @@ final class _MusicPlaylistGridState<T> extends ConsumerState<MusicPlaylistGrid<T
           // The columns the wall takes under the viewer's settings: a phone —
           // a row too narrow for two cards at the narrow measure — keeps the
           // mobile column count directly, cards a little narrower for it;
-          // elsewhere the viewer's ceiling lowers the width-derived count,
-          // and a ceiling of none leaves that count to say.
+          // elsewhere the viewer's pin raises the width-derived count when it
+          // asks for more, and none leaves that count to say.
           var columns = columnsOfWidth();
           if (content <= 0) {
             columns = 1;
           } else if (content < kMusicPlaylistCardMinWidth * 2 + spacing) {
             columns = browse.phoneColumns;
           } else {
-            final capped = cappedColumnsForWidth(
+            columns = pinnedColumnsForWidth(
               content,
               spacing: spacing,
-              ceiling: browse.gridColumns,
+              pinned: browse.gridColumns,
+              base: columns,
               minWidth: kMusicPlaylistCardMinWidth,
             );
-            if (capped > 0) columns = capped;
           }
           // The wall's own silhouette before the covers arrive: poster
           // blocks, not a lone spinner in the first cell.

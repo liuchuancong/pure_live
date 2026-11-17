@@ -74,23 +74,27 @@ const double kHongguoCoverChipFloor = 190;
 
 /// The columns a poster wall of [content] pixels takes: as many tiles of
 /// [kHongguoPosterCardWidth] as the row holds, less one when that would thin
-/// them past [kHongguoPosterMinWidth], the viewer's [ceiling] lowering the
-/// count further when it asks for fewer. 0 — no ceiling — leaves the width to say.
-int hongguoPosterColumns(double content, {double spacing = DsSpace.s16, int ceiling = 0}) {
+/// them past [kHongguoPosterMinWidth]; the viewer's [pinned] count raises
+/// the total when it asks for more columns. 0 — no pin — leaves the width
+/// to say.
+int hongguoPosterColumns(double content, {double spacing = DsSpace.s16, int pinned = 0}) {
   if (content <= 0) return 1;
   double width(int columns) => (content - spacing * (columns - 1)) / columns;
   var columns = math.max(1, ((content + spacing) / (kHongguoPosterCardWidth + spacing)).ceil());
   if (columns > 1 && width(columns) < kHongguoPosterMinWidth) columns--;
-  if (ceiling > 0 && columns > ceiling) columns = ceiling;
+  if (pinned > columns) {
+    final fits = math.max(1, ((content + spacing) / (kHongguoPosterMinWidth + spacing)).floor());
+    columns = math.max(columns, math.min(pinned, fits));
+  }
   return math.max(1, columns);
 }
 
 /// The card width a poster wall of [content] pixels gives itself: one even
 /// share of the row at the columns [hongguoPosterColumns] counts — the number
 /// a card grid hands its delegate as its own measure.
-double hongguoPosterExtentForWidth(double content, {double spacing = DsSpace.s16, int ceiling = 0}) => content <= 0
+double hongguoPosterExtentForWidth(double content, {double spacing = DsSpace.s16, int pinned = 0}) => content <= 0
     ? kHongguoPosterCardWidth
-    : columnExtentForWidth(content, hongguoPosterColumns(content, spacing: spacing, ceiling: ceiling), spacing);
+    : columnExtentForWidth(content, hongguoPosterColumns(content, spacing: spacing, pinned: pinned), spacing);
 
 /// Where the head's 续播 puts the viewer, in seconds — null when the shelf has
 /// no place to go back to: an unfinished title, stopped partway inside, on an
@@ -281,7 +285,9 @@ final class _HongguoSeriesCardState extends ConsumerState<HongguoSeriesCard> wit
         : null;
     final favored =
         visibility.shows(HongguoCardElement.favorite) &&
-        (widget.favorited ?? (widget.favoritable && ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId)));
+        (widget.favorited ??
+            (widget.favoritable &&
+                ref.watch(hongguoLibraryProvider.select((library) => library.isFavorite(series.seriesId)))));
     // A kept state the caller gave is the sample's own: a heart that wrote would
     // rewrite this device's library from a settings page.
     final onUnfavorite = widget.favorited == null
@@ -1019,7 +1025,7 @@ final class HongguoShelf extends ConsumerWidget {
             final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
             if (content <= 0) return const SizedBox.shrink();
             final spacing = browse.crossSpacing;
-            final columns = hongguoPosterColumns(content, spacing: spacing, ceiling: browse.gridColumns);
+            final columns = hongguoPosterColumns(content, spacing: spacing, pinned: browse.gridColumns);
             final cardWidth = columnExtentForWidth(content, columns, spacing) - .01;
             // The shelf's posters take the poster walls' measure, so the same
             // card never draws two shapes; the height is stated because the
