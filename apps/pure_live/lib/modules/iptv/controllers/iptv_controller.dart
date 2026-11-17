@@ -246,12 +246,15 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     final target = _capped(state.shown + kIptvRevealStep, state.channels.length);
     final group = state.selectedGroup;
     final scope = state.scope;
+    final query = state.query;
     state = _with(loadingMore: true);
     await Future<void>.delayed(Duration.zero);
     // A filter switch during the frame lands through the switch's own
     // mirror, which has already restarted the reveal — this page turn is
-    // for the list that asked for it.
-    if (!ref.mounted || state.selectedGroup != group || state.scope != scope) return;
+    // for the list that asked for it. A typed filter is one of those
+    // switches: revealing into the unfiltered list would answer the old
+    // question after the new one.
+    if (!ref.mounted || state.selectedGroup != group || state.scope != scope || state.query != query) return;
     _mirror(library, reveal: target);
   }
 

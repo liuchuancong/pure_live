@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show EpgSourceX;
@@ -102,7 +103,16 @@ final class IptvSettingsPane extends ConsumerWidget {
             initialValue: userAgent,
             clearable: true,
             placeholder: t.iptv.customUserAgent,
-            onChanged: (value) => unawaited(ref.read(iptvUserAgentProvider.notifier).set(value)),
+            // The agent is saved on submission, not per keystroke: a
+            // half-typed string must not ride the module's next fetch, and
+            // the store does not need a write per key. Only the emptied
+            // field commits at once — the ✕ and a delete-all both land
+            // here, and there is nothing left to mistype.
+            onChanged: (value) {
+              if (value.isEmpty) unawaited(ref.read(iptvUserAgentProvider.notifier).set(''));
+            },
+            onSubmitted: (value) => unawaited(ref.read(iptvUserAgentProvider.notifier).set(value)),
+            textInputAction: TextInputAction.done,
             semanticLabel: t.iptv.customUserAgent,
           ),
         ),

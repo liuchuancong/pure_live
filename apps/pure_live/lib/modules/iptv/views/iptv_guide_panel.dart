@@ -359,6 +359,7 @@ Future<void> toggleIptvReminder(
     IptvReminderToggle.set => (t.iptv.reminderSet(title: programme.title), DsStatus.success),
     IptvReminderToggle.cleared => (t.iptv.reminderRemoved, DsStatus.neutral),
     IptvReminderToggle.refused => (t.iptv.reminderAlreadyStarted, DsStatus.warning),
+    IptvReminderToggle.capped => (t.iptv.reminderCapReached, DsStatus.warning),
   };
   showDsToast(context: context, title: title, status: status);
 }

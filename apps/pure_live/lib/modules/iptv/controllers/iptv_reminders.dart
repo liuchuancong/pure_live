@@ -71,7 +71,16 @@ enum IptvReminderToggle {
 
   /// The programme has already started; a reminder for it cannot be set.
   refused,
+
+  /// The shelf is full: the cap keeps the armed list and its toast flow
+  /// from an unbounded pile.
+  capped,
 }
+
+/// How many reminders the shelf holds. Past it the newest ask is refused
+/// rather than the list growing without end — a reminder nobody can find
+/// under a hundred others helps no one.
+const int kIptvReminderCap = 100;
 
 /// The viewer's reminders, soonest first.
 ///
@@ -151,6 +160,7 @@ final class IptvRemindersController extends Notifier<List<IptvReminder>> {
       ];
     } else {
       if (!reminder.start.isAfter(DateTime.now())) return IptvReminderToggle.refused;
+      if (state.length >= kIptvReminderCap) return IptvReminderToggle.capped;
       state = [
         for (final entry in state)
           if (!entry.isFor(reminder.channelId, reminder.start)) entry,

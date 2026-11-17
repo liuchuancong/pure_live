@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show StreamSubscription, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -92,6 +92,62 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
   int _channelIndex = 0;
   int _programmeIndex = 0;
 
+  /// The panel's columns, cached against the library instance: a D-pad move
+  /// rebuilds this widget, and re-sorting the groups and the open group's
+  /// channels — re-reading the day's schedule with them — is work a move
+  /// between two rows never needed. The library mutates in place, so its own
+  /// changes stream is what drops the cache; the next build re-sorts.
+  IptvLibrary? _memoLibrary;
+  List<_Group>? _groupsCache;
+  final Map<String, List<IptvChannel>> _channelsCache = <String, List<IptvChannel>>{};
+  final Map<String, List<EpgProgramme>> _scheduleCache = <String, List<EpgProgramme>>{};
+  StreamSubscription<void>? _changes;
+
+  /// Binds the caches to [library], clearing them when the instance turns
+  /// over and on every write through it.
+  void _bindLibrary(IptvLibrary library) {
+    if (identical(_memoLibrary, library)) return;
+    _memoLibrary = library;
+    _groupsCache = null;
+    _channelsCache.clear();
+    _scheduleCache.clear();
+    unawaited(_changes?.cancel() ?? Future<void>.value());
+    _changes = library.changes.listen((_) {
+      _groupsCache = null;
+      _channelsCache.clear();
+      _scheduleCache.clear();
+    });
+  }
+
+  /// The open library's groups, favourites entry first.
+  List<_Group> _groupsOf(IptvLibrary library) {
+    _bindLibrary(library);
+    return _groupsCache ??= [
+      if (library.zapSequence(favouritesOnly: true).channels.isNotEmpty) (favourites: true, name: null),
+      // Listed by the module's one rule, so the panel's first column puts the
+      // ungrouped bucket where the channel page's column and the guide's picker
+      // do — the same three panes should not order the same groups three ways.
+      for (final name in iptvGroupsListed(library.groupNames))
+        if (!library.isGroupHidden(name)) (favourites: false, name: name),
+    ];
+  }
+
+  /// The group's channels, in the order the remote walks.
+  List<IptvChannel> _channelsOf(IptvLibrary library, _Group? group) {
+    if (group == null) return const [];
+    _bindLibrary(library);
+    final key = group.favourites ? 'favourites' : 'group:${group.name ?? ''}';
+    return _channelsCache[key] ??= library.zapSequence(group: group.name, favouritesOnly: group.favourites).channels;
+  }
+
+  /// The day's schedule for [channel], replayed from the cache while the
+  /// panel moves between its rows.
+  List<EpgProgramme> _dayScheduleOf(IptvLibrary library, IptvChannel channel, DateTime day) {
+    _bindLibrary(library);
+    final key = '${channel.id}@${day.millisecondsSinceEpoch}';
+    return _scheduleCache[key] ??= library.schedule(channel, from: day, span: const Duration(days: 1));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -100,6 +156,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
 
   @override
   void dispose() {
+    unawaited(_changes?.cancel() ?? Future<void>.value());
     _focus.dispose();
     _groupScroll.dispose();
     _channelScroll.dispose();
@@ -123,22 +180,10 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
     _programmeIndex = _liveProgramme(library, widget.channel, now);
   }
 
-  static List<_Group> _groupsOf(IptvLibrary library) => [
-    if (library.zapSequence(favouritesOnly: true).channels.isNotEmpty) (favourites: true, name: null),
-    // Listed by the module's one rule, so the panel's first column puts the
-    // ungrouped bucket where the channel page's column and the guide's picker
-    // do — the same three panes should not order the same groups three ways.
-    for (final name in iptvGroupsListed(library.groupNames))
-      if (!library.isGroupHidden(name)) (favourites: false, name: name),
-  ];
-
-  static List<IptvChannel> _channelsOf(IptvLibrary library, _Group? group) =>
-      group == null ? const [] : library.zapSequence(group: group.name, favouritesOnly: group.favourites).channels;
-
   /// The index of the programme on air at [now], or the first upcoming one
   /// when the guide is between programmes.
-  static int _liveProgramme(IptvLibrary library, IptvChannel channel, DateTime now) {
-    final schedule = library.schedule(channel, from: iptvStartOfDay(now), span: const Duration(days: 1));
+  int _liveProgramme(IptvLibrary library, IptvChannel channel, DateTime now) {
+    final schedule = _dayScheduleOf(library, channel, iptvStartOfDay(now));
     final live = schedule.indexWhere((programme) => !programme.start.isAfter(now) && !programme.stop.isBefore(now));
     if (live >= 0) return live;
     final next = schedule.indexWhere((programme) => programme.start.isAfter(now));
@@ -161,9 +206,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
     final channels = _channelsOf(library, group);
     final channelIndex = channels.isEmpty ? 0 : _channelIndex.clamp(0, channels.length - 1);
     final channel = channels.isEmpty ? null : channels[channelIndex];
-    final schedule = channel == null
-        ? const <EpgProgramme>[]
-        : library.schedule(channel, from: iptvStartOfDay(now), span: const Duration(days: 1));
+    final schedule = channel == null ? const <EpgProgramme>[] : _dayScheduleOf(library, channel, iptvStartOfDay(now));
     final programmeIndex = schedule.isEmpty ? 0 : _programmeIndex.clamp(0, schedule.length - 1);
     String groupLabel(_Group entry) => entry.favourites
         ? t.iptv.favouritesTitle
@@ -560,8 +603,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
   List<EpgProgramme> _scheduleOf(IptvChannel? channel) {
     final library = ref.read(iptvLibraryProvider).value;
     if (library == null || channel == null) return const [];
-    final now = DateTime.now();
-    return library.schedule(channel, from: iptvStartOfDay(now), span: const Duration(days: 1));
+    return _dayScheduleOf(library, channel, iptvStartOfDay(DateTime.now()));
   }
 
   EpgProgramme? _selectedProgramme() {
@@ -588,7 +630,13 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
   Future<void> _toggleFavourite(IptvChannel channel) async {
     final library = ref.read(iptvLibraryProvider).value;
     if (library == null) return;
-    await library.toggleFavorite(channel.id);
+    try {
+      await library.toggleFavorite(channel.id);
+    } on Object {
+      // A store write failing is rare; the heart stays as it was rather
+      // than throwing through the gesture.
+      return;
+    }
     if (mounted) setState(() {});
   }
 

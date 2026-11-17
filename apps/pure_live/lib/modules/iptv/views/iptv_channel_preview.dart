@@ -118,6 +118,11 @@ final class _IptvChannelPreviewVideoState extends ConsumerState<IptvChannelPrevi
     _handles = null;
     unawaited(_errors?.cancel() ?? Future<void>.value());
     _errors = null;
+    // The last handle speaks until its controller's disposal reaches it:
+    // silencing it here keeps the unmount gap quiet.
+    final handle = _handle;
+    _handle = null;
+    if (handle != null && !handle.disposed) unawaited(handle.setMute(muted: true));
     final playback = _playback;
     _playback = null;
     unawaited(playback?.dispose() ?? Future<void>.value());
@@ -158,12 +163,15 @@ final class _IptvChannelPreviewVideoState extends ConsumerState<IptvChannelPrevi
       if (_handle == null) setState(() => _failed = true);
     });
     _handles = playback.onHandleChanged.listen((handle) {
-      if (!mounted || epoch != _epoch || handle.disposed) return;
+      if (epoch != _epoch || handle.disposed) return;
       // Muted before the open below lets a frame play: the preview never
-      // speaks, whatever the channel carries.
+      // speaks, whatever the channel carries. The mute runs ahead of the
+      // mounted guard — a handle landing while the pane unmounts must not
+      // speak in the gap before its controller's disposal lands.
       unawaited(handle.setVolume(0));
       unawaited(handle.setMute(muted: true));
-      if (mounted) setState(() => _handle = handle);
+      if (!mounted) return;
+      setState(() => _handle = handle);
     });
     try {
       await playback.play(

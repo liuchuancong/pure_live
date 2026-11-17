@@ -61,7 +61,7 @@ final class _IptvRemindersList extends ConsumerWidget {
           trailing: DsButton.icon(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
-            semanticLabel: t.iptv.reminderRemoved,
+            semanticLabel: t.iptv.reminderCancelAction,
             onPressed: () => unawaited(ref.read(iptvRemindersProvider.notifier).toggle(reminder)),
             icon: const DsIcon(DsIcons.x, size: 16),
           ),
