@@ -415,10 +415,11 @@ final class _AppShellState extends ConsumerState<AppShell> {
     // toolbar breakpoint the page stacks its row and the head carries its
     // verbs; above it the page keeps them itself.
     final pageNarrow = LiveWindow.stacksToolbar(headWidth - 2 * LiveWindow.pageInset(width));
-    // The same width decides the paging mode the pages show (see
-    // PageLayoutScope.paging): measured here once, against the content
-    // area the pages actually get.
-    final pagePaging = headWidth >= LiveWindow.paging;
+    // The paging mode the pages show (see PageLayoutScope.paging): the
+    // window's own class, not the content's width — the pager is a desktop
+    // idiom, and folding the sidebar must not turn a paged wall into an
+    // endless one (the area detail's pager died exactly that way).
+    final pagePaging = width >= LiveWindow.paging;
     // A page may hand its own verbs up instead of drawing them (see
     // PageHeadActions); the built-in feeds also offer theirs by name.
     final published = ref.watch(pageHeadActionsProvider);
