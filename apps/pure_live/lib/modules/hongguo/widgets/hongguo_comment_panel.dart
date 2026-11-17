@@ -11,8 +11,8 @@ import 'package:pure_live/shared/shared.dart' show SectionHeader;
 import 'package:pure_live/shared/utils/utils.dart' show avatarInitials;
 
 /// One episode's comments and the series' reviews, behind the reference's two
-/// tabs: the list reads the next page as the viewer reaches its bottom, and
-/// the panel itself never scrolls — the page it is docked in does.
+/// tabs: the list reads its next pages through the footer button, and the
+/// panel itself never scrolls — the page it is docked in does.
 final class HongguoCommentPanel extends ConsumerStatefulWidget {
   /// The panel for [seriesId]'s episode [episodeVid].
   const HongguoCommentPanel({required this.seriesId, required this.episodeVid, this.showTitle = true, super.key});
@@ -37,7 +37,9 @@ final class _HongguoCommentPanelState extends ConsumerState<HongguoCommentPanel>
   bool _episodeTab = true;
 
   /// The reference's 到底自动续读: the next page is asked as the viewer nears
-  /// the bottom of whatever scrollable the panel sits in.
+  /// the bottom of a scrollable BELOW this listener. The usual dock — the
+  /// page's own scroll view — sits above, whose events never come through
+  /// here; the footer button in the list is the pagination that always works.
   bool _onScroll(ScrollUpdateNotification notification) {
     final metrics = notification.metrics;
     if (metrics.axis != Axis.vertical || !_episodeTab) return false;
@@ -213,7 +215,20 @@ final class _CommentsListState extends ConsumerState<_CommentsList> {
               ],
             ],
           ),
-        if (state.hasMore && state.loading) const Center(child: DsSpinner(style: DsSpinnerStyle(size: 20))),
+        if (state.hasMore && state.loading)
+          const Center(child: DsSpinner(style: DsSpinnerStyle(size: 20)))
+        else if (state.hasMore && items.isNotEmpty)
+          // The panel docks inside the page's scrollable, whose scroll
+          // events never pass through this subtree — the footer button is
+          // the pagination that always works, wherever the panel sits.
+          Center(
+            child: DsButton(
+              size: DsSize.sm,
+              variant: DsButtonVariant.ghost,
+              onPressed: () => unawaited(ref.read(hongguoCommentsProvider.notifier).loadMore()),
+              child: Text(t.hongguo.loadMore),
+            ),
+          ),
       ],
     );
   }

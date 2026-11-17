@@ -201,6 +201,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   Duration _retryPosition = Duration.zero;
   bool _retryAutoplay = true;
 
+  /// The episode the viewer asked for while an open was still running: the
+  /// open that settles continues there, so a fast tap-tap lands on the
+  /// last ask instead of the tap being swallowed.
+  HongguoEpisode? _pendingEpisode;
+
   /// What the last failure was, for the panel's line.
   String? _lastFailure;
 
@@ -454,7 +459,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     bool downgrade = false,
     bool autoplay = true,
   }) async {
-    if (_opening) return;
+    if (_opening) {
+      _pendingEpisode = episode;
+      return;
+    }
     _stopWaiting();
     final sameEpisode = _episode?.vid == episode.vid;
     if (!recovering) _saveProgress(force: true);
@@ -463,6 +471,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       _autoDowngrades = 0;
       _attempted = null;
       _lastFailure = null;
+      // The failed episode's retry position belongs to that episode: a
+      // switch that fails must not resume the new one where the old one
+      // was left.
+      _retryPosition = Duration.zero;
     }
     setState(() {
       _opening = true;
@@ -548,6 +560,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         _opening = false;
         _error = null;
       });
+      _drainPending(episode);
     } on Object catch (error) {
       appLog.forCategory('hongguo.play').warning('playback step failed', fields: {'error': '$error'});
       if (!mounted || _disposed) return;
@@ -561,8 +574,19 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         unawaited(_kernel.release(stale.id));
       }
       setState(() => _opening = false);
+      if (_drainPending(episode)) return;
       _onPlaybackFailure(error);
     }
+  }
+
+  /// Opens the episode asked for while an open ran, when it differs from
+  /// the one that just settled; answers whether it took over.
+  bool _drainPending(HongguoEpisode settled) {
+    final pending = _pendingEpisode;
+    _pendingEpisode = null;
+    if (pending == null || pending.vid == settled.vid) return false;
+    unawaited(_openEpisode(pending));
+    return true;
   }
 
   /// The vids after [episode], at most two — the models fetched ahead.
@@ -580,7 +604,21 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     if (!mounted || _disposed) return;
     final failure = hongguoFailureText(error);
     final position = _transport?.position ?? Duration.zero;
-    if (position > Duration.zero) _retryPosition = position;
+    if (position > Duration.zero) {
+      _retryPosition = position;
+    } else {
+      // The stream never opened — a switch or a first open that failed: the
+      // episode's own checkpoint is the resume, never the position the
+      // episode before it was left at.
+      final episode = _episode;
+      final row = ref.read(hongguoLibraryProvider).progressOf(widget.seriesId);
+      final index = episode == null || row == null
+          ? -1
+          : (_detail?.episodes.indexWhere((entry) => entry.vid == episode.vid) ?? -1);
+      _retryPosition = row != null && index >= 0 && row.episodeIndex == index
+          ? Duration(milliseconds: row.positionMs)
+          : Duration.zero;
+    }
     _retryAutoplay = !_sleepStopped;
     _saveProgress(force: true);
     _cancelRecovery();
@@ -2960,8 +2998,16 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     }
   }
 
+  /// Whether this display is the TV form factor: its chrome never hides on
+  /// idle, the room's keepControls rule — the remote's focus walk is the
+  /// only way through the bar, and a bar that folds under a focused button
+  /// strands the walk.
+  bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+
   void _scheduleHide() {
     _hideTimer?.cancel();
+    // The TV's chrome never hides on idle (see _isTv).
+    if (_isTv) return;
     // An open catalogue holds the bar up; a paused stream keeps it too.
     if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;

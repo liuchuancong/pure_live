@@ -50,6 +50,11 @@ const HongguoCommentsState _idleComments = (
 final class HongguoCommentsController extends Notifier<HongguoCommentsState> {
   String _key = '';
 
+  /// The ask in flight: a keyed swap while one runs would let the stale
+  /// answer land on the new pair's page — the current ask is the only one
+  /// allowed to write.
+  int _generation = 0;
+
   @override
   HongguoCommentsState build() => _idleComments;
 
@@ -80,6 +85,7 @@ final class HongguoCommentsController extends Notifier<HongguoCommentsState> {
   }
 
   Future<void> _load(String seriesId, String episodeVid) async {
+    final run = ++_generation;
     state = (
       items: state.items,
       total: state.total,
@@ -90,6 +96,7 @@ final class HongguoCommentsController extends Notifier<HongguoCommentsState> {
     );
     try {
       final page = await ref.read(hongguoCommentClientProvider).comments(seriesId, episodeVid, state.cursor);
+      if (run != _generation) return;
       state = (
         items: [...state.items, ...page.items],
         total: page.total,
@@ -99,6 +106,7 @@ final class HongguoCommentsController extends Notifier<HongguoCommentsState> {
         error: null,
       );
     } on Object catch (error) {
+      if (run != _generation) return;
       state = (
         items: state.items,
         total: state.total,
@@ -153,8 +161,13 @@ final class HongguoDanmakuController extends Notifier<HongguoDanmakuState> {
   /// Starts the chain for the series/episode pair at [durationMs]; the
   /// poll walks the windows while [positionMs] answers where playback is.
   void start(String seriesId, String episodeVid, int durationMs, int Function() positionMs) {
+    final key = '$seriesId/$episodeVid';
+    // The same chain already stands: a caller that repeats itself — the
+    // transport's every tick — must not tear the held windows down and
+    // start the walk over.
+    if (key == _key && _poll != null) return;
     stop();
-    _key = '$seriesId/$episodeVid';
+    _key = key;
     if (durationMs <= 0) return;
     unawaited(_fetch(seriesId, episodeVid, durationMs));
     _poll = Timer.periodic(const Duration(seconds: 5), (timer) {
@@ -203,6 +216,11 @@ typedef HongguoPublicReviewsState = ({HongguoPublicReviews? data, bool loading, 
 final class HongguoPublicReviewsController extends Notifier<HongguoPublicReviewsState> {
   String _key = '';
 
+  /// The ask in flight: a keyed swap while one runs would let the stale
+  /// answer land on the new pair's page — the current ask is the only one
+  /// allowed to write.
+  int _generation = 0;
+
   @override
   HongguoPublicReviewsState build() => (data: null, loading: false, error: null);
 
@@ -223,11 +241,14 @@ final class HongguoPublicReviewsController extends Notifier<HongguoPublicReviews
 
   Future<void> _load(String seriesId, String episodeVid) async {
     _key = '$seriesId/$episodeVid';
+    final run = ++_generation;
     state = (data: state.data, loading: true, error: null);
     try {
       final data = await ref.read(hongguoPublicReviewsClientProvider).read(seriesId, episodeVid);
+      if (run != _generation) return;
       state = (data: data, loading: false, error: null);
     } on Object catch (error) {
+      if (run != _generation) return;
       state = (data: state.data, loading: false, error: hongguoFailureText(error));
     }
   }
@@ -245,14 +266,20 @@ typedef HongguoRelatedState = ({List<HongguoRelatedWork> items, bool loading, St
 final class HongguoRelatedController extends Notifier<HongguoRelatedState> {
   String _seriesId = '';
 
+  /// The ask in flight: a keyed swap while one runs would let the stale
+  /// answer land on the new series' page — the current ask is the only one
+  /// allowed to write.
+  int _generation = 0;
+
   @override
   HongguoRelatedState build() => (items: const [], loading: false, error: null);
 
-  /// Loads the series' related works when it is not the one held.
+  /// Loads the series' related works when it is not the one held. A held
+  /// series keeps whatever it settled on — items, an empty answer, or the
+  /// failure the panel's retry is the way out of; asking again here would
+  /// turn one failed answer into an ask on every rebuild.
   Future<void> open(String seriesId) {
-    if (_seriesId == seriesId && (state.items.isNotEmpty || state.loading || state.error == null)) {
-      return Future.value();
-    }
+    if (_seriesId == seriesId) return Future.value();
     return _load(seriesId);
   }
 
@@ -261,11 +288,14 @@ final class HongguoRelatedController extends Notifier<HongguoRelatedState> {
 
   Future<void> _load(String seriesId) async {
     _seriesId = seriesId;
+    final run = ++_generation;
     state = (items: const [], loading: true, error: null);
     try {
       final items = await ref.read(hongguoRelatedClientProvider).related(seriesId);
+      if (run != _generation) return;
       state = (items: items, loading: false, error: null);
     } on Object catch (error) {
+      if (run != _generation) return;
       state = (items: const [], loading: false, error: hongguoFailureText(error));
     }
   }

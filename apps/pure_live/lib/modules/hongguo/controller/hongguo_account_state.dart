@@ -193,10 +193,14 @@ final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, 
   }
 
   /// Polls the code once; on confirmation the account session is settled.
-  /// Answers whether the poll loop may stop.
+  /// Answers whether the poll loop may stop: a session with nothing to ask
+  /// ends it, but a tick that lands while the last ask still runs only
+  /// skips its turn — answering stop there would let one slow answer kill
+  /// the whole loop.
   Future<bool> poll() async {
     final login = _login;
-    if (login == null || state.polling) return true;
+    if (login == null) return true;
+    if (state.polling) return false;
     state = (qr: state.qr, polling: true, error: null);
     try {
       final confirmed = await login.poll();

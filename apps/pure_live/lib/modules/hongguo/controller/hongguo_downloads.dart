@@ -406,7 +406,6 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   final Map<String, HttpClient> _clients = {};
   final Map<String, _HongguoStop> _stops = {};
   final Map<String, Timer> _retryTimers = {};
-  Timer? _persistTimer;
 
   @override
   List<HongguoDownloadItem> build() {
@@ -421,7 +420,6 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     }
     ref.listen(hongguoDownloadSettingsProvider, (_, _) => _pump());
     ref.onDispose(() {
-      _persistTimer?.cancel();
       for (final timer in _retryTimers.values) {
         timer.cancel();
       }

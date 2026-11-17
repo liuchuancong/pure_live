@@ -59,6 +59,13 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
 
   var _cursor = 0;
   var _lastSample = 0;
+
+  /// Per lane, the (spawn, width) of the runner still on it — the chase
+  /// guard's memory. Cleared with the sky.
+  final Map<int, ({int spawnMs, double width})> _laneLast = {};
+
+  /// The gap a lane keeps between the runner ahead and the next word.
+  static const double _chaseGapPx = 24;
   var _anchorMs = 0;
   Duration _anchorTick = Duration.zero;
   var _currentMs = 0;
@@ -77,6 +84,7 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
   void didUpdateWidget(HongguoDanmakuLayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.items, widget.items)) _rewind();
+    _syncTicker();
   }
 
   @override
@@ -92,11 +100,30 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
     super.dispose();
   }
 
+  /// The ticker only runs while it has work: a paused sky with nothing in
+  /// it (or a take whose words are all past) stops the frame pump, and a
+  /// play, a seek or new words arm it again. The paused early return below
+  /// stays as the belt for the frames before the stop lands.
+  void _syncTicker() {
+    final wanted = widget.playing() || _flights.isNotEmpty || _cursor < widget.items.length;
+    if (wanted && !_ticker.isActive) {
+      _ticker.start();
+      // The anchor re-reads the position: a stopped period's elapsed book
+      // keeping is stale by definition, and the flights are empty here by
+      // the same fact that stopped the ticker.
+      _rewind();
+    } else if (!wanted && _ticker.isActive) {
+      _ticker.stop();
+      _frame.value++;
+    }
+  }
+
   void _rewind() {
     for (final flight in _flights) {
       flight.painter.dispose();
     }
     _flights.clear();
+    _laneLast.clear();
     _planner.reset();
     _lastSample = widget.positionMs();
     _anchorMs = _lastSample;
@@ -142,6 +169,19 @@ final class _HongguoDanmakuLayerState extends State<HongguoDanmakuLayer> with Si
         maxLines: 1,
       )..layout();
       if (painter.width <= 0) continue;
+      // A wider word flies faster on this layer's fixed travel time, so a
+      // lane that only looked at spawn times lets the fast one catch the
+      // slow one it follows and the two overlap for seconds. The lane
+      // stands down until the runner ahead has cleared its own length.
+      final last = _laneLast[lane];
+      if (last != null) {
+        final speed = (_size.width + last.width) / _travel;
+        if ((_currentMs - last.spawnMs) * speed < last.width + _chaseGapPx) {
+          painter.dispose();
+          continue;
+        }
+      }
+      _laneLast[lane] = (spawnMs: _currentMs, width: painter.width);
       _flights.add(_Flight(lane: lane, spawnMs: _currentMs, painter: painter));
     }
 

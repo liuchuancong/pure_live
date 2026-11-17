@@ -279,7 +279,7 @@ final class HongguoLibraryController extends Notifier<HongguoLibraryState> {
                 'episodeCount': series.episodeCount,
               },
           ]),
-        ),
+        ).catchError((Object _) => false),
       );
       unawaited(
         StoragePrefs.setString(
@@ -427,7 +427,7 @@ final class HongguoLibraryController extends Notifier<HongguoLibraryState> {
         error = hongguoFailureText(failure);
       }
       done++;
-      state = state.copyWith(updates: updates, checksDone: done, checkFailures: failures);
+      state = state.copyWith(updates: _keptUpdates(updates), checksDone: done, checkFailures: failures);
       if (error != null) state = state.copyWith(checkError: error);
       if (consecutive >= _maxConsecutiveFailures) break;
     }
@@ -436,13 +436,24 @@ final class HongguoLibraryController extends Notifier<HongguoLibraryState> {
     state = HongguoLibraryState(
       favorites: state.favorites,
       history: state.history,
-      updates: updates,
+      updates: _keptUpdates(updates),
       checksDone: done,
       checksTotal: due.length,
       checkFailures: failures,
       checkError: failures == 0 ? null : state.checkError,
     );
     _persist();
+  }
+
+  /// The walk's snapshot minus the rows of favorites the viewer removed
+  /// while it ran: the snapshot predates those removals, and writing it
+  /// back would put the removed rows straight back.
+  Map<String, HongguoFavoriteUpdate> _keptUpdates(Map<String, HongguoFavoriteUpdate> updates) {
+    final kept = {for (final series in state.favorites) series.seriesId};
+    return {
+      for (final entry in updates.entries)
+        if (kept.contains(entry.key)) entry.key: entry.value,
+    };
   }
 }
 

@@ -61,9 +61,16 @@ final class HongguoCardMenu extends ConsumerWidget {
     // label, loses every verb it cannot answer, and so reads nothing from the
     // local shelf either.
     final openable = onOpen != null && hongguoSeriesOpenable(series);
-    final library = openable ? ref.watch(hongguoLibraryProvider) : null;
-    final seen = library?.progressOf(series.seriesId);
-    final favored = library?.isFavorite(series.seriesId) ?? false;
+    // The two shelf facts this menu reads, watched as one projected record:
+    // a write to some other series' history row — or the update walk's
+    // tick — does not rebuild every card's menu with it.
+    final (:seen, :favored) = openable
+        ? ref.watch(
+            hongguoLibraryProvider.select(
+              (library) => (seen: library.progressOf(series.seriesId), favored: library.isFavorite(series.seriesId)),
+            ),
+          )
+        : (seen: null, favored: false);
     final details = hongguoSeriesListingLine(t, series, watched: seen);
     final actions = <Widget>[
       if (onOpen != null)

@@ -20,6 +20,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart' show hongguoCoverImage;
 import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show HongguoQualityChoice;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart'
     show
         DownloadDetails,
@@ -295,6 +296,13 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
 
   bool _mergeCancelRequested = false;
 
+  /// The stranded rows last read, and the queue fingerprint they answer to:
+  /// the disk is asked again only when a done row's file name or the folder
+  /// moved — a running download rebuilds this pane on every tick, and each
+  /// build must not walk the done list checking the disk.
+  List<HongguoDownloadItem> _strandedCache = const [];
+  String _strandedFingerprint = '';
+
   Future<void> _pickDirectory(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     try {
@@ -368,8 +376,16 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
     final retryDelay = ref.watch(hongguoDownloadRetryDelayProvider);
     final directory = ref.watch(appPathsProvider).shortDramas.path;
     // What the shared 视频 folder still holds from before dramas got a folder
-    // of their own; read after the queue so a new download lands here too.
-    final stranded = ref.read(hongguoDownloadsProvider.notifier).stranded();
+    // of their own; read after the queue so a new download lands here too —
+    // but only when that queue's done rows actually moved, not per tick.
+    final fingerprint =
+        '$directory|${[for (final task in tasks)
+          if (task.phase == HongguoDownloadPhase.done) '${task.id}:${task.filePath}'].join(',')}';
+    if (fingerprint != _strandedFingerprint) {
+      _strandedFingerprint = fingerprint;
+      _strandedCache = ref.read(hongguoDownloadsProvider.notifier).stranded();
+    }
+    final stranded = _strandedCache;
     final merging = _merging;
     final active = tasks
         .where((task) => task.phase == HongguoDownloadPhase.queued || task.phase == HongguoDownloadPhase.running)
@@ -506,14 +522,11 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
 
 /// The remaining time the caption carries when it can be computed at all:
 /// a known speed and bytes still owed — otherwise the fact is left out
-/// rather than guessed.
+/// rather than guessed. The clock is the episodes', so one page never
+/// shows two spellings of the same span.
 String? _etaOf(Translations t, {required int speed, required int total, required int received}) {
   if (speed <= 0 || received >= total) return null;
-  final seconds = (total - received) ~/ speed;
-  final hours = seconds ~/ 3600;
-  final mm = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
-  final ss = (seconds % 60).toString().padLeft(2, '0');
-  return t.hongguo.downloadEta(time: hours > 0 ? '$hours:$mm:$ss' : '$mm:$ss');
+  return t.hongguo.downloadEta(time: hongguoDurationText(Duration(seconds: (total - received) ~/ speed)));
 }
 
 /// The station's download manager as its own page: the queue as a table with

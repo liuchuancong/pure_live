@@ -34,9 +34,13 @@ const HongguoBrowseFeed _idleFeed = (
 
 /// The browse feeds, one per shelf, straight from the official landpage:
 /// the first page carries the selector panel, later pages ride the cursor.
-/// A changed selection resets the feed; a newer ask always wins.
+/// A changed selection resets the feed; a shelf's newer ask always wins.
 final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFeed>> {
-  int _generation = 0;
+  /// The ask each shelf has let out, per genre: a shelf's own newer ask
+  /// wins over its older one, and a different shelf's ask never aborts
+  /// this one — with one shared counter, a genre switched away from sat
+  /// loading forever because another shelf's ask had silenced its answer.
+  final Map<String, int> _generations = {};
 
   @override
   Map<String, HongguoBrowseFeed> build() => const {};
@@ -81,7 +85,8 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
 
   Future<void> _load(HongguoGenre genre, Map<String, String> selection, {HongguoDiscoveryCursor? cursor}) async {
     final current = feedOf(genre);
-    final generation = ++_generation;
+    final generation = (_generations[genre.name] ?? 0) + 1;
+    _generations[genre.name] = generation;
     _write(genre, (
       items: cursor == null ? const <HongguoSeries>[] : current.items,
       cursor: cursor,
@@ -95,7 +100,7 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
       final page = await ref
           .read(hongguoClientProvider)
           .discovery(selection: _withGenre(genre, selection), cursor: cursor);
-      if (generation != _generation) return;
+      if (generation != _generations[genre.name]) return;
       _write(genre, (
         items: cursor == null ? page.items : [...current.items, ...page.items],
         cursor: page.next,
@@ -107,7 +112,7 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
       ));
     } on Object catch (error) {
       appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
-      if (generation != _generation) return;
+      if (generation != _generations[genre.name]) return;
       _write(genre, (
         items: current.items,
         cursor: null,
@@ -149,6 +154,11 @@ typedef HongguoLatestFeed = ({
 /// The newest-arrivals feed per shelf, the browse feed with the time sort
 /// pinned.
 final class HongguoLatestController extends Notifier<Map<String, HongguoLatestFeed>> {
+  /// The ask each shelf has let out, per genre: the shelf's own newer ask
+  /// wins, so two asks racing for one genre settle on the newer answer
+  /// instead of whichever came home last.
+  final Map<String, int> _generations = {};
+
   @override
   Map<String, HongguoLatestFeed> build() => const {};
 
@@ -171,6 +181,8 @@ final class HongguoLatestController extends Notifier<Map<String, HongguoLatestFe
 
   Future<void> _load(HongguoGenre genre, HongguoDiscoveryCursor? cursor) async {
     final current = feedOf(genre);
+    final generation = (_generations[genre.name] ?? 0) + 1;
+    _generations[genre.name] = generation;
     _write(genre, (
       items: cursor == null ? const [] : current.items,
       cursor: cursor,
@@ -182,6 +194,7 @@ final class HongguoLatestController extends Notifier<Map<String, HongguoLatestFe
       final page = await ref
           .read(hongguoClientProvider)
           .discovery(selection: {'genre': genre.wire, 'sort': 'online_time', 'online_time': 'days_7'}, cursor: cursor);
+      if (generation != _generations[genre.name]) return;
       _write(genre, (
         items: cursor == null ? page.items : [...current.items, ...page.items],
         cursor: page.next,
@@ -191,6 +204,7 @@ final class HongguoLatestController extends Notifier<Map<String, HongguoLatestFe
       ));
     } on Object catch (error) {
       appLog.forCategory('hongguo.feed').warning('feed request failed', fields: {'error': '$error'});
+      if (generation != _generations[genre.name]) return;
       _write(genre, (
         items: current.items,
         cursor: null,
