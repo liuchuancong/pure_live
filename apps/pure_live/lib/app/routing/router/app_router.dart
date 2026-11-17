@@ -453,21 +453,31 @@ final class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
   final String areaId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => WindowChromeFrame(
+  Widget build(BuildContext context, GoRouterState state) {
     // Outside the shell's content area, so this page carries the scroll
-    // pair itself.
-    child: ScrollEdgeControls(
-      pageIdentity: 'areaRooms/$platform/$areaId',
-      child: AreaRoomsPage(
-        platform: platform,
-        areaId: areaId,
-        area: switch (state.extra) {
-          final LiveArea area => area,
-          _ => null,
-        },
+    // pair itself — and the layout scope too: the page reads its paging
+    // mode from [PageLayoutScope], and above the shell nobody else
+    // publishes it, so a missing one reads as endless at every window size
+    // (the area detail's pager died exactly that way).
+    final width = MediaQuery.sizeOf(context).width;
+    return WindowChromeFrame(
+      child: ScrollEdgeControls(
+        pageIdentity: 'areaRooms/$platform/$areaId',
+        child: PageLayoutScope(
+          narrow: LiveWindow.stacksToolbar(width - 2 * LiveWindow.pageInset(width)),
+          paging: width >= LiveWindow.paging,
+          child: AreaRoomsPage(
+            platform: platform,
+            areaId: areaId,
+            area: switch (state.extra) {
+              final LiveArea area => area,
+              _ => null,
+            },
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// Where a window opens when no route is named.
