@@ -39,6 +39,7 @@
   "show": "显示",
   "save": "保存",
   "copied": "已复制",
+  "copyFailed": "复制失败",
   "downloadSpeed": "总速度 {speed}",
   "downloadDetails": "下载详情",
   "downloadSavePath": "保存位置",

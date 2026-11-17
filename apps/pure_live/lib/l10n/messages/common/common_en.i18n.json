@@ -39,6 +39,7 @@
   "show": "Show",
   "save": "Save",
   "copied": "Copied",
+  "copyFailed": "Could not copy",
   "downloadSpeed": "Total {speed}",
   "downloadDetails": "Download details",
   "downloadSavePath": "Saved to",

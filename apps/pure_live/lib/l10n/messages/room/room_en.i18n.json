@@ -95,6 +95,8 @@
   "recordSize": "{size: String} recorded",
   "recordDanmakuCount": "{count: int} danmaku",
   "recordIdle": "This room is not being recorded",
+  "roomRecordTakes": "This room's recordings · {count}",
+  "roomRecordTakesEmpty": "No saved recordings yet",
   "autoRecordOn": "Record when live",
   "autoRecordOff": "Stop waiting for live",
   "autoRecordArmed": "Live check is on (every {seconds} s); recording starts when the room goes live",

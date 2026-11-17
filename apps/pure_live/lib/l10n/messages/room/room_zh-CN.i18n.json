@@ -95,6 +95,8 @@
   "recordSize": "已录 {size: String}",
   "recordDanmakuCount": "弹幕 {count: int} 条",
   "recordIdle": "这个房间现在没在录制",
+  "roomRecordTakes": "该直播间的录像 · {count}",
+  "roomRecordTakesEmpty": "还没有已保存的录像",
   "autoRecordOn": "开播自动录",
   "autoRecordOff": "取消开播自动录",
   "autoRecordArmed": "已打开开播检测（每 {seconds} 秒检查一次）；开播后自动录制",

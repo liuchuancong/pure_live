@@ -340,5 +340,6 @@
   "recordedDuration": "已录 {elapsed}",
   "reminderMissed": "已错过「{title}」的预约（应用关闭期间）",
   "reminderMissedMany": "{count: int} 个预约在应用关闭期间已错过",
-  "reminderAlreadyStarted": "节目已开播，不能预约"
+  "reminderAlreadyStarted": "节目已开播，不能预约",
+  "reminderCapReached": "预约已满，请先清理已播过的预约"
 }

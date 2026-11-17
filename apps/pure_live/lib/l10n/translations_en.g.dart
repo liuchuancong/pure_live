@@ -483,6 +483,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get show => 'Show';
 	@override String get save => 'Save';
 	@override String get copied => 'Copied';
+	@override String get copyFailed => 'Could not copy';
 	@override String downloadSpeed({required Object speed}) => 'Total ${speed}';
 	@override String get downloadDetails => 'Download details';
 	@override String get downloadSavePath => 'Saved to';
@@ -767,6 +768,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get reserveFailed => 'Could not reserve it; try again later.';
 	@override String get comments => 'Comments';
 	@override String get commentsEmpty => 'No comments yet';
+	@override String get loadMore => 'Load more';
 	@override String get anonymousUser => 'Hongguo user';
 	@override String get commentsLoadMore => 'More';
 	@override String get danmaku => 'Danmaku';
@@ -1320,6 +1322,7 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String reminderMissed({required Object title}) => 'Missed “${title}” while the app was closed';
 	@override String reminderMissedMany({required int count}) => '${count} reminders were missed while the app was closed';
 	@override String get reminderAlreadyStarted => 'The programme has already started';
+	@override String get reminderCapReached => 'The reminder list is full — clear the passed ones first';
 }
 
 // Path: multiview
@@ -2642,6 +2645,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String recordSize({required String size}) => '${size} recorded';
 	@override String recordDanmakuCount({required int count}) => '${count} danmaku';
 	@override String get recordIdle => 'This room is not being recorded';
+	@override String roomRecordTakes({required Object count}) => 'This room\'s recordings · ${count}';
+	@override String get roomRecordTakesEmpty => 'No saved recordings yet';
 	@override String get autoRecordOn => 'Record when live';
 	@override String get autoRecordOff => 'Stop waiting for live';
 	@override String autoRecordArmed({required Object seconds}) => 'Live check is on (every ${seconds} s); recording starts when the room goes live';
@@ -3223,10 +3228,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuFont => 'Danmaku font';
 	@override String get danmakuFontDescription => 'For flying danmaku only; the chat list keeps the UI font.';
 	@override String get danmakuFontManagerDescription => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.';
-	@override String get styleDensity => 'Density';
-	@override String get styleDensityNormal => 'Normal';
-	@override String get styleDensityMore => 'More';
-	@override String get styleDensityOverlap => 'Overlap';
 	@override String get styleAdvanced => 'Advanced';
 	@override String get styleFontSize => 'Size';
 	@override String get styleFontSizeDesc => 'Font size of a flying danmaku, in pixels.';
@@ -3485,6 +3486,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get searchResults => 'Search results';
 	@override String get browseLayoutGroup => 'Card layout';
 	@override String get browseColumns => 'Cards per row';
+	@override String get browseColumnsHint => 'A pinned count asks for density: wider windows add columns instead of widening the cards.';
 	@override String get browseAuto => 'Auto';
 	@override String get phoneColumns => 'Cards per row on phones';
 	@override String get crossSpacing => 'Column spacing';
@@ -4548,10 +4550,12 @@ class _Translations$shield$en extends Translations$shield$zh_CN {
 	@override String get usersEmpty => 'No blocked users yet';
 	@override String get clear => 'Clear all';
 	@override String get clearConfirmDesc => 'The list empties; add entries again whenever you need them.';
+	@override String get listFull => 'The list is full — remove some first';
 	@override String get duplicateEntry => 'This entry is already on the list';
 	@override String get invalidEntry => 'The entry cannot be empty';
 	@override String get added => 'Blocked';
 	@override String get removed => 'Removed';
+	@override String moreNotShown({required Object count}) => '${count} more not shown';
 	@override String get cleared => 'Cleared';
 	@override String get removeEntry => 'Remove this rule';
 	@override String get effectNote => 'The rules apply to the room chat immediately.';
@@ -5820,6 +5824,7 @@ extension on TranslationsEn {
 			'common.show' => 'Show',
 			'common.save' => 'Save',
 			'common.copied' => 'Copied',
+			'common.copyFailed' => 'Could not copy',
 			'common.downloadSpeed' => ({required Object speed}) => 'Total ${speed}',
 			'common.downloadDetails' => 'Download details',
 			'common.downloadSavePath' => 'Saved to',
@@ -6077,6 +6082,7 @@ extension on TranslationsEn {
 			'hongguo.reserveFailed' => 'Could not reserve it; try again later.',
 			'hongguo.comments' => 'Comments',
 			'hongguo.commentsEmpty' => 'No comments yet',
+			'hongguo.loadMore' => 'Load more',
 			'hongguo.anonymousUser' => 'Hongguo user',
 			'hongguo.commentsLoadMore' => 'More',
 			'hongguo.danmaku' => 'Danmaku',
@@ -6308,10 +6314,10 @@ extension on TranslationsEn {
 			'iptv.customUserAgentDesc' => 'User-Agent for imports and playback; blank means the app default.',
 			'iptv.updateInterval' => 'Update interval',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} h',
-			'iptv.updateIntervalDays' => ({required int days}) => '${days} d',
-			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} guides refresh at this interval',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.updateIntervalDays' => ({required int days}) => '${days} d',
+			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} guides refresh at this interval',
 			'iptv.autoUpdateStatusNone' => 'No guide updates automatically yet.',
 			'iptv.autoUpdateNoRemote' => 'No network guide to update',
 			'iptv.select' => 'Choose',
@@ -6614,6 +6620,7 @@ extension on TranslationsEn {
 			'iptv.reminderMissed' => ({required Object title}) => 'Missed “${title}” while the app was closed',
 			'iptv.reminderMissedMany' => ({required int count}) => '${count} reminders were missed while the app was closed',
 			'iptv.reminderAlreadyStarted' => 'The programme has already started',
+			'iptv.reminderCapReached' => 'The reminder list is full — clear the passed ones first',
 			'multiview.layoutLabel' => 'Layout',
 			'multiview.pickRoom' => 'Pick a room',
 			'multiview.openRoom' => 'Open room',
@@ -6821,11 +6828,11 @@ extension on TranslationsEn {
 			'music.queueShowMore' => ({required Object count}) => 'Show more (${count} left)',
 			'music.queueMissingFile' => 'File missing',
 			'music.queueUnplayable' => 'Couldn\'t play',
+			_ => null,
+		} ?? switch (path) {
 			'music.nowPlaying' => 'Now playing',
 			'music.stagePanels' => 'Lyrics & queue',
 			'music.volume' => 'Volume',
-			_ => null,
-		} ?? switch (path) {
 			'music.progress' => 'Progress',
 			'music.lyrics' => 'Lyrics',
 			'music.lyricsEmpty' => 'This song has no lyrics yet.',
@@ -7335,11 +7342,11 @@ extension on TranslationsEn {
 			'music.tagEditTitle' => 'Edit song tags',
 			'music.tagEditFileName' => 'File name',
 			'music.tagEditName' => 'Title',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditSinger' => 'Artist',
 			'music.tagEditAlbum' => 'Album',
 			'music.tagEditLyric' => 'LRC lyric',
-			_ => null,
-		} ?? switch (path) {
 			'music.tagEditPic' => 'Album cover',
 			'music.tagEditParseName' => 'Parse title and artist from the file name',
 			'music.tagParseNameSinger' => 'Title - Artist',
@@ -7849,11 +7856,11 @@ extension on TranslationsEn {
 			'room.banned' => 'This room has been banned',
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
+			_ => null,
+		} ?? switch (path) {
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
-			_ => null,
-		} ?? switch (path) {
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
 			'room.copyName' => 'Copy name',
@@ -7870,6 +7877,8 @@ extension on TranslationsEn {
 			'room.recordSize' => ({required String size}) => '${size} recorded',
 			'room.recordDanmakuCount' => ({required int count}) => '${count} danmaku',
 			'room.recordIdle' => 'This room is not being recorded',
+			'room.roomRecordTakes' => ({required Object count}) => 'This room\'s recordings · ${count}',
+			'room.roomRecordTakesEmpty' => 'No saved recordings yet',
 			'room.autoRecordOn' => 'Record when live',
 			'room.autoRecordOff' => 'Stop waiting for live',
 			'room.autoRecordArmed' => ({required Object seconds}) => 'Live check is on (every ${seconds} s); recording starts when the room goes live',
@@ -8361,13 +8370,13 @@ extension on TranslationsEn {
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'No restart after the proxy app changes.',
 			'settings.githubMirrorTitle' => 'GitHub acceleration',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorMode' => 'Download route',
 			'settings.githubMirrorModeDesc' => 'Where GitHub assets download from.',
 			'settings.githubMirrorOff' => 'Default (no acceleration)',
 			'settings.githubMirrorOfficial' => 'Official source · may be slow',
 			'settings.githubMirrorCustom' => 'Custom…',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorCustomDetail' => 'Type a mirror domain',
 			'settings.githubMirrorCustomDomain' => 'Custom mirror domain',
 			'settings.githubMirrorCustomDesc' => 'Starts with https:// and prefixes the original address.',
@@ -8435,10 +8444,6 @@ extension on TranslationsEn {
 			'settings.danmakuFont' => 'Danmaku font',
 			'settings.danmakuFontDescription' => 'For flying danmaku only; the chat list keeps the UI font.',
 			'settings.danmakuFontManagerDescription' => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.',
-			'settings.styleDensity' => 'Density',
-			'settings.styleDensityNormal' => 'Normal',
-			'settings.styleDensityMore' => 'More',
-			'settings.styleDensityOverlap' => 'Overlap',
 			'settings.styleAdvanced' => 'Advanced',
 			'settings.styleFontSize' => 'Size',
 			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
@@ -8697,6 +8702,7 @@ extension on TranslationsEn {
 			'settings.searchResults' => 'Search results',
 			'settings.browseLayoutGroup' => 'Card layout',
 			'settings.browseColumns' => 'Cards per row',
+			'settings.browseColumnsHint' => 'A pinned count asks for density: wider windows add columns instead of widening the cards.',
 			'settings.browseAuto' => 'Auto',
 			'settings.phoneColumns' => 'Cards per row on phones',
 			'settings.crossSpacing' => 'Column spacing',
@@ -8878,10 +8884,10 @@ extension on TranslationsEn {
 			'settings.mpvResetDesc' => 'Restores this page; the preferred quality stays.',
 			'settings.mpvResetConfirm' => 'These go back to their defaults:\n• Hardware decoding: on\n• Compatibility mode, RTX VSR: off\n• Force Stop Player: on\n• Custom drivers: off; the three drivers: default\nThe preferred quality in Video stays.',
 			'settings.mpvResetDone' => 'Defaults restored',
-			'settings.mpvDocs' => 'Open the mpv manual',
-			'settings.mpvDocsDesc' => 'Full descriptions for every property.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.mpvDocs' => 'Open the mpv manual',
+			'settings.mpvDocsDesc' => 'Full descriptions for every property.',
 			'settings.playerGuide' => 'Player guide',
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
@@ -9392,10 +9398,10 @@ extension on TranslationsEn {
 			'settings.twitchLanguages' => 'Twitch directory languages',
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
-			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
-			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
+			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
 			'settings.twitchLanguage_zh' => 'Chinese',
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
@@ -9755,10 +9761,12 @@ extension on TranslationsEn {
 			'shield.usersEmpty' => 'No blocked users yet',
 			'shield.clear' => 'Clear all',
 			'shield.clearConfirmDesc' => 'The list empties; add entries again whenever you need them.',
+			'shield.listFull' => 'The list is full — remove some first',
 			'shield.duplicateEntry' => 'This entry is already on the list',
 			'shield.invalidEntry' => 'The entry cannot be empty',
 			'shield.added' => 'Blocked',
 			'shield.removed' => 'Removed',
+			'shield.moreNotShown' => ({required Object count}) => '${count} more not shown',
 			'shield.cleared' => 'Cleared',
 			'shield.removeEntry' => 'Remove this rule',
 			'shield.effectNote' => 'The rules apply to the room chat immediately.',
@@ -9904,12 +9912,12 @@ extension on TranslationsEn {
 			'vod.dynamicsEmptyTitle' => 'No dynamics yet',
 			'vod.dynamicsEmptyDescription' => 'Posts from the uploaders you follow appear here.',
 			'vod.loadMore' => 'Load more',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regions' => 'Regions',
 			'vod.regionAnimation' => 'Animation',
 			'vod.regionGames' => 'Gaming',
 			'vod.regionGuichu' => 'Guichu',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regionMusic' => 'Music',
 			'vod.regionDance' => 'Dance',
 			'vod.regionFilm' => 'Film & TV',

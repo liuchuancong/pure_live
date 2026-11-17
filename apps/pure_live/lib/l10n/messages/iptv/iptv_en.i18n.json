@@ -340,5 +340,6 @@
   "recordedDuration": "Recorded {elapsed}",
   "reminderMissed": "Missed “{title}” while the app was closed",
   "reminderMissedMany": "{count: int} reminders were missed while the app was closed",
-  "reminderAlreadyStarted": "The programme has already started"
+  "reminderAlreadyStarted": "The programme has already started",
+  "reminderCapReached": "The reminder list is full — clear the passed ones first"
 }

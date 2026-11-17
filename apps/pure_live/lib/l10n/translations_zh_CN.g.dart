@@ -1249,6 +1249,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '已复制'
 	String get copied => '已复制';
 
+	/// zh-CN: '复制失败'
+	String get copyFailed => '复制失败';
+
 	/// zh-CN: '总速度 {speed}'
 	String downloadSpeed({required Object speed}) => '总速度 ${speed}';
 
@@ -2046,6 +2049,9 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '还没有评论'
 	String get commentsEmpty => '还没有评论';
+
+	/// zh-CN: '加载更多'
+	String get loadMore => '加载更多';
 
 	/// zh-CN: '红果用户'
 	String get anonymousUser => '红果用户';
@@ -3669,6 +3675,9 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '节目已开播，不能预约'
 	String get reminderAlreadyStarted => '节目已开播，不能预约';
+
+	/// zh-CN: '预约已满，请先清理已播过的预约'
+	String get reminderCapReached => '预约已满，请先清理已播过的预约';
 }
 
 // Path: multiview
@@ -7492,6 +7501,12 @@ class Translations$room$zh_CN {
 	/// zh-CN: '这个房间现在没在录制'
 	String get recordIdle => '这个房间现在没在录制';
 
+	/// zh-CN: '该直播间的录像 · {count}'
+	String roomRecordTakes({required Object count}) => '该直播间的录像 · ${count}';
+
+	/// zh-CN: '还没有已保存的录像'
+	String get roomRecordTakesEmpty => '还没有已保存的录像';
+
 	/// zh-CN: '开播自动录'
 	String get autoRecordOn => '开播自动录';
 
@@ -9199,18 +9214,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。'
 	String get danmakuFontManagerDescription => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。';
 
-	/// zh-CN: '弹幕密度'
-	String get styleDensity => '弹幕密度';
-
-	/// zh-CN: '正常'
-	String get styleDensityNormal => '正常';
-
-	/// zh-CN: '较多'
-	String get styleDensityMore => '较多';
-
-	/// zh-CN: '重叠'
-	String get styleDensityOverlap => '重叠';
-
 	/// zh-CN: '高级设置'
 	String get styleAdvanced => '高级设置';
 
@@ -9984,6 +9987,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '每行卡片数'
 	String get browseColumns => '每行卡片数';
+
+	/// zh-CN: '设了具体列数时，更宽的窗口会自动加列，卡片不会跟着变宽。'
+	String get browseColumnsHint => '设了具体列数时，更宽的窗口会自动加列，卡片不会跟着变宽。';
 
 	/// zh-CN: '自动'
 	String get browseAuto => '自动';
@@ -13156,6 +13162,9 @@ class Translations$shield$zh_CN {
 	/// zh-CN: '列表将被清空，需要时再重新添加。'
 	String get clearConfirmDesc => '列表将被清空，需要时再重新添加。';
 
+	/// zh-CN: '列表已满，先删掉一些再添加'
+	String get listFull => '列表已满，先删掉一些再添加';
+
 	/// zh-CN: '该条目已在屏蔽列表中'
 	String get duplicateEntry => '该条目已在屏蔽列表中';
 
@@ -13167,6 +13176,9 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '已移除'
 	String get removed => '已移除';
+
+	/// zh-CN: '还有 {count} 项未显示'
+	String moreNotShown({required Object count}) => '还有 ${count} 项未显示';
 
 	/// zh-CN: '已清空'
 	String get cleared => '已清空';
@@ -15753,6 +15765,7 @@ extension on Translations {
 			'common.show' => '显示',
 			'common.save' => '保存',
 			'common.copied' => '已复制',
+			'common.copyFailed' => '复制失败',
 			'common.downloadSpeed' => ({required Object speed}) => '总速度 ${speed}',
 			'common.downloadDetails' => '下载详情',
 			'common.downloadSavePath' => '保存位置',
@@ -16010,6 +16023,7 @@ extension on Translations {
 			'hongguo.reserveFailed' => '预约失败，请稍后再试。',
 			'hongguo.comments' => '评论',
 			'hongguo.commentsEmpty' => '还没有评论',
+			'hongguo.loadMore' => '加载更多',
 			'hongguo.anonymousUser' => '红果用户',
 			'hongguo.commentsLoadMore' => '加载更多',
 			'hongguo.danmaku' => '弹幕',
@@ -16241,10 +16255,10 @@ extension on Translations {
 			'iptv.customUserAgentDesc' => '导入与播放请求使用的 UA；留空用默认，播放列表自带优先。',
 			'iptv.updateInterval' => '更新间隔',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
-			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
-			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} 个节目单会按此间隔自动刷新',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
+			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} 个节目单会按此间隔自动刷新',
 			'iptv.autoUpdateStatusNone' => '还没有节目单开启自动更新。',
 			'iptv.autoUpdateNoRemote' => '还没有网络节目单',
 			'iptv.select' => '选择',
@@ -16547,6 +16561,7 @@ extension on Translations {
 			'iptv.reminderMissed' => ({required Object title}) => '已错过「${title}」的预约（应用关闭期间）',
 			'iptv.reminderMissedMany' => ({required int count}) => '${count} 个预约在应用关闭期间已错过',
 			'iptv.reminderAlreadyStarted' => '节目已开播，不能预约',
+			'iptv.reminderCapReached' => '预约已满，请先清理已播过的预约',
 			'multiview.layoutLabel' => '布局',
 			'multiview.pickRoom' => '选择房间',
 			'multiview.openRoom' => '进入直播间',
@@ -16754,11 +16769,11 @@ extension on Translations {
 			'music.queueShowMore' => ({required Object count}) => '显示更多（还有 ${count} 首）',
 			'music.queueMissingFile' => '文件丢失',
 			'music.queueUnplayable' => '无法播放',
+			_ => null,
+		} ?? switch (path) {
 			'music.nowPlaying' => '正在播放',
 			'music.stagePanels' => '歌词与队列',
 			'music.volume' => '音量',
-			_ => null,
-		} ?? switch (path) {
 			'music.progress' => '播放进度',
 			'music.lyrics' => '歌词',
 			'music.lyricsEmpty' => '这首歌还没有歌词。',
@@ -17268,11 +17283,11 @@ extension on Translations {
 			'music.tagEditTitle' => '编辑歌曲标签',
 			'music.tagEditFileName' => '文件名',
 			'music.tagEditName' => '歌曲名',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditSinger' => '艺术家',
 			'music.tagEditAlbum' => '专辑名',
 			'music.tagEditLyric' => 'LRC 歌词',
-			_ => null,
-		} ?? switch (path) {
 			'music.tagEditPic' => '歌曲专辑封面',
 			'music.tagEditParseName' => '从文件名解析歌曲名、艺术家',
 			'music.tagParseNameSinger' => '歌曲名 - 艺术家',
@@ -17782,11 +17797,11 @@ extension on Translations {
 			'room.banned' => '该直播间已被封禁',
 			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
+			_ => null,
+		} ?? switch (path) {
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
 			'room.offlineReason' => '开播后这里会看到直播画面',
-			_ => null,
-		} ?? switch (path) {
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
 			'room.copyName' => '复制昵称',
@@ -17803,6 +17818,8 @@ extension on Translations {
 			'room.recordSize' => ({required String size}) => '已录 ${size}',
 			'room.recordDanmakuCount' => ({required int count}) => '弹幕 ${count} 条',
 			'room.recordIdle' => '这个房间现在没在录制',
+			'room.roomRecordTakes' => ({required Object count}) => '该直播间的录像 · ${count}',
+			'room.roomRecordTakesEmpty' => '还没有已保存的录像',
 			'room.autoRecordOn' => '开播自动录',
 			'room.autoRecordOff' => '取消开播自动录',
 			'room.autoRecordArmed' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）；开播后自动录制',
@@ -18294,13 +18311,13 @@ extension on Translations {
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理开关变化后无需重启应用。',
 			'settings.githubMirrorTitle' => 'GitHub 加速',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorMode' => '下载方式',
 			'settings.githubMirrorModeDesc' => 'GitHub 资源的下载地址。',
 			'settings.githubMirrorOff' => '默认（不加速）',
 			'settings.githubMirrorOfficial' => '官方源 · 可能较慢',
 			'settings.githubMirrorCustom' => '自定义…',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorCustomDetail' => '自填镜像域名',
 			'settings.githubMirrorCustomDomain' => '自定义加速域名',
 			'settings.githubMirrorCustomDesc' => '以 https:// 开头，拼在原始地址前。',
@@ -18368,10 +18385,6 @@ extension on Translations {
 			'settings.danmakuFont' => '弹幕字体',
 			'settings.danmakuFontDescription' => '仅用于画面弹幕，聊天列表沿用界面字体。',
 			'settings.danmakuFontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。',
-			'settings.styleDensity' => '弹幕密度',
-			'settings.styleDensityNormal' => '正常',
-			'settings.styleDensityMore' => '较多',
-			'settings.styleDensityOverlap' => '重叠',
 			'settings.styleAdvanced' => '高级设置',
 			'settings.styleFontSize' => '大小',
 			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
@@ -18630,6 +18643,7 @@ extension on Translations {
 			'settings.searchResults' => '搜索结果',
 			'settings.browseLayoutGroup' => '卡片布局',
 			'settings.browseColumns' => '每行卡片数',
+			'settings.browseColumnsHint' => '设了具体列数时，更宽的窗口会自动加列，卡片不会跟着变宽。',
 			'settings.browseAuto' => '自动',
 			'settings.phoneColumns' => '手机端每行卡片数',
 			'settings.crossSpacing' => '列间距',
@@ -18811,10 +18825,10 @@ extension on Translations {
 			'settings.mpvResetDesc' => '恢复本页设置，首选清晰度不受影响。',
 			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR：关\n• 播放器强制销毁：开\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
 			'settings.mpvResetDone' => '已恢复默认设置',
-			'settings.mpvDocs' => '打开 mpv 官方文档',
-			'settings.mpvDocsDesc' => '每个属性的完整说明。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.mpvDocs' => '打开 mpv 官方文档',
+			'settings.mpvDocsDesc' => '每个属性的完整说明。',
 			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
@@ -19325,10 +19339,10 @@ extension on Translations {
 			'settings.twitchLanguages' => 'Twitch 目录语言',
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
-			'settings.twitchLegacyLanguages' => '中文 + 韩语',
-			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.twitchLegacyLanguages' => '中文 + 韩语',
+			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
 			'settings.twitchLanguage_zh' => '中文',
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
@@ -19688,10 +19702,12 @@ extension on Translations {
 			'shield.usersEmpty' => '还没有屏蔽的用户',
 			'shield.clear' => '清空全部',
 			'shield.clearConfirmDesc' => '列表将被清空，需要时再重新添加。',
+			'shield.listFull' => '列表已满，先删掉一些再添加',
 			'shield.duplicateEntry' => '该条目已在屏蔽列表中',
 			'shield.invalidEntry' => '内容不能为空',
 			'shield.added' => '已添加屏蔽',
 			'shield.removed' => '已移除',
+			'shield.moreNotShown' => ({required Object count}) => '还有 ${count} 项未显示',
 			'shield.cleared' => '已清空',
 			'shield.removeEntry' => '移除这条屏蔽规则',
 			'shield.effectNote' => '屏蔽在直播间弹幕中立即生效。',
@@ -19837,12 +19853,12 @@ extension on Translations {
 			'vod.dynamicsEmptyTitle' => '还没有动态',
 			'vod.dynamicsEmptyDescription' => '关注的 UP 主更新后会出现在这里。',
 			'vod.loadMore' => '加载更多',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regions' => '分区',
 			'vod.regionAnimation' => '动画',
 			'vod.regionGames' => '游戏',
 			'vod.regionGuichu' => '鬼畜',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regionMusic' => '音乐',
 			'vod.regionDance' => '舞蹈',
 			'vod.regionFilm' => '影视',
