@@ -232,8 +232,17 @@ final class LanSyncRuntime {
 
   /// Remembers where [deviceId] was seen, from discovery or a manual entry,
   /// so a sync can reach it.
-  void rememberAddress(String deviceId, {required String host, required int port}) =>
-      _addresses[deviceId] = (host: host, port: port);
+  void rememberAddress(String deviceId, {required String host, required int port}) {
+    final previous = _addresses[deviceId];
+    _addresses[deviceId] = (host: host, port: port);
+    // A peer that moved networks keeps its cached client dialing the dead
+    // address until the runtime rebuilds: drop it, and the next sync
+    // builds a client on the address just seen.
+    if (previous != null && (previous.host != host || previous.port != port)) {
+      final stale = _clients.remove(deviceId);
+      if (stale != null) unawaited(stale.dispose());
+    }
+  }
 
   /// Follows the discovery stream, remembering every peer's newest address.
   /// Without this a freshly paired device is trusted but unreachable until

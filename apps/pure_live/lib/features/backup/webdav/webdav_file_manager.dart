@@ -12,7 +12,14 @@ import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart'
     show BackupDocumentEmpty, BackupRecordingsBusy, BackupRestoreBusy, backupSummaryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart'
-    show applyBackup, captureBackupDocument, formatBackupSize, formatBackupTime, includeSecretsAllowed, webDavClientFor;
+    show
+        applyBackup,
+        captureBackupDocument,
+        decodeBackupBytes,
+        formatBackupSize,
+        formatBackupTime,
+        includeSecretsAllowed,
+        webDavClientFor;
 import 'package:pure_live/features/backup/panes/backup_section_picker.dart' show showBackupSectionPicker;
 import 'package:pure_live/features/backup/panes/restore_preview_dialog.dart'
     show pickAndPreviewRestore, restoreInProgress;
@@ -519,20 +526,29 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
     }
     final bytes = await _readBytes(entry);
     if (bytes == null || !mounted) return;
-    final decoded = BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
-    if (decoded == null) {
+    final read = decodeBackupBytes(bytes);
+    if (read == null) {
       _toast(t.backup.importBadData, status: DsStatus.danger);
       return;
     }
     // The section picker and the preview that says what actually changes
-    // replace the old totals-only confirm; the safe choice comes first.
-    final document = await pickAndPreviewRestore(
-      context,
-      ref,
-      document: decoded,
-      name: entry.name,
-      title: t.backup.pickRestoreTitle(name: entry.name),
-    );
+    // replace the old totals-only confirm; the safe choice comes first. The
+    // stores the comparison reads can refuse to open — nothing is written,
+    // but the walk must say so instead of dying in an unawaited future.
+    BackupDocument? document;
+    try {
+      document = await pickAndPreviewRestore(
+        context,
+        ref,
+        document: read.document,
+        name: entry.name,
+        title: t.backup.pickRestoreTitle(name: entry.name),
+      );
+    } on Object {
+      // The stores the comparison reads did not open; nothing was written.
+      if (mounted) _toast(t.backup.restoreFailed, status: DsStatus.danger);
+      return;
+    }
     if (document == null || !mounted) return;
     // The restore's refusals are messages the viewer can act on, not a
     // transport failure; anything else keeps the server-error wording.
@@ -552,7 +568,6 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
       if (mounted) _toast(_messageOf(error), status: DsStatus.danger);
       return;
     }
-    ref.invalidate(backupSummaryProvider);
     if (mounted) _toast(t.backup.webdavRestored, status: DsStatus.success);
   }
 

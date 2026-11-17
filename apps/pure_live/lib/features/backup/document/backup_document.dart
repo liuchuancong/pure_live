@@ -328,8 +328,15 @@ final class BackupDocument {
     if (decoded is! Map) return null;
     final root = Map<String, Object?>.from(decoded);
     final tagged = _objectMap(root['version'])?['app'] == appTag;
-    final hasSection = BackupSection.values.any((section) => root[section.key] is Map);
-    if (!tagged && !hasSection) return null;
+    final sections = [
+      for (final section in BackupSection.values)
+        if (root[section.key] is Map) section.key,
+    ];
+    // A tagged document is this app's own. An untagged one must name at
+    // least two known sections: any third-party JSON carrying a lone
+    // `settings` or `history` key is not a backup, and accepting it as one
+    // would let an accidental confirm rewrite those stores.
+    if (!tagged && sections.length < 2) return null;
     return BackupDocument._fromRoot(root);
   }
 

@@ -176,12 +176,19 @@ Object? _readPref(String key) {
       BackupPrefKind.integer => StoragePrefs.getInt(key),
       BackupPrefKind.floating => StoragePrefs.getDouble(key),
       BackupPrefKind.stringList => StoragePrefs.getStringList(key),
-      null => null,
+      // The computed families (the per-video VOD keys) have no manifest
+      // kind: their values are strings, read whole.
+      null => _isFamilyKey(key) ? StoragePrefs.getAnyPref(key) : null,
     };
   } on Object {
     return null;
   }
 }
+
+/// Whether [key] rides one of the computed families (see
+/// [kBackedUpPrefFamilies]): the manifest kinds do not name it, the value
+/// itself is the truth.
+bool _isFamilyKey(String key) => kBackedUpPrefFamilies.any(key.startsWith);
 
 Future<void> _writePref(String key, Object? value) async {
   if (value == null) return;
@@ -199,6 +206,9 @@ Future<void> _writePref(String key, Object? value) async {
         await StoragePrefs.setStringList(key, List<String>.from(value));
       }
     case null:
+      // The computed families store strings; a value of any other shape is
+      // not one this device speaks, and the key stays as it is.
+      if (_isFamilyKey(key) && value is String) await StoragePrefs.setString(key, value);
       return;
   }
 }

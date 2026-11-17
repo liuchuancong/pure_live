@@ -166,6 +166,13 @@ final class ScopedSyncAdapter implements LanSyncDataAdapter {
         if (change.isTombstone) {
           await source.delete(change.entityId);
           await ledger.markApplied(syncScope, change.entityId, null);
+          // A source that keeps a value for a deleted entity (a pref the
+          // viewer's device owns) would otherwise read as a fresh local
+          // edit on the next detector pass, pushing the deletion straight
+          // back — a delete the two devices then flip between forever. The
+          // kept value goes into the ledger as the applied one.
+          final kept = (await source.current())[change.entityId];
+          if (kept != null) await ledger.markApplied(syncScope, change.entityId, kept);
         } else {
           await source.upsert(change.entityId, change.payload);
           await ledger.markApplied(syncScope, change.entityId, change.payload);

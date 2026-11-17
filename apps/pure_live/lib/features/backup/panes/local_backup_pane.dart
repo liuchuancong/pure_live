@@ -237,16 +237,16 @@ final class _LocalBackupPaneState extends ConsumerState<LocalBackupPane> {
   Future<BackupDocument?> _pickRestore(LocalBackupFile entry) async {
     final t = context.t;
     try {
-      final document = await readBackupDocument(entry.file);
+      final read = await readBackupDocument(entry.file);
       if (!mounted) return null;
-      if (document == null) {
+      if (read == null) {
         _toast(t.backup.importBadData);
         return null;
       }
       return await pickAndPreviewRestore(
         context,
         ref,
-        document: document,
+        document: read.document,
         name: entry.name,
         title: t.backup.pickRestoreTitle(name: entry.name),
       );

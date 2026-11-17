@@ -1,4 +1,4 @@
-import 'dart:convert' show utf8;
+import 'dart:convert' show jsonDecode, utf8;
 import 'dart:io' show Directory, File, FileSystemException;
 
 import 'package:file_picker/file_picker.dart' show FilePicker;
@@ -8,6 +8,7 @@ import 'package:live_storage/live_storage.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/backup/cloud/legacy_backup_importer.dart' show LegacyBackupImporter;
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
 import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
@@ -49,6 +50,10 @@ Future<void> storeIncludeSecrets({required bool allowed}) => StoragePrefs.setBoo
 /// The backup document built from the stores and settings as they are now,
 /// carrying [sections]. The secrets drop out unless the user allowed them.
 Future<BackupDocument> captureBackupDocument(WidgetRef ref, {Set<BackupSection> sections = BackupSection.all}) async {
+  // A restore in progress is rewriting the stores this reads: the answer
+  // would be half-old, half-new. The refusal words itself like the restore
+  // path's own busy refusal, so every caller's existing handler says so.
+  if (ref.read(backupRestoreLockProvider).busy) throw const BackupRestoreBusy();
   final repository = await ref.read(backupRepositoryProvider.future);
   final allowed = includeSecretsAllowed() ? sections : sections.difference(const {BackupSection.secrets});
   return repository.capture(sections: allowed);
@@ -66,6 +71,9 @@ Future<void> applyBackup(WidgetRef ref, BackupDocument document) async {
   // hear the same writes over the store's change stream.
   if (document.hasSettings) refreshSettingsFromWidget(ref);
   refreshBackupDataProviders(document, invalidate: ref.invalidate);
+  // The summary pane counts from the stores directly; a restore just moved
+  // every count under it.
+  ref.invalidate(backupSummaryProvider);
 }
 
 /// Makes the IPTV library and the multiview re-read their stores after a
@@ -174,10 +182,34 @@ File freeBackupFile(Directory folder, String name) {
   return file;
 }
 
-/// Reads [file] as a backup document; answers null when it is not one.
-Future<BackupDocument?> readBackupDocument(File file) async {
+/// The backup document in [bytes]: this app's own export, or a legacy
+/// file (the reference app's `backupVersion` documents) carried over into
+/// this app's shape, skipped sections named. Null when it is neither —
+/// the callers say "not a backup" to that. Every restore path (the local
+/// files, the WebDAV downloads, the cloud) decodes through here, so a
+/// legacy document reads the same whichever way it travelled.
+({BackupDocument document, List<String> skippedLegacy})? decodeBackupBytes(List<int> bytes) {
+  final Object? root;
+  try {
+    root = jsonDecode(utf8.decode(bytes, allowMalformed: true));
+  } on Object {
+    return null;
+  }
+  if (root is! Map) return null;
+  final typed = Map<String, Object?>.from(root);
+  if (LegacyBackupImporter.looksLegacy(typed)) {
+    final imported = LegacyBackupImporter.tryImport(typed);
+    if (imported == null) return null;
+    return (document: imported.document, skippedLegacy: imported.skipped);
+  }
+  final document = BackupDocument.tryFromJson(typed);
+  if (document == null) return null;
+  return (document: document, skippedLegacy: const <String>[]);
+}
+
+Future<({BackupDocument document, List<String> skippedLegacy})?> readBackupDocument(File file) async {
   final bytes = await file.readAsBytes();
-  return BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
+  return decodeBackupBytes(bytes);
 }
 
 /// Deletes [file].

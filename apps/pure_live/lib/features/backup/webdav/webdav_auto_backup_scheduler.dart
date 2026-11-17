@@ -106,6 +106,9 @@ final class WebDavAutoBackupService {
     final log = appLog.forCategory('backup.webdav.auto');
     try {
       final repository = await _ref.read(backupRepositoryProvider.future);
+      // Re-checked now the awaits are done: a restore that started while
+      // this check was pending must not be read half-through.
+      if (_ref.read(backupRestoreLockProvider).busy) return const WebDavAutoBackupResult.skipped();
       final document = _capture(repository, plan);
       if (document.isEmpty) {
         log.info('nothing to upload: the document is empty');

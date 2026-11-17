@@ -8,7 +8,7 @@ import 'package:pure_live/features/backup/cloud/cloud_service.dart';
 import 'package:pure_live/features/backup/cloud/legacy_backup_importer.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart'
-    show BackupDocumentEmpty, BackupRecordingsBusy, BackupRestoreBusy, backupRepositoryProvider;
+    show BackupDocumentEmpty, BackupRecordingsBusy, BackupRestoreBusy, backupRepositoryProvider, backupSummaryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show refreshBackupDataProviders;
 import 'package:pure_live/features/version/app_version.dart';
 
@@ -224,6 +224,10 @@ final class CloudController extends Notifier<CloudState> {
     }
     if (document.hasSettings) refreshSettings(ref);
     refreshBackupDataProviders(document, invalidate: ref.invalidate);
+    // The summary pane counts from the stores directly; the local and
+    // WebDAV restores re-read it through applyBackup, and this path does
+    // the same here.
+    ref.invalidate(backupSummaryProvider);
     await refreshBackupInfo();
   });
 

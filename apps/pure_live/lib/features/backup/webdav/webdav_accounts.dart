@@ -134,7 +134,9 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
   /// an empty one clears it, anything else stores it. Answers the id the
   /// account ended up with, which is how a caller finds its own new entry.
   Future<String> save({required WebDavAccount account, required String? password}) async {
-    final id = account.id.isEmpty ? _newAccountId(account.url) : account.id;
+    final id = account.id.isEmpty
+        ? _newAccountId(account.url, taken: {for (final other in state.accounts) other.id})
+        : account.id;
     final next = (id: id, name: account.name, url: account.url, user: account.user);
     final others = [
       for (final other in state.accounts)
@@ -197,10 +199,17 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
 
 /// A fresh account id: the address's host plus a counter-free suffix, so two
 /// servers on one host still get separate vault refs.
-String _newAccountId(String url) {
+String _newAccountId(String url, {Set<String> taken = const {}}) {
   final host = webDavAccountNameFromUrl(url).replaceAll(RegExp('[^A-Za-z0-9._-]'), '-');
   final stamp = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-  return 'webdav-${host.isEmpty ? 'server' : host}-$stamp';
+  // Two accounts on one host inside the stamp's window are real: the
+  // suffix walks until the id is one nobody holds, so a save never lands
+  // on another account's entry.
+  var id = 'webdav-${host.isEmpty ? 'server' : host}-$stamp';
+  for (var suffix = 2; taken.contains(id); suffix++) {
+    id = 'webdav-${host.isEmpty ? 'server' : host}-$stamp-$suffix';
+  }
+  return id;
 }
 
 /// Stores an account's password in [store]; an empty [password] clears it.
