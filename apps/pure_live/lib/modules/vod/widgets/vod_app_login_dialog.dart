@@ -194,6 +194,32 @@ final class _VodAppLoginDialogState extends ConsumerState<_VodAppLoginDialog> {
             )
           : const SizedBox(width: 28, height: 28, child: DsSpinner());
     }
+    if (_expired) {
+      // The code aged out but is still on the field: a veil says so, the
+      // way the scanned veil does — the stale picture never invites a scan.
+      final colors = DsTheme.colorsOf(context);
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          PrettyQrView.data(data: url),
+          DecoratedBox(
+            decoration: BoxDecoration(color: const Color(0xCCFFFFFF), borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s8,
+              children: [
+                DsIcon(DsIcons.clock, size: 40, color: colors.textMuted),
+                Text(
+                  t.vod.appLoginExpired,
+                  textAlign: TextAlign.center,
+                  style: DsTheme.of(context).typography.caption.copyWith(color: colors.text),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
     return PrettyQrView.data(data: url);
   }
 }

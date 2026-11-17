@@ -267,6 +267,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   late final SleepTimerController _sleepTimerNotifier;
   late final PlayerKernel _kernel;
 
+  /// The continue checkpoint's writer, captured for the same reason: the
+  /// leaving page's last position and the mini window's close both land
+  /// after `ref` has stopped answering.
+  late final VodHistoryController _historyNotifier;
+
   /// The presentation mode, followed through a manual listener for the same
   /// reason: the leaving page reads its own field, not `ref`.
   PresentationMode _presentationMode = PresentationMode.normal;
@@ -281,6 +286,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
     _sleepTimerNotifier.onFire_ = _onSleepFire;
     _kernel = ref.read(playerKernelProvider);
+    _historyNotifier = ref.read(vodHistoryProvider.notifier);
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
@@ -1091,15 +1097,29 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
+  /// The current part's live download row, projected to the fields the
+  /// over-the-bar pill reads: a record compares structurally, so a tick
+  /// from some other task in the queue does not rebuild this page.
+  ({VodDownloadPhase phase, double? progress, String id})? _partDownload() {
+    final item = vodDownloadOf(ref.watch(vodDownloadsProvider), widget.bvid, _part?.cid ?? 0);
+    if (item == null) return null;
+    return (phase: item.phase, progress: item.progress, id: item.id);
+  }
+
   /// Reads the part's own extras: its marked moments, its subtitle tracks and
   /// its scrub filmstrip. The station keeps the last two for a signed-in
   /// viewer, so an empty answer is the ordinary one and the surface simply
   /// shows less rather than failing.
   Future<void> _loadExtra(int cid) async {
     if (cid <= 0) return;
-    final extra = await ref.read(vodClientProvider).playerExtra(bvid: widget.bvid, cid: cid);
-    if (!mounted || _part?.cid != cid) return;
-    setState(() => _extra = extra);
+    try {
+      final extra = await ref.read(vodClientProvider).playerExtra(bvid: widget.bvid, cid: cid);
+      if (!mounted || _part?.cid != cid) return;
+      setState(() => _extra = extra);
+    } on Object {
+      // The extras are garnish: a failed answer leaves the surface without
+      // them, the way an empty one would.
+    }
   }
 
   /// The archive's opening and ending, kept on this device: Bilibili marks
@@ -1434,7 +1454,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  ({int cid, double seconds})? _readProgress() => ref.read(vodHistoryProvider.notifier).resumePoint(widget.bvid);
+  ({int cid, double seconds})? _readProgress() => _historyNotifier.resumePoint(widget.bvid);
 
   /// Saves the part and position at most once every few seconds. The entry is
   /// also the history record the station's 个人 page reads, so it carries the
@@ -1455,18 +1475,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _lastSave = now;
     final detail = _detail;
     unawaited(
-      ref
-          .read(vodHistoryProvider.notifier)
-          .save(
-            bvid: widget.bvid,
-            cid: part.cid,
-            seconds: position / 1000,
-            title: detail?.title ?? part.title,
-            cover: detail?.coverUrl,
-            uploader: detail?.uploader,
-            durationSeconds: total / 1000,
-            completed: position >= total - 5000,
-          ),
+      _historyNotifier.save(
+        bvid: widget.bvid,
+        cid: part.cid,
+        seconds: position / 1000,
+        title: detail?.title ?? part.title,
+        cover: detail?.coverUrl,
+        uploader: detail?.uploader,
+        durationSeconds: total / 1000,
+        completed: position >= total - 5000,
+      ),
     );
   }
 
@@ -1967,8 +1985,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (vodDownloadOf(ref.watch(vodDownloadsProvider), widget.bvid, _part?.cid ?? 0)
-                              case final download?
+                          if (_partDownload() case final download?
                               when download.phase == VodDownloadPhase.running ||
                                   download.phase == VodDownloadPhase.queued)
                             Padding(
@@ -2944,8 +2961,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
+  /// Whether this display is the TV form factor: its chrome never hides on
+  /// idle, the room's keepControls rule — the remote's focus walk is the
+  /// only way through the bar, and a bar that folds under a focused button
+  /// strands the walk.
+  bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+
   void _scheduleHide() {
     _hideTimer?.cancel();
+    // The TV's chrome never hides on idle (see _isTv).
+    if (_isTv) return;
     // An open catalogue holds the bar up; a paused stream keeps it too.
     if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
     final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;

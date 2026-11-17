@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart'
     show PlatformScreenBrightnessService, ScreenBrightnessScope, ScreenBrightnessService;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
@@ -19,7 +20,8 @@ import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSp
 import 'package:pure_live/modules/vod/controller/vod_app_login.dart' show vodAppClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
-import 'package:pure_live/modules/vod/controller/vod_library.dart' show VodSeasonProgress, vodSeasonProgressProvider;
+import 'package:pure_live/modules/vod/controller/vod_library.dart'
+    show VodSeasonProgress, VodSeasonProgressController, vodSeasonProgressProvider;
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart'
     show VodApiType, VodFinishAction, VodSpeedChoice, vodPlaybackSettingsProvider;
@@ -38,6 +40,7 @@ import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPil
 import 'package:pure_live/shared/shared.dart'
     show
         AudienceFormat,
+        BackgroundPlaybackGate,
         CoverFallback,
         DetailHeroBackdrop,
         FloatingVideoHandoff,
@@ -73,7 +76,7 @@ final class VodSeasonPage extends ConsumerStatefulWidget {
   ConsumerState<VodSeasonPage> createState() => _VodSeasonPageState();
 }
 
-final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteAware {
+final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteAware, WidgetsBindingObserver {
   /// The cinema player's default qn (1080P); the source may serve lower.
   static const int _defaultQn = 80;
 
@@ -154,6 +157,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   bool _autoOpened = false;
   double? _dragSeconds;
 
+  /// The picture's background rule, the video page's own gate: whether
+  /// leaving the app keeps the episode playing, and how it comes back.
+  BackgroundPlaybackGate? _backgroundGate;
+  PlayerId? _backgroundPausedHandle;
+
   /// The window's observer, kept for `dispose` where the provider scope may
   /// already be gone.
   RouteObserver<ModalRoute<void>>? _routeObserver;
@@ -163,6 +171,14 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   // release its handle.
   late final RoomPresentationController _presentationNotifier;
   late final PlayerKernel _kernel;
+
+  /// The continue checkpoint's writer, captured for the same reason: the
+  /// leaving page's last position lands after `ref` has stopped answering.
+  late final VodSeasonProgressController _progressNotifier;
+
+  /// The season detail as plain data, followed through a manual listener:
+  /// `_savePosition` names its episode ladder by it, also on the way out.
+  VodSeasonDetail? _seasonDetail;
 
   /// The presentation mode, followed through a manual listener for the same
   /// reason: the leaving page reads its own field, not `ref`.
@@ -175,7 +191,13 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     super.initState();
     _presentationNotifier = ref.read(roomPresentationProvider.notifier);
     _kernel = ref.read(playerKernelProvider);
+    _progressNotifier = ref.read(vodSeasonProgressProvider.notifier);
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
+    ref.listenManual(
+      vodSeasonDetailProvider(widget.seasonId),
+      (_, next) => _seasonDetail = next.value,
+      fireImmediately: true,
+    );
     // The station's opening quality, with the cinema's own floor: 720P is the
     // progressive endpoint's ceiling, not a PGC rendition's.
     final setting = ref.read(vodQualityProvider).qn;
@@ -184,7 +206,37 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     // will take a brightness write at all.
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
     _speed = ref.read(vodPlaybackSettingsProvider).speed.value;
+    // The background rule the video page plays by: the gate decides whether
+    // leaving the app pauses this picture, and what resumes it.
+    WidgetsBinding.instance.addObserver(this);
+    _backgroundGate = BackgroundPlaybackGate(
+      backgroundEnabled: () => ref.read(playbackSettingsProvider).backgroundPlay,
+      shouldPause: () {
+        final presentation = _presentationMode;
+        return (_transport?.isPlaying ?? false) &&
+            presentation != PresentationMode.pip &&
+            presentation != PresentationMode.floating;
+      },
+      pause: () async {
+        _backgroundPausedHandle = _handle?.id;
+        await _handle?.pause();
+      },
+      canResume: () =>
+          _backgroundPausedHandle != null &&
+          _handle != null &&
+          _handle?.id == _backgroundPausedHandle &&
+          !(_transport?.isPlaying ?? false),
+      resume: () async {
+        _backgroundPausedHandle = null;
+        await _handle?.play();
+      },
+    );
     unawaited(_syncBrightness());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _backgroundGate?.handleLifecycle(state);
   }
 
   @override
@@ -213,8 +265,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   @override
   void dispose() {
     _disposed = true;
-    // The page's last position lands while its ref still answers; the
-    // code below this line must not read it again.
+    // The page's last position lands through the captured writer and
+    // ladder; no `ref` read below this line.
     _savePosition(force: true);
     // The player goes quiet before anything else: the route's leave animation
     // runs while the release's queue drains, and the episode must not be heard
@@ -232,6 +284,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     }
     _routeObserver?.unsubscribe(this);
     _routeObserver = null;
+    WidgetsBinding.instance.removeObserver(this);
+    _backgroundGate?.dispose();
+    _backgroundGate = null;
     _gestureTimer?.cancel();
     _hideTimer?.cancel();
     _countdownTimer?.cancel();
@@ -396,7 +451,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   /// seconds while the picture plays, and once more on the way out. The
   /// open-time write names the ladder's position; this one adds the
   /// where within the episode.
-  void _savePosition({bool force = false, Duration? positionOverride}) {
+  void _savePosition({bool force = false, Duration? positionOverride, bool markDone = false}) {
     final episode = _episode;
     final transport = _transport;
     if (episode == null || transport == null) return;
@@ -409,20 +464,19 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     final now = DateTime.now();
     if (!force && now.difference(_lastPositionSave) < const Duration(seconds: 5)) return;
     _lastPositionSave = now;
-    final detail = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+    final detail = _seasonDetail;
     final index = detail?.episodes.indexOf(episode) ?? -1;
     if (detail == null || index < 0) return;
     unawaited(
-      ref
-          .read(vodSeasonProgressProvider.notifier)
-          .save(
-            seasonId: '${widget.seasonId}',
-            title: detail.title,
-            cover: detail.coverUrl,
-            episodeIndex: index,
-            total: detail.episodes.length,
-            positionSeconds: position / 1000,
-          ),
+      _progressNotifier.save(
+        seasonId: '${widget.seasonId}',
+        title: detail.title,
+        cover: detail.coverUrl,
+        episodeIndex: index,
+        total: detail.episodes.length,
+        positionSeconds: position / 1000,
+        completed: markDone,
+      ),
     );
   }
 
@@ -483,8 +537,16 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
 
   /// A playing episode lets its bars down after a moment's rest; a paused one
   /// keeps them, because a stopped picture has nothing else to read.
+  /// Whether this display is the TV form factor: its chrome never hides on
+  /// idle, the room's keepControls rule — the remote's focus walk is the
+  /// only way through the bar, and a bar that folds under a focused button
+  /// strands the walk.
+  bool get _isTv => ref.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+
   void _scheduleHide() {
     _hideTimer?.cancel();
+    // The TV's chrome never hides on idle (see _isTv).
+    if (_isTv) return;
     if (!(_transport?.isPlaying ?? false)) return;
     _hideTimer = Timer(const Duration(seconds: 3), () {
       if (mounted && (_transport?.isPlaying ?? false)) setState(() => _controlsVisible = false);
@@ -622,7 +684,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       case VodTapSide.right:
         unawaited(_stepSeek(_doubleTapStep));
       case VodTapSide.middle:
-        _togglePlay();
+        unawaited(_togglePlay());
     }
   }
 
@@ -716,6 +778,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
   Future<void> _handleFinished() async {
     if (_finished) return;
     _finished = true;
+    // The checkpoint says the season was played to its end: for a ladder
+    // the last-episode rule already reads it done, and a single-episode
+    // season (a film) needs this mark to leave the continue card.
+    _savePosition(force: true, markDone: true);
     final next = _episodeStepped(1);
     switch (ref.read(vodPlaybackSettingsProvider).finish) {
       case VodFinishAction.pause:
@@ -792,11 +858,32 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       if (state.isPlaying) _scheduleHide();
       _savePosition();
     });
-    // The end of an episode is the station's own event, not a position the
-    // page has to guess at: it is what the finish action waits for.
+    // The station's own events, not positions the page guesses at: the end
+    // of an episode is what the finish action waits for, and a failed one
+    // says so on the picture instead of spinning forever.
     _eventSub = handle.adapterEvents.listen((event) {
-      if (event is PlayerAdapterCompleted) unawaited(_handleFinished());
+      if (!mounted) return;
+      switch (event) {
+        case final PlayerAdapterErrorEvent error:
+          setState(() {
+            _opening = false;
+            _error = error.message;
+          });
+        case PlayerAdapterCompleted():
+          unawaited(_handleFinished());
+        default:
+          break;
+      }
     });
+  }
+
+  /// The episode's live download row, projected to the fields the picture's
+  /// pill reads: a record compares structurally, so a tick from some other
+  /// task in the queue does not rebuild this page.
+  ({VodDownloadPhase phase, double? progress, String id})? _episodeDownload(VodEpisode? episode) {
+    final item = vodDownloadOf(ref.watch(vodDownloadsProvider), 'ep${episode?.id ?? 0}', episode?.cid ?? 0);
+    if (item == null) return null;
+    return (phase: item.phase, progress: item.progress, id: item.id);
   }
 
   /// Hands the current episode to the app-wide download queue; the queue
@@ -834,16 +921,25 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     }
   }
 
-  void _togglePlay() {
+  Future<void> _togglePlay() async {
     final handle = _handle;
     if (handle == null) return;
-    unawaited(_transport?.isPlaying ?? false ? handle.pause() : handle.play());
+    try {
+      final playing = _transport?.isPlaying ?? false;
+      playing ? await handle.pause() : await handle.play();
+    } on Object catch (error) {
+      if (mounted) setState(() => _error = '$error');
+    }
   }
 
   Future<void> _seekTo(double seconds) async {
     final handle = _handle;
     if (handle == null) return;
-    await handle.seek(Duration(milliseconds: (seconds * 1000).round()));
+    try {
+      await handle.seek(Duration(milliseconds: (seconds * 1000).round()));
+    } on Object catch (error) {
+      if (mounted) setState(() => _error = '$error');
+    }
   }
 
   void _toggleFullscreen() {
@@ -955,9 +1051,43 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     if (mounted && context.mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
   }
 
-  /// The picture verbs over the picture: the frame copy, the two small
-  /// windows — one pill, on every stage size this page draws.
+  /// The sideways window has no episode column: the strip's jump verb is
+  /// the way through the ladder there, the section's own dialog reused —
+  /// a number is an episode number first, a ladder position second.
+  Future<void> _jumpEpisode() async {
+    final detail = _seasonDetail;
+    if (detail == null || detail.episodes.isEmpty) return;
+    final episodes = detail.episodes;
+    int? parse(String typed) {
+      final number = int.tryParse(typed.trim());
+      if (number == null) return null;
+      final byIndex = episodes.where((entry) => int.tryParse(entry.index) == number);
+      if (byIndex.isNotEmpty) return episodes.indexOf(byIndex.first);
+      return number >= 1 && number <= episodes.length ? number - 1 : null;
+    }
+
+    final position = await showVodJumpDialog(
+      context,
+      title: context.t.vod.episodesJump,
+      count: episodes.length,
+      parse: parse,
+    );
+    if (position == null || position < 0 || position >= episodes.length || !mounted) return;
+    unawaited(_openEpisode(episodes[position]));
+  }
+
+  /// The picture verbs over the picture: the ladder's jump, the frame copy,
+  /// the two small windows — one pill, on every stage size this page draws.
   List<Widget> _pictureVerbs(Translations t) => [
+    if (_seasonDetail != null && _seasonDetail!.episodes.length > 1)
+      PlayerBarButton(
+        icon: DsIcons.listVideo,
+        label: t.vod.episodesJump,
+        onPressed: () {
+          _wake();
+          unawaited(_jumpEpisode());
+        },
+      ),
     if (_handle?.canCaptureScreenshot ?? false)
       PlayerBarButton(
         icon: DsIcons.camera,
@@ -1495,8 +1625,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               onAction: _cancelCountdown,
                             ),
                           ),
-                        if (vodDownloadOf(ref.watch(vodDownloadsProvider), 'ep${episode?.id ?? 0}', episode?.cid ?? 0)
-                            case final download?
+                        if (_episodeDownload(episode) case final download?
                             when download.phase == VodDownloadPhase.running ||
                                 download.phase == VodDownloadPhase.queued)
                           Row(

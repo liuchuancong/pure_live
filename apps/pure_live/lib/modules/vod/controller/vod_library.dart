@@ -204,6 +204,13 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
   /// last.
   Timer? _reload;
 
+  /// The archives removed just now: a writer already in flight — another
+  /// window's throttled checkpoint, the mini window's close — would
+  /// otherwise put a just-removed record straight back. A removal mutes
+  /// only the writers racing it; a minute later watching the archive again
+  /// brings the record back, the way it should.
+  final Map<String, DateTime> _tombstones = {};
+
   @override
   List<VodHistoryEntry> build() {
     _subscription = StoragePrefs.watch().listen((keys) {
@@ -232,6 +239,14 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
     String? uploader,
     bool completed = false,
   }) async {
+    // A removal just made mutes this write: the viewer took the record
+    // out, and a checkpoint that left before the removal does not put it
+    // back.
+    final tombstone = _tombstones[bvid];
+    if (tombstone != null) {
+      if (DateTime.now().difference(tombstone) < const Duration(minutes: 1)) return;
+      _tombstones.remove(bvid);
+    }
     final key = '$kVodProgressPrefix$bvid';
     try {
       await StoragePrefs.setString(
@@ -326,6 +341,7 @@ final class VodHistoryController extends Notifier<List<VodHistoryEntry>> {
     // The prefix is a constant, the bvid is not: the manifest gate treats
     // this as a computed key and lists it for review instead of demanding a
     // static entry.
+    _tombstones[bvid] = DateTime.now();
     final key = '$kVodProgressPrefix$bvid';
     try {
       await StoragePrefs.remove(key);
@@ -419,6 +435,7 @@ final class VodSeasonProgress {
     this.cover,
     this.positionSeconds,
     this.total,
+    this.finished = false,
   });
 
   /// The season the checkpoint belongs to.
@@ -441,12 +458,19 @@ final class VodSeasonProgress {
   /// How many episodes the ladder had when the checkpoint was written.
   final int? total;
 
+  /// Whether the picture reached the episode's end — the season page marks
+  /// it on the station's own end event.
+  final bool finished;
+
   /// When the checkpoint was written.
   final DateTime updatedAt;
 
-  /// Whether the last-opened episode was the ladder's last one — a
-  /// finished series leaves the continue card alone.
-  bool get completed => total != null && episodeIndex >= total! - 1;
+  /// Whether the season is done and leaves the continue card alone: the
+  /// end event said so, or a ladder of several episodes has had its last
+  /// one opened. A single-episode season (a film) only counts when it was
+  /// played to its end — merely opening it was never the mark of a
+  /// finished one.
+  bool get completed => finished || (total != null && total! > 1 && episodeIndex >= total! - 1);
 }
 
 /// The preference prefix one archive's viewer-set opening and ending points
@@ -510,7 +534,9 @@ final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>
   }
 
   /// Writes one series' checkpoint — the season page calls it at each
-  /// episode open, so the shelf and the continue card never disagree.
+  /// episode open, so the shelf and the continue card never disagree. The
+  /// end event marks it [completed], the mark a single-episode season
+  /// needs before its checkpoint leaves the continue card.
   Future<void> save({
     required String seasonId,
     required String title,
@@ -518,6 +544,7 @@ final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>
     String? cover,
     int? total,
     double? positionSeconds,
+    bool completed = false,
   }) async {
     final key = '$kVodSeasonProgressPrefix$seasonId';
     final written = VodSeasonProgress(
@@ -528,6 +555,7 @@ final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>
       updatedAt: DateTime.now(),
       positionSeconds: positionSeconds,
       total: total,
+      finished: completed,
     );
     try {
       await StoragePrefs.setString(
@@ -538,6 +566,7 @@ final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>
           'episodeIndex': episodeIndex,
           'total': ?total,
           'positionSeconds': ?positionSeconds,
+          if (completed) 'completed': true,
           'updatedAt': written.updatedAt.millisecondsSinceEpoch,
         }),
       );
@@ -604,6 +633,7 @@ final class VodSeasonProgressController extends Notifier<List<VodSeasonProgress>
         episodeIndex: index.toInt(),
         positionSeconds: (json['positionSeconds'] as num?)?.toDouble(),
         total: json['total'] is num ? (json['total'] as num).toInt() : null,
+        finished: json['completed'] == true,
         updatedAt: updatedAt == null ? DateTime.now() : DateTime.fromMillisecondsSinceEpoch(updatedAt),
       );
     } on Object {

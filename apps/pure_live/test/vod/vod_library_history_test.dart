@@ -115,6 +115,39 @@ void main() {
       expect(unknown.completed, isFalse);
     });
 
+    test('a single-episode season is done only when the end marked it', () async {
+      final container = await _container();
+      final controller = container.read(vodSeasonProgressProvider.notifier);
+      // Opening the only episode is not finishing it.
+      await controller.save(seasonId: '5', title: 'film', episodeIndex: 0, total: 1);
+      final open = jsonDecode(StoragePrefs.getString('${kVodSeasonProgressPrefix}5')!) as Map<String, Object?>;
+      expect(open.containsKey('completed'), isFalse);
+      // The picture's end event marks it done; reopening it clears the mark.
+      await controller.save(seasonId: '5', title: 'film', episodeIndex: 0, total: 1, completed: true);
+      final done = jsonDecode(StoragePrefs.getString('${kVodSeasonProgressPrefix}5')!) as Map<String, Object?>;
+      expect(done['completed'], isTrue);
+      await controller.save(seasonId: '5', title: 'film', episodeIndex: 0, total: 1);
+      final again = jsonDecode(StoragePrefs.getString('${kVodSeasonProgressPrefix}5')!) as Map<String, Object?>;
+      expect(again.containsKey('completed'), isFalse);
+      // The getter reads the mark, not the index alone.
+      final stamp = DateTime.fromMillisecondsSinceEpoch(1000);
+      expect(
+        VodSeasonProgress(seasonId: '5', title: 'x', episodeIndex: 0, total: 1, updatedAt: stamp).completed,
+        isFalse,
+      );
+      expect(
+        VodSeasonProgress(
+          seasonId: '5',
+          title: 'x',
+          episodeIndex: 0,
+          total: 1,
+          updatedAt: stamp,
+          finished: true,
+        ).completed,
+        isTrue,
+      );
+    });
+
     test('remove drops the checkpoint', () async {
       final container = await _container({
         '${kVodSeasonProgressPrefix}7': jsonEncode({'title': 'x', 'episodeIndex': 0, 'updatedAt': 1}),
