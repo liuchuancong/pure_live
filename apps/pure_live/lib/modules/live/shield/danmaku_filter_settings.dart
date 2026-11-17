@@ -316,19 +316,45 @@ class DanmakuFilterController extends Notifier<DanmakuFilterRules> {
   ));
 
   Future<void> _write(DanmakuFilterRules next) async {
+    final previous = state;
     state = next;
     try {
-      await StoragePrefs.setBool(_similarityKey, next.similarityEnabled);
-      await StoragePrefs.setInt(_thresholdKey, next.similarityThreshold);
-      await StoragePrefs.setInt(_cacheSecondsKey, next.similarityCacheSeconds);
-      await StoragePrefs.setInt(_maxCacheSizeKey, next.similarityMaxCacheSize);
-      await StoragePrefs.setBool(_emoteOnlyKey, next.blockEmoteOnly);
-      await StoragePrefs.setBool(_blockLongKey, next.blockLong);
-      await StoragePrefs.setInt(_blockLongLengthKey, next.blockLongLength);
-      await StoragePrefs.setBool(_douyuSuspectedKey, next.douyuSuspectedAutomated);
-      await StoragePrefs.setBool(_coloredOnlyKey, next.coloredOnly);
-      await StoragePrefs.setInt(_minUserLevelKey, next.minUserLevel);
-      await StoragePrefs.setInt(_minFansLevelKey, next.minFansLevel);
+      // Only the moved keys go to storage: a slider drag lands here per
+      // tick, and rewriting every rule's key per tick is eleven writes for
+      // one move.
+      if (previous.similarityEnabled != next.similarityEnabled) {
+        await StoragePrefs.setBool(_similarityKey, next.similarityEnabled);
+      }
+      if (previous.similarityThreshold != next.similarityThreshold) {
+        await StoragePrefs.setInt(_thresholdKey, next.similarityThreshold);
+      }
+      if (previous.similarityCacheSeconds != next.similarityCacheSeconds) {
+        await StoragePrefs.setInt(_cacheSecondsKey, next.similarityCacheSeconds);
+      }
+      if (previous.similarityMaxCacheSize != next.similarityMaxCacheSize) {
+        await StoragePrefs.setInt(_maxCacheSizeKey, next.similarityMaxCacheSize);
+      }
+      if (previous.blockEmoteOnly != next.blockEmoteOnly) {
+        await StoragePrefs.setBool(_emoteOnlyKey, next.blockEmoteOnly);
+      }
+      if (previous.blockLong != next.blockLong) {
+        await StoragePrefs.setBool(_blockLongKey, next.blockLong);
+      }
+      if (previous.blockLongLength != next.blockLongLength) {
+        await StoragePrefs.setInt(_blockLongLengthKey, next.blockLongLength);
+      }
+      if (previous.douyuSuspectedAutomated != next.douyuSuspectedAutomated) {
+        await StoragePrefs.setBool(_douyuSuspectedKey, next.douyuSuspectedAutomated);
+      }
+      if (previous.coloredOnly != next.coloredOnly) {
+        await StoragePrefs.setBool(_coloredOnlyKey, next.coloredOnly);
+      }
+      if (previous.minUserLevel != next.minUserLevel) {
+        await StoragePrefs.setInt(_minUserLevelKey, next.minUserLevel);
+      }
+      if (previous.minFansLevel != next.minFansLevel) {
+        await StoragePrefs.setInt(_minFansLevelKey, next.minFansLevel);
+      }
     } on Object {
       // The rules are a preference; a closed store loses them, nothing else.
     }

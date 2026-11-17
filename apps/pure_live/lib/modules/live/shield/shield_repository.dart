@@ -48,6 +48,9 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
   Future<bool> addKeyword(String raw) async {
     final value = raw.trim();
     if (value.isEmpty || state.keywords.contains(value)) return false;
+    // The list editor's save takes this same cap; the one-by-one path
+    // honours it here, or a pile of block actions would outgrow it.
+    if (state.keywords.length >= kShieldBlockLimit) return false;
     state = (enabled: state.enabled, keywords: [...state.keywords, value], users: state.users);
     await persist(_keywordsKey, state.keywords);
     return true;
@@ -70,6 +73,13 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
     state = (enabled: state.enabled, keywords: const [], users: state.users);
     await persist(_keywordsKey, const []);
   }
+
+  /// Whether the keyword list has room for one more, so a caller can say
+  /// "full" instead of the duplicate a false add reads as.
+  bool get keywordsHaveRoom => state.keywords.length < kShieldBlockLimit;
+
+  /// Whether the users list has room for one more.
+  bool get usersHaveRoom => state.users.length < kShieldBlockLimit;
 
   /// Replaces the blocked keywords with [values] — the list editor's save:
   /// the draft carries the order the viewer chose and the rows they kept.

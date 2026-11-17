@@ -6,9 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
-import 'package:pure_live/modules/live/shield/shield_add_field.dart';
+import 'package:pure_live/modules/live/shield/shield_entry_list.dart';
 import 'package:pure_live/modules/live/shield/shield_repository.dart';
-import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The danmaku filter's settings pane (the reference's video → danmaku
 /// filter page): the shield's master switch, then its rules one group at a
@@ -80,7 +79,7 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
         ),
         switch (_group) {
           _ShieldGroup.content => _content(context),
-          _ShieldGroup.keywords => _ShieldList(
+          _ShieldGroup.keywords => ShieldEntryList(
             icon: DsIcons.filter,
             title: t.shield.keywordsTitle,
             entries: rules.keywords,
@@ -91,7 +90,7 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
             onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
             onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
           ),
-          _ShieldGroup.users => _ShieldList(
+          _ShieldGroup.users => ShieldEntryList(
             icon: DsIcons.users,
             title: t.shield.usersTitle,
             entries: rules.users,
@@ -311,118 +310,5 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
         ),
       ],
     );
-  }
-}
-
-/// One managed list's section: the entries as badges that wrap, each with its
-/// own delete icon, an inline add row under them and the destructive clear
-/// behind a confirm.
-final class _ShieldList extends ConsumerWidget {
-  const _ShieldList({
-    required this.icon,
-    required this.title,
-    required this.entries,
-    required this.fieldHint,
-    required this.emptyText,
-    required this.onAdd,
-    required this.onRemove,
-    required this.onClear,
-    this.acceptsPatterns = false,
-  });
-
-  /// The list's icon (a keyword's funnel, a user's person).
-  final DsIconData icon;
-
-  /// The section header's words.
-  final String title;
-
-  /// The entries, in stored order.
-  final List<String> entries;
-
-  /// The add field's placeholder.
-  final String fieldHint;
-
-  /// Whether a `/…/` word means a regular expression in this list.
-  final bool acceptsPatterns;
-
-  /// What an empty list says.
-  final String emptyText;
-
-  /// Adds an entry; answers false when it is empty or a duplicate.
-  final Future<bool> Function(String value) onAdd;
-
-  /// Removes one entry.
-  final Future<void> Function(String value) onRemove;
-
-  /// Drops every entry.
-  final Future<void> Function() onClear;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    return DsListSection(
-      header: Text(title),
-      children: [
-        ShieldAddField(
-          fieldHint: fieldHint,
-          acceptsPatterns: acceptsPatterns,
-          onAdd: onAdd,
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
-          // Clearing the whole list sits beside the add button: both are
-          // actions on the list.
-          trailing: entries.isEmpty
-              ? null
-              : DsButton(
-                  variant: DsButtonVariant.dangerSoft,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(_clear(context)),
-                  child: Text(t.shield.clear),
-                ),
-        ),
-        // The entries stack under the field that adds them.
-        if (entries.isEmpty)
-          DsListRow(leading: DsIcon(icon), title: Text(emptyText))
-        else
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s12),
-            child: Wrap(
-              spacing: DsSpace.s8,
-              runSpacing: DsSpace.s6,
-              children: [
-                for (final entry in entries)
-                  DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.xs,
-                    trailing: const DsIcon(DsIcons.trash2, size: 14),
-                    semanticLabel: '${t.shield.removeEntry} $entry',
-                    onPressed: () => unawaited(_remove(context, entry)),
-                    child: Text(entry),
-                  ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  Future<void> _remove(BuildContext context, String value) async {
-    await onRemove(value);
-    if (!context.mounted) return;
-    showDsToast(context: context, title: context.t.shield.removed);
-  }
-
-  Future<void> _clear(BuildContext context) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.shield.clear,
-      description: t.shield.clearConfirmDesc,
-      confirmLabel: t.common.confirm,
-      destructive: true,
-    );
-    if (!confirmed) return;
-    await onClear();
-    if (!context.mounted) return;
-    showDsToast(context: context, title: t.shield.cleared);
   }
 }

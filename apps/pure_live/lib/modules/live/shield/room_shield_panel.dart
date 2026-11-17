@@ -3,20 +3,24 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/features/settings/settings.dart'
+    show SettingsConfigRow, danmakuRepeatProvider, kDanmakuRepeatWindowMax, kDanmakuRepeatWindowMin;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
 import 'package:pure_live/modules/live/shield/room_shield_count.dart';
-import 'package:pure_live/modules/live/shield/shield_add_field.dart';
+import 'package:pure_live/modules/live/shield/shield_entry_list.dart';
 import 'package:pure_live/modules/live/shield/shield_repository.dart';
-import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The shield inside the room's chat column: the same rules the settings
-/// page edits, laid out for a narrow pane — the two block lists as
-/// removable tags with an inline add field, the content blocks as plain
-/// switches (their long descriptions on hover), and the fuzzy filters as
-/// one-line slider rows. Every edit lands in the settings providers, so
-/// the settings page and the pipeline both see it at once.
+/// page edits, drawn as the same cards laid out for the column's width —
+/// one section per rule group, one [SettingsConfigRow] per rule. The column
+/// is narrow enough that a slider drops under its label and a description
+/// reads under its title, so nothing here depends on a pointer; where the
+/// line can still spare it, the slider rides beside its label as on the
+/// settings page.
+///
+/// Every edit lands in the settings providers, so the settings page and the
+/// pipeline both see it at once.
 final class RoomShieldPanel extends ConsumerWidget {
   /// The panel.
   const RoomShieldPanel({super.key});
@@ -25,158 +29,238 @@ final class RoomShieldPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final rules = ref.watch(shieldRulesProvider);
+    final rulesController = ref.read(shieldRulesProvider.notifier);
     final filter = ref.watch(danmakuFilterProvider);
     final filterController = ref.read(danmakuFilterProvider.notifier);
     final repeat = ref.watch(danmakuRepeatProvider);
+    final repeatController = ref.read(danmakuRepeatProvider.notifier);
     final hidden = ref.watch(roomShieldCountProvider);
-    return ListView(
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s16),
-      children: [
-        // The room's own number comes first, so the rules under it read as the
-        // reason it moved.
-        _ShieldSessionCount(count: hidden),
-        _ShieldSwitch(
-          label: t.shield.enabled,
-          description: t.shield.enabledDescription,
-          value: rules.enabled,
-          onChanged: (value) => unawaited(ref.read(shieldRulesProvider.notifier).setEnabled(value: value)),
-        ),
-        _TagList(
-          icon: DsIcons.filter,
-          title: t.shield.keywordsTitle,
-          entries: rules.keywords,
-          emptyText: t.shield.keywordsEmpty,
-          fieldHint: t.shield.keywordFieldHint,
-          acceptsPatterns: true,
-          onAdd: (value) => ref.read(shieldRulesProvider.notifier).addKeyword(value),
-          onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
-          onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
-        ),
-        _TagList(
-          icon: DsIcons.users,
-          title: t.shield.usersTitle,
-          entries: rules.users,
-          emptyText: t.shield.usersEmpty,
-          fieldHint: t.shield.userFieldHint,
-          onAdd: (value) => ref.read(shieldRulesProvider.notifier).addUser(value),
-          onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeUser(value),
-          onClear: () => ref.read(shieldRulesProvider.notifier).clearUsers(),
-        ),
-        _ShieldHeader(title: t.shield.contentTitle),
-        _ShieldSwitch(
-          label: t.shield.blockEmoteOnly,
-          description: t.shield.blockEmoteOnlyDescription,
-          value: filter.blockEmoteOnly,
-          onChanged: (value) => unawaited(filterController.setBlockEmoteOnly(value: value)),
-        ),
-        _ShieldSwitch(
-          label: t.shield.blockLong,
-          description: t.shield.blockLongDescription,
-          value: filter.blockLong,
-          onChanged: (value) => unawaited(filterController.setBlockLong(value: value)),
-        ),
-        if (filter.blockLong)
-          _SliderRow(
-            title: t.shield.blockLongLength,
-            current: filter.blockLongLength.toDouble(),
-            value: '${filter.blockLongLength}',
-            min: DanmakuFilterRange.blockLongLengthMin.toDouble(),
-            max: DanmakuFilterRange.blockLongLengthMax.toDouble(),
-            divisions:
-                (DanmakuFilterRange.blockLongLengthMax - DanmakuFilterRange.blockLongLengthMin) ~/
-                DanmakuFilterRange.blockLongLengthStep,
-            semanticLabel: t.shield.blockLongLength,
-            onChanged: (value) => unawaited(
-              filterController.setBlockLongLength(
-                (value / DanmakuFilterRange.blockLongLengthStep).round() * DanmakuFilterRange.blockLongLengthStep,
+      // One gutter between the cards; the sections carry their own rhythm
+      // inside, so the column never reads as a wall of bare switches.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s16,
+        children: [
+          // The room's own number comes first, so the rules under it read as
+          // the reason it moved.
+          _ShieldSessionCount(count: hidden),
+          // The master switch governs every group, so it stays above them
+          // rather than inside one.
+          DsListSection(
+            header: Text(t.shield.masterTitle),
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.shield),
+                title: t.shield.enabled,
+                description: t.shield.enabledDescription,
+                control: DsSwitch(
+                  value: rules.enabled,
+                  onChanged: (value) => unawaited(rulesController.setEnabled(value: value)),
+                ),
               ),
-            ),
+            ],
           ),
-        _ShieldSwitch(
-          label: t.shield.douyuSuspected,
-          description: t.shield.douyuSuspectedDescription,
-          value: filter.douyuSuspectedAutomated,
-          onChanged: (value) => unawaited(filterController.setDouyuSuspectedAutomated(value: value)),
-        ),
-        _ShieldSwitch(
-          label: t.shield.coloredOnly,
-          description: t.shield.coloredOnlyDescription,
-          value: filter.coloredOnly,
-          onChanged: (value) => unawaited(filterController.setColoredOnly(value: value)),
-        ),
-        _SliderRow(
-          title: t.shield.minUserLevel,
-          current: filter.minUserLevel.toDouble(),
-          value: filter.minUserLevel == 0 ? t.shield.levelOff : t.shield.levelValue(count: filter.minUserLevel),
-          min: 0,
-          max: DanmakuFilterRange.levelMax.toDouble(),
-          divisions: DanmakuFilterRange.levelMax,
-          semanticLabel: t.shield.minUserLevel,
-          onChanged: (value) => unawaited(filterController.setMinUserLevel(value.round())),
-        ),
-        _SliderRow(
-          title: t.shield.minFansLevel,
-          current: filter.minFansLevel.toDouble(),
-          value: filter.minFansLevel == 0 ? t.shield.levelOff : t.shield.levelValue(count: filter.minFansLevel),
-          min: 0,
-          max: DanmakuFilterRange.levelMax.toDouble(),
-          divisions: DanmakuFilterRange.levelMax,
-          semanticLabel: t.shield.minFansLevel,
-          onChanged: (value) => unawaited(filterController.setMinFansLevel(value.round())),
-        ),
-        _ShieldHeader(title: t.shield.similarityTitle),
-        _ShieldSwitch(
-          label: t.shield.similarityEnabled,
-          description: t.shield.similarityEnabledDescription,
-          value: filter.similarityEnabled,
-          onChanged: (value) => unawaited(filterController.setSimilarityEnabled(value: value)),
-        ),
-        if (filter.similarityEnabled) ...[
-          _SliderRow(
-            title: t.shield.similarityThreshold,
-            current: filter.similarityThreshold.toDouble(),
-            value: '${filter.similarityThreshold}%',
-            min: DanmakuFilterRange.thresholdMin.toDouble(),
-            max: DanmakuFilterRange.thresholdMax.toDouble(),
-            divisions: DanmakuFilterRange.thresholdMax - DanmakuFilterRange.thresholdMin,
-            semanticLabel: t.shield.similarityThreshold,
-            onChanged: (value) => unawaited(filterController.setSimilarityThreshold(value.round())),
+          ShieldEntryList(
+            icon: DsIcons.filter,
+            title: t.shield.keywordsTitle,
+            entries: rules.keywords,
+            emptyText: t.shield.keywordsEmpty,
+            fieldHint: t.shield.keywordFieldHint,
+            acceptsPatterns: true,
+            onAdd: rulesController.addKeyword,
+            onRemove: rulesController.removeKeyword,
+            onClear: rulesController.clearKeywords,
           ),
-          _SliderRow(
-            title: t.shield.similarityCacheDuration,
-            current: filter.similarityCacheSeconds.toDouble(),
-            value: t.shield.similaritySeconds(seconds: '${filter.similarityCacheSeconds}'),
-            min: DanmakuFilterRange.cacheSecondsMin.toDouble(),
-            max: DanmakuFilterRange.cacheSecondsMax.toDouble(),
-            divisions: DanmakuFilterRange.cacheSecondsMax - DanmakuFilterRange.cacheSecondsMin,
-            semanticLabel: t.shield.similarityCacheDuration,
-            onChanged: (value) => unawaited(filterController.setSimilarityCacheSeconds(value.round())),
+          ShieldEntryList(
+            icon: DsIcons.users,
+            title: t.shield.usersTitle,
+            entries: rules.users,
+            emptyText: t.shield.usersEmpty,
+            fieldHint: t.shield.userFieldHint,
+            onAdd: rulesController.addUser,
+            onRemove: rulesController.removeUser,
+            onClear: rulesController.clearUsers,
+          ),
+          // The rules that judge a line's own words.
+          DsListSection(
+            header: Text(t.shield.contentTitle),
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.smile),
+                title: t.shield.blockEmoteOnly,
+                description: t.shield.blockEmoteOnlyDescription,
+                control: DsSwitch(
+                  value: filter.blockEmoteOnly,
+                  onChanged: (value) => unawaited(filterController.setBlockEmoteOnly(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.fileText),
+                title: t.shield.blockLong,
+                description: t.shield.blockLongDescription,
+                control: DsSwitch(
+                  value: filter.blockLong,
+                  onChanged: (value) => unawaited(filterController.setBlockLong(value: value)),
+                ),
+              ),
+              if (filter.blockLong)
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.fileText),
+                  title: t.shield.blockLongLength,
+                  description: t.shield.blockLongLengthDescription,
+                  detail: Text(t.shield.blockLongLengthValue(count: filter.blockLongLength)),
+                  controlWidth: 220,
+                  control: DsSlider(
+                    value: filter.blockLongLength.toDouble(),
+                    min: DanmakuFilterRange.blockLongLengthMin.toDouble(),
+                    max: DanmakuFilterRange.blockLongLengthMax.toDouble(),
+                    divisions:
+                        (DanmakuFilterRange.blockLongLengthMax - DanmakuFilterRange.blockLongLengthMin) ~/
+                        DanmakuFilterRange.blockLongLengthStep,
+                    onChanged: (value) => unawaited(
+                      filterController.setBlockLongLength(
+                        (value / DanmakuFilterRange.blockLongLengthStep).round() *
+                            DanmakuFilterRange.blockLongLengthStep,
+                      ),
+                    ),
+                    semanticLabel: t.shield.blockLongLength,
+                  ),
+                ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.bot),
+                title: t.shield.douyuSuspected,
+                description: t.shield.douyuSuspectedDescription,
+                control: DsSwitch(
+                  value: filter.douyuSuspectedAutomated,
+                  onChanged: (value) => unawaited(filterController.setDouyuSuspectedAutomated(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.palette),
+                title: t.shield.coloredOnly,
+                description: t.shield.coloredOnlyDescription,
+                control: DsSwitch(
+                  value: filter.coloredOnly,
+                  onChanged: (value) => unawaited(filterController.setColoredOnly(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.users),
+                title: t.shield.minUserLevel,
+                description: t.shield.minUserLevelDescription,
+                detail: Text(
+                  filter.minUserLevel == 0 ? t.shield.levelOff : t.shield.levelValue(count: filter.minUserLevel),
+                ),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: filter.minUserLevel.toDouble(),
+                  max: DanmakuFilterRange.levelMax.toDouble(),
+                  divisions: DanmakuFilterRange.levelMax,
+                  onChanged: (value) => unawaited(filterController.setMinUserLevel(value.round())),
+                  semanticLabel: t.shield.minUserLevel,
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.users),
+                title: t.shield.minFansLevel,
+                description: t.shield.minFansLevelDescription,
+                detail: Text(
+                  filter.minFansLevel == 0 ? t.shield.levelOff : t.shield.levelValue(count: filter.minFansLevel),
+                ),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: filter.minFansLevel.toDouble(),
+                  max: DanmakuFilterRange.levelMax.toDouble(),
+                  divisions: DanmakuFilterRange.levelMax,
+                  onChanged: (value) => unawaited(filterController.setMinFansLevel(value.round())),
+                  semanticLabel: t.shield.minFansLevel,
+                ),
+              ),
+            ],
+          ),
+          DsListSection(
+            header: Text(t.shield.similarityTitle),
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.scanText),
+                title: t.shield.similarityEnabled,
+                description: t.shield.similarityEnabledDescription,
+                control: DsSwitch(
+                  value: filter.similarityEnabled,
+                  onChanged: (value) => unawaited(filterController.setSimilarityEnabled(value: value)),
+                ),
+              ),
+              if (filter.similarityEnabled) ...[
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.percent),
+                  title: t.shield.similarityThreshold,
+                  description: t.shield.similarityThresholdDescription,
+                  detail: Text('${filter.similarityThreshold}%'),
+                  controlWidth: 220,
+                  control: DsSlider(
+                    value: filter.similarityThreshold.toDouble(),
+                    min: DanmakuFilterRange.thresholdMin.toDouble(),
+                    max: DanmakuFilterRange.thresholdMax.toDouble(),
+                    divisions: DanmakuFilterRange.thresholdMax - DanmakuFilterRange.thresholdMin,
+                    onChanged: (value) => unawaited(filterController.setSimilarityThreshold(value.round())),
+                    semanticLabel: t.shield.similarityThreshold,
+                  ),
+                ),
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.timer),
+                  title: t.shield.similarityCacheDuration,
+                  description: t.shield.similarityCacheDurationDescription,
+                  detail: Text(t.shield.similaritySeconds(seconds: '${filter.similarityCacheSeconds}')),
+                  controlWidth: 220,
+                  control: DsSlider(
+                    value: filter.similarityCacheSeconds.toDouble(),
+                    min: DanmakuFilterRange.cacheSecondsMin.toDouble(),
+                    max: DanmakuFilterRange.cacheSecondsMax.toDouble(),
+                    divisions: DanmakuFilterRange.cacheSecondsMax - DanmakuFilterRange.cacheSecondsMin,
+                    onChanged: (value) => unawaited(filterController.setSimilarityCacheSeconds(value.round())),
+                    semanticLabel: t.shield.similarityCacheDuration,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          DsListSection(
+            header: Text(t.shield.repeatTitle),
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.repeat),
+                title: t.shield.repeatEnabled,
+                description: t.shield.repeatEnabledDescription,
+                control: DsSwitch(
+                  value: repeat.enabled,
+                  onChanged: (value) => unawaited(repeatController.setEnabled(value: value)),
+                ),
+              ),
+              if (repeat.enabled)
+                SettingsConfigRow(
+                  leading: const DsIcon(DsIcons.timer),
+                  title: t.shield.repeatWindow,
+                  detail: Text(t.shield.similaritySeconds(seconds: '${repeat.windowSeconds}')),
+                  controlWidth: 220,
+                  control: DsSlider(
+                    value: repeat.windowSeconds.toDouble(),
+                    min: kDanmakuRepeatWindowMin.toDouble(),
+                    max: kDanmakuRepeatWindowMax.toDouble(),
+                    divisions: kDanmakuRepeatWindowMax - kDanmakuRepeatWindowMin,
+                    onChanged: (value) => unawaited(repeatController.setWindowSeconds(value.round())),
+                    semanticLabel: t.shield.repeatWindow,
+                  ),
+                ),
+            ],
           ),
         ],
-        _ShieldHeader(title: t.shield.repeatTitle),
-        _ShieldSwitch(
-          label: t.shield.repeatEnabled,
-          description: t.shield.repeatEnabledDescription,
-          value: repeat.enabled,
-          onChanged: (value) => unawaited(ref.read(danmakuRepeatProvider.notifier).setEnabled(value: value)),
-        ),
-        if (repeat.enabled)
-          _SliderRow(
-            title: t.shield.repeatWindow,
-            current: repeat.windowSeconds.toDouble(),
-            value: t.shield.similaritySeconds(seconds: '${repeat.windowSeconds}'),
-            min: kDanmakuRepeatWindowMin.toDouble(),
-            max: kDanmakuRepeatWindowMax.toDouble(),
-            divisions: kDanmakuRepeatWindowMax - kDanmakuRepeatWindowMin,
-            semanticLabel: t.shield.repeatWindow,
-            onChanged: (value) => unawaited(ref.read(danmakuRepeatProvider.notifier).setWindowSeconds(value.round())),
-          ),
-      ],
+      ),
     );
   }
 }
 
-/// A section's title line: the icon, the words and the entry count.
 /// 「本场已屏蔽 N 条」: what the viewer's own shield hid during this
 /// visit — a blocked name or word, an emoticon-only line, one over the length
 /// limit. A duplicate or a collapsed repeat is not in it, or the line would
@@ -193,286 +277,9 @@ final class _ShieldSessionCount extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: DsSpace.s6),
-      child: Text(
-        context.t.shield.blockedThisStream(count: count),
-        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-      ),
-    );
-  }
-}
-
-final class _ShieldHeader extends StatelessWidget {
-  const _ShieldHeader({required this.title, this.icon, this.count = 0, this.trailing});
-
-  final String title;
-
-  /// The section's icon, when it leads the title.
-  final DsIconData? icon;
-
-  final int count;
-
-  /// An action at the line's end (the lists' clear).
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(top: DsSpace.s16, bottom: DsSpace.s6),
-      child: Row(
-        spacing: DsSpace.s6,
-        children: [
-          if (icon != null) DsIcon(icon!, size: theme.sizes.iconXs, color: colors.textSubtle),
-          Expanded(
-            child: Text(
-              count > 0 ? '$title ($count)' : title,
-              style: theme.typography.labelStrong.copyWith(color: colors.textMuted),
-            ),
-          ),
-          ?trailing,
-        ],
-      ),
-    );
-  }
-}
-
-/// One switch row: the label carries the description on hover, so the
-/// narrow column keeps one line per rule.
-final class _ShieldSwitch extends StatelessWidget {
-  const _ShieldSwitch({required this.label, required this.description, required this.value, required this.onChanged});
-
-  final String label;
-  final String description;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsSwitch(
-      value: value,
-      onChanged: onChanged,
-      label: DsTooltip(
-        message: description,
-        child: Text(label, style: theme.typography.body.copyWith(color: colors.text)),
-      ),
-    );
-  }
-}
-
-/// One slider row: title, the narrow track and the shown value on one line.
-final class _SliderRow extends StatelessWidget {
-  const _SliderRow({
-    required this.title,
-    required this.current,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    required this.onChanged,
-    required this.semanticLabel,
-  });
-
-  final String title;
-
-  /// The stored choice the track shows.
-  final double current;
-  final String value;
-  final double min;
-  final double max;
-  final int divisions;
-  final ValueChanged<double> onChanged;
-  final String semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(start: DsSpace.s4, bottom: DsSpace.s4),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: DsSlider(
-              value: current.clamp(min, max),
-              min: min,
-              max: max,
-              divisions: divisions,
-              onChanged: onChanged,
-              semanticLabel: semanticLabel,
-            ),
-          ),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 44),
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// One block list: the entries as removable tags over an inline add field,
-/// with the clear action on the header once there is something to clear.
-final class _TagList extends ConsumerWidget {
-  const _TagList({
-    required this.icon,
-    required this.title,
-    required this.entries,
-    required this.emptyText,
-    required this.fieldHint,
-    required this.onAdd,
-    required this.onRemove,
-    required this.onClear,
-    this.acceptsPatterns = false,
-  });
-
-  final DsIconData icon;
-  final String title;
-  final List<String> entries;
-  final String emptyText;
-  final String fieldHint;
-
-  /// Whether a `/…/` word means a regular expression in this list.
-  final bool acceptsPatterns;
-  final Future<bool> Function(String value) onAdd;
-  final Future<void> Function(String value) onRemove;
-  final Future<void> Function() onClear;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _ShieldHeader(
-          icon: icon,
-          title: title,
-          count: entries.length,
-          trailing: entries.isEmpty
-              ? null
-              : DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.xs,
-                  icon: const DsIcon(DsIcons.delete),
-                  semanticLabel: t.shield.clear,
-                  onPressed: () => unawaited(_clear(context)),
-                ),
-        ),
-        if (entries.isEmpty)
-          Text(emptyText, style: theme.typography.caption.copyWith(color: colors.textSubtle))
-        else
-          Wrap(
-            spacing: DsSpace.s6,
-            runSpacing: DsSpace.s6,
-            children: [
-              for (final entry in entries)
-                _ShieldTag(
-                  label: entry,
-                  onRemove: () async {
-                    await onRemove(entry);
-                    if (!context.mounted) return;
-                    showDsToast(context: context, title: t.shield.removed);
-                  },
-                ),
-            ],
-          ),
-        ShieldAddField(
-          fieldHint: fieldHint,
-          acceptsPatterns: acceptsPatterns,
-          onAdd: onAdd,
-          padding: const EdgeInsetsDirectional.only(top: DsSpace.s8),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _clear(BuildContext context) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.shield.clear,
-      description: t.shield.clearConfirmDesc,
-      confirmLabel: t.common.confirm,
-      destructive: true,
-    );
-    if (!confirmed) return;
-    await onClear();
-    if (!context.mounted) return;
-    showDsToast(context: context, title: t.shield.cleared);
-  }
-}
-
-/// One removable tag: the entry in a pill, the x inside at the end.
-final class _ShieldTag extends StatelessWidget {
-  const _ShieldTag({required this.label, required this.onRemove});
-
-  final String label;
-  final Future<void> Function() onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Container(
-      padding: const EdgeInsetsDirectional.only(
-        start: DsSpace.s12,
-        end: DsSpace.s4,
-        top: DsSpace.s3,
-        bottom: DsSpace.s3,
-      ),
-      decoration: BoxDecoration(
-        color: colors.control,
-        borderRadius: BorderRadius.circular(DsRadii.pill),
-        border: Border.fromBorderSide(BorderSide(color: colors.border)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.text),
-            ),
-          ),
-          DsPressable(
-            semanticLabel: context.t.shield.removeEntry,
-            onPressed: () => unawaited(onRemove()),
-            builder: (context, states, child) => Padding(
-              padding: const EdgeInsets.all(DsSpace.s3),
-              child: DsIcon(DsIcons.close, size: theme.sizes.iconXs, color: colors.textMuted),
-            ),
-          ),
-        ],
-      ),
+    return Text(
+      context.t.shield.blockedThisStream(count: count),
+      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
     );
   }
 }
