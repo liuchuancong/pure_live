@@ -19,9 +19,18 @@ Future<void> showRoomDirectLinks(BuildContext context, WidgetRef ref, LiveRoom r
     showDsToast(context: context, title: t.toolbox.linkDirectEmpty, status: DsStatus.danger);
     return;
   }
-  final answer = await playback.getQualities(room: room);
-  if (!context.mounted) return;
-  final qualities = answer.fold((_) => const <LivePlayQuality>[], (qualities) => qualities);
+  final List<LivePlayQuality> qualities;
+  try {
+    final answer = await playback.getQualities(room: room);
+    if (!context.mounted) return;
+    qualities = answer.fold((_) => const <LivePlayQuality>[], (qualities) => qualities);
+  } on Object {
+    // A throwing adapter is the empty answer here, not a crash out of a
+    // fire-and-forget menu callback.
+    if (!context.mounted) return;
+    showDsToast(context: context, title: t.toolbox.linkDirectEmpty, status: DsStatus.danger);
+    return;
+  }
   if (qualities.isEmpty) {
     showDsToast(context: context, title: t.toolbox.linkDirectEmpty, status: DsStatus.danger);
     return;
@@ -159,7 +168,12 @@ final class _DirectLinkDialogState extends ConsumerState<DirectLinkDialog> {
   }
 
   Future<void> _copy(LivePlayLine line) async {
-    await Clipboard.setData(ClipboardData(text: line.url));
+    try {
+      await Clipboard.setData(ClipboardData(text: line.url));
+    } on Object {
+      if (mounted) showDsToast(context: context, title: context.t.common.copyFailed, status: DsStatus.danger);
+      return;
+    }
     if (mounted) {
       showDsToast(context: context, title: context.t.toolbox.linkDirectCopyDone);
     }

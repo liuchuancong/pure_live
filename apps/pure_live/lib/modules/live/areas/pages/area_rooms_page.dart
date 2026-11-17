@@ -48,6 +48,11 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   /// own pill).
   int? _askedPage;
 
+  /// Whether the opening ask went out (or cannot go out at all): a deep
+  /// link without the area object has nothing to load, and the skeleton
+  /// must not stand in for that forever.
+  bool _opened = false;
+
   @override
   void dispose() {
     _scroll.dispose();
@@ -58,13 +63,19 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final area = widget.area;
-      if (area == null) return; // A deep link without the object cannot load.
+      final sites = ref.read(sitesProvider);
+      final site = area == null ? null : sites.getById(area.platform) ?? sites.getById(widget.platform);
+      if (area == null || site == null) {
+        // A deep link without the object cannot load; say so instead of
+        // spinning.
+        setState(() => _opened = true);
+        return;
+      }
+      _opened = true;
       // The area names its own platform; the preferred site is the viewer's
       // home platform and may be another one entirely.
-      final sites = ref.read(sitesProvider);
-      final site = sites.getById(area.platform) ?? sites.getById(widget.platform);
-      if (site == null) return;
       unawaited(ref.read(areaRoomsProvider.notifier).init(site: site, area: area));
     });
   }
@@ -180,8 +191,14 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     if (state == null) {
       // `init` has not answered yet: this is loading, not emptiness — the
       // empty state would flash "no rooms" over every area open. The wall's
-      // own silhouette stands in until the rooms arrive.
-      body = const SkeletonGrid();
+      // own silhouette stands in until the rooms arrive — unless the open
+      // never could go out (a deep link without its area object), which is
+      // a failure to say, not a wait.
+      body = _opened
+          ? Center(
+              child: DsEmptyState(icon: const DsIcon(DsIcons.cloudOff), title: Text(context.t.common.loadFailed)),
+            )
+          : const SkeletonGrid();
     } else if (!wide) {
       body = withHiddenNote(state, grid(state, state.rooms, endless: true));
     } else {

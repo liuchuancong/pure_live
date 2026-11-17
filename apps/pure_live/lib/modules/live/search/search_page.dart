@@ -109,7 +109,6 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     );
     if (!confirmed || !context.mounted) return;
     unawaited(ref.read(searchHistoryProvider.notifier).clear());
-    setState(() {});
   }
 
   /// Asks for completions once the typing has rested: a change in the
@@ -320,6 +319,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                         controller: _field,
                         autofocus: true,
                         placeholder: context.t.common.searchHint,
+                        semanticLabel: context.t.common.searchHint,
                         onChanged: _onDraftChanged,
                         onSubmitted: _onSubmitted,
                       )
@@ -666,6 +666,15 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     return _draft.isEmpty && search.query.isEmpty;
   }
 
+  /// The drawn view and the inputs it answers to: a rebuild that changed
+  /// none of them — every keystroke's, while the field narrows the
+  /// suggestion wall — reuses it instead of re-filtering and re-sorting
+  /// the whole result.
+  late SearchState? _viewCache;
+  late SearchState? _viewCacheInput;
+  late _SearchSort? _viewCacheSort;
+  late bool? _viewCacheOffline;
+
   /// The filtered/ordered copy of [search] the page draws: the controller
   /// keeps the raw platform pages, so a new sort or the offline toggle is
   /// instant and never re-asks the servers.
@@ -675,6 +684,9 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// replay, then the rest under every sort mode.
   SearchState _viewOf(SearchState search) {
     if (search.target == LiveSearchTarget.areas) return search;
+    if (search == _viewCacheInput && _viewCacheSort == _sort && _viewCacheOffline == _includeOffline) {
+      return _viewCache!;
+    }
     final rooms = [
       for (final room in search.rooms)
         if (_includeOffline || room.broadcast.isPlayableNow) room,
@@ -683,7 +695,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       for (final anchor in search.anchors)
         if (_includeOffline || anchor.liveStatus == LiveStatus.live) anchor,
     ];
-    return (
+    final view = (
       query: search.query,
       target: search.target,
       rooms: _sortRooms(rooms),
@@ -695,6 +707,11 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       error: search.error,
       suggestions: search.suggestions,
     );
+    _viewCacheInput = search;
+    _viewCacheSort = _sort;
+    _viewCacheOffline = _includeOffline;
+    _viewCache = view;
+    return view;
   }
 
   List<LiveRoom> _sortRooms(List<LiveRoom> rooms) {
@@ -918,7 +935,9 @@ final class _SearchHistory extends ConsumerWidget {
             title: Text(word),
             onPressed: () => onPicked(word),
             trailing: DsPressable(
-              semanticLabel: context.t.search.clearHistory,
+              // The row's own ✕ removes this one word; the header's link is
+              // the one that clears everything.
+              semanticLabel: context.t.history.remove,
               onPressed: () => unawaited(ref.read(searchHistoryProvider.notifier).remove(word)),
               builder: (context, states, _) => DsIcon(
                 DsIcons.x,

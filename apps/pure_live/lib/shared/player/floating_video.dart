@@ -182,6 +182,13 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
   StreamSubscription<void>? _geometrySub;
   bool _failed = false;
 
+  /// The facts the window's own chrome reads: the transport's playing state
+  /// and the picture's aspect. The streams beneath them move per tick, the
+  /// window rebuilds only when one of these two actually turns — the video
+  /// view inside repaints on its own.
+  bool _playing = false;
+  double _aspect = 0;
+
   /// The width the viewer pulled, or null to follow the size preset.
   double? _width;
   Offset? _origin;
@@ -229,11 +236,16 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
       if (muted != null) unawaited(handle.setMute(muted: muted));
       final resume = handoff.resume;
       if (resume > Duration.zero) unawaited(handle.seek(resume));
+      _playing = handle.isPlaying;
       _transportSub = handle.playbackStream.listen((_) {
-        if (mounted) setState(() {});
+        final now = handle.isPlaying;
+        if (!mounted || now == _playing) return;
+        setState(() => _playing = now);
       });
       _geometrySub = handle.geometryController.state.listen((_) {
-        if (mounted) setState(() {});
+        final detected = handle.combinedSnapshot.geometry.aspectRatio;
+        if (!mounted || detected == _aspect) return;
+        setState(() => _aspect = detected);
       });
     } on Object {
       if (mounted) setState(() => _failed = true);
@@ -267,7 +279,7 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
     final screen = MediaQuery.sizeOf(context);
     final floating = ref.watch(floatingWindowSettingsProvider);
     final playback = ref.watch(playbackSettingsProvider);
-    final detected = handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
+    final detected = handle == null ? 0.0 : _aspect;
     final ratio = detected > 0 && detected.isFinite ? detected.clamp(0.5, 2.4) : 16 / 9;
     final portrait = ratio < 1;
     final base = kFloatingWindowBaseWidth * floatingWindowSizeFactor(floating.size);
@@ -280,7 +292,7 @@ final class _FloatingVideoViewState extends ConsumerState<FloatingVideoView> {
     final origin = _origin ?? Offset(maxX, maxY);
     final left = origin.dx.clamp(0, maxX).toDouble();
     final top = origin.dy.clamp(0, maxY).toDouble();
-    final playing = handle?.isPlaying ?? false;
+    final playing = handle != null && _playing;
 
     return Stack(
       fit: StackFit.expand,

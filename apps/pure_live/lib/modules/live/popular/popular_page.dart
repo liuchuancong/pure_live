@@ -485,7 +485,9 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   /// Runs the search from page 1 and fills the first display page.
   Future<void> _run() async {
     if (!mounted) return;
-    ref.read(searchSiteIdProvider.notifier).selected = widget.platform;
+    // The browsed platform names the scope for this word only: a passing
+    // feed must not rewrite the viewer's own stored search scope.
+    ref.read(searchSiteIdProvider.notifier).showTransient(widget.platform);
     await ref.read(searchProvider.notifier).search(widget.query);
     if (!mounted) return;
     await _ensurePage();

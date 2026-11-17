@@ -385,6 +385,8 @@ final class DouyuArchiveController extends ArchivePlaybackController {
 
   void _changed(PlayerTransportState state) {
     if (_disposed) return;
+    final hadPending = _pending != null;
+    final hadError = error != null;
     // The acknowledgement window widens with the speed: a fast walk covers
     // more ground between two of the engine's own reports.
     final tolerance = Duration(milliseconds: 1000 + (rate * 1000).round());
@@ -396,14 +398,21 @@ final class DouyuArchiveController extends ArchivePlaybackController {
         error = null;
       }
     }
+    var milestone = false;
     if (_ready && _pending == null) {
       _timeline?.update(position, playing: state.command.isPlaying);
       if ((position - _lastSaved).abs().inSeconds >= 5 || _atEnd(state)) {
         _lastSaved = position;
+        milestone = true;
         unawaited(record().catchError((Object _) {}));
       }
     }
-    notifyListeners();
+    // The tick itself is not a displayable change — the seek bar reads the
+    // page's own transport field. The rebuilds are the visible flips: a
+    // seek acknowledged, an error cleared, a progress milestone.
+    if (hadPending != (_pending != null) || hadError != (error != null) || milestone) {
+      notifyListeners();
+    }
   }
 
   /// Saves the recording's own id and position only; transient transport

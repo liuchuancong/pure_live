@@ -1,6 +1,7 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show utf8;
 import 'dart:io' show File;
+import 'dart:isolate' show Isolate;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, BarrageItem, EmojiAtlas, FlameBarrageWidget;
@@ -12,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouter;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:media_core/media_core.dart'
     show
         GeometryState,
@@ -38,6 +40,7 @@ import 'package:pure_live/app/app.dart'
         fullscreenDriverProvider,
         isPrimaryWindowProvider,
         pipDriverProvider,
+        platformRuntimeProvider,
         resolvedFontFamily,
         roomLeaveProvider,
         roomPresentationProvider,
@@ -594,9 +597,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       _danmakuLoading = sidecar != null && format != null;
     });
     if (sidecar == null || format == null) return;
+    // The decode runs off the UI isolate: a long take's sidecar reaches
+    // megabytes, and a synchronous decode here would stall the page for
+    // the whole of it on every set change.
     String source;
     try {
-      source = utf8.decode(await File(sidecar).readAsBytes(), allowMalformed: true);
+      source = await Isolate.run(() => utf8.decode(File(sidecar).readAsBytesSync(), allowMalformed: true));
     } on Object {
       if (!mounted || token != _danmakuToken) return;
       setState(() => _danmakuLoading = false);
@@ -1347,9 +1353,13 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         loop: false,
         // The bar settles away on the app's own clock while a take plays, and
         // stays up when it does not — the same delay every player here reads
-        // from 画面与浮窗.
+        // from 画面与浮窗. A TV's bar stays up full stop: the remote's focus
+        // walk is the only way through it (the room's keepControls rule, and
+        // the zero the setting itself spells 常显).
         barHideAfter: Duration(
-          seconds: ref.watch(playbackSettingsProvider.select((settings) => settings.controlsAutoHideSeconds)),
+          seconds: ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv
+              ? 0
+              : ref.watch(playbackSettingsProvider.select((settings) => settings.controlsAutoHideSeconds)),
         ),
         onHandle: _onHandle,
         onBarVisibleChanged: (value) {

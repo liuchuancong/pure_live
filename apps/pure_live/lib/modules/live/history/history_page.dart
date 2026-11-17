@@ -296,7 +296,12 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     if (!wide) {
       return NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if (moreInHand && notification.metrics.pixels >= notification.metrics.maxScrollExtent - 600) {
+          // One reveal per pass: scroll events keep arriving while the
+          // pointer rests near the end, and every rebuild re-filters the
+          // whole list — bump only while a block is still owed, judged
+          // against the live counter, not the build's snapshot of it.
+          final owed = shown.length > _revealed * _pageSize;
+          if (owed && notification.metrics.pixels >= notification.metrics.maxScrollExtent - 600) {
             setState(() => _revealed++);
           }
           return false;

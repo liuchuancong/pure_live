@@ -121,7 +121,7 @@ final class _ArchiveCatalogPageState extends ConsumerState<ArchiveCatalogPage> {
         child: DsAlert(
           status: DsStatus.danger,
           title: Text(t.room.replayFailed),
-          description: '${state.openingError}'.isEmpty ? null : Text('$state.openingError'),
+          description: '${state.openingError}'.isEmpty ? null : Text('${state.openingError}'),
           action: DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,

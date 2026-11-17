@@ -132,10 +132,6 @@ class HistoryController extends Notifier<HistoryState> {
 
   @override
   HistoryState build() {
-    ref.watch(historyRepositoryProvider).whenData((repository) {
-      _subscription ??= repository.watch().listen((_) => _refresh(repository));
-      _refresh(repository);
-    });
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
     final repository = ref.watch(historyRepositoryProvider);
     switch (repository) {

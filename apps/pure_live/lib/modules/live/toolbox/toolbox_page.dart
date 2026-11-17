@@ -179,7 +179,13 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
 
   /// Puts the clipboard's text in the field, replacing whatever is there.
   Future<void> _paste() async {
-    final text = await Clipboard.getData(Clipboard.kTextPlain).then((data) => data?.text);
+    final String? text;
+    try {
+      text = await Clipboard.getData(Clipboard.kTextPlain).then((data) => data?.text);
+    } on Object {
+      // A platform without a readable clipboard pastes nothing.
+      return;
+    }
     if (!mounted || text == null || text.trim().isEmpty) return;
     _field.text = text.trim();
     _edited();
@@ -673,7 +679,12 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       showDsToast(context: context, title: context.t.toolbox.logsCopyEmpty);
       return;
     }
-    await Clipboard.setData(ClipboardData(text: text));
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+    } on Object {
+      if (mounted) showDsToast(context: context, title: context.t.common.copyFailed, status: DsStatus.danger);
+      return;
+    }
     if (mounted) showDsToast(context: context, title: context.t.toolbox.logsCopied);
   }
 

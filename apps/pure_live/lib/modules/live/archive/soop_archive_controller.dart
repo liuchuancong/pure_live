@@ -285,6 +285,7 @@ final class SoopArchiveController extends ArchivePlaybackController {
 
   void _changed(PlayerTransportState state) {
     if (_disposed) return;
+    final hadPending = _pending != null;
     // A queued nonzero snapshot from before the seek is not its
     // acknowledgement: the pending position clears on the end of the media
     // or on a position come within two seconds of the ask.
@@ -296,13 +297,20 @@ final class SoopArchiveController extends ArchivePlaybackController {
         _seekDeadline?.cancel();
       }
     }
+    var milestone = false;
     if (_ready && !busy) {
       if ((position - _lastSaved).abs() >= const Duration(seconds: 5) || _atEnd(state)) {
         _lastSaved = position;
+        milestone = true;
         unawaited(record().catchError((Object _) {}));
       }
     }
-    notifyListeners();
+    // The tick itself is not a displayable change — the seek bar reads the
+    // page's own transport field. The rebuilds are the visible flips: a
+    // seek acknowledged or a progress milestone.
+    if (hadPending != (_pending != null) || milestone) {
+      notifyListeners();
+    }
   }
 
   /// Saves the part and its position only; transient transport states must

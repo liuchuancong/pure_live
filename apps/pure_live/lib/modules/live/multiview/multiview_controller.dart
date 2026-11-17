@@ -169,6 +169,12 @@ final multiviewRepositoryProvider = FutureProvider<MultiviewRepository>((ref) as
 final class MultiviewController extends Notifier<MultiviewState> {
   StreamSubscription<void>? _subscription;
 
+  /// The repository the subscription listens to: a wall-failure retry
+  /// rebuilds only the repository, and a kept subscription would keep
+  /// listening to the old store while every later write lands in the new
+  /// one — the wall would freeze for the rest of the session.
+  MultiviewRepository? _subscribed;
+
   @override
   MultiviewState build() {
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
@@ -179,11 +185,17 @@ final class MultiviewController extends Notifier<MultiviewState> {
     // the stored wall.
     switch (repository) {
       case AsyncData(:final value):
-        _subscription ??= value.watch().listen((_) => _refresh(value));
+        if (!identical(_subscribed, value)) {
+          unawaited(_subscription?.cancel() ?? Future<void>.value());
+          _subscribed = value;
+          _subscription = value.watch().listen((_) => _refresh(value));
+        }
         _refresh(value);
         return state;
       case AsyncError(:final error):
+        unawaited(_subscription?.cancel() ?? Future<void>.value());
         _subscription = null;
+        _subscribed = null;
         return pendingMultiview(error: error.toString());
       default:
         return pendingMultiview();

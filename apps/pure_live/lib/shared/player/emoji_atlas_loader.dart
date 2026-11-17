@@ -78,6 +78,13 @@ Future<void> _load() async {
     );
     EmojiAtlas.instance.registerAll([info]);
     await EmojiAtlas.instance.preloadEmoji(info);
+    // preloadEmoji swallows its own failures: the rects and the entry are
+    // registered, but the sheet never decoded, and every danmaku would pay
+    // the atlas regex for nothing. A sheet that is not there throws, and
+    // the catch below clears the memo — a later room retries.
+    if (EmojiAtlas.instance.image(info.id) == null) {
+      throw StateError('the emoticon sheet did not decode');
+    }
   } on Object catch (error) {
     // The catalogue is an enhancement: without it the danmaku flies as
     // text, and the memo clears so a later room can retry.

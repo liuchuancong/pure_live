@@ -84,8 +84,10 @@ final class FollowedAreasController extends Notifier<FollowedAreasState> {
   @override
   FollowedAreasState build() {
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    // The refresh has to come back as the return value: a `state =` inside
-    // build is discarded — the build's return is the initial state.
+    // The build's return seeds the state; the `state =` writes below and in
+    // _refresh go through just the same (riverpod only flags them in dev
+    // when they happen before the build returns). The seed keeps the page
+    // loading while the repository opens.
     var initial = (ready: false, areas: const <LiveArea>[]);
     ref.watch(areaFollowRepositoryProvider).whenData((repository) {
       _subscription ??= repository.watch().listen((_) => _refresh(repository));

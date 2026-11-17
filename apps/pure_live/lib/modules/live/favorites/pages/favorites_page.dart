@@ -57,6 +57,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// [_resumeRefreshStaleAfter] does not repeat it.
   DateTime? _lastRefreshAt;
 
+  /// The phone top bar's hook holder, captured while the page is alive;
+  /// dispose clears the hook through it (`ref` is refused by then).
+  late final FavoritesPageRefresh _refreshHandoff = ref.read(followsPageRefreshProvider.notifier);
+
   @override
   void initState() {
     super.initState();
@@ -64,7 +68,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     // The phone's top bar learns the page's refresh after the first frame:
     // a provider write in initState would be a modification during build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(followsPageRefreshProvider.notifier).handler = _runRefresh;
+      if (mounted) _refreshHandoff.handler = _runRefresh;
     });
     // A change from the settings surface re-arms the clock in place.
     ref.listenManual(followsAutoRefreshProvider, (_, _) {
@@ -86,6 +90,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
   @override
   void dispose() {
+    // The phone top bar's hook dies with the page that installed it: a
+    // press landing after teardown must not reach a dead element.
+    _refreshHandoff.handler = null;
     WidgetsBinding.instance.removeObserver(this);
     _autoRefresh?.cancel();
     _cancelResumeRefresh();
@@ -150,6 +157,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// refresh is what moves a room into the group, so refreshing nothing
   /// would leave the empty state's button dead.
   Future<void> _runRefresh() async {
+    // A press routed here after the page left reads nothing.
+    if (!mounted) return;
     final rooms = ref.read(followsProvider).rooms;
     final group = ref.read(favoritesViewProvider).group;
     final platform = _visiblePlatform(rooms);

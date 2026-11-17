@@ -707,6 +707,14 @@ final class SearchSiteController extends Notifier<String> {
     state = id;
     unawaited(StoragePrefs.setString('browse.search.site', id));
   }
+
+  /// Moves the shown scope without persisting it: a passing surface's word
+  /// (the popular page's inline feed) must not rewrite the viewer's own
+  /// stored choice — the next launch keeps what they chose.
+  // ignore: use_setters_to_change_properties
+  void showTransient(String id) {
+    state = id;
+  }
 }
 
 /// The search page's shown scope.
