@@ -2617,9 +2617,6 @@ class Translations$huya$zh_CN {
 	/// zh-CN: '搜索'
 	String get search => '搜索';
 
-	/// zh-CN: '直播'
-	String get liveTab => '直播';
-
 	/// zh-CN: '推荐'
 	String get recommend => '推荐';
 
@@ -16254,7 +16251,6 @@ extension on Translations {
 			'huya.hotChannels' => '热门频道',
 			'huya.suggestTitle' => '试试这些',
 			'huya.search' => '搜索',
-			'huya.liveTab' => '直播',
 			'huya.recommend' => '推荐',
 			'huya.exchange' => '换一批',
 			'huya.profileHome' => '主页',
@@ -16300,9 +16296,9 @@ extension on Translations {
 			'iptv.activeGuideNone' => '未选择',
 			'iptv.activeGuideTitle' => '当前节目单',
 			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
+			'iptv.autoUpdate' => '自动更新',
 			_ => null,
 		} ?? switch (path) {
-			'iptv.autoUpdate' => '自动更新',
 			'iptv.autoUpdateHint' => '按此间隔在后台检查并重拉已开启自动更新的节目单。',
 			'iptv.customUserAgent' => 'User-Agent',
 			'iptv.customUserAgentDesc' => '导入与播放请求使用的 UA；留空用默认，播放列表自带优先。',
@@ -16814,9 +16810,9 @@ extension on Translations {
 			'music.removeSong' => '移除',
 			'music.chartsFailed' => '榜单加载失败',
 			'music.queueEmpty' => '队列为空',
+			'music.queueTitle' => '播放队列',
 			_ => null,
 		} ?? switch (path) {
-			'music.queueTitle' => '播放队列',
 			'music.queueUpNext' => '接下来播放',
 			'music.queuePlayed' => '已播放',
 			'music.queueShowMore' => ({required Object count}) => '显示更多（还有 ${count} 首）',
@@ -17328,9 +17324,9 @@ extension on Translations {
 			'music.toggleSource' => '歌曲换源',
 			'music.toggleSourceDone' => '已换源，之后都用新源播放这首歌',
 			'music.toggleSourceEmpty' => '没有找到候选歌曲',
+			'music.toggleSourceFailed' => '候选搜索失败',
 			_ => null,
 		} ?? switch (path) {
-			'music.toggleSourceFailed' => '候选搜索失败',
 			'music.editTags' => '编辑标签',
 			'music.tagEditTitle' => '编辑歌曲标签',
 			'music.tagEditFileName' => '文件名',
@@ -17842,9 +17838,9 @@ extension on Translations {
 			'room.slowReason' => '时间有点长，线路可能不稳定',
 			'room.paused' => '已暂停',
 			'room.replayEnded' => '回放已结束',
+			'room.banned' => '该直播间已被封禁',
 			_ => null,
 		} ?? switch (path) {
-			'room.banned' => '该直播间已被封禁',
 			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
 			'room.offlineTitle' => '主播暂时不在',
@@ -18356,9 +18352,9 @@ extension on Translations {
 			'settings.proxyPasswordClearDesc' => '清除后代理将按无认证方式访问；若它仍要求密码，请求会失败。',
 			'settings.proxyModeOff' => '不使用代理',
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
+			'settings.proxyModeSystem' => '跟随系统代理',
 			_ => null,
 		} ?? switch (path) {
-			'settings.proxyModeSystem' => '跟随系统代理',
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
@@ -18870,9 +18866,9 @@ extension on Translations {
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
+			'settings.hwdecCodecsAll' => '全部编码格式',
 			_ => null,
 		} ?? switch (path) {
-			'settings.hwdecCodecsAll' => '全部编码格式',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
@@ -19384,9 +19380,9 @@ extension on Translations {
 			'settings.chatListFontSize' => '文字大小',
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
+			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			_ => null,
 		} ?? switch (path) {
-			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
 			'settings.chatListSpacingCompact' => '紧凑',
@@ -19898,9 +19894,9 @@ extension on Translations {
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
 			'vod.searchHint' => '搜索 Bilibili 视频',
+			'vod.idleTitle' => '搜索点播视频',
 			_ => null,
 		} ?? switch (path) {
-			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',

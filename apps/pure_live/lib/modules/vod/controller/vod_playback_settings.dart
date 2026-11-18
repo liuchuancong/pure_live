@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart' show playerRateLabel;
 
 /// The speeds the station offers, the reference's own list (0.5×–2×).
 enum VodSpeedChoice {
@@ -39,7 +40,7 @@ enum VodSpeedChoice {
   /// The menu's words: the rate itself, never the category's name — a 1×
   /// row reading "倍速" beside a panel titled 倍速 says nothing about which
   /// choice is in force.
-  String get label => '${_trim(value)}x';
+  String get label => playerRateLabel(value);
 
   /// The nearest choice for a stored rate; [normal] for a damaged value.
   static VodSpeedChoice nearest(double value) {
@@ -50,10 +51,6 @@ enum VodSpeedChoice {
     return best;
   }
 
-  static String _trim(double value) {
-    final text = value.toStringAsFixed(2);
-    return text.replaceFirst(RegExp(r'\.?0+$'), '');
-  }
 }
 
 /// What the page does when a part reaches its end — the reference's

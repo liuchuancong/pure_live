@@ -57,14 +57,11 @@ import 'package:pure_live/modules/music/controller/sync/music_sync_server.dart'
         musicSyncServerProvider,
         musicSyncServerStatusProvider;
 import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
+import 'package:pure_live/shared/player/player_rate_label.dart' show playerRateLabel;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// The speeds the player offers — the same ladder its own menu walks.
 const List<double> _kPlaybackRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
-
-/// A rate as the player spells it: whole numbers without decimals, so 1 reads
-/// `1x` and 1.25 reads `1.25x`.
-String _playbackRateLabel(double rate) => '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 2)}x';
 
 /// The music module's own settings, on the reference's rail: 播放 keeps the
 /// source, rendition and playback behaviours; 界面与列表 keeps the player and
@@ -180,9 +177,9 @@ final class _MusicSettingsPaneState extends ConsumerState<MusicSettingsPane> {
                 title: t.music.playbackRate,
                 value: settings.playbackRate,
                 options: [
-                  for (final rate in _kPlaybackRates) DsSelectOption(value: rate, label: _playbackRateLabel(rate)),
+                  for (final rate in _kPlaybackRates) DsSelectOption(value: rate, label: playerRateLabel(rate)),
                   if (!_kPlaybackRates.contains(settings.playbackRate))
-                    DsSelectOption(value: settings.playbackRate, label: _playbackRateLabel(settings.playbackRate)),
+                    DsSelectOption(value: settings.playbackRate, label: playerRateLabel(settings.playbackRate)),
                 ],
                 onChanged: (rate) => unawaited(controller.setPlaybackRate(rate)),
               ),

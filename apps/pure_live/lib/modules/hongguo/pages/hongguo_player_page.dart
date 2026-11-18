@@ -2084,7 +2084,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                           spacing: DsSpace.s6,
                           children: [
                             DsIcon(
-                              _speedLocked ? DsIcons.lock : DsIcons.fastForward,
+                              _speedLocked ? DsIcons.lock : DsIcons.timer,
                               size: theme.sizes.iconXs,
                               color: OnVideoColors.foreground,
                             ),
@@ -2500,14 +2500,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         ? Duration(milliseconds: (_dragSeconds! * 1000).round())
         : transport?.position ?? Duration.zero;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
-    final speedLabel = _speed == _speed.roundToDouble() ? '${_speed.toInt()}x' : '${_speed}x';
+    final speedLabel = playerRateLabel(_speed);
     final next = _nextEpisode();
-    return Container(
+    return PlayerControlBar(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
-      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           // The bar bends before it breaks: a portrait picture leaves the
@@ -2802,7 +2799,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           children: [
             for (final speed in _speedChoices)
               PlayerPanelOption(
-                label: '${speed == speed.roundToDouble() ? speed.toInt() : speed}x',
+                label: playerRateLabel(speed),
                 selected: speed == _speed,
                 onPressed: () {
                   _closePanel();
@@ -2841,7 +2838,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         const sizes = <double>[16, 20, 24, 28, 32];
         const speeds = <double>[0.5, 1, 1.5, 2];
         const densities = HongguoDanmakuDensity.values;
-        String speedText(double speed) => '${speed == speed.roundToDouble() ? speed.toInt() : speed}x';
+        String speedText(double speed) => playerRateLabel(speed);
         return PlayerOverlayPanel(
           title: t.hongguo.danmaku,
           width: _panelWidth(panel),

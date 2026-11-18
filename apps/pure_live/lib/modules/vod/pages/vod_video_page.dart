@@ -2497,12 +2497,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final playback = ref.watch(playbackSettingsProvider);
     final danmakuVisible = playback.danmakuVisible;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
-    return Container(
+    return PlayerControlBar(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s4,

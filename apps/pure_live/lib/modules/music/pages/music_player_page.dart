@@ -36,7 +36,7 @@ import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_spectrum.dart';
 import 'package:pure_live/modules/music/widgets/music_stage_panels.dart' show MusicCommentsDialog, MusicStagePanels;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage, playerRateLabel;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 import 'package:pure_live/shared/widgets/app_panel.dart';
 
@@ -716,7 +716,6 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
   static const List<int> _offsets = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
   static const List<int> _sleepMinutes = [15, 30, 45, 60, 90];
 
-  String _rateLabel(double rate) => '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 2)}x';
   String _offsetLabel(Translations t, int ms) {
     if (ms == 0) return t.music.lyricOffsetReset;
     final seconds = (ms / 1000).toStringAsFixed(1);
@@ -913,11 +912,11 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
         ],
         DsMenuItem.submenu(
           leading: const DsIcon(DsIcons.timer),
-          label: Text('${t.music.playbackRate} · ${_rateLabel(currentRate)}'),
+          label: Text('${t.music.playbackRate} · ${playerRateLabel(currentRate)}'),
           submenu: [
             for (final rate in _rates)
               DsMenuItem(
-                label: Text(_rateLabel(rate)),
+                label: Text(playerRateLabel(rate)),
                 checked: (currentRate - rate).abs() < 0.001,
                 onPressed: () => unawaited(controller.setRate(rate)),
               ),

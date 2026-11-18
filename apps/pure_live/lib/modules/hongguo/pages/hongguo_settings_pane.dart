@@ -9,11 +9,13 @@ import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart' show hongguoClientProvider;
+
 import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart'
     show HongguoDanmakuDensity, hongguoDanmakuSettingsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderLessonsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart';
 import 'package:pure_live/modules/hongguo/widgets/hongguo_card_preview.dart' show showHongguoCardPreview;
+import 'package:pure_live/shared/player/player_rate_label.dart' show playerRateLabel;
 
 /// The station's own settings, split the way every module's are: the
 /// rendition an episode opens with on its own page, the poster card's pieces,
@@ -184,7 +186,7 @@ final class HongguoDanmakuPane extends ConsumerWidget {
           value: danmaku.speed,
           options: [
             for (final value in const <double>[0.5, 1, 1.5, 2])
-              DsSelectOption(value: value, label: '${value == value.roundToDouble() ? value.toInt() : value}x'),
+              DsSelectOption(value: value, label: playerRateLabel(value)),
           ],
           onChanged: (value) => unawaited(controller.setSpeed(value)),
         ),

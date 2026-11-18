@@ -963,7 +963,6 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get hotChannels => 'Popular channels';
 	@override String get suggestTitle => 'Try these';
 	@override String get search => 'Search';
-	@override String get liveTab => 'Live';
 	@override String get recommend => 'Recommended';
 	@override String get exchange => 'New batch';
 	@override String get profileHome => 'Home';
@@ -6283,7 +6282,6 @@ extension on TranslationsEn {
 			'huya.hotChannels' => 'Popular channels',
 			'huya.suggestTitle' => 'Try these',
 			'huya.search' => 'Search',
-			'huya.liveTab' => 'Live',
 			'huya.recommend' => 'Recommended',
 			'huya.exchange' => 'New batch',
 			'huya.profileHome' => 'Home',
@@ -6329,9 +6327,9 @@ extension on TranslationsEn {
 			'iptv.activeGuideNone' => 'None selected',
 			'iptv.activeGuideTitle' => 'Active guide',
 			'iptv.activeGuideCardHint' => 'The channel list\'s “on air” and progress follow this guide.',
+			'iptv.autoUpdate' => 'Auto update',
 			_ => null,
 		} ?? switch (path) {
-			'iptv.autoUpdate' => 'Auto update',
 			'iptv.autoUpdateHint' => 'Checks in the background at this interval and refetches guides with auto-update on.',
 			'iptv.customUserAgent' => 'User-Agent',
 			'iptv.customUserAgentDesc' => 'User-Agent for imports and playback; blank means the app default.',
@@ -6843,9 +6841,9 @@ extension on TranslationsEn {
 			'music.removeSong' => 'Remove',
 			'music.chartsFailed' => 'The chart did not load',
 			'music.queueEmpty' => 'Queue is empty',
+			'music.queueTitle' => 'Queue',
 			_ => null,
 		} ?? switch (path) {
-			'music.queueTitle' => 'Queue',
 			'music.queueUpNext' => 'Up next',
 			'music.queuePlayed' => 'Played',
 			'music.queueShowMore' => ({required Object count}) => 'Show more (${count} left)',
@@ -7357,9 +7355,9 @@ extension on TranslationsEn {
 			'music.toggleSource' => 'Toggle source',
 			'music.toggleSourceDone' => 'Source swapped; this song now plays from the new one',
 			'music.toggleSourceEmpty' => 'No candidate songs found',
+			'music.toggleSourceFailed' => 'Searching for candidates failed',
 			_ => null,
 		} ?? switch (path) {
-			'music.toggleSourceFailed' => 'Searching for candidates failed',
 			'music.editTags' => 'Edit tags',
 			'music.tagEditTitle' => 'Edit song tags',
 			'music.tagEditFileName' => 'File name',
@@ -7871,9 +7869,9 @@ extension on TranslationsEn {
 			'room.slowReason' => 'This is taking a while; the line may be unstable',
 			'room.paused' => 'Paused',
 			'room.replayEnded' => 'The replay has ended',
+			'room.banned' => 'This room has been banned',
 			_ => null,
 		} ?? switch (path) {
-			'room.banned' => 'This room has been banned',
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
 			'room.offlineTitle' => 'The streamer is away',
@@ -8385,9 +8383,9 @@ extension on TranslationsEn {
 			'settings.proxyPasswordClearDesc' => 'The proxy is then used without authentication; if it still requires a password, requests will fail.',
 			'settings.proxyModeOff' => 'No proxy',
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
+			'settings.proxyModeSystem' => 'Follow the system proxy',
 			_ => null,
 		} ?? switch (path) {
-			'settings.proxyModeSystem' => 'Follow the system proxy',
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
@@ -8899,9 +8897,9 @@ extension on TranslationsEn {
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
 			'settings.hwdecCodecs' => 'Hardware codecs',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
+			'settings.hwdecCodecsAll' => 'All codecs',
 			_ => null,
 		} ?? switch (path) {
-			'settings.hwdecCodecsAll' => 'All codecs',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
@@ -9413,9 +9411,9 @@ extension on TranslationsEn {
 			'settings.chatListFontSize' => 'Text size',
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
 			'settings.chatListFollowTheme' => 'Follow theme',
+			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			_ => null,
 		} ?? switch (path) {
-			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
 			'settings.chatListSpacingCompact' => 'Compact',
@@ -9927,9 +9925,9 @@ extension on TranslationsEn {
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
 			'vod.searchHint' => 'Search Bilibili videos',
+			'vod.idleTitle' => 'Search for videos',
 			_ => null,
 		} ?? switch (path) {
-			'vod.idleTitle' => 'Search for videos',
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
 			'vod.noResultsTitle' => 'No videos found',
 			'vod.noResultsDescription' => 'Try another keyword.',

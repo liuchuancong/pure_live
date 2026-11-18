@@ -425,7 +425,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     final next = (nearest + (direction > 0 ? 1 : -1)).clamp(0, choices.length - 1);
     if (choices[next] == controller.rate) return;
     final rate = choices[next];
-    _tip(VodGestureKind.speed, '${rate}x');
+    _tip(VodGestureKind.speed, playerRateLabel(rate));
     await controller.setRate(rate);
   }
 
@@ -976,7 +976,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           null => t.vod.downloadingUnknown,
         }, style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground));
         trailing = PlayerBarButton(
-          icon: DsIcons.pause,
+          iconAsset: 'assets/icons/pause.svg',
           label: t.vod.downloadPause,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).pause(widget.id)),
         );
@@ -986,7 +986,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground),
         );
         trailing = PlayerBarButton(
-          icon: DsIcons.play,
+          iconAsset: 'assets/icons/play.svg',
           label: t.vod.downloadResume,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).resume(widget.id)),
         );
@@ -1226,7 +1226,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
       spacing: tv ? DsSpace.s8 : DsSpace.s4,
       children: [
         PlayerBarButton(
-          icon: playing ? DsIcons.pause : DsIcons.play,
+          iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
           label: playing ? t.room.pause : t.room.play,
           onPressed: () {
             _wake();
@@ -1289,11 +1289,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           align: DsAlign.end,
           items: [
             for (final rate in _speedChoices)
-              DsMenuItem(label: Text('${rate}x'), onPressed: () => unawaited(controller.setRate(rate))),
+              DsMenuItem(label: Text(playerRateLabel(rate)), onPressed: () => unawaited(controller.setRate(rate))),
           ],
           builder: (context, menu, _) => PlayerBarButton(
-            icon: DsIcons.fastForward,
-            label: '${controller.rate}x',
+            icon: DsIcons.timer,
+            label: playerRateLabel(controller.rate),
             onPressed: () {
               _wake();
               menu.toggle();
@@ -1326,11 +1326,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
           ),
       ],
     );
-    return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s12),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
-      ),
+    return PlayerControlBar(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s4,

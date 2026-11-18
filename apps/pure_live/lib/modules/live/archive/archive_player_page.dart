@@ -527,7 +527,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
     final next = (nearest + (direction > 0 ? 1 : -1)).clamp(0, choices.length - 1);
     if (choices[next] == controller.rate) return;
     final rate = choices[next];
-    _tip(VodGestureKind.speed, '${rate}x');
+    _tip(VodGestureKind.speed, playerRateLabel(rate));
     await controller.setRate(rate);
   }
 
@@ -1248,7 +1248,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         // The bar's first control and a TV's landing focus: the remote
         // reaches play before anything else.
         PlayerBarButton(
-          icon: playing ? DsIcons.pause : DsIcons.play,
+          iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
           label: playing ? t.room.pause : t.room.play,
           autofocus: tv,
           onPressed: () {
@@ -1322,11 +1322,11 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           align: DsAlign.end,
           items: [
             for (final rate in _speedChoices)
-              DsMenuItem(label: Text('${rate}x'), onPressed: () => unawaited(controller.setRate(rate))),
+              DsMenuItem(label: Text(playerRateLabel(rate)), onPressed: () => unawaited(controller.setRate(rate))),
           ],
           builder: (context, menu, _) => PlayerBarButton(
-            icon: DsIcons.fastForward,
-            label: '${controller.rate}x',
+            icon: DsIcons.timer,
+            label: playerRateLabel(controller.rate),
             onPressed: () {
               _wake();
               menu.toggle();
@@ -1374,11 +1374,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           ),
       ],
     );
-    return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s12),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
-      ),
+    return PlayerControlBar(
       child: Column(
         key: _barAnchor,
         crossAxisAlignment: CrossAxisAlignment.stretch,

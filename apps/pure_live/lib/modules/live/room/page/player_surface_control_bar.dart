@@ -82,15 +82,12 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
     // The state echo of a mute switch rebuilds this bar, so the icon reads
     // fresh without its own stream.
     final tv = PlayerBarTier.tvOf(context);
-    return Container(
+    return PlayerControlBar(
       padding: EdgeInsets.fromLTRB(
         tv ? DsSpace.s16 : DsSpace.s12,
         tv ? DsSpace.s12 : DsSpace.s8,
         tv ? DsSpace.s16 : DsSpace.s12,
         tv ? DsSpace.s12 : DsSpace.s8,
-      ),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
       ),
       // Two width tiers, each a superset of the other: the desktop bar gains
       // the volume slider beside the window-fullscreen button at 720, the

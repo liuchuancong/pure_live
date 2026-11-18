@@ -80,6 +80,7 @@ import 'package:pure_live/shared/shared.dart'
         danmakuFileFor,
         kPlaybackWideBreakpoint,
         playerBarrageConfig,
+        playerRateLabel,
         playerStatsVisibleProvider,
         showCastUriDialog,
         silencePlayer;
@@ -117,10 +118,6 @@ Future<void> openMediaPreview(
 /// catalogue carries, written out here because this page is what the modules
 /// open and must not reach back into one of them for a list.
 const List<double> kPreviewRates = [0.5, 0.75, 1, 1.25, 1.5, 2];
-
-/// The rate as the menu says it: `1×`, `1.5×`, `0.75×` — the number, never the
-/// category's name beside a panel already titled 倍速.
-String _rateLabel(double value) => '${value.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '')}×';
 
 /// The preview page: one file playing, the rest of the list beside it, and
 /// the entry's danmaku over the picture when it has a sidecar.
@@ -1704,14 +1701,14 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
         items: [
           for (final value in kPreviewRates)
             DsMenuItem(
-              label: Text(_rateLabel(value)),
+              label: Text(playerRateLabel(value)),
               checked: value == _rate,
               onPressed: () => unawaited(_setRate(value)),
             ),
         ],
         builder: (context, controller, _) => PlayerBarButton(
           icon: DsIcons.timer,
-          label: _rateLabel(_rate),
+          label: playerRateLabel(_rate),
           selected: _rate != 1,
           onPressed: handle == null ? null : controller.toggle,
         ),
