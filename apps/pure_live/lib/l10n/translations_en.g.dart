@@ -886,7 +886,6 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String downloadRetryTimes({required int count}) => '${count} times';
 	@override String get downloadRetryDelay => 'Retry interval';
 	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
-	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get downloadManagerTitle => 'Downloads';
 	@override String get downloadPauseAll => 'Pause all';
 	@override String get downloadResumeAll => 'Resume all';
@@ -1738,7 +1737,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadDeleteFile => 'Delete the file';
 	@override String get downloadDeleteFileBody => 'The audio file goes with this record. This cannot be undone.';
 	@override String get downloadDeleteFailed => 'The file could not be deleted';
-	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get downloadResume => 'Resume';
 	@override String get downloadPause => 'Pause';
 	@override String get downloadCancel => 'Cancel';
@@ -3943,6 +3941,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadManagerEmpty => 'No downloads yet';
 	@override String get downloadManagerEmptyDesc => 'Choose “Download” in a preview or the library and the task shows up here.';
 	@override String get downloadStatusRunning => 'Downloading';
+	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get downloadStatusDone => 'Completed';
 	@override String get downloadStatusFailed => 'Failed';
 	@override String downloadStartedAt({required Object time}) => 'Started ${time}';
@@ -3992,9 +3991,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadPause => 'Pause';
 	@override String get downloadResume => 'Resume';
 	@override String get downloadPausedHint => 'Paused · tap to resume';
-	@override String downloadEtaSeconds({required Object seconds}) => '${seconds} seconds left';
-	@override String downloadEtaMinutes({required Object minutes}) => '${minutes} minutes left';
-	@override String downloadEtaHours({required Object hours}) => '${hours} hours left';
 	@override String downloadSummary({required Object total}) => '${total} items';
 	@override String downloadSummaryMoving({required Object total, required Object running}) => '${total} tasks · ${running} downloading';
 	@override String downloadPageSummary({required Object total, required Object page, required Object count}) => '${total} tasks · page ${page} of ${count}';
@@ -4974,7 +4970,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadDeleteFile => 'Delete file';
 	@override String get downloadDeleteFileBody => 'The video file is deleted too; this cannot be undone.';
 	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
-	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get partsPrevious => 'Previous group';
 	@override String get partsNext => 'Next group';
 	@override String get partsJump => 'Jump to part';
@@ -6220,7 +6215,6 @@ extension on TranslationsEn {
 			'hongguo.downloadRetryTimes' => ({required int count}) => '${count} times',
 			'hongguo.downloadRetryDelay' => 'Retry interval',
 			'hongguo.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
-			'hongguo.downloadEta' => ({required Object time}) => '${time} left',
 			'hongguo.downloadManagerTitle' => 'Downloads',
 			'hongguo.downloadPauseAll' => 'Pause all',
 			'hongguo.downloadResumeAll' => 'Resume all',
@@ -6334,9 +6328,9 @@ extension on TranslationsEn {
 			'iptv.activeGuideDescription' => 'The guide source used for the channel list; one at a time.',
 			'iptv.activeGuideNone' => 'None selected',
 			'iptv.activeGuideTitle' => 'Active guide',
+			'iptv.activeGuideCardHint' => 'The channel list\'s “on air” and progress follow this guide.',
 			_ => null,
 		} ?? switch (path) {
-			'iptv.activeGuideCardHint' => 'The channel list\'s “on air” and progress follow this guide.',
 			'iptv.autoUpdate' => 'Auto update',
 			'iptv.autoUpdateHint' => 'Checks in the background at this interval and refetches guides with auto-update on.',
 			'iptv.customUserAgent' => 'User-Agent',
@@ -6848,9 +6842,9 @@ extension on TranslationsEn {
 			'music.mineEmptyDescription' => 'Songs you collect or play appear here.',
 			'music.removeSong' => 'Remove',
 			'music.chartsFailed' => 'The chart did not load',
+			'music.queueEmpty' => 'Queue is empty',
 			_ => null,
 		} ?? switch (path) {
-			'music.queueEmpty' => 'Queue is empty',
 			'music.queueTitle' => 'Queue',
 			'music.queueUpNext' => 'Up next',
 			'music.queuePlayed' => 'Played',
@@ -7040,7 +7034,6 @@ extension on TranslationsEn {
 			'music.downloadDeleteFile' => 'Delete the file',
 			'music.downloadDeleteFileBody' => 'The audio file goes with this record. This cannot be undone.',
 			'music.downloadDeleteFailed' => 'The file could not be deleted',
-			'music.downloadEta' => ({required Object time}) => '${time} left',
 			'music.downloadResume' => 'Resume',
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
@@ -7362,10 +7355,10 @@ extension on TranslationsEn {
 			'music.listSearch' => 'Search in this list',
 			'music.listSearchEmpty' => 'No matching songs found',
 			'music.toggleSource' => 'Toggle source',
-			_ => null,
-		} ?? switch (path) {
 			'music.toggleSourceDone' => 'Source swapped; this song now plays from the new one',
 			'music.toggleSourceEmpty' => 'No candidate songs found',
+			_ => null,
+		} ?? switch (path) {
 			'music.toggleSourceFailed' => 'Searching for candidates failed',
 			'music.editTags' => 'Edit tags',
 			'music.tagEditTitle' => 'Edit song tags',
@@ -7876,10 +7869,10 @@ extension on TranslationsEn {
 			'room.buffering' => 'Buffering',
 			'room.connecting' => 'Connecting to the live stream',
 			'room.slowReason' => 'This is taking a while; the line may be unstable',
-			_ => null,
-		} ?? switch (path) {
 			'room.paused' => 'Paused',
 			'room.replayEnded' => 'The replay has ended',
+			_ => null,
+		} ?? switch (path) {
 			'room.banned' => 'This room has been banned',
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
@@ -8390,10 +8383,10 @@ extension on TranslationsEn {
 			'settings.proxyPasswordReplace' => 'Type a new password to replace it',
 			'settings.proxyPasswordClear' => 'Clear the saved password',
 			'settings.proxyPasswordClearDesc' => 'The proxy is then used without authentication; if it still requires a password, requests will fail.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeOff' => 'No proxy',
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeSystem' => 'Follow the system proxy',
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
 			'settings.proxyModeManual' => 'Manual proxy',
@@ -8904,10 +8897,10 @@ extension on TranslationsEn {
 			'settings.deinterlaceAuto' => 'Auto',
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hwdecCodecs' => 'Hardware codecs',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecsAll' => 'All codecs',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
@@ -9181,6 +9174,7 @@ extension on TranslationsEn {
 			'settings.downloadManagerEmpty' => 'No downloads yet',
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
 			'settings.downloadStatusRunning' => 'Downloading',
+			'settings.downloadEta' => ({required Object time}) => '${time} left',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
@@ -9230,9 +9224,6 @@ extension on TranslationsEn {
 			'settings.downloadPause' => 'Pause',
 			'settings.downloadResume' => 'Resume',
 			'settings.downloadPausedHint' => 'Paused · tap to resume',
-			'settings.downloadEtaSeconds' => ({required Object seconds}) => '${seconds} seconds left',
-			'settings.downloadEtaMinutes' => ({required Object minutes}) => '${minutes} minutes left',
-			'settings.downloadEtaHours' => ({required Object hours}) => '${hours} hours left',
 			'settings.downloadSummary' => ({required Object total}) => '${total} items',
 			'settings.downloadSummaryMoving' => ({required Object total, required Object running}) => '${total} tasks · ${running} downloading',
 			'settings.downloadPageSummary' => ({required Object total, required Object page, required Object count}) => '${total} tasks · page ${page} of ${count}',
@@ -9418,12 +9409,12 @@ extension on TranslationsEn {
 			'settings.storageFolderPickFailed' => 'Could not select a download folder',
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
 			'settings.chatListFontSize' => 'Text size',
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
 			'settings.chatListFollowTheme' => 'Follow theme',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
@@ -9932,12 +9923,12 @@ extension on TranslationsEn {
 			'toolbox.logsLevelLabel' => 'Level',
 			'toolbox.logsSave' => 'Save to file',
 			'toolbox.logsSaved' => 'Log saved',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsSaveFailed' => 'Could not save the log',
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
 			'vod.searchHint' => 'Search Bilibili videos',
+			_ => null,
+		} ?? switch (path) {
 			'vod.idleTitle' => 'Search for videos',
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
 			'vod.noResultsTitle' => 'No videos found',
@@ -10180,7 +10171,6 @@ extension on TranslationsEn {
 			'vod.downloadDeleteFile' => 'Delete file',
 			'vod.downloadDeleteFileBody' => 'The video file is deleted too; this cannot be undone.',
 			'vod.downloadDeleteFailed' => 'Couldn\'t delete the file',
-			'vod.downloadEta' => ({required Object time}) => '${time} left',
 			'vod.partsPrevious' => 'Previous group',
 			'vod.partsNext' => 'Next group',
 			'vod.partsJump' => 'Jump to part',

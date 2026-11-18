@@ -9,6 +9,7 @@ import 'package:pure_live/modules/live/recorder/data/recorder_platform_filter.da
 import 'package:pure_live/modules/live/recorder/data/recording_covers.dart' show recordingCoversProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_library.dart' show RecordingTake;
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart' show formatRecordingDuration;
+import 'package:pure_live/shared/player/on_video_colors.dart' show OnVideoColors;
 import 'package:pure_live/shared/shared.dart' show kAllPlatforms, localizedSiteIcon, showPlatformPickerPanel;
 
 /// The blank an opening CJK punctuation leaves before its ink.
@@ -208,7 +209,7 @@ final class RecorderTakeCoverState extends ConsumerState<RecorderTakeCover> {
               right: 4,
               bottom: 4,
               child: DecoratedBox(
-                decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(color: OnVideoColors.scrim, borderRadius: BorderRadius.circular(4)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   child: Text(

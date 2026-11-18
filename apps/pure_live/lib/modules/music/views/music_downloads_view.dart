@@ -28,6 +28,7 @@ import 'package:pure_live/shared/shared.dart'
         DownloadRowPhase,
         DownloadTaskCard,
         LiveWindow,
+        downloadEtaText,
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
@@ -654,7 +655,7 @@ String? _etaOf(Translations t, audio.MusicDownloadTask task) {
   if (task.status != audio.MusicDownloadStatus.running) return null;
   final left = task.remaining;
   if (left == null) return null;
-  return t.music.downloadEta(time: musicDurationText(left));
+  return t.settings.downloadEta(time: downloadEtaText(left));
 }
 
 /// One state's word. The row's caption, the table's badge and the filter panel's

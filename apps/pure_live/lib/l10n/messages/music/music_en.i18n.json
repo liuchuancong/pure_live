@@ -349,7 +349,6 @@
   "downloadDeleteFile": "Delete the file",
   "downloadDeleteFileBody": "The audio file goes with this record. This cannot be undone.",
   "downloadDeleteFailed": "The file could not be deleted",
-  "downloadEta": "{time} left",
   "downloadResume": "Resume",
   "downloadPause": "Pause",
   "downloadCancel": "Cancel",

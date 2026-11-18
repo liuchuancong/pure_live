@@ -2344,12 +2344,8 @@ final class _InfoBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.bottomCenter,
-          end: AlignmentDirectional.topCenter,
-          colors: [OnVideoColors.scrim, OnVideoColors.clear],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.down),
       ),
       child: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s40, DsSpace.s16, DsSpace.s12),
@@ -2424,12 +2420,8 @@ final class _PipStrip extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topCenter,
-          end: AlignmentDirectional.bottomCenter,
-          colors: [OnVideoColors.scrim, OnVideoColors.clear],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
       ),
       padding: const EdgeInsetsDirectional.only(start: DsSpace.s8),
       child: Row(

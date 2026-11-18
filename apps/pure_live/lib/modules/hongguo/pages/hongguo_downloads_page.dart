@@ -23,7 +23,6 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart' show hongguoCoverImage;
 import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show HongguoQualityChoice;
-import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart'
     show
         DownloadDetails,
@@ -36,6 +35,7 @@ import 'package:pure_live/shared/shared.dart'
         DownloadTaskCard,
         LiveWindow,
         NavigationItem,
+        downloadEtaText,
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
@@ -359,11 +359,11 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
 
 /// The remaining time the caption carries when it can be computed at all:
 /// a known speed and bytes still owed — otherwise the fact is left out
-/// rather than guessed. The clock is the episodes', so one page never
-/// shows two spellings of the same span.
+/// rather than guessed. The spelling is the app's one download eta, so
+/// every manager's queue reads the same.
 String? _etaOf(Translations t, {required int speed, required int total, required int received}) {
   if (speed <= 0 || received >= total) return null;
-  return t.hongguo.downloadEta(time: hongguoDurationText(Duration(seconds: (total - received) ~/ speed)));
+  return t.settings.downloadEta(time: downloadEtaText(Duration(seconds: (total - received) ~/ speed)));
 }
 
 /// The station's download manager as its own page: the queue as a table with

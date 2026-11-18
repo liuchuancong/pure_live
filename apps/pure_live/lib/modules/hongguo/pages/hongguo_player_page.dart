@@ -2260,12 +2260,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final inPip = ref.watch(roomPresentationProvider) == PresentationMode.pip;
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topCenter,
-          end: AlignmentDirectional.bottomCenter,
-          colors: [OnVideoColors.scrim, Color(0x00000000)],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
       ),
       child: Row(
         spacing: DsSpace.s8,

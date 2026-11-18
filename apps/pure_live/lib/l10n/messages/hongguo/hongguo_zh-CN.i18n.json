@@ -226,7 +226,6 @@
   "downloadRetryTimes": "{count: int} 次",
   "downloadRetryDelay": "重试间隔",
   "downloadRetryDelayDesc": "两次自动重试之间等待的时间。",
-  "downloadEta": "剩余 {time}",
   "downloadManagerTitle": "下载管理",
   "downloadPauseAll": "全部暂停",
   "downloadResumeAll": "全部继续",

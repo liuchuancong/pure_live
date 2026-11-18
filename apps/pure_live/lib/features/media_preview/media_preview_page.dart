@@ -1044,12 +1044,8 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     final theme = DsTheme.of(context);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topCenter,
-          end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
       ),
       child: Row(
         spacing: DsSpace.s8,
@@ -1713,36 +1709,12 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               onPressed: () => unawaited(_setRate(value)),
             ),
         ],
-        builder: (context, controller, _) => compact
-            ? PlayerBarButton(
-                icon: DsIcons.gauge,
-                label: t.common.previewSpeed,
-                selected: _rate != 1,
-                onPressed: handle == null ? null : controller.toggle,
-              )
-            : PlayerGlassPill(
-                child: DsPressable(
-                  semanticLabel: t.common.previewSpeed,
-                  onPressed: handle == null ? null : controller.toggle,
-                  builder: (context, states, _) {
-                    final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed);
-                    return Container(
-                      height: DsTheme.of(context).sizes.sm,
-                      padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8),
-                      color: lit ? const Color(0x24FFFFFF) : null,
-                      child: Center(
-                        child: Text(
-                          _rateLabel(_rate),
-                          style: DsTheme.of(context).typography.numeric(
-                            DsTheme.of(context).typography.caption
-                                .copyWith(color: _rate == 1 ? const Color(0xCCFFFFFF) : OnVideoColors.foreground),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+        builder: (context, controller, _) => PlayerBarButton(
+          icon: DsIcons.timer,
+          label: _rateLabel(_rate),
+          selected: _rate != 1,
+          onPressed: handle == null ? null : controller.toggle,
+        ),
       ),
       // The flying danmaku's switch beside the gear that opens its settings —
       // the pair the room's bar draws at the reading end. Without a sidecar

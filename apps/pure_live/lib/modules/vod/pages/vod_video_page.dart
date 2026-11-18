@@ -2222,12 +2222,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       // would only promise what cannot run yet.
       final ground = Container(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: AlignmentDirectional.topCenter,
-            end: AlignmentDirectional.bottomCenter,
-            colors: [Color(0xB3000000), Color(0x00000000)],
-          ),
+        decoration: BoxDecoration(
+          gradient: OnVideoColors.shade(edge: VerticalDirection.up),
         ),
         child: Row(
           spacing: DsSpace.s8,
@@ -2238,12 +2234,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topCenter,
-          end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
       ),
       child: Row(
         spacing: DsSpace.s8,

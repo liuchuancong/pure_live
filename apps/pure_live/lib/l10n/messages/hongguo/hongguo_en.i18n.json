@@ -226,7 +226,6 @@
   "downloadRetryTimes": "{count: int} times",
   "downloadRetryDelay": "Retry interval",
   "downloadRetryDelayDesc": "How long to wait between two automatic retries.",
-  "downloadEta": "{time} left",
   "downloadManagerTitle": "Downloads",
   "downloadPauseAll": "Pause all",
   "downloadResumeAll": "Resume all",

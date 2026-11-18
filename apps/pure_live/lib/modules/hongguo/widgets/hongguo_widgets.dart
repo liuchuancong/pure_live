@@ -494,7 +494,7 @@ final class _CoverMark extends StatelessWidget {
       style: DsBadgeStyle(
         height: 28,
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
-        background: leading ? colors.accent : const Color(0xB3000000),
+        background: leading ? colors.accent : OnVideoColors.scrim,
         foreground: leading ? colors.onAccent : OnVideoColors.foreground,
         borderRadius: BorderRadius.circular(8),
         textStyle: theme.typography.labelStrong,

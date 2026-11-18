@@ -2404,9 +2404,6 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '两次自动重试之间等待的时间。'
 	String get downloadRetryDelayDesc => '两次自动重试之间等待的时间。';
 
-	/// zh-CN: '剩余 {time}'
-	String downloadEta({required Object time}) => '剩余 ${time}';
-
 	/// zh-CN: '下载管理'
 	String get downloadManagerTitle => '下载管理';
 
@@ -4887,9 +4884,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '文件未能删除'
 	String get downloadDeleteFailed => '文件未能删除';
-
-	/// zh-CN: '剩余 {time}'
-	String downloadEta({required Object time}) => '剩余 ${time}';
 
 	/// zh-CN: '继续'
 	String get downloadResume => '继续';
@@ -11359,6 +11353,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '下载中'
 	String get downloadStatusRunning => '下载中';
 
+	/// zh-CN: '剩余 {time}'
+	String downloadEta({required Object time}) => '剩余 ${time}';
+
 	/// zh-CN: '已完成'
 	String get downloadStatusDone => '已完成';
 
@@ -11505,15 +11502,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '已暂停 · 点击继续'
 	String get downloadPausedHint => '已暂停 · 点击继续';
-
-	/// zh-CN: '预计还需 {seconds} 秒'
-	String downloadEtaSeconds({required Object seconds}) => '预计还需 ${seconds} 秒';
-
-	/// zh-CN: '预计还需 {minutes} 分钟'
-	String downloadEtaMinutes({required Object minutes}) => '预计还需 ${minutes} 分钟';
-
-	/// zh-CN: '预计还需 {hours} 小时'
-	String downloadEtaHours({required Object hours}) => '预计还需 ${hours} 小时';
 
 	/// zh-CN: '共 {total} 项'
 	String downloadSummary({required Object total}) => '共 ${total} 项';
@@ -14380,9 +14368,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '文件未能删除'
 	String get downloadDeleteFailed => '文件未能删除';
 
-	/// zh-CN: '剩余 {time}'
-	String downloadEta({required Object time}) => '剩余 ${time}';
-
 	/// zh-CN: '上一组'
 	String get partsPrevious => '上一组';
 
@@ -16201,7 +16186,6 @@ extension on Translations {
 			'hongguo.downloadRetryTimes' => ({required int count}) => '${count} 次',
 			'hongguo.downloadRetryDelay' => '重试间隔',
 			'hongguo.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
-			'hongguo.downloadEta' => ({required Object time}) => '剩余 ${time}',
 			'hongguo.downloadManagerTitle' => '下载管理',
 			'hongguo.downloadPauseAll' => '全部暂停',
 			'hongguo.downloadResumeAll' => '全部继续',
@@ -16315,9 +16299,9 @@ extension on Translations {
 			'iptv.activeGuideDescription' => '选择用于频道节目的节目单来源；同一时间只使用一个。',
 			'iptv.activeGuideNone' => '未选择',
 			'iptv.activeGuideTitle' => '当前节目单',
+			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
 			_ => null,
 		} ?? switch (path) {
-			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
 			'iptv.autoUpdate' => '自动更新',
 			'iptv.autoUpdateHint' => '按此间隔在后台检查并重拉已开启自动更新的节目单。',
 			'iptv.customUserAgent' => 'User-Agent',
@@ -16829,9 +16813,9 @@ extension on Translations {
 			'music.mineEmptyDescription' => '收藏或播放过的歌曲会出现在这里。',
 			'music.removeSong' => '移除',
 			'music.chartsFailed' => '榜单加载失败',
+			'music.queueEmpty' => '队列为空',
 			_ => null,
 		} ?? switch (path) {
-			'music.queueEmpty' => '队列为空',
 			'music.queueTitle' => '播放队列',
 			'music.queueUpNext' => '接下来播放',
 			'music.queuePlayed' => '已播放',
@@ -17021,7 +17005,6 @@ extension on Translations {
 			'music.downloadDeleteFile' => '删除文件',
 			'music.downloadDeleteFileBody' => '音频文件会随这条记录一并删除，此操作无法撤销。',
 			'music.downloadDeleteFailed' => '文件未能删除',
-			'music.downloadEta' => ({required Object time}) => '剩余 ${time}',
 			'music.downloadResume' => '继续',
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
@@ -17343,10 +17326,10 @@ extension on Translations {
 			'music.listSearch' => '搜索列表内歌曲',
 			'music.listSearchEmpty' => '没有找到匹配的歌曲',
 			'music.toggleSource' => '歌曲换源',
-			_ => null,
-		} ?? switch (path) {
 			'music.toggleSourceDone' => '已换源，之后都用新源播放这首歌',
 			'music.toggleSourceEmpty' => '没有找到候选歌曲',
+			_ => null,
+		} ?? switch (path) {
 			'music.toggleSourceFailed' => '候选搜索失败',
 			'music.editTags' => '编辑标签',
 			'music.tagEditTitle' => '编辑歌曲标签',
@@ -17857,10 +17840,10 @@ extension on Translations {
 			'room.buffering' => '缓冲中',
 			'room.connecting' => '正在连接直播流',
 			'room.slowReason' => '时间有点长，线路可能不稳定',
-			_ => null,
-		} ?? switch (path) {
 			'room.paused' => '已暂停',
 			'room.replayEnded' => '回放已结束',
+			_ => null,
+		} ?? switch (path) {
 			'room.banned' => '该直播间已被封禁',
 			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
@@ -18371,10 +18354,10 @@ extension on Translations {
 			'settings.proxyPasswordReplace' => '输入新密码以替换',
 			'settings.proxyPasswordClear' => '清除已保存的密码',
 			'settings.proxyPasswordClearDesc' => '清除后代理将按无认证方式访问；若它仍要求密码，请求会失败。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeOff' => '不使用代理',
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeSystem' => '跟随系统代理',
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
 			'settings.proxyModeManual' => '手动代理',
@@ -18885,10 +18868,10 @@ extension on Translations {
 			'settings.deinterlaceAuto' => '自动',
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecsAll' => '全部编码格式',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
@@ -19162,6 +19145,7 @@ extension on Translations {
 			'settings.downloadManagerEmpty' => '还没有下载记录',
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
+			'settings.downloadEta' => ({required Object time}) => '剩余 ${time}',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
@@ -19211,9 +19195,6 @@ extension on Translations {
 			'settings.downloadPause' => '暂停',
 			'settings.downloadResume' => '继续下载',
 			'settings.downloadPausedHint' => '已暂停 · 点击继续',
-			'settings.downloadEtaSeconds' => ({required Object seconds}) => '预计还需 ${seconds} 秒',
-			'settings.downloadEtaMinutes' => ({required Object minutes}) => '预计还需 ${minutes} 分钟',
-			'settings.downloadEtaHours' => ({required Object hours}) => '预计还需 ${hours} 小时',
 			'settings.downloadSummary' => ({required Object total}) => '共 ${total} 项',
 			'settings.downloadSummaryMoving' => ({required Object total, required Object running}) => '共 ${total} 个任务 · ${running} 个正在下载',
 			'settings.downloadPageSummary' => ({required Object total, required Object page, required Object count}) => '共 ${total} 个任务 · 第 ${page}/${count} 页',
@@ -19399,12 +19380,12 @@ extension on Translations {
 			'settings.storageFolderPickFailed' => '无法选择下载目录',
 			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
 			'settings.chatListFontSize' => '文字大小',
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
@@ -19913,12 +19894,12 @@ extension on Translations {
 			'toolbox.logsLevelLabel' => '级别',
 			'toolbox.logsSave' => '保存到本地',
 			'toolbox.logsSaved' => '日志已保存',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsSaveFailed' => '日志保存失败',
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
 			'vod.searchHint' => '搜索 Bilibili 视频',
+			_ => null,
+		} ?? switch (path) {
 			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
 			'vod.noResultsTitle' => '没有找到视频',
@@ -20161,7 +20142,6 @@ extension on Translations {
 			'vod.downloadDeleteFile' => '删除文件',
 			'vod.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
 			'vod.downloadDeleteFailed' => '文件未能删除',
-			'vod.downloadEta' => ({required Object time}) => '剩余 ${time}',
 			'vod.partsPrevious' => '上一组',
 			'vod.partsNext' => '下一组',
 			'vod.partsJump' => '跳转分P',

@@ -36,6 +36,7 @@ import 'package:pure_live/shared/shared.dart'
         NavigationItem,
         avatarInitials,
         cachedImage,
+        downloadEtaText,
         downloadFilePresent,
         formatDownloadBytes,
         showDownloadDetails;
@@ -377,11 +378,7 @@ final class VodDownloadsPane extends ConsumerWidget {
 /// rather than guessed.
 String? _etaOf(Translations t, {required int speed, required int total, required int received}) {
   if (speed <= 0 || received >= total) return null;
-  final seconds = (total - received) ~/ speed;
-  final hours = seconds ~/ 3600;
-  final mm = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
-  final ss = (seconds % 60).toString().padLeft(2, '0');
-  return t.vod.downloadEta(time: hours > 0 ? '$hours:$mm:$ss' : '$mm:$ss');
+  return t.settings.downloadEta(time: downloadEtaText(Duration(seconds: (total - received) ~/ speed)));
 }
 
 /// The phase's own word, said the same way in a row's badge and in the filter
