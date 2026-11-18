@@ -373,19 +373,14 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
     // The grid keeps one ancestry: the section head and the note are rows of
     // the same Column, never a wrapper that swaps the Column in over the bare
     // grid — a swap would tear the grid's element down and reset its scroll.
-    // The head names the feed and counts the platform's rooms (a "+" while
-    // more may still come); an empty load leaves the count off.
-    final feedCount = ordered.isEmpty
-        ? null
-        : state.hasMore
-        ? t.popular.feedCountMore(count: ordered.length)
-        : t.popular.feedCount(count: ordered.length);
+    // The head names the feed and nothing else: a running count read as a
+    // promise, and the viewer kept waiting for the number to mean something.
     final feedView = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
-          child: FeedSectionHeader(title: t.popular.feedTitle, caption: feedCount),
+          child: FeedSectionHeader(title: t.popular.feedTitle),
         ),
         Expanded(child: grid),
         ?hiddenNote,

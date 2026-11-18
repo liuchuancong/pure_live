@@ -7,7 +7,5 @@
   "inlineAt": "Searching “{query}” on {platform}",
   "backToBrowse": "Back to browsing",
   "feedTitle": "Recommended live",
-  "feedCount": "{count: int} streams",
-  "feedCountMore": "{count: int}+ streams",
   "hiddenUnplayable": "{count: int} streams that cannot play here are hidden (paid, locked, app only…)"
 }

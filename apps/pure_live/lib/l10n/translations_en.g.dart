@@ -2193,8 +2193,6 @@ class _Translations$popular$en extends Translations$popular$zh_CN {
 	@override String inlineAt({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}';
 	@override String get backToBrowse => 'Back to browsing';
 	@override String get feedTitle => 'Recommended live';
-	@override String feedCount({required int count}) => '${count} streams';
-	@override String feedCountMore({required int count}) => '${count}+ streams';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)';
 }
 
@@ -7441,8 +7439,6 @@ extension on TranslationsEn {
 			'popular.inlineAt' => ({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}',
 			'popular.backToBrowse' => 'Back to browsing',
 			'popular.feedTitle' => 'Recommended live',
-			'popular.feedCount' => ({required int count}) => '${count} streams',
-			'popular.feedCountMore' => ({required int count}) => '${count}+ streams',
 			'popular.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)',
 			'recorder.tabRunning' => 'Recording',
 			'recorder.tabFinished' => 'Finished',
@@ -7856,10 +7852,10 @@ extension on TranslationsEn {
 			'room.banned' => 'This room has been banned',
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
-			_ => null,
-		} ?? switch (path) {
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
+			_ => null,
+		} ?? switch (path) {
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
@@ -8370,10 +8366,10 @@ extension on TranslationsEn {
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'No restart after the proxy app changes.',
 			'settings.githubMirrorTitle' => 'GitHub acceleration',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorMode' => 'Download route',
 			'settings.githubMirrorModeDesc' => 'Where GitHub assets download from.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorOff' => 'Default (no acceleration)',
 			'settings.githubMirrorOfficial' => 'Official source · may be slow',
 			'settings.githubMirrorCustom' => 'Custom…',
@@ -8884,10 +8880,10 @@ extension on TranslationsEn {
 			'settings.mpvResetDesc' => 'Restores this page; the preferred quality stays.',
 			'settings.mpvResetConfirm' => 'These go back to their defaults:\n• Hardware decoding: on\n• Compatibility mode, RTX VSR: off\n• Force Stop Player: on\n• Custom drivers: off; the three drivers: default\nThe preferred quality in Video stays.',
 			'settings.mpvResetDone' => 'Defaults restored',
-			_ => null,
-		} ?? switch (path) {
 			'settings.mpvDocs' => 'Open the mpv manual',
 			'settings.mpvDocsDesc' => 'Full descriptions for every property.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuide' => 'Player guide',
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
@@ -9398,10 +9394,10 @@ extension on TranslationsEn {
 			'settings.twitchLanguages' => 'Twitch directory languages',
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_zh' => 'Chinese',
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
@@ -9912,10 +9908,10 @@ extension on TranslationsEn {
 			'vod.dynamicsEmptyTitle' => 'No dynamics yet',
 			'vod.dynamicsEmptyDescription' => 'Posts from the uploaders you follow appear here.',
 			'vod.loadMore' => 'Load more',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regions' => 'Regions',
 			'vod.regionAnimation' => 'Animation',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regionGames' => 'Gaming',
 			'vod.regionGuichu' => 'Guichu',
 			'vod.regionMusic' => 'Music',

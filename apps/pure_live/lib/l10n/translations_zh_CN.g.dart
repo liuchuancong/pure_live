@@ -6181,12 +6181,6 @@ class Translations$popular$zh_CN {
 	/// zh-CN: '推荐直播'
 	String get feedTitle => '推荐直播';
 
-	/// zh-CN: '{count: int} 个直播'
-	String feedCount({required int count}) => '${count} 个直播';
-
-	/// zh-CN: '{count: int}+ 个直播'
-	String feedCountMore({required int count}) => '${count}+ 个直播';
-
 	/// zh-CN: '已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）';
 }
@@ -17382,8 +17376,6 @@ extension on Translations {
 			'popular.inlineAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”',
 			'popular.backToBrowse' => '返回浏览',
 			'popular.feedTitle' => '推荐直播',
-			'popular.feedCount' => ({required int count}) => '${count} 个直播',
-			'popular.feedCountMore' => ({required int count}) => '${count}+ 个直播',
 			'popular.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
@@ -17797,10 +17789,10 @@ extension on Translations {
 			'room.banned' => '该直播间已被封禁',
 			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
-			_ => null,
-		} ?? switch (path) {
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
+			_ => null,
+		} ?? switch (path) {
 			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
@@ -18311,10 +18303,10 @@ extension on Translations {
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理开关变化后无需重启应用。',
 			'settings.githubMirrorTitle' => 'GitHub 加速',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorMode' => '下载方式',
 			'settings.githubMirrorModeDesc' => 'GitHub 资源的下载地址。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorOff' => '默认（不加速）',
 			'settings.githubMirrorOfficial' => '官方源 · 可能较慢',
 			'settings.githubMirrorCustom' => '自定义…',
@@ -18825,10 +18817,10 @@ extension on Translations {
 			'settings.mpvResetDesc' => '恢复本页设置，首选清晰度不受影响。',
 			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR：关\n• 播放器强制销毁：开\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
 			'settings.mpvResetDone' => '已恢复默认设置',
-			_ => null,
-		} ?? switch (path) {
 			'settings.mpvDocs' => '打开 mpv 官方文档',
 			'settings.mpvDocsDesc' => '每个属性的完整说明。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
@@ -19339,10 +19331,10 @@ extension on Translations {
 			'settings.twitchLanguages' => 'Twitch 目录语言',
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_zh' => '中文',
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
@@ -19853,10 +19845,10 @@ extension on Translations {
 			'vod.dynamicsEmptyTitle' => '还没有动态',
 			'vod.dynamicsEmptyDescription' => '关注的 UP 主更新后会出现在这里。',
 			'vod.loadMore' => '加载更多',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regions' => '分区',
 			'vod.regionAnimation' => '动画',
+			_ => null,
+		} ?? switch (path) {
 			'vod.regionGames' => '游戏',
 			'vod.regionGuichu' => '鬼畜',
 			'vod.regionMusic' => '音乐',
