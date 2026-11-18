@@ -366,11 +366,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     );
   }
 
-  /// The files pane: this room's finished takes as a shelf of cover cards —
-  /// the frame the backend cut from the file leads each card, the way a
-  /// media library reads. Two columns at the panel's width, three when it
-  /// stretches; each card opens the preview, and its foot carries the file
-  /// verbs: the take's folder, and delete with its confirmation.
+  /// The files pane: this room's finished takes as full-width cover cards —
+  /// the frame the backend cut from the file leads each card on the left at
+  /// its own 16:9, the title and the day it was taken beside it. One card
+  /// per row, the way a playlist reads; the card opens the preview on tap,
+  /// and its verbs — the file manager and delete — answer the ellipsis, a
+  /// right press and a long press alike.
   Widget _filesPane({required LiveRoom? room}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -398,33 +399,27 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
               ? Center(
                   child: DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.room.roomRecordTakesEmpty)),
                 )
-              : LayoutBuilder(
-                  builder: (context, box) {
-                    // Columns grow with the pane, tiles keep the 16:9 the
-                    // frames were cut at; the foot is sized to one title
-                    // line and one meta line, which the texts are capped to.
-                    final columns = box.maxWidth >= 560 ? 3 : 2;
-                    final tileWidth = (box.maxWidth - DsSpace.s16 * 2 - DsSpace.s8 * (columns - 1)) / columns;
-                    final tileHeight = tileWidth * 9 / 16 + 60;
-                    return GridView.count(
-                      padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s16),
-                      crossAxisCount: columns,
-                      mainAxisSpacing: DsSpace.s8,
-                      crossAxisSpacing: DsSpace.s8,
-                      childAspectRatio: tileWidth / tileHeight,
-                      children: [for (final take in takes) _takeCard(take, takes, tileWidth)],
-                    );
-                  },
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s16),
+                  children: [
+                    for (final take in takes)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: DsSpace.s8),
+                        child: _takeCard(take, takes),
+                      ),
+                  ],
                 ),
         ),
       ],
     );
   }
 
-  /// One cover card: the frame fills the top at its own 16:9, the foot
-  /// holds the title, the day it was taken with its weight, and the two
-  /// file verbs — quiet glyphs, the row's tap opens the preview.
-  Widget _takeCard(RecordingTake take, List<RecordingTake> around, double coverWidth) {
+  /// One cover card: the frame on the left at 16:9, the take's title and
+  /// its day-with-weight beside it, and the verbs glyph at the end. The tap
+  /// opens the preview; a right press and a long press open the same verbs
+  /// the ellipsis does — wherever the pointer comes from, the card answers
+  /// with one menu.
+  Widget _takeCard(RecordingTake take, List<RecordingTake> around) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
@@ -433,47 +428,47 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
       onPressed: () =>
           unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
       style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
-            child: RecorderTakeCover(take: take, width: coverWidth, height: coverWidth * 9 / 16),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(DsSpace.s8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 2,
-              children: [
-                Text(
-                  take.roomTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.labelStrong.copyWith(color: colors.text),
-                ),
-                Row(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onSecondaryTapUp: (_) => unawaited(_takeActions(take)),
+        onLongPress: () => unawaited(_takeActions(take)),
+        child: Padding(
+          padding: const EdgeInsets.all(DsSpace.s12),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: RecorderTakeCover(take: take, width: 160, height: 90),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 2,
                   children: [
-                    Expanded(
-                      child: Text(
-                        meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
+                    Text(
+                      take.roomTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.labelStrong.copyWith(color: colors.text),
                     ),
-                    // The verbs live behind one quiet glyph — the card face
-                    // stays a picture with two lines, and the file manager
-                    // and delete answer when asked (the reference's 稿件
-                    // menu, where 删除 is one row behind 更多, not a bare
-                    // red stamp on every card).
-                    _cardAction(icon: DsIcons.ellipsis, onTap: () => unawaited(_takeActions(take))),
+                    Text(
+                      meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              // The verbs live behind one quiet glyph — the card face stays
+              // a picture with two lines, and the file manager and delete
+              // answer when asked (the reference's 稿件 menu, where 删除 is
+              // one row behind 更多, not a bare red stamp on every card).
+              _cardAction(icon: DsIcons.ellipsis, onTap: () => unawaited(_takeActions(take))),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
