@@ -193,7 +193,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.onPortraitRestore,
     this.onSwitchRoom,
     this.ambient = false,
-    this.showModeExit = true,
     this.topInset = 0,
     this.liftsOverKeyboard = false,
     this.overlay,
@@ -268,7 +267,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// `exit` verb). The immersive room's own layouts suppress it: there is no
   /// page layout under an always-on surface to return to, and a chip that
   /// leaves the room while reading as "exit the mode" would lie.
-  final bool showModeExit;
 
   /// How much of the picture's top edge the system's own chrome (a status
   /// bar drawn edge-to-edge) covers: the capsule and the strips stand below
@@ -1093,27 +1091,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                     PositionedDirectional(
                       top: DsSpace.s12 + widget.topInset,
                       end: DsSpace.s12,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        spacing: DsSpace.s4,
-                        children: [
-                          // Only the system fullscreen keeps a chip — its own
-                          // way out on a window that has no caption to drag.
-                          // The portrait full screen and the immersive shapes
-                          // leave through the capsule's back arrow; the window
-                          // fullscreen leaves through its own Windows caption
-                          // (drag + min/max/close) — never through this chip,
-                          // whatever mode races the chrome during a switch.
-                          if (widget.showModeExit &&
-                              presentation == PresentationMode.fullscreen &&
-                              presentation != PresentationMode.windowFullscreen)
-                            _ModeExitChip(
-                              label: context.t.room.fullscreenOff,
-                              onPressed: widget.onLeave,
-                              onWake: _wake,
-                            ),
-                          _TopToolCluster(room: room, onWake: _wake, onMore: widget.onMore),
-                        ],
+                      // The way out is the capsule's back arrow (the system
+                      // fullscreen) or the window's own caption (the window
+                      // fullscreen); no worded chip stands above the tools.
+                      child: Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: _TopToolCluster(room: room, onWake: _wake, onMore: widget.onMore),
                       ),
                     ),
                   ],

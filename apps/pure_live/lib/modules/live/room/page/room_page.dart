@@ -861,9 +861,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     /// trailing arguments: [portraitSurface] puts the capsule and the
     /// swipe-to-switch zones on a surface the page does not track as
     /// `_portraitFullscreen` (the immersive room is the layout, not a mode),
-    /// [showModeExit] silences a chip that would lie (an always-on surface
-    /// has no layout under itself to exit to), and [onMoreOverride] lets the
-    /// immersive shapes carry the clean-screen switch in the sheet.
+    /// and [onMoreOverride] lets the immersive shapes carry the clean-screen
+    /// switch in the sheet.
     Widget playerWith({
       Widget? overlay,
       double bottomInset = 0,
@@ -871,7 +870,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       double topBarEndInset = DsSpace.s12,
       bool? portraitSurface,
       bool? ambientOverride,
-      bool showModeExit = true,
       double topInset = 0,
       bool liftsOverKeyboard = false,
       bool allowPortraitRestore = true,
@@ -914,7 +912,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       // shape — the page owns all three. The immersive surfaces answer the
       // verb with the system's own fullscreen directly: they are already the
       // page's full-bleed layout, and there is no surface under them.
-      showModeExit: showModeExit,
       topInset: topInset,
       liftsOverKeyboard: liftsOverKeyboard,
       // The restore band listens only where a restore exists: an immersive
@@ -961,7 +958,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   player: playerWith(
                     portraitSurface: true,
                     ambientOverride: true,
-                    showModeExit: false,
                     topInset: MediaQuery.paddingOf(context).top,
                     allowPortraitRestore: false,
                     fullscreenVerb: _enterSystemFullscreen,
@@ -999,7 +995,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     player: playerWith(
                       portraitSurface: true,
                       ambientOverride: true,
-                      showModeExit: false,
                       topInset: padding.top,
                       allowPortraitRestore: false,
                       // The control bar stands on the safe area's bottom; a
