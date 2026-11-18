@@ -1313,6 +1313,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // its layout.
     final ownsWindow = presentationController.modeOwnsWindow(presentation);
     final fullscreen = presentation != PresentationMode.normal;
+    final windowFullscreen = presentation == PresentationMode.windowFullscreen;
     final playing = _playbackState.playing;
     _syncScreenWake(playing && ref.watch(keepScreenOnProvider));
     final library = ref.watch(iptvLibraryProvider).value;
@@ -1330,7 +1331,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // being shown.
     final subtitle = replay != null
         ? (badge: t.iptv.playingCatchup, text: replay.title, accent: true)
-        : !browse.showProgrammeLine
+        : !browse.showProgrammeLine || presentation == PresentationMode.normal
         ? null
         : switch (slot?.title) {
             final programme? => (
@@ -1730,7 +1731,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                if (_infoVisible && channel != null && _error == null)
+                                if (fullscreen && _infoVisible && channel != null && _error == null)
                                   IgnorePointer(
                                     child: _InfoBar(
                                       channel: channel,
@@ -1906,11 +1907,24 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                   ),
                                                 ),
                                               const Spacer(),
-                                              // The way out of the picture's box: the
-                                              // system fullscreen the phone turns for.
-                                              // The window's own verbs and 画中画 hang
-                                              // in the top-right cluster, where the
-                                              // room keeps them.
+                                              // The two ways out of the picture's box,
+                                              // where the room bar keeps them: the
+                                              // window's own full-bleed on the desktops
+                                              // first, then the system fullscreen the
+                                              // phone turns for. Both read as buttons in
+                                              // the strip — a corner glyph nobody reads
+                                              // as a door is how the verbs went missing.
+                                              if (_desktop)
+                                                PlayerBarButton(
+                                                  label: windowFullscreen
+                                                      ? t.room.windowFullscreenOff
+                                                      : t.room.windowFullscreenOn,
+                                                  icon: windowFullscreen ? DsIcons.copy : DsIcons.square,
+                                                  selected: windowFullscreen,
+                                                  onPressed: handle == null
+                                                      ? null
+                                                      : () => unawaited(_toggleWindowFullscreen()),
+                                                ),
                                               PlayerBarButton(
                                                 label: fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
                                                 icon: fullscreen ? DsIcons.minimize2 : DsIcons.fullscreen,
