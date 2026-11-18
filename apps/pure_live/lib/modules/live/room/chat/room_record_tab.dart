@@ -15,6 +15,7 @@ import 'package:pure_live/modules/live/room/controller/room_controller.dart' sho
 import 'package:pure_live/modules/live/room/page/player_surface.dart' show toggleRoomRecording;
 import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
 import 'package:pure_live/shared/shared.dart' show AppPanel, localizedSiteName, showAppPanel;
+import 'package:pure_live/shared/widgets/action_panel.dart' show showActionsPanel;
 import 'package:pure_live/shared/widgets/app_dialog.dart' show showAppConfirm;
 
 /// The room's own recording panel: what this room's capture is doing and
@@ -461,8 +462,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
                     ),
-                    _cardAction(icon: DsIcons.folder, onTap: () => unawaited(openDownloadedPath(context, take.folder))),
-                    _cardAction(icon: DsIcons.trash2, onTap: () => unawaited(_deleteTake(take))),
+                    // The verbs live behind one quiet glyph — the card face
+                    // stays a picture with two lines, and the file manager
+                    // and delete answer when asked (the reference's 稿件
+                    // menu, where 删除 is one row behind 更多, not a bare
+                    // red stamp on every card).
+                    _cardAction(icon: DsIcons.ellipsis, onTap: () => unawaited(_takeActions(take))),
                   ],
                 ),
               ],
@@ -483,6 +488,40 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
         padding: const EdgeInsets.all(DsSpace.s4),
         child: DsIcon(icon, size: 15, color: colors.textSubtle),
       ),
+    );
+  }
+
+  /// One take's verbs as the app's action panel: the file manager and the
+  /// delete walk, as list rows — the same surface the room's own more menu
+  /// uses, so the panel's verbs read as the app's verbs.
+  Future<void> _takeActions(RecordingTake take) {
+    final t = context.t;
+    return showActionsPanel(
+      context,
+      title: take.roomTitle,
+      children: [
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.folder, size: 16),
+              title: Text(t.recorder.openFolder),
+              onPressed: () {
+                Navigator.of(context).pop();
+                unawaited(openDownloadedPath(context, take.folder));
+              },
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.trash2, size: 16),
+              title: Text(t.recorder.delete),
+              destructive: true,
+              onPressed: () {
+                Navigator.of(context).pop();
+                unawaited(_deleteTake(take));
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 
