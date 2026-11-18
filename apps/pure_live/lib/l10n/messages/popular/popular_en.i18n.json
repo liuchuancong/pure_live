@@ -2,7 +2,6 @@
   "allPlatforms": "All platforms",
   "allPlatformsHint": "Tap one to switch to it right away; hide and reorder platforms under Platform display.",
   "page": "Page {page: int} of {total: int}",
-  "prevPage": "Previous page",
   "nextPage": "Next page",
   "inlineAt": "Searching “{query}” on {platform}",
   "backToBrowse": "Back to browsing",

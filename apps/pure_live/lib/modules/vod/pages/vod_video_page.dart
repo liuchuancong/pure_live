@@ -2010,7 +2010,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                           null => t.settings.downloadPercentUnknown,
                                         }, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
                                         PlayerBarButton(
-                                          icon: DsIcons.pause,
+                                          iconAsset: 'assets/icons/pause.svg',
                                           label: t.vod.downloadPause,
                                           size: 28,
                                           iconSize: 16,
@@ -2641,7 +2641,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // what is on the picture: the pair the room's bar draws.
                   PlayerBarButton(
                     iconAsset: danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
-                    label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
+                    label: danmakuVisible ? t.common.danmakuOff : t.common.danmakuOn,
                     onPressed: handle == null
                         ? null
                         : () {

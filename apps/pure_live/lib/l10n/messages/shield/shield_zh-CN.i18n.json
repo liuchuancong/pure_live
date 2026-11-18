@@ -35,7 +35,6 @@
   "moreNotShown": "还有 {count} 项未显示",
   "cleared": "已清空",
   "removeEntry": "移除这条屏蔽规则",
-  "effectNote": "屏蔽在直播间弹幕中立即生效。",
   "contentTitle": "内容屏蔽",
   "blockEmoteOnly": "屏蔽纯表情",
   "blockEmoteOnlyDescription": "纯表情弹幕不显示。",

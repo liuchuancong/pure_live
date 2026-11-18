@@ -1286,7 +1286,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         if (controller.supportsDanmaku) ...[
           PlayerBarButton(
             iconAsset: controller.danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
-            label: controller.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+            label: controller.danmakuVisible ? t.common.danmakuOff : t.common.danmakuOn,
             onPressed: () {
               _wake();
               controller.toggleDanmaku();

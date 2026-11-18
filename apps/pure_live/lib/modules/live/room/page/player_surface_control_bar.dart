@@ -239,42 +239,17 @@ final class _DanmakuBarCluster extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
-    final side = PlayerBarTier.controlSize(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s4,
       children: [
-        DsTooltip(
-          message: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-          child: DsPressable(
-            semanticLabel: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-            onPressed: () {
-              onWake();
-              unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible));
-            },
-            builder: (context, states, _) {
-              final on = settings.danmakuVisible;
-              final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-              // The pair the reference serves: the off glyph wears the barred
-              // circle, the on glyph the check — the badge says which, so both
-              // take the bar's ink and the off one only steps back a shade.
-              return Container(
-                width: side,
-                height: side,
-                alignment: Alignment.center,
-                decoration: DsBoxDecoration(
-                  color: lit ? _onVideoHover : null,
-                  borderRadius: DsTheme.of(context).radii.controlCorners(null, side),
-                ),
-                child: SvgPicture.asset(
-                  on ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
-                  width: side * .5,
-                  height: side * .5,
-                  colorFilter: ColorFilter.mode(on ? _onVideo : _onVideoMuted, BlendMode.srcIn),
-                ),
-              );
-            },
-          ),
+        PlayerBarButton(
+          iconAsset: settings.danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
+          label: settings.danmakuVisible ? t.common.danmakuOff : t.common.danmakuOn,
+          onPressed: () {
+            onWake();
+            unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible));
+          },
         ),
         PlayerBarButton(
           key: settingsAnchor,

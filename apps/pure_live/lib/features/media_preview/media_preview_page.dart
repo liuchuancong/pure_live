@@ -1750,7 +1750,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
           label: loading
               ? t.common.previewDanmakuLoading
               : has
-              ? (visible ? t.vod.danmakuOff : t.vod.danmakuOn)
+              ? (visible ? t.common.danmakuOff : t.common.danmakuOn)
               : t.common.previewDanmakuOff,
           onPressed: has
               ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))

@@ -236,7 +236,7 @@ final class _RoomMoreContent extends ConsumerWidget {
             // The flying layer's switch, where a strip too narrow to carry
             // the pair still reaches it: the same one read the bar's glyph.
             DsListRow(
-              title: Text(t.room.danmakuOn),
+              title: Text(t.common.danmakuOn),
               leading: const DsIcon(DsIcons.messageSquare),
               trailing: DsSwitch(
                 value: settings.danmakuVisible,

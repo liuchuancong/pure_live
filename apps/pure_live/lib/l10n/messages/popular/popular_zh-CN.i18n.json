@@ -2,7 +2,6 @@
   "allPlatforms": "全部平台",
   "allPlatformsHint": "点一个直接切过去；在「平台显示」里隐藏和排序。",
   "page": "第 {page: int} 页，共 {total: int} 页",
-  "prevPage": "上一页",
   "nextPage": "下一页",
   "inlineAt": "在 {platform} 中搜索“{query}”",
   "backToBrowse": "返回浏览",

@@ -35,7 +35,6 @@
   "moreNotShown": "{count} more not shown",
   "cleared": "Cleared",
   "removeEntry": "Remove this rule",
-  "effectNote": "The rules apply to the room chat immediately.",
   "contentTitle": "Content blocks",
   "blockEmoteOnly": "Block emote-only",
   "blockEmoteOnlyDescription": "Lines with emotes and no text are hidden.",

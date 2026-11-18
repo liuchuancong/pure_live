@@ -1530,12 +1530,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   end: 0,
                   child: Container(
                     padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: AlignmentDirectional.topCenter,
-                        end: AlignmentDirectional.bottomCenter,
-                        colors: [Color(0xB3000000), Color(0x00000000)],
-                      ),
+                    decoration: BoxDecoration(
+                      gradient: OnVideoColors.shade(edge: VerticalDirection.up),
                     ),
                     child: Row(
                       spacing: DsSpace.s8,
@@ -1601,12 +1597,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   end: 0,
                   child: Container(
                     padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s24, DsSpace.s8, DsSpace.s4),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: AlignmentDirectional.bottomCenter,
-                        end: AlignmentDirectional.topCenter,
-                        colors: [Color(0xD9000000), Color(0x00000000)],
-                      ),
+                    decoration: BoxDecoration(
+                      gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1912,7 +1904,7 @@ final class _SeasonHead extends StatelessWidget {
                         // The poster is 3:4, not the covers' 16:9: a fade that
                         // rises from the foot by its own height, not a cover scrim
                         // stretched over a taller shape.
-                        const PositionedDirectional(
+                        PositionedDirectional(
                           bottom: 0,
                           start: 0,
                           end: 0,
@@ -1920,10 +1912,9 @@ final class _SeasonHead extends StatelessWidget {
                           child: IgnorePointer(
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: AlignmentDirectional.bottomCenter,
-                                  end: AlignmentDirectional.topCenter,
-                                  colors: [Color(0x99000000), Color(0x00000000)],
+                                gradient: OnVideoColors.shade(
+                                  edge: VerticalDirection.down,
+                                  strong: OnVideoColors.coverMark,
                                 ),
                               ),
                             ),

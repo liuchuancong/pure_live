@@ -191,7 +191,7 @@ final class _PipTransportBar extends ConsumerWidget {
             children: [
               PlayerGlassPill(
                 child: PlayerBarButton(
-                  icon: muted ? DsIcons.volumeOff : DsIcons.volume2,
+                  iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                   label: muted ? t.room.unmute : t.room.mute,
                   onPressed: () => unawaited(controller.setMuted(value: !muted)),
                 ),
