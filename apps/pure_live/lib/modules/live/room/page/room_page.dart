@@ -197,6 +197,22 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   bool _audioOnlyBeforeBackground = false;
   bool _backgroundDanmakuPaused = false;
 
+  /// The page's shortcut holder. CallbackShortcuts answers only to a focus
+  /// inside its subtree, and a mode transition (the chrome swapping under a
+  /// window fullscreen, the driver resizing a system fullscreen) can leave
+  /// the focus nowhere in this page at all — the keys then read as dead. The
+  /// holder is named so [_keepPageFocus] can re-arm it.
+  final FocusNode _shortcutFocus = FocusNode(debugLabel: 'room page shortcuts');
+
+  /// Re-arms the shortcut holder when the focus has wandered off this page
+  /// entirely. A focus inside the page — a field, a bar control — is left
+  /// exactly where it is.
+  void _keepPageFocus() {
+    if (_shortcutFocus.hasFocus) return;
+    if (!mounted) return;
+    _shortcutFocus.requestFocus();
+  }
+
   /// Whether the room was paused by closing the picture-in-picture window,
   /// so returning to the app can resume it (V5-23).
   bool _pausedByPipClose = false;
@@ -532,6 +548,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _panels
       ..removeListener(_onRoomPanelChanged)
       ..dispose();
+    _shortcutFocus.dispose();
     _routeObserver?.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
@@ -638,6 +655,16 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       }
       if (next != PresentationMode.normal && _portraitFullscreen) {
         _setPortraitFullscreen(false);
+      }
+      // A mode change rebuilds the chrome under the picture (the window
+      // fullscreen's caption column, the system fullscreen's frameless
+      // window) and the keyboard's focus can fall out of the page with it —
+      // the shortcuts, Escape first among them, then read as dead. Re-arm
+      // the holder once the new chrome has laid itself out.
+      if (previous != next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _keepPageFocus();
+        });
       }
     });
     // What the room says about a login (a Bilibili connection that only sees
@@ -1163,6 +1190,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // The page, not the body, holds the shortcuts: Space and the arrows
     // must work while an AppBar action or a chat field has focus too.
     Widget withShortcuts(Widget child) => Focus(
+      focusNode: _shortcutFocus,
       // A mouse/keyboard room keeps the page itself as the shortcut
       // holder; the TV room leaves the focus to the player's first control.
       autofocus: !tv,

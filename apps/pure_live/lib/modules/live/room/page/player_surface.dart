@@ -1073,12 +1073,22 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   // into a glass capsule at the picture's top-left (the
                   // redesign's gcap), and the exit verb plus the tool cluster
                   // stack at the top-right — the reference hangs the cluster
-                  // beneath its text buttons when both are up.
+                  // beneath its text buttons when both are up. The window
+                  // fullscreen strips the capsule's back and facts doors: the
+                  // caption strip above already carries the way out, and the
+                  // system fullscreen keeps the arrow — there it is the only
+                  // way back.
                   if (showBar && !mini && capsuleIdentity) ...[
                     PositionedDirectional(
                       top: DsSpace.s12 + widget.topInset,
                       start: DsSpace.s12,
-                      child: _ImmersiveCapsule(room: room, onWake: _wake, onBack: widget.onLeave),
+                      child: _ImmersiveCapsule(
+                        room: room,
+                        onWake: _wake,
+                        onBack: widget.onLeave,
+                        showBack: presentation != PresentationMode.windowFullscreen,
+                        showFacts: presentation != PresentationMode.windowFullscreen,
+                      ),
                     ),
                     PositionedDirectional(
                       top: DsSpace.s12 + widget.topInset,
@@ -1092,8 +1102,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                           // The portrait full screen and the immersive shapes
                           // leave through the capsule's back arrow; the window
                           // fullscreen leaves through its own Windows caption
-                          // (drag + min/max/close).
-                          if (widget.showModeExit && presentation == PresentationMode.fullscreen)
+                          // (drag + min/max/close) — never through this chip,
+                          // whatever mode races the chrome during a switch.
+                          if (widget.showModeExit &&
+                              presentation == PresentationMode.fullscreen &&
+                              presentation != PresentationMode.windowFullscreen)
                             _ModeExitChip(
                               label: context.t.room.fullscreenOff,
                               onPressed: widget.onLeave,

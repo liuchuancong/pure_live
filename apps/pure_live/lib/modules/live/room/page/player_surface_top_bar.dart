@@ -558,7 +558,13 @@ final class _NarrowRecordingUnderMenu extends ConsumerWidget {
 /// identity half opens the details where the shape folds the room card into
 /// the picture (a phone held sideways).
 final class _ImmersiveCapsule extends ConsumerStatefulWidget {
-  const _ImmersiveCapsule({required this.room, required this.onWake, required this.onBack});
+  const _ImmersiveCapsule({
+    required this.room,
+    required this.onWake,
+    required this.onBack,
+    this.showBack = true,
+    this.showFacts = true,
+  });
 
   final RoomState room;
 
@@ -568,6 +574,16 @@ final class _ImmersiveCapsule extends ConsumerStatefulWidget {
   /// The capsule's back arrow: the way out of the shape it rides (the page's
   /// own leave — the portrait full screen unwinds first, then the room).
   final VoidCallback onBack;
+
+  /// Whether the back arrow leads the capsule. The window fullscreen leaves
+  /// it off: the caption strip above already carries the way out, and a
+  /// second one two lines down read as two doors to two places.
+  final bool showBack;
+
+  /// Whether the facts' chevron rides the capsule (the unfolded title, the
+  /// share and the details doors). The window fullscreen leaves it off with
+  /// the back arrow: a one-line identity pill is what that mode shows.
+  final bool showFacts;
 
   @override
   ConsumerState<_ImmersiveCapsule> createState() => _ImmersiveCapsuleState();
@@ -655,26 +671,29 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
                   // The back arrow leads the capsule (the reference's own):
                   // the immersive shapes and the portrait full screen have no
                   // other way back — the exit chip is gone, the strip is gone.
-                  DsPressable(
-                    semanticLabel: t.common.back,
-                    onPressed: () {
-                      widget.onWake();
-                      widget.onBack();
-                    },
-                    builder: (context, states, _) {
-                      final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                      return Container(
-                        width: 28,
-                        height: 28,
-                        alignment: Alignment.center,
-                        decoration: DsBoxDecoration(
-                          color: lit ? _onVideoHover : null,
-                          borderRadius: BorderRadius.circular(DsRadii.pill),
-                        ),
-                        child: const DsIcon(DsIcons.arrowLeft, size: 16, color: _onVideo),
-                      );
-                    },
-                  ),
+                  // The window fullscreen keeps none: its caption above is
+                  // the door.
+                  if (widget.showBack)
+                    DsPressable(
+                      semanticLabel: t.common.back,
+                      onPressed: () {
+                        widget.onWake();
+                        widget.onBack();
+                      },
+                      builder: (context, states, _) {
+                        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+                        return Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: DsBoxDecoration(
+                            color: lit ? _onVideoHover : null,
+                            borderRadius: BorderRadius.circular(DsRadii.pill),
+                          ),
+                          child: const DsIcon(DsIcons.arrowLeft, size: 16, color: _onVideo),
+                        );
+                      },
+                    ),
                   // The identity half is a label, not a door: no tap, no
                   // details sheet — the anchor's facts stay where they are.
                   Padding(
@@ -718,33 +737,36 @@ final class _ImmersiveCapsuleState extends ConsumerState<_ImmersiveCapsule> {
                   ),
                   // The facts' door: a chevron that unfolds the room's own
                   // words over the pill, the way the reference's capsule does.
-                  DsPressable(
-                    semanticLabel: t.room.detailsHint,
-                    onPressed: () {
-                      widget.onWake();
-                      setState(() => _expanded = !_expanded);
-                    },
-                    builder: (context, states, _) {
-                      final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                      return Container(
-                        width: theme.sizes.sm,
-                        height: theme.sizes.sm,
-                        alignment: Alignment.center,
-                        decoration: DsBoxDecoration(
-                          color: lit ? _onVideoHover : null,
-                          borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-                        ),
-                        child: DsIcon(
-                          _expanded ? DsIcons.chevronUp : DsIcons.chevronDown,
-                          size: 14,
-                          color: _onVideoMuted,
-                        ),
-                      );
-                    },
-                  ),
+                  // The window fullscreen keeps the door shut: its one-line
+                  // pill carries no second row.
+                  if (widget.showFacts)
+                    DsPressable(
+                      semanticLabel: t.room.detailsHint,
+                      onPressed: () {
+                        widget.onWake();
+                        setState(() => _expanded = !_expanded);
+                      },
+                      builder: (context, states, _) {
+                        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+                        return Container(
+                          width: theme.sizes.sm,
+                          height: theme.sizes.sm,
+                          alignment: Alignment.center,
+                          decoration: DsBoxDecoration(
+                            color: lit ? _onVideoHover : null,
+                            borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                          ),
+                          child: DsIcon(
+                            _expanded ? DsIcons.chevronUp : DsIcons.chevronDown,
+                            size: 14,
+                            color: _onVideoMuted,
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
-              if (_expanded)
+              if (_expanded && widget.showFacts)
                 Text.rich(
                   TextSpan(
                     style: theme.typography.caption.copyWith(color: OnVideoColors.inkSubtle),
