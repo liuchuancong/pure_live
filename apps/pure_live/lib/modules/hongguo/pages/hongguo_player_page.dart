@@ -2282,7 +2282,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     },
                   )
                 : PlayerBarButton(
-                    icon: DsIcons.minimize2,
+                    icon: DsIcons.minimize,
                     label: t.hongguo.exitFullscreen,
                     autofocus: true,
                     onPressed: () => unawaited(_toggleFullscreen()),
@@ -2509,12 +2509,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     return Container(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.bottomCenter,
-          end: AlignmentDirectional.topCenter,
-          colors: [Color(0xD9000000), Color(0x00000000)],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -2653,7 +2649,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   // stands down there.
                   if (ref.watch(roomPresentationProvider) != PresentationMode.pip)
                     PlayerBarButton(
-                      icon: immersive ? DsIcons.minimize2 : DsIcons.maximize2,
+                      icon: immersive ? DsIcons.minimize : DsIcons.maximize,
                       label: immersive ? t.hongguo.exitFullscreen : t.hongguo.fullscreen,
                       onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
                     ),

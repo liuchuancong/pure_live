@@ -129,7 +129,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final muted = room.muted;
           final muteButton = !pip && player != null
               ? PlayerBarButton(
-                  icon: muted ? DsIcons.volumeOff : DsIcons.volume2,
+                  iconAsset: muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                   label: muted ? t.room.unmute : t.room.mute,
                   onPressed: () {
                     widget.onWake();
@@ -168,11 +168,7 @@ final class _ControlBarState extends ConsumerState<_ControlBar> {
           final pickers = !pip ? widget.streamPickers?.call(labelled: true, fitOnly: compactPickers) : null;
           final windowButton = !pip && player != null && wide
               ? PlayerBarButton(
-                  // The window's own spread: out where the mode is off, in
-                  // where it is on — the two chevrons, not the arrows.
-                  icon: presentation == PresentationMode.windowFullscreen
-                      ? DsIcons.chevronsRightLeft
-                      : DsIcons.chevronsLeftRight,
+                  icon: presentation == PresentationMode.windowFullscreen ? DsIcons.copy : DsIcons.square,
                   label: presentation == PresentationMode.windowFullscreen
                       ? t.room.windowFullscreenOff
                       : t.room.windowFullscreenOn,

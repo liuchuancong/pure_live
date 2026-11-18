@@ -17,6 +17,7 @@ import 'package:media_core/media_core.dart'
         SourceType;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/player/on_video_colors.dart' show OnVideoColors;
 import 'package:pure_live/shared/shared.dart' show PlayerBarButton;
 
 /// The clip's own stage: the app's media_core player with its transport in
@@ -392,12 +393,8 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
               onEnter: (_) => _hideTimer?.cancel(),
               onExit: (_) => _scheduleHideBar(),
               child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x00000000), Color(0xB3000000)],
-                  ),
+                decoration: BoxDecoration(
+                  gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
@@ -416,7 +413,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                             : () => unawaited(seekBy(const Duration(seconds: -10))),
                       ),
                       PlayerBarButton(
-                        icon: _playing ? DsIcons.pause : DsIcons.play,
+                        iconAsset: _playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
                         label: _playing ? t.room.pause : t.room.play,
                         onPressed: () => unawaited(_toggle()),
                       ),
@@ -447,7 +444,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                         ),
                       ),
                       PlayerBarButton(
-                        icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
+                        iconAsset: _muted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                         label: _muted ? t.room.unmute : t.room.mute,
                         onPressed: () => unawaited(_toggleMute()),
                       ),

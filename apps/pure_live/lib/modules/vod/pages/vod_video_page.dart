@@ -2508,12 +2508,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     return Container(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.bottomCenter,
-          end: AlignmentDirectional.topCenter,
-          colors: [Color(0xD9000000), Color(0x00000000)],
-        ),
+      decoration: BoxDecoration(
+        gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2655,9 +2651,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // The danmaku's switch and its settings, the reading end of
                   // what is on the picture: the pair the room's bar draws.
                   PlayerBarButton(
-                    iconAsset: 'assets/icons/danmaku.svg',
+                    iconAsset: danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
                     label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
-                    selected: danmakuVisible,
                     onPressed: handle == null
                         ? null
                         : () {

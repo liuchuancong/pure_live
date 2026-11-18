@@ -1927,7 +1927,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                 ),
                                               PlayerBarButton(
                                                 label: fullscreen ? t.room.fullscreenOff : t.room.fullscreenOn,
-                                                icon: fullscreen ? DsIcons.minimize2 : DsIcons.fullscreen,
+                                                icon: fullscreen ? DsIcons.minimize : DsIcons.maximize,
                                                 onPressed: handle == null
                                                     ? null
                                                     : () => unawaited(
