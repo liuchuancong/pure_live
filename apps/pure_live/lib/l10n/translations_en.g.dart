@@ -2537,6 +2537,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get failureStopFailed => 'The recording failed to stop';
 	@override String get failureGeneric => 'The recording action failed';
 	@override String get warningSizeCap => 'The take reached its size cap and stopped; the segments are kept';
+	@override String get stateIdle => 'Not recording';
 }
 
 // Path: room
@@ -2813,6 +2814,11 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get areaUnavailable => 'That category could not be found';
 	@override String get replayLoginHint => 'Replays show their full content once signed in; you can sign in first.';
 	@override String get replayLoginAction => 'Sign in';
+	@override String get recordLabelSize => 'Size';
+	@override String get recordLabelBitrate => 'Bitrate';
+	@override String get recordLabelQuality => 'Quality';
+	@override String get recordLabelDanmaku => 'Danmaku';
+	@override String get autoRecordHint => 'Records when the room goes live';
 }
 
 // Path: search
@@ -7773,6 +7779,7 @@ extension on TranslationsEn {
 			'recorder.failureStopFailed' => 'The recording failed to stop',
 			'recorder.failureGeneric' => 'The recording action failed',
 			'recorder.warningSizeCap' => 'The take reached its size cap and stopped; the segments are kept',
+			'recorder.stateIdle' => 'Not recording',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -7852,9 +7859,9 @@ extension on TranslationsEn {
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
-			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			_ => null,
 		} ?? switch (path) {
+			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
 			'room.copyName' => 'Copy name',
@@ -8042,6 +8049,11 @@ extension on TranslationsEn {
 			'room.areaUnavailable' => 'That category could not be found',
 			'room.replayLoginHint' => 'Replays show their full content once signed in; you can sign in first.',
 			'room.replayLoginAction' => 'Sign in',
+			'room.recordLabelSize' => 'Size',
+			'room.recordLabelBitrate' => 'Bitrate',
+			'room.recordLabelQuality' => 'Quality',
+			'room.recordLabelDanmaku' => 'Danmaku',
+			'room.autoRecordHint' => 'Records when the room goes live',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -8361,14 +8373,14 @@ extension on TranslationsEn {
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
 			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'No restart after the proxy app changes.',
 			'settings.githubMirrorTitle' => 'GitHub acceleration',
 			'settings.githubMirrorMode' => 'Download route',
 			'settings.githubMirrorModeDesc' => 'Where GitHub assets download from.',
 			'settings.githubMirrorOff' => 'Default (no acceleration)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorOfficial' => 'Official source · may be slow',
 			'settings.githubMirrorCustom' => 'Custom…',
 			'settings.githubMirrorCustomDetail' => 'Type a mirror domain',
@@ -8875,14 +8887,14 @@ extension on TranslationsEn {
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
 			'settings.mpvAdvanced' => 'mpv advanced',
 			'settings.mpvReset' => 'Restore the player defaults',
+			_ => null,
+		} ?? switch (path) {
 			'settings.mpvResetDesc' => 'Restores this page; the preferred quality stays.',
 			'settings.mpvResetConfirm' => 'These go back to their defaults:\n• Hardware decoding: on\n• Compatibility mode, RTX VSR: off\n• Force Stop Player: on\n• Custom drivers: off; the three drivers: default\nThe preferred quality in Video stays.',
 			'settings.mpvResetDone' => 'Defaults restored',
 			'settings.mpvDocs' => 'Open the mpv manual',
 			'settings.mpvDocsDesc' => 'Full descriptions for every property.',
 			'settings.playerGuide' => 'Player guide',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
 			'settings.playerGuideSubtitle' => 'Glossary · Platform picks · Symptom table',
@@ -9389,14 +9401,14 @@ extension on TranslationsEn {
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
 			'settings.chatPanelWidthDesc' => 'Its width in the wide layout.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguages' => 'Twitch directory languages',
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
 			'settings.twitchLanguage_zh' => 'Chinese',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',
@@ -9903,14 +9915,14 @@ extension on TranslationsEn {
 			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',
 			'vod.signIn' => 'Sign in to Bilibili',
 			'vod.dynamicsFailed' => 'The dynamics did not load',
+			_ => null,
+		} ?? switch (path) {
 			'vod.dynamicsEmptyTitle' => 'No dynamics yet',
 			'vod.dynamicsEmptyDescription' => 'Posts from the uploaders you follow appear here.',
 			'vod.loadMore' => 'Load more',
 			'vod.regions' => 'Regions',
 			'vod.regionAnimation' => 'Animation',
 			'vod.regionGames' => 'Gaming',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regionGuichu' => 'Guichu',
 			'vod.regionMusic' => 'Music',
 			'vod.regionDance' => 'Dance',

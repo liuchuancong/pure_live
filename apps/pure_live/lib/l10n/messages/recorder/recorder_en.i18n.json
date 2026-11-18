@@ -333,5 +333,6 @@
   "failureStartFailed": "The recording failed to start",
   "failureStopFailed": "The recording failed to stop",
   "failureGeneric": "The recording action failed",
-  "warningSizeCap": "The take reached its size cap and stopped; the segments are kept"
+  "warningSizeCap": "The take reached its size cap and stopped; the segments are kept",
+  "stateIdle": "Not recording"
 }

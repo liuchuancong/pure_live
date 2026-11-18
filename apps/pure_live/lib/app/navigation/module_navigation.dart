@@ -119,14 +119,16 @@ const SettingsGroup _sharedPlaybackGroup = (labelKey: 'groupPlayback', sections:
 
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
-  // The live home's rail: the four home destinations as one block — the
+  // The live home's rail: the three home destinations as one block — the
   // navigation setting orders and hides these, its default being favorites,
-  // hot feed, areas and the recording centre — then the tools block the
-  // tool-order setting sorts: multi-view, the link parser, the log console,
-  // search and history.
+  // hot feed and areas (the recording centre is not a rail row: recording
+  // lives in the room panel and the settings, and a library the live home
+  // never fills sat as a rail row) — then the tools block the tool-order
+  // setting sorts: multi-view, the link parser, the log console, search and
+  // history.
   AppModule.live: ModuleNavigation(
     menu: [
-      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones, NavigationItem.record],
+      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
       [
         NavigationItem.multiview,
         NavigationItem.toolbox,

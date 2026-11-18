@@ -333,5 +333,6 @@
   "failureStartFailed": "录制启动失败",
   "failureStopFailed": "录制停止失败",
   "failureGeneric": "录制操作失败",
-  "warningSizeCap": "到达单个文件大小上限，这段录制已停止；分段已保留"
+  "warningSizeCap": "到达单个文件大小上限，这段录制已停止；分段已保留",
+  "stateIdle": "未在录制"
 }

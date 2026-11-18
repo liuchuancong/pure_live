@@ -318,6 +318,12 @@ final class RecordingLiveMonitor {
     }
   }
 
+  /// Runs one live check right now, whatever the polling switch says: the
+  /// moment a room is armed from its panel is the moment it should ask "am
+  /// I live?" — a room already on air must not wait out the first interval
+  /// (one that may not even be ticking yet) to start recording.
+  Future<void> checkNow() => _tick(force: true);
+
   /// Checks every startable task once. A task that is still offline, whose
   /// platform answers slowly or whose start fails stays as it is; the next
   /// tick tries again (the reference's failure backoff is REC-20).

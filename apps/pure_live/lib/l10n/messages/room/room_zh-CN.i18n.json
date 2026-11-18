@@ -265,5 +265,10 @@
   "anchorVideosUnavailable": "该主播暂时没有可看的视频",
   "areaUnavailable": "没能找到这个分类",
   "replayLoginHint": "回放需要登录后才能看到完整内容，可以先去登录。",
-  "replayLoginAction": "去登录"
+  "replayLoginAction": "去登录",
+  "recordLabelSize": "大小",
+  "recordLabelBitrate": "码率",
+  "recordLabelQuality": "清晰度",
+  "recordLabelDanmaku": "弹幕",
+  "autoRecordHint": "开播即自动录制"
 }

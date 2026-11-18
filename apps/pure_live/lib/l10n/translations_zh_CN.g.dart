@@ -7194,6 +7194,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '到达单个文件大小上限，这段录制已停止；分段已保留'
 	String get warningSizeCap => '到达单个文件大小上限，这段录制已停止；分段已保留';
+
+	/// zh-CN: '未在录制'
+	String get stateIdle => '未在录制';
 }
 
 // Path: room
@@ -8004,6 +8007,21 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '去登录'
 	String get replayLoginAction => '去登录';
+
+	/// zh-CN: '大小'
+	String get recordLabelSize => '大小';
+
+	/// zh-CN: '码率'
+	String get recordLabelBitrate => '码率';
+
+	/// zh-CN: '清晰度'
+	String get recordLabelQuality => '清晰度';
+
+	/// zh-CN: '弹幕'
+	String get recordLabelDanmaku => '弹幕';
+
+	/// zh-CN: '开播即自动录制'
+	String get autoRecordHint => '开播即自动录制';
 }
 
 // Path: search
@@ -17708,6 +17726,7 @@ extension on Translations {
 			'recorder.failureStopFailed' => '录制停止失败',
 			'recorder.failureGeneric' => '录制操作失败',
 			'recorder.warningSizeCap' => '到达单个文件大小上限，这段录制已停止；分段已保留',
+			'recorder.stateIdle' => '未在录制',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -17787,9 +17806,9 @@ extension on Translations {
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
-			'room.offlineReason' => '开播后这里会看到直播画面',
 			_ => null,
 		} ?? switch (path) {
+			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
 			'room.copyName' => '复制昵称',
@@ -17977,6 +17996,11 @@ extension on Translations {
 			'room.areaUnavailable' => '没能找到这个分类',
 			'room.replayLoginHint' => '回放需要登录后才能看到完整内容，可以先去登录。',
 			'room.replayLoginAction' => '去登录',
+			'room.recordLabelSize' => '大小',
+			'room.recordLabelBitrate' => '码率',
+			'room.recordLabelQuality' => '清晰度',
+			'room.recordLabelDanmaku' => '弹幕',
+			'room.autoRecordHint' => '开播即自动录制',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -18296,14 +18320,14 @@ extension on Translations {
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
 			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理开关变化后无需重启应用。',
 			'settings.githubMirrorTitle' => 'GitHub 加速',
 			'settings.githubMirrorMode' => '下载方式',
 			'settings.githubMirrorModeDesc' => 'GitHub 资源的下载地址。',
 			'settings.githubMirrorOff' => '默认（不加速）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorOfficial' => '官方源 · 可能较慢',
 			'settings.githubMirrorCustom' => '自定义…',
 			'settings.githubMirrorCustomDetail' => '自填镜像域名',
@@ -18810,14 +18834,14 @@ extension on Translations {
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
 			'settings.mpvReset' => '恢复播放内核默认设置',
+			_ => null,
+		} ?? switch (path) {
 			'settings.mpvResetDesc' => '恢复本页设置，首选清晰度不受影响。',
 			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR：关\n• 播放器强制销毁：开\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
 			'settings.mpvResetDone' => '已恢复默认设置',
 			'settings.mpvDocs' => '打开 mpv 官方文档',
 			'settings.mpvDocsDesc' => '每个属性的完整说明。',
 			'settings.playerGuide' => '播放器指南',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
 			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
@@ -19324,14 +19348,14 @@ extension on Translations {
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
 			'settings.chatPanelWidthDesc' => '宽屏布局下的宽度。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguages' => 'Twitch 目录语言',
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
 			'settings.twitchLanguage_zh' => '中文',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
@@ -19838,14 +19862,14 @@ extension on Translations {
 			'vod.dynamicsLoginDescription' => '动态来自你关注的 UP 主，需要一个 Bilibili 登录。',
 			'vod.signIn' => '登录 Bilibili',
 			'vod.dynamicsFailed' => '动态没有加载出来',
+			_ => null,
+		} ?? switch (path) {
 			'vod.dynamicsEmptyTitle' => '还没有动态',
 			'vod.dynamicsEmptyDescription' => '关注的 UP 主更新后会出现在这里。',
 			'vod.loadMore' => '加载更多',
 			'vod.regions' => '分区',
 			'vod.regionAnimation' => '动画',
 			'vod.regionGames' => '游戏',
-			_ => null,
-		} ?? switch (path) {
 			'vod.regionGuichu' => '鬼畜',
 			'vod.regionMusic' => '音乐',
 			'vod.regionDance' => '舞蹈',

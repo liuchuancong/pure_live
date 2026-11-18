@@ -14,18 +14,20 @@ import 'package:pure_live/modules/live/room/page/player_surface.dart' show toggl
 import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
 import 'package:pure_live/shared/shared.dart' show AppPanel, localizedSiteName, showAppPanel;
 
-/// The room's own recording panel: what this room's capture has written and
+/// The room's own recording panel: what this room's capture is doing and
 /// what it has already written, with the verbs on both — start and stop and
 /// play right here, so managing this room's takes never means leaving the
 /// room.
 ///
-/// The verbs are the player bar's own ([toggleRoomRecording]), called with
-/// this panel's ref: one switch, one truth, two doors. The foot carries the
-/// two doors the panel itself does not replace: the recorder's settings page
-/// (the quality, the segments, the schedule's shape) and the recording centre
-/// (the queue and every room's files together). Settings goes to the settings
-/// page, not to the centre — a change of quality is not a walk through the
-/// library.
+/// The panel is three cards, read top to bottom: the capture's own card
+/// (state word, start/stop verb, the facts the session has earned), the
+/// schedule card (record when live), and the shelf of finished takes. The
+/// verbs are the player bar's own ([toggleRoomRecording]), called with this
+/// panel's ref: one switch, one truth, two doors. The foot carries the two
+/// doors the panel itself does not replace: the recorder's settings page
+/// (the quality, the segments, the schedule's shape) and the recording
+/// centre (the queue and every room's files together) — the centre keeps
+/// this one quiet entry because the sidebar's own is gone.
 ///
 /// The figures come from the task store, which the engine writes once a second
 /// while bytes move. The clock is the exception and ticks on its own: a number
@@ -67,9 +69,6 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final room = ref.watch(roomProvider.select((state) => state.room));
     final task = room == null
         ? null
@@ -80,50 +79,37 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
               .firstOrNull;
     final recording = task != null && task.state == RecordingTaskState.recording;
     final waiting = task?.state == RecordingTaskState.waiting;
+    _syncTicker(running: recording);
+
+    return ListView(
+      padding: const EdgeInsets.all(DsSpace.s16),
+      children: [
+        _statusCard(task: task),
+        const SizedBox(height: DsSpace.s12),
+        _autoRecordCard(room: room, task: task, waiting: waiting, recording: recording),
+        const SizedBox(height: DsSpace.s24),
+        _takesSection(room: room),
+        const SizedBox(height: DsSpace.s16),
+        _footer(),
+      ],
+    );
+  }
+
+  /// The capture's own card: the state badge leads the row, the start/stop
+  /// verb sits at its end, and the facts the session has already earned —
+  /// elapsed, size, rate, quality, danmaku, segments — follow as label:value
+  /// lines. One card, one eye-path: state, verb, facts.
+  Widget _statusCard({required RecordingTask? task}) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final recording = task != null && task.state == RecordingTaskState.recording;
     // The take's segments are being joined into its file: neither recording
     // nor stopped, and the state words say so where the raw state cannot.
     final joining = task?.postProcessing ?? false;
-    _syncTicker(running: recording);
-
-    if (task == null) {
-      return ListView(
-        padding: const EdgeInsets.all(DsSpace.s16),
-        children: [
-          _autoRecordSwitch(room: room, task: task, waiting: waiting),
-          const SizedBox(height: DsSpace.s32),
-          DsEmptyState(
-            icon: const DsIcon(DsIcons.disc),
-            title: Text(t.room.recordIdle),
-            actions: [
-              DsButton(
-                variant: DsButtonVariant.primary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.disc, size: 15),
-                onPressed: _toggle,
-                child: Text(t.room.recordStarted),
-              ),
-            ],
-          ),
-          const SizedBox(height: DsSpace.s24),
-          _takesSection(room: room),
-          const SizedBox(height: DsSpace.s16),
-          _footer(),
-        ],
-      );
-    }
-
-    final settings = ref.watch(recordingSettingsProvider);
-    final elapsed = DateTime.now().difference(task.startedAt);
-    // The take's own average rather than the stream's instantaneous rate: the
-    // store keeps bytes and media time and no live bitrate, which is all a
-    // recording can honestly answer with.
-    // Media time over the wall clock: a stalled stream writes fewer bytes
-    // than the clock says, and the average should say what landed. The
-    // clock keeps its own line below.
-    final mediaTime = Duration(milliseconds: task.durationMs);
-    final bitrate = formatRecordingBitrate(task.bytes, mediaTime > Duration.zero ? mediaTime : elapsed);
-    final chatCount = recording ? ref.read(recorderEngineProvider).chatEntries(task.id) : null;
-    final (word, tone) = joining
+    final (word, tone) = task == null
+        ? (t.recorder.stateIdle, DsStatus.neutral)
+        : joining
         ? (t.recorder.stateProcessing, DsStatus.info)
         : switch (task.state) {
             RecordingTaskState.recording => (t.recorder.stateRecording, DsStatus.danger),
@@ -131,70 +117,119 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
             RecordingTaskState.stopped => (t.recorder.stateStopped, DsStatus.success),
             RecordingTaskState.failed => (t.recorder.stateFailed, DsStatus.warning),
           };
-    return ListView(
-      padding: const EdgeInsets.all(DsSpace.s16),
+    final elapsed = recording ? DateTime.now().difference(task.startedAt) : null;
+    // The take's own average rather than the stream's instantaneous rate: the
+    // store keeps bytes and media time and no live bitrate, which is all a
+    // recording can honestly answer with. Media time over the wall clock: a
+    // stalled stream writes fewer bytes than the clock says, and the average
+    // should say what landed. Zero bytes answers nothing, on a waiting room
+    // as on a just-started take.
+    final mediaTime = Duration(milliseconds: task?.durationMs ?? 0);
+    final bitrate = task == null
+        ? ''
+        : formatRecordingBitrate(
+            task.bytes,
+            mediaTime > Duration.zero ? mediaTime : DateTime.now().difference(task.startedAt),
+          );
+    // A live danmaku count only while the capture runs; a take recorded
+    // without a chat file says nothing about one — "0 条" would read as a
+    // capture that lost every line.
+    final chatCount = recording ? ref.read(recorderEngineProvider).chatEntries(task.id) : null;
+    final facts = <(String, String)>[
+      if (task != null && task.bytes > 0) (t.room.recordLabelSize, formatRecordingBytes(task.bytes)),
+      if (bitrate.isNotEmpty) (t.room.recordLabelBitrate, bitrate),
+      if (task != null) (t.room.recordLabelQuality, task.quality.isEmpty ? t.recorder.qualityBest : task.quality),
+      if (chatCount case final count? when count > 0) (t.room.recordLabelDanmaku, '$count'),
+    ];
+
+    return DsListSection(
       children: [
-        _autoRecordSwitch(room: room, task: task, waiting: waiting),
-        const SizedBox(height: DsSpace.s16),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DsBadge(dot: recording, label: Text(word), status: tone),
-        ),
-        if (recording)
-          Padding(
-            padding: const EdgeInsets.only(top: DsSpace.s12, bottom: DsSpace.s4),
-            child: Text(
-              RecordingIndicator.formatElapsed(elapsed),
-              style: theme.typography.numeric(
-                theme.typography.title.copyWith(color: colors.text, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        if (recording)
-          Text(
-            t.room.recordSegment(
-              index: task.segments < 1 ? 1 : task.segments,
-              minutes: (settings.segmentSeconds / 60).round(),
-            ),
-            style: theme.typography.caption.copyWith(color: colors.textMuted),
-          ),
         Padding(
-          padding: const EdgeInsets.only(top: DsSpace.s12),
-          child: Wrap(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             spacing: DsSpace.s8,
-            runSpacing: DsSpace.s6,
             children: [
-              if (task.bytes > 0)
-                DsBadge(dot: false, label: Text(t.room.recordSize(size: formatRecordingBytes(task.bytes)))),
-              if (bitrate.isNotEmpty) DsBadge(dot: false, label: Text(bitrate)),
-              DsBadge(dot: false, label: Text(task.quality.isEmpty ? t.recorder.qualityBest : task.quality)),
-              // A take recorded without a chat file says nothing about one:
-              // "0 条" would read as a capture that lost every line.
-              if (chatCount case final count? when count > 0)
-                DsBadge(dot: false, label: Text(t.room.recordDanmakuCount(count: count))),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  DsBadge(dot: recording, label: Text(word), status: tone),
+                  const Spacer(),
+                  DsButton(
+                    variant: recording ? DsButtonVariant.danger : DsButtonVariant.primary,
+                    size: DsSize.sm,
+                    leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc, size: 15),
+                    onPressed: joining ? null : _toggle,
+                    child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
+                  ),
+                ],
+              ),
+              if (elapsed != null)
+                Text(
+                  RecordingIndicator.formatElapsed(elapsed),
+                  style: theme.typography.numeric(
+                    theme.typography.title.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              if (facts.isNotEmpty) _factLine(facts.take(2).toList(), theme, colors),
+              if (facts.length > 2) _factLine(facts.sublist(2), theme, colors),
+              if (recording)
+                Text(
+                  t.room.recordSegment(
+                    index: task.segments < 1 ? 1 : task.segments,
+                    minutes: (ref.read(recordingSettingsProvider).segmentSeconds / 60).round(),
+                  ),
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
             ],
           ),
         ),
-        // The verb on the take, where the facts about it are: a press here
-        // starts or stops this room's capture, and the room never moves.
+      ],
+    );
+  }
+
+  /// One line of label:value pairs, the labels muted and the values in the
+  /// plain text color so the eye finds the numbers first: `大小 123 MB ·
+  /// 码率 4.2 Mbps`.
+  Widget _factLine(List<(String, String)> pairs, DsThemeData theme, DsColors colors) {
+    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
+    final value = theme.typography.caption.copyWith(color: colors.text);
+    return Text.rich(
+      TextSpan(
+        children: [
+          for (final (index, (label, text)) in pairs.indexed) ...[
+            if (index > 0) TextSpan(text: '  ·  ', style: muted),
+            TextSpan(text: '$label ', style: muted),
+            TextSpan(text: text, style: value),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// The schedule card: record when live, with the cadence it will run at —
+  /// armed or not, the description names what the switch does, so an off
+  /// switch still advertises its own meaning.
+  Widget _autoRecordCard({
+    required LiveRoom? room,
+    required RecordingTask? task,
+    required bool waiting,
+    required bool recording,
+  }) {
+    if (room == null) return const SizedBox.shrink();
+    final t = context.t;
+    final seconds = ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds;
+    return DsListSection(
+      children: [
         Padding(
-          padding: const EdgeInsets.only(top: DsSpace.s16),
-          child: SizedBox(
-            width: double.infinity,
-            child: DsButton(
-              variant: recording ? DsButtonVariant.danger : DsButtonVariant.primary,
-              size: DsSize.sm,
-              leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc, size: 15),
-              onPressed: joining ? null : _toggle,
-              child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+          child: DsSwitch(
+            value: waiting,
+            onChanged: recording ? null : (_) => unawaited(toggleRoomAutoRecord(context, ref, room, task)),
+            label: Text(t.room.autoRecordOn),
+            description: Text(waiting ? t.room.autoRecordArmed(seconds: seconds) : t.room.autoRecordHint),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: DsSpace.s24, bottom: DsSpace.s16),
-          child: _takesSection(room: room),
-        ),
-        _footer(),
       ],
     );
   }
@@ -309,21 +344,6 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
     onPressed: () => unawaited(context.push(RouteNames.recorder)),
     child: Text(t.navigation.record),
   );
-
-  /// The room's schedule verb, where the room's takes are managed: arming the
-  /// live check for this room is a recording errand, not a room-menu row.
-  Widget _autoRecordSwitch({required LiveRoom? room, required RecordingTask? task, required bool waiting}) {
-    if (room == null) return const SizedBox.shrink();
-    final t = context.t;
-    final recording = task?.state == RecordingTaskState.recording;
-    final seconds = ref.watch(recordingSettingsProvider).schedule.liveCheckSeconds;
-    return DsSwitch(
-      value: waiting,
-      onChanged: recording ? null : (_) => unawaited(toggleRoomAutoRecord(context, ref, room, task)),
-      label: Text(t.room.autoRecordOn),
-      description: waiting ? Text(t.room.autoRecordArmed(seconds: seconds)) : null,
-    );
-  }
 }
 
 /// Adds the room to the live check, or takes it out.
@@ -367,6 +387,10 @@ Future<void> toggleRoomAutoRecord(BuildContext context, WidgetRef ref, LiveRoom 
           startedAt: now,
         );
   await tasks.add(waiting);
+  // The task write arms the monitor, but the arm's first probe owes the poll
+  // interval: ask for the check now, so a room already on air starts
+  // recording while the toast is still on screen.
+  unawaited(ref.read(recordingLiveMonitorProvider).checkNow());
   if (!context.mounted) return;
   showDsToast(
     context: context,

@@ -2,16 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/shared/shared.dart';
 
-/// The live home menu's destinations: the four content entries the
+/// The live home menu's destinations: the three content entries the
 /// navigation setting shows, hides and orders (the reference's
 /// `savedMenuIds`), in the sidebar's default order — favorites, the hot
-/// feed, areas and the recording centre.
-const List<NavigationItem> kHomeMenuItems = [
-  NavigationItem.favorites,
-  NavigationItem.hot,
-  NavigationItem.zones,
-  NavigationItem.record,
-];
+/// feed and areas. The recording centre is not a destination: recording
+/// lives in the room panel and the settings, and a library the live home
+/// never fills sat as a rail row.
+const List<NavigationItem> kHomeMenuItems = [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones];
 
 /// The settings key the home menu's order lives under. It is written by
 /// one caller only — the order editor's save. Until then the key does not
@@ -45,9 +42,9 @@ final class NavMenuController extends Notifier<List<NavigationItem>> {
     }
   }
 
-  /// The four destinations in their order, hidden ones included: the
-  /// settings page lists every row in place, its switch carrying the
-  /// visibility, so no row ever moves for a switch.
+  /// The destinations in their order, hidden ones included: the settings
+  /// page lists every row in place, its switch carrying the visibility, so
+  /// no row ever moves for a switch.
   List<NavigationItem> get ordered => _savedOrder ?? _order();
 
   /// Shows or hides [item], writing only the hidden set — the order key is
@@ -83,7 +80,7 @@ final class NavMenuController extends Notifier<List<NavigationItem>> {
   }
 
   /// Stores the editor's draft as the home menu's order — the one writer of
-  /// the order key. The draft carries all four destinations, hidden ones
+  /// the order key. The draft carries every destination, hidden ones
   /// included (the editor lists every row), so every entry keeps the exact
   /// place the draft puts it. Anything but a full rearrangement is refused.
   /// The store is written before the state moves, so the rebuild the state
@@ -138,8 +135,8 @@ final class NavMenuController extends Notifier<List<NavigationItem>> {
 /// The home menu's visible entries, in the viewer's order.
 final navMenuProvider = NotifierProvider<NavMenuController, List<NavigationItem>>(NavMenuController.new);
 
-/// The four destinations in their order, hidden ones included — the
-/// settings page's rows, which no switch ever moves.
+/// The destinations in their order, hidden ones included — the settings
+/// page's rows, which no switch ever moves.
 final navMenuOrderProvider = Provider<List<NavigationItem>>((ref) {
   ref.watch(navMenuProvider);
   return ref.read(navMenuProvider.notifier).ordered;

@@ -265,5 +265,10 @@
   "anchorVideosUnavailable": "This streamer has nothing to watch yet",
   "areaUnavailable": "That category could not be found",
   "replayLoginHint": "Replays show their full content once signed in; you can sign in first.",
-  "replayLoginAction": "Sign in"
+  "replayLoginAction": "Sign in",
+  "recordLabelSize": "Size",
+  "recordLabelBitrate": "Bitrate",
+  "recordLabelQuality": "Quality",
+  "recordLabelDanmaku": "Danmaku",
+  "autoRecordHint": "Records when the room goes live"
 }
