@@ -74,17 +74,29 @@ final class HongguoEpisodeShelf extends ConsumerStatefulWidget {
 final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf> {
   int _group = 0;
 
+  /// One key per range tab, so the row can bring the selected range into
+  /// view when the episode moves under it: a series autoplaying through its
+  /// pages must not leave the selected tab scrolled out of sight.
+  final Map<int, GlobalKey> _tabKeys = <int, GlobalKey>{};
+
+  /// Whether the selected tab still owes its reveal; set when the group
+  /// moves under the shelf rather than under the viewer's own press.
+  bool _revealTabs = false;
+
   @override
   void initState() {
     super.initState();
     _group = _groupOf(widget.current);
+    _revealTabs = true;
   }
 
   @override
   void didUpdateWidget(HongguoEpisodeShelf oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.detail, widget.detail) || oldWidget.current?.vid != widget.current?.vid) {
-      _group = _groupOf(widget.current);
+      final group = _groupOf(widget.current);
+      if (group != _group) _revealTabs = true;
+      _group = group;
     }
   }
 
@@ -148,6 +160,24 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
     // about what has been seen.
     final marks = hongguoEpisodeMarks(ref.watch(hongguoLibraryProvider).progressOf(widget.detail.meta.seriesId));
     bool isCurrent(HongguoEpisode episode) => episode.vid == current?.vid && episode.index == current?.index;
+    // The selected tab's reveal, once the tabs are on stage: the row walks
+    // the range in — centred when it can be — and the debt is cleared, so a
+    // plain rebuild never scrolls the row again.
+    if (_revealTabs) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final tabContext = _tabKeys[group]?.currentContext;
+        if (tabContext != null) {
+          Scrollable.ensureVisible(
+            tabContext,
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            alignment: 0.5,
+          );
+        }
+      });
+      _revealTabs = false;
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
@@ -164,6 +194,7 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
               children: [
                 for (var index = 0; index < groups; index++)
                   _RangeTab(
+                    key: _tabKeys.putIfAbsent(index, GlobalKey.new),
                     label: hongguoEpisodeRangeLabel(episodes, index),
                     selected: index == group,
                     onPressed: () => setState(() => _group = index),
@@ -203,7 +234,7 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
 /// One range of the selection: `1–20` on a quiet pill, the group on stage
 /// filled and accented.
 final class _RangeTab extends StatelessWidget {
-  const _RangeTab({required this.label, required this.selected, required this.onPressed});
+  const _RangeTab({required this.label, required this.selected, required this.onPressed, super.key});
 
   final String label;
   final bool selected;

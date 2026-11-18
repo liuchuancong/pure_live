@@ -2505,6 +2505,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         : transport?.position ?? Duration.zero;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: OnVideoColors.foreground));
     final speedLabel = _speed == _speed.roundToDouble() ? '${_speed.toInt()}x' : '${_speed}x';
+    final next = _nextEpisode();
     return Container(
       key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
@@ -2574,6 +2575,16 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             unawaited(_togglePlay());
                           },
                   ),
+                  // The next episode rides beside the transport, as the
+                  // reference's bar carries it — not only on the action
+                  // column — once the bar can pay for it; a narrow stage
+                  // keeps the verb on the column at the picture's edge.
+                  if (wide && next != null)
+                    PlayerBarButton(
+                      icon: DsIcons.skipForward,
+                      label: t.hongguo.nextEpisode,
+                      onPressed: handle == null ? null : () => unawaited(_openEpisode(next)),
+                    ),
                   if (wide)
                     // Where the episode is, and how long it runs — the bar's
                     // own reading of the seek line.
@@ -2592,7 +2603,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   ),
                   if (wide)
                     SizedBox(
-                      width: 96,
+                      width: 72,
                       child: DsSlider(
                         value: _effectivelyMuted ? 0 : _volume,
                         onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),

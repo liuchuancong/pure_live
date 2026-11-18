@@ -1495,7 +1495,10 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
                       child: constraints.maxWidth < 600
                           ? const SizedBox.shrink()
                           : ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 180),
+                              // The reference's volume walks a short rail —
+                              // a 180 slider read as a second seek line
+                              // under the real one.
+                              constraints: const BoxConstraints(maxWidth: 120),
                               child: Consumer(
                                 builder: (context, ref, _) {
                                   final (volume, muted) = ref.watch(
