@@ -127,13 +127,16 @@ final class _MusicSpectrumState extends ConsumerState<MusicSpectrum> {
     _bind(fft: fft, pcm: pcm);
     final colors = DsTheme.colorsOf(context);
     return SizedBox(
-      height: ui.spectrumStyle == MusicSpectrumStyle.circle ? 104 : 44,
+      height: ui.spectrumStyle == MusicSpectrumStyle.circle ? 64 : 32,
       width: double.infinity,
       child: CustomPaint(
         painter: _SpectrumPainter(
           samples: _samples,
           style: ui.spectrumStyle,
-          color: colors.accent,
+          // Full-strength accent across a wide stage reads as a wall; the
+          // strip sits beside the seek, so it sings at half strength —
+          // the reference's spectrum keeping below the words.
+          color: colors.accent.withValues(alpha: 0.62),
           quietColor: colors.textSubtle,
           quiet: quiet,
         ),

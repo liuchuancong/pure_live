@@ -253,8 +253,8 @@ final class _Stage extends ConsumerStatefulWidget {
 }
 
 final class _StageState extends ConsumerState<_Stage> {
-  /// Where the seek slider is while the viewer drags it, in seconds.
-  /// This run's stage, or the stored default while none was chosen.
+  /// This run's stage shape: the stored default until the switch under the
+  /// song chooses otherwise.
   MusicPlayerMode _stageMode() => ref.watch(musicStageOverrideProvider) ?? ref.watch(musicPlayerModeProvider);
 
   @override
@@ -283,147 +283,152 @@ final class _StageState extends ConsumerState<_Stage> {
                 .toDouble();
         final disc = playerMode == MusicPlayerMode.vinyl && constraints.maxWidth >= 640;
         final words = playerMode == MusicPlayerMode.lyrics;
+        // The song sits at the stage's middle when the window affords it and
+        // scrolls when it does not — a tall window that pins the cover to the
+        // top leaves the rest of the stage reading as void.
         return SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s16,
-            children: [
-              if (words)
-                // The words get the stage's whole height: a lyric column
-                // boxed at the cover's square wasted the room the mode
-                // exists to use.
-                SizedBox(
-                  height: constraints.maxHeight.clamp(300.0, 640.0),
-                  child: const MusicLyricsPanel(transparent: true),
-                )
-              else
-                Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 320),
-                    curve: Curves.easeOutCubic,
-                    width: disc ? size * 1.32 : size,
-                    height: size,
-                    child: disc
-                        ? Stack(
-                            alignment: AlignmentDirectional.centerStart,
-                            clipBehavior: Clip.none,
-                            children: [
-                              // The record is the stage in this mode — the
-                              // sleeve gives way to the disc, its own cover
-                              // pressed into the label — and the arm rests on
-                              // it, the reference's turntable.
-                              PositionedDirectional(
-                                start: 0,
-                                top: 0,
-                                child: _VinylDisc(size: size * 0.92, track: track, playing: playing),
-                              ),
-                              PositionedDirectional(
-                                start: size * 0.62,
-                                top: -size * 0.02,
-                                child: _Tonearm(size: size, playing: playing),
-                              ),
-                            ],
-                          )
-                        : DecoratedBox(
-                            decoration: DsBoxDecoration(
-                              borderRadius: BorderRadius.circular(theme.radii.overlay),
-                              shadows: [
-                                DsShadow(
-                                  color: colors.overlay,
-                                  blur: DsSpace.s40,
-                                  offset: const Offset(0, DsSpace.s16),
-                                ),
-                              ],
-                            ),
-                            child: _Artwork(track: track, size: size),
-                          ),
-                  ),
-                ),
-              Column(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s4,
+                spacing: DsSpace.s16,
                 children: [
-                  Text(
-                    track.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: theme.typography.heading.copyWith(color: colors.text),
-                  ),
-                  if (track.artist.isNotEmpty)
+                  if (words)
+                    // The words get the stage's whole height: a lyric column
+                    // boxed at the cover's square wasted the room the mode
+                    // exists to use.
+                    SizedBox(
+                      height: constraints.maxHeight.clamp(300.0, 640.0),
+                      child: const MusicLyricsPanel(transparent: true),
+                    )
+                  else
                     Center(
-                      // The credit is the way into the artist's page: quiet
-                      // until hovered, underlined and link-tinted then.
-                      child: DsLink(
-                        label: track.artist,
-                        inline: true,
-                        semanticLabel: t.music.viewArtist,
-                        style: DsLinkStyle(foreground: colors.textMuted, underlineWidth: 0),
-                        onPressed: () => openMusicArtist(
-                          context,
-                          sourceId: track.sourceId,
-                          artist: track.artist,
-                          artistId: musicTrackArtistId(track),
-                        ),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 320),
+                        curve: Curves.easeOutCubic,
+                        width: disc ? size * 1.32 : size,
+                        height: size,
+                        child: disc
+                            ? Stack(
+                                alignment: AlignmentDirectional.centerStart,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // The record is the stage in this mode — the
+                                  // sleeve gives way to the disc, its own cover
+                                  // pressed into the label — and the arm rests on
+                                  // it, the reference's turntable.
+                                  PositionedDirectional(
+                                    start: 0,
+                                    top: 0,
+                                    child: _VinylDisc(size: size * 0.92, track: track, playing: playing),
+                                  ),
+                                  PositionedDirectional(
+                                    start: size * 0.62,
+                                    top: -size * 0.02,
+                                    child: _Tonearm(size: size, playing: playing),
+                                  ),
+                                ],
+                              )
+                            : DecoratedBox(
+                                decoration: DsBoxDecoration(
+                                  borderRadius: BorderRadius.circular(theme.radii.overlay),
+                                  shadows: [
+                                    DsShadow(
+                                      color: colors.overlay,
+                                      blur: DsSpace.s40,
+                                      offset: const Offset(0, DsSpace.s16),
+                                    ),
+                                  ],
+                                ),
+                                child: _Artwork(track: track, size: size),
+                              ),
                       ),
                     ),
-                  if (track.album.isNotEmpty)
-                    Center(
-                      child: (track.albumId ?? '').isEmpty
-                          ? Text(
-                              '${t.music.songDetailAlbum} · ${track.album}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                            )
-                          : DsLink(
-                              label: '${t.music.songDetailAlbum} · ${track.album}',
-                              inline: true,
-                              semanticLabel: t.music.viewAlbum,
-                              style: DsLinkStyle(foreground: colors.textSubtle, underlineWidth: 0),
-                              onPressed: () =>
-                                  openMusicAlbum(context, sourceId: track.sourceId, albumId: track.albumId!),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Text(
+                        track.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: theme.typography.heading.copyWith(color: colors.text),
+                      ),
+                      if (track.artist.isNotEmpty)
+                        Center(
+                          // The credit is the way into the artist's page: quiet
+                          // until hovered, underlined and link-tinted then.
+                          child: DsLink(
+                            label: track.artist,
+                            inline: true,
+                            semanticLabel: t.music.viewArtist,
+                            style: DsLinkStyle(foreground: colors.textMuted, underlineWidth: 0),
+                            onPressed: () => openMusicArtist(
+                              context,
+                              sourceId: track.sourceId,
+                              artist: track.artist,
+                              artistId: musicTrackArtistId(track),
                             ),
+                          ),
+                        ),
+                      if (track.album.isNotEmpty)
+                        Center(
+                          child: (track.albumId ?? '').isEmpty
+                              ? Text(
+                                  '${t.music.songDetailAlbum} · ${track.album}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                )
+                              : DsLink(
+                                  label: '${t.music.songDetailAlbum} · ${track.album}',
+                                  inline: true,
+                                  semanticLabel: t.music.viewAlbum,
+                                  style: DsLinkStyle(foreground: colors.textSubtle, underlineWidth: 0),
+                                  onPressed: () =>
+                                      openMusicAlbum(context, sourceId: track.sourceId, albumId: track.albumId!),
+                                ),
+                        ),
+                    ],
+                  ),
+                  // The stage's three shapes as a segmented control: the sleeve,
+                  // the record and the words chosen where they are seen — the
+                  // reference's three player modes. It sets this run's choice;
+                  // the settings row stays the default. A narrow stage still
+                  // falls back to the sleeve for the record, and the control
+                  // says so.
+                  Center(
+                    child: DsSegmentedControl<MusicPlayerMode>(
+                      value: playerMode,
+                      semanticLabel: t.music.playerModeSwitch,
+                      onChanged: (mode) => ref.read(musicStageOverrideProvider.notifier).choose(mode),
+                      segments: [
+                        DsSegment(
+                          value: MusicPlayerMode.standard,
+                          icon: const DsIcon(DsIcons.image, size: 16),
+                          label: Text(t.music.playerModeCover),
+                        ),
+                        DsSegment(
+                          value: MusicPlayerMode.vinyl,
+                          icon: const DsIcon(DsIcons.disc, size: 16),
+                          label: Text(t.music.playerModeVinyl),
+                        ),
+                        DsSegment(
+                          value: MusicPlayerMode.lyrics,
+                          icon: const DsIcon(DsIcons.captions, size: 16),
+                          label: Text(t.music.playerModeLyrics),
+                        ),
+                      ],
                     ),
+                  ),
                 ],
               ),
-              // The stage's three shapes as a segmented control: the sleeve,
-              // the record and the words chosen where they are seen — the
-              // reference's three player modes. It sets this run's choice;
-              // the settings row stays the default. A narrow stage still
-              // falls back to the sleeve for the record, and the control
-              // says so.
-              Center(
-                child: DsSegmentedControl<MusicPlayerMode>(
-                  value: playerMode,
-                  semanticLabel: t.music.playerModeSwitch,
-                  onChanged: (mode) => ref.read(musicStageOverrideProvider.notifier).choose(mode),
-                  segments: [
-                    DsSegment(
-                      value: MusicPlayerMode.standard,
-                      icon: const DsIcon(DsIcons.image, size: 16),
-                      label: Text(t.music.playerModeCover),
-                    ),
-                    DsSegment(
-                      value: MusicPlayerMode.vinyl,
-                      icon: const DsIcon(DsIcons.disc, size: 16),
-                      label: Text(t.music.playerModeVinyl),
-                    ),
-                    DsSegment(
-                      value: MusicPlayerMode.lyrics,
-                      icon: const DsIcon(DsIcons.captions, size: 16),
-                      label: Text(t.music.playerModeLyrics),
-                    ),
-                  ],
-                ),
-              ),
-              // The engine's own taps, drawn live: nothing until the first
-              // frames arrive, so a backend without taps leaves the stage
-              // exactly as it was.
-              const MusicSpectrum(),
-            ],
+            ),
           ),
         );
       },
@@ -1328,11 +1333,12 @@ final class _Volume extends StatelessWidget {
   }
 }
 
-/// The transport dock under the detail: the seek, the clock and the engine's
-/// own verbs, fixed at the bottom while the stage scrolls — the reference's
-/// play bar. The song's heart rides at the trailing end beside the volume,
-/// where the window has room for it; a phone keeps the transport centred and
-/// leaves the volume to the hardware keys.
+/// The transport dock under the detail: the spectrum's quiet strip, the seek,
+/// the clock and the engine's own verbs, floating on the song's backdrop at
+/// the page's foot — the reference's play bar over its artwork. The song's
+/// heart reads from the left flank and the sound from the right, so the
+/// movement verbs hold the page's centre; a phone leaves the volume to the
+/// hardware keys.
 final class _TransportBar extends ConsumerStatefulWidget {
   const _TransportBar();
 
@@ -1456,58 +1462,61 @@ final class _TransportBarState extends ConsumerState<_TransportBar> {
       onPressed: () => unawaited(favouriteController.toggle(track)),
       icon: DsIcon(DsIcons.heart, color: loved ? colors.accent : null, fill: loved),
     );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(top: BorderSide(color: colors.border)),
-      ),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s4,
-          children: [
-            seek,
-            LayoutBuilder(
-              builder: (context, constraints) {
-                // The movement verbs, a breath of space, then the song's
-                // heart and the volume where the window affords it; a phone
-                // centres transport and heart and leaves the volume to the
-                // hardware keys.
-                if (constraints.maxWidth < 600) {
-                  return Center(
-                    child: Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s12, children: [transport, favourite]),
-                  );
-                }
-                return Row(
-                  children: [
-                    const Expanded(child: SizedBox()),
-                    transport,
-                    const Expanded(child: SizedBox()),
-                    favourite,
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 180),
-                      child: Consumer(
-                        builder: (context, ref, _) {
-                          final (volume, muted) = ref.watch(
-                            musicPlayerProvider.select((state) => (state.volume, state.muted)),
-                          );
-                          return _Volume(
-                            volume: volume,
-                            muted: muted,
-                            onVolume: (value) => unawaited(controller.setVolume(value)),
-                            onMute: () => unawaited(controller.setMuted(muted: !muted)),
-                          );
-                        },
-                      ),
+    // The dock floats on the song's own backdrop: the blurred cover runs
+    // behind the verbs, so a surface slab here would cut the page into a
+    // picture and a control panel — the reference's play bar sits on the
+    // artwork, not on a card.
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, 0, DsSpace.s16, DsSpace.s12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s4,
+        children: [
+          // The engine's own taps as a quiet strip tight above the seek —
+          // where the reference keeps its spectrum: a band that breathes
+          // with the song, not a wall under the stage.
+          const MusicSpectrum(),
+          seek,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Equal flanks put the movement verbs at the page's own centre:
+              // the song's heart reads from the left, the sound from the
+              // right, and a phone leaves the volume to its hardware keys.
+              return Row(
+                children: [
+                  Expanded(
+                    child: Align(alignment: AlignmentDirectional.centerStart, child: favourite),
+                  ),
+                  transport,
+                  Expanded(
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: constraints.maxWidth < 600
+                          ? const SizedBox.shrink()
+                          : ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 180),
+                              child: Consumer(
+                                builder: (context, ref, _) {
+                                  final (volume, muted) = ref.watch(
+                                    musicPlayerProvider.select((state) => (state.volume, state.muted)),
+                                  );
+                                  return _Volume(
+                                    volume: volume,
+                                    muted: muted,
+                                    onVolume: (value) => unawaited(controller.setVolume(value)),
+                                    onMute: () => unawaited(controller.setMuted(muted: !muted)),
+                                  );
+                                },
+                              ),
+                            ),
                     ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
