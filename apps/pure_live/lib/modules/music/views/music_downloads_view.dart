@@ -4,11 +4,14 @@ import 'dart:io' show File;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
+import 'package:pure_live/app/routing/router/app_router.dart' show SettingsSectionRoute;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
+import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/library/music_downloads.dart';
 import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
@@ -20,6 +23,10 @@ import 'package:pure_live/shared/shared.dart'
         DownloadDetailsPane,
         DownloadQueueAction,
         DownloadQueueHeader,
+        DownloadRowActions,
+        DownloadRowMenuActions,
+        DownloadRowPhase,
+        DownloadTaskCard,
         LiveWindow,
         downloadFilePresent,
         formatDownloadBytes,
@@ -48,206 +55,6 @@ String _musicFacts(Translations t, audio.MusicDownloadTask task) => [
   ?_qualityOf(t, task),
 ].join(' · ');
 
-/// What a task's state says about itself, as the table's state column shows it:
-/// the state, and how far a transfer still owed bytes has got. The words come
-/// from [_statusLabel], the same list the filter panel ticks through, so one
-/// state has one spelling on this page.
-Widget _musicPhaseBadge(BuildContext context, audio.MusicDownloadTask task, {required bool missing}) {
-  final t = context.t;
-  final progress = task.progress;
-  // A row whose file the viewer moved or deleted is said here, in the same words
-  // its own caption and the facts column use: the record is true of the
-  // transfer, not of the disk.
-  if (missing) {
-    return DsBadge(status: DsStatus.danger, label: Text(t.common.previewFileMissing));
-  }
-  // A working row counts itself out loud when the engine can say how far it is.
-  if (task.status == audio.MusicDownloadStatus.running && progress != null) {
-    return DsBadge(status: DsStatus.info, label: Text('${_statusLabel(t, task)} ${(progress * 100).round()}%'));
-  }
-  return DsBadge(
-    status: switch (task.status) {
-      audio.MusicDownloadStatus.completed || audio.MusicDownloadStatus.skipped => DsStatus.success,
-      audio.MusicDownloadStatus.running || audio.MusicDownloadStatus.processing => DsStatus.info,
-      audio.MusicDownloadStatus.paused => DsStatus.warning,
-      audio.MusicDownloadStatus.failed || audio.MusicDownloadStatus.cancelled => DsStatus.danger,
-      audio.MusicDownloadStatus.queued => DsStatus.neutral,
-    },
-    label: Text(_statusLabel(t, task)),
-  );
-}
-
-/// The one verb a task's state allows: pause or carry on a transfer, fetch a
-/// failed one again, play the file that landed, or — for a task the engine is
-/// still writing tags into, or one the viewer stopped — take it out of the
-/// queue.
-///
-/// The card and the table name the same verb for the same state, so the two
-/// shapes cannot drift apart; everything else a row can do sits in
-/// [_musicRowMenu].
-Widget _musicPhaseVerb(
-  BuildContext context,
-  WidgetRef ref,
-  audio.MusicDownloadTask task, {
-  required bool missing,
-  required VoidCallback onPlay,
-}) {
-  final t = context.t;
-  final controller = ref.read(musicDownloadsProvider.notifier);
-  Widget icon(String label, DsIconData glyph, VoidCallback onPressed) => DsButton.icon(
-    variant: DsButtonVariant.secondary,
-    size: DsSize.sm,
-    semanticLabel: label,
-    onPressed: onPressed,
-    icon: DsIcon(glyph, size: 16),
-  );
-  final status = task.status;
-  if (_playableTask(task)) {
-    // A song whose file is gone has nothing to play: the button keeps its place,
-    // names the fact and stays out of reach rather than handing the player a
-    // dead path.
-    if (missing) {
-      return DsButton.icon(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        icon: const DsIcon(DsIcons.fileX, size: 16),
-        semanticLabel: t.common.previewFileMissing,
-        onPressed: null,
-      );
-    }
-    return icon(t.music.play, DsIcons.play, onPlay);
-  }
-  return switch (status) {
-    audio.MusicDownloadStatus.failed => icon(
-      t.music.downloadRetry,
-      DsIcons.refreshCw,
-      () => unawaited(controller.retry(task.id)),
-    ),
-    audio.MusicDownloadStatus.paused => icon(
-      t.music.downloadResume,
-      DsIcons.play,
-      () => unawaited(controller.resume(task.id)),
-    ),
-    audio.MusicDownloadStatus.running || audio.MusicDownloadStatus.queued => icon(
-      t.music.downloadPause,
-      DsIcons.pause,
-      () => unawaited(controller.pause(task.id)),
-    ),
-    // The engine owes these two nothing more: a task still writing tags can only
-    // be stopped, and a cancelled one can only leave the list — which is why its
-    // menu drops the same verb it would show twice.
-    audio.MusicDownloadStatus.processing => icon(
-      t.music.downloadCancel,
-      DsIcons.x,
-      () => unawaited(controller.cancel(task.id)),
-    ),
-    _ => icon(t.music.downloadRemove, DsIcons.trash2, () => unawaited(controller.remove(task.id))),
-  };
-}
-
-/// Everything one download can be asked for beyond its state's own verb: the
-/// facts sheet, and for a file on disk the three ways out — open it, open the
-/// folder beside it, delete it with its record — ending in the record's removal.
-/// A song whose file went away keeps the folder (what sits beside it is still
-/// worth seeing) and loses the two verbs that act on a file that is not there.
-List<Widget> _musicRowMenu(BuildContext context, WidgetRef ref, audio.MusicDownloadTask task, {required bool missing}) {
-  final t = context.t;
-  final controller = ref.read(musicDownloadsProvider.notifier);
-  final playable = _playableTask(task);
-  // The verb column already IS 移除记录 for a cancelled row; an action gets one
-  // place to be pressed, not two.
-  final verbIsRemove = task.status == audio.MusicDownloadStatus.cancelled;
-
-  Future<void> deleteFile() async {
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.music.downloadDeleteFile,
-      description: t.music.downloadDeleteFileBody,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !context.mounted) return;
-    try {
-      await controller.remove(task.id, deleteFile: true);
-    } on Object {
-      if (context.mounted) {
-        showDsToast(context: context, title: t.music.downloadDeleteFailed, status: DsStatus.danger);
-      }
-    }
-  }
-
-  return [
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.info),
-      label: Text(t.common.downloadDetails),
-      // One construction feeds the menu's sheet and the wide workspace's right
-      // column, so the two cannot state different facts.
-      onPressed: () => unawaited(
-        showDownloadDetails(
-          context,
-          _detailsOf(context, task, t, onRemove: () => unawaited(controller.remove(task.id))),
-        ),
-      ),
-    ),
-    // A transfer still owed a file can be dropped: for 排队中/下载中 that is the
-    // pause verb's companion, for 已暂停 the only way out besides carrying on. A
-    // task the engine is writing tags into is already cancelled by its own verb,
-    // so the menu must not name the same action twice; a terminal one has nothing
-    // left to cancel.
-    if (!task.isTerminal && task.status != audio.MusicDownloadStatus.processing)
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.x),
-        label: Text(t.music.downloadCancel),
-        onPressed: () => unawaited(controller.cancel(task.id)),
-      ),
-    if (playable) ...[
-      const DsMenuDivider(),
-      if (!missing)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.settings.downloadOpenFile),
-          onPressed: () => unawaited(openDownloadedPath(context, task.outputPath)),
-        ),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.folderOpen),
-        label: Text(t.settings.downloadManagerOpenFolder),
-        onPressed: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
-      ),
-      if (!missing)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.trash2),
-          label: Text(t.music.downloadDeleteFile),
-          destructive: true,
-          onPressed: () => unawaited(deleteFile()),
-        ),
-    ],
-    if (!verbIsRemove)
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.trash2),
-        // Over a file that is gone, the row's only verb is leaving the list; the
-        // word says that instead of 移除, which reads twice.
-        label: Text(missing ? t.common.downloadRemoveFromList : t.music.downloadRemove),
-        destructive: true,
-        onPressed: () => unawaited(controller.remove(task.id)),
-      ),
-  ];
-}
-
-/// The states in the order a queue reads: what is moving, what the engine is
-/// still finishing, what waits for a lane, what stopped on purpose, what
-/// landed, what was already there, what stopped on its own, what was dropped.
-int _musicStatusRank(audio.MusicDownloadStatus status) => switch (status) {
-  audio.MusicDownloadStatus.running => 0,
-  audio.MusicDownloadStatus.processing => 1,
-  audio.MusicDownloadStatus.queued => 2,
-  audio.MusicDownloadStatus.paused => 3,
-  audio.MusicDownloadStatus.completed => 4,
-  audio.MusicDownloadStatus.skipped => 5,
-  audio.MusicDownloadStatus.failed => 6,
-  audio.MusicDownloadStatus.cancelled => 7,
-};
-
 final class MusicDownloadsView extends ConsumerStatefulWidget {
   const MusicDownloadsView({super.key});
 
@@ -273,9 +80,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
 
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
-
-  /// The table's sorted column.
-  DsTableSort? _sort;
 
   /// The ticked rows — the batch verbs' objects.
   final Set<Object> _selected = {};
@@ -496,27 +300,10 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        // The table starts where a queue's columns fit; below it the songs keep
-        // the row cards, with their artwork and their bar.
-        final asTable = width >= LiveWindow.table;
-        // The facts column rides beside a table only where the table still
-        // keeps its columns after 340 pixels are taken from it.
+        // The facts column rides beside the queue where the rows keep their
+        // reading after 340 pixels are taken from them.
         final withFacts = width >= LiveWindow.downloadWorkspace;
-        // A table says it has nothing through its own slot; the card list needs
-        // the page's empty state.
-        final queue = asTable
-            ? _table(
-                t,
-                shown,
-                narrow: width < 720,
-                withFacts: withFacts,
-                directory: directory,
-                tasks: tasks,
-                isMissing: (task) => missing[task.id] ?? false,
-              )
-            : shown.isEmpty
-            ? _empty(t, tasks, directory, filterActive)
-            : _cards(shown);
+        final queue = shown.isEmpty ? _empty(t, tasks, directory, filterActive) : _cards(shown, missing);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -528,6 +315,11 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
+                settingsLabel: t.settings.downloadSettings,
+                onSettings: () {
+                  openSettingsSection(ref, SettingsSection.musicDownload);
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.musicDownload.name).location));
+                },
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
                 onQuery: (value) => setState(() {
@@ -635,13 +427,19 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
 
   /// The queue as the row cards: one section of songs, each with its artwork,
   /// its state and its own verbs.
-  Widget _cards(List<audio.MusicDownloadTask> shown) => ListView(
+  Widget _cards(List<audio.MusicDownloadTask> shown, Map<String, bool> missing) => ListView(
     padding: EdgeInsets.only(left: _inset, right: _inset, bottom: DsSpace.s16),
     children: [
       DsListSection(
         children: [
           for (final task in shown)
-            _DownloadRow(key: ValueKey(task.id), task: task, onPlay: () => _playFrom(shown, task)),
+            _musicTaskCard(
+              context,
+              ref,
+              task,
+              missing: missing[task.id] ?? false,
+              onPlay: () => _playFrom(shown, task),
+            ),
         ],
       ),
     ],
@@ -682,213 +480,119 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
       ],
     ),
   );
-
-  /// The queue as a table: the song and what became of it, then the bytes, the
-  /// moment and the one verb its state allows.
-  ///
-  /// A narrow table drops the two columns a row can do without, and pressing a
-  /// row is the facts column's own verb — so a window with no facts column lets
-  /// a click do what its checkbox does.
-  Widget _table(
-    Translations t,
-    List<audio.MusicDownloadTask> rows, {
-    required bool narrow,
-    required bool withFacts,
-    required List<audio.MusicDownloadTask> tasks,
-    required String directory,
-    required bool Function(audio.MusicDownloadTask task) isMissing,
-  }) {
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s12),
-      child: DsTable<audio.MusicDownloadTask>(
-        semanticLabel: t.navigation.musicDownloads,
-        style: const DsTableStyle(rowHeight: 56),
-        rowsVersion: _recheck,
-        columns: [
-          DsTableColumn<audio.MusicDownloadTask>(
-            id: 'name',
-            label: t.settings.downloadColumnFile,
-            value: (task) => task.request.title ?? musicFileNameOf(task.outputPath),
-            sortable: true,
-            width: const DsTableColumnWidth.flex(3, 160),
-            // Two lines, as the station managers' rows do: the song over the
-            // artists, the record and the rendition it was asked for.
-            cell: (context, task) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.request.title ?? musicFileNameOf(task.outputPath),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  _musicFacts(t, task),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
-                ),
-              ],
-            ),
-          ),
-          DsTableColumn<audio.MusicDownloadTask>(
-            id: 'status',
-            label: t.common.downloadStatus,
-            sortable: true,
-            comparator: (a, b) => _musicStatusRank(a.status).compareTo(_musicStatusRank(b.status)),
-            width: const DsTableColumnWidth.intrinsic(min: 104),
-            cell: (context, task) => _musicPhaseBadge(context, task, missing: isMissing(task)),
-          ),
-          if (!narrow)
-            DsTableColumn<audio.MusicDownloadTask>(
-              id: 'size',
-              label: t.settings.downloadColumnSize,
-              value: (task) => task.bytesTotal > 0 ? task.bytesTotal : task.bytesReceived,
-              text: (task) => formatDownloadBytes(task.bytesTotal > 0 ? task.bytesTotal : task.bytesReceived),
-              numeric: true,
-              sortable: true,
-              width: const DsTableColumnWidth.intrinsic(min: 88),
-            ),
-          if (!narrow)
-            DsTableColumn<audio.MusicDownloadTask>(
-              id: 'time',
-              label: t.settings.downloadColumnTime,
-              value: (task) => (task.finishedAt ?? task.startedAt)?.millisecondsSinceEpoch ?? 0,
-              text: (task) {
-                final at = task.finishedAt ?? task.startedAt;
-                return at == null ? '' : downloadStampOf(at);
-              },
-              sortable: true,
-              width: const DsTableColumnWidth.intrinsic(min: 92),
-            ),
-          DsTableColumn<audio.MusicDownloadTask>(
-            id: 'actions',
-            label: t.settings.downloadColumnActions,
-            alignment: DsTableCellAlignment.end,
-            // A builder-only column measures nothing, so it names its width.
-            width: const DsTableColumnWidth.fixed(48),
-            cell: (context, task) =>
-                _musicPhaseVerb(context, ref, task, missing: isMissing(task), onPlay: () => _playFrom(rows, task)),
-          ),
-        ],
-        rows: rows,
-        rowKey: (task) => task.id,
-        sort: _sort,
-        onSortChanged: (sort) => setState(() => _sort = sort),
-        selected: _selected,
-        onSelectionChanged: (next) => setState(() {
-          _selected
-            ..clear()
-            ..addAll(next);
-        }),
-        onRowPressed: withFacts
-            ? (task) => setState(() {
-                _factsId = task.id;
-              })
-            : null,
-        rowMenuBuilder: (context, task) => _musicRowMenu(context, ref, task, missing: isMissing(task)),
-        showRowMenuButton: true,
-        emptyView: _empty(t, tasks, directory, _statuses.isNotEmpty || _playableOnly),
-      ),
-    );
-  }
 }
 
-/// One download's row, as the window too narrow for a table shows it: the song's
-/// artwork and names over its state's caption and bar, with the actions that
-/// state allows at the end. The table shape reads the same state, verb and menu
-/// through [_musicPhaseBadge], [_musicPhaseVerb] and [_musicRowMenu], so the two
-/// shapes cannot say two different things about one song.
-final class _DownloadRow extends ConsumerWidget {
-  const _DownloadRow({required this.task, required this.onPlay, super.key});
-
-  final audio.MusicDownloadTask task;
-
-  /// Plays this row inside the list the page is showing, queued in the module's
-  /// own player.
-  final VoidCallback onPlay;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final progress = task.progress;
-    final title = task.request.title ?? musicFileNameOf(task.outputPath);
-    final playable = _playableTask(task);
-    // The file the row claims, asked once: a song the viewer moved out of the
-    // download folder still shows as 已完成 unless someone looks.
-    final missing = _musicFileMissing(task);
-    // The art of the row: the downloaded file's own cover once it is on disk,
-    // the platform's cover before that — the page shows the songs, not their
-    // tasks.
-    final preview = _previewTrack(task, local: playable);
-    final facts = _musicFacts(t, task);
-    final caption = missing ? t.common.previewFileMissing : _statusLabel(t, task);
-    final detail = [
-      caption,
+/// One song's row, as the shared download row draws it — the state as a badge
+/// beside the song's facts, the transfer's numbers under it, the one verb its
+/// state allows and the menu with the rest. The page keeps nothing of its own
+/// row shape: the same card the station's and the drama's queues wear is the
+/// reason their pages read as one surface.
+Widget _musicTaskCard(
+  BuildContext context,
+  WidgetRef ref,
+  audio.MusicDownloadTask task, {
+  required bool missing,
+  required VoidCallback onPlay,
+}) {
+  final t = context.t;
+  final controller = ref.read(musicDownloadsProvider.notifier);
+  final progress = task.progress;
+  final playable = _playableTask(task);
+  final status = task.status;
+  final phase = switch (status) {
+    audio.MusicDownloadStatus.running => DownloadRowPhase.running,
+    audio.MusicDownloadStatus.queued => DownloadRowPhase.queued,
+    audio.MusicDownloadStatus.paused => DownloadRowPhase.paused,
+    audio.MusicDownloadStatus.processing => DownloadRowPhase.processing,
+    audio.MusicDownloadStatus.failed => DownloadRowPhase.failed,
+    audio.MusicDownloadStatus.cancelled => DownloadRowPhase.cancelled,
+    audio.MusicDownloadStatus.completed ||
+    audio.MusicDownloadStatus.skipped => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+  };
+  final moving = status == audio.MusicDownloadStatus.running || status == audio.MusicDownloadStatus.paused;
+  // The badge carries the state; the caption carries the transfer's numbers —
+  // a failed row its error — so one fact is said once.
+  final caption = switch (phase) {
+    DownloadRowPhase.failed => task.error ?? t.settings.downloadStatusFailed,
+    DownloadRowPhase.missing => t.common.previewFileMissing,
+    DownloadRowPhase.done => task.bytesTotal > 0 ? formatDownloadBytes(task.bytesTotal) : t.settings.downloadStatusDone,
+    _ => [
       if (!task.isTerminal && progress != null) '${(progress * 100).round()}%',
-      if (task.status == audio.MusicDownloadStatus.running && task.bytesPerSecond > 0)
+      if (status == audio.MusicDownloadStatus.running && task.bytesPerSecond > 0)
         '${formatDownloadBytes(task.bytesPerSecond)}/s',
       ?_etaOf(t, task),
-      if (playable && !missing && task.bytesTotal > 0) formatDownloadBytes(task.bytesTotal),
-    ].join(' · ');
-    return DsListRow(
-      leading: MusicArtwork(track: preview),
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
-        children: [
-          if (facts.isNotEmpty)
-            Text(facts, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.typography.caption),
-          // Two lines: a failed row carries its error as well as its state, and
-          // a narrow window must not ellipsise the second half away.
-          Text(
-            task.status == audio.MusicDownloadStatus.failed && task.error != null
-                ? '${_statusLabel(t, task)} · ${task.error}'
-                : detail,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          ),
-          if (!task.isTerminal && progress != null)
-            DsProgressBar(value: progress, semanticLabel: t.music.downloadProgress),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          _musicPhaseVerb(context, ref, task, missing: missing, onPlay: onPlay),
-          DsMenuAnchor(
-            semanticLabel: t.common.more,
-            align: DsAlign.end,
-            builder: (context, controller, child) => DsPressable(
-              semanticLabel: t.common.more,
-              onPressed: controller.toggle,
-              builder: (context, states, _) {
-                final hovered = states.contains(WidgetState.hovered);
-                return Padding(
-                  padding: const EdgeInsets.all(DsSpace.s4),
-                  child: DsIcon(
-                    DsIcons.ellipsisVertical,
-                    size: theme.sizes.iconSm,
-                    color: hovered ? colors.text : colors.textSubtle,
-                  ),
-                );
-              },
-            ),
-            items: _musicRowMenu(context, ref, task, missing: missing),
-          ),
-        ],
-      ),
+    ].join(' · '),
+  };
+  final title = task.request.title ?? musicFileNameOf(task.outputPath);
+  // The art of the row: the downloaded file's own cover once it is on disk,
+  // the platform's cover before that — the page shows the songs, not their
+  // tasks.
+  final preview = _previewTrack(task, local: playable);
+  Future<void> deleteFile() async {
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.music.downloadDeleteFile,
+      description: t.music.downloadDeleteFileBody,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
     );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await controller.remove(task.id, deleteFile: true);
+    } on Object {
+      if (context.mounted) {
+        showDsToast(context: context, title: t.music.downloadDeleteFailed, status: DsStatus.danger);
+      }
+    }
   }
+
+  return DownloadTaskCard(
+    key: ValueKey(task.id),
+    title: title,
+    phase: phase,
+    caption: caption,
+    badgeLabel: status == audio.MusicDownloadStatus.running && progress != null
+        ? '${t.settings.downloadStatusRunning} ${(progress * 100).round()}%'
+        : null,
+    meta: _musicFacts(t, task),
+    fraction: progress,
+    showProgress: moving && progress != null,
+    progressLabel: t.music.downloadProgress,
+    leading: MusicArtwork(track: preview),
+    playable: playable,
+    actions: DownloadRowActions(
+      // A waiting row holds its place in the lane — the queue's resume answers
+      // only a held row, so the waiting one offers the pause that takes it out
+      // of the lane.
+      onPause: status == audio.MusicDownloadStatus.running || status == audio.MusicDownloadStatus.queued
+          ? () => unawaited(controller.pause(task.id))
+          : null,
+      onResume: status == audio.MusicDownloadStatus.paused ? () => unawaited(controller.resume(task.id)) : null,
+      onRetry: status == audio.MusicDownloadStatus.failed ? () => unawaited(controller.retry(task.id)) : null,
+      onPlay: playable ? onPlay : null,
+      onCancel: status == audio.MusicDownloadStatus.processing ? () => unawaited(controller.cancel(task.id)) : null,
+      onRemove: status == audio.MusicDownloadStatus.cancelled ? () => unawaited(controller.remove(task.id)) : null,
+    ),
+    menu: DownloadRowMenuActions(
+      onDetails: () => unawaited(
+        showDownloadDetails(
+          context,
+          _detailsOf(context, task, t, onRemove: () => unawaited(controller.remove(task.id))),
+        ),
+      ),
+      onRemove: () => unawaited(controller.remove(task.id)),
+      missing: missing,
+      onMenuCancel: !task.isTerminal && status != audio.MusicDownloadStatus.processing
+          ? () => unawaited(controller.cancel(task.id))
+          : null,
+      onOpenFile: playable && !missing ? () => unawaited(openDownloadedPath(context, task.outputPath)) : null,
+      onOpenFolder: playable ? () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)) : null,
+      onDeleteFile: playable && !missing ? () => unawaited(deleteFile()) : null,
+    ),
+  );
 }
 
-/// The facts the row's 详情 sheet and the wide workspace's right column show
-/// — one construction, so the two cannot drift.
 DownloadDetails _detailsOf(
   BuildContext context,
   audio.MusicDownloadTask task,

@@ -28,6 +28,10 @@ import 'package:pure_live/shared/shared.dart'
         DownloadDetailsPane,
         DownloadQueueAction,
         DownloadQueueHeader,
+        DownloadRowActions,
+        DownloadRowMenuActions,
+        DownloadRowPhase,
+        DownloadTaskCard,
         LiveWindow,
         NavigationItem,
         avatarInitials,
@@ -95,58 +99,50 @@ Future<void> _openVodPreview(BuildContext context, WidgetRef ref, VodDownloadIte
   );
 }
 
-/// The one verb a part's phase allows: stop a transfer, carry a waiting or
-/// stopped one on, fetch a failed one again, or watch the part that landed.
-///
-/// The card and the table name the same verb for the same phase and say it the
-/// same way, so the two shapes cannot drift apart; everything else a row can do
-/// sits in [_vodRowMenu].
-Widget _vodPhaseVerb(BuildContext context, WidgetRef ref, VodDownloadItem task, {required bool missing}) {
-  final t = context.t;
-  final controller = ref.read(vodDownloadsProvider.notifier);
-  return switch (task.phase) {
-    VodDownloadPhase.running => DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.pause),
-      semanticLabel: t.settings.downloadPause,
-      onPressed: () => unawaited(controller.pause(task.id)),
-    ),
-    VodDownloadPhase.queued || VodDownloadPhase.paused => DsButton.icon(
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.play),
-      semanticLabel: t.settings.downloadResume,
-      onPressed: () => unawaited(controller.resume(task.id)),
-    ),
-    VodDownloadPhase.failed => DsButton.icon(
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.rotateCw),
-      semanticLabel: t.common.retry,
-      onPressed: () => unawaited(controller.resume(task.id)),
-    ),
-    // A part whose file is gone has nothing to preview: the button keeps its
-    // place, shows what happened and stays out of reach, so the row cannot
-    // promise an opening that only fails.
-    VodDownloadPhase.done => DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      icon: DsIcon(missing ? DsIcons.fileX : DsIcons.play),
-      semanticLabel: missing ? t.common.previewFileMissing : t.settings.backgroundPreviewMedia,
-      onPressed: missing ? null : () => unawaited(_openVodPreview(context, ref, task)),
-    ),
-  };
-}
+/// The one phase a part speaks, as every manager's row says it: the queue's
+/// own phases read onto the shared download row's table — a finished part
+/// whose file is gone reads as the missing state, not as done.
+DownloadRowPhase _vodRowPhase(VodDownloadPhase phase, {required bool missing}) => switch (phase) {
+  VodDownloadPhase.running => DownloadRowPhase.running,
+  VodDownloadPhase.queued => DownloadRowPhase.queued,
+  VodDownloadPhase.paused => DownloadRowPhase.paused,
+  VodDownloadPhase.failed => DownloadRowPhase.failed,
+  VodDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+};
 
-/// Everything one part can be asked for beyond its phase's own verb.
-///
-/// The card's trailing menu and the table's row menu read the same list: 详情,
-/// and for a finished part the file's own ways out — open it, open the folder
-/// beside it, delete it — ending in the record's removal. A part whose file went
-/// away keeps the folder (what is left beside it is still worth seeing) and
-/// drops the two verbs that act on a file that is not there.
-List<Widget> _vodRowMenu(BuildContext context, WidgetRef ref, VodDownloadItem task, {required bool missing}) {
+/// One part's row, as the shared download row draws it — the state as a badge
+/// beside the rendition it plays at, the facts under it, the one verb its
+/// phase allows and the menu with the rest. Every manager's queue wears this
+/// one shape, which is what makes the app's download pages read as one
+/// surface; what the station adds is only its part/preview reading.
+Widget _vodTaskCard(BuildContext context, WidgetRef ref, VodDownloadItem task, {required bool inBlock}) {
   final t = context.t;
   final controller = ref.read(vodDownloadsProvider.notifier);
+  final total = task.total;
+  final fraction = total > 0 ? (task.received / total).clamp(0.0, 1.0) : null;
+  final moving = task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.paused;
+  final retryLimit = ref.watch(vodDownloadRetryProvider);
+  final retryDelay = ref.watch(vodDownloadRetryDelayProvider);
+  final retryPending = controller.hasPendingRetry(task.id);
+  // The row states the same facts the details do, built by the same function
+  // — including the wait before a pending automatic retry.
+  final caption = _detailsOf(
+    context,
+    task,
+    t,
+    retryLimit: retryLimit,
+    retryDelay: retryDelay,
+    retryPending: retryPending,
+  ).status;
+  final missing = _vodFileMissing(task);
+  final phase = _vodRowPhase(task.phase, missing: missing);
+  // The row previews the title it downloaded: its own cover where the task
+  // kept one, the part it is, and the rendition asked for. Inside a block the
+  // archive's name and its cover belong to the header above it, so the row
+  // says only which part it is.
+  final preview = task.part.isEmpty ? task.title : '${task.title} · ${task.part}';
+  final part = task.part.isEmpty ? 'P${task.index}' : 'P${task.index} ${task.part}';
+  final quality = VodQualityChoice.values.where((choice) => choice.qn == task.qn).firstOrNull;
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
       context: context,
@@ -166,57 +162,59 @@ List<Widget> _vodRowMenu(BuildContext context, WidgetRef ref, VodDownloadItem ta
     }
   }
 
-  return [
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.info),
-      label: Text(t.common.downloadDetails),
-      onPressed: () => unawaited(
+  return DownloadTaskCard(
+    key: ValueKey(task.id),
+    title: inBlock ? part : preview,
+    phase: phase,
+    caption: caption,
+    meta: quality?.label(t),
+    fraction: fraction,
+    showProgress: moving && (fraction != null || task.received > 0),
+    progressLabel: task.fileName,
+    leading: inBlock
+        ? null
+        : DsAvatar(
+            initials: avatarInitials(task.title),
+            image: task.cover.isEmpty ? null : cachedImage(task.cover, policy: ImageCachePolicies.videoCover),
+            size: DsSize.md,
+            toneIndex: DsAvatar.toneFor(task.id),
+            semanticLabel: preview,
+          ),
+    playable: task.phase == VodDownloadPhase.done,
+    actions: DownloadRowActions(
+      onPause: task.phase == VodDownloadPhase.running ? () => unawaited(controller.pause(task.id)) : null,
+      onResume: task.phase == VodDownloadPhase.queued || task.phase == VodDownloadPhase.paused
+          ? () => unawaited(controller.resume(task.id))
+          : null,
+      onRetry: task.phase == VodDownloadPhase.failed ? () => unawaited(controller.resume(task.id)) : null,
+      onPlay: task.phase == VodDownloadPhase.done ? () => unawaited(_openVodPreview(context, ref, task)) : null,
+    ),
+    menu: DownloadRowMenuActions(
+      onDetails: () => unawaited(
         showDownloadDetails(
           context,
           _detailsOf(
             context,
             task,
             t,
-            retryLimit: ref.read(vodDownloadRetryProvider),
-            retryDelay: ref.read(vodDownloadRetryDelayProvider),
-            retryPending: controller.hasPendingRetry(task.id),
+            retryLimit: retryLimit,
+            retryDelay: retryDelay,
+            retryPending: retryPending,
             onRemove: () => unawaited(_removeRecord(context, ref, task.id)),
           ),
         ),
       ),
+      onRemove: () => unawaited(_removeRecord(context, ref, task.id)),
+      missing: missing,
+      onOpenFile: task.phase == VodDownloadPhase.done && !missing
+          ? () => unawaited(openDownloadedPath(context, task.filePath))
+          : null,
+      onOpenFolder: task.phase == VodDownloadPhase.done
+          ? () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path))
+          : null,
+      onDeleteFile: task.phase == VodDownloadPhase.done && !missing ? () => unawaited(deleteFile()) : null,
     ),
-    const DsMenuDivider(),
-    if (task.phase == VodDownloadPhase.done) ...[
-      if (!missing)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.settings.downloadOpenFile),
-          onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
-        ),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.folderOpen),
-        label: Text(t.settings.downloadManagerOpenFolder),
-        onPressed: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
-      ),
-      if (!missing) ...[
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.trash2),
-          label: Text(t.vod.downloadDeleteFile),
-          destructive: true,
-          onPressed: () => unawaited(deleteFile()),
-        ),
-        const DsMenuDivider(),
-      ],
-    ],
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.trash2),
-      // The one action a gone file still has: the record goes, the name says
-      // so rather than 删除文件 over an empty path.
-      label: Text(missing ? t.common.downloadRemoveFromList : t.settings.downloadRemove),
-      destructive: true,
-      onPressed: () => unawaited(_removeRecord(context, ref, task.id)),
-    ),
-  ];
+  );
 }
 
 /// 下载管理 — the station's download settings under Settings → 视频.
@@ -370,109 +368,6 @@ final class VodDownloadsPane extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// One part's row, as the window too narrow for a table shows it: the file's
-/// name over its phase's caption and bar, with the actions that phase allows at
-/// the end. The table shape reads the same phase, verb and menu through
-/// [_vodPhaseVerb] and [_vodRowMenu], so the two agree.
-final class _VodTaskRow extends ConsumerWidget {
-  const _VodTaskRow({required this.task, this.inBlock = false, super.key});
-
-  final VodDownloadItem task;
-
-  /// Whether a header above names this row's archive and its cover. In a block
-  /// the row drops both and reads as the part it is.
-  final bool inBlock;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final controller = ref.read(vodDownloadsProvider.notifier);
-    final total = task.total;
-    final fraction = total > 0 ? (task.received / total).clamp(0.0, 1.0) : null;
-    final moving = task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.paused;
-    // The row states the same facts the details do, built by the same
-    // function — including the wait before a pending automatic retry.
-    final caption = _detailsOf(
-      context,
-      task,
-      t,
-      retryLimit: ref.watch(vodDownloadRetryProvider),
-      retryDelay: ref.watch(vodDownloadRetryDelayProvider),
-      retryPending: controller.hasPendingRetry(task.id),
-    ).status;
-    // The row previews the title it downloaded: its own cover where the task
-    // kept one (a task queued before covers were kept falls back to its name),
-    // the part it is, and the rendition asked for. Inside a block the archive's
-    // name and its cover belong to the header above it, so the row says only
-    // which part it is — the shelf's own `P3 分集名` reading.
-    final preview = task.part.isEmpty ? task.title : '${task.title} · ${task.part}';
-    final part = task.part.isEmpty ? 'P${task.index}' : 'P${task.index} ${task.part}';
-    final quality = VodQualityChoice.values.where((choice) => choice.qn == task.qn).firstOrNull;
-    // The file the row names, asked once: a finished part whose bytes were
-    // moved elsewhere still plays no part, and its 打开 / 删除文件 items would
-    // only fail.
-    final missing = _vodFileMissing(task);
-    return DsListRow(
-      leading: inBlock
-          ? null
-          : DsAvatar(
-              initials: avatarInitials(task.title),
-              image: task.cover.isEmpty ? null : cachedImage(task.cover, policy: ImageCachePolicies.videoCover),
-              size: DsSize.md,
-              toneIndex: DsAvatar.toneFor(task.id),
-              semanticLabel: preview,
-            ),
-      title: Text(inBlock ? part : preview, maxLines: 1, overflow: TextOverflow.ellipsis),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
-        children: [
-          if (quality != null)
-            Text(
-              quality.label(t),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
-          // Two lines: a failed row carries its error and the retry wait, and
-          // a narrow window must not ellipsise the second half away.
-          Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis),
-          if (moving && (fraction != null || task.received > 0))
-            DsProgressBar(value: fraction, semanticLabel: task.fileName),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _vodPhaseVerb(context, ref, task, missing: missing),
-          DsMenuAnchor(
-            semanticLabel: t.common.more,
-            align: DsAlign.end,
-            builder: (context, controller, child) => DsPressable(
-              semanticLabel: t.common.more,
-              onPressed: controller.toggle,
-              builder: (context, states, _) {
-                final hovered = states.contains(WidgetState.hovered);
-                return Padding(
-                  padding: const EdgeInsets.all(DsSpace.s4),
-                  child: DsIcon(
-                    DsIcons.ellipsisVertical,
-                    size: theme.sizes.iconSm,
-                    color: hovered ? colors.text : colors.textSubtle,
-                  ),
-                );
-              },
-            ),
-            items: _vodRowMenu(context, ref, task, missing: missing),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -747,7 +642,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     padding: EdgeInsets.only(left: _inset, right: _inset, bottom: DsSpace.s16),
     children: _vodQueueBlocks(
       shown,
-      rowOf: (task, {required inBlock}) => _VodTaskRow(key: ValueKey(task.id), task: task, inBlock: inBlock),
+      rowOf: (task, {required inBlock}) => _vodTaskCard(context, ref, task, inBlock: inBlock),
     ),
   );
 

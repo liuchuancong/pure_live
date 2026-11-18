@@ -13113,6 +13113,21 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '主页'
 	String get remoteHome => '主页';
+
+	/// zh-CN: '排队中'
+	String get downloadStatusQueued => '排队中';
+
+	/// zh-CN: '整理中'
+	String get downloadStatusProcessing => '整理中';
+
+	/// zh-CN: '已取消'
+	String get downloadStatusCancelled => '已取消';
+
+	/// zh-CN: '删除文件'
+	String get downloadDeleteFile => '删除文件';
+
+	/// zh-CN: '播放'
+	String get downloadPlay => '播放';
 }
 
 // Path: shield
@@ -19734,6 +19749,11 @@ extension on Translations {
 			'settings.remoteDanmaku' => '弹幕',
 			'settings.remoteBack' => '返回',
 			'settings.remoteHome' => '主页',
+			'settings.downloadStatusQueued' => '排队中',
+			'settings.downloadStatusProcessing' => '整理中',
+			'settings.downloadStatusCancelled' => '已取消',
+			'settings.downloadDeleteFile' => '删除文件',
+			'settings.downloadPlay' => '播放',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -19893,13 +19913,13 @@ extension on Translations {
 			'toolbox.logsLevelLabel' => '级别',
 			'toolbox.logsSave' => '保存到本地',
 			'toolbox.logsSaved' => '日志已保存',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsSaveFailed' => '日志保存失败',
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
-			_ => null,
-		} ?? switch (path) {
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',

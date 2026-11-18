@@ -4528,6 +4528,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get remoteDanmaku => 'Danmaku';
 	@override String get remoteBack => 'Back';
 	@override String get remoteHome => 'Home';
+	@override String get downloadStatusQueued => 'Queued';
+	@override String get downloadStatusProcessing => 'Finishing';
+	@override String get downloadStatusCancelled => 'Cancelled';
+	@override String get downloadDeleteFile => 'Delete file';
+	@override String get downloadPlay => 'Play';
 }
 
 // Path: shield
@@ -9763,6 +9768,11 @@ extension on TranslationsEn {
 			'settings.remoteDanmaku' => 'Danmaku',
 			'settings.remoteBack' => 'Back',
 			'settings.remoteHome' => 'Home',
+			'settings.downloadStatusQueued' => 'Queued',
+			'settings.downloadStatusProcessing' => 'Finishing',
+			'settings.downloadStatusCancelled' => 'Cancelled',
+			'settings.downloadDeleteFile' => 'Delete file',
+			'settings.downloadPlay' => 'Play',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -9922,13 +9932,13 @@ extension on TranslationsEn {
 			'toolbox.logsLevelLabel' => 'Level',
 			'toolbox.logsSave' => 'Save to file',
 			'toolbox.logsSaved' => 'Log saved',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsSaveFailed' => 'Could not save the log',
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
-			_ => null,
-		} ?? switch (path) {
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
 			'vod.noResultsTitle' => 'No videos found',
 			'vod.noResultsDescription' => 'Try another keyword.',

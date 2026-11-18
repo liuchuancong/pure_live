@@ -1586,5 +1586,10 @@
   "remoteFullscreen": "Fullscreen",
   "remoteDanmaku": "Danmaku",
   "remoteBack": "Back",
-  "remoteHome": "Home"
+  "remoteHome": "Home",
+  "downloadStatusQueued": "Queued",
+  "downloadStatusProcessing": "Finishing",
+  "downloadStatusCancelled": "Cancelled",
+  "downloadDeleteFile": "Delete file",
+  "downloadPlay": "Play"
 }

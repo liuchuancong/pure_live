@@ -5,16 +5,19 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart'
     show appPathsProvider, storageFolderOverridesProvider;
 import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
+import 'package:pure_live/app/routing/router/app_router.dart' show SettingsSectionRoute;
 import 'package:pure_live/features/media_preview/media_preview_item.dart' show MediaPreviewItem;
 import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
-import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem, openSettingsSection;
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart' show hongguoCoverImage;
@@ -27,6 +30,10 @@ import 'package:pure_live/shared/shared.dart'
         DownloadDetailsPane,
         DownloadQueueAction,
         DownloadQueueHeader,
+        DownloadRowActions,
+        DownloadRowMenuActions,
+        DownloadRowPhase,
+        DownloadTaskCard,
         LiveWindow,
         NavigationItem,
         downloadFilePresent,
@@ -109,177 +116,7 @@ String _hongguoPhaseLabel(Translations t, HongguoDownloadPhase phase) => switch 
 
 /// The phases in the order a queue reads: what is moving, what waits for a
 /// lane, what stopped on purpose, what stopped on its own, what landed.
-int _hongguoPhaseRank(HongguoDownloadPhase phase) => switch (phase) {
-  HongguoDownloadPhase.running => 0,
-  HongguoDownloadPhase.queued => 1,
-  HongguoDownloadPhase.paused => 2,
-  HongguoDownloadPhase.failed => 3,
-  HongguoDownloadPhase.done => 4,
-};
 
-/// What a row's phase says about itself, as the table's state column shows it:
-/// the phase, and how far a transfer still owed bytes has got. The phase's name
-/// comes from [_hongguoPhaseLabel], the same words the filter panel lists it by,
-/// so one phase is not said two ways on one page.
-Widget _hongguoPhaseBadge(BuildContext context, HongguoDownloadItem task, {required bool missing}) {
-  final t = context.t;
-  // A finished row whose file the viewer moved or deleted is said here, in the
-  // same words the row's own caption and the facts column use: the record is
-  // true of the transfer, not of the disk.
-  if (task.phase == HongguoDownloadPhase.done && missing) {
-    return DsBadge(status: DsStatus.danger, label: Text(t.common.previewFileMissing));
-  }
-  // An episode that never got its total only says it is moving.
-  if (task.phase == HongguoDownloadPhase.running && task.total > 0) {
-    return DsBadge(
-      status: DsStatus.info,
-      label: Text(t.hongguo.downloading(percent: '${task.received * 100 ~/ task.total}')),
-    );
-  }
-  return DsBadge(
-    status: switch (task.phase) {
-      HongguoDownloadPhase.done => DsStatus.success,
-      HongguoDownloadPhase.running => DsStatus.info,
-      HongguoDownloadPhase.paused => DsStatus.warning,
-      HongguoDownloadPhase.failed => DsStatus.danger,
-      HongguoDownloadPhase.queued => DsStatus.neutral,
-    },
-    label: Text(_hongguoPhaseLabel(t, task.phase)),
-  );
-}
-
-/// The one verb an episode's phase allows: stop a transfer, carry a waiting or
-/// stopped one on, fetch a failed one again, or watch the episode that landed.
-///
-/// The card and the table name the same verb for the same phase and say it the
-/// same way, so the two shapes cannot drift apart; everything else a row can do
-/// sits in [_hongguoRowMenu].
-Widget _hongguoPhaseVerb(BuildContext context, WidgetRef ref, HongguoDownloadItem task, {required bool missing}) {
-  final t = context.t;
-  final controller = ref.read(hongguoDownloadsProvider.notifier);
-  return switch (task.phase) {
-    HongguoDownloadPhase.running => DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.pause),
-      semanticLabel: t.settings.downloadPause,
-      onPressed: () => unawaited(controller.pause(task.id)),
-    ),
-    HongguoDownloadPhase.queued || HongguoDownloadPhase.paused => DsButton.icon(
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.play),
-      semanticLabel: t.settings.downloadResume,
-      onPressed: () => unawaited(controller.resume(task.id)),
-    ),
-    HongguoDownloadPhase.failed => DsButton.icon(
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.rotateCw),
-      semanticLabel: t.common.retry,
-      onPressed: () => unawaited(controller.resume(task.id)),
-    ),
-    // An episode whose file is gone has nothing to preview: the button keeps
-    // its place, shows what happened and stays out of reach, so the row cannot
-    // promise an opening that only fails.
-    HongguoDownloadPhase.done => DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      icon: DsIcon(missing ? DsIcons.fileX : DsIcons.play),
-      semanticLabel: missing ? t.common.previewFileMissing : t.settings.backgroundPreviewMedia,
-      onPressed: missing ? null : () => unawaited(_openHongguoPreview(context, ref, task)),
-    ),
-  };
-}
-
-/// Everything one episode can be asked for beyond its phase's own verb.
-///
-/// The card's trailing menu and the table's row menu read the same list: 详情,
-/// and for a finished episode the file's own ways out — open it, open the
-/// folder beside it, delete it — ending in the record's removal. An episode
-/// whose file went away keeps the folder (what is left beside it is still worth
-/// seeing) and drops the two verbs that act on a file that is not there.
-List<Widget> _hongguoRowMenu(BuildContext context, WidgetRef ref, HongguoDownloadItem task, {required bool missing}) {
-  final t = context.t;
-  final controller = ref.read(hongguoDownloadsProvider.notifier);
-  Future<void> deleteFile() async {
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.hongguo.downloadDeleteFile,
-      description: t.hongguo.downloadDeleteFileBody,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !context.mounted) return;
-    try {
-      await controller.remove(task.id, deleteFile: true);
-    } on Object {
-      if (context.mounted) {
-        showDsToast(context: context, title: t.hongguo.downloadDeleteFailed, status: DsStatus.danger);
-      }
-    }
-  }
-
-  return [
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.info),
-      label: Text(t.common.downloadDetails),
-      onPressed: () => unawaited(
-        showDownloadDetails(
-          context,
-          _detailsOf(
-            context,
-            task,
-            t,
-            retryLimit: ref.read(hongguoDownloadRetryProvider),
-            retryDelay: ref.read(hongguoDownloadRetryDelayProvider),
-            retryPending: controller.hasPendingRetry(task.id),
-            onRemove: () => unawaited(_removeRecord(context, ref, task.id)),
-          ),
-        ),
-      ),
-    ),
-    const DsMenuDivider(),
-    if (task.phase == HongguoDownloadPhase.done) ...[
-      if (!missing)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.settings.downloadOpenFile),
-          onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
-        ),
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.folderOpen),
-        label: Text(t.settings.downloadManagerOpenFolder),
-        onPressed: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
-      ),
-      if (!missing) ...[
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.trash2),
-          label: Text(t.hongguo.downloadDeleteFile),
-          destructive: true,
-          onPressed: () => unawaited(deleteFile()),
-        ),
-        const DsMenuDivider(),
-      ],
-    ],
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.trash2),
-      // Over a file that is not there, 移除记录 is the whole answer: the row is
-      // the only thing left of the download.
-      label: Text(missing ? t.common.downloadRemoveFromList : t.settings.downloadRemove),
-      destructive: true,
-      onPressed: () => unawaited(_removeRecord(context, ref, task.id)),
-    ),
-  ];
-}
-
-/// 下载管理 — the station's download settings under Settings → 红果短剧.
-///
-/// The pane carries the lanes, the retry budget, the download tier and the
-/// folder the files land in, the one verb that brings what the shared 视频 folder
-/// still holds into this folder, and one line that says how much the queue
-/// holds and opens the station's own 下载管理 page ([HongguoDownloadsPage]).
-/// Drawing the queue here as well made one thing two entrances, and the settings
-/// half was the weaker: no speed, no table, no batch verbs.
 final class HongguoDownloadsPane extends ConsumerStatefulWidget {
   /// The pane shown under Settings → 红果短剧 → 下载.
   const HongguoDownloadsPane({super.key});
@@ -556,9 +393,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
 
-  /// The table's sorted column.
-  DsTableSort? _sort;
-
   /// The ticked rows — the batch verbs' objects.
   final Set<Object> _selected = {};
 
@@ -754,28 +588,12 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        // The table starts where a queue's columns fit; below it the episodes
-        // keep the row cards, with their caption and their bar.
-        final asTable = width >= LiveWindow.table;
-        // The facts column rides beside a table only where the table still
-        // keeps its columns after 340 pixels are taken from it.
+        // The facts column rides beside the queue where the rows keep their
+        // reading after 340 pixels are taken from them.
         final withFacts = width >= LiveWindow.downloadWorkspace;
-        // A table says it has nothing through its own slot; the card list
-        // needs the page's empty state, because a head over no rows is not a
-        // queue at all.
-        final queue = asTable
-            ? _table(
-                t,
-                shown,
-                narrow: width < 720,
-                withFacts: withFacts,
-                filterActive: filterActive,
-                tasks: tasks,
-                isMissing: (task) => missing[task.id] ?? false,
-              )
-            : shown.isEmpty
-            ? _empty(t, tasks, directory, filterActive)
-            : _cards(shown);
+        // A head over no rows is not a queue at all, so the empty state stays
+        // the card list's own.
+        final queue = shown.isEmpty ? _empty(t, tasks, directory, filterActive) : _cards(shown, missing);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -787,6 +605,11 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
+                settingsLabel: t.settings.downloadSettings,
+                onSettings: () {
+                  openSettingsSection(ref, SettingsSection.hongguoDownload);
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.hongguoDownload.name).location));
+                },
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
                 onQuery: (value) => setState(() {
@@ -897,13 +720,15 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
 
   /// The queue as the row cards: one block per drama, its head naming the drama
   /// and carrying the verbs for the episodes it holds.
-  Widget _cards(List<HongguoDownloadItem> shown) => ListView(
+  Widget _cards(List<HongguoDownloadItem> shown, Map<String, bool> missing) => ListView(
     padding: EdgeInsets.only(left: _inset, right: _inset, bottom: DsSpace.s16),
     children: [
       for (final group in _hongguoDownloadGroups(shown)) ...[
         _HongguoSeriesHead(group: group),
         DsListSection(
-          children: [for (final task in group.tasks) _HongguoTaskRow(key: ValueKey(task.id), task: task)],
+          children: [
+            for (final task in group.tasks) _hongguoTaskCard(context, ref, task, missing: missing[task.id] ?? false),
+          ],
         ),
       ],
     ],
@@ -944,110 +769,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
       ],
     ),
   );
-
-  /// The queue as a table: the episode and what became of it, then the bytes,
-  /// the moment and the one verb its phase allows.
-  ///
-  /// A narrow table drops the two columns a row can do without, and pressing a
-  /// row is the facts column's own verb — so a window with no facts column lets
-  /// a click do what its checkbox does.
-  Widget _table(
-    Translations t,
-    List<HongguoDownloadItem> rows, {
-    required bool narrow,
-    required bool withFacts,
-    required bool filterActive,
-    required List<HongguoDownloadItem> tasks,
-    required bool Function(HongguoDownloadItem task) isMissing,
-  }) {
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s12),
-      child: DsTable<HongguoDownloadItem>(
-        semanticLabel: t.hongguo.downloadManagerTitle,
-        style: const DsTableStyle(rowHeight: 56),
-        rowsVersion: _recheck,
-        columns: [
-          DsTableColumn<HongguoDownloadItem>(
-            id: 'name',
-            label: t.settings.downloadColumnFile,
-            value: (task) => task.title,
-            sortable: true,
-            width: const DsTableColumnWidth.flex(3, 160),
-            // Two lines, as the library's rows do: the drama the episode
-            // belongs to over the episode itself, which is the half a queue of
-            // thirty rows actually differs on. A table has no block heads, so
-            // the drama has to be said by the row.
-            cell: (context, task) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(task.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(
-                  _hongguoEpisodeLabel(t, task),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: theme.colors.textMuted),
-                ),
-              ],
-            ),
-          ),
-          DsTableColumn<HongguoDownloadItem>(
-            id: 'status',
-            label: t.common.downloadStatus,
-            sortable: true,
-            comparator: (a, b) => _hongguoPhaseRank(a.phase).compareTo(_hongguoPhaseRank(b.phase)),
-            width: const DsTableColumnWidth.intrinsic(min: 104),
-            cell: (context, task) => _hongguoPhaseBadge(context, task, missing: isMissing(task)),
-          ),
-          if (!narrow)
-            DsTableColumn<HongguoDownloadItem>(
-              id: 'size',
-              label: t.settings.downloadColumnSize,
-              value: (task) => task.total > 0 ? task.total : task.received,
-              text: (task) => formatDownloadBytes(task.total > 0 ? task.total : task.received),
-              numeric: true,
-              sortable: true,
-              width: const DsTableColumnWidth.intrinsic(min: 88),
-            ),
-          if (!narrow)
-            DsTableColumn<HongguoDownloadItem>(
-              id: 'time',
-              label: t.settings.downloadColumnTime,
-              value: (task) => task.stamp,
-              text: (task) => downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp)),
-              sortable: true,
-              width: const DsTableColumnWidth.intrinsic(min: 92),
-            ),
-          DsTableColumn<HongguoDownloadItem>(
-            id: 'actions',
-            label: t.settings.downloadColumnActions,
-            alignment: DsTableCellAlignment.end,
-            // A builder-only column measures nothing, so it names its width.
-            width: const DsTableColumnWidth.fixed(48),
-            cell: (context, task) => _hongguoPhaseVerb(context, ref, task, missing: isMissing(task)),
-          ),
-        ],
-        rows: rows,
-        rowKey: (task) => task.id,
-        sort: _sort,
-        onSortChanged: (sort) => setState(() => _sort = sort),
-        selected: _selected,
-        onSelectionChanged: (next) => setState(() {
-          _selected
-            ..clear()
-            ..addAll(next);
-        }),
-        onRowPressed: withFacts
-            ? (task) => setState(() {
-                _factsId = task.id;
-              })
-            : null,
-        rowMenuBuilder: (context, task) => _hongguoRowMenu(context, ref, task, missing: isMissing(task)),
-        showRowMenuButton: true,
-        emptyView: _empty(t, tasks, ref.read(appPathsProvider).shortDramas.path, filterActive),
-      ),
-    );
-  }
 }
 
 /// The preview page's list for the hongguo queue: every episode that finished,
@@ -1337,90 +1058,80 @@ DownloadDetails _detailsOf(
   );
 }
 
-/// One episode's row, as the window too narrow for a table shows it: the
-/// episode's name over its phase's caption and bar, with the actions that phase
-/// allows at the end. The table shape reads the same phase, verb and menu
-/// through [_hongguoPhaseBadge], [_hongguoPhaseVerb] and [_hongguoRowMenu], so the
-/// two shapes cannot say two different things about one row.
-final class _HongguoTaskRow extends ConsumerWidget {
-  const _HongguoTaskRow({required this.task, super.key});
-
-  final HongguoDownloadItem task;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final controller = ref.read(hongguoDownloadsProvider.notifier);
-    final total = task.total;
-    final fraction = total > 0 ? (task.received / total).clamp(0.0, 1.0) : null;
-    final moving = task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.paused;
-    // The row states the same facts the details do, built by the same
-    // function — including the wait before a pending automatic retry.
-    final caption = _detailsOf(
-      context,
-      task,
-      t,
-      retryLimit: ref.watch(hongguoDownloadRetryProvider),
-      retryDelay: ref.watch(hongguoDownloadRetryDelayProvider),
-      retryPending: controller.hasPendingRetry(task.id),
-    ).status;
-    // The row is one episode of the block its header just named: the drama's
-    // name and its poster belong to that header, not to every one of the thirty
-    // rows under it, so the row says which episode it is — in the same words the
-    // table's second line uses.
-    final episode = _hongguoEpisodeLabel(t, task);
-    // Asked once per row, never by walking the folder: a finished episode the
-    // viewer moved elsewhere still plays no part.
-    final missing = _hongguoFileMissing(task);
-    return DsListRow(
-      title: Text(episode, maxLines: 1, overflow: TextOverflow.ellipsis),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
-        children: [
-          Text(
-            task.qualityLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textMuted),
-          ),
-          // Two lines: a failed row carries its error and the retry wait, and
-          // a narrow window must not ellipsise the second half away.
-          Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis),
-          if (moving && (fraction != null || task.received > 0))
-            DsProgressBar(value: fraction, semanticLabel: task.fileName),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _hongguoPhaseVerb(context, ref, task, missing: missing),
-          DsMenuAnchor(
-            semanticLabel: t.common.more,
-            align: DsAlign.end,
-            builder: (context, controller, child) => DsPressable(
-              semanticLabel: t.common.more,
-              onPressed: controller.toggle,
-              builder: (context, states, _) {
-                final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                return Padding(
-                  padding: const EdgeInsets.all(DsSpace.s4),
-                  child: DsIcon(
-                    DsIcons.ellipsisVertical,
-                    size: theme.sizes.iconSm,
-                    color: lit ? colors.text : colors.textMuted,
-                  ),
-                );
-              },
-            ),
-            items: _hongguoRowMenu(context, ref, task, missing: missing),
-          ),
-        ],
-      ),
+/// One episode's row, as the shared download row draws it — the state as a
+/// badge beside the rendition that came down, the facts under it, the one
+/// verb its phase allows and the menu with the rest. The poster belongs to
+/// the block header above, so the row carries no picture of its own.
+Widget _hongguoTaskCard(BuildContext context, WidgetRef ref, HongguoDownloadItem task, {required bool missing}) {
+  final t = context.t;
+  final controller = ref.read(hongguoDownloadsProvider.notifier);
+  final total = task.total;
+  final fraction = total > 0 ? (task.received / total).clamp(0.0, 1.0) : null;
+  final moving = task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.paused;
+  final caption = _detailsOf(context, task, t).status;
+  final phase = switch (task.phase) {
+    HongguoDownloadPhase.running => DownloadRowPhase.running,
+    HongguoDownloadPhase.queued => DownloadRowPhase.queued,
+    HongguoDownloadPhase.paused => DownloadRowPhase.paused,
+    HongguoDownloadPhase.failed => DownloadRowPhase.failed,
+    HongguoDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+  };
+  final label = _hongguoEpisodeLabel(t, task);
+  Future<void> deleteFile() async {
+    final confirmed = await showAppConfirm(
+      context: context,
+      title: t.hongguo.downloadDeleteFile,
+      description: t.hongguo.downloadDeleteFileBody,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
     );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await controller.remove(task.id, deleteFile: true);
+    } on Object {
+      if (context.mounted) {
+        showDsToast(context: context, title: t.hongguo.downloadDeleteFailed, status: DsStatus.danger);
+      }
+    }
   }
+
+  return DownloadTaskCard(
+    key: ValueKey(task.id),
+    title: label,
+    phase: phase,
+    caption: caption,
+    meta: task.qualityLabel,
+    fraction: fraction,
+    showProgress: moving && (fraction != null || task.received > 0),
+    progressLabel: task.fileName,
+    playable: task.phase == HongguoDownloadPhase.done,
+    actions: DownloadRowActions(
+      onPause: task.phase == HongguoDownloadPhase.running ? () => unawaited(controller.pause(task.id)) : null,
+      onResume: task.phase == HongguoDownloadPhase.queued || task.phase == HongguoDownloadPhase.paused
+          ? () => unawaited(controller.resume(task.id))
+          : null,
+      onRetry: task.phase == HongguoDownloadPhase.failed ? () => unawaited(controller.resume(task.id)) : null,
+      onPlay: task.phase == HongguoDownloadPhase.done ? () => unawaited(_openHongguoPreview(context, ref, task)) : null,
+    ),
+    menu: DownloadRowMenuActions(
+      onDetails: () => unawaited(
+        showDownloadDetails(
+          context,
+          _detailsOf(context, task, t, onRemove: () => unawaited(controller.remove(task.id))),
+        ),
+      ),
+      onRemove: () => unawaited(controller.remove(task.id)),
+      missing: missing,
+      onOpenFile: task.phase == HongguoDownloadPhase.done && !missing
+          ? () => unawaited(openDownloadedPath(context, task.filePath))
+          : null,
+      onOpenFolder: task.phase == HongguoDownloadPhase.done
+          ? () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path))
+          : null,
+      onDeleteFile: task.phase == HongguoDownloadPhase.done && !missing ? () => unawaited(deleteFile()) : null,
+    ),
+  );
 }
 
 /// The tier a row names: the height that actually came down once the run

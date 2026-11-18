@@ -1586,5 +1586,10 @@
   "remoteFullscreen": "全屏",
   "remoteDanmaku": "弹幕",
   "remoteBack": "返回",
-  "remoteHome": "主页"
+  "remoteHome": "主页",
+  "downloadStatusQueued": "排队中",
+  "downloadStatusProcessing": "整理中",
+  "downloadStatusCancelled": "已取消",
+  "downloadDeleteFile": "删除文件",
+  "downloadPlay": "播放"
 }

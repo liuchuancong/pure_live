@@ -8,15 +8,23 @@ import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPat
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/huya/controller/huya_downloads.dart';
-import 'package:pure_live/shared/shared.dart' show formatDownloadBytes;
+import 'package:pure_live/shared/shared.dart'
+    show
+        DownloadDetails,
+        DownloadRowActions,
+        DownloadRowMenuActions,
+        DownloadRowPhase,
+        DownloadTaskCard,
+        formatDownloadBytes;
+import 'package:pure_live/shared/widgets/download_details.dart' show showDownloadDetails;
 
 /// 虎牙下载 — the station's video download queue under Settings.
 ///
-/// The pane carries the whole queue: one row per video, the phase's verb on
-/// its end (pause a run, resume a paused or failed one, open a finished
-/// file), the ⋯ beside it for the rest, and the folder the files land in.
-/// The player page's own progress pill reaches the same tasks; this pane is
-/// where a viewer manages them after leaving the video.
+/// The pane carries the whole queue as the same rows the station's own 下载
+/// 管理 page wears — one shared download card to a video — and the folder the
+/// files land in. The player page's own progress pill reaches the same tasks;
+/// the full manager lives at the station's own rail page, this pane is the
+/// settings' window onto it.
 final class HuyaDownloadsPane extends ConsumerWidget {
   /// The pane shown under Settings.
   const HuyaDownloadsPane({super.key});
@@ -36,7 +44,7 @@ final class HuyaDownloadsPane extends ConsumerWidget {
             if (tasks.isEmpty)
               DsListRow(title: Text(t.vod.downloadEmpty), description: Text(t.vod.downloadEmptyDesc))
             else
-              for (final task in tasks) _HuyaTaskRow(task: task),
+              for (final task in tasks) huyaTaskCard(context, ref, task, missing: huyaFileMissing(task)),
           ],
         ),
         DsListSection(
@@ -55,145 +63,101 @@ final class HuyaDownloadsPane extends ConsumerWidget {
   }
 }
 
-/// One video's row: its name, the phase's caption over the bar it moves, and
-/// the phase's verb beside the ⋯ that carries the rest.
-final class _HuyaTaskRow extends ConsumerWidget {
-  const _HuyaTaskRow({required this.task});
+/// Whether a finished video's file is still on disk where its row says: one
+/// stat per row, never a folder walk.
+bool huyaFileMissing(HuyaDownloadItem task) =>
+    task.phase == HuyaDownloadPhase.done && !File(task.filePath).existsSync();
 
-  final HuyaDownloadItem task;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final fraction = task.progress;
-    final moving = task.phase == HuyaDownloadPhase.running || task.phase == HuyaDownloadPhase.queued;
-    // Asked once per row, never by walking the folder: a finished video the
-    // viewer moved elsewhere still plays no part.
-    final missing = task.phase == HuyaDownloadPhase.done && !File(task.filePath).existsSync();
-    final caption = switch (task.phase) {
-      HuyaDownloadPhase.queued => t.vod.downloadPhaseQueued,
-      HuyaDownloadPhase.running => switch (fraction) {
-        final progress? =>
-          '${t.vod.downloading(percent: (progress * 100).round())}'
-              ' · ${t.common.downloadSpeed(speed: '${formatDownloadBytes(task.speed)}/s')}',
-        null => t.vod.downloadingUnknown,
-      },
-      HuyaDownloadPhase.paused => t.vod.downloadPhasePaused,
-      HuyaDownloadPhase.done => t.vod.downloadPhaseDone,
-      HuyaDownloadPhase.failed =>
-        task.error == null ? t.vod.downloadPhaseFailed : '${t.vod.downloadPhaseFailed} · ${task.error}',
-    };
-    return DsListRow(
-      title: Text(task.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
-        children: [
-          // A failed row carries its error, and a narrow window must not
-          // ellipsise the second half away.
-          Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis),
-          if (moving && (fraction != null || task.received > 0))
-            DsProgressBar(value: fraction, semanticLabel: task.fileName),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _phaseVerb(context, ref, task, missing: missing),
-          DsMenuAnchor(
-            semanticLabel: t.common.more,
-            align: DsAlign.end,
-            builder: (context, controller, child) => DsPressable(
-              semanticLabel: t.common.more,
-              onPressed: controller.toggle,
-              builder: (context, states, _) {
-                final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-                return Padding(
-                  padding: const EdgeInsets.all(DsSpace.s4),
-                  child: DsIcon(
-                    DsIcons.ellipsisVertical,
-                    size: theme.sizes.iconSm,
-                    color: lit ? colors.text : colors.textSubtle,
-                  ),
-                );
-              },
-            ),
-            items: _rowMenu(context, ref, task, missing: missing),
+/// One video's row, as the shared download row draws it — the state as a
+/// badge, the transfer's facts under it, the phase's verb and the menu with
+/// the rest, the same shape every manager's queue wears.
+Widget huyaTaskCard(BuildContext context, WidgetRef ref, HuyaDownloadItem task, {required bool missing}) {
+  final t = context.t;
+  final notifier = ref.read(huyaDownloadsProvider.notifier);
+  final fraction = task.progress;
+  final moving = task.phase == HuyaDownloadPhase.running || task.phase == HuyaDownloadPhase.queued;
+  final phase = switch (task.phase) {
+    HuyaDownloadPhase.running => DownloadRowPhase.running,
+    HuyaDownloadPhase.queued => DownloadRowPhase.queued,
+    HuyaDownloadPhase.paused => DownloadRowPhase.paused,
+    HuyaDownloadPhase.failed => DownloadRowPhase.failed,
+    HuyaDownloadPhase.done => missing ? DownloadRowPhase.missing : DownloadRowPhase.done,
+  };
+  // The badge carries the state; the caption carries the transfer's facts —
+  // a failed row its error — so one fact is said once.
+  final caption = switch (phase) {
+    DownloadRowPhase.running => [
+      if (fraction != null) '${(fraction * 100).round()}%',
+      if (task.speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(task.speed)}/s'),
+    ].join(' · '),
+    DownloadRowPhase.done => task.total > 0 ? formatDownloadBytes(task.total) : t.settings.downloadStatusDone,
+    DownloadRowPhase.failed => task.error == null ? t.vod.downloadPhaseFailed : '${task.error}',
+    _ => task.received > 0 ? formatDownloadBytes(task.received) : '',
+  };
+  return DownloadTaskCard(
+    key: ValueKey(task.videoId),
+    title: task.title,
+    phase: phase,
+    caption: caption,
+    badgeLabel: task.phase == HuyaDownloadPhase.running && fraction != null
+        ? t.vod.downloading(percent: (fraction * 100).round())
+        : null,
+    fraction: fraction,
+    showProgress: moving && (fraction != null || task.received > 0),
+    progressLabel: task.fileName,
+    leading: task.cover.isEmpty
+        ? null
+        : DsAvatar(
+            initials: task.title.characters.take(2).toString(),
+            image: NetworkImage(task.cover),
+            size: DsSize.md,
+            semanticLabel: task.title,
           ),
-        ],
-      ),
-    );
-  }
+    playable: task.phase == HuyaDownloadPhase.done,
+    actions: DownloadRowActions(
+      onPause: task.phase == HuyaDownloadPhase.running ? () => unawaited(notifier.pause(task.videoId)) : null,
+      onResume: task.phase == HuyaDownloadPhase.queued || task.phase == HuyaDownloadPhase.paused
+          ? () => unawaited(notifier.resume(task.videoId))
+          : null,
+      onRetry: task.phase == HuyaDownloadPhase.failed ? () => unawaited(notifier.resume(task.videoId)) : null,
+      onOpenFile: task.phase == HuyaDownloadPhase.done && !missing
+          ? () => unawaited(openDownloadedPath(context, task.filePath))
+          : null,
+    ),
+    menu: DownloadRowMenuActions(
+      onDetails: () => unawaited(showDownloadDetails(context, huyaDetailsOf(context, ref, task, missing: missing))),
+      onRemove: () => unawaited(notifier.remove(task.videoId)),
+      missing: missing,
+      onOpenFile: task.phase == HuyaDownloadPhase.done && !missing
+          ? () => unawaited(openDownloadedPath(context, task.filePath))
+          : null,
+      onOpenFolder: task.phase == HuyaDownloadPhase.done
+          ? () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path))
+          : null,
+      onDeleteFile: task.phase == HuyaDownloadPhase.done && !missing
+          ? () => unawaited(notifier.remove(task.videoId, deleteFile: true))
+          : null,
+    ),
+  );
+}
 
-  /// The phase's one verb: a run pauses, a stopped one carries on, a
-  /// finished one opens.
-  Widget _phaseVerb(BuildContext context, WidgetRef ref, HuyaDownloadItem task, {required bool missing}) {
-    final t = context.t;
-    final notifier = ref.read(huyaDownloadsProvider.notifier);
-    return switch (task.phase) {
-      HuyaDownloadPhase.running || HuyaDownloadPhase.queued => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        onPressed: () => unawaited(notifier.pause(task.videoId)),
-        child: Text(t.vod.downloadPause),
-      ),
-      HuyaDownloadPhase.paused => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        onPressed: () => unawaited(notifier.resume(task.videoId)),
-        child: Text(t.vod.downloadResume),
-      ),
-      HuyaDownloadPhase.failed => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        onPressed: () => unawaited(notifier.resume(task.videoId)),
-        child: Text(t.vod.downloadRetry),
-      ),
-      HuyaDownloadPhase.done => DsButton(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        onPressed: () =>
-            unawaited(openDownloadedPath(context, missing ? File(task.filePath).parent.path : task.filePath)),
-        child: Text(missing ? t.settings.downloadManagerOpenFolder : t.settings.downloadOpenFile),
-      ),
-    };
-  }
-
-  /// The row's menu: what a finished file can still do (open, delete), and
-  /// the removal every row has — the record goes, and a removal that also
-  /// deletes the file says so.
-  List<Widget> _rowMenu(BuildContext context, WidgetRef ref, HuyaDownloadItem task, {required bool missing}) {
-    final t = context.t;
-    final notifier = ref.read(huyaDownloadsProvider.notifier);
-    return [
-      if (task.phase == HuyaDownloadPhase.done && !missing)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.settings.downloadOpenFile),
-          onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
-        ),
-      if (task.phase == HuyaDownloadPhase.done)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.folderOpen),
-          label: Text(t.settings.downloadManagerOpenFolder),
-          onPressed: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
-        ),
-      if (task.phase == HuyaDownloadPhase.done)
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.trash2),
-          label: Text(missing ? t.common.downloadRemoveFromList : t.vod.downloadDeleteFile),
-          destructive: true,
-          onPressed: () => unawaited(notifier.remove(task.videoId, deleteFile: !missing)),
-        )
-      else
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.trash2),
-          label: Text(t.settings.downloadRemove),
-          destructive: true,
-          onPressed: () => unawaited(notifier.remove(task.videoId)),
-        ),
-    ];
-  }
+/// The facts the details sheet shows for one video.
+DownloadDetails huyaDetailsOf(BuildContext context, WidgetRef ref, HuyaDownloadItem task, {required bool missing}) {
+  final t = context.t;
+  return DownloadDetails(
+    title: task.title,
+    coverUrl: task.cover,
+    status: switch (task.phase) {
+      HuyaDownloadPhase.queued => t.vod.downloadPhaseQueued,
+      HuyaDownloadPhase.running =>
+        task.progress == null ? t.vod.downloadingUnknown : t.vod.downloading(percent: (task.progress! * 100).round()),
+      HuyaDownloadPhase.paused => t.vod.downloadPhasePaused,
+      HuyaDownloadPhase.failed => task.error == null ? t.vod.downloadPhaseFailed : '${task.error}',
+      HuyaDownloadPhase.done => missing ? t.common.previewFileMissing : t.vod.downloadPhaseDone,
+    },
+    savePath: task.filePath,
+    error: task.error ?? '',
+    fileMissing: missing,
+    onRemove: () => unawaited(ref.read(huyaDownloadsProvider.notifier).remove(task.videoId)),
+  );
 }

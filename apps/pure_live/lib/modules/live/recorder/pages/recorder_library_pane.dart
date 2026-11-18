@@ -815,61 +815,119 @@ final class _TakeRow extends StatelessWidget {
           final (coverWidth, coverHeight) = width >= 560 ? (132.0, 74.0) : (96.0, 54.0);
           // Four verbs in two rows of two, the same shape the subscription
           // cards use: what the take does first, what it names second.
-          Widget cell(Widget child) => SizedBox(width: 124, child: child);
-          // The rows shrink to their cells so the block can be held to the
-          // card's right edge on a narrow window.
-          final verbs = Column(
+          // The play verb stands alone where the window affords it; the rest
+          // of what a recording can do — into its room, its folder, out of
+          // the library — folds into the ⋯ menu the download queues' rows
+          // wear, so a card carries two controls instead of a keypad.
+          final verbs = Row(
             mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s8,
+            spacing: DsSpace.s4,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s8,
-                children: [
-                  cell(
-                    DsButton(
-                      variant: DsButtonVariant.primary,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.play, size: 14),
-                      onPressed: ok ? onPlay : null,
-                      child: Text(t.recorder.playRecording),
-                    ),
+              DsButton(
+                variant: DsButtonVariant.primary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.play, size: 14),
+                onPressed: ok ? onPlay : null,
+                child: Text(t.recorder.playRecording),
+              ),
+              DsMenuAnchor(
+                semanticLabel: t.common.more,
+                align: DsAlign.end,
+                builder: (context, controller, child) => DsPressable(
+                  semanticLabel: t.common.more,
+                  onPressed: controller.toggle,
+                  builder: (context, states, _) {
+                    final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+                    return Padding(
+                      padding: const EdgeInsets.all(DsSpace.s4),
+                      child: DsIcon(
+                        DsIcons.ellipsisVertical,
+                        size: theme.sizes.iconSm,
+                        color: lit ? colors.text : colors.textSubtle,
+                      ),
+                    );
+                  },
+                ),
+                items: [
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.externalLink),
+                    label: Text(openRoomLabel),
+                    onPressed: onOpenRoom,
                   ),
-                  cell(
-                    DsButton(
-                      variant: DsButtonVariant.secondary,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.externalLink, size: 14),
-                      onPressed: onOpenRoom,
-                      child: Text(openRoomLabel),
-                    ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.folderOpen),
+                    label: Text(t.recorder.openFolder),
+                    onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
+                  ),
+                  const DsMenuDivider(),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.trash2),
+                    label: Text(t.recorder.delete),
+                    destructive: true,
+                    onPressed: onDelete,
                   ),
                 ],
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s8,
-                children: [
-                  cell(
-                    DsButton(
-                      variant: DsButtonVariant.secondary,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.folderOpen, size: 14),
-                      onPressed: () => unawaited(openDownloadedPath(context, take.folder)),
-                      child: Text(t.recorder.openFolder),
-                    ),
-                  ),
-                  cell(
-                    DsButton(
-                      variant: DsButtonVariant.dangerSoft,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.trash2, size: 14),
-                      onPressed: onDelete,
-                      child: Text(t.recorder.delete),
-                    ),
-                  ),
-                ],
+            ],
+          );
+          final content = Row(
+            spacing: DsSpace.s16,
+            children: [
+              DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: RecorderTakeCover(take: take, width: coverWidth, height: coverHeight),
               ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        DsAvatar(
+                          initials: avatarInitials(avatarLabel),
+                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
+                          size: DsSize.sm,
+                          semanticLabel: avatarLabel,
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 1,
+                            children: [
+                              Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.heading.copyWith(color: colors.text),
+                              ),
+                              if (caption.isNotEmpty)
+                                Padding(
+                                  padding: EdgeInsetsDirectional.only(start: hang),
+                                  child: Text(
+                                    caption,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (chips.isNotEmpty)
+                      Wrap(
+                        spacing: DsSpace.s6,
+                        runSpacing: DsSpace.s4,
+                        children: [for (final chip in chips) RecorderTagChip(text: chip)],
+                      ),
+                  ],
+                ),
+              ),
+              if (width >= 620) ...[const SizedBox(width: DsSpace.s16), verbs],
             ],
           );
           return DsCard(
@@ -882,68 +940,7 @@ final class _TakeRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s12,
               children: [
-                Row(
-                  spacing: DsSpace.s16,
-                  children: [
-                    DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: RecorderTakeCover(take: take, width: coverWidth, height: coverHeight),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s4,
-                        children: [
-                          Row(
-                            spacing: DsSpace.s8,
-                            children: [
-                              DsAvatar(
-                                initials: avatarInitials(avatarLabel),
-                                image: avatarUrl.isEmpty
-                                    ? null
-                                    : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
-                                size: DsSize.sm,
-                                semanticLabel: avatarLabel,
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  spacing: 1,
-                                  children: [
-                                    Text(
-                                      name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.typography.heading.copyWith(color: colors.text),
-                                    ),
-                                    if (caption.isNotEmpty)
-                                      Padding(
-                                        padding: EdgeInsetsDirectional.only(start: hang),
-                                        child: Text(
-                                          caption,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (chips.isNotEmpty)
-                            Wrap(
-                              spacing: DsSpace.s6,
-                              runSpacing: DsSpace.s4,
-                              children: [for (final chip in chips) RecorderTagChip(text: chip)],
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (width >= 620) ...[const SizedBox(width: DsSpace.s16), verbs],
-                  ],
-                ),
+                content,
                 if (width < 620) Align(alignment: AlignmentDirectional.centerEnd, child: verbs),
               ],
             ),
