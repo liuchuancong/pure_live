@@ -11,7 +11,8 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart' show VodSeasonProgress, vodSeasonProgressProvider;
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard, kVodSeasonTileAspect;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
+    show VodSeasonCard, kVodSeasonTileAspect, vodPosterExtentForWidth;
 import 'package:pure_live/shared/shared.dart';
 
 /// The cinema's six catalogues with the platform's own names — Bilibili's
@@ -140,10 +141,16 @@ final class _PgcFeedView extends ConsumerWidget {
         ref.watch(vodPgcProvider.select((feeds) => feeds[type])) ??
         (seasons: const <VodSeason>[], cursor: 0, hasMore: true, loading: true, loaded: false, error: null);
     final controller = ref.read(vodPgcProvider.notifier);
+    // The wall's own measure: the width the page's inset leaves, spent on
+    // the poster shelf's narrow tiles instead of the browse feed's landscape
+    // ceiling — the viewer's column pin still raises the count.
+    final width = MediaQuery.sizeOf(context).width;
+    final content = width - LiveWindow.pageInset(width) * 2;
     return PagedCardGrid<VodSeason>(
       key: ValueKey(type),
       scrollController: scrollController,
       items: feed.seasons,
+      cardExtent: vodPosterExtentForWidth(content, spacing: browse.crossSpacing, pinned: browse.gridColumns),
       aspectRatio: kVodSeasonTileAspect,
       crossSpacing: browse.crossSpacing,
       mainSpacing: browse.mainSpacing,

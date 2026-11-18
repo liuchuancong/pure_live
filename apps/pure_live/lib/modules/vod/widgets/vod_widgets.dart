@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,6 +51,43 @@ const double kVodSeasonCardInfoExtent = 76;
 /// [kVodSeasonCardInfoExtent] and gives the poster the rest. The figure keeps
 /// the poster itself near the station's 3:4 once the name block is paid for.
 const double kVodSeasonTileAspect = 0.56;
+
+/// The widest a season poster gets. The browse feed's 340 ceiling is a
+/// landscape card's ceiling: a poster tile at 0.56 asks 607 pixels of height
+/// there — one poster the height of a phone screen, four to a row, and the
+/// wall stops being a wall. The station's poster shelf reads in narrow
+/// tiles; the wall measures itself in them.
+const double kVodPosterCardWidth = 176;
+
+/// The narrowest a poster tile may get: the share a row of
+/// [kVodPosterCardWidth] tiles leaves when the window cannot pay another
+/// whole one. Below it the row takes a column back rather than thinning
+/// the posters into slivers.
+const double kVodPosterMinWidth = 140;
+
+/// The columns a poster wall of [content] pixels takes: as many tiles of
+/// [kVodPosterCardWidth] as the row holds, less one when that would thin
+/// them past [kVodPosterMinWidth]; the viewer's [pinned] count raises the
+/// total when it asks for more columns. 0 — no pin — leaves the width to
+/// say.
+int vodPosterColumns(double content, {double spacing = DsSpace.s16, int pinned = 0}) {
+  if (content <= 0) return 1;
+  double width(int columns) => (content - spacing * (columns - 1)) / columns;
+  var columns = math.max(1, ((content + spacing) / (kVodPosterCardWidth + spacing)).ceil());
+  if (columns > 1 && width(columns) < kVodPosterMinWidth) columns--;
+  if (pinned > columns) {
+    final fits = math.max(1, ((content + spacing) / (kVodPosterMinWidth + spacing)).floor());
+    columns = math.max(columns, math.min(pinned, fits));
+  }
+  return math.max(1, columns);
+}
+
+/// The card width a poster wall of [content] pixels gives itself: one even
+/// share of the row at the columns [vodPosterColumns] counts — the number a
+/// card grid hands its delegate as its own measure.
+double vodPosterExtentForWidth(double content, {double spacing = DsSpace.s16, int pinned = 0}) => content <= 0
+    ? kVodPosterCardWidth
+    : columnExtentForWidth(content, vodPosterColumns(content, spacing: spacing, pinned: pinned), spacing);
 
 /// One Bilibili archive as a card in a browse or search grid, drawn in the
 /// live module's card language so the two stations read as one design: the
@@ -217,7 +256,12 @@ final class _VodVideoCardState extends ConsumerState<VodVideoCard> with CoverPre
                   children: [
                     if (visibility.shows(VodCardElement.avatar))
                       DsAvatar(
-                        initials: avatarInitials(uploaderName.isEmpty ? video.title : uploaderName),
+                        // The placeholder says the role, not a name: an
+                        // uploader whose face the source did not carry is
+                        // still the uploader — an 「UP」 mark reads as that
+                        // at any size, where a first letter reads as a
+                        // broken picture.
+                        initials: 'UP',
                         image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl, policy: ImageCachePolicies.avatar),
                         size: DsSize.md,
                         semanticLabel: uploaderName.isEmpty ? video.title : uploaderName,
