@@ -49,7 +49,12 @@ import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show H
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' show HongguoDanmakuLayer;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
-    show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, kHongguoEpisodeGroup;
+    show
+        HongguoEpisodeShelf,
+        hongguoEpisodeGroupOf,
+        hongguoEpisodeMarks,
+        hongguoEpisodeRangeLabel,
+        kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -1536,18 +1541,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     // here: on a phone a private 20 puts this page's left edge beside every
     // other page's 16.
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    final player = Center(child: _stage(context));
     final head = detail == null ? const _HeadSkeleton() : _watchHead(context, detail, t);
     final shelf = detail == null
         ? const _ShelfSkeleton()
-        : HongguoEpisodeShelf(
-            detail: detail,
-            current: _episode,
-            rail: true,
-            onOpen: (episode) => unawaited(_openEpisode(episode)),
-          );
+        : HongguoEpisodeShelf(detail: detail, current: _episode, onOpen: (episode) => unawaited(_openEpisode(episode)));
     final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
     if (MediaQuery.sizeOf(context).width < kPlaybackWideBreakpoint) {
+      // A narrow window's portrait stage is the phone's player: the action
+      // rail rides the picture's own edge, drawn for the on-video ink.
+      final player = Center(child: _stage(context));
       return SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
         child: Column(
@@ -1558,9 +1560,20 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       );
     }
     // The wide window keeps the watch head and the comments with the stage —
-    // the title and the verbs belong to what is playing, wherever the window
-    // is wide enough for a shelf beside it — and the shelf reads as the
-    // rail's rows, one episode a line, not the page grid squeezed to 340.
+    // the title and the verbs belong to what is playing — and hangs the
+    // action rail beside the picture instead of over it, the station's own
+    // web player: the picture keeps its shape, the verbs sit at its side on
+    // the page's own ink.
+    final player = Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s16,
+        children: [
+          Flexible(child: _stage(context, overlayActions: false)),
+          if (detail != null) _actionRail(t, detail),
+        ],
+      ),
+    );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1590,12 +1603,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// episode keeps its width-first shape — the picture is never forced into a
   /// shape it has not got — and the box tops out at 640 so the shelf's column
   /// beside it stays the taller one.
-  Widget _stage(BuildContext context) {
+  Widget _stage(BuildContext context, {bool overlayActions = true}) {
     final aspect = _aspectRatio > 0 ? _aspectRatio : 9 / 16;
     final shaped = aspect < 1 ? math.max(aspect, 9 / 16) : aspect;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 640),
-      child: _playerSurface(context, immersive: false, aspectRatio: shaped),
+      child: _playerSurface(context, immersive: false, aspectRatio: shaped, overlayActions: overlayActions),
     );
   }
 
@@ -1834,8 +1847,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// episode's likes as the platform counts them — read-only, the local
   /// session cannot post one — the local shelf's bookmark with the series' own
   /// follower figure, the episode's comments, and the way to hand the series
-  /// out. Drawn over the page's stage and over the immersive picture alike.
-  Widget _actionRail(Translations t, HongguoSeriesDetail detail) {
+  /// out. Over the picture it draws in the on-video ink; beside it, on the
+  /// page's own surface, in the theme's.
+  Widget _actionRail(Translations t, HongguoSeriesDetail detail, {bool onVideo = false}) {
     final meta = detail.meta;
     final episode = _episode;
     final next = _nextEpisode();
@@ -1850,7 +1864,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               _RailAction(
                 icon: DsIcons.skipForward,
                 label: t.hongguo.nextEpisode,
-                selected: true,
+                strong: true,
+                onVideo: onVideo,
                 onPressed: () => unawaited(_openEpisode(next)),
               ),
             if (episode != null)
@@ -1858,6 +1873,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 icon: DsIcons.thumbsUp,
                 label: t.hongguo.likes,
                 count: episode.diggedCount > 0 ? AudienceFormat.format(episode.diggedCount) : null,
+                onVideo: onVideo,
                 onPressed: () => showDsToast(context: context, title: t.hongguo.likesReadonly),
               ),
             _RailAction(
@@ -1865,6 +1881,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               label: favored ? t.hongguo.favorited : t.hongguo.favorite,
               count: meta.followedCount > 0 ? AudienceFormat.format(meta.followedCount) : null,
               selected: favored,
+              onVideo: onVideo,
               onPressed: () => _toggleSeriesFavorite(detail),
             ),
             if (episode != null)
@@ -1872,9 +1889,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 icon: DsIcons.messageCircle,
                 label: t.hongguo.comments,
                 count: episode.commentCount > 0 ? AudienceFormat.format(episode.commentCount) : null,
+                onVideo: onVideo,
                 onPressed: _openComments,
               ),
-            _RailAction(icon: DsIcons.share, label: t.hongguo.share, onPressed: () => unawaited(_shareSeries())),
+            _RailAction(
+              icon: DsIcons.share,
+              label: t.hongguo.share,
+              onVideo: onVideo,
+              onPressed: () => unawaited(_shareSeries()),
+            ),
           ],
         );
       },
@@ -1913,7 +1936,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// for — the page stage's shape, never narrower than 9:16 for an upright
   /// episode — and the engine's own reading is the fallback, which a
   /// fullscreen window's tight constraints hold in place regardless.
-  Widget _playerSurface(BuildContext context, {required bool immersive, bool fills = false, double? aspectRatio}) {
+  /// [overlayActions] hangs the action rail over the picture's own edge; the
+  /// wide page's stage hands that duty to the rail beside the picture.
+  Widget _playerSurface(
+    BuildContext context, {
+    required bool immersive,
+    bool fills = false,
+    double? aspectRatio,
+    bool overlayActions = true,
+  }) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -2066,12 +2097,13 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       ),
                     ),
                   ),
-                // The picture's own action column, over the page's stage and
-                // the immersive picture alike: the next episode, the episode's
-                // likes, the series' bookmark, its comments and the way to
-                // hand it out. Like the bar, the column stands down while a
-                // catalogue hangs over the picture or a hold is running.
-                if (showBar && handle != null && detail != null && _openPanel == null && !_holding)
+                // The picture's own action column, over the picture's edge:
+                // the next episode, the episode's likes, the series'
+                // bookmark, its comments and the way to hand it out. The wide
+                // page's stage hands it to the rail beside the picture; like
+                // the bar, the column stands down while a catalogue hangs
+                // over the picture or a hold is running.
+                if (overlayActions && showBar && handle != null && detail != null && _openPanel == null && !_holding)
                   PositionedDirectional(
                     // Fullscreen hangs the column under the strip, clear of
                     // the way out's row; the stage centres it on the picture's
@@ -2079,7 +2111,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     top: immersive ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s20 : 0,
                     bottom: immersive ? null : 0,
                     end: immersive ? DsSpace.s8 : DsSpace.s12,
-                    child: immersive ? _actionRail(t, detail) : Center(child: _actionRail(t, detail)),
+                    child: immersive
+                        ? _actionRail(t, detail, onVideo: true)
+                        : Center(child: _actionRail(t, detail, onVideo: true)),
                   ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
@@ -2849,7 +2883,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 children: [
                   for (var index = 0; index < groups; index++)
                     _panelPill(
-                      label: _episodeRangeLabel(episodes, index),
+                      label: hongguoEpisodeRangeLabel(episodes, index),
                       selected: index == group,
                       onPressed: () => setState(() => _episodesGroup = index),
                     ),
@@ -2875,13 +2909,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         ),
       ],
     );
-  }
-
-  /// One page of the series, named by the episode numbers it holds — `1–20`,
-  /// and the short last one `81–102`.
-  String _episodeRangeLabel(List<HongguoEpisode> episodes, int group) {
-    final first = group * kHongguoEpisodeGroup;
-    return '${first + 1}–${first + (episodes.length - first).clamp(0, kHongguoEpisodeGroup)}';
   }
 
   /// One numbered tile: lit white while it plays, ticked once it is finished,
@@ -3070,8 +3097,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   }
 }
 
-/// One action on the picture's own column: a glass disc over the video, and
-/// the count the phone prints under it.
+/// One action on the picture's own column: a disc with the glyph and, under
+/// it, the count the phone prints. Over the video the disc is the on-video
+/// glass; beside it, the theme's own control.
 final class _RailAction extends StatelessWidget {
   const _RailAction({
     required this.icon,
@@ -3079,6 +3107,8 @@ final class _RailAction extends StatelessWidget {
     required this.onPressed,
     this.count,
     this.selected = false,
+    this.strong = false,
+    this.onVideo = false,
   });
 
   /// The glyph in the disc.
@@ -3093,10 +3123,17 @@ final class _RailAction extends StatelessWidget {
   /// The figure under the disc, when the platform has one.
   final String? count;
 
-  /// Whether the action draws in the accent colour: a state that is on, as a
-  /// favorite is — or, for the column's one strong verb (the next episode),
-  /// the accent outright.
+  /// Whether the action's state is on, as a favorite is: the disc tints to
+  /// say so.
   final bool selected;
+
+  /// The column's one strong verb — the next episode — in the accent
+  /// outright.
+  final bool strong;
+
+  /// Whether the disc sits on the video's ink (white on glass) or on the
+  /// page's own surface (theme colours).
+  final bool onVideo;
 
   @override
   Widget build(BuildContext context) {
@@ -3109,6 +3146,25 @@ final class _RailAction extends StatelessWidget {
         onPressed: onPressed,
         builder: (context, states, _) {
           final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+          final Color disc;
+          final Color glyph;
+          if (onVideo) {
+            disc = selected || strong
+                ? colors.accent
+                : lit
+                ? OnVideoColors.inkHover
+                : OnVideoColors.dimLight;
+            glyph = selected || strong ? colors.onAccent : OnVideoColors.foreground;
+          } else if (strong) {
+            disc = colors.accent;
+            glyph = colors.onAccent;
+          } else if (selected) {
+            disc = colors.accent.withValues(alpha: 0.14);
+            glyph = colors.accentText;
+          } else {
+            disc = lit ? colors.hover : colors.control;
+            glyph = colors.text;
+          }
           return Column(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s4,
@@ -3119,25 +3175,17 @@ final class _RailAction extends StatelessWidget {
                 width: 38,
                 height: 38,
                 alignment: Alignment.center,
-                decoration: DsBoxDecoration(
-                  color: selected
-                      ? colors.accent
-                      : lit
-                      ? OnVideoColors.inkHover
-                      : OnVideoColors.dimLight,
-                  borderRadius: BorderRadius.circular(theme.radii.control(38)),
-                ),
-                child: DsIcon(
-                  icon,
-                  size: theme.sizes.iconLg,
-                  color: selected ? colors.onAccent : OnVideoColors.foreground,
-                ),
+                decoration: DsBoxDecoration(color: disc, borderRadius: BorderRadius.circular(theme.radii.control(38))),
+                child: DsIcon(icon, size: theme.sizes.iconLg, color: glyph),
               ),
               if (count case final figure?)
                 Text(
                   figure,
                   style: theme.typography.numeric(
-                    theme.typography.caption.copyWith(color: OnVideoColors.foreground, fontSize: 11),
+                    theme.typography.caption.copyWith(
+                      color: onVideo ? OnVideoColors.foreground : colors.textMuted,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
             ],

@@ -1,50 +1,24 @@
 import 'dart:async' show unawaited;
-import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart' show hongguoCoverImage;
-import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart' show HongguoWatchProgress;
+import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart'
+    show HongguoWatchProgress, hongguoLibraryProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart' show HongguoEpisode, HongguoSeriesDetail;
-import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// The episodes one group of the shelf lists before the pager takes over —
 /// the reference's twenty.
 const int kHongguoEpisodeGroup = 20;
 
-/// The widest an episode's cover card gets: what a pane pays for one before
-/// the grid would rather take another column than stretch the picture — the
-/// station's own episode frames read a little over a phone's width, never
-/// the whole reading column.
-const double kHongguoEpisodeCardWidth = 280;
-
-/// The most columns the episode grid draws: the design's four — a catalogue
-/// of covers, not a wall that runs to the window's edge.
-const int kHongguoEpisodeGridMaxColumns = 4;
-
-/// The columns the episode grid takes in a pane [width] pixels wide, at
-/// [spacing] between them: as many cards of [kHongguoEpisodeCardWidth] as
-/// the pane holds, at most [kHongguoEpisodeGridMaxColumns] — and below the
-/// app's compact width exactly two, the design's phone frame, where the
-/// 16:9 covers want a neighbour to read as a catalogue rather than one
-/// stretched banner.
-int hongguoEpisodeColumns(double width, {double spacing = DsSpace.s8}) {
-  if (width <= 0) return 1;
-  if (width < LiveWindow.compact) return 2;
-  final columns = ((width + spacing) / (kHongguoEpisodeCardWidth + spacing)).floor();
-  return math.min(math.max(1, columns), kHongguoEpisodeGridMaxColumns);
-}
-
 /// How far the viewer has got, as every surface that lists the series'
 /// episodes reads it: `watchedThrough` is the last one finished — it and
 /// everything behind it take the tick — and `resumeAt` is the one stopped
 /// part-way, the only one that gets the play glyph. The immersive catalogue
-/// over the picture runs this one reading, and the shelf's own lit card
+/// over the picture runs this one reading, and the shelf's own lit chip
 /// names the same episode, so the two can never disagree about what has
 /// been watched.
 ({int watchedThrough, int? resumeAt}) hongguoEpisodeMarks(HongguoWatchProgress? progress) => (
@@ -65,29 +39,30 @@ int hongguoEpisodeGroupOf(List<HongguoEpisode> episodes, HongguoEpisode? episode
   return position < 0 ? 0 : position ~/ kHongguoEpisodeGroup;
 }
 
-/// The series' episodes as the design's cover cards — a 16:9 frame to an
-/// episode, the number over the picture's start, the length over its end and
-/// the episode's own name under it — [kHongguoEpisodeGroup] at a time with a
-/// jump box. The episode being watched stands lit at its number and its name
-/// and gives up its press; the rest of the cards open the player.
-/// [onOpen] runs when the viewer picks another.
-///
-/// [rail] draws the player page's side-column cut instead: one episode a
-/// line — cover at the row's head, name and length beside it — the shape a
-/// 340px column reads comfortably, where the page grid's two squeezed
-/// columns would not.
+/// One page of the series, named by the episode numbers it holds — `1–20`,
+/// and the short last one `81–102`.
+String hongguoEpisodeRangeLabel(List<HongguoEpisode> episodes, int group) {
+  final first = group * kHongguoEpisodeGroup;
+  return '${first + 1}–${first + (episodes.length - first).clamp(0, kHongguoEpisodeGroup)}';
+}
+
+/// The series' episodes as the stations' own selection reads: one row of
+/// range tabs — `1–20`, `21–40` — and under it the group's numbers as
+/// chips, the number the only thing on them. No frames: a short drama's
+/// episodes share one cover, so a catalogue of the same picture a hundred
+/// times says nothing the numbers do not. The chip being watched stands
+/// filled in the accent, the finished ones carry the tick, the one stopped
+/// part-way the play glyph, and every chip opens its episode.
+/// [onOpen] runs when the viewer picks one.
 final class HongguoEpisodeShelf extends ConsumerStatefulWidget {
   /// The shelf for the series' own episodes.
-  const HongguoEpisodeShelf({required this.detail, required this.onOpen, this.current, this.rail = false, super.key});
+  const HongguoEpisodeShelf({required this.detail, required this.onOpen, this.current, super.key});
 
   /// The series whose episodes are listed.
   final HongguoSeriesDetail detail;
 
   /// The episode the viewer is on, when one is.
   final HongguoEpisode? current;
-
-  /// Whether the shelf draws the side-column rows rather than the page grid.
-  final bool rail;
 
   /// Runs when the viewer picks an episode.
   final void Function(HongguoEpisode episode) onOpen;
@@ -118,8 +93,6 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
 
   /// Asks for an episode number and opens it; an empty or unknown answer
   /// leaves the shelf where it was.
-  void _jump() => unawaited(_jumpToEpisode());
-
   Future<void> _jumpToEpisode() async {
     final episodes = widget.detail.episodes;
     if (episodes.isEmpty) return;
@@ -169,307 +142,181 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
     final episodes = widget.detail.episodes;
     final groups = (episodes.length + kHongguoEpisodeGroup - 1) ~/ kHongguoEpisodeGroup;
     final group = _group.clamp(0, groups <= 0 ? 0 : groups - 1);
-    final first = group * kHongguoEpisodeGroup;
-    final shown = episodes.skip(first).take(kHongguoEpisodeGroup).toList();
-    final last = first + shown.length;
+    final shown = episodes.skip(group * kHongguoEpisodeGroup).take(kHongguoEpisodeGroup).toList();
+    // The watch marks come off the local library, the same reading the
+    // player's own catalogue runs, so shelf and catalogue never disagree
+    // about what has been seen.
+    final marks = hongguoEpisodeMarks(ref.watch(hongguoLibraryProvider).progressOf(widget.detail.meta.seriesId));
     bool isCurrent(HongguoEpisode episode) => episode.vid == current?.vid && episode.index == current?.index;
-    // A 340px rail cannot carry the paging arrows beside the title and the
-    // range; the page grid's full width can, below the app's compact width
-    // it folds them the same way the season page's own shelf does.
-    final narrow = widget.rail || MediaQuery.sizeOf(context).width < kPlaybackCompactBreakpoint;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        SectionHeader(
-          title: t.hongguo.episodes,
-          count: episodes.length,
-          hint: groups > 1 ? '$first–$last / ${episodes.length}' : null,
-          trailing: [
-            if (groups > 1 && !narrow) ...[
-              DsButton.icon(
-                icon: const DsIcon(DsIcons.chevronLeft),
-                semanticLabel: t.hongguo.episodesPrevious,
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: group > 0 ? () => setState(() => _group = group - 1) : null,
-              ),
-              DsButton.icon(
-                icon: const DsIcon(DsIcons.chevronRight),
-                semanticLabel: t.hongguo.episodesNext,
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: group < groups - 1 ? () => setState(() => _group = group + 1) : null,
-              ),
-            ],
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              leading: const DsIcon(DsIcons.listOrdered, size: 16),
-              onPressed: _jump,
-              child: Text(t.hongguo.episodesJump),
+        SectionHeader(title: t.hongguo.episodes, count: episodes.length, trailing: [_jumpButton()]),
+        // The ranges as the page's own tabs, one per group: the selected one
+        // carries the accent, the rest stay quiet. A hundred-plus-episode
+        // series walks them sideways.
+        if (groups > 1)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              spacing: DsSpace.s6,
+              children: [
+                for (var index = 0; index < groups; index++)
+                  _RangeTab(
+                    label: hongguoEpisodeRangeLabel(episodes, index),
+                    selected: index == group,
+                    onPressed: () => setState(() => _group = index),
+                  ),
+              ],
             ),
+          ),
+        Wrap(
+          spacing: DsSpace.s6,
+          runSpacing: DsSpace.s6,
+          children: [
+            for (final episode in shown)
+              _EpisodeChip(
+                episode: episode,
+                playing: isCurrent(episode),
+                marks: marks,
+                onOpen: isCurrent(episode) ? null : () => widget.onOpen(episode),
+              ),
           ],
         ),
-        if (widget.rail)
-          for (final episode in shown)
-            _HongguoEpisodeRow(
-              episode: episode,
-              current: isCurrent(episode),
-              onOpen: isCurrent(episode) ? null : () => widget.onOpen(episode),
-            )
-        else
-          // The columns come from the pane this shelf lands in — the series
-          // page's reading column, the player's own panel — so the same widget
-          // lays a phone's pair and a desktop's four out of one reading. The
-          // cards stand in a shrink-wrap row set, the page's scroll carrying
-          // them, because a group of the shelf is a block of the page, not a
-          // feed of its own.
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
-              final spacing = ref.watch(browseSettingsProvider).crossSpacing;
-              final columns = hongguoEpisodeColumns(content, spacing: spacing);
-              final cardWidth = content > 0
-                  ? columnExtentForWidth(content, columns, spacing) - .01
-                  : kHongguoEpisodeCardWidth;
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: [
-                  for (final episode in shown)
-                    SizedBox(
-                      width: cardWidth,
-                      child: _HongguoEpisodeCard(
-                        episode: episode,
-                        current: isCurrent(episode),
-                        onOpen: isCurrent(episode) ? null : () => widget.onOpen(episode),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
       ],
     );
   }
-}
 
-/// One episode in the rail cut: the picture at the row's head, the number
-/// over it, the name and the length beside — what a 340px column reads
-/// without squeezing a grid built for a page.
-final class _HongguoEpisodeRow extends StatelessWidget {
-  const _HongguoEpisodeRow({required this.episode, required this.current, required this.onOpen});
-
-  final HongguoEpisode episode;
-
-  /// Whether this is the episode the viewer is on: lit, and inert.
-  final bool current;
-
-  /// Opens the episode; null leaves the row inert.
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _jumpButton() {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final label = t.hongguo.episodeLabel(index: episode.index);
-    final name = episode.title.isNotEmpty ? episode.title : label;
-    final fallback = CoverFallback(title: name, padding: const EdgeInsets.all(DsSpace.s8));
-    return DsCard(
-      onPressed: onOpen,
-      semanticLabel: label,
-      style: DsCardStyle(
-        padding: const EdgeInsets.all(DsSpace.s4),
-        hovered: DsCardStyle(background: colors.hover),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s8,
-        children: [
-          SizedBox(
-            width: 120,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(theme.radii.control(84)),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (episode.cover.isEmpty)
-                      fallback
-                    else
-                      DsImage(
-                        image: hongguoCoverImage(episode.cover),
-                        aspectRatio: 16 / 9,
-                        semanticLabel: label,
-                        fallback: fallback,
-                      ),
-                    const Positioned.fill(
-                      child: IgnorePointer(
-                        child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
-                      ),
-                    ),
-                    PositionedDirectional(
-                      top: DsSpace.s4,
-                      start: DsSpace.s4,
-                      child: current
-                          ? DsBadge(
-                              label: Text(t.hongguo.episodeNo(index: episode.index)),
-                              dot: false,
-                              style: DsBadgeStyle(
-                                height: 20,
-                                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6),
-                                background: colors.accent,
-                                foreground: colors.onAccent,
-                                borderRadius: BorderRadius.circular(6),
-                                textStyle: theme.typography.labelStrong,
-                              ),
-                            )
-                          : RoomCoverChip(text: t.hongguo.episodeNo(index: episode.index), compact: true),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(top: DsSpace.s3, bottom: DsSpace.s3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s3,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.small.copyWith(
-                      color: current ? colors.accentText : colors.text,
-                      fontWeight: current ? FontWeight.w600 : null,
-                    ),
-                  ),
-                  if (episode.durationSeconds > 0)
-                    Text(
-                      hongguoDurationText(Duration(seconds: episode.durationSeconds)),
-                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    return DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: const DsIcon(DsIcons.listOrdered, size: 16),
+      onPressed: widget.detail.episodes.isEmpty ? null : () => unawaited(_jumpToEpisode()),
+      child: Text(t.hongguo.episodesJump),
     );
   }
 }
 
-/// One episode as the design's cover card: the picture at the cards' 16:9,
-/// the episode's number over its start — lit on the one being watched, the
-/// station's dark mark on the rest — the length over its end, and the
-/// episode's own name on one line under the picture. The whole card is the
-/// way into the episode; the watched one keeps its place and gives up the
-/// press, the way the numbered chip it grew out of did.
-final class _HongguoEpisodeCard extends StatelessWidget {
-  const _HongguoEpisodeCard({required this.episode, required this.current, required this.onOpen});
+/// One range of the selection: `1–20` on a quiet pill, the group on stage
+/// filled and accented.
+final class _RangeTab extends StatelessWidget {
+  const _RangeTab({required this.label, required this.selected, required this.onPressed});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsPressable(
+      semanticLabel: label,
+      onPressed: onPressed,
+      builder: (context, states, _) {
+        final hovered = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        return Container(
+          height: theme.sizes.xs,
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8),
+          alignment: AlignmentDirectional.center,
+          decoration: DsBoxDecoration(
+            color: selected
+                ? colors.accent.withValues(alpha: 0.14)
+                : hovered
+                ? colors.hover
+                : null,
+            borderRadius: theme.radii.controlCorners(null, theme.sizes.xs),
+          ),
+          child: Text(
+            label,
+            style: theme.typography.numeric(
+              theme.typography.caption.copyWith(
+                color: selected ? colors.accentText : colors.textMuted,
+                fontWeight: selected ? FontWeight.w600 : null,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// One number of the selection: the episode's index on a small tile — filled
+/// in the accent while it plays, ticked once finished, the play glyph where
+/// the viewer stopped part-way. The episode's own name, where the source
+/// gives one, rides in the semantics rather than on the tile: the number is
+/// what the grid reads.
+final class _EpisodeChip extends StatelessWidget {
+  const _EpisodeChip({required this.episode, required this.playing, required this.marks, required this.onOpen});
 
   final HongguoEpisode episode;
 
-  /// Whether this is the episode the viewer is on: its number reads in the
-  /// accent and the card does not press.
-  final bool current;
+  /// Whether this is the episode on air: filled, and inert.
+  final bool playing;
 
-  /// Opens the episode; null leaves the card inert.
+  /// How far the viewer has got through the series.
+  final ({int watchedThrough, int? resumeAt}) marks;
+
+  /// Opens the episode; null leaves the chip inert.
   final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final t = context.t;
     final label = t.hongguo.episodeLabel(index: episode.index);
-    // The station's own episode cards carry the episode's name where it has
-    // one and the number where it has not — the words the player's catalogue
-    // and the card menu read for the same episode.
-    final name = episode.title.isNotEmpty ? episode.title : label;
-    final fallback = CoverFallback(title: name, padding: const EdgeInsets.all(DsSpace.s8));
-    return DsCard(
+    final height = theme.sizes.xs < 28.0 ? 28.0 : theme.sizes.xs;
+    return DsPressable(
+      semanticLabel: episode.title.isEmpty ? label : '$label ${episode.title}',
       onPressed: onOpen,
-      semanticLabel: label,
-      style: const DsCardStyle(padding: EdgeInsets.zero),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s6,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (episode.cover.isEmpty)
-                    fallback
-                  else
-                    DsImage(
-                      image: hongguoCoverImage(episode.cover),
-                      aspectRatio: 16 / 9,
-                      semanticLabel: label,
-                      fallback: fallback,
-                    ),
-                  // Darkens the picture's edges so the two marks keep their
-                  // contrast over a bright frame — the room cover's scrim.
-                  const Positioned.fill(
-                    child: IgnorePointer(
-                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
-                    ),
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        final resume = !playing && episode.index == marks.resumeAt;
+        final watched = !playing && !resume && episode.index <= marks.watchedThrough;
+        final ink = playing
+            ? colors.onAccent
+            : watched
+            ? colors.textSubtle
+            : colors.textMuted;
+        return Container(
+          height: height,
+          constraints: BoxConstraints(minWidth: height + 20),
+          alignment: AlignmentDirectional.center,
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
+          decoration: DsBoxDecoration(
+            color: playing
+                ? colors.accent
+                : lit
+                ? colors.hover
+                : colors.control,
+            borderRadius: theme.radii.controlCorners(null, height),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 2,
+            children: [
+              if (resume)
+                DsIcon(DsIcons.play, size: 10, color: ink)
+              else if (watched)
+                DsIcon(DsIcons.check, size: 10, color: ink),
+              Text(
+                '${episode.index}',
+                style: theme.typography.numeric(
+                  theme.typography.caption.copyWith(
+                    color: playing ? ink : (watched ? colors.textSubtle : colors.text),
+                    fontWeight: playing ? FontWeight.w600 : null,
                   ),
-                  PositionedDirectional(
-                    top: DsSpace.s8,
-                    start: DsSpace.s8,
-                    child: current
-                        ? DsBadge(
-                            label: Text(t.hongguo.episodeNo(index: episode.index)),
-                            dot: false,
-                            style: DsBadgeStyle(
-                              height: 22,
-                              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
-                              background: colors.accent,
-                              foreground: colors.onAccent,
-                              borderRadius: BorderRadius.circular(6),
-                              textStyle: theme.typography.labelStrong,
-                            ),
-                          )
-                        : RoomCoverChip(text: t.hongguo.episodeNo(index: episode.index), compact: true),
-                  ),
-                  if (episode.durationSeconds > 0)
-                    PositionedDirectional(
-                      bottom: DsSpace.s8,
-                      end: DsSpace.s8,
-                      child: RoomCoverChip(
-                        text: hongguoDurationText(Duration(seconds: episode.durationSeconds)),
-                        compact: true,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s6),
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.small.copyWith(
-                  color: current ? colors.accentText : colors.textSubtle,
-                  fontWeight: current ? FontWeight.w600 : null,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
