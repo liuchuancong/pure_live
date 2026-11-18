@@ -55,11 +55,11 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
             for (final phase in HuyaDownloadPhase.values)
               DsListRow(
                 title: Text(switch (phase) {
-                  HuyaDownloadPhase.queued => t.vod.downloadPhaseQueued,
+                  HuyaDownloadPhase.queued => t.settings.downloadStatusQueued,
                   HuyaDownloadPhase.running => t.settings.downloadStatusRunning,
-                  HuyaDownloadPhase.paused => t.vod.downloadPhasePaused,
-                  HuyaDownloadPhase.failed => t.vod.downloadPhaseFailed,
-                  HuyaDownloadPhase.done => t.vod.downloadPhaseDone,
+                  HuyaDownloadPhase.paused => t.settings.downloadStatusPaused,
+                  HuyaDownloadPhase.failed => t.settings.downloadStatusFailed,
+                  HuyaDownloadPhase.done => t.settings.downloadStatusDone,
                 }),
                 trailing: _statuses.contains(phase) ? const DsIcon(DsIcons.check, size: 14) : null,
                 onPressed: () => setState(() {
@@ -119,8 +119,8 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
             child: Center(
               child: DsEmptyState(
                 icon: const DsIcon(DsIcons.download),
-                title: Text(tasks.isEmpty ? t.vod.downloadEmpty : t.settings.downloadFilterEmpty),
-                description: Text(tasks.isEmpty ? t.vod.downloadEmptyDesc : t.settings.downloadFilterEmpty),
+                title: Text(tasks.isEmpty ? t.settings.downloadQueueEmpty : t.settings.downloadFilterEmpty),
+                description: Text(tasks.isEmpty ? t.huya.downloadQueueEmptyDesc : t.settings.downloadFilterEmpty),
                 actions: [
                   if (_statuses.isNotEmpty)
                     DsButton(
@@ -161,7 +161,7 @@ final class _HuyaDownloadsPageState extends ConsumerState<HuyaDownloadsPage> {
             padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),
             child: DownloadQueueHeader(
               summary: [
-                t.vod.downloadTaskCount(count: tasks.length, active: moving),
+                t.settings.downloadTaskCount(count: tasks.length, active: moving),
                 if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                 if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
               ].join(' · '),

@@ -972,8 +972,8 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     switch (task.phase) {
       case HuyaDownloadPhase.queued || HuyaDownloadPhase.running:
         caption = Text(switch (task.progress) {
-          final progress? => t.vod.downloading(percent: (progress * 100).round()),
-          null => t.vod.downloadingUnknown,
+          final progress? => t.settings.downloadPercent(percent: '${(progress * 100).round()}'),
+          null => t.settings.downloadPercentUnknown,
         }, style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground));
         trailing = PlayerBarButton(
           iconAsset: 'assets/icons/pause.svg',
@@ -982,7 +982,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         );
       case HuyaDownloadPhase.paused:
         caption = Text(
-          t.vod.downloadPhasePaused,
+          t.settings.downloadStatusPaused,
           style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground),
         );
         trailing = PlayerBarButton(
@@ -992,7 +992,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         );
       case HuyaDownloadPhase.failed:
         caption = Text(
-          t.vod.downloadPhaseFailed,
+          t.settings.downloadStatusFailed,
           style: DsTheme.of(context).typography.small.copyWith(color: OnVideoColors.foreground),
         );
         trailing = PlayerBarButton(

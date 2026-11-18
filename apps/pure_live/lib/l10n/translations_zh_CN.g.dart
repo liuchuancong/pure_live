@@ -2380,9 +2380,6 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '回到应用默认的视频目录。'
 	String get downloadDirectoryDefaultDesc => '回到应用默认的视频目录。';
 
-	/// zh-CN: '{count: int} 个任务 · {active: int} 个进行中'
-	String downloadTaskCount({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中';
-
 	/// zh-CN: '{held}集/{total}集'
 	String downloadHeldOfTotal({required Object held, required Object total}) => '${held}集/${total}集';
 
@@ -2457,24 +2454,6 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '已下载 {name}'
 	String downloadDone({required Object name}) => '已下载 ${name}';
-
-	/// zh-CN: '下载中 {percent}%'
-	String downloading({required Object percent}) => '下载中 ${percent}%';
-
-	/// zh-CN: '下载中'
-	String get downloadingUnknown => '下载中';
-
-	/// zh-CN: '排队中'
-	String get downloadPhaseQueued => '排队中';
-
-	/// zh-CN: '已暂停'
-	String get downloadPhasePaused => '已暂停';
-
-	/// zh-CN: '下载失败'
-	String get downloadPhaseFailed => '下载失败';
-
-	/// zh-CN: '已完成'
-	String get downloadPhaseDone => '已完成';
 
 	/// zh-CN: '删除文件'
 	String get downloadDeleteFile => '删除文件';
@@ -2640,6 +2619,9 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '展开信息栏'
 	String get infoColumnShow => '展开信息栏';
+
+	/// zh-CN: '在虎牙视频页点「下载」，任务会出现在这里。'
+	String get downloadQueueEmptyDesc => '在虎牙视频页点「下载」，任务会出现在这里。';
 
 	/// zh-CN: '下载管理'
 	String get downloads => '下载管理';
@@ -11353,6 +11335,15 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '剩余 {time}'
 	String downloadEta({required Object time}) => '剩余 ${time}';
 
+	/// zh-CN: '下载中…'
+	String get downloadPercentUnknown => '下载中…';
+
+	/// zh-CN: '{count: int} 个任务 · {active: int} 个进行中'
+	String downloadTaskCount({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中';
+
+	/// zh-CN: '还没有下载任务'
+	String get downloadQueueEmpty => '还没有下载任务';
+
 	/// zh-CN: '已完成'
 	String get downloadStatusDone => '已完成';
 
@@ -14218,12 +14209,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '下载视频'
 	String get download => '下载视频';
 
-	/// zh-CN: '下载中 {percent: int}%'
-	String downloading({required int percent}) => '下载中 ${percent}%';
-
-	/// zh-CN: '下载中…'
-	String get downloadingUnknown => '下载中…';
-
 	/// zh-CN: '已下载到 {name: String}'
 	String downloadDone({required String name}) => '已下载到 ${name}';
 
@@ -14232,9 +14217,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '这条回放的格式暂不支持下载'
 	String get downloadUnsupported => '这条回放的格式暂不支持下载';
-
-	/// zh-CN: '{percent}% 正在下载'
-	String downloadPercent({required Object percent}) => '${percent}% 正在下载';
 
 	/// zh-CN: '已取消下载'
 	String get downloadCancelled => '已取消下载';
@@ -14290,9 +14272,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '回到应用默认的视频目录。'
 	String get downloadDirectoryDefaultDesc => '回到应用默认的视频目录。';
 
-	/// zh-CN: '{count: int} 个任务 · {active: int} 个进行中'
-	String downloadTaskCount({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中';
-
 	/// zh-CN: '自动重试'
 	String get downloadRetry => '自动重试';
 
@@ -14341,20 +14320,8 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '在视频页点「下载」，任务会出现在这里。'
 	String get downloadEmptyDesc => '在视频页点「下载」，任务会出现在这里。';
 
-	/// zh-CN: '排队中'
-	String get downloadPhaseQueued => '排队中';
-
-	/// zh-CN: '已暂停'
-	String get downloadPhasePaused => '已暂停';
-
 	/// zh-CN: '恢复下载'
 	String get downloadResume => '恢复下载';
-
-	/// zh-CN: '下载失败'
-	String get downloadPhaseFailed => '下载失败';
-
-	/// zh-CN: '已完成'
-	String get downloadPhaseDone => '已完成';
 
 	/// zh-CN: '删除文件'
 	String get downloadDeleteFile => '删除文件';
@@ -16175,7 +16142,6 @@ extension on Translations {
 			'hongguo.downloadDirectoryFailed' => '保存目录未能更新',
 			'hongguo.downloadDirectoryDefault' => '恢复默认目录',
 			'hongguo.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
-			'hongguo.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
 			'hongguo.downloadHeldOfTotal' => ({required Object held, required Object total}) => '${held}集/${total}集',
 			'hongguo.downloadRetry' => '自动重试',
 			'hongguo.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
@@ -16201,12 +16167,6 @@ extension on Translations {
 			'hongguo.downloaded' => '已下载',
 			'hongguo.downloadFailed' => '下载失败',
 			'hongguo.downloadDone' => ({required Object name}) => '已下载 ${name}',
-			'hongguo.downloading' => ({required Object percent}) => '下载中 ${percent}%',
-			'hongguo.downloadingUnknown' => '下载中',
-			'hongguo.downloadPhaseQueued' => '排队中',
-			'hongguo.downloadPhasePaused' => '已暂停',
-			'hongguo.downloadPhaseFailed' => '下载失败',
-			'hongguo.downloadPhaseDone' => '已完成',
 			'hongguo.downloadDeleteFile' => '删除文件',
 			'hongguo.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
 			'hongguo.downloadDeleteFailed' => '文件未能删除',
@@ -16259,6 +16219,7 @@ extension on Translations {
 			'huya.headVideos' => ({required int count}) => '${count} 个视频',
 			'huya.infoColumn' => '信息栏',
 			'huya.infoColumnShow' => '展开信息栏',
+			'huya.downloadQueueEmptyDesc' => '在虎牙视频页点「下载」，任务会出现在这里。',
 			'huya.downloads' => '下载管理',
 			'huya.materialSearchHint' => '搜索素材',
 			'huya.materialHot' => '精选',
@@ -16297,14 +16258,14 @@ extension on Translations {
 			'iptv.activeGuideTitle' => '当前节目单',
 			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
 			'iptv.autoUpdate' => '自动更新',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.autoUpdateHint' => '按此间隔在后台检查并重拉已开启自动更新的节目单。',
 			'iptv.customUserAgent' => 'User-Agent',
 			'iptv.customUserAgentDesc' => '导入与播放请求使用的 UA；留空用默认，播放列表自带优先。',
 			'iptv.updateInterval' => '更新间隔',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} 个节目单会按此间隔自动刷新',
 			'iptv.autoUpdateStatusNone' => '还没有节目单开启自动更新。',
 			'iptv.autoUpdateNoRemote' => '还没有网络节目单',
@@ -16811,14 +16772,14 @@ extension on Translations {
 			'music.chartsFailed' => '榜单加载失败',
 			'music.queueEmpty' => '队列为空',
 			'music.queueTitle' => '播放队列',
-			_ => null,
-		} ?? switch (path) {
 			'music.queueUpNext' => '接下来播放',
 			'music.queuePlayed' => '已播放',
 			'music.queueShowMore' => ({required Object count}) => '显示更多（还有 ${count} 首）',
 			'music.queueMissingFile' => '文件丢失',
 			'music.queueUnplayable' => '无法播放',
 			'music.nowPlaying' => '正在播放',
+			_ => null,
+		} ?? switch (path) {
 			'music.stagePanels' => '歌词与队列',
 			'music.volume' => '音量',
 			'music.progress' => '播放进度',
@@ -17325,14 +17286,14 @@ extension on Translations {
 			'music.toggleSourceDone' => '已换源，之后都用新源播放这首歌',
 			'music.toggleSourceEmpty' => '没有找到候选歌曲',
 			'music.toggleSourceFailed' => '候选搜索失败',
-			_ => null,
-		} ?? switch (path) {
 			'music.editTags' => '编辑标签',
 			'music.tagEditTitle' => '编辑歌曲标签',
 			'music.tagEditFileName' => '文件名',
 			'music.tagEditName' => '歌曲名',
 			'music.tagEditSinger' => '艺术家',
 			'music.tagEditAlbum' => '专辑名',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditLyric' => 'LRC 歌词',
 			'music.tagEditPic' => '歌曲专辑封面',
 			'music.tagEditParseName' => '从文件名解析歌曲名、艺术家',
@@ -17839,14 +17800,14 @@ extension on Translations {
 			'room.paused' => '已暂停',
 			'room.replayEnded' => '回放已结束',
 			'room.banned' => '该直播间已被封禁',
-			_ => null,
-		} ?? switch (path) {
 			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
 			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
+			_ => null,
+		} ?? switch (path) {
 			'room.openRoom' => '进入直播间',
 			'room.copyName' => '复制昵称',
 			'room.copyLink' => '复制房间链接',
@@ -18353,14 +18314,14 @@ extension on Translations {
 			'settings.proxyModeOff' => '不使用代理',
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
 			'settings.proxyModeSystem' => '跟随系统代理',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
 			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
@@ -18867,14 +18828,14 @@ extension on Translations {
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
 			'settings.hwdecCodecsAll' => '全部编码格式',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => '音频独占',
 			'settings.audioExclusiveDesc' => '--audio-exclusive：独占 WASAPI 设备，其他应用无法出声。',
 			'settings.forceDestroy' => '播放器强制销毁',
+			_ => null,
+		} ?? switch (path) {
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
 			'settings.mpvReset' => '恢复播放内核默认设置',
@@ -19142,6 +19103,9 @@ extension on Translations {
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadEta' => ({required Object time}) => '剩余 ${time}',
+			'settings.downloadPercentUnknown' => '下载中…',
+			'settings.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
+			'settings.downloadQueueEmpty' => '还没有下载任务',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
@@ -19381,11 +19345,11 @@ extension on Translations {
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
 			'settings.chatListSpacingCompact' => '紧凑',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
@@ -19895,11 +19859,11 @@ extension on Translations {
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
-			_ => null,
-		} ?? switch (path) {
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
@@ -20089,12 +20053,9 @@ extension on Translations {
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
 			'vod.download' => '下载视频',
-			'vod.downloading' => ({required int percent}) => '下载中 ${percent}%',
-			'vod.downloadingUnknown' => '下载中…',
 			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
 			'vod.downloadFailed' => '下载失败',
 			'vod.downloadUnsupported' => '这条回放的格式暂不支持下载',
-			'vod.downloadPercent' => ({required Object percent}) => '${percent}% 正在下载',
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadCancel' => '取消下载',
 			'vod.downloadPause' => '暂停下载',
@@ -20113,7 +20074,6 @@ extension on Translations {
 			'vod.downloadDirectoryFailed' => '保存目录未能更新',
 			'vod.downloadDirectoryDefault' => '恢复默认目录',
 			'vod.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
-			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
 			'vod.downloadRetry' => '自动重试',
 			'vod.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
 			'vod.downloadRetryOff' => '不重试',
@@ -20130,11 +20090,7 @@ extension on Translations {
 			'vod.downloadFilterEmptyDesc' => '换一个筛选，或先去视频页添加下载。',
 			'vod.downloadEmpty' => '还没有下载任务',
 			'vod.downloadEmptyDesc' => '在视频页点「下载」，任务会出现在这里。',
-			'vod.downloadPhaseQueued' => '排队中',
-			'vod.downloadPhasePaused' => '已暂停',
 			'vod.downloadResume' => '恢复下载',
-			'vod.downloadPhaseFailed' => '下载失败',
-			'vod.downloadPhaseDone' => '已完成',
 			'vod.downloadDeleteFile' => '删除文件',
 			'vod.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
 			'vod.downloadDeleteFailed' => '文件未能删除',

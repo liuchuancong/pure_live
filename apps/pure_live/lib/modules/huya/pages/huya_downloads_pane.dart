@@ -42,7 +42,7 @@ final class HuyaDownloadsPane extends ConsumerWidget {
           header: Text(t.settings.huyaDownloadTitle),
           children: [
             if (tasks.isEmpty)
-              DsListRow(title: Text(t.vod.downloadEmpty), description: Text(t.vod.downloadEmptyDesc))
+              DsListRow(title: Text(t.settings.downloadQueueEmpty), description: Text(t.huya.downloadQueueEmptyDesc))
             else
               for (final task in tasks) huyaTaskCard(context, ref, task, missing: huyaFileMissing(task)),
           ],
@@ -91,7 +91,7 @@ Widget huyaTaskCard(BuildContext context, WidgetRef ref, HuyaDownloadItem task, 
       if (task.speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(task.speed)}/s'),
     ].join(' · '),
     DownloadRowPhase.done => task.total > 0 ? formatDownloadBytes(task.total) : t.settings.downloadStatusDone,
-    DownloadRowPhase.failed => task.error == null ? t.vod.downloadPhaseFailed : '${task.error}',
+    DownloadRowPhase.failed => task.error == null ? t.settings.downloadStatusFailed : '${task.error}',
     _ => task.received > 0 ? formatDownloadBytes(task.received) : '',
   };
   return DownloadTaskCard(
@@ -100,7 +100,7 @@ Widget huyaTaskCard(BuildContext context, WidgetRef ref, HuyaDownloadItem task, 
     phase: phase,
     caption: caption,
     badgeLabel: task.phase == HuyaDownloadPhase.running && fraction != null
-        ? t.vod.downloading(percent: (fraction * 100).round())
+        ? t.settings.downloadPercent(percent: '${(fraction * 100).round()}')
         : null,
     fraction: fraction,
     showProgress: moving && (fraction != null || task.received > 0),
@@ -148,12 +148,12 @@ DownloadDetails huyaDetailsOf(BuildContext context, WidgetRef ref, HuyaDownloadI
     title: task.title,
     coverUrl: task.cover,
     status: switch (task.phase) {
-      HuyaDownloadPhase.queued => t.vod.downloadPhaseQueued,
+      HuyaDownloadPhase.queued => t.settings.downloadStatusQueued,
       HuyaDownloadPhase.running =>
-        task.progress == null ? t.vod.downloadingUnknown : t.vod.downloading(percent: (task.progress! * 100).round()),
-      HuyaDownloadPhase.paused => t.vod.downloadPhasePaused,
-      HuyaDownloadPhase.failed => task.error == null ? t.vod.downloadPhaseFailed : '${task.error}',
-      HuyaDownloadPhase.done => missing ? t.common.previewFileMissing : t.vod.downloadPhaseDone,
+        task.progress == null ? t.settings.downloadPercentUnknown : t.settings.downloadPercent(percent: '${(task.progress! * 100).round()}'),
+      HuyaDownloadPhase.paused => t.settings.downloadStatusPaused,
+      HuyaDownloadPhase.failed => task.error == null ? t.settings.downloadStatusFailed : '${task.error}',
+      HuyaDownloadPhase.done => missing ? t.common.previewFileMissing : t.settings.downloadStatusDone,
     },
     savePath: task.filePath,
     error: task.error ?? '',

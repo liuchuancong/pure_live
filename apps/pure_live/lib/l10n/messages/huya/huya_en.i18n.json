@@ -40,6 +40,7 @@
   "headVideos": "{count:int} videos",
   "infoColumn": "Info column",
   "infoColumnShow": "Show the info column",
+  "downloadQueueEmptyDesc": "Tap Download on a huya video and the task shows up here.",
   "downloads": "Downloads",
   "materialSearchHint": "Search clips",
   "materialHot": "Picks",

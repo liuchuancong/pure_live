@@ -878,7 +878,6 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
 	@override String get downloadDirectoryDefault => 'Restore default folder';
 	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
-	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
 	@override String downloadHeldOfTotal({required Object held, required Object total}) => '${held}/${total} eps';
 	@override String get downloadRetry => 'Retry automatically';
 	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
@@ -904,12 +903,6 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloaded => 'Downloaded';
 	@override String get downloadFailed => 'Download failed';
 	@override String downloadDone({required Object name}) => 'Downloaded ${name}';
-	@override String downloading({required Object percent}) => 'Downloading ${percent}%';
-	@override String get downloadingUnknown => 'Downloading';
-	@override String get downloadPhaseQueued => 'Queued';
-	@override String get downloadPhasePaused => 'Paused';
-	@override String get downloadPhaseFailed => 'Download failed';
-	@override String get downloadPhaseDone => 'Finished';
 	@override String get downloadDeleteFile => 'Delete file';
 	@override String get downloadDeleteFileBody => 'The video file is deleted with it; this cannot be undone.';
 	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
@@ -971,6 +964,7 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String headVideos({required int count}) => '${count} videos';
 	@override String get infoColumn => 'Info column';
 	@override String get infoColumnShow => 'Show the info column';
+	@override String get downloadQueueEmptyDesc => 'Tap Download on a huya video and the task shows up here.';
 	@override String get downloads => 'Downloads';
 	@override String get materialSearchHint => 'Search clips';
 	@override String get materialHot => 'Picks';
@@ -3941,6 +3935,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadManagerEmptyDesc => 'Choose “Download” in a preview or the library and the task shows up here.';
 	@override String get downloadStatusRunning => 'Downloading';
 	@override String downloadEta({required Object time}) => '${time} left';
+	@override String get downloadPercentUnknown => 'Downloading…';
+	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
+	@override String get downloadQueueEmpty => 'No downloads yet';
 	@override String get downloadStatusDone => 'Completed';
 	@override String get downloadStatusFailed => 'Failed';
 	@override String downloadStartedAt({required Object time}) => 'Started ${time}';
@@ -4920,12 +4917,9 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get saveAdded => 'Added to favourites';
 	@override String get saveRemoved => 'Removed from favourites';
 	@override String get download => 'Download video';
-	@override String downloading({required int percent}) => 'Downloading ${percent}%';
-	@override String get downloadingUnknown => 'Downloading…';
 	@override String downloadDone({required String name}) => 'Saved to ${name}';
 	@override String get downloadFailed => 'Download failed';
 	@override String get downloadUnsupported => 'This replay\'s format cannot be downloaded yet';
-	@override String downloadPercent({required Object percent}) => '${percent}% downloading';
 	@override String get downloadCancelled => 'Download cancelled';
 	@override String get downloadCancel => 'Cancel download';
 	@override String get downloadPause => 'Pause download';
@@ -4944,7 +4938,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
 	@override String get downloadDirectoryDefault => 'Restore default folder';
 	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
-	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
 	@override String get downloadRetry => 'Retry automatically';
 	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
 	@override String get downloadRetryOff => 'No retry';
@@ -4961,11 +4954,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a video page first.';
 	@override String get downloadEmpty => 'No downloads yet';
 	@override String get downloadEmptyDesc => 'Tap download on a video and its tasks appear here.';
-	@override String get downloadPhaseQueued => 'Queued';
-	@override String get downloadPhasePaused => 'Paused';
 	@override String get downloadResume => 'Resume download';
-	@override String get downloadPhaseFailed => 'Failed';
-	@override String get downloadPhaseDone => 'Done';
 	@override String get downloadDeleteFile => 'Delete file';
 	@override String get downloadDeleteFileBody => 'The video file is deleted too; this cannot be undone.';
 	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
@@ -6206,7 +6195,6 @@ extension on TranslationsEn {
 			'hongguo.downloadDirectoryFailed' => 'Couldn\'t update the save location',
 			'hongguo.downloadDirectoryDefault' => 'Restore default folder',
 			'hongguo.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
-			'hongguo.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
 			'hongguo.downloadHeldOfTotal' => ({required Object held, required Object total}) => '${held}/${total} eps',
 			'hongguo.downloadRetry' => 'Retry automatically',
 			'hongguo.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
@@ -6232,12 +6220,6 @@ extension on TranslationsEn {
 			'hongguo.downloaded' => 'Downloaded',
 			'hongguo.downloadFailed' => 'Download failed',
 			'hongguo.downloadDone' => ({required Object name}) => 'Downloaded ${name}',
-			'hongguo.downloading' => ({required Object percent}) => 'Downloading ${percent}%',
-			'hongguo.downloadingUnknown' => 'Downloading',
-			'hongguo.downloadPhaseQueued' => 'Queued',
-			'hongguo.downloadPhasePaused' => 'Paused',
-			'hongguo.downloadPhaseFailed' => 'Download failed',
-			'hongguo.downloadPhaseDone' => 'Finished',
 			'hongguo.downloadDeleteFile' => 'Delete file',
 			'hongguo.downloadDeleteFileBody' => 'The video file is deleted with it; this cannot be undone.',
 			'hongguo.downloadDeleteFailed' => 'Couldn\'t delete the file',
@@ -6290,6 +6272,7 @@ extension on TranslationsEn {
 			'huya.headVideos' => ({required int count}) => '${count} videos',
 			'huya.infoColumn' => 'Info column',
 			'huya.infoColumnShow' => 'Show the info column',
+			'huya.downloadQueueEmptyDesc' => 'Tap Download on a huya video and the task shows up here.',
 			'huya.downloads' => 'Downloads',
 			'huya.materialSearchHint' => 'Search clips',
 			'huya.materialHot' => 'Picks',
@@ -6328,14 +6311,14 @@ extension on TranslationsEn {
 			'iptv.activeGuideTitle' => 'Active guide',
 			'iptv.activeGuideCardHint' => 'The channel list\'s “on air” and progress follow this guide.',
 			'iptv.autoUpdate' => 'Auto update',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.autoUpdateHint' => 'Checks in the background at this interval and refetches guides with auto-update on.',
 			'iptv.customUserAgent' => 'User-Agent',
 			'iptv.customUserAgentDesc' => 'User-Agent for imports and playback; blank means the app default.',
 			'iptv.updateInterval' => 'Update interval',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} h',
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} d',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} guides refresh at this interval',
 			'iptv.autoUpdateStatusNone' => 'No guide updates automatically yet.',
 			'iptv.autoUpdateNoRemote' => 'No network guide to update',
@@ -6842,14 +6825,14 @@ extension on TranslationsEn {
 			'music.chartsFailed' => 'The chart did not load',
 			'music.queueEmpty' => 'Queue is empty',
 			'music.queueTitle' => 'Queue',
-			_ => null,
-		} ?? switch (path) {
 			'music.queueUpNext' => 'Up next',
 			'music.queuePlayed' => 'Played',
 			'music.queueShowMore' => ({required Object count}) => 'Show more (${count} left)',
 			'music.queueMissingFile' => 'File missing',
 			'music.queueUnplayable' => 'Couldn\'t play',
 			'music.nowPlaying' => 'Now playing',
+			_ => null,
+		} ?? switch (path) {
 			'music.stagePanels' => 'Lyrics & queue',
 			'music.volume' => 'Volume',
 			'music.progress' => 'Progress',
@@ -7356,14 +7339,14 @@ extension on TranslationsEn {
 			'music.toggleSourceDone' => 'Source swapped; this song now plays from the new one',
 			'music.toggleSourceEmpty' => 'No candidate songs found',
 			'music.toggleSourceFailed' => 'Searching for candidates failed',
-			_ => null,
-		} ?? switch (path) {
 			'music.editTags' => 'Edit tags',
 			'music.tagEditTitle' => 'Edit song tags',
 			'music.tagEditFileName' => 'File name',
 			'music.tagEditName' => 'Title',
 			'music.tagEditSinger' => 'Artist',
 			'music.tagEditAlbum' => 'Album',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditLyric' => 'LRC lyric',
 			'music.tagEditPic' => 'Album cover',
 			'music.tagEditParseName' => 'Parse title and artist from the file name',
@@ -7870,14 +7853,14 @@ extension on TranslationsEn {
 			'room.paused' => 'Paused',
 			'room.replayEnded' => 'The replay has ended',
 			'room.banned' => 'This room has been banned',
-			_ => null,
-		} ?? switch (path) {
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
+			_ => null,
+		} ?? switch (path) {
 			'room.openRoom' => 'Open the room',
 			'room.copyName' => 'Copy name',
 			'room.copyLink' => 'Copy room link',
@@ -8384,14 +8367,14 @@ extension on TranslationsEn {
 			'settings.proxyModeOff' => 'No proxy',
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
 			'settings.proxyModeSystem' => 'Follow the system proxy',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
 			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
@@ -8898,14 +8881,14 @@ extension on TranslationsEn {
 			'settings.hwdecCodecs' => 'Hardware codecs',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
 			'settings.hwdecCodecsAll' => 'All codecs',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => 'Audio exclusive',
 			'settings.audioExclusiveDesc' => '--audio-exclusive: takes the WASAPI device; other apps fall silent.',
 			'settings.forceDestroy' => 'Force Stop Player',
+			_ => null,
+		} ?? switch (path) {
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
 			'settings.mpvAdvanced' => 'mpv advanced',
 			'settings.mpvReset' => 'Restore the player defaults',
@@ -9173,6 +9156,9 @@ extension on TranslationsEn {
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadEta' => ({required Object time}) => '${time} left',
+			'settings.downloadPercentUnknown' => 'Downloading…',
+			'settings.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
+			'settings.downloadQueueEmpty' => 'No downloads yet',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
@@ -9412,11 +9398,11 @@ extension on TranslationsEn {
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
 			'settings.chatListFollowTheme' => 'Follow theme',
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
 			'settings.chatListSpacingCompact' => 'Compact',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => 'Standard',
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
@@ -9926,11 +9912,11 @@ extension on TranslationsEn {
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
-			_ => null,
-		} ?? switch (path) {
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
 			'vod.noResultsTitle' => 'No videos found',
 			'vod.noResultsDescription' => 'Try another keyword.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.errorTitle' => 'The videos did not load',
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
@@ -10120,12 +10106,9 @@ extension on TranslationsEn {
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
 			'vod.download' => 'Download video',
-			'vod.downloading' => ({required int percent}) => 'Downloading ${percent}%',
-			'vod.downloadingUnknown' => 'Downloading…',
 			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
 			'vod.downloadFailed' => 'Download failed',
 			'vod.downloadUnsupported' => 'This replay\'s format cannot be downloaded yet',
-			'vod.downloadPercent' => ({required Object percent}) => '${percent}% downloading',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
 			'vod.downloadPause' => 'Pause download',
@@ -10144,7 +10127,6 @@ extension on TranslationsEn {
 			'vod.downloadDirectoryFailed' => 'Couldn\'t update the save location',
 			'vod.downloadDirectoryDefault' => 'Restore default folder',
 			'vod.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
-			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
 			'vod.downloadRetry' => 'Retry automatically',
 			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
 			'vod.downloadRetryOff' => 'No retry',
@@ -10161,11 +10143,7 @@ extension on TranslationsEn {
 			'vod.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a video page first.',
 			'vod.downloadEmpty' => 'No downloads yet',
 			'vod.downloadEmptyDesc' => 'Tap download on a video and its tasks appear here.',
-			'vod.downloadPhaseQueued' => 'Queued',
-			'vod.downloadPhasePaused' => 'Paused',
 			'vod.downloadResume' => 'Resume download',
-			'vod.downloadPhaseFailed' => 'Failed',
-			'vod.downloadPhaseDone' => 'Done',
 			'vod.downloadDeleteFile' => 'Delete file',
 			'vod.downloadDeleteFileBody' => 'The video file is deleted too; this cannot be undone.',
 			'vod.downloadDeleteFailed' => 'Couldn\'t delete the file',

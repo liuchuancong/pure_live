@@ -40,6 +40,7 @@
   "headVideos": "{count:int} 个视频",
   "infoColumn": "信息栏",
   "infoColumnShow": "展开信息栏",
+  "downloadQueueEmptyDesc": "在虎牙视频页点「下载」，任务会出现在这里。",
   "downloads": "下载管理",
   "materialSearchHint": "搜索素材",
   "materialHot": "精选",

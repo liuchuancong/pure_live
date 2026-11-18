@@ -356,7 +356,7 @@ final class VodDownloadsPane extends ConsumerWidget {
               title: Text(t.vod.downloadManagerTitle),
               description: Text(
                 [
-                  t.vod.downloadTaskCount(count: tasks.length, active: active),
+                  t.settings.downloadTaskCount(count: tasks.length, active: active),
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   directory,
                 ].join(' · '),
@@ -384,11 +384,11 @@ String? _etaOf(Translations t, {required int speed, required int total, required
 /// The phase's own word, said the same way in a row's badge and in the filter
 /// panel: one phase, one spelling.
 String _vodPhaseLabel(Translations t, VodDownloadPhase phase) => switch (phase) {
-  VodDownloadPhase.queued => t.vod.downloadPhaseQueued,
+  VodDownloadPhase.queued => t.settings.downloadStatusQueued,
   VodDownloadPhase.running => t.settings.downloadStatusRunning,
-  VodDownloadPhase.paused => t.vod.downloadPhasePaused,
-  VodDownloadPhase.failed => t.vod.downloadPhaseFailed,
-  VodDownloadPhase.done => t.vod.downloadPhaseDone,
+  VodDownloadPhase.paused => t.settings.downloadStatusPaused,
+  VodDownloadPhase.failed => t.settings.downloadStatusFailed,
+  VodDownloadPhase.done => t.settings.downloadStatusDone,
 };
 
 /// The station's download manager as its own page: the queue as a table with
@@ -547,7 +547,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
               padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),
               child: DownloadQueueHeader(
                 summary: [
-                  t.vod.downloadTaskCount(count: tasks.length, active: moving),
+                  t.settings.downloadTaskCount(count: tasks.length, active: moving),
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
@@ -799,7 +799,7 @@ final class _VodArchiveHead extends ConsumerWidget {
       title: t.settings.downloadRemove,
       // Which upload, and how many of its parts: the row's own body says 这条
       // 记录, and a block would be answering for ten of them.
-      description: '${group.title} · ${t.vod.downloadTaskCount(count: ids.length, active: _phases().pausable.length)}',
+      description: '${group.title} · ${t.settings.downloadTaskCount(count: ids.length, active: _phases().pausable.length)}',
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -927,29 +927,29 @@ DownloadDetails _detailsOf(
   // A failed row says what went wrong and, when the queue still owes it an
   // automatic retry, how long the wait is.
   final failedBase = (task.error ?? '').trim().isEmpty
-      ? t.vod.downloadPhaseFailed
-      : '${t.vod.downloadPhaseFailed} · ${task.error!.trim()}';
+      ? t.settings.downloadStatusFailed
+      : '${t.settings.downloadStatusFailed} · ${task.error!.trim()}';
   final retryWait = retryPending && retryLimit > 0
       ? ' · ${t.common.downloadRetryPending(delay: retryDelay, left: (retryLimit - task.attempts).clamp(0, 1 << 20))}'
       : '';
   final caption = switch (task.phase) {
-    VodDownloadPhase.queued => t.vod.downloadPhaseQueued,
+    VodDownloadPhase.queued => t.settings.downloadStatusQueued,
     VodDownloadPhase.running when total > 0 => [
-      t.vod.downloading(percent: task.received * 100 ~/ total),
+      t.settings.downloadPercent(percent: '${task.received * 100 ~/ total}'),
       '${formatDownloadBytes(task.speed)}/s',
       '${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
       ?_etaOf(t, speed: task.speed, total: total, received: task.received),
     ].join(' · '),
-    VodDownloadPhase.running => t.vod.downloadingUnknown,
+    VodDownloadPhase.running => t.settings.downloadPercentUnknown,
     VodDownloadPhase.paused when total > 0 =>
-      '${t.vod.downloadPhasePaused} · ${task.received * 100 ~/ total}% · ${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
-    VodDownloadPhase.paused => t.vod.downloadPhasePaused,
+      '${t.settings.downloadStatusPaused} · ${task.received * 100 ~/ total}% · ${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
+    VodDownloadPhase.paused => t.settings.downloadStatusPaused,
     VodDownloadPhase.failed => '$failedBase$retryWait',
     // A finished row whose file the viewer moved or deleted says so here: the
     // record is true of the transfer, not of the disk, and the queue must not
     // go on offering 打开文件 over a path that answers nothing.
     VodDownloadPhase.done =>
-      '${missing ? t.common.previewFileMissing : t.vod.downloadPhaseDone} · '
+      '${missing ? t.common.previewFileMissing : t.settings.downloadStatusDone} · '
           '${formatDownloadBytes(total > 0 ? total : task.received)}'
           ' · ${downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp))}',
   };

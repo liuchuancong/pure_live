@@ -10,7 +10,6 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart' show SvgPicture;
 import 'package:go_router/go_router.dart' show GoRouter;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
@@ -1741,50 +1740,21 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// serves, so the two players read as one app's controls. Without a
   /// sidecar the switch stays in place but out of reach, and says why.
   Widget _danmakuBarCluster(Translations t, {required bool has, required bool visible, required bool loading}) {
-    final theme = DsTheme.of(context);
-    final side = theme.sizes.sm;
     final on = has && visible;
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s4,
       children: [
-        DsTooltip(
-          message: loading
+        PlayerBarButton(
+          iconAsset: on ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
+          label: loading
               ? t.common.previewDanmakuLoading
               : has
               ? (visible ? t.vod.danmakuOff : t.vod.danmakuOn)
               : t.common.previewDanmakuOff,
-          child: DsPressable(
-            semanticLabel: loading
-                ? t.common.previewDanmakuLoading
-                : on
-                ? t.vod.danmakuOff
-                : t.vod.danmakuOn,
-            onPressed: has
-                ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
-                : null,
-            builder: (context, states, _) {
-              final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
-              return Container(
-                width: side,
-                height: side,
-                alignment: Alignment.center,
-                decoration: DsBoxDecoration(
-                  color: lit ? const Color(0x24FFFFFF) : null,
-                  borderRadius: theme.radii.controlCorners(null, side),
-                ),
-                child: SvgPicture.asset(
-                  on ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
-                  width: side * .5,
-                  height: side * .5,
-                  colorFilter: ColorFilter.mode(
-                    on ? OnVideoColors.foreground : OnVideoColors.inkMuted,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              );
-            },
-          ),
+          onPressed: has
+              ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
+              : null,
         ),
         PlayerBarButton(
           iconAsset: 'assets/icons/danmaku-settings.svg',

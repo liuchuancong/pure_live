@@ -1635,8 +1635,8 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               Expanded(
                                 child: Text(
                                   switch (download.progress) {
-                                    final progress? => t.vod.downloading(percent: (progress * 100).round()),
-                                    null => t.vod.downloadingUnknown,
+                                    final progress? => t.settings.downloadPercent(percent: '${(progress * 100).round()}'),
+                                    null => t.settings.downloadPercentUnknown,
                                   },
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,

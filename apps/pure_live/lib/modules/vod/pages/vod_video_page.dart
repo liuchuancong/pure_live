@@ -2006,8 +2006,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                       children: [
                                         const DsSpinner(style: DsSpinnerStyle(size: 14)),
                                         Text(switch (download.progress) {
-                                          final progress? => t.vod.downloading(percent: (progress * 100).round()),
-                                          null => t.vod.downloadingUnknown,
+                                          final progress? => t.settings.downloadPercent(percent: '${(progress * 100).round()}'),
+                                          null => t.settings.downloadPercentUnknown,
                                         }, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
                                         PlayerBarButton(
                                           icon: DsIcons.pause,

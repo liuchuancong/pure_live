@@ -1070,7 +1070,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           icon: _downloadProgress == null ? DsIcons.download : DsIcons.squareStop,
           label: _downloadProgress == null
               ? t.vod.download
-              : t.vod.downloadPercent(percent: (_downloadProgress! * 100).round()),
+              : t.settings.downloadPercent(percent: '${(_downloadProgress! * 100).round()}'),
           onPressed: _downloadProgress == null
               ? () {
                   _wake();
@@ -1283,16 +1283,26 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
           style: DsTheme.of(context).typography.numeric(DsTheme.of(context).typography.caption),
         ),
         if (!compact) const Spacer(),
-        if (controller.supportsDanmaku)
+        if (controller.supportsDanmaku) ...[
           PlayerBarButton(
-            iconAsset: 'assets/icons/danmaku.svg',
+            iconAsset: controller.danmakuVisible ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
             label: controller.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-            selected: controller.danmakuVisible,
             onPressed: () {
               _wake();
               controller.toggleDanmaku();
             },
           ),
+          // The danmaku's style is the app's own store, so the tuning lives
+          // in the settings pane — the way the vod page's gear reaches it.
+          PlayerBarButton(
+            iconAsset: 'assets/icons/danmaku-settings.svg',
+            label: t.settings.navDanmaku,
+            onPressed: () {
+              _wake();
+              unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location));
+            },
+          ),
+        ],
         if (controller.qualities.length > 1)
           DsMenuAnchor(
             semanticLabel: t.room.replayQuality,

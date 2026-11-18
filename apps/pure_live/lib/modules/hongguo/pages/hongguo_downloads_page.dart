@@ -107,11 +107,11 @@ String _hongguoEpisodeLabel(Translations t, HongguoDownloadItem task) {
 /// The phase's own word, said the same way in a row's badge and in the filter
 /// panel: one phase, one spelling.
 String _hongguoPhaseLabel(Translations t, HongguoDownloadPhase phase) => switch (phase) {
-  HongguoDownloadPhase.queued => t.hongguo.downloadPhaseQueued,
-  HongguoDownloadPhase.running => t.hongguo.downloadingUnknown,
-  HongguoDownloadPhase.paused => t.hongguo.downloadPhasePaused,
-  HongguoDownloadPhase.failed => t.hongguo.downloadPhaseFailed,
-  HongguoDownloadPhase.done => t.hongguo.downloadPhaseDone,
+  HongguoDownloadPhase.queued => t.settings.downloadStatusQueued,
+  HongguoDownloadPhase.running => t.settings.downloadPercentUnknown,
+  HongguoDownloadPhase.paused => t.settings.downloadStatusPaused,
+  HongguoDownloadPhase.failed => t.settings.downloadStatusFailed,
+  HongguoDownloadPhase.done => t.settings.downloadStatusDone,
 };
 
 /// The phases in the order a queue reads: what is moving, what waits for a
@@ -340,7 +340,7 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
               title: Text(t.hongguo.downloadManagerTitle),
               description: Text(
                 [
-                  t.hongguo.downloadTaskCount(count: tasks.length, active: active),
+                  t.settings.downloadTaskCount(count: tasks.length, active: active),
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   directory,
                 ].join(' · '),
@@ -601,7 +601,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
               padding: EdgeInsets.fromLTRB(_inset, DsSpace.s12, _inset, DsSpace.s8),
               child: DownloadQueueHeader(
                 summary: [
-                  t.hongguo.downloadTaskCount(count: tasks.length, active: moving),
+                  t.settings.downloadTaskCount(count: tasks.length, active: moving),
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
@@ -891,7 +891,7 @@ final class _HongguoSeriesHead extends ConsumerWidget {
       title: t.settings.downloadRemove,
       // Which drama, and how many of its tasks: the row's own body says 这条
       // 记录, and a block would be answering for thirty of them.
-      description: '${group.title} · ${t.hongguo.downloadTaskCount(count: ids.length, active: phases.pausable.length)}',
+      description: '${group.title} · ${t.settings.downloadTaskCount(count: ids.length, active: phases.pausable.length)}',
       confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -1014,29 +1014,29 @@ DownloadDetails _detailsOf(
   // A failed row says what went wrong and, when the queue still owes it an
   // automatic retry, how long the wait is.
   final failedBase = (task.error ?? '').trim().isEmpty
-      ? t.hongguo.downloadPhaseFailed
-      : '${t.hongguo.downloadPhaseFailed} · ${task.error!.trim()}';
+      ? t.settings.downloadStatusFailed
+      : '${t.settings.downloadStatusFailed} · ${task.error!.trim()}';
   final retryWait = retryPending && retryLimit > 0
       ? ' · ${t.common.downloadRetryPending(delay: retryDelay, left: (retryLimit - task.attempts).clamp(0, 1 << 20))}'
       : '';
   final caption = switch (task.phase) {
-    HongguoDownloadPhase.queued => t.hongguo.downloadPhaseQueued,
+    HongguoDownloadPhase.queued => t.settings.downloadStatusQueued,
     HongguoDownloadPhase.running when total > 0 => [
-      t.hongguo.downloading(percent: task.received * 100 ~/ total),
+      t.settings.downloadPercent(percent: '${task.received * 100 ~/ total}'),
       '${formatDownloadBytes(task.speed)}/s',
       '${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
       ?_etaOf(t, speed: task.speed, total: total, received: task.received),
     ].join(' · '),
-    HongguoDownloadPhase.running => t.hongguo.downloadingUnknown,
+    HongguoDownloadPhase.running => t.settings.downloadPercentUnknown,
     HongguoDownloadPhase.paused when total > 0 =>
-      '${t.hongguo.downloadPhasePaused} · ${task.received * 100 ~/ total}% · ${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
-    HongguoDownloadPhase.paused => t.hongguo.downloadPhasePaused,
+      '${t.settings.downloadStatusPaused} · ${task.received * 100 ~/ total}% · ${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
+    HongguoDownloadPhase.paused => t.settings.downloadStatusPaused,
     HongguoDownloadPhase.failed => '$failedBase$retryWait',
     // The record says the transfer finished; only the disk says whether the
     // file is still there. A row whose episode was moved or deleted says so in
     // the same place its 已完成 used to stand alone.
     HongguoDownloadPhase.done =>
-      '${missing ? t.common.previewFileMissing : t.hongguo.downloadPhaseDone} · '
+      '${missing ? t.common.previewFileMissing : t.settings.downloadStatusDone} · '
           '${formatDownloadBytes(total > 0 ? total : task.received)}'
           ' · ${downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp))}',
   };
