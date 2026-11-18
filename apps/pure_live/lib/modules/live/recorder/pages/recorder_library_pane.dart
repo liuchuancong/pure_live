@@ -1,5 +1,4 @@
 import 'dart:async' show unawaited;
-import 'dart:io' show File;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -889,7 +888,7 @@ final class _TakeRow extends StatelessWidget {
                     DsCheckbox(value: selected.contains(key), semanticLabel: name, onChanged: (_) => onSelect(take)),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: _TakeCover(take: take, width: coverWidth, height: coverHeight),
+                      child: RecorderTakeCover(take: take, width: coverWidth, height: coverHeight),
                     ),
                     Expanded(
                       child: Column(
@@ -961,89 +960,6 @@ final class _TakeRow extends StatelessWidget {
 /// [avatarInitials] would draw as the disc's letter; the first letter or digit
 /// is the one the avatar should show.
 String _initialsOfTitle(String title) => title.replaceFirst(RegExp(r'^[^\p{L}\p{N}]+', unicode: true), '');
-
-/// The take's own frame, cut from the file by the recording backend's FFmpeg.
-///
-/// A take with nothing playable, or one FFmpeg could not open, keeps the tile
-/// the library always drew: the picture is what a row gains, never what it
-/// depends on.
-final class _TakeCover extends ConsumerStatefulWidget {
-  const _TakeCover({required this.take, required this.width, required this.height});
-
-  final RecordingTake take;
-  final double width;
-  final double height;
-
-  @override
-  ConsumerState<_TakeCover> createState() => _TakeCoverState();
-}
-
-final class _TakeCoverState extends ConsumerState<_TakeCover> {
-  @override
-  void initState() {
-    super.initState();
-    _request();
-  }
-
-  @override
-  void didUpdateWidget(_TakeCover old) {
-    super.didUpdateWidget(old);
-    if (old.take.filePath != widget.take.filePath) _request();
-  }
-
-  /// Asks for this take's frame after the frame is painted, so a page of rows
-  /// queues its covers instead of starting FFmpeg inside a build.
-  void _request() {
-    final file = widget.take.filePath;
-    if (file == null || file.isEmpty) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(recordingCoversProvider.notifier).request(file);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final cover = ref.watch(recordingCoversProvider)[widget.take.filePath ?? ''];
-    final duration = widget.take.duration;
-    return SizedBox(
-      width: widget.width,
-      height: widget.height,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DsImage(
-              image: cover == null ? null : FileImage(File(cover)),
-              width: widget.width,
-              height: widget.height,
-              semanticLabel: widget.take.roomTitle,
-              fallback: DecoratedBox(
-                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
-                child: Center(child: DsIcon(DsIcons.video, size: 20, color: colors.accentText)),
-              ),
-            ),
-          ),
-          if (duration != null)
-            Positioned(
-              right: 4,
-              bottom: 4,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(4)),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  child: Text(
-                    formatRecordingDuration(duration),
-                    style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 /// A take's average write rate, in the units a player's info line uses.
 ///

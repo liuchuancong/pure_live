@@ -274,5 +274,6 @@
   "recordCheckEvery": "Checked every {seconds} s",
   "recordLabelResolution": "Resolution",
   "recordLabelSegment": "Segments",
-  "recordSegmentN": "Segment {index}"
+  "recordSegmentN": "Segment {index}",
+  "recordFilesPane": "Files"
 }

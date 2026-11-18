@@ -20,15 +20,11 @@ import 'package:pure_live/shared/shared.dart' show AppPanel, localizedSiteName, 
 /// play right here, so managing this room's takes never means leaving the
 /// room.
 ///
-/// The panel is three cards, read top to bottom: the capture's own card
-/// (state word, start/stop verb, the facts the session has earned), the
-/// schedule card (record when live), and the shelf of finished takes. The
-/// verbs are the player bar's own ([toggleRoomRecording]), called with this
-/// panel's ref: one switch, one truth, two doors. The foot carries the two
-/// doors the panel itself does not replace: the recorder's settings page
-/// (the quality, the segments, the schedule's shape) and the recording
-/// centre (the queue and every room's files together) — the centre keeps
-/// this one quiet entry because the sidebar's own is gone.
+/// The panel splits into two panes under one segmented switch: 录制 drives
+/// the capture (the transport card and the record-when-live card), 录制文件
+/// shelves the finished takes as thumbnail rows. The verbs that leave the
+/// panel — the recorder's settings page and the recording centre — sit in
+/// the top row where any amount of content cannot push them away.
 ///
 /// The figures come from the task store, which the engine writes once a second
 /// while bytes move. The clock is the exception and ticks on its own: a number
@@ -42,9 +38,16 @@ final class RoomRecordTab extends ConsumerStatefulWidget {
   ConsumerState<RoomRecordTab> createState() => _RoomRecordTabState();
 }
 
+/// The panel's two panes: the capture the room is driving, and the files it
+/// has already written — separate views, because a shelf of takes reads as
+/// inventory and a running capture reads as control, and one long scroll
+/// made the second wait behind the first.
+enum _RoomPane { live, files }
+
 final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with SingleTickerProviderStateMixin {
   Timer? _tick;
   bool _ticking = false;
+  _RoomPane _pane = _RoomPane.live;
   // The live dot breathes: a fixed red circle reads as a label, a breathing
   // one reads as on air — every recorder's REC dot does this, and the eye
   // has learned to look for the pulse.
@@ -91,17 +94,59 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     final waiting = task?.state == RecordingTaskState.waiting;
     _syncTicker(running: recording);
 
-    return ListView(
-      padding: const EdgeInsets.all(DsSpace.s16),
+    return Column(
       children: [
-        _statusCard(task: task),
-        const SizedBox(height: DsSpace.s12),
-        _autoRecordCard(room: room, task: task, waiting: waiting, recording: recording),
-        const SizedBox(height: DsSpace.s24),
-        _takesSection(room: room),
-        const SizedBox(height: DsSpace.s16),
-        _footer(),
+        // The switch and the settings share the top row: both verbs stay
+        // reachable no matter how long either pane's content runs — a
+        // hundred files never push them below the fold again.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsSegmentedControl<_RoomPane>(
+                  value: _pane,
+                  onChanged: (pane) => setState(() => _pane = pane),
+                  segments: [
+                    DsSegment(value: _RoomPane.live, label: Text(context.t.room.tabRecording)),
+                    DsSegment(value: _RoomPane.files, label: Text(context.t.room.recordFilesPane)),
+                  ],
+                ),
+              ),
+              _settingsButton(),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _pane == _RoomPane.live
+              ? ListView(
+                  padding: const EdgeInsets.all(DsSpace.s16),
+                  children: [
+                    _statusCard(task: task),
+                    const SizedBox(height: DsSpace.s12),
+                    _autoRecordCard(room: room, task: task, waiting: waiting, recording: recording),
+                  ],
+                )
+              : _filesPane(room: room),
+        ),
       ],
+    );
+  }
+
+  /// The recorder's settings page — quality, segments, schedule shape — as a
+  /// top-bar verb: the section's own page, not a walk through the library.
+  Widget _settingsButton() {
+    final t = context.t;
+    return DsButton(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.sm,
+      onPressed: () {
+        openSettingsSection(ref, SettingsSection.recording);
+        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.recording.name).location));
+      },
+      leading: const DsIcon(DsIcons.settings, size: 15),
+      child: Text(t.recorder.settingsOpen),
     );
   }
 
@@ -318,11 +363,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     );
   }
 
-  /// The takes the capture has already filed for this room, newest first —
-  /// the room's own shelf, so a finished take plays without a trip to the
-  /// centre. The walk runs once per settled session; while it first runs the
-  /// section keeps quiet rather than promising rows it cannot name yet.
-  Widget _takesSection({required LiveRoom? room}) {
+  /// The files pane: this room's finished takes, newest first, each a
+  /// thumbnail row — the same frame the centre's grid shows, with the
+  /// take's title, the day it was taken and its weight beside it. The
+  /// centre keeps one quiet door at the pane's top right: the queue and
+  /// every other room's files stay together over there.
+  Widget _filesPane({required LiveRoom? room}) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
@@ -333,53 +379,72 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
       for (final take in takesAsync.value ?? const <RecordingTake>[])
         if (take.playable && platform != null && take.platformId == platform && take.roomId == roomId) take,
     ];
-    if (takes.isEmpty) {
-      // A walk still in flight says nothing: "no recordings" before the
-      // first answer lands is a lie the next frame corrects.
-      if (takesAsync.isLoading && takesAsync.value == null) return const SizedBox.shrink();
-      return Text(t.room.roomRecordTakesEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted));
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s4,
+    return ListView(
+      padding: const EdgeInsets.all(DsSpace.s16),
       children: [
-        Text(
-          t.room.roomRecordTakes(count: takes.length),
-          style: theme.typography.overline.copyWith(color: colors.textSubtle),
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(
+                takes.isEmpty ? '' : t.room.roomRecordTakes(count: takes.length),
+                style: theme.typography.overline.copyWith(color: colors.textSubtle),
+              ),
+            ),
+            _centreButton(t),
+          ],
         ),
-        for (final take in takes) _takeRow(take, takes),
+        const SizedBox(height: DsSpace.s8),
+        if (takes.isEmpty)
+          DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.room.roomRecordTakesEmpty))
+        else
+          DsListSection(
+            style: recorderPanelSectionStyle(context),
+            children: [for (final take in takes) _takeRow(take, takes)],
+          ),
       ],
     );
   }
 
-  /// One finished take: when it was taken, how long and how heavy it is —
-  /// the whole line is the way in, the same preview player the centre opens.
+  /// One finished take: the frame the backend cut from the file, the take's
+  /// title and the day it was taken beside it, its weight at the end — the
+  /// whole row is the way in, the same preview player the centre opens.
   Widget _takeRow(RecordingTake take, List<RecordingTake> around) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final facts = [
-      formatRecordingMoment(take.takenAt),
-      if (take.duration case final duration?) formatRecordingDuration(duration),
-      if (take.bytes > 0) formatRecordingBytes(take.bytes),
-    ].join(' · ');
+    final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
         child: Row(
           spacing: DsSpace.s8,
           children: [
-            DsIcon(DsIcons.play, size: 16, color: colors.textMuted),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: RecorderTakeCover(take: take, width: 96, height: 54),
+            ),
             Expanded(
-              child: Text(
-                facts,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.text),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(
+                    take.roomTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.labelStrong.copyWith(color: colors.text),
+                  ),
+                  Text(
+                    formatRecordingMoment(take.takenAt),
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ],
               ),
             ),
-            DsIcon(DsIcons.chevronRight, size: 14, color: colors.textSubtle),
+            if (bytes != null) Text(bytes, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+            DsIcon(DsIcons.play, size: 14, color: colors.textSubtle),
           ],
         ),
       ),
@@ -393,35 +458,10 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     return site == null ? id : localizedSiteName(site);
   }
 
-  /// The quiet foot: the recorder's settings page and the centre. Settings
-  /// is the section's own page — quality, segments, schedule shape — not a
-  /// walk through the library; the centre keeps the queue and every room's
-  /// files together. A push, not a `go`: the room stays under them.
-  Widget _footer() {
-    final t = context.t;
-    return Wrap(
-      spacing: DsSpace.s8,
-      runSpacing: DsSpace.s6,
-      children: [
-        DsButton(
-          variant: DsButtonVariant.ghost,
-          size: DsSize.sm,
-          onPressed: () {
-            openSettingsSection(ref, SettingsSection.recording);
-            unawaited(context.push(SettingsSectionRoute(section: SettingsSection.recording.name).location));
-          },
-          leading: const DsIcon(DsIcons.settings, size: 15),
-          child: Text(t.recorder.settingsOpen),
-        ),
-        _centreButton(t),
-      ],
-    );
-  }
-
   /// The centre still exists for what a single room's panel cannot show — the
-  /// queue, the schedule, the finished files — said as one quiet line, not as
-  /// the panel's only door. A push, not a `go`: the room stays under it, and
-  /// the way back is the panel's own.
+  /// queue, the schedule, the finished files — said as one quiet line in the
+  /// files pane's top row, not as the panel's only door. A push, not a `go`:
+  /// the room stays under it, and the way back is the panel's own.
   Widget _centreButton(Translations t) => DsButton(
     variant: DsButtonVariant.ghost,
     size: DsSize.sm,

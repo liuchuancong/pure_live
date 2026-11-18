@@ -274,5 +274,6 @@
   "recordCheckEvery": "每 {seconds} 秒检查一次",
   "recordLabelResolution": "分辨率",
   "recordLabelSegment": "分段",
-  "recordSegmentN": "第 {index} 段"
+  "recordSegmentN": "第 {index} 段",
+  "recordFilesPane": "录制文件"
 }

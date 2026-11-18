@@ -1,9 +1,14 @@
+import 'dart:io' show File;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart' show sitesProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_platform_filter.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_covers.dart' show recordingCoversProvider;
+import 'package:pure_live/modules/live/recorder/data/recording_library.dart' show RecordingTake;
+import 'package:pure_live/modules/live/recorder/data/recording_preview.dart' show formatRecordingDuration;
 import 'package:pure_live/shared/shared.dart' show kAllPlatforms, localizedSiteIcon, showPlatformPickerPanel;
 
 /// The blank an opening CJK punctuation leaves before its ink.
@@ -134,4 +139,87 @@ final class RecorderPlatformFilterButton extends ConsumerWidget {
 List<String> recorderPlatformsOf(Iterable<String> ids, String Function(String id) nameOf) {
   final unique = ids.toList()..sort((a, b) => nameOf(a).compareTo(nameOf(b)));
   return unique;
+}
+
+/// The take's own frame, cut from the file by the recording backend's FFmpeg.
+///
+/// A take with nothing playable, or one FFmpeg could not open, keeps the tile
+/// the library always drew: the picture is what a row gains, never what it
+/// depends on.
+final class RecorderTakeCover extends ConsumerStatefulWidget {
+  const RecorderTakeCover({required this.take, required this.width, required this.height, super.key});
+
+  final RecordingTake take;
+  final double width;
+  final double height;
+
+  @override
+  ConsumerState<RecorderTakeCover> createState() => RecorderTakeCoverState();
+}
+
+final class RecorderTakeCoverState extends ConsumerState<RecorderTakeCover> {
+  @override
+  void initState() {
+    super.initState();
+    _request();
+  }
+
+  @override
+  void didUpdateWidget(RecorderTakeCover oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.take.filePath != widget.take.filePath) _request();
+  }
+
+  /// Asks for this take's frame after the frame is painted, so a page of rows
+  /// queues its covers instead of starting FFmpeg inside a build.
+  void _request() {
+    final file = widget.take.filePath;
+    if (file == null || file.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(recordingCoversProvider.notifier).request(file);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final cover = ref.watch(recordingCoversProvider)[widget.take.filePath ?? ''];
+    final duration = widget.take.duration;
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: DsImage(
+              image: cover == null ? null : FileImage(File(cover)),
+              width: widget.width,
+              height: widget.height,
+              semanticLabel: widget.take.roomTitle,
+              fallback: DecoratedBox(
+                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
+                child: Center(child: DsIcon(DsIcons.video, size: 20, color: colors.accentText)),
+              ),
+            ),
+          ),
+          if (duration != null)
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(4)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  child: Text(
+                    formatRecordingDuration(duration),
+                    style: theme.typography.overline.copyWith(color: const Color(0xFFFFFFFF)),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

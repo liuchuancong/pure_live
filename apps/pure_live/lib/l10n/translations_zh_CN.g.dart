@@ -8034,6 +8034,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '第 {index} 段'
 	String recordSegmentN({required Object index}) => '第 ${index} 段';
+
+	/// zh-CN: '录制文件'
+	String get recordFilesPane => '录制文件';
 }
 
 // Path: search
@@ -18017,6 +18020,7 @@ extension on Translations {
 			'room.recordLabelResolution' => '分辨率',
 			'room.recordLabelSegment' => '分段',
 			'room.recordSegmentN' => ({required Object index}) => '第 ${index} 段',
+			'room.recordFilesPane' => '录制文件',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -18331,9 +18335,9 @@ extension on Translations {
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
-			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
 			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
@@ -18845,9 +18849,9 @@ extension on Translations {
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => '音频独占',
-			'settings.audioExclusiveDesc' => '--audio-exclusive：独占 WASAPI 设备，其他应用无法出声。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.audioExclusiveDesc' => '--audio-exclusive：独占 WASAPI 设备，其他应用无法出声。',
 			'settings.forceDestroy' => '播放器强制销毁',
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
@@ -19359,9 +19363,9 @@ extension on Translations {
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
-			'settings.chatListSpacingCompact' => '紧凑',
 			_ => null,
 		} ?? switch (path) {
+			'settings.chatListSpacingCompact' => '紧凑',
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
@@ -19873,9 +19877,9 @@ extension on Translations {
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
 			'vod.tabPopular' => '热门',
-			'vod.tabDynamics' => '动态',
 			_ => null,
 		} ?? switch (path) {
+			'vod.tabDynamics' => '动态',
 			'vod.dynamicsLoginTitle' => '登录后查看动态',
 			'vod.dynamicsLoginDescription' => '动态来自你关注的 UP 主，需要一个 Bilibili 登录。',
 			'vod.signIn' => '登录 Bilibili',

@@ -2823,6 +2823,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get recordLabelResolution => 'Resolution';
 	@override String get recordLabelSegment => 'Segments';
 	@override String recordSegmentN({required Object index}) => 'Segment ${index}';
+	@override String get recordFilesPane => 'Files';
 }
 
 // Path: search
@@ -8062,6 +8063,7 @@ extension on TranslationsEn {
 			'room.recordLabelResolution' => 'Resolution',
 			'room.recordLabelSegment' => 'Segments',
 			'room.recordSegmentN' => ({required Object index}) => 'Segment ${index}',
+			'room.recordFilesPane' => 'Files',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -8376,9 +8378,9 @@ extension on TranslationsEn {
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
-			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
 			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
@@ -8890,9 +8892,9 @@ extension on TranslationsEn {
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => 'Audio exclusive',
-			'settings.audioExclusiveDesc' => '--audio-exclusive: takes the WASAPI device; other apps fall silent.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.audioExclusiveDesc' => '--audio-exclusive: takes the WASAPI device; other apps fall silent.',
 			'settings.forceDestroy' => 'Force Stop Player',
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
 			'settings.mpvAdvanced' => 'mpv advanced',
@@ -9404,9 +9406,9 @@ extension on TranslationsEn {
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
-			'settings.chatListSpacingCompact' => 'Compact',
 			_ => null,
 		} ?? switch (path) {
+			'settings.chatListSpacingCompact' => 'Compact',
 			'settings.chatListSpacingStandard' => 'Standard',
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
@@ -9918,9 +9920,9 @@ extension on TranslationsEn {
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
 			'vod.tabPopular' => 'Popular',
-			'vod.tabDynamics' => 'Dynamics',
 			_ => null,
 		} ?? switch (path) {
+			'vod.tabDynamics' => 'Dynamics',
 			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',
 			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',
 			'vod.signIn' => 'Sign in to Bilibili',
