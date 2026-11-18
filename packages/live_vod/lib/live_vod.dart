@@ -10,6 +10,7 @@ export 'src/bilibili_wbi.dart';
 export 'src/douyu_replay.dart';
 export 'src/douyu_sign.dart';
 export 'src/douyu_timeline.dart';
+export 'src/huya_material_api.dart';
 export 'src/huya_replay.dart';
 export 'src/huya_ssr.dart';
 export 'src/huya_video_api.dart';

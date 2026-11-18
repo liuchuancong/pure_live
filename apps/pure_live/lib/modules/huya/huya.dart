@@ -4,13 +4,14 @@
 /// player page, its uploader page, and the shelf and grid widgets they share.
 library;
 
+export 'controller/huya_material.dart';
 export 'controller/huya_video.dart';
 export 'controller/huya_video_playback.dart';
 export 'pages/huya_downloads_page.dart';
 export 'pages/huya_downloads_pane.dart';
+export 'pages/huya_material_page.dart';
 export 'pages/huya_search_page.dart';
 export 'pages/huya_uploader_page.dart';
 export 'pages/huya_video_page.dart';
 export 'pages/huya_video_player_page.dart';
-export 'pages/huya_web_page.dart';
 export 'widgets/huya_widgets.dart';

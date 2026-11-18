@@ -32,7 +32,6 @@
   "hotChannels": "热门频道",
   "suggestTitle": "试试这些",
   "search": "搜索",
-  "material": "素材库",
   "liveTab": "直播",
   "recommend": "推荐",
   "exchange": "换一批",
@@ -42,5 +41,9 @@
   "headVideos": "{count:int} 个视频",
   "infoColumn": "信息栏",
   "infoColumnShow": "展开信息栏",
-  "downloads": "下载管理"
+  "downloads": "下载管理",
+  "materialSearchHint": "搜索素材",
+  "materialHot": "精选",
+  "materialEmpty": "这里暂时没有素材。",
+  "material": "素材库"
 }

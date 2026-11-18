@@ -32,7 +32,6 @@
   "hotChannels": "Popular channels",
   "suggestTitle": "Try these",
   "search": "Search",
-  "material": "Material",
   "liveTab": "Live",
   "recommend": "Recommended",
   "exchange": "New batch",
@@ -42,5 +41,9 @@
   "headVideos": "{count:int} videos",
   "infoColumn": "Info column",
   "infoColumnShow": "Show the info column",
-  "downloads": "Downloads"
+  "downloads": "Downloads",
+  "materialSearchHint": "Search clips",
+  "materialHot": "Picks",
+  "materialEmpty": "No clips here right now.",
+  "material": "Material"
 }

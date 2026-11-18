@@ -90,8 +90,6 @@ enum NavigationItem {
   /// The Huya station's material library (its own web surface).
   huyaMaterial(DsIcons.folderOpen),
 
-  /// The Huya station's live portal (its own web surface).
-  huyaLive(DsIcons.tv),
 
   /// The Huya station's ranking boards.
   huyaRank(DsIcons.trophy),
@@ -196,7 +194,6 @@ enum NavigationItem {
     NavigationItem.huyaHome => t.huya.home,
     NavigationItem.huyaChannels => t.huya.channels,
     NavigationItem.huyaMaterial => t.huya.material,
-    NavigationItem.huyaLive => t.huya.liveTab,
     NavigationItem.huyaRank => t.huya.rank,
     NavigationItem.huyaSearch => t.huya.search,
     NavigationItem.huyaDownloads => t.huya.downloads,

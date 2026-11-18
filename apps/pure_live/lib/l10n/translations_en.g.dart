@@ -964,7 +964,6 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get hotChannels => 'Popular channels';
 	@override String get suggestTitle => 'Try these';
 	@override String get search => 'Search';
-	@override String get material => 'Material';
 	@override String get liveTab => 'Live';
 	@override String get recommend => 'Recommended';
 	@override String get exchange => 'New batch';
@@ -975,6 +974,10 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get infoColumn => 'Info column';
 	@override String get infoColumnShow => 'Show the info column';
 	@override String get downloads => 'Downloads';
+	@override String get materialSearchHint => 'Search clips';
+	@override String get materialHot => 'Picks';
+	@override String get materialEmpty => 'No clips here right now.';
+	@override String get material => 'Material';
 }
 
 // Path: iptv
@@ -6281,7 +6284,6 @@ extension on TranslationsEn {
 			'huya.hotChannels' => 'Popular channels',
 			'huya.suggestTitle' => 'Try these',
 			'huya.search' => 'Search',
-			'huya.material' => 'Material',
 			'huya.liveTab' => 'Live',
 			'huya.recommend' => 'Recommended',
 			'huya.exchange' => 'New batch',
@@ -6292,6 +6294,10 @@ extension on TranslationsEn {
 			'huya.infoColumn' => 'Info column',
 			'huya.infoColumnShow' => 'Show the info column',
 			'huya.downloads' => 'Downloads',
+			'huya.materialSearchHint' => 'Search clips',
+			'huya.materialHot' => 'Picks',
+			'huya.materialEmpty' => 'No clips here right now.',
+			'huya.material' => 'Material',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.renameSourceTitle' => 'Rename source',
@@ -6323,11 +6329,11 @@ extension on TranslationsEn {
 			'iptv.activeGuideDescription' => 'The guide source used for the channel list; one at a time.',
 			'iptv.activeGuideNone' => 'None selected',
 			'iptv.activeGuideTitle' => 'Active guide',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.activeGuideCardHint' => 'The channel list\'s “on air” and progress follow this guide.',
 			'iptv.autoUpdate' => 'Auto update',
 			'iptv.autoUpdateHint' => 'Checks in the background at this interval and refetches guides with auto-update on.',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.customUserAgent' => 'User-Agent',
 			'iptv.customUserAgentDesc' => 'User-Agent for imports and playback; blank means the app default.',
 			'iptv.updateInterval' => 'Update interval',
@@ -6837,11 +6843,11 @@ extension on TranslationsEn {
 			'music.mineEmptyDescription' => 'Songs you collect or play appear here.',
 			'music.removeSong' => 'Remove',
 			'music.chartsFailed' => 'The chart did not load',
+			_ => null,
+		} ?? switch (path) {
 			'music.queueEmpty' => 'Queue is empty',
 			'music.queueTitle' => 'Queue',
 			'music.queueUpNext' => 'Up next',
-			_ => null,
-		} ?? switch (path) {
 			'music.queuePlayed' => 'Played',
 			'music.queueShowMore' => ({required Object count}) => 'Show more (${count} left)',
 			'music.queueMissingFile' => 'File missing',
@@ -7351,11 +7357,11 @@ extension on TranslationsEn {
 			'music.listSearch' => 'Search in this list',
 			'music.listSearchEmpty' => 'No matching songs found',
 			'music.toggleSource' => 'Toggle source',
+			_ => null,
+		} ?? switch (path) {
 			'music.toggleSourceDone' => 'Source swapped; this song now plays from the new one',
 			'music.toggleSourceEmpty' => 'No candidate songs found',
 			'music.toggleSourceFailed' => 'Searching for candidates failed',
-			_ => null,
-		} ?? switch (path) {
 			'music.editTags' => 'Edit tags',
 			'music.tagEditTitle' => 'Edit song tags',
 			'music.tagEditFileName' => 'File name',
@@ -7865,11 +7871,11 @@ extension on TranslationsEn {
 			'room.buffering' => 'Buffering',
 			'room.connecting' => 'Connecting to the live stream',
 			'room.slowReason' => 'This is taking a while; the line may be unstable',
+			_ => null,
+		} ?? switch (path) {
 			'room.paused' => 'Paused',
 			'room.replayEnded' => 'The replay has ended',
 			'room.banned' => 'This room has been banned',
-			_ => null,
-		} ?? switch (path) {
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
 			'room.offlineTitle' => 'The streamer is away',
@@ -8379,11 +8385,11 @@ extension on TranslationsEn {
 			'settings.proxyPasswordReplace' => 'Type a new password to replace it',
 			'settings.proxyPasswordClear' => 'Clear the saved password',
 			'settings.proxyPasswordClearDesc' => 'The proxy is then used without authentication; if it still requires a password, requests will fail.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeOff' => 'No proxy',
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
 			'settings.proxyModeSystem' => 'Follow the system proxy',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
@@ -8893,11 +8899,11 @@ extension on TranslationsEn {
 			'settings.deinterlaceAuto' => 'Auto',
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecs' => 'Hardware codecs',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
 			'settings.hwdecCodecsAll' => 'All codecs',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
@@ -9407,11 +9413,11 @@ extension on TranslationsEn {
 			'settings.storageFolderPickFailed' => 'Could not select a download folder',
 			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
 			'settings.chatListFontSize' => 'Text size',
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListFollowTheme' => 'Follow theme',
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => 'Line spacing',
@@ -9921,11 +9927,11 @@ extension on TranslationsEn {
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
+			_ => null,
+		} ?? switch (path) {
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
 			'vod.noResultsTitle' => 'No videos found',
 			'vod.noResultsDescription' => 'Try another keyword.',
-			_ => null,
-		} ?? switch (path) {
 			'vod.errorTitle' => 'The videos did not load',
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
