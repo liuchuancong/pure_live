@@ -510,8 +510,8 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                 shown,
                 narrow: width < 720,
                 withFacts: withFacts,
-                tasks: tasks,
                 directory: directory,
+                tasks: tasks,
                 isMissing: (task) => missing[task.id] ?? false,
               )
             : shown.isEmpty
@@ -528,7 +528,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
-                directory: directory,
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
                 onQuery: (value) => setState(() {

@@ -787,7 +787,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
-                directory: directory,
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
                 onQuery: (value) => setState(() {

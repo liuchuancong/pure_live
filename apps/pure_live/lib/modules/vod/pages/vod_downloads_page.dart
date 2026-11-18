@@ -5,9 +5,11 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:path/path.dart' as p;
 
+import 'package:pure_live/app/app.dart' show SettingsSectionRoute;
 import 'package:pure_live/app/providers/boot/storage_providers.dart'
     show appPathsProvider, storageFolderOverridesProvider;
 import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
@@ -15,7 +17,8 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart' show M
 import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
-import 'package:pure_live/features/settings/settings.dart' show SettingsChoiceRow, SettingsConfigRow, openModuleItem;
+import 'package:pure_live/features/settings/settings.dart'
+    show SettingsChoiceRow, SettingsConfigRow, SettingsSection, openModuleItem, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice;
@@ -91,48 +94,6 @@ Future<void> _openVodPreview(BuildContext context, WidgetRef ref, VodDownloadIte
     onDeleted: (item) => ref.read(vodDownloadsProvider.notifier).remove(item.id),
   );
 }
-
-/// What a row's phase says about itself, as the table's state column shows it:
-/// the phase, and how far a transfer still owed bytes has got. The phase's name
-/// comes from [_vodPhaseLabel], the same words the filter panel lists it by, so
-/// one phase is not said two ways on one page.
-Widget _vodPhaseBadge(BuildContext context, VodDownloadItem task, {required bool missing}) {
-  final t = context.t;
-  // A finished row whose file the viewer moved or deleted is said here, in the
-  // same words the row's own caption and the facts column use: the record is
-  // true of the transfer, not of the disk.
-  if (task.phase == VodDownloadPhase.done && missing) {
-    return DsBadge(status: DsStatus.danger, label: Text(t.common.previewFileMissing));
-  }
-  // A running row counts itself out loud; one that never got its total only
-  // says it is moving.
-  if (task.phase == VodDownloadPhase.running && task.total > 0) {
-    return DsBadge(
-      status: DsStatus.info,
-      label: Text(t.settings.downloadPercent(percent: '${task.received * 100 ~/ task.total}')),
-    );
-  }
-  return DsBadge(
-    status: switch (task.phase) {
-      VodDownloadPhase.done => DsStatus.success,
-      VodDownloadPhase.running => DsStatus.info,
-      VodDownloadPhase.paused => DsStatus.warning,
-      VodDownloadPhase.failed => DsStatus.danger,
-      VodDownloadPhase.queued => DsStatus.neutral,
-    },
-    label: Text(_vodPhaseLabel(t, task.phase)),
-  );
-}
-
-/// The phases in the order a queue reads: what is moving, what waits for a
-/// lane, what stopped on purpose, what stopped on its own, what landed.
-int _vodPhaseRank(VodDownloadPhase phase) => switch (phase) {
-  VodDownloadPhase.running => 0,
-  VodDownloadPhase.queued => 1,
-  VodDownloadPhase.paused => 2,
-  VodDownloadPhase.failed => 3,
-  VodDownloadPhase.done => 4,
-};
 
 /// The one verb a part's phase allows: stop a transfer, carry a waiting or
 /// stopped one on, fetch a failed one again, or watch the part that landed.
@@ -416,7 +377,7 @@ final class VodDownloadsPane extends ConsumerWidget {
 /// One part's row, as the window too narrow for a table shows it: the file's
 /// name over its phase's caption and bar, with the actions that phase allows at
 /// the end. The table shape reads the same phase, verb and menu through
-/// [_vodPhaseBadge], [_vodPhaseVerb] and [_vodRowMenu], so the two agree.
+/// [_vodPhaseVerb] and [_vodRowMenu], so the two agree.
 final class _VodTaskRow extends ConsumerWidget {
   const _VodTaskRow({required this.task, this.inBlock = false, super.key});
 
@@ -567,11 +528,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   bool _playableOnly = false;
 
   /// The table's sorted column.
-  DsTableSort? _sort;
-
-  /// The ticked rows — the batch verbs' objects.
-  final Set<Object> _selected = {};
-
   /// The row the wide window's facts column speaks about; null lets the first
   /// visible row speak.
   String? _factsId;
@@ -599,64 +555,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     ];
   }
 
-  /// The ticked rows, in the queue's order.
-  List<VodDownloadItem> _picked(List<VodDownloadItem> tasks) => [
-    for (final task in tasks)
-      if (_selected.contains(task.id)) task,
-  ];
-
-  /// Runs [verb] over [rows], one after another: the store writes per task, so
-  /// a batch is a run of writes rather than a call of its own.
-  Future<void> _runOver(List<VodDownloadItem> rows, Future<void> Function(VodDownloadsController, String) verb) async {
-    final controller = ref.read(vodDownloadsProvider.notifier);
-    for (final task in rows) {
-      await verb(controller, task.id);
-    }
-  }
-
-  /// Drops the ticked records after one ask; the files they name stay on disk,
-  /// which is what the body says rather than leaves to be guessed.
-  Future<void> _removePicked(List<VodDownloadItem> picked) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.settings.downloadRemoveBody,
-      confirmLabel: t.settings.downloadRemove,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    await _runOver(picked, (controller, id) => controller.remove(id));
-    if (mounted) setState(_selected.clear);
-  }
-
-  /// Deletes the ticked parts' files and records after one ask. The store's own
-  /// remove answers for a file that already went away, so a batch that names
-  /// more than the disk holds says so instead of quietly reporting a smaller
-  /// number.
-  Future<void> _deletePicked(List<VodDownloadItem> picked) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.vod.downloadDeleteFileBody,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    final controller = ref.read(vodDownloadsProvider.notifier);
-    for (final task in picked) {
-      try {
-        await controller.remove(task.id, deleteFile: true);
-      } on Object {
-        if (mounted) showDsToast(context: context, title: t.vod.downloadDeleteFailed, status: DsStatus.danger);
-      }
-    }
-    if (mounted) setState(_selected.clear);
-  }
-
   /// The queue's conditions, behind the head's one entry: which phases show and
   /// whether a row must still name a file the disk holds. Nothing else about a
   /// queue is a condition — where it lands is a setting, and its size is what
@@ -670,7 +568,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
         ..clear()
         ..addAll(picked);
       _playableOnly = playable;
-      _selected.clear();
     });
     await showAppPanel<void>(
       context: context,
@@ -728,14 +625,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     // the two settings that decide it.
     final retry = ref.watch(vodDownloadRetryProvider);
     final retryDelay = ref.watch(vodDownloadRetryDelayProvider);
-    // A tick on a row the queue no longer holds no longer counts, and the batch
-    // bar would otherwise promise an action on nothing.
-    _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
     final shown = _visible(tasks);
-    // One stat per visible row per read, not one per cell: the same part answers
-    // through its badge, its verb and its menu, and asking the disk three times
-    // for one row is how a queue of a hundred parts starts to cost a frame.
-    final missing = {for (final task in shown) task.id: _vodFileMissing(task)};
     final moving = tasks
         .where((task) => task.phase == VodDownloadPhase.queued || task.phase == VodDownloadPhase.running)
         .length;
@@ -746,40 +636,18 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
     // What it is pulling right now, its third half: the lanes' own total, so a
     // running row's speed is not asked of every row to be read once.
     final speed = tasks.fold<int>(0, (sum, task) => sum + task.speed);
-    final picked = _picked(tasks);
-    final pausable = picked
-        .where((task) => task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.queued)
-        .toList();
-    final resumable = picked
-        .where((task) => task.phase == VodDownloadPhase.paused || task.phase == VodDownloadPhase.failed)
-        .toList();
     final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
     final filterActive = _phases.isNotEmpty || _playableOnly;
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        // The table starts where a queue's columns fit; below it the parts keep
-        // the row cards, with their cover and their bar.
-        final asTable = width >= LiveWindow.table;
-        // The facts column rides beside a table only where the table still
-        // keeps its columns after 340 pixels are taken from it.
+        // The facts column rides beside the shelf only where the shelf still
+        // keeps its rows after 340 pixels are taken from it.
         final withFacts = width >= LiveWindow.downloadWorkspace;
-        // A table says it has nothing through its own slot; the card list
-        // needs the page's empty state, because a list of one block is not a
-        // queue at all.
-        final queue = asTable
-            ? _table(
-                t,
-                shown,
-                narrow: width < 720,
-                withFacts: withFacts,
-                filterActive: filterActive,
-                tasks: tasks,
-                isMissing: (task) => missing[task.id] ?? false,
-              )
-            : shown.isEmpty
-            ? _empty(t, tasks, directory, filterActive)
-            : _cards(shown);
+        // One shelf at every width — the queue reads as cards, the way the
+        // recording centre's task list does; a table of columns is the one
+        // form this page never grew back.
+        final queue = shown.isEmpty ? _empty(t, tasks, directory, filterActive) : _cards(shown);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -791,13 +659,9 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                   if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                   if (speed > 0) t.common.downloadSpeed(speed: '${formatDownloadBytes(speed)}/s'),
                 ].join(' · '),
-                directory: directory,
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
-                onQuery: (value) => setState(() {
-                  _query = value;
-                  _selected.clear();
-                }),
+                onQuery: (value) => setState(() => _query = value),
                 filterLabel: t.settings.downloadFilterLabel,
                 filterActive: filterActive,
                 onFilter: () => unawaited(_openFilter(tasks)),
@@ -838,34 +702,11 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                     onPressed: () => setState(() => _recheck++),
                   ),
                 ],
-                selectedLabel: picked.isEmpty ? null : t.settings.downloadSelectedCount(count: picked.length),
-                selectionActions: [
-                  if (pausable.isNotEmpty)
-                    DownloadQueueAction(
-                      label: t.settings.downloadPause,
-                      icon: DsIcons.pause,
-                      onPressed: () => unawaited(_runOver(pausable, (controller, id) => controller.pause(id))),
-                    ),
-                  if (resumable.isNotEmpty)
-                    DownloadQueueAction(
-                      label: t.settings.downloadResume,
-                      icon: DsIcons.play,
-                      onPressed: () => unawaited(_runOver(resumable, (controller, id) => controller.resume(id))),
-                    ),
-                  DownloadQueueAction(
-                    label: t.settings.downloadRemove,
-                    icon: DsIcons.trash2,
-                    destructive: true,
-                    onPressed: () => unawaited(_removePicked(picked)),
-                  ),
-                  if (picked.any((task) => task.phase == VodDownloadPhase.done))
-                    DownloadQueueAction(
-                      label: t.vod.downloadDeleteFile,
-                      icon: DsIcons.fileX,
-                      destructive: true,
-                      onPressed: () => unawaited(_deletePicked(picked)),
-                    ),
-                ],
+                settingsLabel: t.settings.downloadSettings,
+                onSettings: () {
+                  openSettingsSection(ref, SettingsSection.vodDownload);
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.vodDownload.name).location));
+                },
               ),
             ),
             Expanded(
@@ -945,110 +786,6 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
       ],
     ),
   );
-
-  /// The queue as a table: the part and what became of it, then the bytes, the
-  /// moment and the one verb its phase allows.
-  ///
-  /// A narrow table drops the two columns a row can do without — the size of a
-  /// part it has not finished is not the fact that decides anything, and the
-  /// facts column says the rest. Pressing a row is the facts column's own verb,
-  /// so a window with no facts column lets a click do what its checkbox does.
-  Widget _table(
-    Translations t,
-    List<VodDownloadItem> rows, {
-    required bool narrow,
-    required bool withFacts,
-    required bool filterActive,
-    required List<VodDownloadItem> tasks,
-    required bool Function(VodDownloadItem task) isMissing,
-  }) {
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(_inset, 0, _inset, DsSpace.s12),
-      child: DsTable<VodDownloadItem>(
-        semanticLabel: t.vod.downloadManagerTitle,
-        style: const DsTableStyle(rowHeight: 56),
-        rowsVersion: _recheck,
-        columns: [
-          DsTableColumn<VodDownloadItem>(
-            id: 'name',
-            label: t.settings.downloadColumnFile,
-            value: (task) => task.title,
-            sortable: true,
-            width: const DsTableColumnWidth.flex(3, 160),
-            // Two lines, as the library's rows do: the archive the part belongs
-            // to over the part itself, which is the half a queue of thirty parts
-            // actually differs on.
-            cell: (context, task) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(task.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(
-                  task.part.isEmpty ? 'P${task.index}' : 'P${task.index} ${task.part}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
-                ),
-              ],
-            ),
-          ),
-          DsTableColumn<VodDownloadItem>(
-            id: 'status',
-            label: t.common.downloadStatus,
-            sortable: true,
-            comparator: (a, b) => _vodPhaseRank(a.phase).compareTo(_vodPhaseRank(b.phase)),
-            width: const DsTableColumnWidth.intrinsic(min: 104),
-            cell: (context, task) => _vodPhaseBadge(context, task, missing: isMissing(task)),
-          ),
-          if (!narrow)
-            DsTableColumn<VodDownloadItem>(
-              id: 'size',
-              label: t.settings.downloadColumnSize,
-              value: (task) => task.total > 0 ? task.total : task.received,
-              text: (task) => formatDownloadBytes(task.total > 0 ? task.total : task.received),
-              numeric: true,
-              sortable: true,
-              width: const DsTableColumnWidth.intrinsic(min: 88),
-            ),
-          if (!narrow)
-            DsTableColumn<VodDownloadItem>(
-              id: 'time',
-              label: t.settings.downloadColumnTime,
-              value: (task) => task.stamp,
-              text: (task) => downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp)),
-              sortable: true,
-              width: const DsTableColumnWidth.intrinsic(min: 92),
-            ),
-          DsTableColumn<VodDownloadItem>(
-            id: 'actions',
-            label: t.settings.downloadColumnActions,
-            alignment: DsTableCellAlignment.end,
-            // A builder-only column measures nothing, so it names its width.
-            width: const DsTableColumnWidth.fixed(48),
-            cell: (context, task) => _vodPhaseVerb(context, ref, task, missing: isMissing(task)),
-          ),
-        ],
-        rows: rows,
-        rowKey: (task) => task.id,
-        sort: _sort,
-        onSortChanged: (sort) => setState(() => _sort = sort),
-        selected: _selected,
-        onSelectionChanged: (next) => setState(() {
-          _selected
-            ..clear()
-            ..addAll(next);
-        }),
-        onRowPressed: withFacts
-            ? (task) => setState(() {
-                _factsId = task.id;
-              })
-            : null,
-        rowMenuBuilder: (context, task) => _vodRowMenu(context, ref, task, missing: isMissing(task)),
-        showRowMenuButton: true,
-        emptyView: _empty(t, tasks, ref.read(appPathsProvider).videos.path, filterActive),
-      ),
-    );
-  }
 }
 
 /// The preview page's list for the station's queue: every part that finished,

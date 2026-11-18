@@ -65,11 +65,12 @@ final class DownloadQueueAction {
 /// read, so the page hands them in; [actions] that have nothing to act on are
 /// left out by the caller (see [DownloadQueueAction]).
 final class DownloadQueueHeader extends StatelessWidget {
-  /// The head for [summary] over [directory], searching with [query], filtering
-  /// through [onFilter] and acting through [actions].
+  /// The head for [summary], searching with [query], filtering through
+  /// [onFilter] and acting through [actions]; [onSettings] hangs the
+  /// manager's own settings page off the head's end, the way the recording
+  /// centre's head carries its own.
   const DownloadQueueHeader({
     required this.summary,
-    required this.directory,
     required this.searchHint,
     required this.query,
     required this.onQuery,
@@ -77,6 +78,8 @@ final class DownloadQueueHeader extends StatelessWidget {
     required this.filterActive,
     required this.onFilter,
     required this.actions,
+    this.settingsLabel,
+    this.onSettings,
     this.selectedLabel,
     this.selectionActions = const [],
     super.key,
@@ -86,8 +89,11 @@ final class DownloadQueueHeader extends StatelessWidget {
   /// bytes, at what speed.
   final String summary;
 
-  /// The folder the files land in — the line 打开文件夹 answers with.
-  final String directory;
+  /// The word for the manager's settings entry; null keeps the entry off.
+  final String? settingsLabel;
+
+  /// Opens the manager's settings page; null keeps the entry off.
+  final VoidCallback? onSettings;
 
   /// The search box's own name.
   final String searchHint;
@@ -135,104 +141,102 @@ final class DownloadQueueHeader extends StatelessWidget {
       icon: const DsIcon(DsIcons.filter),
       semanticLabel: filterLabel,
     );
+    // The queue's whole-queue verbs, folded behind one glyph: a strip of
+    // five labelled buttons read as a toolbar bolted onto the page, and the
+    // recording centre's head keeps its batch verbs in one menu for the
+    // same reason.
+    final overflow = DsMenuAnchor(
+      semanticLabel: t.common.more,
+      align: DsAlign.end,
+      items: [
+        for (final action in live)
+          DsMenuItem(
+            leading: DsIcon(action.icon),
+            label: Text(action.label),
+            destructive: action.destructive,
+            onPressed: action.onPressed,
+          ),
+      ],
+      builder: (context, controller, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.sm,
+        semanticLabel: t.common.more,
+        onPressed: live.isEmpty ? null : controller.toggle,
+        icon: const DsIcon(DsIcons.ellipsisVertical),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
         Row(
-          spacing: DsSpace.s12,
+          spacing: DsSpace.s8,
           children: [
             // The page's name belongs to the menu entry that opened it; what
-            // only this page answers is how big the queue is and where its
-            // files sit.
+            // only this page answers is how big the queue is. Where the
+            // files land, the folder row in the menu answers.
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s3,
+              child: Text(
+                summary,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
+              ),
+            ),
+            search,
+            filterButton,
+            if (onSettings != null)
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                onPressed: onSettings,
+                icon: const DsIcon(DsIcons.settings),
+                semanticLabel: settingsLabel!,
+              ),
+            overflow,
+          ],
+        ),
+        if (compact && live.isNotEmpty)
+          // A phone's verbs are a 弹窗 behind a labelled button, not a
+          // glyph drop-down — the rule the live module's pages follow.
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            semanticLabel: t.common.more,
+            leading: const DsIcon(DsIcons.chevronDown, size: 14),
+            child: Text(t.common.more),
+            onPressed: () => unawaited(
+              showActionsPanel(
+                context,
+                title: t.common.more,
                 children: [
-                  Text(
-                    summary,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                  Text(
-                    directory,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  DsListSection(
+                    children: [
+                      DsListRow(
+                        leading: const DsIcon(DsIcons.filter, size: 16),
+                        title: Text(filterLabel),
+                        trailing: filterActive ? const DsIcon(DsIcons.check, size: 14) : null,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onFilter();
+                        },
+                      ),
+                      for (final action in live)
+                        DsListRow(
+                          leading: DsIcon(action.icon, size: 16),
+                          title: Text(action.label),
+                          destructive: action.destructive,
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            action.onPressed!();
+                          },
+                        ),
+                    ],
                   ),
                 ],
               ),
             ),
-            search,
-            if (compact)
-              // A phone's verbs are a 弹窗 behind a labelled button, not a
-              // glyph drop-down — the rule the live module's pages follow.
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.common.more,
-                leading: const DsIcon(DsIcons.chevronDown, size: 14),
-                child: Text(t.common.more),
-                onPressed: () => unawaited(
-                  showActionsPanel(
-                    context,
-                    title: t.common.more,
-                    children: [
-                      DsListSection(
-                        children: [
-                          DsListRow(
-                            leading: const DsIcon(DsIcons.filter, size: 16),
-                            title: Text(filterLabel),
-                            trailing: filterActive ? const DsIcon(DsIcons.check, size: 14) : null,
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              onFilter();
-                            },
-                          ),
-                          for (final action in live)
-                            DsListRow(
-                              leading: DsIcon(action.icon, size: 16),
-                              title: Text(action.label),
-                              destructive: action.destructive,
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                action.onPressed!();
-                              },
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else ...[
-              filterButton,
-              // Several verbs and a search box do not fit a 960 window: the
-              // verbs give way to a sideways run, keeping the queue's own room.
-              Flexible(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  reverse: true,
-                  child: Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      for (final action in live)
-                        DsButton(
-                          variant: DsButtonVariant.secondary,
-                          size: DsSize.sm,
-                          leading: DsIcon(action.icon, size: 14),
-                          onPressed: action.onPressed,
-                          child: Text(action.label),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
         if (selectedLabel != null && selected.isNotEmpty)
           Row(
             spacing: DsSpace.s8,
