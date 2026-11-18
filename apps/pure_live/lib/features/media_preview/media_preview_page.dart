@@ -10,6 +10,7 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart' show SvgPicture;
 import 'package:go_router/go_router.dart' show GoRouter;
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
@@ -221,6 +222,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// the file is still being read.
   List<BarrageItem>? _timeline;
   bool _danmakuLoading = false;
+  _PreviewListTab _listTab = _PreviewListTab.files;
 
   /// A read may finish after the list moved on; only the latest one lands.
   int _danmakuToken = 0;
@@ -911,19 +913,129 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
   /// The list, built once for every arrangement that shows it: the inline
   /// column, the theatre's float and the immersive drawer are three rooms for
   /// the same widget.
-  Widget _previewList() => _PreviewList(
-    items: widget.items,
-    current: _index,
-    onSelect: _select,
-    onOpenFolder: _revealFolderAt,
-    onDelete: _deleteAt,
-    // The folder a group header names; no groups means no button on the list.
-    onOpenGroup: widget.items.any((item) => item.groupPath.trim().isNotEmpty)
-        ? (folder) => unawaited(_revealFolder(folder))
-        : null,
-    autoNext: _autoNext,
-    onAutoNext: widget.items.length > 1 ? (value) => setState(() => _autoNext = value) : null,
-  );
+  Widget _previewList() {
+    final t = context.t;
+    final files = _PreviewList(
+      items: widget.items,
+      current: _index,
+      onSelect: _select,
+      onOpenFolder: _revealFolderAt,
+      onDelete: _deleteAt,
+      // The folder a group header names; no groups means no button on the list.
+      onOpenGroup: widget.items.any((item) => item.groupPath.trim().isNotEmpty)
+          ? (folder) => unawaited(_revealFolder(folder))
+          : null,
+      autoNext: _autoNext,
+      onAutoNext: widget.items.length > 1 ? (value) => setState(() => _autoNext = value) : null,
+    );
+    // The column carries two tabs: the entries, and the danmaku record —
+    // what was said beside the picture, read as a list, not flown across
+    // it. One column, two readings, the room side's own pattern.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s8, DsSpace.s4),
+          child: DsTabs<_PreviewListTab>(
+            value: _listTab,
+            onChanged: (tab) => setState(() => _listTab = tab),
+            semanticLabel: t.common.previewDanmakuSettings,
+            tabs: [
+              DsTab(value: _PreviewListTab.files, label: Text(t.common.previewFilesPane)),
+              DsTab(value: _PreviewListTab.danmaku, label: Text(t.room.danmakuList)),
+            ],
+          ),
+        ),
+        Expanded(child: _listTab == _PreviewListTab.files ? files : _danmakuRecordList(t)),
+      ],
+    );
+  }
+
+  /// The danmaku record: the decoded timeline as rows — the moment it was
+  /// said, then what was said — under its own switch. The record is a
+  /// reading surface, not the flying layer: the two live on separate
+  /// switches, and turning one off never silences the other.
+  Widget _danmakuRecordList(Translations t) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final listVisible = ref.watch(playbackSettingsProvider.select((settings) => settings.danmakuListVisible));
+    final timeline = _timeline;
+    final entries = <(Duration, String)>[
+      if (timeline != null)
+        for (final item in timeline)
+          if (item.at case final at?) (at, item.content),
+    ]..sort((a, b) => a.$1.compareTo(b.$1));
+    String stampOf(Duration at) {
+      final minutes = at.inMinutes;
+      final seconds = at.inSeconds % 60;
+      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s4),
+          child: DsSwitch(
+            value: listVisible,
+            onChanged: _hasDanmaku
+                ? (value) => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuListVisible(value: value))
+                : null,
+            label: Text(t.common.previewDanmakuListVisible),
+          ),
+        ),
+        Expanded(
+          child: !listVisible
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(DsSpace.s16),
+                    child: Text(
+                      t.common.previewDanmakuListVisible,
+                      textAlign: TextAlign.center,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  ),
+                )
+              : entries.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(DsSpace.s16),
+                    child: Text(
+                      _danmakuLoading ? t.common.previewDanmakuLoading : t.common.previewDanmakuOff,
+                      textAlign: TextAlign.center,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s16),
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final (at, content) = entries[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s8,
+                        children: [
+                          Text(
+                            stampOf(at),
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(content, style: theme.typography.small.copyWith(color: colors.text)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
 
   /// The compact window's strip: the restore pill leads, the title carries
   /// the window's drag and the double press that restores, and the ✕ closes
@@ -1635,17 +1747,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       // The flying danmaku's switch beside the gear that opens its settings —
       // the pair the room's bar draws at the reading end. Without a sidecar
       // the switch stays in place but out of reach, and says why.
-      _DanmakuToggle(
-        on: has && visible,
-        label: loading
-            ? t.common.previewDanmakuLoading
-            : has
-            ? (visible ? t.vod.danmakuOff : t.vod.danmakuOn)
-            : t.common.previewDanmakuOff,
-        onPressed: has
-            ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
-            : null,
-      ),
+      _danmakuBarCluster(t, has: has, visible: visible, loading: loading),
       // The window's own verbs: the in-app fullscreen where a desktop can
       // fill its window, and the system fullscreen whose button doubles as
       // the way back out of whichever mode is active.
@@ -1665,6 +1767,65 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     ];
   }
 
+  /// The flying danmaku's pair — the on/off glyph the room's bar draws, and
+  /// the gear that opens its settings — the same SVG marks the room bar
+  /// serves, so the two players read as one app's controls. Without a
+  /// sidecar the switch stays in place but out of reach, and says why.
+  Widget _danmakuBarCluster(Translations t, {required bool has, required bool visible, required bool loading}) {
+    final theme = DsTheme.of(context);
+    final side = theme.sizes.sm;
+    final on = has && visible;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s4,
+      children: [
+        DsTooltip(
+          message: loading
+              ? t.common.previewDanmakuLoading
+              : has
+              ? (visible ? t.vod.danmakuOff : t.vod.danmakuOn)
+              : t.common.previewDanmakuOff,
+          child: DsPressable(
+            semanticLabel: loading
+                ? t.common.previewDanmakuLoading
+                : on
+                ? t.vod.danmakuOff
+                : t.vod.danmakuOn,
+            onPressed: has
+                ? () => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !visible))
+                : null,
+            builder: (context, states, _) {
+              final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+              return Container(
+                width: side,
+                height: side,
+                alignment: Alignment.center,
+                decoration: DsBoxDecoration(
+                  color: lit ? const Color(0x24FFFFFF) : null,
+                  borderRadius: theme.radii.controlCorners(null, side),
+                ),
+                child: SvgPicture.asset(
+                  on ? 'assets/icons/danmaku-on.svg' : 'assets/icons/danmaku-off.svg',
+                  width: side * .5,
+                  height: side * .5,
+                  colorFilter: ColorFilter.mode(
+                    on ? OnVideoColors.foreground : OnVideoColors.inkMuted,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        PlayerBarButton(
+          iconAsset: 'assets/icons/danmaku-settings.svg',
+          label: t.settings.navDanmaku,
+          onPressed: _openDanmakuSettings,
+        ),
+      ],
+    );
+  }
+
   /// Whether this host offers the in-app window-fullscreen button: a desktop
   /// can fill its own window, a phone has nothing to fill.
   bool get _desktop =>
@@ -1675,6 +1836,9 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
 }
 
 /// The list itself: what the page can play, current entry first-class.
+/// The list column's two readings: the entries, and the danmaku record.
+enum _PreviewListTab { files, danmaku }
+
 final class _PreviewList extends StatelessWidget {
   const _PreviewList({
     required this.items,
@@ -2007,55 +2171,6 @@ final class _DrawerTab extends StatelessWidget {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// The flying danmaku's round 「弹」 switch, the room bar's own control: a
-/// circle that fills with the accent while the lines are on, beside the gear
-/// that opens their settings. Over the picture's dark bar it takes the
-/// overlay's ink rather than the theme's, like every button beside it.
-final class _DanmakuToggle extends StatelessWidget {
-  const _DanmakuToggle({required this.on, required this.label, this.onPressed});
-
-  /// Whether the lines are flying.
-  final bool on;
-
-  /// What the switch says to a screen reader and the tooltip.
-  final String label;
-
-  /// Fired on tap; null draws the switch out of reach.
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final side = theme.sizes.sm;
-    return DsTooltip(
-      message: label,
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: onPressed,
-        builder: (context, states, _) {
-          return Container(
-            width: side,
-            height: side,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: on ? theme.colors.accent : const Color(0x00000000),
-              border: on ? null : Border.all(color: const Color(0x59FFFFFF)),
-            ),
-            child: Text(
-              context.t.room.danmakuMark,
-              style: theme.typography.caption.copyWith(
-                color: on ? theme.colors.onAccent : OnVideoColors.inkMuted,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          );
-        },
       ),
     );
   }

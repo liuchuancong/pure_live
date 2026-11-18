@@ -1431,6 +1431,15 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '将删除全部搜索历史，删除后不可恢复。'
 	String get clearSearchHistoryBody => '将删除全部搜索历史，删除后不可恢复。';
+
+	/// zh-CN: '文件'
+	String get previewFilesPane => '文件';
+
+	/// zh-CN: '显示弹幕列表'
+	String get previewDanmakuListVisible => '显示弹幕列表';
+
+	/// zh-CN: '在侧栏按时间排列这条录像的弹幕记录。'
+	String get previewDanmakuListVisibleDescription => '在侧栏按时间排列这条录像的弹幕记录。';
 }
 
 // Path: favorites
@@ -15850,6 +15859,9 @@ extension on Translations {
 			'common.previewSplitter' => '预览分栏宽度',
 			'common.clearSearchHistoryTitle' => '清空搜索历史？',
 			'common.clearSearchHistoryBody' => '将删除全部搜索历史，删除后不可恢复。',
+			'common.previewFilesPane' => '文件',
+			'common.previewDanmakuListVisible' => '显示弹幕列表',
+			'common.previewDanmakuListVisibleDescription' => '在侧栏按时间排列这条录像的弹幕记录。',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -16276,11 +16288,11 @@ extension on Translations {
 			'iptv.autoUpdate' => '自动更新',
 			'iptv.autoUpdateHint' => '按此间隔在后台检查并重拉已开启自动更新的节目单。',
 			'iptv.customUserAgent' => 'User-Agent',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.customUserAgentDesc' => '导入与播放请求使用的 UA；留空用默认，播放列表自带优先。',
 			'iptv.updateInterval' => '更新间隔',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
 			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} 个节目单会按此间隔自动刷新',
 			'iptv.autoUpdateStatusNone' => '还没有节目单开启自动更新。',
@@ -16790,11 +16802,11 @@ extension on Translations {
 			'music.queueTitle' => '播放队列',
 			'music.queueUpNext' => '接下来播放',
 			'music.queuePlayed' => '已播放',
+			_ => null,
+		} ?? switch (path) {
 			'music.queueShowMore' => ({required Object count}) => '显示更多（还有 ${count} 首）',
 			'music.queueMissingFile' => '文件丢失',
 			'music.queueUnplayable' => '无法播放',
-			_ => null,
-		} ?? switch (path) {
 			'music.nowPlaying' => '正在播放',
 			'music.stagePanels' => '歌词与队列',
 			'music.volume' => '音量',
@@ -17304,11 +17316,11 @@ extension on Translations {
 			'music.toggleSourceEmpty' => '没有找到候选歌曲',
 			'music.toggleSourceFailed' => '候选搜索失败',
 			'music.editTags' => '编辑标签',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditTitle' => '编辑歌曲标签',
 			'music.tagEditFileName' => '文件名',
 			'music.tagEditName' => '歌曲名',
-			_ => null,
-		} ?? switch (path) {
 			'music.tagEditSinger' => '艺术家',
 			'music.tagEditAlbum' => '专辑名',
 			'music.tagEditLyric' => 'LRC 歌词',
@@ -17818,11 +17830,11 @@ extension on Translations {
 			'room.replayEnded' => '回放已结束',
 			'room.banned' => '该直播间已被封禁',
 			'room.carousel' => '轮播中',
+			_ => null,
+		} ?? switch (path) {
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
-			_ => null,
-		} ?? switch (path) {
 			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
@@ -18332,11 +18344,11 @@ extension on Translations {
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
 			'settings.proxyModeSystem' => '跟随系统代理',
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
@@ -18846,11 +18858,11 @@ extension on Translations {
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
 			'settings.hwdecCodecsAll' => '全部编码格式',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => '音频独占',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioExclusiveDesc' => '--audio-exclusive：独占 WASAPI 设备，其他应用无法出声。',
 			'settings.forceDestroy' => '播放器强制销毁',
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
@@ -19360,11 +19372,11 @@ extension on Translations {
 			'settings.chatListFontSize' => '文字大小',
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListSpacingCompact' => '紧凑',
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
@@ -19874,11 +19886,11 @@ extension on Translations {
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',
 			'vod.errorTitle' => '视频没有加载出来',
+			_ => null,
+		} ?? switch (path) {
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
 			'vod.tabPopular' => '热门',
-			_ => null,
-		} ?? switch (path) {
 			'vod.tabDynamics' => '动态',
 			'vod.dynamicsLoginTitle' => '登录后查看动态',
 			'vod.dynamicsLoginDescription' => '动态来自你关注的 UP 主，需要一个 Bilibili 登录。',

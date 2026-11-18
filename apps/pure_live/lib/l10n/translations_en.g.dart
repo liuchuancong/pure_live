@@ -544,6 +544,9 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewSplitter => 'Preview pane width';
 	@override String get clearSearchHistoryTitle => 'Clear search history?';
 	@override String get clearSearchHistoryBody => 'This removes every search from the history; it cannot be undone.';
+	@override String get previewFilesPane => 'Files';
+	@override String get previewDanmakuListVisible => 'Show danmaku list';
+	@override String get previewDanmakuListVisibleDescription => 'Lists this video\'s danmaku as a timestamped record beside the picture.';
 }
 
 // Path: favorites
@@ -5893,6 +5896,9 @@ extension on TranslationsEn {
 			'common.previewSplitter' => 'Preview pane width',
 			'common.clearSearchHistoryTitle' => 'Clear search history?',
 			'common.clearSearchHistoryBody' => 'This removes every search from the history; it cannot be undone.',
+			'common.previewFilesPane' => 'Files',
+			'common.previewDanmakuListVisible' => 'Show danmaku list',
+			'common.previewDanmakuListVisibleDescription' => 'Lists this video\'s danmaku as a timestamped record beside the picture.',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -6319,11 +6325,11 @@ extension on TranslationsEn {
 			'iptv.autoUpdate' => 'Auto update',
 			'iptv.autoUpdateHint' => 'Checks in the background at this interval and refetches guides with auto-update on.',
 			'iptv.customUserAgent' => 'User-Agent',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.customUserAgentDesc' => 'User-Agent for imports and playback; blank means the app default.',
 			'iptv.updateInterval' => 'Update interval',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} h',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} d',
 			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} guides refresh at this interval',
 			'iptv.autoUpdateStatusNone' => 'No guide updates automatically yet.',
@@ -6833,11 +6839,11 @@ extension on TranslationsEn {
 			'music.queueTitle' => 'Queue',
 			'music.queueUpNext' => 'Up next',
 			'music.queuePlayed' => 'Played',
+			_ => null,
+		} ?? switch (path) {
 			'music.queueShowMore' => ({required Object count}) => 'Show more (${count} left)',
 			'music.queueMissingFile' => 'File missing',
 			'music.queueUnplayable' => 'Couldn\'t play',
-			_ => null,
-		} ?? switch (path) {
 			'music.nowPlaying' => 'Now playing',
 			'music.stagePanels' => 'Lyrics & queue',
 			'music.volume' => 'Volume',
@@ -7347,11 +7353,11 @@ extension on TranslationsEn {
 			'music.toggleSourceEmpty' => 'No candidate songs found',
 			'music.toggleSourceFailed' => 'Searching for candidates failed',
 			'music.editTags' => 'Edit tags',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditTitle' => 'Edit song tags',
 			'music.tagEditFileName' => 'File name',
 			'music.tagEditName' => 'Title',
-			_ => null,
-		} ?? switch (path) {
 			'music.tagEditSinger' => 'Artist',
 			'music.tagEditAlbum' => 'Album',
 			'music.tagEditLyric' => 'LRC lyric',
@@ -7861,11 +7867,11 @@ extension on TranslationsEn {
 			'room.replayEnded' => 'The replay has ended',
 			'room.banned' => 'This room has been banned',
 			'room.carousel' => 'Carousel',
+			_ => null,
+		} ?? switch (path) {
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
-			_ => null,
-		} ?? switch (path) {
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
@@ -8375,11 +8381,11 @@ extension on TranslationsEn {
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
 			'settings.proxyModeSystem' => 'Follow the system proxy',
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
@@ -8889,11 +8895,11 @@ extension on TranslationsEn {
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs: drop a codec from the list to fall back to software.',
 			'settings.hwdecCodecsAll' => 'All codecs',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => 'Audio exclusive',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioExclusiveDesc' => '--audio-exclusive: takes the WASAPI device; other apps fall silent.',
 			'settings.forceDestroy' => 'Force Stop Player',
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
@@ -9403,11 +9409,11 @@ extension on TranslationsEn {
 			'settings.chatListFontSize' => 'Text size',
 			'settings.chatListFontSizeDesc' => 'Follow theme keeps it in step.',
 			'settings.chatListFollowTheme' => 'Follow theme',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListSpacingCompact' => 'Compact',
 			'settings.chatListSpacingStandard' => 'Standard',
 			'settings.chatListSpacingLoose' => 'Loose',
@@ -9917,11 +9923,11 @@ extension on TranslationsEn {
 			'vod.noResultsTitle' => 'No videos found',
 			'vod.noResultsDescription' => 'Try another keyword.',
 			'vod.errorTitle' => 'The videos did not load',
+			_ => null,
+		} ?? switch (path) {
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
 			'vod.tabPopular' => 'Popular',
-			_ => null,
-		} ?? switch (path) {
 			'vod.tabDynamics' => 'Dynamics',
 			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',
 			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',

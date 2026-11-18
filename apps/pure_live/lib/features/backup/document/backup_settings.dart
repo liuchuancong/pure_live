@@ -187,6 +187,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('playback.volume', BackupPrefKind.floating),
   ('playback.fit', BackupPrefKind.string),
   ('playback.danmaku', BackupPrefKind.boolean),
+  ('playback.danmakuList', BackupPrefKind.boolean),
   ('playback.miniDanmaku', BackupPrefKind.boolean),
   ('playback.hwdec', BackupPrefKind.boolean),
   ('playback.autoPip', BackupPrefKind.boolean),

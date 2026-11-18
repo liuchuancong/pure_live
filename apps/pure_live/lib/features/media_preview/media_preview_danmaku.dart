@@ -47,6 +47,7 @@ final class MediaPreviewDanmakuPanel extends ConsumerWidget {
     final style = ref.watch(danmakuStyleProvider);
     final controller = ref.read(danmakuStyleProvider.notifier);
     final visible = ref.watch(playbackSettingsProvider.select((settings) => settings.danmakuVisible));
+    final listVisible = ref.watch(playbackSettingsProvider.select((settings) => settings.danmakuListVisible));
     final playback = ref.read(playbackSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -87,6 +88,20 @@ final class MediaPreviewDanmakuPanel extends ConsumerWidget {
                     control: DsSwitch(
                       value: visible,
                       onChanged: hasDanmaku ? (value) => unawaited(playback.setDanmakuVisible(value: value)) : null,
+                    ),
+                  ),
+                  // The list is the record beside the picture, not the layer
+                  // on it: its own switch, so a viewer can keep the flying
+                  // lines off and still read what was said.
+                  SettingsConfigRow(
+                    leading: const DsIcon(DsIcons.list),
+                    title: t.common.previewDanmakuListVisible,
+                    description: hasDanmaku
+                        ? t.common.previewDanmakuListVisibleDescription
+                        : t.common.previewDanmakuOff,
+                    control: DsSwitch(
+                      value: listVisible,
+                      onChanged: hasDanmaku ? (value) => unawaited(playback.setDanmakuListVisible(value: value)) : null,
                     ),
                   ),
                   SettingsConfigRow(

@@ -366,12 +366,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     );
   }
 
-  /// The files pane: this room's finished takes as full-width cover cards —
-  /// the frame the backend cut from the file leads each card on the left at
-  /// its own 16:9, the title and the day it was taken beside it. One card
-  /// per row, the way a playlist reads; the card opens the preview on tap,
-  /// and its verbs — the file manager and delete — answer the ellipsis, a
-  /// right press and a long press alike.
+  /// The files pane: this room's finished takes as playlist rows — the
+  /// title on the first line, the platform, the length, the weight and the
+  /// moment on the second, a row number leading them. No covers: a shelf
+  /// of one room's takes reads by its words, and the rows stay one glance
+  /// tall. Tap plays; a right press and a long press open the verbs the
+  /// ellipsis does.
   Widget _filesPane({required LiveRoom? room}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -402,10 +402,10 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
               : ListView(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s16),
                   children: [
-                    for (final take in takes)
+                    for (final (index, take) in takes.indexed)
                       Padding(
                         padding: const EdgeInsets.only(bottom: DsSpace.s8),
-                        child: _takeCard(take, takes),
+                        child: _takeCard(take, index + 1, takes),
                       ),
                   ],
                 ),
@@ -414,16 +414,21 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     );
   }
 
-  /// One cover card: the frame on the left at 16:9, the take's title and
-  /// its day-with-weight beside it, and the verbs glyph at the end. The tap
-  /// opens the preview; a right press and a long press open the same verbs
-  /// the ellipsis does — wherever the pointer comes from, the card answers
-  /// with one menu.
-  Widget _takeCard(RecordingTake take, List<RecordingTake> around) {
+  /// One playlist row: the take's title, and under it the platform, the
+  /// length, the weight and the moment led by the row's number — no cover,
+  /// because the words are what pick a take out of this room's shelf. The
+  /// tap opens the preview; a right press and a long press open the same
+  /// verbs the ellipsis does.
+  Widget _takeCard(RecordingTake take, int row, List<RecordingTake> around) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
-    final meta = [formatRecordingMoment(take.takenAt), ?bytes].join(' · ');
+    final meta = [
+      _platformName(take.platformId),
+      if (take.duration case final duration?) formatRecordingDuration(duration),
+      ?bytes,
+      formatRecordingMoment(take.takenAt),
+    ].join(' · ');
     return DsCard(
       onPressed: () =>
           unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
@@ -437,9 +442,9 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
           child: Row(
             spacing: DsSpace.s8,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: RecorderTakeCover(take: take, width: 160, height: 90),
+              Text(
+                '$row',
+                style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
               ),
               Expanded(
                 child: Column(
@@ -461,10 +466,10 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
                   ],
                 ),
               ),
-              // The verbs live behind one quiet glyph — the card face stays
-              // a picture with two lines, and the file manager and delete
-              // answer when asked (the reference's 稿件 menu, where 删除 is
-              // one row behind 更多, not a bare red stamp on every card).
+              // The verbs live behind one quiet glyph — the row stays two
+              // lines, and the file manager and delete answer when asked
+              // (the reference's 稿件 menu, where 删除 is one row behind
+              // 更多, not a bare red stamp on every row).
               _cardAction(icon: DsIcons.ellipsis, onTap: () => unawaited(_takeActions(take))),
             ],
           ),

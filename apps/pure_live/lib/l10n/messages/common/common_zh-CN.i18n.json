@@ -99,5 +99,8 @@
   "resizeWindow": "调整浮窗大小",
   "previewSplitter": "预览分栏宽度",
   "clearSearchHistoryTitle": "清空搜索历史？",
-  "clearSearchHistoryBody": "将删除全部搜索历史，删除后不可恢复。"
+  "clearSearchHistoryBody": "将删除全部搜索历史，删除后不可恢复。",
+  "previewFilesPane": "文件",
+  "previewDanmakuListVisible": "显示弹幕列表",
+  "previewDanmakuListVisibleDescription": "在侧栏按时间排列这条录像的弹幕记录。"
 }

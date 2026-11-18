@@ -125,6 +125,7 @@ typedef PlaybackSettings = ({
   double desktopVolume,
   PlaybackFit fit,
   bool danmakuVisible,
+  bool danmakuListVisible,
   bool miniDanmakuVisible,
   bool hardwareDecoding,
   bool autoPipOnLeave,
@@ -155,6 +156,7 @@ const PlaybackSettings _defaults = (
   desktopVolume: 1,
   fit: PlaybackFit.contain,
   danmakuVisible: true,
+  danmakuListVisible: true,
   miniDanmakuVisible: true,
   hardwareDecoding: true,
   autoPipOnLeave: false,
@@ -243,6 +245,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
             _defaults.desktopVolume,
         fit: normalizePlaybackFit(_readString('playback.fit')),
         danmakuVisible: StoragePrefs.getBool('playback.danmaku') ?? _defaults.danmakuVisible,
+        danmakuListVisible: StoragePrefs.getBool('playback.danmakuList') ?? _defaults.danmakuListVisible,
         miniDanmakuVisible: StoragePrefs.getBool('playback.miniDanmaku') ?? _defaults.miniDanmakuVisible,
         hardwareDecoding: StoragePrefs.getBool('playback.hwdec') ?? _defaults.hardwareDecoding,
         autoPipOnLeave: StoragePrefs.getBool('playback.autoPip') ?? _defaults.autoPipOnLeave,
@@ -307,6 +310,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     double? desktopVolume,
     PlaybackFit? fit,
     bool? danmakuVisible,
+    bool? danmakuListVisible,
     bool? miniDanmakuVisible,
     bool? hardwareDecoding,
     bool? autoPipOnLeave,
@@ -335,6 +339,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     desktopVolume: desktopVolume ?? state.desktopVolume,
     fit: fit ?? state.fit,
     danmakuVisible: danmakuVisible ?? state.danmakuVisible,
+    danmakuListVisible: danmakuListVisible ?? state.danmakuListVisible,
     miniDanmakuVisible: miniDanmakuVisible ?? state.miniDanmakuVisible,
     hardwareDecoding: hardwareDecoding ?? state.hardwareDecoding,
     autoPipOnLeave: autoPipOnLeave ?? state.autoPipOnLeave,
@@ -390,6 +395,8 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   bool get danmakuVisible => state.danmakuVisible;
 
   /// Whether the flying danmaku also draws while the window is in PiP.
+  bool get danmakuListVisible => state.danmakuListVisible;
+
   bool get miniDanmakuVisible => state.miniDanmakuVisible;
 
   /// Whether the engine decodes in hardware.
@@ -604,6 +611,13 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   Future<void> setDanmakuVisible({required bool value}) async {
     state = _with(danmakuVisible: value);
     await _write(() => StoragePrefs.setBool('playback.danmaku', value));
+  }
+
+  /// Shows or hides the danmaku list — the side record of what was said,
+  /// read next to the picture rather than flown across it.
+  Future<void> setDanmakuListVisible({required bool value}) async {
+    state = _with(danmakuListVisible: value);
+    await _write(() => StoragePrefs.setBool('playback.danmakuList', value));
   }
 
   /// Shows or hides the flying danmaku in the small window.

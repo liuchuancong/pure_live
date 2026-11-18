@@ -99,5 +99,8 @@
   "resizeWindow": "Resize the floating window",
   "previewSplitter": "Preview pane width",
   "clearSearchHistoryTitle": "Clear search history?",
-  "clearSearchHistoryBody": "This removes every search from the history; it cannot be undone."
+  "clearSearchHistoryBody": "This removes every search from the history; it cannot be undone.",
+  "previewFilesPane": "Files",
+  "previewDanmakuListVisible": "Show danmaku list",
+  "previewDanmakuListVisibleDescription": "Lists this video's danmaku as a timestamped record beside the picture."
 }
