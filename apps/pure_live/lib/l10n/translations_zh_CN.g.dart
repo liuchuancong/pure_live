@@ -6178,9 +6178,6 @@ class Translations$popular$zh_CN {
 	/// zh-CN: '返回浏览'
 	String get backToBrowse => '返回浏览';
 
-	/// zh-CN: '推荐直播'
-	String get feedTitle => '推荐直播';
-
 	/// zh-CN: '已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）';
 }
@@ -17375,7 +17372,6 @@ extension on Translations {
 			'popular.nextPage' => '下一页',
 			'popular.inlineAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”',
 			'popular.backToBrowse' => '返回浏览',
-			'popular.feedTitle' => '推荐直播',
 			'popular.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
@@ -17791,9 +17787,9 @@ extension on Translations {
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
+			'room.offlineReason' => '开播后这里会看到直播画面',
 			_ => null,
 		} ?? switch (path) {
-			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
 			'room.copyName' => '复制昵称',
@@ -18305,9 +18301,9 @@ extension on Translations {
 			'settings.githubMirrorTitle' => 'GitHub 加速',
 			'settings.githubMirrorMode' => '下载方式',
 			'settings.githubMirrorModeDesc' => 'GitHub 资源的下载地址。',
+			'settings.githubMirrorOff' => '默认（不加速）',
 			_ => null,
 		} ?? switch (path) {
-			'settings.githubMirrorOff' => '默认（不加速）',
 			'settings.githubMirrorOfficial' => '官方源 · 可能较慢',
 			'settings.githubMirrorCustom' => '自定义…',
 			'settings.githubMirrorCustomDetail' => '自填镜像域名',
@@ -18819,9 +18815,9 @@ extension on Translations {
 			'settings.mpvResetDone' => '已恢复默认设置',
 			'settings.mpvDocs' => '打开 mpv 官方文档',
 			'settings.mpvDocsDesc' => '每个属性的完整说明。',
+			'settings.playerGuide' => '播放器指南',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
 			'settings.playerGuideTitle' => '播放搭配指南',
 			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
@@ -19333,9 +19329,9 @@ extension on Translations {
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
+			'settings.twitchLanguage_zh' => '中文',
 			_ => null,
 		} ?? switch (path) {
-			'settings.twitchLanguage_zh' => '中文',
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
@@ -19847,9 +19843,9 @@ extension on Translations {
 			'vod.loadMore' => '加载更多',
 			'vod.regions' => '分区',
 			'vod.regionAnimation' => '动画',
+			'vod.regionGames' => '游戏',
 			_ => null,
 		} ?? switch (path) {
-			'vod.regionGames' => '游戏',
 			'vod.regionGuichu' => '鬼畜',
 			'vod.regionMusic' => '音乐',
 			'vod.regionDance' => '舞蹈',

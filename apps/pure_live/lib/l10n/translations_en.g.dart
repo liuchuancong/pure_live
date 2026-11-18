@@ -2192,7 +2192,6 @@ class _Translations$popular$en extends Translations$popular$zh_CN {
 	@override String get nextPage => 'Next page';
 	@override String inlineAt({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}';
 	@override String get backToBrowse => 'Back to browsing';
-	@override String get feedTitle => 'Recommended live';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)';
 }
 
@@ -7438,7 +7437,6 @@ extension on TranslationsEn {
 			'popular.nextPage' => 'Next page',
 			'popular.inlineAt' => ({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}',
 			'popular.backToBrowse' => 'Back to browsing',
-			'popular.feedTitle' => 'Recommended live',
 			'popular.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)',
 			'recorder.tabRunning' => 'Recording',
 			'recorder.tabFinished' => 'Finished',
@@ -7854,9 +7852,9 @@ extension on TranslationsEn {
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
+			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			_ => null,
 		} ?? switch (path) {
-			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
 			'room.copyName' => 'Copy name',
@@ -8368,9 +8366,9 @@ extension on TranslationsEn {
 			'settings.githubMirrorTitle' => 'GitHub acceleration',
 			'settings.githubMirrorMode' => 'Download route',
 			'settings.githubMirrorModeDesc' => 'Where GitHub assets download from.',
+			'settings.githubMirrorOff' => 'Default (no acceleration)',
 			_ => null,
 		} ?? switch (path) {
-			'settings.githubMirrorOff' => 'Default (no acceleration)',
 			'settings.githubMirrorOfficial' => 'Official source · may be slow',
 			'settings.githubMirrorCustom' => 'Custom…',
 			'settings.githubMirrorCustomDetail' => 'Type a mirror domain',
@@ -8882,9 +8880,9 @@ extension on TranslationsEn {
 			'settings.mpvResetDone' => 'Defaults restored',
 			'settings.mpvDocs' => 'Open the mpv manual',
 			'settings.mpvDocsDesc' => 'Full descriptions for every property.',
+			'settings.playerGuide' => 'Player guide',
 			_ => null,
 		} ?? switch (path) {
-			'settings.playerGuide' => 'Player guide',
 			'settings.playerGuideDesc' => 'Presets, tuning and common issues.',
 			'settings.playerGuideTitle' => 'Playback Guide',
 			'settings.playerGuideSubtitle' => 'Glossary · Platform picks · Symptom table',
@@ -9396,9 +9394,9 @@ extension on TranslationsEn {
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
+			'settings.twitchLanguage_zh' => 'Chinese',
 			_ => null,
 		} ?? switch (path) {
-			'settings.twitchLanguage_zh' => 'Chinese',
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',
@@ -9910,9 +9908,9 @@ extension on TranslationsEn {
 			'vod.loadMore' => 'Load more',
 			'vod.regions' => 'Regions',
 			'vod.regionAnimation' => 'Animation',
+			'vod.regionGames' => 'Gaming',
 			_ => null,
 		} ?? switch (path) {
-			'vod.regionGames' => 'Gaming',
 			'vod.regionGuichu' => 'Guichu',
 			'vod.regionMusic' => 'Music',
 			'vod.regionDance' => 'Dance',

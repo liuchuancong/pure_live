@@ -370,18 +370,13 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
             ),
           )
         : null;
-    // The grid keeps one ancestry: the section head and the note are rows of
-    // the same Column, never a wrapper that swaps the Column in over the bare
-    // grid — a swap would tear the grid's element down and reset its scroll.
-    // The head names the feed and nothing else: a running count read as a
-    // promise, and the viewer kept waiting for the number to mean something.
+    // The grid keeps one ancestry: the note is a row of the same Column as
+    // the grid, never a wrapper that swaps the Column in over the bare grid
+    // — a swap would tear the grid's element down and reset its scroll. No
+    // head above the wall: the page is 热门, the wall needs no second name.
     final feedView = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
-          child: FeedSectionHeader(title: t.popular.feedTitle),
-        ),
         Expanded(child: grid),
         ?hiddenNote,
       ],
