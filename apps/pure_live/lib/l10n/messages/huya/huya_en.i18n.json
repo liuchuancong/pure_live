@@ -41,5 +41,6 @@
   "greatVideos": "Highlights",
   "headVideos": "{count:int} videos",
   "infoColumn": "Info column",
-  "infoColumnShow": "Show the info column"
+  "infoColumnShow": "Show the info column",
+  "downloads": "Downloads"
 }

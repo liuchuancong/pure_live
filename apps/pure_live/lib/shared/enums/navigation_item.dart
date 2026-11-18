@@ -96,6 +96,9 @@ enum NavigationItem {
   /// The Huya station's ranking boards.
   huyaRank(DsIcons.trophy),
 
+  /// The Huya station's download queue, as its own page.
+  huyaDownloads(DsIcons.download),
+
   /// The Huya station's search.
   huyaSearch(DsIcons.search),
 
@@ -196,6 +199,7 @@ enum NavigationItem {
     NavigationItem.huyaLive => t.huya.liveTab,
     NavigationItem.huyaRank => t.huya.rank,
     NavigationItem.huyaSearch => t.huya.search,
+    NavigationItem.huyaDownloads => t.huya.downloads,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvRecent => t.iptv.recentTitle,
     NavigationItem.musicRecommend => t.navigation.musicRecommend,

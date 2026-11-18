@@ -2649,6 +2649,9 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '展开信息栏'
 	String get infoColumnShow => '展开信息栏';
+
+	/// zh-CN: '下载管理'
+	String get downloads => '下载管理';
 }
 
 // Path: iptv
@@ -16253,6 +16256,7 @@ extension on Translations {
 			'huya.headVideos' => ({required int count}) => '${count} 个视频',
 			'huya.infoColumn' => '信息栏',
 			'huya.infoColumnShow' => '展开信息栏',
+			'huya.downloads' => '下载管理',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.renameSourceTitle' => '重命名来源',
@@ -16287,9 +16291,9 @@ extension on Translations {
 			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
 			'iptv.autoUpdate' => '自动更新',
 			'iptv.autoUpdateHint' => '按此间隔在后台检查并重拉已开启自动更新的节目单。',
-			'iptv.customUserAgent' => 'User-Agent',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.customUserAgent' => 'User-Agent',
 			'iptv.customUserAgentDesc' => '导入与播放请求使用的 UA；留空用默认，播放列表自带优先。',
 			'iptv.updateInterval' => '更新间隔',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
@@ -16801,9 +16805,9 @@ extension on Translations {
 			'music.queueEmpty' => '队列为空',
 			'music.queueTitle' => '播放队列',
 			'music.queueUpNext' => '接下来播放',
-			'music.queuePlayed' => '已播放',
 			_ => null,
 		} ?? switch (path) {
+			'music.queuePlayed' => '已播放',
 			'music.queueShowMore' => ({required Object count}) => '显示更多（还有 ${count} 首）',
 			'music.queueMissingFile' => '文件丢失',
 			'music.queueUnplayable' => '无法播放',
@@ -17315,9 +17319,9 @@ extension on Translations {
 			'music.toggleSourceDone' => '已换源，之后都用新源播放这首歌',
 			'music.toggleSourceEmpty' => '没有找到候选歌曲',
 			'music.toggleSourceFailed' => '候选搜索失败',
-			'music.editTags' => '编辑标签',
 			_ => null,
 		} ?? switch (path) {
+			'music.editTags' => '编辑标签',
 			'music.tagEditTitle' => '编辑歌曲标签',
 			'music.tagEditFileName' => '文件名',
 			'music.tagEditName' => '歌曲名',
@@ -17829,9 +17833,9 @@ extension on Translations {
 			'room.paused' => '已暂停',
 			'room.replayEnded' => '回放已结束',
 			'room.banned' => '该直播间已被封禁',
-			'room.carousel' => '轮播中',
 			_ => null,
 		} ?? switch (path) {
+			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
@@ -18343,9 +18347,9 @@ extension on Translations {
 			'settings.proxyModeOff' => '不使用代理',
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
 			'settings.proxyModeSystem' => '跟随系统代理',
-			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
@@ -18857,9 +18861,9 @@ extension on Translations {
 			'settings.hwdecCodecs' => '硬解编码范围',
 			'settings.hwdecCodecsDesc' => '--hwdec-codecs：某编码黑屏或花屏时移出列表，回退软解。',
 			'settings.hwdecCodecsAll' => '全部编码格式',
-			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => '音频独占',
@@ -19371,9 +19375,9 @@ extension on Translations {
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
 			'settings.chatListFontSize' => '文字大小',
 			'settings.chatListFontSizeDesc' => '跟随主题时与界面一致。',
-			'settings.chatListFollowTheme' => '跟随主题',
 			_ => null,
 		} ?? switch (path) {
+			'settings.chatListFollowTheme' => '跟随主题',
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
@@ -19885,9 +19889,9 @@ extension on Translations {
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',
-			'vod.errorTitle' => '视频没有加载出来',
 			_ => null,
 		} ?? switch (path) {
+			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
 			'vod.tabPopular' => '热门',

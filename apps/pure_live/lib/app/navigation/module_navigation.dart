@@ -197,7 +197,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         NavigationItem.huyaLive,
         NavigationItem.huyaRank,
       ],
-      [NavigationItem.huyaSearch, NavigationItem.logs],
+      [NavigationItem.huyaSearch, NavigationItem.huyaDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.huyaHome,
     // Huya shares the app-wide groups only. The Bilibili station's account and
@@ -329,6 +329,7 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.huyaMaterial: HuyaMaterialPage.new,
   NavigationItem.huyaLive: HuyaLivePage.new,
   NavigationItem.huyaSearch: HuyaSearchPage.new,
+  NavigationItem.huyaDownloads: HuyaDownloadsPage.new,
   NavigationItem.musicRecommend: () => const MusicPage(view: MusicView.recommend),
   NavigationItem.musicFeatured: () => const MusicPage(view: MusicView.featured),
   NavigationItem.music: MusicPage.new,
