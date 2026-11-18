@@ -6,7 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:pure_live/app/app.dart' show RouteNames, SettingsSectionRoute, sitesProvider;
+import 'package:pure_live/app/app.dart' show SettingsSectionRoute, sitesProvider;
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
@@ -14,6 +15,7 @@ import 'package:pure_live/modules/live/room/controller/room_controller.dart' sho
 import 'package:pure_live/modules/live/room/page/player_surface.dart' show toggleRoomRecording;
 import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
 import 'package:pure_live/shared/shared.dart' show AppPanel, localizedSiteName, showAppPanel;
+import 'package:pure_live/shared/widgets/app_dialog.dart' show showAppConfirm;
 
 /// The room's own recording panel: what this room's capture is doing and
 /// what it has already written, with the verbs on both — start and stop and
@@ -22,9 +24,9 @@ import 'package:pure_live/shared/shared.dart' show AppPanel, localizedSiteName, 
 ///
 /// The panel splits into two panes under one segmented switch: 录制 drives
 /// the capture (the transport card and the record-when-live card), 录制文件
-/// shelves the finished takes as thumbnail rows. The verbs that leave the
-/// panel — the recorder's settings page and the recording centre — sit in
-/// the top row where any amount of content cannot push them away.
+/// shelves the finished takes as thumbnail rows with their own verbs —
+/// play, the take's folder, delete — on each row. The settings page sits in
+/// the top row where any amount of content cannot push it away.
 ///
 /// The figures come from the task store, which the engine writes once a second
 /// while bytes move. The clock is the exception and ticks on its own: a number
@@ -364,10 +366,8 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
   }
 
   /// The files pane: this room's finished takes, newest first, each a
-  /// thumbnail row — the same frame the centre's grid shows, with the
-  /// take's title, the day it was taken and its weight beside it. The
-  /// centre keeps one quiet door at the pane's top right: the queue and
-  /// every other room's files stay together over there.
+  /// thumbnail row with its own verbs — play, the take's folder, delete —
+  /// so a file is managed where it is listed, not after a trip elsewhere.
   Widget _filesPane({required LiveRoom? room}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -382,19 +382,14 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     return ListView(
       padding: const EdgeInsets.all(DsSpace.s16),
       children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                takes.isEmpty ? '' : t.room.roomRecordTakes(count: takes.length),
-                style: theme.typography.overline.copyWith(color: colors.textSubtle),
-              ),
+        if (takes.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: DsSpace.s8),
+            child: Text(
+              t.room.roomRecordTakes(count: takes.length),
+              style: theme.typography.overline.copyWith(color: colors.textSubtle),
             ),
-            _centreButton(t),
-          ],
-        ),
-        const SizedBox(height: DsSpace.s8),
+          ),
         if (takes.isEmpty)
           DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.room.roomRecordTakesEmpty))
         else
@@ -408,8 +403,10 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
 
   /// One finished take: the frame the backend cut from the file, the take's
   /// title and the day it was taken beside it, its weight at the end — the
-  /// whole row is the way in, the same preview player the centre opens.
+  /// whole row opens the preview, and the row's end carries the file verbs:
+  /// the take's folder, and delete with its confirmation.
   Widget _takeRow(RecordingTake take, List<RecordingTake> around) {
+    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
@@ -444,11 +441,63 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
               ),
             ),
             if (bytes != null) Text(bytes, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-            DsIcon(DsIcons.play, size: 14, color: colors.textSubtle),
+            _rowAction(
+              icon: DsIcons.folder,
+              tooltip: t.recorder.openFolder,
+              onTap: () => unawaited(openDownloadedPath(context, take.folder)),
+            ),
+            _rowAction(
+              icon: DsIcons.trash2,
+              tooltip: t.recorder.delete,
+              color: colors.danger.text,
+              onTap: () => unawaited(_deleteTake(take)),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// One row verb: a quiet glyph that stays out of the thumbnail's way.
+  Widget _rowAction({required DsIconData icon, required String tooltip, required VoidCallback onTap, Color? color}) {
+    final colors = DsTheme.colorsOf(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(DsSpace.s4),
+        child: DsIcon(icon, size: 15, color: color ?? colors.textSubtle),
+      ),
+    );
+  }
+
+  /// Deletes one take where it is listed: the confirmation the centre uses,
+  /// then the same walk — the folder goes, and the task's row says its file
+  /// is gone instead of pointing into nothing. A take the engine is still
+  /// writing or joining is refused, and the toast says so.
+  Future<void> _deleteTake(RecordingTake take) async {
+    final t = context.t;
+    final ok = await showAppConfirm(
+      context: context,
+      title: t.recorder.deleteTakeTitle(name: take.name),
+      description: t.recorder.deleteTakeBody(count: 1),
+      confirmLabel: t.recorder.delete,
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    final removed = await ref.read(recordingLibraryProvider.notifier).deleteTake(take);
+    if (!mounted) return;
+    showDsToast(context: context, title: removed ? t.recorder.deletedToast(count: 1) : t.recorder.deleteBlocked);
+    if (!removed) return;
+    final row = take.task;
+    if (row != null) {
+      final store = ref.read(recordingTasksProvider.notifier);
+      if (row.state == RecordingTaskState.stopped) {
+        await store.setStopped(row.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
+      } else {
+        await store.add(row.copyWith(filePath: row.takeDirectory, bytes: 0));
+      }
+    }
   }
 
   /// A platform id's display name, or the id itself when the registry does
@@ -457,17 +506,6 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     final site = ref.read(sitesProvider).getById(id);
     return site == null ? id : localizedSiteName(site);
   }
-
-  /// The centre still exists for what a single room's panel cannot show — the
-  /// queue, the schedule, the finished files — said as one quiet line in the
-  /// files pane's top row, not as the panel's only door. A push, not a `go`:
-  /// the room stays under it, and the way back is the panel's own.
-  Widget _centreButton(Translations t) => DsButton(
-    variant: DsButtonVariant.ghost,
-    size: DsSize.sm,
-    onPressed: () => unawaited(context.push(RouteNames.recorder)),
-    child: Text(t.navigation.record),
-  );
 }
 
 /// Adds the room to the live check, or takes it out.
