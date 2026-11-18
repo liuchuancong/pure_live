@@ -8022,6 +8022,18 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '开播即自动录制'
 	String get autoRecordHint => '开播即自动录制';
+
+	/// zh-CN: '每 {seconds} 秒检查一次'
+	String recordCheckEvery({required Object seconds}) => '每 ${seconds} 秒检查一次';
+
+	/// zh-CN: '分辨率'
+	String get recordLabelResolution => '分辨率';
+
+	/// zh-CN: '分段'
+	String get recordLabelSegment => '分段';
+
+	/// zh-CN: '第 {index} 段'
+	String recordSegmentN({required Object index}) => '第 ${index} 段';
 }
 
 // Path: search
@@ -18001,6 +18013,10 @@ extension on Translations {
 			'room.recordLabelQuality' => '清晰度',
 			'room.recordLabelDanmaku' => '弹幕',
 			'room.autoRecordHint' => '开播即自动录制',
+			'room.recordCheckEvery' => ({required Object seconds}) => '每 ${seconds} 秒检查一次',
+			'room.recordLabelResolution' => '分辨率',
+			'room.recordLabelSegment' => '分段',
+			'room.recordSegmentN' => ({required Object index}) => '第 ${index} 段',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -18316,12 +18332,12 @@ extension on Translations {
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
 			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理开关变化后无需重启应用。',
 			'settings.githubMirrorTitle' => 'GitHub 加速',
@@ -18830,12 +18846,12 @@ extension on Translations {
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => '音频独占',
 			'settings.audioExclusiveDesc' => '--audio-exclusive：独占 WASAPI 设备，其他应用无法出声。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.forceDestroy' => '播放器强制销毁',
 			'settings.forceDestroyDesc' => '离开房间即销毁播放器；关闭则保留下次复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
 			'settings.mpvReset' => '恢复播放内核默认设置',
-			_ => null,
-		} ?? switch (path) {
 			'settings.mpvResetDesc' => '恢复本页设置，首选清晰度不受影响。',
 			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR：关\n• 播放器强制销毁：开\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
 			'settings.mpvResetDone' => '已恢复默认设置',
@@ -19344,12 +19360,12 @@ extension on Translations {
 			'settings.chatListLineSpacing' => '行距',
 			'settings.chatListLineSpacingDesc' => '两行之间的留白。',
 			'settings.chatListSpacingCompact' => '紧凑',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
 			'settings.chatPanelWidth' => '栏宽',
 			'settings.chatPanelWidthDesc' => '宽屏布局下的宽度。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguages' => 'Twitch 目录语言',
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
@@ -19858,12 +19874,12 @@ extension on Translations {
 			'vod.tabRecommend' => '推荐',
 			'vod.tabPopular' => '热门',
 			'vod.tabDynamics' => '动态',
+			_ => null,
+		} ?? switch (path) {
 			'vod.dynamicsLoginTitle' => '登录后查看动态',
 			'vod.dynamicsLoginDescription' => '动态来自你关注的 UP 主，需要一个 Bilibili 登录。',
 			'vod.signIn' => '登录 Bilibili',
 			'vod.dynamicsFailed' => '动态没有加载出来',
-			_ => null,
-		} ?? switch (path) {
 			'vod.dynamicsEmptyTitle' => '还没有动态',
 			'vod.dynamicsEmptyDescription' => '关注的 UP 主更新后会出现在这里。',
 			'vod.loadMore' => '加载更多',

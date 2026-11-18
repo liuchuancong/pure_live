@@ -1,4 +1,5 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -41,13 +42,22 @@ final class RoomRecordTab extends ConsumerStatefulWidget {
   ConsumerState<RoomRecordTab> createState() => _RoomRecordTabState();
 }
 
-final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
+final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with SingleTickerProviderStateMixin {
   Timer? _tick;
   bool _ticking = false;
+  // The live dot breathes: a fixed red circle reads as a label, a breathing
+  // one reads as on air — every recorder's REC dot does this, and the eye
+  // has learned to look for the pulse.
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+    lowerBound: 0.35,
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
     _tick?.cancel();
+    _pulse.dispose();
     super.dispose();
   }
 
@@ -95,10 +105,12 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
     );
   }
 
-  /// The capture's own card: the state badge leads the row, the start/stop
-  /// verb sits at its end, and the facts the session has already earned —
-  /// elapsed, size, rate, quality, danmaku, segments — follow as label:value
-  /// lines. One card, one eye-path: state, verb, facts.
+  /// The capture's own card, built like a recorder's transport: the state
+  /// line on top (a breathing dot when on air), the elapsed clock as the
+  /// hero figure with its size·rate line under it, the session's facts as
+  /// label:value tiles, and the start/stop verb as one full-width block at
+  /// the bottom — the recorder-page pattern (OBS's own Start Recording
+  /// block): the verb is a destination, not a chip at the end of a row.
   Widget _statusCard({required RecordingTask? task}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -131,56 +143,89 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
             task.bytes,
             mediaTime > Duration.zero ? mediaTime : DateTime.now().difference(task.startedAt),
           );
-    // A live danmaku count only while the capture runs; a take recorded
-    // without a chat file says nothing about one — "0 条" would read as a
-    // capture that lost every line.
-    final chatCount = recording ? ref.read(recorderEngineProvider).chatEntries(task.id) : null;
-    final facts = <(String, String)>[
-      if (task != null && task.bytes > 0) (t.room.recordLabelSize, formatRecordingBytes(task.bytes)),
-      if (bitrate.isNotEmpty) (t.room.recordLabelBitrate, bitrate),
+    // What the clock's line already says is not repeated in the tiles: size
+    // and rate ride under the hero figure, the tiles hold the per-take facts
+    // a viewer checks once — quality, danmaku, resolution, segments. A live
+    // danmaku count only while the capture runs; a take recorded without a
+    // chat file says nothing about one — "0 条" would read as a capture that
+    // lost every line.
+    final tiles = <(String, String)>[
       if (task != null) (t.room.recordLabelQuality, task.quality.isEmpty ? t.recorder.qualityBest : task.quality),
-      if (chatCount case final count? when count > 0) (t.room.recordLabelDanmaku, '$count'),
+      if (recording) (t.room.recordLabelDanmaku, '${ref.read(recorderEngineProvider).chatEntries(task.id)}'),
+      if (task != null && task.videoWidth > 0 && task.videoHeight > 0)
+        (t.room.recordLabelResolution, '${task.videoWidth}×${task.videoHeight}'),
+      if (recording) (t.room.recordLabelSegment, t.room.recordSegmentN(index: task.segments < 1 ? 1 : task.segments)),
+      if (!recording && task != null && task.bytes > 0) (t.room.recordLabelSize, formatRecordingBytes(task.bytes)),
     ];
 
     return DsListSection(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: DsSpace.s8,
             children: [
+              // The state line: dot and word, the word in the status's own
+              // color while on air — red is not decoration here, it is the
+              // recorder's oldest signal.
               Row(
                 spacing: DsSpace.s8,
                 children: [
-                  DsBadge(dot: recording, label: Text(word), status: tone),
-                  const Spacer(),
-                  DsButton(
-                    variant: recording ? DsButtonVariant.danger : DsButtonVariant.primary,
-                    size: DsSize.sm,
-                    leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc, size: 15),
-                    onPressed: joining ? null : _toggle,
-                    child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
+                  _statusDot(tone: tone, recording: recording, colors: colors),
+                  Text(
+                    word,
+                    style: theme.typography.heading.copyWith(color: recording ? colors.status(tone).text : colors.text),
                   ),
                 ],
               ),
-              if (elapsed != null)
+              if (elapsed != null) ...[
                 Text(
                   RecordingIndicator.formatElapsed(elapsed),
                   style: theme.typography.numeric(
-                    theme.typography.title.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+                    theme.typography.display.copyWith(color: colors.text, fontWeight: FontWeight.w600, height: 1.1),
                   ),
                 ),
-              if (facts.isNotEmpty) _factLine(facts.take(2).toList(), theme, colors),
-              if (facts.length > 2) _factLine(facts.sublist(2), theme, colors),
-              if (recording)
+                // The clock's companion line: what the take has landed so
+                // far, said in the same breath as the time it took.
+                if (recording && (task.bytes > 0 || bitrate.isNotEmpty))
+                  Text(
+                    [
+                      if (recording && task.bytes > 0) formatRecordingBytes(task.bytes),
+                      if (bitrate.isNotEmpty) bitrate,
+                    ].join('  ·  '),
+                    style: theme.typography.small.copyWith(color: colors.textMuted),
+                  ),
+              ],
+              if (task?.state == RecordingTaskState.waiting)
                 Text(
-                  t.room.recordSegment(
-                    index: task.segments < 1 ? 1 : task.segments,
-                    minutes: (ref.read(recordingSettingsProvider).segmentSeconds / 60).round(),
-                  ),
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  t.room.recordCheckEvery(seconds: ref.read(recordingSettingsProvider).schedule.liveCheckSeconds),
+                  style: theme.typography.small.copyWith(color: colors.textMuted),
                 ),
+              if (tiles.isNotEmpty)
+                for (final row in _chunk(tiles)) ...[
+                  Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(child: _factTile(row.first, theme, colors)),
+                      if (row.length > 1) Expanded(child: _factTile(row.last, theme, colors)),
+                      // A trailing lone tile keeps its half width, so the
+                      // grid reads as a grid rather than stretching to fill.
+                      if (row.length == 1) const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                ],
+              const SizedBox(height: DsSpace.s4),
+              SizedBox(
+                width: double.infinity,
+                child: DsButton(
+                  variant: recording ? DsButtonVariant.danger : DsButtonVariant.primary,
+                  size: DsSize.lg,
+                  leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc, size: 16),
+                  onPressed: joining ? null : _toggle,
+                  child: Text(recording ? t.room.stopRecording : t.room.recordStarted),
+                ),
+              ),
             ],
           ),
         ),
@@ -188,23 +233,62 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> {
     );
   }
 
-  /// One line of label:value pairs, the labels muted and the values in the
-  /// plain text color so the eye finds the numbers first: `大小 123 MB ·
-  /// 码率 4.2 Mbps`.
-  Widget _factLine(List<(String, String)> pairs, DsThemeData theme, DsColors colors) {
-    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
-    final value = theme.typography.caption.copyWith(color: colors.text);
-    return Text.rich(
-      TextSpan(
+  /// The state dot: the status's own signal color, breathing while the
+  /// capture runs — on air is something the eye should catch peripherally.
+  Widget _statusDot({required DsStatus tone, required bool recording, required DsColors colors}) {
+    final color = colors.status(tone).signal;
+    if (!recording) {
+      return Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      );
+    }
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, _) => Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: _pulse.value),
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: _pulse.value * 0.45), blurRadius: 8, spreadRadius: 1)],
+        ),
+      ),
+    );
+  }
+
+  /// One fact tile: the label muted and small above the value plain and
+  /// strong — a place to look up, not a sentence to read.
+  Widget _factTile((String, String) fact, DsThemeData theme, DsColors colors) {
+    final (label, value) = fact;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+      decoration: DsBoxDecoration(
+        color: colors.control,
+        borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 2,
         children: [
-          for (final (index, (label, text)) in pairs.indexed) ...[
-            if (index > 0) TextSpan(text: '  ·  ', style: muted),
-            TextSpan(text: '$label ', style: muted),
-            TextSpan(text: text, style: value),
-          ],
+          Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.labelStrong.copyWith(color: colors.text),
+          ),
         ],
       ),
     );
+  }
+
+  /// Splits the facts into rows of two, order kept.
+  Iterable<List<(String, String)>> _chunk(List<(String, String)> facts) sync* {
+    for (var i = 0; i < facts.length; i += 2) {
+      yield facts.sublist(i, math.min(i + 2, facts.length));
+    }
   }
 
   /// The schedule card: record when live, with the cadence it will run at —

@@ -270,5 +270,9 @@
   "recordLabelBitrate": "Bitrate",
   "recordLabelQuality": "Quality",
   "recordLabelDanmaku": "Danmaku",
-  "autoRecordHint": "Records when the room goes live"
+  "autoRecordHint": "Records when the room goes live",
+  "recordCheckEvery": "Checked every {seconds} s",
+  "recordLabelResolution": "Resolution",
+  "recordLabelSegment": "Segments",
+  "recordSegmentN": "Segment {index}"
 }

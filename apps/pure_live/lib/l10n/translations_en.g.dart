@@ -2819,6 +2819,10 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get recordLabelQuality => 'Quality';
 	@override String get recordLabelDanmaku => 'Danmaku';
 	@override String get autoRecordHint => 'Records when the room goes live';
+	@override String recordCheckEvery({required Object seconds}) => 'Checked every ${seconds} s';
+	@override String get recordLabelResolution => 'Resolution';
+	@override String get recordLabelSegment => 'Segments';
+	@override String recordSegmentN({required Object index}) => 'Segment ${index}';
 }
 
 // Path: search
@@ -8054,6 +8058,10 @@ extension on TranslationsEn {
 			'room.recordLabelQuality' => 'Quality',
 			'room.recordLabelDanmaku' => 'Danmaku',
 			'room.autoRecordHint' => 'Records when the room goes live',
+			'room.recordCheckEvery' => ({required Object seconds}) => 'Checked every ${seconds} s',
+			'room.recordLabelResolution' => 'Resolution',
+			'room.recordLabelSegment' => 'Segments',
+			'room.recordSegmentN' => ({required Object index}) => 'Segment ${index}',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -8369,12 +8377,12 @@ extension on TranslationsEn {
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
 			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'No restart after the proxy app changes.',
 			'settings.githubMirrorTitle' => 'GitHub acceleration',
@@ -8883,12 +8891,12 @@ extension on TranslationsEn {
 			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
 			'settings.audioExclusive' => 'Audio exclusive',
 			'settings.audioExclusiveDesc' => '--audio-exclusive: takes the WASAPI device; other apps fall silent.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.forceDestroy' => 'Force Stop Player',
 			'settings.forceDestroyDesc' => 'Destroys the player on leaving; off keeps it for the next room.',
 			'settings.mpvAdvanced' => 'mpv advanced',
 			'settings.mpvReset' => 'Restore the player defaults',
-			_ => null,
-		} ?? switch (path) {
 			'settings.mpvResetDesc' => 'Restores this page; the preferred quality stays.',
 			'settings.mpvResetConfirm' => 'These go back to their defaults:\n• Hardware decoding: on\n• Compatibility mode, RTX VSR: off\n• Force Stop Player: on\n• Custom drivers: off; the three drivers: default\nThe preferred quality in Video stays.',
 			'settings.mpvResetDone' => 'Defaults restored',
@@ -9397,12 +9405,12 @@ extension on TranslationsEn {
 			'settings.chatListLineSpacing' => 'Line spacing',
 			'settings.chatListLineSpacingDesc' => 'The air between two lines.',
 			'settings.chatListSpacingCompact' => 'Compact',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListSpacingStandard' => 'Standard',
 			'settings.chatListSpacingLoose' => 'Loose',
 			'settings.chatPanelWidth' => 'Panel width',
 			'settings.chatPanelWidthDesc' => 'Its width in the wide layout.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguages' => 'Twitch directory languages',
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
@@ -9911,12 +9919,12 @@ extension on TranslationsEn {
 			'vod.tabRecommend' => 'Recommended',
 			'vod.tabPopular' => 'Popular',
 			'vod.tabDynamics' => 'Dynamics',
+			_ => null,
+		} ?? switch (path) {
 			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',
 			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',
 			'vod.signIn' => 'Sign in to Bilibili',
 			'vod.dynamicsFailed' => 'The dynamics did not load',
-			_ => null,
-		} ?? switch (path) {
 			'vod.dynamicsEmptyTitle' => 'No dynamics yet',
 			'vod.dynamicsEmptyDescription' => 'Posts from the uploaders you follow appear here.',
 			'vod.loadMore' => 'Load more',

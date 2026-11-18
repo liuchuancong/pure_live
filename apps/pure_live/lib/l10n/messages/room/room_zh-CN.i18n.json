@@ -270,5 +270,9 @@
   "recordLabelBitrate": "码率",
   "recordLabelQuality": "清晰度",
   "recordLabelDanmaku": "弹幕",
-  "autoRecordHint": "开播即自动录制"
+  "autoRecordHint": "开播即自动录制",
+  "recordCheckEvery": "每 {seconds} 秒检查一次",
+  "recordLabelResolution": "分辨率",
+  "recordLabelSegment": "分段",
+  "recordSegmentN": "第 {index} 段"
 }
