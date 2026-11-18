@@ -365,9 +365,11 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
     );
   }
 
-  /// The files pane: this room's finished takes, newest first, each a
-  /// thumbnail row with its own verbs — play, the take's folder, delete —
-  /// so a file is managed where it is listed, not after a trip elsewhere.
+  /// The files pane: this room's finished takes as a shelf of cover cards —
+  /// the frame the backend cut from the file leads each card, the way a
+  /// media library reads. Two columns at the panel's width, three when it
+  /// stretches; each card opens the preview, and its foot carries the file
+  /// verbs: the take's folder, and delete with its confirmation.
   Widget _filesPane({required LiveRoom? room}) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -379,94 +381,107 @@ final class _RoomRecordTabState extends ConsumerState<RoomRecordTab> with Single
       for (final take in takesAsync.value ?? const <RecordingTake>[])
         if (take.playable && platform != null && take.platformId == platform && take.roomId == roomId) take,
     ];
-    return ListView(
-      padding: const EdgeInsets.all(DsSpace.s16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (takes.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: DsSpace.s8),
+            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s8),
             child: Text(
               t.room.roomRecordTakes(count: takes.length),
               style: theme.typography.overline.copyWith(color: colors.textSubtle),
             ),
           ),
-        if (takes.isEmpty)
-          DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.room.roomRecordTakesEmpty))
-        else
-          DsListSection(
-            style: recorderPanelSectionStyle(context),
-            children: [for (final take in takes) _takeRow(take, takes)],
-          ),
+        Expanded(
+          child: takes.isEmpty
+              ? Center(
+                  child: DsEmptyState(icon: const DsIcon(DsIcons.video), title: Text(t.room.roomRecordTakesEmpty)),
+                )
+              : LayoutBuilder(
+                  builder: (context, box) {
+                    // Columns grow with the pane, tiles keep the 16:9 the
+                    // frames were cut at; the foot is sized to one title
+                    // line and one meta line, which the texts are capped to.
+                    final columns = box.maxWidth >= 560 ? 3 : 2;
+                    final tileWidth = (box.maxWidth - DsSpace.s16 * 2 - DsSpace.s8 * (columns - 1)) / columns;
+                    final tileHeight = tileWidth * 9 / 16 + 60;
+                    return GridView.count(
+                      padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s16),
+                      crossAxisCount: columns,
+                      mainAxisSpacing: DsSpace.s8,
+                      crossAxisSpacing: DsSpace.s8,
+                      childAspectRatio: tileWidth / tileHeight,
+                      children: [for (final take in takes) _takeCard(take, takes, tileWidth)],
+                    );
+                  },
+                ),
+        ),
       ],
     );
   }
 
-  /// One finished take: the frame the backend cut from the file, the take's
-  /// title and the day it was taken beside it, its weight at the end — the
-  /// whole row opens the preview, and the row's end carries the file verbs:
-  /// the take's folder, and delete with its confirmation.
-  Widget _takeRow(RecordingTake take, List<RecordingTake> around) {
-    final t = context.t;
+  /// One cover card: the frame fills the top at its own 16:9, the foot
+  /// holds the title, the day it was taken with its weight, and the two
+  /// file verbs — quiet glyphs, the row's tap opens the preview.
+  Widget _takeCard(RecordingTake take, List<RecordingTake> around, double coverWidth) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final bytes = take.bytes > 0 ? formatRecordingBytes(take.bytes) : null;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
-        child: Row(
-          spacing: DsSpace.s8,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: RecorderTakeCover(take: take, width: 96, height: 54),
+    final meta = [formatRecordingMoment(take.takenAt), ?bytes].join(' · ');
+    return DsCard(
+      onPressed: () =>
+          unawaited(playRecordingTake(context, ref, around: around, take: take, platformName: _platformName)),
+      style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+            child: RecorderTakeCover(take: take, width: coverWidth, height: coverWidth * 9 / 16),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(DsSpace.s8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Text(
+                  take.roomTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.labelStrong.copyWith(color: colors.text),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ),
+                    _cardAction(icon: DsIcons.folder, onTap: () => unawaited(openDownloadedPath(context, take.folder))),
+                    _cardAction(icon: DsIcons.trash2, onTap: () => unawaited(_deleteTake(take))),
+                  ],
+                ),
+              ],
             ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 2,
-                children: [
-                  Text(
-                    take.roomTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.labelStrong.copyWith(color: colors.text),
-                  ),
-                  Text(
-                    formatRecordingMoment(take.takenAt),
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-            if (bytes != null) Text(bytes, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-            _rowAction(
-              icon: DsIcons.folder,
-              tooltip: t.recorder.openFolder,
-              onTap: () => unawaited(openDownloadedPath(context, take.folder)),
-            ),
-            _rowAction(
-              icon: DsIcons.trash2,
-              tooltip: t.recorder.delete,
-              color: colors.danger.text,
-              onTap: () => unawaited(_deleteTake(take)),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  /// One row verb: a quiet glyph that stays out of the thumbnail's way.
-  Widget _rowAction({required DsIconData icon, required String tooltip, required VoidCallback onTap, Color? color}) {
+  /// One card verb: a quiet glyph that stays out of the frame's way.
+  Widget _cardAction({required DsIconData icon, required VoidCallback onTap}) {
     final colors = DsTheme.colorsOf(context);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(DsSpace.s4),
-        child: DsIcon(icon, size: 15, color: color ?? colors.textSubtle),
+        child: DsIcon(icon, size: 15, color: colors.textSubtle),
       ),
     );
   }
