@@ -2515,12 +2515,18 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           colors: [Color(0xD9000000), Color(0x00000000)],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s4,
-        children: [
-          // The seek line, alone: the clock moved down into the row below.
-          DsSlider(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The bar bends before it breaks: a portrait picture leaves the
+          // bar a few hundred pixels, and a row that does not bend there
+          // overflows — the striped edge that once ate the fullscreen verbs.
+          // A narrow bar moves the clock up onto the seek line's ends, keeps
+          // mute one thumb away and lets the volume slider go; the words on
+          // the pickers come back once the bar can pay for them.
+          final wide = constraints.maxWidth >= 480;
+          final labels = constraints.maxWidth >= 640;
+          Widget clock(Duration value) => Text(hongguoDurationText(value), style: timeStyle);
+          final seek = DsSlider(
             value: duration.inMilliseconds <= 0
                 ? 0
                 : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
@@ -2534,14 +2540,27 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     unawaited(_seekTo(seconds));
                   },
             semanticLabel: t.hongguo.progress,
-          ),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // The row gives the chips' words up on a narrow stage — a
-              // portrait picture leaves a phone's stage a few hundred wide —
-              // and keeps one line, never wrapping.
-              final compact = constraints.maxWidth < 480;
-              return Row(
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s4,
+            children: [
+              // Wide, the seek line runs alone and the clock rides the row
+              // below; narrow, the clock splits to the line's ends — the
+              // phone player's own layout — and the row below loses nothing
+              // it cannot spare.
+              if (wide)
+                seek
+              else
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    clock(position),
+                    Expanded(child: seek),
+                    clock(duration),
+                  ],
+                ),
+              Row(
                 spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                 children: [
                   PlayerBarButton(
@@ -2555,12 +2574,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             unawaited(_togglePlay());
                           },
                   ),
-                  // The clock the row carries: where the episode is, and how
-                  // long it runs — the bar's own reading of the seek line.
-                  Text('${hongguoDurationText(position)} / ${hongguoDurationText(duration)}', style: timeStyle),
-                  // Mute and the volume slider ride with the transport at
-                  // every width: a compact window narrows the slider rather
-                  // than losing it, and mute stays one thumb away.
+                  if (wide)
+                    // Where the episode is, and how long it runs — the bar's
+                    // own reading of the seek line.
+                    Text('${hongguoDurationText(position)} / ${hongguoDurationText(duration)}', style: timeStyle),
+                  // Mute stays one thumb away at every width; the slider
+                  // beside it waits for a bar that can pay for it.
                   PlayerBarButton(
                     iconAsset: _effectivelyMuted ? 'assets/icons/volume-muted.svg' : 'assets/icons/volume.svg',
                     label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
@@ -2571,35 +2590,38 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                             unawaited(_setMuted(muted: !_effectivelyMuted));
                           },
                   ),
-                  SizedBox(
-                    width: compact ? 72 : 96,
-                    child: DsSlider(
-                      value: _effectivelyMuted ? 0 : _volume,
-                      onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
-                      semanticLabel: t.hongguo.volume,
+                  if (wide)
+                    SizedBox(
+                      width: 96,
+                      child: DsSlider(
+                        value: _effectivelyMuted ? 0 : _volume,
+                        onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
+                        semanticLabel: t.hongguo.volume,
+                      ),
                     ),
-                  ),
                   const Spacer(),
                   _pickerButton(
                     panel: _HongguoPanel.episodes,
                     icon: DsIcons.listVideo,
-                    label: _episodesLabel(t),
+                    // The count reads on the panel this opens; the bar's chip
+                    // stays the one word, so the row keeps its line.
+                    label: t.hongguo.episodes,
                     semanticLabel: t.hongguo.episodes,
-                    compact: compact,
+                    compact: !labels,
                   ),
                   _pickerButton(
                     panel: _HongguoPanel.speed,
                     icon: DsIcons.timer,
                     label: speedLabel,
                     semanticLabel: t.hongguo.speed,
-                    compact: compact,
+                    compact: !labels,
                   ),
                   _pickerButton(
                     panel: _HongguoPanel.quality,
                     icon: DsIcons.gauge,
                     label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.hongguo.quality,
                     semanticLabel: t.hongguo.quality,
-                    compact: compact,
+                    compact: !labels,
                   ),
                   // The window verbs, then the way out of the picture's box —
                   // the room bar's pair: the desktop's window-fullscreen
@@ -2625,10 +2647,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
                     ),
                 ],
-              );
-            },
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
