@@ -147,8 +147,8 @@ Widget _vodTaskCard(BuildContext context, WidgetRef ref, VodDownloadItem task, {
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
       context: context,
-      title: t.vod.downloadDeleteFile,
-      description: t.vod.downloadDeleteFileBody,
+      title: t.settings.downloadDeleteFile,
+      description: t.settings.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -158,7 +158,7 @@ Widget _vodTaskCard(BuildContext context, WidgetRef ref, VodDownloadItem task, {
       await controller.remove(task.id, deleteFile: true);
     } on Object {
       if (context.mounted) {
-        showDsToast(context: context, title: t.vod.downloadDeleteFailed, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
       }
     }
   }
@@ -234,18 +234,18 @@ final class VodDownloadsPane extends ConsumerWidget {
   Future<void> _pickDirectory(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     try {
-      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.vod.downloadDirectory);
+      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.downloadDirectory);
       if (selected == null || selected.trim().isEmpty) return;
       final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.videos, selected);
       if (!context.mounted) return;
       showDsToast(
         context: context,
-        title: saved ? t.vod.downloadDirectoryUpdated : t.vod.downloadDirectoryFailed,
+        title: saved ? t.settings.downloadDirectoryUpdated : t.settings.downloadDirectoryFailed,
         status: saved ? DsStatus.success : DsStatus.danger,
       );
     } on Object {
       if (context.mounted) {
-        showDsToast(context: context, title: t.vod.downloadDirectoryFailed, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadDirectoryFailed, status: DsStatus.danger);
       }
     }
   }
@@ -273,34 +273,34 @@ final class VodDownloadsPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
-          header: Text(t.vod.downloadSettingsTitle),
+          header: Text(t.settings.downloadSettings),
           children: [
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.download),
-              title: t.vod.downloadMaxConcurrent,
-              description: t.vod.downloadMaxConcurrentDesc,
+              title: t.settings.downloadMaxConcurrent,
+              description: t.settings.downloadMaxConcurrentDesc,
               value: lanes,
               options: [for (var count = 1; count <= 5; count++) DsSelectOption(value: count, label: '$count')],
               onChanged: (value) => ref.read(vodDownloadSettingsProvider.notifier).select(value),
             ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.refreshCw),
-              title: t.vod.downloadRetry,
-              description: t.vod.downloadRetryDesc,
+              title: t.common.downloadRetried,
+              description: t.common.downloadRetryDesc,
               value: retry,
               options: [
                 for (final count in VodDownloadRetryController.choices)
                   DsSelectOption(
                     value: count,
-                    label: count == 0 ? t.vod.downloadRetryOff : t.vod.downloadRetryTimes(count: count),
+                    label: count == 0 ? t.common.downloadRetryOff : t.common.downloadRetriedTimes(count: count),
                   ),
               ],
               onChanged: (value) => ref.read(vodDownloadRetryProvider.notifier).select(value),
             ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.timer),
-              title: t.vod.downloadRetryDelay,
-              description: t.vod.downloadRetryDelayDesc,
+              title: t.common.downloadRetryDelay,
+              description: t.common.downloadRetryDelayDesc,
               value: retryDelay,
               options: [
                 for (final seconds in VodDownloadRetryDelayController.choices)
@@ -331,15 +331,15 @@ final class VodDownloadsPane extends ConsumerWidget {
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.folderOpen),
-              title: Text(t.vod.downloadDirectory),
+              title: Text(t.settings.downloadDirectory),
               description: Text(directory, maxLines: 2, overflow: TextOverflow.ellipsis),
               showChevron: true,
               onPressed: () => unawaited(_pickDirectory(context, ref)),
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.vod.downloadDirectoryDefault),
-              description: Text(t.vod.downloadDirectoryDefaultDesc),
+              title: Text(t.settings.downloadDirectoryDefault),
+              description: Text(t.settings.downloadDirectoryDefaultDesc),
               onPressed: () => unawaited(ref.read(storageFolderOverridesProvider.notifier).reset(StorageFolder.videos)),
             ),
           ],
@@ -353,7 +353,7 @@ final class VodDownloadsPane extends ConsumerWidget {
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.download),
-              title: Text(t.vod.downloadManagerTitle),
+              title: Text(t.settings.downloadManagerTitle),
               description: Text(
                 [
                   t.settings.downloadTaskCount(count: tasks.length, active: active),
@@ -565,25 +565,25 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                   ),
                   if (moving > 0)
                     DownloadQueueAction(
-                      label: t.vod.downloadPauseAll,
+                      label: t.settings.downloadPauseAll,
                       icon: DsIcons.pause,
                       onPressed: () => unawaited(controller.pauseAll()),
                     ),
                   if (stopped)
                     DownloadQueueAction(
-                      label: t.vod.downloadResumeAll,
+                      label: t.settings.downloadResumeAll,
                       icon: DsIcons.play,
                       onPressed: () => unawaited(controller.resumeAll()),
                     ),
                   if (finished.isNotEmpty)
                     DownloadQueueAction(
-                      label: t.vod.downloadClearFinished,
+                      label: t.settings.downloadClearFinished,
                       icon: DsIcons.trash2,
                       destructive: true,
                       onPressed: () => unawaited(
                         confirmClearFinished(
                           context,
-                          title: t.vod.downloadClearFinished,
+                          title: t.settings.downloadClearFinished,
                           clear: controller.clearFinished,
                         ),
                       ),
@@ -654,7 +654,7 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
   Widget _empty(Translations t, List<VodDownloadItem> tasks, String directory, bool filterActive) => Center(
     child: DsEmptyState(
       icon: const DsIcon(DsIcons.download),
-      title: Text(tasks.isEmpty ? t.vod.downloadEmpty : t.vod.downloadFilterEmpty),
+      title: Text(tasks.isEmpty ? t.vod.downloadEmpty : t.settings.downloadFilterEmpty),
       description: Text(tasks.isEmpty ? t.vod.downloadEmptyDesc : t.vod.downloadFilterEmptyDesc),
       actions: [
         if (filterActive)

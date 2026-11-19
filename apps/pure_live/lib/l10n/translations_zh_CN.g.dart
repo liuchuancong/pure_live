@@ -1198,9 +1198,6 @@ class Translations$common$zh_CN {
 	/// zh-CN: '完成的录像与下载会出现在这里。'
 	String get previewEmptyDescription => '完成的录像与下载会出现在这里。';
 
-	/// zh-CN: '倍速'
-	String get previewSpeed => '倍速';
-
 	/// zh-CN: '这条没有弹幕文件'
 	String get previewDanmakuOff => '这条没有弹幕文件';
 
@@ -1311,6 +1308,18 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '在侧栏按时间排列这条录像的弹幕记录。'
 	String get previewDanmakuListVisibleDescription => '在侧栏按时间排列这条录像的弹幕记录。';
+
+	/// zh-CN: '不重试'
+	String get downloadRetryOff => '不重试';
+
+	/// zh-CN: '两次自动重试之间等待的时间。'
+	String get downloadRetryDelayDesc => '两次自动重试之间等待的时间。';
+
+	/// zh-CN: '重试间隔'
+	String get downloadRetryDelay => '重试间隔';
+
+	/// zh-CN: '失败的下载在后台自动再试，已经下到的字节会接着用。'
+	String get downloadRetryDesc => '失败的下载在后台自动再试，已经下到的字节会接着用。';
 }
 
 // Path: favorites
@@ -2149,77 +2158,20 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '{count} 人评分'
 	String ratingCount({required Object count}) => '${count} 人评分';
 
-	/// zh-CN: '下载设置'
-	String get downloadSettingsTitle => '下载设置';
-
-	/// zh-CN: '同时下载数'
-	String get downloadMaxConcurrent => '同时下载数';
-
-	/// zh-CN: '同时进行的下载任务数量，改动即时生效。'
-	String get downloadMaxConcurrentDesc => '同时进行的下载任务数量，改动即时生效。';
-
 	/// zh-CN: '默认下载清晰度'
 	String get downloadQuality => '默认下载清晰度';
 
 	/// zh-CN: '下载时向平台请求的清晰度档位。'
 	String get downloadQualityDesc => '下载时向平台请求的清晰度档位。';
 
-	/// zh-CN: '保存目录'
-	String get downloadDirectory => '保存目录';
-
-	/// zh-CN: '保存目录已更新'
-	String get downloadDirectoryUpdated => '保存目录已更新';
-
-	/// zh-CN: '保存目录未能更新'
-	String get downloadDirectoryFailed => '保存目录未能更新';
-
-	/// zh-CN: '恢复默认目录'
-	String get downloadDirectoryDefault => '恢复默认目录';
-
-	/// zh-CN: '回到应用默认的视频目录。'
-	String get downloadDirectoryDefaultDesc => '回到应用默认的视频目录。';
-
 	/// zh-CN: '{held}集/{total}集'
 	String downloadHeldOfTotal({required Object held, required Object total}) => '${held}集/${total}集';
-
-	/// zh-CN: '自动重试'
-	String get downloadRetry => '自动重试';
-
-	/// zh-CN: '失败的下载在后台自动再试，已经下到的字节会接着用。'
-	String get downloadRetryDesc => '失败的下载在后台自动再试，已经下到的字节会接着用。';
-
-	/// zh-CN: '不重试'
-	String get downloadRetryOff => '不重试';
-
-	/// zh-CN: '{count: int} 次'
-	String downloadRetryTimes({required int count}) => '${count} 次';
-
-	/// zh-CN: '重试间隔'
-	String get downloadRetryDelay => '重试间隔';
-
-	/// zh-CN: '两次自动重试之间等待的时间。'
-	String get downloadRetryDelayDesc => '两次自动重试之间等待的时间。';
-
-	/// zh-CN: '下载管理'
-	String get downloadManagerTitle => '下载管理';
-
-	/// zh-CN: '全部暂停'
-	String get downloadPauseAll => '全部暂停';
-
-	/// zh-CN: '全部继续'
-	String get downloadResumeAll => '全部继续';
-
-	/// zh-CN: '清除已完成'
-	String get downloadClearFinished => '清除已完成';
 
 	/// zh-CN: '下载预览'
 	String get previewTitle => '下载预览';
 
 	/// zh-CN: '这一集还没有下载完成的文件'
 	String get previewUnavailable => '这一集还没有下载完成的文件';
-
-	/// zh-CN: '这个筛选下没有任务'
-	String get downloadFilterEmpty => '这个筛选下没有任务';
 
 	/// zh-CN: '换一个筛选，或先去播放页添加下载。'
 	String get downloadFilterEmptyDesc => '换一个筛选，或先去播放页添加下载。';
@@ -2233,35 +2185,14 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '下载'
 	String get download => '下载';
 
-	/// zh-CN: '已加入下载队列'
-	String get downloadQueued => '已加入下载队列';
-
-	/// zh-CN: '排队中'
-	String get downloadQueuedLabel => '排队中';
-
 	/// zh-CN: '该集已在下载队列'
 	String get downloadDuplicate => '该集已在下载队列';
-
-	/// zh-CN: '继续下载'
-	String get downloadResume => '继续下载';
 
 	/// zh-CN: '已下载'
 	String get downloaded => '已下载';
 
-	/// zh-CN: '下载失败'
-	String get downloadFailed => '下载失败';
-
 	/// zh-CN: '已下载 {name}'
 	String downloadDone({required Object name}) => '已下载 ${name}';
-
-	/// zh-CN: '删除文件'
-	String get downloadDeleteFile => '删除文件';
-
-	/// zh-CN: '视频文件会被一并删除，此操作无法撤销。'
-	String get downloadDeleteFileBody => '视频文件会被一并删除，此操作无法撤销。';
-
-	/// zh-CN: '文件未能删除'
-	String get downloadDeleteFailed => '文件未能删除';
 
 	/// zh-CN: '打开剧集页'
 	String get cardOpenSeries => '打开剧集页';
@@ -2412,9 +2343,6 @@ class Translations$huya$zh_CN {
 
 	/// zh-CN: '在虎牙视频页点「下载」，任务会出现在这里。'
 	String get downloadQueueEmptyDesc => '在虎牙视频页点「下载」，任务会出现在这里。';
-
-	/// zh-CN: '下载管理'
-	String get downloads => '下载管理';
 
 	/// zh-CN: '搜索素材'
 	String get materialSearchHint => '搜索素材';
@@ -4180,9 +4108,6 @@ class Translations$music$zh_CN {
 	/// zh-CN: '换一个筛选，或先在歌曲行的「更多」里下载。'
 	String get downloadFilterEmptyDesc => '换一个筛选，或先在歌曲行的「更多」里下载。';
 
-	/// zh-CN: '已加入下载：{title}'
-	String downloadQueued({required Object title}) => '已加入下载：${title}';
-
 	/// zh-CN: '这首歌已经在下载队列里'
 	String get downloadDuplicate => '这首歌已经在下载队列里';
 
@@ -4297,71 +4222,26 @@ class Translations$music$zh_CN {
 	/// zh-CN: '从歌单下载时，文件保存到以歌单命名的子文件夹。'
 	String get downloadGroupByListDesc => '从歌单下载时，文件保存到以歌单命名的子文件夹。';
 
-	/// zh-CN: '同时下载数'
-	String get downloadMaxConcurrent => '同时下载数';
-
-	/// zh-CN: '同时进行的下载任务数量（1–5），修改后立即生效。'
-	String get downloadMaxConcurrentDesc => '同时进行的下载任务数量（1–5），修改后立即生效。';
-
 	/// zh-CN: '排队中'
 	String get downloadStatusQueued => '排队中';
-
-	/// zh-CN: '下载中'
-	String get downloadStatusRunning => '下载中';
-
-	/// zh-CN: '已暂停'
-	String get downloadStatusPaused => '已暂停';
 
 	/// zh-CN: '写入标签'
 	String get downloadStatusProcessing => '写入标签';
 
-	/// zh-CN: '已完成'
-	String get downloadStatusCompleted => '已完成';
-
 	/// zh-CN: '已跳过'
 	String get downloadStatusSkipped => '已跳过';
-
-	/// zh-CN: '下载失败'
-	String get downloadStatusFailed => '下载失败';
-
-	/// zh-CN: '已取消'
-	String get downloadStatusCancelled => '已取消';
-
-	/// zh-CN: '全部暂停'
-	String get downloadPauseAll => '全部暂停';
-
-	/// zh-CN: '全部继续'
-	String get downloadResumeAll => '全部继续';
-
-	/// zh-CN: '清除已完成'
-	String get downloadClearFinished => '清除已完成';
 
 	/// zh-CN: '下载进度'
 	String get downloadProgress => '下载进度';
 
-	/// zh-CN: '重试'
-	String get downloadRetry => '重试';
-
-	/// zh-CN: '移除记录'
-	String get downloadRemove => '移除记录';
-
-	/// zh-CN: '删除文件'
-	String get downloadDeleteFile => '删除文件';
-
 	/// zh-CN: '音频文件会随这条记录一并删除，此操作无法撤销。'
 	String get downloadDeleteFileBody => '音频文件会随这条记录一并删除，此操作无法撤销。';
-
-	/// zh-CN: '文件未能删除'
-	String get downloadDeleteFailed => '文件未能删除';
 
 	/// zh-CN: '继续'
 	String get downloadResume => '继续';
 
 	/// zh-CN: '暂停'
 	String get downloadPause => '暂停';
-
-	/// zh-CN: '还没有下载任务'
-	String get downloadsEmptyTitle => '还没有下载任务';
 
 	/// zh-CN: '在歌曲行的「更多」里下载，文件会出现在这里。'
 	String get downloadsEmptyDescription => '在歌曲行的「更多」里下载，文件会出现在这里。';
@@ -5430,6 +5310,9 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '已清除 {size: String} 的缓存'
 	String audioCacheFreed({required String size}) => '已清除 ${size} 的缓存';
+
+	/// zh-CN: '同时进行的下载任务数量（1–5），修改后立即生效。'
+	String get downloadMaxConcurrentDesc => '同时进行的下载任务数量（1–5），修改后立即生效。';
 }
 
 // Path: navigation
@@ -10312,9 +10195,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '点击进入预览'
 	String get downloadDetailPreview => '点击进入预览';
 
-	/// zh-CN: '下载详情'
-	String get downloadDetailTitle => '下载详情';
-
 	/// zh-CN: '保存路径'
 	String get downloadInfoPath => '保存路径';
 
@@ -11823,6 +11703,42 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '播放'
 	String get downloadPlay => '播放';
+
+	/// zh-CN: '同时下载数'
+	String get downloadMaxConcurrent => '同时下载数';
+
+	/// zh-CN: '同时进行的下载任务数量，改动即时生效。'
+	String get downloadMaxConcurrentDesc => '同时进行的下载任务数量，改动即时生效。';
+
+	/// zh-CN: '回到应用默认的视频目录。'
+	String get downloadDirectoryDefaultDesc => '回到应用默认的视频目录。';
+
+	/// zh-CN: '恢复默认目录'
+	String get downloadDirectoryDefault => '恢复默认目录';
+
+	/// zh-CN: '保存目录已更新'
+	String get downloadDirectoryUpdated => '保存目录已更新';
+
+	/// zh-CN: '保存目录未能更新'
+	String get downloadDirectoryFailed => '保存目录未能更新';
+
+	/// zh-CN: '保存目录'
+	String get downloadDirectory => '保存目录';
+
+	/// zh-CN: '视频文件会被一并删除，此操作无法撤销。'
+	String get downloadDeleteFileBody => '视频文件会被一并删除，此操作无法撤销。';
+
+	/// zh-CN: '文件未能删除'
+	String get downloadDeleteFailed => '文件未能删除';
+
+	/// zh-CN: '全部暂停'
+	String get downloadPauseAll => '全部暂停';
+
+	/// zh-CN: '全部继续'
+	String get downloadResumeAll => '全部继续';
+
+	/// zh-CN: '已加入下载队列'
+	String get downloadQueuedNotice => '已加入下载队列';
 }
 
 // Path: shield
@@ -12784,9 +12700,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '已下载到 {name: String}'
 	String downloadDone({required String name}) => '已下载到 ${name}';
 
-	/// zh-CN: '下载失败'
-	String get downloadFailed => '下载失败';
-
 	/// zh-CN: '这条回放的格式暂不支持下载'
 	String get downloadUnsupported => '这条回放的格式暂不支持下载';
 
@@ -12796,20 +12709,8 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '暂停下载'
 	String get downloadPause => '暂停下载';
 
-	/// zh-CN: '已加入下载队列'
-	String get downloadQueued => '已加入下载队列';
-
 	/// zh-CN: '该分P已在下载队列'
 	String get downloadDuplicate => '该分P已在下载队列';
-
-	/// zh-CN: '下载设置'
-	String get downloadSettingsTitle => '下载设置';
-
-	/// zh-CN: '同时下载数'
-	String get downloadMaxConcurrent => '同时下载数';
-
-	/// zh-CN: '同时进行的下载任务数量，改动即时生效。'
-	String get downloadMaxConcurrentDesc => '同时进行的下载任务数量，改动即时生效。';
 
 	/// zh-CN: '默认下载画质'
 	String get downloadQuality => '默认下载画质';
@@ -12823,59 +12724,11 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。'
 	String get downloadDanmakuDesc => '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。';
 
-	/// zh-CN: '保存目录'
-	String get downloadDirectory => '保存目录';
-
-	/// zh-CN: '保存目录已更新'
-	String get downloadDirectoryUpdated => '保存目录已更新';
-
-	/// zh-CN: '保存目录未能更新'
-	String get downloadDirectoryFailed => '保存目录未能更新';
-
-	/// zh-CN: '恢复默认目录'
-	String get downloadDirectoryDefault => '恢复默认目录';
-
-	/// zh-CN: '回到应用默认的视频目录。'
-	String get downloadDirectoryDefaultDesc => '回到应用默认的视频目录。';
-
-	/// zh-CN: '自动重试'
-	String get downloadRetry => '自动重试';
-
-	/// zh-CN: '失败的下载在后台自动再试，已经下到的字节会接着用。'
-	String get downloadRetryDesc => '失败的下载在后台自动再试，已经下到的字节会接着用。';
-
-	/// zh-CN: '不重试'
-	String get downloadRetryOff => '不重试';
-
-	/// zh-CN: '{count: int} 次'
-	String downloadRetryTimes({required int count}) => '${count} 次';
-
-	/// zh-CN: '重试间隔'
-	String get downloadRetryDelay => '重试间隔';
-
-	/// zh-CN: '两次自动重试之间等待的时间。'
-	String get downloadRetryDelayDesc => '两次自动重试之间等待的时间。';
-
-	/// zh-CN: '下载管理'
-	String get downloadManagerTitle => '下载管理';
-
-	/// zh-CN: '全部暂停'
-	String get downloadPauseAll => '全部暂停';
-
-	/// zh-CN: '全部继续'
-	String get downloadResumeAll => '全部继续';
-
-	/// zh-CN: '清除已完成'
-	String get downloadClearFinished => '清除已完成';
-
 	/// zh-CN: '下载预览'
 	String get previewTitle => '下载预览';
 
 	/// zh-CN: '这个分P还没有下载完成的文件'
 	String get previewUnavailable => '这个分P还没有下载完成的文件';
-
-	/// zh-CN: '这个筛选下没有任务'
-	String get downloadFilterEmpty => '这个筛选下没有任务';
 
 	/// zh-CN: '换一个筛选，或先去视频页添加下载。'
 	String get downloadFilterEmptyDesc => '换一个筛选，或先去视频页添加下载。';
@@ -12885,18 +12738,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '在视频页点「下载」，任务会出现在这里。'
 	String get downloadEmptyDesc => '在视频页点「下载」，任务会出现在这里。';
-
-	/// zh-CN: '恢复下载'
-	String get downloadResume => '恢复下载';
-
-	/// zh-CN: '删除文件'
-	String get downloadDeleteFile => '删除文件';
-
-	/// zh-CN: '视频文件会被一并删除，此操作无法撤销。'
-	String get downloadDeleteFileBody => '视频文件会被一并删除，此操作无法撤销。';
-
-	/// zh-CN: '文件未能删除'
-	String get downloadDeleteFailed => '文件未能删除';
 
 	/// zh-CN: '跳转分P'
 	String get partsJump => '跳转分P';
@@ -14282,10 +14123,9 @@ extension on Translations {
 			'common.previewFileMissingDescription' => '它可能被移动、改名或删除了；打开文件夹看看，或回到列表选另一项。',
 			'common.previewEmpty' => '没有可预览的条目',
 			'common.previewEmptyDescription' => '完成的录像与下载会出现在这里。',
-			'common.previewSpeed' => '倍速',
+			'common.previewDanmakuOff' => '这条没有弹幕文件',
 			_ => null,
 		} ?? switch (path) {
-			'common.previewDanmakuOff' => '这条没有弹幕文件',
 			'common.previewDanmakuSettings' => '弹幕设置',
 			'common.previewDanmakuVisible' => '显示弹幕',
 			'common.previewDanmakuVisibleDescription' => '在画面上叠加这条录像或下载的弹幕，样式与其它播放页共用。',
@@ -14322,6 +14162,10 @@ extension on Translations {
 			'common.previewFilesPane' => '文件',
 			'common.previewDanmakuListVisible' => '显示弹幕列表',
 			'common.previewDanmakuListVisibleDescription' => '在侧栏按时间排列这条录像的弹幕记录。',
+			'common.downloadRetryOff' => '不重试',
+			'common.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
+			'common.downloadRetryDelay' => '重试间隔',
+			'common.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -14592,44 +14436,18 @@ extension on Translations {
 			'hongguo.reviewsEmpty' => '还没有剧评',
 			'hongguo.rating' => ({required Object score}) => '评分 ${score}',
 			'hongguo.ratingCount' => ({required Object count}) => '${count} 人评分',
-			'hongguo.downloadSettingsTitle' => '下载设置',
-			'hongguo.downloadMaxConcurrent' => '同时下载数',
-			'hongguo.downloadMaxConcurrentDesc' => '同时进行的下载任务数量，改动即时生效。',
 			'hongguo.downloadQuality' => '默认下载清晰度',
 			'hongguo.downloadQualityDesc' => '下载时向平台请求的清晰度档位。',
-			'hongguo.downloadDirectory' => '保存目录',
-			'hongguo.downloadDirectoryUpdated' => '保存目录已更新',
-			'hongguo.downloadDirectoryFailed' => '保存目录未能更新',
-			'hongguo.downloadDirectoryDefault' => '恢复默认目录',
-			'hongguo.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
 			'hongguo.downloadHeldOfTotal' => ({required Object held, required Object total}) => '${held}集/${total}集',
-			'hongguo.downloadRetry' => '自动重试',
-			'hongguo.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
-			'hongguo.downloadRetryOff' => '不重试',
-			'hongguo.downloadRetryTimes' => ({required int count}) => '${count} 次',
-			'hongguo.downloadRetryDelay' => '重试间隔',
-			'hongguo.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
-			'hongguo.downloadManagerTitle' => '下载管理',
-			'hongguo.downloadPauseAll' => '全部暂停',
-			'hongguo.downloadResumeAll' => '全部继续',
-			'hongguo.downloadClearFinished' => '清除已完成',
 			'hongguo.previewTitle' => '下载预览',
 			'hongguo.previewUnavailable' => '这一集还没有下载完成的文件',
-			'hongguo.downloadFilterEmpty' => '这个筛选下没有任务',
 			'hongguo.downloadFilterEmptyDesc' => '换一个筛选，或先去播放页添加下载。',
 			'hongguo.downloadEmpty' => '还没有下载任务',
 			'hongguo.downloadEmptyDesc' => '在剧集播放页点「下载」，任务会出现在这里。',
 			'hongguo.download' => '下载',
-			'hongguo.downloadQueued' => '已加入下载队列',
-			'hongguo.downloadQueuedLabel' => '排队中',
 			'hongguo.downloadDuplicate' => '该集已在下载队列',
-			'hongguo.downloadResume' => '继续下载',
 			'hongguo.downloaded' => '已下载',
-			'hongguo.downloadFailed' => '下载失败',
 			'hongguo.downloadDone' => ({required Object name}) => '已下载 ${name}',
-			'hongguo.downloadDeleteFile' => '删除文件',
-			'hongguo.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
-			'hongguo.downloadDeleteFailed' => '文件未能删除',
 			'hongguo.cardOpenSeries' => '打开剧集页',
 			'hongguo.cardCopyLink' => '复制详情页链接',
 			'hongguo.cardNoEpisodes' => '这部剧还没有可下载的剧集',
@@ -14677,7 +14495,6 @@ extension on Translations {
 			'huya.infoColumn' => '信息栏',
 			'huya.infoColumnShow' => '展开信息栏',
 			'huya.downloadQueueEmptyDesc' => '在虎牙视频页点「下载」，任务会出现在这里。',
-			'huya.downloads' => '下载管理',
 			'huya.materialSearchHint' => '搜索素材',
 			'huya.materialHot' => '精选',
 			'huya.materialEmpty' => '这里暂时没有素材。',
@@ -14797,8 +14614,6 @@ extension on Translations {
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
 			'iptv.recentRemove' => '从最近观看中移除',
 			'iptv.recentClear' => '清空最近观看',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.recentClearTitle' => '清空最近观看？',
 			'iptv.recentClearDesc' => '只删除本机的观看记录，收藏和频道本身不受影响。',
 			'iptv.recentEmptyTitle' => '还没有看过的频道',
@@ -14823,6 +14638,8 @@ extension on Translations {
 			'iptv.aspectZoom' => '裁剪',
 			'iptv.digitHint' => '输入频道号跳转',
 			'iptv.digitNoChannel' => ({required Object number}) => '没有频道号 ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.reminderAction' => '预约',
 			'iptv.reminderCancelAction' => '取消预约',
 			'iptv.reminderSet' => ({required Object title}) => '已预约「${title}」',
@@ -15259,7 +15076,6 @@ extension on Translations {
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadFilterEmpty' => '这一类还没有任务',
 			'music.downloadFilterEmptyDesc' => '换一个筛选，或先在歌曲行的「更多」里下载。',
-			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
 			'music.downloadFailed' => ({required Object error}) => '下载失败：${error}',
@@ -15298,30 +15114,13 @@ extension on Translations {
 			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
 			'music.downloadGroupByList' => '按歌单分文件夹',
 			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
-			'music.downloadMaxConcurrent' => '同时下载数',
-			'music.downloadMaxConcurrentDesc' => '同时进行的下载任务数量（1–5），修改后立即生效。',
 			'music.downloadStatusQueued' => '排队中',
-			'music.downloadStatusRunning' => '下载中',
-			'music.downloadStatusPaused' => '已暂停',
 			'music.downloadStatusProcessing' => '写入标签',
-			'music.downloadStatusCompleted' => '已完成',
 			'music.downloadStatusSkipped' => '已跳过',
-			'music.downloadStatusFailed' => '下载失败',
-			'music.downloadStatusCancelled' => '已取消',
-			'music.downloadPauseAll' => '全部暂停',
-			'music.downloadResumeAll' => '全部继续',
-			'music.downloadClearFinished' => '清除已完成',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadProgress' => '下载进度',
-			'music.downloadRetry' => '重试',
-			'music.downloadRemove' => '移除记录',
-			'music.downloadDeleteFile' => '删除文件',
 			'music.downloadDeleteFileBody' => '音频文件会随这条记录一并删除，此操作无法撤销。',
-			'music.downloadDeleteFailed' => '文件未能删除',
 			'music.downloadResume' => '继续',
 			'music.downloadPause' => '暂停',
-			'music.downloadsEmptyTitle' => '还没有下载任务',
 			'music.downloadsEmptyDescription' => '在歌曲行的「更多」里下载，文件会出现在这里。',
 			'music.localAddFolder' => '添加文件夹',
 			'music.localHint' => '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。',
@@ -15353,6 +15152,8 @@ extension on Translations {
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
 			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
 			'music.lyricTraditionalize' => '简体转繁体',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricTraditionalizeDesc' => '把歌词文本改写为繁体中文。',
 			'music.lyricWordTimed' => '逐字歌词',
 			'music.lyricWordTimedDesc' => '平台提供逐字时间轴时按字高亮演唱。',
@@ -15678,6 +15479,7 @@ extension on Translations {
 			'music.playlistClearDone' => ({required String name}) => '已清空「${name}」',
 			'music.audioCacheNothingToClear' => '没有可清除的缓存',
 			'music.audioCacheFreed' => ({required String size}) => '已清除 ${size} 的缓存',
+			'music.downloadMaxConcurrentDesc' => '同时进行的下载任务数量（1–5），修改后立即生效。',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
 			'navigation.channels' => '频道',
@@ -15825,8 +15627,6 @@ extension on Translations {
 			'recorder.stopRecording' => '停止录制',
 			'recorder.stopAll' => '停止全部录制',
 			'recorder.stopAllTitle' => '停止全部录制？',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.stopAllBody' => ({required int count}) => '${count} 个正在录制的房间将结束保存；已写入的分段保留，收尾照常进行。',
 			'recorder.stopAllDone' => ({required int count}) => '已停止 ${count} 个录制',
 			'recorder.stopAllPartial' => ({required int count, required Object error}) => '已停止 ${count} 个，另有失败：${error}',
@@ -15866,6 +15666,8 @@ extension on Translations {
 			'recorder.filterTitle' => '筛选录像',
 			'recorder.filterPlatformGroup' => '平台',
 			'recorder.refresh' => '刷新',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.reset' => '清空筛选',
 			'recorder.selectedCount' => ({required int count}) => '已选 ${count} 项',
 			'recorder.deleteSelected' => '删除选中',
@@ -16339,8 +16141,6 @@ extension on Translations {
 			'settings.navPlaybackPreferences' => '播放偏好',
 			'settings.navSystem' => '系统',
 			'settings.navDataCache' => '数据与缓存',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navAppearance' => '外观',
 			'settings.navPlayback' => '播放',
 			'settings.navSites' => '站点',
@@ -16380,6 +16180,8 @@ extension on Translations {
 			'settings.dataCacheDescription' => '观看数据与封面缓存。',
 			'settings.personalizationChooseTheme' => '选择要应用的主题',
 			'settings.sitesDescription' => '首选平台与平台显示，账号管理与标签管理，以及各平台的特殊设置。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
@@ -16853,8 +16655,6 @@ extension on Translations {
 			'settings.navMusicSync' => '同步',
 			'settings.navMusicEq' => '音效',
 			'settings.musicHotkeysDescription' => '播放、音量与收藏的快捷键。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.musicSyncDescription' => '与 lx-music 桌面端服务端同步歌单。',
 			'settings.musicEqDescription' => '音效总开关、内置预设、十段均衡器与预放增益。',
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
@@ -16894,6 +16694,8 @@ extension on Translations {
 			'settings.playerOneClickDesc' => '恢复「标准」预设；播放中的立即生效，其余下次打开。',
 			'settings.playerOneClickConfirmTitle' => '应用推荐配置？',
 			'settings.playerOneClickConfirmBody' => ({required Object preset}) => '切换到「${preset}」并撤销手动输出与解码器；正在播放的直播会短暂重建。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerOneClickApplied' => ({required Object preset}) => '已应用「${preset}」',
 			'settings.playerCompatFix' => '花屏 / 绿屏修复',
 			'settings.playerCompatFixDesc' => '仅 Android；直出表面并强制硬解，音画不同步或撕裂时先试。',
@@ -17287,7 +17089,6 @@ extension on Translations {
 			'settings.downloadLoadingMore' => '正在加载更多…',
 			'settings.downloadSettings' => '下载设置',
 			'settings.downloadDetailPreview' => '点击进入预览',
-			'settings.downloadDetailTitle' => '下载详情',
 			'settings.downloadInfoPath' => '保存路径',
 			'settings.downloadInfoSize' => '文件大小',
 			'settings.downloadInfoTime' => '下载时间',
@@ -17367,8 +17168,6 @@ extension on Translations {
 			'settings.backgroundLibraryApplied' => '已应用为背景',
 			'settings.wallpaperSourceOfficial' => '官方壁纸',
 			'settings.wallpaperSourceWallhaven' => 'Wallhaven',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperSourceBing' => '必应壁纸',
 			'settings.wallpaperSourceDeepin' => 'deepin',
 			'settings.wallpaperSourceVideo' => '动态壁纸',
@@ -17409,6 +17208,8 @@ extension on Translations {
 			'settings.tagNoteHint' => '给这个标签写一句备注',
 			'settings.tagNameEmpty' => '标签名称不能为空',
 			'settings.tagNameDuplicate' => '已存在同名标签',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagSaveFailed' => '标签更改未保存，请重试',
 			'settings.tagStale' => '这个标签已在别处被删除或修改',
 			'settings.tagAddedToast' => ({required String name}) => '已添加标签“${name}”',
@@ -17793,6 +17594,18 @@ extension on Translations {
 			'settings.downloadStatusCancelled' => '已取消',
 			'settings.downloadDeleteFile' => '删除文件',
 			'settings.downloadPlay' => '播放',
+			'settings.downloadMaxConcurrent' => '同时下载数',
+			'settings.downloadMaxConcurrentDesc' => '同时进行的下载任务数量，改动即时生效。',
+			'settings.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
+			'settings.downloadDirectoryDefault' => '恢复默认目录',
+			'settings.downloadDirectoryUpdated' => '保存目录已更新',
+			'settings.downloadDirectoryFailed' => '保存目录未能更新',
+			'settings.downloadDirectory' => '保存目录',
+			'settings.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
+			'settings.downloadDeleteFailed' => '文件未能删除',
+			'settings.downloadPauseAll' => '全部暂停',
+			'settings.downloadResumeAll' => '全部继续',
+			'settings.downloadQueuedNotice' => '已加入下载队列',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -17881,8 +17694,6 @@ extension on Translations {
 			'toolbox.cacheClear' => '清理缓存',
 			'toolbox.cacheClearDesc' => '释放图片缓存占用的内存，不影响收藏与历史。',
 			'toolbox.linkDirect' => '获取直链',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => '直链地址',
 			'toolbox.linkDirectQuality' => '画质',
 			'toolbox.linkDirectLines' => '播放地址',
@@ -17911,6 +17722,8 @@ extension on Translations {
 			'toolbox.logsSearch' => '搜索日志…',
 			'toolbox.logsEmptyTitle' => '还没有日志',
 			'toolbox.logsEmptyDescription' => '应用启动、网络请求与错误会记录在这里。',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsAutoOn' => '自动滚动已开启',
 			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
 			'toolbox.logsLines' => ({required int count}) => '${count} 行',
@@ -18103,44 +17916,19 @@ extension on Translations {
 			'vod.saveRemoved' => '已取消收藏',
 			'vod.download' => '下载视频',
 			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
-			'vod.downloadFailed' => '下载失败',
 			'vod.downloadUnsupported' => '这条回放的格式暂不支持下载',
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadPause' => '暂停下载',
-			'vod.downloadQueued' => '已加入下载队列',
 			'vod.downloadDuplicate' => '该分P已在下载队列',
-			'vod.downloadSettingsTitle' => '下载设置',
-			'vod.downloadMaxConcurrent' => '同时下载数',
-			'vod.downloadMaxConcurrentDesc' => '同时进行的下载任务数量，改动即时生效。',
 			'vod.downloadQuality' => '默认下载画质',
 			'vod.downloadQualityDesc' => '下载时向哔哩哔哩请求的清晰度，1080P+ 与 4K 需要登录账号。',
 			'vod.downloadDanmaku' => '同时保存弹幕',
 			'vod.downloadDanmakuDesc' => '下载完成时把弹幕按「弹幕保存格式」写进视频所在目录。',
-			'vod.downloadDirectory' => '保存目录',
-			'vod.downloadDirectoryUpdated' => '保存目录已更新',
-			'vod.downloadDirectoryFailed' => '保存目录未能更新',
-			'vod.downloadDirectoryDefault' => '恢复默认目录',
-			'vod.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
-			'vod.downloadRetry' => '自动重试',
-			'vod.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
-			'vod.downloadRetryOff' => '不重试',
-			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
-			'vod.downloadRetryDelay' => '重试间隔',
-			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
-			'vod.downloadManagerTitle' => '下载管理',
-			'vod.downloadPauseAll' => '全部暂停',
-			'vod.downloadResumeAll' => '全部继续',
-			'vod.downloadClearFinished' => '清除已完成',
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',
-			'vod.downloadFilterEmpty' => '这个筛选下没有任务',
 			'vod.downloadFilterEmptyDesc' => '换一个筛选，或先去视频页添加下载。',
 			'vod.downloadEmpty' => '还没有下载任务',
 			'vod.downloadEmptyDesc' => '在视频页点「下载」，任务会出现在这里。',
-			'vod.downloadResume' => '恢复下载',
-			'vod.downloadDeleteFile' => '删除文件',
-			'vod.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
-			'vod.downloadDeleteFailed' => '文件未能删除',
 			'vod.partsJump' => '跳转分P',
 			'vod.episodesPrevious' => '上一组',
 			'vod.episodesNext' => '下一组',

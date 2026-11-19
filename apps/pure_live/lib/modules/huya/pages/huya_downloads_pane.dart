@@ -51,7 +51,7 @@ final class HuyaDownloadsPane extends ConsumerWidget {
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.folderOpen),
-              title: Text(t.vod.downloadDirectory),
+              title: Text(t.settings.downloadDirectory),
               description: Text(directory, maxLines: 2, overflow: TextOverflow.ellipsis),
               showChevron: true,
               onPressed: () => unawaited(openDownloadedPath(context, directory)),

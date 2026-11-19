@@ -562,7 +562,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     ),
     _hit(
       SettingsSection.vodDownload,
-      t.vod.downloadMaxConcurrent,
+      t.settings.downloadMaxConcurrent,
       'download queue lanes quality danmaku save folder 下载 队列 同时 画质 弹幕 保存 目录 下载管理',
     ),
     _hit(SettingsSection.vodInterface, t.vod.showDetails, 'details description uploader hide 详情 简介 隐藏'),
@@ -579,8 +579,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.vodPlayback, t.vod.playbackReset, 'playback reset defaults speed quality finish 播放 恢复 默认 重置'),
     _hit(SettingsSection.vodDownload, t.vod.downloadQuality, 'download rendition resolution mp4 flv 下载 画质 清晰度 档位'),
     _hit(SettingsSection.vodDownload, t.vod.downloadDanmaku, 'danmaku comments sidecar file 弹幕 同时 保存 旁挂'),
-    _hit(SettingsSection.vodDownload, t.vod.downloadRetry, 'failed task try again 重试 失败 任务'),
-    _hit(SettingsSection.vodDownload, t.vod.downloadRetryDelay, 'retry interval wait seconds 重试 间隔 等待 秒'),
+    _hit(SettingsSection.vodDownload, t.common.downloadRetried, 'failed task try again 重试 失败 任务'),
+    _hit(SettingsSection.vodDownload, t.common.downloadRetryDelay, 'retry interval wait seconds 重试 间隔 等待 秒'),
     _hit(
       SettingsSection.vodDownload,
       s.downloadFilterPlayable,
@@ -618,7 +618,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.musicSync, t.music.syncForgetKey, 'sync device pair forget unpair remove 同步 已配对 设备 解除 忘记 配对'),
     _hit(
       SettingsSection.musicDownload,
-      t.music.downloadMaxConcurrent,
+      t.settings.downloadMaxConcurrent,
       'download concurrent lanes parallel threads 下载 并发 同时 数量 线程',
     ),
     _hit(
@@ -750,14 +750,14 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.hongguoDanmaku, t.hongguo.danmakuSpeed, 'comment scroll rate 弹幕 速度 滚动'),
     _hit(SettingsSection.hongguoDanmaku, t.hongguo.danmakuDensity, 'comment amount limit 弹幕 密度 条数'),
     _hit(SettingsSection.hongguoDownload, t.hongguo.downloadQuality, 'download rendition resolution 下载 画质 清晰度 档位'),
-    _hit(SettingsSection.hongguoDownload, t.hongguo.downloadRetry, 'failed task try again 重试 失败 任务'),
-    _hit(SettingsSection.hongguoDownload, t.hongguo.downloadRetryDelay, 'retry interval wait seconds 重试 间隔 等待 秒'),
+    _hit(SettingsSection.hongguoDownload, t.common.downloadRetried, 'failed task try again 重试 失败 任务'),
+    _hit(SettingsSection.hongguoDownload, t.common.downloadRetryDelay, 'retry interval wait seconds 重试 间隔 等待 秒'),
     _hit(
       SettingsSection.huyaDownload,
       t.settings.huyaDownloadTitle,
       'huya video download queue task pause resume 下载 任务 队列 虎牙 视频 暂停 恢复',
     ),
-    _hit(SettingsSection.huyaDownload, t.vod.downloadDirectory, 'download folder path storage 下载 文件夹 存放 路径'),
+    _hit(SettingsSection.huyaDownload, t.settings.downloadDirectory, 'download folder path storage 下载 文件夹 存放 路径'),
     _hit(
       SettingsSection.hongguoDownload,
       s.downloadFilterPlayable,
@@ -765,7 +765,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     ),
     _hit(
       SettingsSection.hongguoDownload,
-      t.hongguo.downloadMaxConcurrent,
+      t.settings.downloadMaxConcurrent,
       'hongguo download queue lanes quality save folder 下载 队列 同时 清晰度 保存 目录 下载管理',
     ),
     // About.

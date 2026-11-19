@@ -143,18 +143,18 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
   Future<void> _pickDirectory(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     try {
-      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.hongguo.downloadDirectory);
+      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.downloadDirectory);
       if (selected == null || selected.trim().isEmpty) return;
       final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.shortDramas, selected);
       if (!context.mounted) return;
       showDsToast(
         context: context,
-        title: saved ? t.hongguo.downloadDirectoryUpdated : t.hongguo.downloadDirectoryFailed,
+        title: saved ? t.settings.downloadDirectoryUpdated : t.settings.downloadDirectoryFailed,
         status: saved ? DsStatus.success : DsStatus.danger,
       );
     } on Object {
       if (context.mounted) {
-        showDsToast(context: context, title: t.hongguo.downloadDirectoryFailed, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadDirectoryFailed, status: DsStatus.danger);
       }
     }
   }
@@ -236,34 +236,34 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
       spacing: DsSpace.s16,
       children: [
         DsListSection(
-          header: Text(t.hongguo.downloadSettingsTitle),
+          header: Text(t.settings.downloadSettings),
           children: [
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.download),
-              title: t.hongguo.downloadMaxConcurrent,
-              description: t.hongguo.downloadMaxConcurrentDesc,
+              title: t.settings.downloadMaxConcurrent,
+              description: t.settings.downloadMaxConcurrentDesc,
               value: lanes,
               options: [for (var count = 1; count <= 5; count++) DsSelectOption(value: count, label: '$count')],
               onChanged: (value) => ref.read(hongguoDownloadSettingsProvider.notifier).select(value),
             ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.refreshCw),
-              title: t.hongguo.downloadRetry,
-              description: t.hongguo.downloadRetryDesc,
+              title: t.common.downloadRetried,
+              description: t.common.downloadRetryDesc,
               value: retry,
               options: [
                 for (final count in HongguoDownloadRetryController.choices)
                   DsSelectOption(
                     value: count,
-                    label: count == 0 ? t.hongguo.downloadRetryOff : t.hongguo.downloadRetryTimes(count: count),
+                    label: count == 0 ? t.common.downloadRetryOff : t.common.downloadRetriedTimes(count: count),
                   ),
               ],
               onChanged: (value) => ref.read(hongguoDownloadRetryProvider.notifier).select(value),
             ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.timer),
-              title: t.hongguo.downloadRetryDelay,
-              description: t.hongguo.downloadRetryDelayDesc,
+              title: t.common.downloadRetryDelay,
+              description: t.common.downloadRetryDelayDesc,
               value: retryDelay,
               options: [
                 for (final seconds in HongguoDownloadRetryDelayController.choices)
@@ -287,15 +287,15 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.folderOpen),
-              title: Text(t.hongguo.downloadDirectory),
+              title: Text(t.settings.downloadDirectory),
               description: Text(directory, maxLines: 2, overflow: TextOverflow.ellipsis),
               showChevron: true,
               onPressed: () => unawaited(_pickDirectory(context, ref)),
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.hongguo.downloadDirectoryDefault),
-              description: Text(t.hongguo.downloadDirectoryDefaultDesc),
+              title: Text(t.settings.downloadDirectoryDefault),
+              description: Text(t.settings.downloadDirectoryDefaultDesc),
               onPressed: () =>
                   unawaited(ref.read(storageFolderOverridesProvider.notifier).reset(StorageFolder.shortDramas)),
             ),
@@ -337,7 +337,7 @@ final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPan
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.download),
-              title: Text(t.hongguo.downloadManagerTitle),
+              title: Text(t.settings.downloadManagerTitle),
               description: Text(
                 [
                   t.settings.downloadTaskCount(count: tasks.length, active: active),
@@ -467,7 +467,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     final confirmed = await showAppConfirm(
       context: context,
       title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.hongguo.downloadDeleteFileBody,
+      description: t.settings.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -478,7 +478,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
       try {
         await controller.remove(task.id, deleteFile: true);
       } on Object {
-        if (mounted) showDsToast(context: context, title: t.hongguo.downloadDeleteFailed, status: DsStatus.danger);
+        if (mounted) showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
       }
     }
     if (mounted) setState(_selected.clear);
@@ -627,25 +627,25 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   ),
                   if (moving > 0)
                     DownloadQueueAction(
-                      label: t.hongguo.downloadPauseAll,
+                      label: t.settings.downloadPauseAll,
                       icon: DsIcons.pause,
                       onPressed: () => unawaited(controller.pauseAll()),
                     ),
                   if (stopped)
                     DownloadQueueAction(
-                      label: t.hongguo.downloadResumeAll,
+                      label: t.settings.downloadResumeAll,
                       icon: DsIcons.play,
                       onPressed: () => unawaited(controller.resumeAll()),
                     ),
                   if (finished.isNotEmpty)
                     DownloadQueueAction(
-                      label: t.hongguo.downloadClearFinished,
+                      label: t.settings.downloadClearFinished,
                       icon: DsIcons.trash2,
                       destructive: true,
                       onPressed: () => unawaited(
                         confirmClearFinished(
                           context,
-                          title: t.hongguo.downloadClearFinished,
+                          title: t.settings.downloadClearFinished,
                           clear: controller.clearFinished,
                         ),
                       ),
@@ -678,7 +678,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                   ),
                   if (picked.any((task) => task.phase == HongguoDownloadPhase.done))
                     DownloadQueueAction(
-                      label: t.hongguo.downloadDeleteFile,
+                      label: t.settings.downloadDeleteFile,
                       icon: DsIcons.fileX,
                       destructive: true,
                       onPressed: () => unawaited(_deletePicked(picked)),
@@ -745,7 +745,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
   Widget _empty(Translations t, List<HongguoDownloadItem> tasks, String directory, bool filterActive) => Center(
     child: DsEmptyState(
       icon: const DsIcon(DsIcons.download),
-      title: Text(tasks.isEmpty ? t.hongguo.downloadEmpty : t.hongguo.downloadFilterEmpty),
+      title: Text(tasks.isEmpty ? t.hongguo.downloadEmpty : t.settings.downloadFilterEmpty),
       description: Text(tasks.isEmpty ? t.hongguo.downloadEmptyDesc : t.hongguo.downloadFilterEmptyDesc),
       actions: [
         if (filterActive)
@@ -1080,8 +1080,8 @@ Widget _hongguoTaskCard(BuildContext context, WidgetRef ref, HongguoDownloadItem
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
       context: context,
-      title: t.hongguo.downloadDeleteFile,
-      description: t.hongguo.downloadDeleteFileBody,
+      title: t.settings.downloadDeleteFile,
+      description: t.settings.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
       destructive: true,
@@ -1091,7 +1091,7 @@ Widget _hongguoTaskCard(BuildContext context, WidgetRef ref, HongguoDownloadItem
       await controller.remove(task.id, deleteFile: true);
     } on Object {
       if (context.mounted) {
-        showDsToast(context: context, title: t.hongguo.downloadDeleteFailed, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
       }
     }
   }

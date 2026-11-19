@@ -1695,7 +1695,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
       // The speed as a chip that says what it would set — a number a viewer
       // chose is a state worth reading, not only a menu to open.
       DsMenuAnchor(
-        semanticLabel: t.common.previewSpeed,
+        semanticLabel: t.player.speed,
         align: DsAlign.end,
         items: [
           for (final value in kPreviewRates)

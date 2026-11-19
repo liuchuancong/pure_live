@@ -337,7 +337,7 @@ final class WallpaperDownloadDetailPage extends StatelessWidget {
           children: [
             SettingsPreviewTitleBar(
               icon: DsIcons.download,
-              title: t.settings.downloadDetailTitle,
+              title: t.common.downloadDetails,
               onBack: () => Navigator.of(context).maybePop(),
             ),
             Expanded(
@@ -368,7 +368,7 @@ final class _WallpaperDownloadDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     return AppDialog(
-      title: Text(t.settings.downloadDetailTitle),
+      title: Text(t.common.downloadDetails),
       description: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: _WallpaperDownloadDetail(taskId: taskId, onGone: () => Navigator.of(context).maybePop()),
@@ -1099,7 +1099,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
       const DsMenuDivider(),
       DsMenuItem(
         leading: const DsIcon(DsIcons.slidersHorizontal),
-        label: Text(t.settings.downloadDetailTitle),
+        label: Text(t.common.downloadDetails),
         onPressed: () => unawaited(showWallpaperDownloadDetail(context, task.id)),
       ),
       const DsMenuDivider(),

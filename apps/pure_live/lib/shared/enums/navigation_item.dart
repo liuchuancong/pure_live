@@ -196,7 +196,7 @@ enum NavigationItem {
     NavigationItem.huyaMaterial => t.huya.material,
     NavigationItem.huyaRank => t.huya.rank,
     NavigationItem.huyaSearch => t.huya.search,
-    NavigationItem.huyaDownloads => t.huya.downloads,
+    NavigationItem.huyaDownloads => t.settings.downloadManagerTitle,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvRecent => t.iptv.recentTitle,
     NavigationItem.musicRecommend => t.navigation.musicRecommend,

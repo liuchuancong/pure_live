@@ -146,7 +146,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
       context: context,
       title: t.settings.downloadDeleteSelected(count: picked.length),
       description: t.settings.downloadRemoveBody,
-      confirmLabel: t.music.downloadRemove,
+      confirmLabel: t.settings.downloadRemove,
       cancelLabel: t.common.cancel,
       destructive: true,
     );
@@ -174,7 +174,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
       try {
         await controller.remove(task.id, deleteFile: true);
       } on Object {
-        if (mounted) showDsToast(context: context, title: t.music.downloadDeleteFailed, status: DsStatus.danger);
+        if (mounted) showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
       }
     }
     if (mounted) setState(_selected.clear);
@@ -338,25 +338,25 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                   ),
                   if (pending > 0)
                     DownloadQueueAction(
-                      label: t.music.downloadPauseAll,
+                      label: t.settings.downloadPauseAll,
                       icon: DsIcons.pause,
                       onPressed: () => unawaited(controller.pauseAll()),
                     ),
                   if (tasks.any((task) => task.isPaused))
                     DownloadQueueAction(
-                      label: t.music.downloadResumeAll,
+                      label: t.settings.downloadResumeAll,
                       icon: DsIcons.play,
                       onPressed: () => unawaited(controller.resumeAll()),
                     ),
                   if (playableCount > 0)
                     DownloadQueueAction(
-                      label: t.music.downloadClearFinished,
+                      label: t.settings.downloadClearFinished,
                       icon: DsIcons.trash2,
                       destructive: true,
                       onPressed: () => unawaited(
                         confirmClearFinished(
                           context,
-                          title: t.music.downloadClearFinished,
+                          title: t.settings.downloadClearFinished,
                           clear: controller.clearFinished,
                         ),
                       ),
@@ -382,14 +382,14 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                       onPressed: () => unawaited(_runOver(resumable, (controller, id) => controller.resume(id))),
                     ),
                   DownloadQueueAction(
-                    label: t.music.downloadRemove,
+                    label: t.settings.downloadRemove,
                     icon: DsIcons.trash2,
                     destructive: true,
                     onPressed: () => unawaited(_removePicked(picked)),
                   ),
                   if (picked.any(_playableTask))
                     DownloadQueueAction(
-                      label: t.music.downloadDeleteFile,
+                      label: t.settings.downloadDeleteFile,
                       icon: DsIcons.fileX,
                       destructive: true,
                       onPressed: () => unawaited(_deletePicked(picked)),
@@ -457,7 +457,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   Widget _empty(Translations t, List<audio.MusicDownloadTask> tasks, String directory, bool filterActive) => Center(
     child: DsEmptyState(
       icon: const DsIcon(DsIcons.download),
-      title: Text(tasks.isEmpty ? t.music.downloadsEmptyTitle : t.music.downloadFilterEmpty),
+      title: Text(tasks.isEmpty ? t.settings.downloadQueueEmpty : t.music.downloadFilterEmpty),
       description: Text(tasks.isEmpty ? t.music.downloadsEmptyDescription : t.music.downloadFilterEmptyDesc),
       actions: [
         if (filterActive)
@@ -532,7 +532,7 @@ Widget _musicTaskCard(
   Future<void> deleteFile() async {
     final confirmed = await showAppConfirm(
       context: context,
-      title: t.music.downloadDeleteFile,
+      title: t.settings.downloadDeleteFile,
       description: t.music.downloadDeleteFileBody,
       confirmLabel: t.common.delete,
       cancelLabel: t.common.cancel,
@@ -543,7 +543,7 @@ Widget _musicTaskCard(
       await controller.remove(task.id, deleteFile: true);
     } on Object {
       if (context.mounted) {
-        showDsToast(context: context, title: t.music.downloadDeleteFailed, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
       }
     }
   }
@@ -610,7 +610,7 @@ DownloadDetails _detailsOf(
     title: request.title ?? musicFileNameOf(task.outputPath),
     part: facts.join(' · '),
     coverUrl: request.coverUrl ?? '',
-    status: missing ? '${t.music.downloadStatusCompleted} · ${t.common.previewFileMissing}' : _statusLabel(t, task),
+    status: missing ? '${t.settings.downloadStatusDone} · ${t.common.previewFileMissing}' : _statusLabel(t, task),
     savePath: task.outputPath,
     queuedAt: task.startedAt == null ? '' : downloadStampOf(task.startedAt!),
     // The task's attempt is 1-based; a first run is no retry.
@@ -662,13 +662,13 @@ String? _etaOf(Translations t, audio.MusicDownloadTask task) {
 /// tick list all read this, so one state is not named three ways on one page.
 String _musicStatusLabel(Translations t, audio.MusicDownloadStatus status) => switch (status) {
   audio.MusicDownloadStatus.queued => t.music.downloadStatusQueued,
-  audio.MusicDownloadStatus.running => t.music.downloadStatusRunning,
-  audio.MusicDownloadStatus.paused => t.music.downloadStatusPaused,
+  audio.MusicDownloadStatus.running => t.settings.downloadStatusRunning,
+  audio.MusicDownloadStatus.paused => t.settings.downloadStatusPaused,
   audio.MusicDownloadStatus.processing => t.music.downloadStatusProcessing,
-  audio.MusicDownloadStatus.completed => t.music.downloadStatusCompleted,
+  audio.MusicDownloadStatus.completed => t.settings.downloadStatusDone,
   audio.MusicDownloadStatus.skipped => t.music.downloadStatusSkipped,
-  audio.MusicDownloadStatus.failed => t.music.downloadStatusFailed,
-  audio.MusicDownloadStatus.cancelled => t.music.downloadStatusCancelled,
+  audio.MusicDownloadStatus.failed => t.settings.downloadStatusFailed,
+  audio.MusicDownloadStatus.cancelled => t.settings.downloadStatusCancelled,
 };
 
 /// The task's state in words.

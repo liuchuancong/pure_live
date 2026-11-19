@@ -1526,7 +1526,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         } else if (item.phase == VodDownloadPhase.failed) {
           // The reason belongs on the toast: "下载失败" with no cause reads as
           // the app's own confusion, and the row keeps it too.
-          showDsToast(context: context, title: t.vod.downloadFailed, description: item.error, status: DsStatus.danger);
+          showDsToast(context: context, title: t.settings.downloadStatusFailed, description: item.error, status: DsStatus.danger);
         }
       }
     });
@@ -2467,11 +2467,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     if (!mounted) return;
     switch (result.outcome) {
       case VodDownloadEnqueue.queued:
-        showDsToast(context: context, title: t.vod.downloadQueued, status: DsStatus.success);
+        showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case VodDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.vod.downloadDuplicate);
       case VodDownloadEnqueue.failed:
-        showDsToast(context: context, title: t.vod.downloadFailed, description: result.error, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
     }
   }
 

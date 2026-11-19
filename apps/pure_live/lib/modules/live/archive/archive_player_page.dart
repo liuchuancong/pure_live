@@ -672,7 +672,7 @@ final class _ArchivePlayerPageState extends ConsumerState<ArchivePlayerPage> wit
         context: context,
         // A replay the downloader cannot rebuild says so; only a broken
         // request reads as a plain failure worth trying again.
-        title: failure.code == ArchiveReplayDownloadFailure.network ? t.vod.downloadFailed : t.vod.downloadUnsupported,
+        title: failure.code == ArchiveReplayDownloadFailure.network ? t.settings.downloadStatusFailed : t.vod.downloadUnsupported,
         status: DsStatus.danger,
       );
     }

@@ -1338,7 +1338,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           // The reason belongs on the toast; the row keeps it too.
           showDsToast(
             context: context,
-            title: t.hongguo.downloadFailed,
+            title: t.settings.downloadStatusFailed,
             description: item.error,
             status: DsStatus.danger,
           );
@@ -1757,9 +1757,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final t = context.t;
     final task = hongguoDownloadOf(ref.watch(hongguoDownloadsProvider), episode.vid);
     final label = switch (task?.phase) {
-      HongguoDownloadPhase.queued => t.hongguo.downloadQueuedLabel,
+      HongguoDownloadPhase.queued => t.settings.downloadStatusQueued,
       HongguoDownloadPhase.running => '${task!.total > 0 ? task.received * 100 ~/ task.total : 0}%',
-      HongguoDownloadPhase.paused => t.hongguo.downloadResume,
+      HongguoDownloadPhase.paused => t.settings.downloadResume,
       HongguoDownloadPhase.done => t.hongguo.downloaded,
       HongguoDownloadPhase.failed || null => t.hongguo.download,
     };
@@ -1801,13 +1801,13 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     if (!mounted) return;
     switch (result.outcome) {
       case HongguoDownloadEnqueue.queued:
-        showDsToast(context: context, title: t.hongguo.downloadQueued, status: DsStatus.success);
+        showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case HongguoDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.hongguo.downloadDuplicate);
       case HongguoDownloadEnqueue.failed:
         showDsToast(
           context: context,
-          title: t.hongguo.downloadFailed,
+          title: t.settings.downloadStatusFailed,
           description: result.error,
           status: DsStatus.danger,
         );
@@ -2350,9 +2350,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         task != null && (task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.queued);
     final finished = task != null && task.phase == HongguoDownloadPhase.done;
     final downloadLabel = switch (task?.phase) {
-      HongguoDownloadPhase.queued => t.hongguo.downloadQueuedLabel,
+      HongguoDownloadPhase.queued => t.settings.downloadStatusQueued,
       HongguoDownloadPhase.running => '${task!.total > 0 ? task.received * 100 ~/ task.total : 0}%',
-      HongguoDownloadPhase.paused => t.hongguo.downloadResume,
+      HongguoDownloadPhase.paused => t.settings.downloadResume,
       HongguoDownloadPhase.done => t.hongguo.downloaded,
       HongguoDownloadPhase.failed || null => t.hongguo.download,
     };

@@ -62,7 +62,6 @@
   "previewFileMissingDescription": "它可能被移动、改名或删除了；打开文件夹看看，或回到列表选另一项。",
   "previewEmpty": "没有可预览的条目",
   "previewEmptyDescription": "完成的录像与下载会出现在这里。",
-  "previewSpeed": "倍速",
   "previewDanmakuOff": "这条没有弹幕文件",
   "previewDanmakuSettings": "弹幕设置",
   "previewDanmakuVisible": "显示弹幕",
@@ -99,5 +98,9 @@
   "clearSearchHistoryBody": "将删除全部搜索历史，删除后不可恢复。",
   "previewFilesPane": "文件",
   "previewDanmakuListVisible": "显示弹幕列表",
-  "previewDanmakuListVisibleDescription": "在侧栏按时间排列这条录像的弹幕记录。"
+  "previewDanmakuListVisibleDescription": "在侧栏按时间排列这条录像的弹幕记录。",
+  "downloadRetryOff": "不重试",
+  "downloadRetryDelayDesc": "两次自动重试之间等待的时间。",
+  "downloadRetryDelay": "重试间隔",
+  "downloadRetryDesc": "失败的下载在后台自动再试，已经下到的字节会接着用。"
 }

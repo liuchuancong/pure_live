@@ -466,7 +466,6 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewFileMissingDescription => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.';
 	@override String get previewEmpty => 'Nothing to preview';
 	@override String get previewEmptyDescription => 'Finished recordings and downloads appear here.';
-	@override String get previewSpeed => 'Speed';
 	@override String get previewDanmakuOff => 'This entry has no danmaku file';
 	@override String get previewDanmakuSettings => 'Danmaku settings';
 	@override String get previewDanmakuVisible => 'Show danmaku';
@@ -504,6 +503,10 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewFilesPane => 'Files';
 	@override String get previewDanmakuListVisible => 'Show danmaku list';
 	@override String get previewDanmakuListVisibleDescription => 'Lists this video\'s danmaku as a timestamped record beside the picture.';
+	@override String get downloadRetryOff => 'No retry';
+	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
+	@override String get downloadRetryDelay => 'Retry interval';
+	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
 }
 
 // Path: favorites
@@ -801,44 +804,18 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get reviewsEmpty => 'No reviews yet';
 	@override String rating({required Object score}) => 'Rated ${score}';
 	@override String ratingCount({required Object count}) => '${count} ratings';
-	@override String get downloadSettingsTitle => 'Download settings';
-	@override String get downloadMaxConcurrent => 'Simultaneous downloads';
-	@override String get downloadMaxConcurrentDesc => 'How many tasks run at once; a change applies at once.';
 	@override String get downloadQuality => 'Download quality';
 	@override String get downloadQualityDesc => 'The rendition tier a download asks the platform for.';
-	@override String get downloadDirectory => 'Save location';
-	@override String get downloadDirectoryUpdated => 'Save location updated';
-	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
-	@override String get downloadDirectoryDefault => 'Restore default folder';
-	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
 	@override String downloadHeldOfTotal({required Object held, required Object total}) => '${held}/${total} eps';
-	@override String get downloadRetry => 'Retry automatically';
-	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
-	@override String get downloadRetryOff => 'No retry';
-	@override String downloadRetryTimes({required int count}) => '${count} times';
-	@override String get downloadRetryDelay => 'Retry interval';
-	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
-	@override String get downloadManagerTitle => 'Downloads';
-	@override String get downloadPauseAll => 'Pause all';
-	@override String get downloadResumeAll => 'Resume all';
-	@override String get downloadClearFinished => 'Clear finished';
 	@override String get previewTitle => 'Download preview';
 	@override String get previewUnavailable => 'This episode has no finished file yet';
-	@override String get downloadFilterEmpty => 'Nothing under this filter';
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a player page first.';
 	@override String get downloadEmpty => 'No downloads yet';
 	@override String get downloadEmptyDesc => 'Tap download on an episode and its task appears here.';
 	@override String get download => 'Download';
-	@override String get downloadQueued => 'Added to the download queue';
-	@override String get downloadQueuedLabel => 'Queued';
 	@override String get downloadDuplicate => 'This episode is already in the queue';
-	@override String get downloadResume => 'Resume download';
 	@override String get downloaded => 'Downloaded';
-	@override String get downloadFailed => 'Download failed';
 	@override String downloadDone({required Object name}) => 'Downloaded ${name}';
-	@override String get downloadDeleteFile => 'Delete file';
-	@override String get downloadDeleteFileBody => 'The video file is deleted with it; this cannot be undone.';
-	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
 	@override String get cardOpenSeries => 'Open series page';
 	@override String get cardCopyLink => 'Copy the series link';
 	@override String get cardNoEpisodes => 'This series has no episodes to download yet';
@@ -895,7 +872,6 @@ class _Translations$huya$en extends Translations$huya$zh_CN {
 	@override String get infoColumn => 'Info column';
 	@override String get infoColumnShow => 'Show the info column';
 	@override String get downloadQueueEmptyDesc => 'Tap Download on a huya video and the task shows up here.';
-	@override String get downloads => 'Downloads';
 	@override String get materialSearchHint => 'Search clips';
 	@override String get materialHot => 'Picks';
 	@override String get materialEmpty => 'No clips here right now.';
@@ -1502,7 +1478,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
 	@override String get downloadFilterEmpty => 'Nothing in this filter yet';
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or download from a song row’s menu first.';
-	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
 	@override String get downloadUnsupported => 'This song has no downloadable source (a local file, or not covered by the current source)';
 	@override String downloadFailed({required Object error}) => 'Download failed: ${error}';
@@ -1541,28 +1516,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadSkipExistingDesc => 'Do not download when the output file is already there.';
 	@override String get downloadGroupByList => 'Group by playlist';
 	@override String get downloadGroupByListDesc => 'When downloading from a playlist, save into a folder named after it.';
-	@override String get downloadMaxConcurrent => 'Concurrent downloads';
-	@override String get downloadMaxConcurrentDesc => 'How many downloads run at once (1–5); changes apply immediately.';
 	@override String get downloadStatusQueued => 'Queued';
-	@override String get downloadStatusRunning => 'Downloading';
-	@override String get downloadStatusPaused => 'Paused';
 	@override String get downloadStatusProcessing => 'Writing tags';
-	@override String get downloadStatusCompleted => 'Completed';
 	@override String get downloadStatusSkipped => 'Skipped';
-	@override String get downloadStatusFailed => 'Failed';
-	@override String get downloadStatusCancelled => 'Cancelled';
-	@override String get downloadPauseAll => 'Pause all';
-	@override String get downloadResumeAll => 'Resume all';
-	@override String get downloadClearFinished => 'Clear finished';
 	@override String get downloadProgress => 'Download progress';
-	@override String get downloadRetry => 'Retry';
-	@override String get downloadRemove => 'Remove the row';
-	@override String get downloadDeleteFile => 'Delete the file';
 	@override String get downloadDeleteFileBody => 'The audio file goes with this record. This cannot be undone.';
-	@override String get downloadDeleteFailed => 'The file could not be deleted';
 	@override String get downloadResume => 'Resume';
 	@override String get downloadPause => 'Pause';
-	@override String get downloadsEmptyTitle => 'No downloads yet';
 	@override String get downloadsEmptyDescription => 'Download from a song row’s menu and it appears here.';
 	@override String get localAddFolder => 'Add a folder';
 	@override String get localHint => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.';
@@ -1919,6 +1879,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String playlistClearDone({required String name}) => 'Cleared “${name}”';
 	@override String get audioCacheNothingToClear => 'Nothing to clear';
 	@override String audioCacheFreed({required String size}) => 'Cleared ${size} of cache';
+	@override String get downloadMaxConcurrentDesc => 'How many downloads run at once (1–5); changes apply immediately.';
 }
 
 // Path: navigation
@@ -3594,7 +3555,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadLoadingMore => 'Loading more…';
 	@override String get downloadSettings => 'Download settings';
 	@override String get downloadDetailPreview => 'Open the preview';
-	@override String get downloadDetailTitle => 'Download detail';
 	@override String get downloadInfoPath => 'Save path';
 	@override String get downloadInfoSize => 'File size';
 	@override String get downloadInfoTime => 'Download time';
@@ -4098,6 +4058,18 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadStatusCancelled => 'Cancelled';
 	@override String get downloadDeleteFile => 'Delete file';
 	@override String get downloadPlay => 'Play';
+	@override String get downloadMaxConcurrent => 'Simultaneous downloads';
+	@override String get downloadMaxConcurrentDesc => 'How many tasks run at once; a change applies at once.';
+	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
+	@override String get downloadDirectoryDefault => 'Restore default folder';
+	@override String get downloadDirectoryUpdated => 'Save location updated';
+	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
+	@override String get downloadDirectory => 'Save location';
+	@override String get downloadDeleteFileBody => 'The video file is deleted with it; this cannot be undone.';
+	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
+	@override String get downloadPauseAll => 'Pause all';
+	@override String get downloadResumeAll => 'Resume all';
+	@override String get downloadQueuedNotice => 'Added to the download queue';
 }
 
 // Path: shield
@@ -4442,44 +4414,19 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get saveRemoved => 'Removed from favourites';
 	@override String get download => 'Download video';
 	@override String downloadDone({required String name}) => 'Saved to ${name}';
-	@override String get downloadFailed => 'Download failed';
 	@override String get downloadUnsupported => 'This replay\'s format cannot be downloaded yet';
 	@override String get downloadCancelled => 'Download cancelled';
 	@override String get downloadPause => 'Pause download';
-	@override String get downloadQueued => 'Added to the download queue';
 	@override String get downloadDuplicate => 'This part is already in the queue';
-	@override String get downloadSettingsTitle => 'Download settings';
-	@override String get downloadMaxConcurrent => 'Simultaneous downloads';
-	@override String get downloadMaxConcurrentDesc => 'How many tasks run at once; a change applies at once.';
 	@override String get downloadQuality => 'Download quality';
 	@override String get downloadQualityDesc => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.';
 	@override String get downloadDanmaku => 'Save danmaku too';
 	@override String get downloadDanmakuDesc => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.';
-	@override String get downloadDirectory => 'Save location';
-	@override String get downloadDirectoryUpdated => 'Save location updated';
-	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
-	@override String get downloadDirectoryDefault => 'Restore default folder';
-	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
-	@override String get downloadRetry => 'Retry automatically';
-	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
-	@override String get downloadRetryOff => 'No retry';
-	@override String downloadRetryTimes({required int count}) => '${count} times';
-	@override String get downloadRetryDelay => 'Retry interval';
-	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
-	@override String get downloadManagerTitle => 'Downloads';
-	@override String get downloadPauseAll => 'Pause all';
-	@override String get downloadResumeAll => 'Resume all';
-	@override String get downloadClearFinished => 'Clear finished';
 	@override String get previewTitle => 'Download preview';
 	@override String get previewUnavailable => 'This part has no finished file yet';
-	@override String get downloadFilterEmpty => 'Nothing under this filter';
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a video page first.';
 	@override String get downloadEmpty => 'No downloads yet';
 	@override String get downloadEmptyDesc => 'Tap download on a video and its tasks appear here.';
-	@override String get downloadResume => 'Resume download';
-	@override String get downloadDeleteFile => 'Delete file';
-	@override String get downloadDeleteFileBody => 'The video file is deleted too; this cannot be undone.';
-	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
 	@override String get partsJump => 'Jump to part';
 	@override String get episodesPrevious => 'Previous group';
 	@override String get episodesNext => 'Next group';
@@ -5313,10 +5260,9 @@ extension on TranslationsEn {
 			'common.previewFileMissingDescription' => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.',
 			'common.previewEmpty' => 'Nothing to preview',
 			'common.previewEmptyDescription' => 'Finished recordings and downloads appear here.',
-			'common.previewSpeed' => 'Speed',
+			'common.previewDanmakuOff' => 'This entry has no danmaku file',
 			_ => null,
 		} ?? switch (path) {
-			'common.previewDanmakuOff' => 'This entry has no danmaku file',
 			'common.previewDanmakuSettings' => 'Danmaku settings',
 			'common.previewDanmakuVisible' => 'Show danmaku',
 			'common.previewDanmakuVisibleDescription' => 'Draw this recording\'s or download\'s danmaku over the picture, in the style the other players share.',
@@ -5353,6 +5299,10 @@ extension on TranslationsEn {
 			'common.previewFilesPane' => 'Files',
 			'common.previewDanmakuListVisible' => 'Show danmaku list',
 			'common.previewDanmakuListVisibleDescription' => 'Lists this video\'s danmaku as a timestamped record beside the picture.',
+			'common.downloadRetryOff' => 'No retry',
+			'common.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
+			'common.downloadRetryDelay' => 'Retry interval',
+			'common.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -5623,44 +5573,18 @@ extension on TranslationsEn {
 			'hongguo.reviewsEmpty' => 'No reviews yet',
 			'hongguo.rating' => ({required Object score}) => 'Rated ${score}',
 			'hongguo.ratingCount' => ({required Object count}) => '${count} ratings',
-			'hongguo.downloadSettingsTitle' => 'Download settings',
-			'hongguo.downloadMaxConcurrent' => 'Simultaneous downloads',
-			'hongguo.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
 			'hongguo.downloadQuality' => 'Download quality',
 			'hongguo.downloadQualityDesc' => 'The rendition tier a download asks the platform for.',
-			'hongguo.downloadDirectory' => 'Save location',
-			'hongguo.downloadDirectoryUpdated' => 'Save location updated',
-			'hongguo.downloadDirectoryFailed' => 'Couldn\'t update the save location',
-			'hongguo.downloadDirectoryDefault' => 'Restore default folder',
-			'hongguo.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
 			'hongguo.downloadHeldOfTotal' => ({required Object held, required Object total}) => '${held}/${total} eps',
-			'hongguo.downloadRetry' => 'Retry automatically',
-			'hongguo.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
-			'hongguo.downloadRetryOff' => 'No retry',
-			'hongguo.downloadRetryTimes' => ({required int count}) => '${count} times',
-			'hongguo.downloadRetryDelay' => 'Retry interval',
-			'hongguo.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
-			'hongguo.downloadManagerTitle' => 'Downloads',
-			'hongguo.downloadPauseAll' => 'Pause all',
-			'hongguo.downloadResumeAll' => 'Resume all',
-			'hongguo.downloadClearFinished' => 'Clear finished',
 			'hongguo.previewTitle' => 'Download preview',
 			'hongguo.previewUnavailable' => 'This episode has no finished file yet',
-			'hongguo.downloadFilterEmpty' => 'Nothing under this filter',
 			'hongguo.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a player page first.',
 			'hongguo.downloadEmpty' => 'No downloads yet',
 			'hongguo.downloadEmptyDesc' => 'Tap download on an episode and its task appears here.',
 			'hongguo.download' => 'Download',
-			'hongguo.downloadQueued' => 'Added to the download queue',
-			'hongguo.downloadQueuedLabel' => 'Queued',
 			'hongguo.downloadDuplicate' => 'This episode is already in the queue',
-			'hongguo.downloadResume' => 'Resume download',
 			'hongguo.downloaded' => 'Downloaded',
-			'hongguo.downloadFailed' => 'Download failed',
 			'hongguo.downloadDone' => ({required Object name}) => 'Downloaded ${name}',
-			'hongguo.downloadDeleteFile' => 'Delete file',
-			'hongguo.downloadDeleteFileBody' => 'The video file is deleted with it; this cannot be undone.',
-			'hongguo.downloadDeleteFailed' => 'Couldn\'t delete the file',
 			'hongguo.cardOpenSeries' => 'Open series page',
 			'hongguo.cardCopyLink' => 'Copy the series link',
 			'hongguo.cardNoEpisodes' => 'This series has no episodes to download yet',
@@ -5708,7 +5632,6 @@ extension on TranslationsEn {
 			'huya.infoColumn' => 'Info column',
 			'huya.infoColumnShow' => 'Show the info column',
 			'huya.downloadQueueEmptyDesc' => 'Tap Download on a huya video and the task shows up here.',
-			'huya.downloads' => 'Downloads',
 			'huya.materialSearchHint' => 'Search clips',
 			'huya.materialHot' => 'Picks',
 			'huya.materialEmpty' => 'No clips here right now.',
@@ -5828,8 +5751,6 @@ extension on TranslationsEn {
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
 			'iptv.recentRemove' => 'Remove from recent',
 			'iptv.recentClear' => 'Clear recently watched',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.recentClearTitle' => 'Clear the recently watched list?',
 			'iptv.recentClearDesc' => 'Only this device\'s records are deleted; favourites and channels stay.',
 			'iptv.recentEmptyTitle' => 'Nothing watched yet',
@@ -5854,6 +5775,8 @@ extension on TranslationsEn {
 			'iptv.aspectZoom' => 'Crop',
 			'iptv.digitHint' => 'Type a channel number',
 			'iptv.digitNoChannel' => ({required Object number}) => 'No channel numbered ${number}',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.reminderAction' => 'Remind',
 			'iptv.reminderCancelAction' => 'Cancel reminder',
 			'iptv.reminderSet' => ({required Object title}) => 'Reminder set for “${title}”',
@@ -6290,7 +6213,6 @@ extension on TranslationsEn {
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadFilterEmpty' => 'Nothing in this filter yet',
 			'music.downloadFilterEmptyDesc' => 'Pick another filter, or download from a song row’s menu first.',
-			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
 			'music.downloadFailed' => ({required Object error}) => 'Download failed: ${error}',
@@ -6329,30 +6251,13 @@ extension on TranslationsEn {
 			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
 			'music.downloadGroupByList' => 'Group by playlist',
 			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
-			'music.downloadMaxConcurrent' => 'Concurrent downloads',
-			'music.downloadMaxConcurrentDesc' => 'How many downloads run at once (1–5); changes apply immediately.',
 			'music.downloadStatusQueued' => 'Queued',
-			'music.downloadStatusRunning' => 'Downloading',
-			'music.downloadStatusPaused' => 'Paused',
 			'music.downloadStatusProcessing' => 'Writing tags',
-			'music.downloadStatusCompleted' => 'Completed',
 			'music.downloadStatusSkipped' => 'Skipped',
-			'music.downloadStatusFailed' => 'Failed',
-			'music.downloadStatusCancelled' => 'Cancelled',
-			'music.downloadPauseAll' => 'Pause all',
-			'music.downloadResumeAll' => 'Resume all',
-			'music.downloadClearFinished' => 'Clear finished',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadProgress' => 'Download progress',
-			'music.downloadRetry' => 'Retry',
-			'music.downloadRemove' => 'Remove the row',
-			'music.downloadDeleteFile' => 'Delete the file',
 			'music.downloadDeleteFileBody' => 'The audio file goes with this record. This cannot be undone.',
-			'music.downloadDeleteFailed' => 'The file could not be deleted',
 			'music.downloadResume' => 'Resume',
 			'music.downloadPause' => 'Pause',
-			'music.downloadsEmptyTitle' => 'No downloads yet',
 			'music.downloadsEmptyDescription' => 'Download from a song row’s menu and it appears here.',
 			'music.localAddFolder' => 'Add a folder',
 			'music.localHint' => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.',
@@ -6384,6 +6289,8 @@ extension on TranslationsEn {
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
 			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
 			'music.lyricTraditionalize' => 'Traditional Chinese',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricTraditionalizeDesc' => 'Rewrite lyric text into traditional Chinese.',
 			'music.lyricWordTimed' => 'Word-by-word lyrics',
 			'music.lyricWordTimedDesc' => 'Play karaoke-style word timing when the platform provides it.',
@@ -6709,6 +6616,7 @@ extension on TranslationsEn {
 			'music.playlistClearDone' => ({required String name}) => 'Cleared “${name}”',
 			'music.audioCacheNothingToClear' => 'Nothing to clear',
 			'music.audioCacheFreed' => ({required String size}) => 'Cleared ${size} of cache',
+			'music.downloadMaxConcurrentDesc' => 'How many downloads run at once (1–5); changes apply immediately.',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
 			'navigation.channels' => 'Channels',
@@ -6856,8 +6764,6 @@ extension on TranslationsEn {
 			'recorder.stopAll' => 'Stop every recording',
 			'recorder.stopAllTitle' => 'Stop every recording?',
 			'recorder.stopAllBody' => ({required int count}) => '${count} room(s) now recording end and save; segments already written stay and post-processing runs as usual.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.stopAllDone' => ({required int count}) => 'Stopped ${count} recording(s)',
 			'recorder.stopAllPartial' => ({required int count, required Object error}) => 'Stopped ${count}; one failed: ${error}',
 			'recorder.merge' => 'Merge into this folder',
@@ -6897,6 +6803,8 @@ extension on TranslationsEn {
 			'recorder.filterTitle' => 'Filter recordings',
 			'recorder.filterPlatformGroup' => 'Platform',
 			'recorder.refresh' => 'Refresh',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.reset' => 'Clear filters',
 			'recorder.selectedCount' => ({required int count}) => '${count} selected',
 			'recorder.deleteSelected' => 'Delete selected',
@@ -7370,8 +7278,6 @@ extension on TranslationsEn {
 			'settings.navPlaybackPreferences' => 'Playback preferences',
 			'settings.navSystem' => 'System',
 			'settings.navDataCache' => 'Data & cache',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navAppearance' => 'Appearance',
 			'settings.navPlayback' => 'Playback',
 			'settings.navSites' => 'Sites',
@@ -7411,6 +7317,8 @@ extension on TranslationsEn {
 			'settings.dataCacheDescription' => 'Watch data and the cover cache.',
 			'settings.personalizationChooseTheme' => 'Choose a theme to apply',
 			'settings.sitesDescription' => 'Preferred platform and platform display, account and tag management, and each platform\'s quirks.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
@@ -7884,8 +7792,6 @@ extension on TranslationsEn {
 			'settings.navMusicSync' => 'Sync',
 			'settings.navMusicEq' => 'Sound effects',
 			'settings.musicHotkeysDescription' => 'Shortcuts for play, volume and favourites.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.musicSyncDescription' => 'List sync with a lx-music desktop server.',
 			'settings.musicEqDescription' => 'The master switch, presets, the ten-band equalizer and its preamp.',
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
@@ -7925,6 +7831,8 @@ extension on TranslationsEn {
 			'settings.playerOneClickDesc' => 'Restores the Standard preset; playing rooms apply at once, others next time.',
 			'settings.playerOneClickConfirmTitle' => 'Apply the recommended setup?',
 			'settings.playerOneClickConfirmBody' => ({required Object preset}) => 'Switches to ${preset} and drops manual output and decoders; a playing room rebuilds briefly.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerOneClickApplied' => ({required Object preset}) => 'Applied "${preset}"',
 			'settings.playerCompatFix' => 'Glitch / green-screen fix',
 			'settings.playerCompatFixDesc' => 'Android only; renders straight to the surface with forced hardware decoding. Try it for drift or tearing.',
@@ -8318,7 +8226,6 @@ extension on TranslationsEn {
 			'settings.downloadLoadingMore' => 'Loading more…',
 			'settings.downloadSettings' => 'Download settings',
 			'settings.downloadDetailPreview' => 'Open the preview',
-			'settings.downloadDetailTitle' => 'Download detail',
 			'settings.downloadInfoPath' => 'Save path',
 			'settings.downloadInfoSize' => 'File size',
 			'settings.downloadInfoTime' => 'Download time',
@@ -8398,8 +8305,6 @@ extension on TranslationsEn {
 			'settings.backgroundLibraryApplied' => 'Applied as the background',
 			'settings.wallpaperSourceOfficial' => 'Official',
 			'settings.wallpaperSourceWallhaven' => 'Wallhaven',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperSourceBing' => 'Bing',
 			'settings.wallpaperSourceDeepin' => 'deepin',
 			'settings.wallpaperSourceVideo' => 'Live wallpapers',
@@ -8440,6 +8345,8 @@ extension on TranslationsEn {
 			'settings.tagNoteHint' => 'Write a short note for this tag',
 			'settings.tagNameEmpty' => 'A tag name cannot be empty',
 			'settings.tagNameDuplicate' => 'A tag with this name already exists',
+			_ => null,
+		} ?? switch (path) {
 			'settings.tagSaveFailed' => 'Tag changes were not saved; please retry',
 			'settings.tagStale' => 'This tag was deleted or changed elsewhere',
 			'settings.tagAddedToast' => ({required String name}) => 'Added the tag “${name}”',
@@ -8824,6 +8731,18 @@ extension on TranslationsEn {
 			'settings.downloadStatusCancelled' => 'Cancelled',
 			'settings.downloadDeleteFile' => 'Delete file',
 			'settings.downloadPlay' => 'Play',
+			'settings.downloadMaxConcurrent' => 'Simultaneous downloads',
+			'settings.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
+			'settings.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
+			'settings.downloadDirectoryDefault' => 'Restore default folder',
+			'settings.downloadDirectoryUpdated' => 'Save location updated',
+			'settings.downloadDirectoryFailed' => 'Couldn\'t update the save location',
+			'settings.downloadDirectory' => 'Save location',
+			'settings.downloadDeleteFileBody' => 'The video file is deleted with it; this cannot be undone.',
+			'settings.downloadDeleteFailed' => 'Couldn\'t delete the file',
+			'settings.downloadPauseAll' => 'Pause all',
+			'settings.downloadResumeAll' => 'Resume all',
+			'settings.downloadQueuedNotice' => 'Added to the download queue',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -8912,8 +8831,6 @@ extension on TranslationsEn {
 			'toolbox.cacheClear' => 'Clear the cache',
 			'toolbox.cacheClearDesc' => 'Release the memory the image cache holds; favorites and history are untouched.',
 			'toolbox.linkDirect' => 'Get stream link',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => 'Stream links',
 			'toolbox.linkDirectQuality' => 'Quality',
 			'toolbox.linkDirectLines' => 'Playback URLs',
@@ -8942,6 +8859,8 @@ extension on TranslationsEn {
 			'toolbox.logsSearch' => 'Search logs…',
 			'toolbox.logsEmptyTitle' => 'No logs yet',
 			'toolbox.logsEmptyDescription' => 'Startup, network requests and errors appear here.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsAutoOn' => 'Auto-scroll on',
 			'toolbox.logsAutoOff' => 'Auto-scroll off (scroll to the bottom to resume)',
 			'toolbox.logsLines' => ({required int count}) => '${count} lines',
@@ -9134,44 +9053,19 @@ extension on TranslationsEn {
 			'vod.saveRemoved' => 'Removed from favourites',
 			'vod.download' => 'Download video',
 			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
-			'vod.downloadFailed' => 'Download failed',
 			'vod.downloadUnsupported' => 'This replay\'s format cannot be downloaded yet',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadPause' => 'Pause download',
-			'vod.downloadQueued' => 'Added to the download queue',
 			'vod.downloadDuplicate' => 'This part is already in the queue',
-			'vod.downloadSettingsTitle' => 'Download settings',
-			'vod.downloadMaxConcurrent' => 'Simultaneous downloads',
-			'vod.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
 			'vod.downloadQuality' => 'Download quality',
 			'vod.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
 			'vod.downloadDanmaku' => 'Save danmaku too',
 			'vod.downloadDanmakuDesc' => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.',
-			'vod.downloadDirectory' => 'Save location',
-			'vod.downloadDirectoryUpdated' => 'Save location updated',
-			'vod.downloadDirectoryFailed' => 'Couldn\'t update the save location',
-			'vod.downloadDirectoryDefault' => 'Restore default folder',
-			'vod.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
-			'vod.downloadRetry' => 'Retry automatically',
-			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
-			'vod.downloadRetryOff' => 'No retry',
-			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
-			'vod.downloadRetryDelay' => 'Retry interval',
-			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
-			'vod.downloadManagerTitle' => 'Downloads',
-			'vod.downloadPauseAll' => 'Pause all',
-			'vod.downloadResumeAll' => 'Resume all',
-			'vod.downloadClearFinished' => 'Clear finished',
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',
-			'vod.downloadFilterEmpty' => 'Nothing under this filter',
 			'vod.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a video page first.',
 			'vod.downloadEmpty' => 'No downloads yet',
 			'vod.downloadEmptyDesc' => 'Tap download on a video and its tasks appear here.',
-			'vod.downloadResume' => 'Resume download',
-			'vod.downloadDeleteFile' => 'Delete file',
-			'vod.downloadDeleteFileBody' => 'The video file is deleted too; this cannot be undone.',
-			'vod.downloadDeleteFailed' => 'Couldn\'t delete the file',
 			'vod.partsJump' => 'Jump to part',
 			'vod.episodesPrevious' => 'Previous group',
 			'vod.episodesNext' => 'Next group',

@@ -951,7 +951,6 @@
   "downloadLoadingMore": "正在加载更多…",
   "downloadSettings": "下载设置",
   "downloadDetailPreview": "点击进入预览",
-  "downloadDetailTitle": "下载详情",
   "downloadInfoPath": "保存路径",
   "downloadInfoSize": "文件大小",
   "downloadInfoTime": "下载时间",
@@ -1454,5 +1453,17 @@
   "downloadStatusProcessing": "整理中",
   "downloadStatusCancelled": "已取消",
   "downloadDeleteFile": "删除文件",
-  "downloadPlay": "播放"
+  "downloadPlay": "播放",
+  "downloadMaxConcurrent": "同时下载数",
+  "downloadMaxConcurrentDesc": "同时进行的下载任务数量，改动即时生效。",
+  "downloadDirectoryDefaultDesc": "回到应用默认的视频目录。",
+  "downloadDirectoryDefault": "恢复默认目录",
+  "downloadDirectoryUpdated": "保存目录已更新",
+  "downloadDirectoryFailed": "保存目录未能更新",
+  "downloadDirectory": "保存目录",
+  "downloadDeleteFileBody": "视频文件会被一并删除，此操作无法撤销。",
+  "downloadDeleteFailed": "文件未能删除",
+  "downloadPauseAll": "全部暂停",
+  "downloadResumeAll": "全部继续",
+  "downloadQueuedNotice": "已加入下载队列"
 }

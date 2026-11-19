@@ -197,7 +197,7 @@ Future<void> downloadTrackWithToast(
     case MusicDownloadStart.queued:
       showDsToast(
         context: context,
-        title: t.music.downloadQueued(title: track.title),
+        title: t.settings.downloadQueued(title: track.title),
         status: DsStatus.success,
       );
     case MusicDownloadStart.duplicate:

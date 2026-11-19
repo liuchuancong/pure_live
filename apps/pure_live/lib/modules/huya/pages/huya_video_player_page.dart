@@ -951,11 +951,11 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
     if (!mounted) return;
     switch (result.outcome) {
       case HuyaDownloadEnqueue.queued:
-        showDsToast(context: context, title: t.vod.downloadQueued, status: DsStatus.success);
+        showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case HuyaDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.vod.downloadDuplicate);
       case HuyaDownloadEnqueue.failed:
-        showDsToast(context: context, title: t.vod.downloadFailed, description: result.error, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
     }
   }
 
@@ -987,7 +987,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         );
         trailing = PlayerBarButton(
           iconAsset: 'assets/icons/play.svg',
-          label: t.vod.downloadResume,
+          label: t.settings.downloadResume,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).resume(widget.id)),
         );
       case HuyaDownloadPhase.failed:
@@ -997,7 +997,7 @@ final class _HuyaVideoPlayerPageState extends ConsumerState<HuyaVideoPlayerPage>
         );
         trailing = PlayerBarButton(
           icon: DsIcons.rotateCcw,
-          label: t.vod.downloadRetry,
+          label: t.common.downloadRetried,
           onPressed: () => unawaited(ref.read(huyaDownloadsProvider.notifier).resume(widget.id)),
         );
       case HuyaDownloadPhase.done:

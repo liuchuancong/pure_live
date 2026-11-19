@@ -913,11 +913,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     if (!mounted) return;
     switch (result.outcome) {
       case VodDownloadEnqueue.queued:
-        showDsToast(context: context, title: t.vod.downloadQueued, status: DsStatus.success);
+        showDsToast(context: context, title: t.settings.downloadQueuedNotice, status: DsStatus.success);
       case VodDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.vod.downloadDuplicate);
       case VodDownloadEnqueue.failed:
-        showDsToast(context: context, title: t.vod.downloadFailed, description: result.error, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
     }
   }
 
@@ -1147,7 +1147,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
             status: DsStatus.success,
           );
         } else if (item.phase == VodDownloadPhase.failed) {
-          showDsToast(context: context, title: t.vod.downloadFailed, status: DsStatus.danger);
+          showDsToast(context: context, title: t.settings.downloadStatusFailed, status: DsStatus.danger);
         }
       }
     });

@@ -977,7 +977,7 @@ final class MusicDownloadPane extends ConsumerWidget {
             ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.download),
-              title: t.music.downloadMaxConcurrent,
+              title: t.settings.downloadMaxConcurrent,
               description: t.music.downloadMaxConcurrentDesc,
               value: settings.downloadMaxConcurrent,
               options: [for (var count = 1; count <= 5; count++) DsSelectOption(value: count, label: '$count')],

@@ -951,7 +951,6 @@
   "downloadLoadingMore": "Loading more…",
   "downloadSettings": "Download settings",
   "downloadDetailPreview": "Open the preview",
-  "downloadDetailTitle": "Download detail",
   "downloadInfoPath": "Save path",
   "downloadInfoSize": "File size",
   "downloadInfoTime": "Download time",
@@ -1454,5 +1453,17 @@
   "downloadStatusProcessing": "Finishing",
   "downloadStatusCancelled": "Cancelled",
   "downloadDeleteFile": "Delete file",
-  "downloadPlay": "Play"
+  "downloadPlay": "Play",
+  "downloadMaxConcurrent": "Simultaneous downloads",
+  "downloadMaxConcurrentDesc": "How many tasks run at once; a change applies at once.",
+  "downloadDirectoryDefaultDesc": "Back to the app's default Videos folder.",
+  "downloadDirectoryDefault": "Restore default folder",
+  "downloadDirectoryUpdated": "Save location updated",
+  "downloadDirectoryFailed": "Couldn't update the save location",
+  "downloadDirectory": "Save location",
+  "downloadDeleteFileBody": "The video file is deleted with it; this cannot be undone.",
+  "downloadDeleteFailed": "Couldn't delete the file",
+  "downloadPauseAll": "Pause all",
+  "downloadResumeAll": "Resume all",
+  "downloadQueuedNotice": "Added to the download queue"
 }

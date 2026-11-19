@@ -62,7 +62,6 @@
   "previewFileMissingDescription": "It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.",
   "previewEmpty": "Nothing to preview",
   "previewEmptyDescription": "Finished recordings and downloads appear here.",
-  "previewSpeed": "Speed",
   "previewDanmakuOff": "This entry has no danmaku file",
   "previewDanmakuSettings": "Danmaku settings",
   "previewDanmakuVisible": "Show danmaku",
@@ -99,5 +98,9 @@
   "clearSearchHistoryBody": "This removes every search from the history; it cannot be undone.",
   "previewFilesPane": "Files",
   "previewDanmakuListVisible": "Show danmaku list",
-  "previewDanmakuListVisibleDescription": "Lists this video's danmaku as a timestamped record beside the picture."
+  "previewDanmakuListVisibleDescription": "Lists this video's danmaku as a timestamped record beside the picture.",
+  "downloadRetryOff": "No retry",
+  "downloadRetryDelayDesc": "How long to wait between two automatic retries.",
+  "downloadRetryDelay": "Retry interval",
+  "downloadRetryDesc": "A failed download tries again in the background, carrying on from the bytes already written."
 }
