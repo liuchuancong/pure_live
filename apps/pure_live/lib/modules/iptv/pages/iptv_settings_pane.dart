@@ -245,19 +245,12 @@ final class IptvGroupsPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
     final groups = ref.watch(iptvGroupsProvider);
     final controller = ref.read(iptvGroupsProvider.notifier);
     if (groups.isEmpty) {
       return DsListSection(
         header: Text(t.settings.navIptvGroups),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(DsSpace.s16),
-            child: Text(t.iptv.groupsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
-          ),
-        ],
+        children: [DsEmptyState(title: Text(t.iptv.groupsEmpty))],
       );
     }
     return Column(

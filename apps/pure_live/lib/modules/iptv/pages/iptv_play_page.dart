@@ -1356,16 +1356,18 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // doors (the panel, the guide, the way back to live) first, the capture
     // cluster after — a hair line between them, the same grouping the bar
     // under the picture reads.
+    final guideVerb = channel == null
+        ? null
+        : headerVerb(
+            DsIcons.list,
+            t.iptv.guideTitle,
+            () => unawaited(
+              showIptvGuide(context, channel: channel, catchup: _catchup, onCatchup: _playCatchup, onBackToLive: _open),
+            ),
+          );
     final navVerbs = [
       if (channel != null) headerVerb(DsIcons.layoutGrid, t.iptv.zapperOpen, _openZapper, selected: _zapperOpen),
-      if (channel != null)
-        headerVerb(
-          DsIcons.list,
-          t.iptv.guideTitle,
-          () => unawaited(
-            showIptvGuide(context, channel: channel, catchup: _catchup, onCatchup: _playCatchup, onBackToLive: _open),
-          ),
-        ),
+      ?guideVerb,
       if (replay != null) headerVerb(DsIcons.radio, t.iptv.backToLive, () => unawaited(_open())),
     ];
     final demoVerbs = [
@@ -1398,7 +1400,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         for (final verb in navVerbs)
           _IconButton(semanticLabel: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
         if (demoVerbs.isNotEmpty) ...[
-          const _HeadDivider(),
+          const _ClusterDivider(),
           for (final verb in demoVerbs)
             _IconButton(semanticLabel: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
         ],
@@ -1734,11 +1736,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                 if (fullscreen && _infoVisible && channel != null && _error == null)
                                   IgnorePointer(
                                     child: _InfoBar(
-                                      channel: channel,
-                                      programme: programme,
-                                      progress: slot?.progress,
-                                      showNumber: browse.showChannelNumber,
-                                      showProgramme: browse.showProgrammeLine,
+                                      programme: browse.showProgrammeLine ? programme : null,
+                                      progress: browse.showProgrammeLine ? slot?.progress : null,
                                       line: _urls.length > 1
                                           ? t.iptv.lineCount(current: _lineIndex + 1, total: _urls.length)
                                           : null,
@@ -1797,7 +1796,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                   icon: DsIcons.chevronDown,
                                                   onPressed: () => _switchChannel(1),
                                                 ),
-                                                const _BarDivider(),
+                                                const _ClusterDivider(height: 16),
                                               ],
                                               PlayerBarButton(
                                                 label: playing ? t.player.pause : t.player.play,
@@ -1824,7 +1823,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                                     semanticLabel: t.player.volume,
                                                   ),
                                                 ),
-                                              const _BarDivider(),
+                                              const _ClusterDivider(height: 16),
                                               // The channel door, at the hand's
                                               // own end of the bar: the list the
                                               // arrows walk, opened in full when
@@ -1986,7 +1985,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                 onExit: (_) => _revealPointer(),
                                 child: _IptvCluster(
                                   narrow: headerNarrow,
-                                  replay: replay != null,
+                                  menuVerbs: [?guideVerb, ...demoVerbs],
                                   recording: recording,
                                   recordingStartedAt: recordingStart,
                                   canScreenshot: handle?.canCaptureScreenshot ?? false,
@@ -1996,21 +1995,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                                   windowFullscreen: presentation == PresentationMode.windowFullscreen,
                                   statsOn: ref.watch(playerStatsVisibleProvider),
                                   audioOnly: _audioOnly,
-                                  onGuide: channel == null
-                                      ? null
-                                      : () => unawaited(
-                                          showIptvGuide(
-                                            context,
-                                            channel: channel,
-                                            catchup: _catchup,
-                                            onCatchup: _playCatchup,
-                                            onBackToLive: _open,
-                                          ),
-                                        ),
                                   onBackToLive: replay == null ? null : () => unawaited(_open()),
-                                  onCast: channel == null ? null : () => _cast(channel),
-                                  onSleep: () => unawaited(showRoomSleepTimer(context)),
-                                  onRecordings: hasTake ? () => unawaited(_openRecordings()) : null,
                                   onRecord: channel == null ? null : () => unawaited(_recordWithToast()),
                                   onScreenshot: handle == null ? null : () => unawaited(_screenshot()),
                                   onPip: handle == null ? null : () => unawaited(_togglePip(handle)),
@@ -2324,63 +2309,40 @@ final class _DigitOsd extends StatelessWidget {
 /// channel's number and name, what is on with its clock and progress, and the
 /// line it plays from — the reference's info bar, on the viewer's switches.
 final class _InfoBar extends StatelessWidget {
-  const _InfoBar({
-    required this.channel,
-    required this.programme,
-    required this.progress,
-    required this.showNumber,
-    required this.showProgramme,
-    this.line,
-  });
+  const _InfoBar({required this.programme, required this.progress, this.line});
 
-  final IptvChannel channel;
   final EpgProgramme? programme;
   final double? progress;
-  final bool showNumber;
-  final bool showProgramme;
   final String? line;
 
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
+    final clocks = programme == null ? null : '${iptvClockLabel(programme!.start)}–${iptvClockLabel(programme!.stop)}';
+    // Nothing to say draws nothing: the strip is the flash after a switch,
+    // not a permanent resident.
+    if (clocks == null && line == null) return const SizedBox.shrink();
     return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.down),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.down)),
       child: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s40, DsSpace.s16, DsSpace.s12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           spacing: DsSpace.s12,
           children: [
-            if (showNumber && channel.number != null)
-              Text(
-                '${channel.number}',
-                style: theme.typography.numeric(
-                  theme.typography.heading.copyWith(color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
-                ),
-              ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: DsSpace.s4,
                 children: [
-                  Text(
-                    channel.entry.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.title.copyWith(color: OnVideoColors.foreground),
-                  ),
-                  if (showProgramme && programme != null) ...[
+                  if (clocks != null)
                     Text(
-                      '${iptvClockLabel(programme!.start)}–${iptvClockLabel(programme!.stop)}  '
-                      '${programme!.title.isEmpty ? '—' : programme!.title}',
+                      clocks,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(color: OnVideoColors.inkMuted),
                     ),
-                    if (progress case final value?) DsProgressBar(value: value, semanticLabel: programme!.title),
-                  ],
+                  if (progress case final value?) DsProgressBar(value: value, semanticLabel: programme?.title ?? ''),
                 ],
               ),
             ),
@@ -2420,9 +2382,7 @@ final class _PipStrip extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     return Container(
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
       padding: const EdgeInsetsDirectional.only(start: DsSpace.s8),
       child: Row(
         spacing: DsSpace.s4,
@@ -2468,33 +2428,20 @@ final class _PipStrip extends StatelessWidget {
   }
 }
 
-/// A hair divider between the bar's clusters: transport | picture menus |
-/// capture and window verbs - the room bar's own separators.
-final class _BarDivider extends StatelessWidget {
-  const _BarDivider();
+/// A hair divider between the player chrome's verb clusters — the bar's
+/// transport | picture | capture groups and the head band's pair — on the
+/// picture's own ink, where the theme's border colour would not read.
+final class _ClusterDivider extends StatelessWidget {
+  const _ClusterDivider({this.height = 18});
+
+  /// The divider's stand; the bar's rows keep their old, shorter one.
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 1,
-      height: 16,
-      margin: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
-      color: OnVideoColors.inkHover,
-    );
-  }
-}
-
-/// A hair divider between the head band's verb clusters, on the picture's
-/// own ink — the band floats over the frame now, where the theme's border
-/// colour would not read.
-final class _HeadDivider extends StatelessWidget {
-  const _HeadDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 18,
+      height: height,
       margin: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
       color: OnVideoColors.inkHover,
     );
@@ -2618,7 +2565,7 @@ final class _IptvCapsule extends StatelessWidget {
 final class _IptvCluster extends StatelessWidget {
   const _IptvCluster({
     required this.narrow,
-    required this.replay,
+    required this.menuVerbs,
     required this.recording,
     required this.recordingStartedAt,
     required this.canScreenshot,
@@ -2630,11 +2577,7 @@ final class _IptvCluster extends StatelessWidget {
     required this.audioOnly,
     required this.onStats,
     required this.onWake,
-    this.onGuide,
     this.onBackToLive,
-    this.onCast,
-    this.onSleep,
-    this.onRecordings,
     this.onRecord,
     this.onScreenshot,
     this.onPip,
@@ -2648,9 +2591,12 @@ final class _IptvCluster extends StatelessWidget {
   /// verb a small picture cannot lose.
   final bool narrow;
 
-  /// The guide's replay is on: the way back to live becomes a chip of its
-  /// own, its colour the state it carries.
-  final bool replay;
+  /// The watching doors — the guide, the cast, the sleep timer, the
+  /// recordings — as the same records the head band and the TV strip read,
+  /// so one list decides where a verb stands at every width.
+  final List<({DsIconData icon, String label, VoidCallback onPressed, bool selected})> menuVerbs;
+
+  /// The recording facts live on the store; the chip reads them here.
   final bool recording;
   final DateTime? recordingStartedAt;
   final bool canScreenshot;
@@ -2667,11 +2613,7 @@ final class _IptvCluster extends StatelessWidget {
 
   /// Resets the chrome's idle timer after a press.
   final VoidCallback onWake;
-  final VoidCallback? onGuide;
   final VoidCallback? onBackToLive;
-  final VoidCallback? onCast;
-  final VoidCallback? onSleep;
-  final VoidCallback? onRecordings;
   final VoidCallback? onRecord;
   final VoidCallback? onScreenshot;
   final VoidCallback? onPip;
@@ -2733,29 +2675,17 @@ final class _IptvCluster extends StatelessWidget {
           // into the ⋯.
           if (onMiniWindow != null) chip(label: t.common.miniWindow, icon: DsIcons.appWindow, onPressed: onMiniWindow),
           if (!narrow && canScreenshot) chip(label: t.player.screenshot, icon: DsIcons.camera, onPressed: onScreenshot),
-          if (replay) chip(label: t.iptv.backToLive, icon: DsIcons.radio, onPressed: onBackToLive),
+          if (onBackToLive != null) chip(label: t.iptv.backToLive, icon: DsIcons.radio, onPressed: onBackToLive),
           DsMenuAnchor(
             semanticLabel: t.common.more,
             items: [
-              if (onGuide != null)
+              for (final verb in menuVerbs)
                 DsMenuItem(
-                  leading: const DsIcon(DsIcons.calendarClock, size: 15),
-                  label: Text(t.iptv.guideTitle),
-                  onPressed: onGuide,
-                ),
-              if (onCast != null)
-                DsMenuItem(leading: const DsIcon(DsIcons.cast, size: 15), label: Text(t.player.cast), onPressed: onCast),
-              if (onSleep != null)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.timer, size: 15),
-                  label: Text(t.player.sleep),
-                  onPressed: onSleep,
-                ),
-              if (onRecordings != null)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.listVideo, size: 15),
-                  label: Text(t.iptv.viewRecordings),
-                  onPressed: onRecordings,
+                  leading: DsIcon(verb.icon, size: 15),
+                  label: Text(verb.label),
+                  checked: verb.selected ? true : null,
+                  checkRole: DsMenuCheckRole.checkbox,
+                  onPressed: verb.onPressed,
                 ),
               DsMenuItem(
                 leading: const DsIcon(DsIcons.activity, size: 15),

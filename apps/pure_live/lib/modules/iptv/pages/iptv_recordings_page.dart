@@ -9,11 +9,10 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/page_head_actions.dart';
 import 'package:pure_live/layouts/page_layout_scope.dart';
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvPageHead;
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/shared/player/recording_indicator.dart' show RecordingIndicator;
 import 'package:pure_live/shared/shared.dart'
-    show LiveWindow, NavigationItem, SectionHeader, recorderFailureText, showAppConfirm;
+    show LiveWindow, ModulePageHead, NavigationItem, SectionHeader, recorderFailureText, showAppConfirm;
 
 /// The IPTV module's own recording centre: the channels this module recorded,
 /// and nothing else.
@@ -63,7 +62,7 @@ final class IptvRecordingsPage extends ConsumerWidget {
         // Nothing runs under the name yet, so the head carries no count.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-          child: IptvPageHead(title: t.navigation.record, actions: [if (!narrow) settings]),
+          child: ModulePageHead(title: t.navigation.record, actions: [if (!narrow) settings]),
         ),
         if (attention.isNotEmpty)
           Padding(

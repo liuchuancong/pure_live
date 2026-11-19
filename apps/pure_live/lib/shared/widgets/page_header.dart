@@ -15,13 +15,18 @@ import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
 /// first row of its body and keeps its scaffold bare of an app bar.
 final class PageHeader extends StatelessWidget {
   /// The header for a page titled [title], its [actions] on the end side.
-  const PageHeader({required this.title, this.actions = const [], super.key});
+  const PageHeader({required this.title, this.actions = const [], this.onBack, super.key});
 
   /// What the page is called; one line, ellipsized.
   final String title;
 
   /// The page's own verbs, in the order they stand at the header's end.
   final List<Widget> actions;
+
+  /// Steps back; null pops the route. A page whose back means something
+  /// else — the import page's preview step returns to its source pane —
+  /// hands that verb here.
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +42,7 @@ final class PageHeader extends StatelessWidget {
               icon: DsIcons.arrowLeft,
               semanticLabel: t.common.back,
               tooltip: t.common.back,
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             ),
             const SizedBox(width: DsSpace.s8),
             Expanded(

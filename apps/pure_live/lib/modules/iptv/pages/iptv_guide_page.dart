@@ -17,9 +17,9 @@ import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show IptvGuideRow, iptvClockLabel, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPageHead;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPlaylistMenu;
 import 'package:pure_live/modules/iptv/views/iptv_reminders_panel.dart' show showIptvReminders;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, ModulePageHead, SkeletonRows;
 
 /// Where the guide page pays for a group column of its own beside the picker.
 /// The channel page takes its column at [LiveWindow.expanded] because the table
@@ -236,7 +236,7 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
         // head so the day is walked from the one line above both panes.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-          child: IptvPageHead(
+          child: ModulePageHead(
             title: t.iptv.guideTitle,
             description: activeGuide == null ? coverage : '${activeGuide.name} · $coverage',
             actions: [
@@ -551,36 +551,11 @@ final class _ChannelPickerState extends ConsumerState<_ChannelPicker> {
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     widthFactor: 1,
-                    child: DsMenuAnchor(
-                      semanticLabel: t.iptv.sourceLabel,
-                      items: [
-                        DsMenuItem(
-                          checked: widget.playlistId == null,
-                          label: Text(t.iptv.sourceAll),
-                          onPressed: () => widget.onSelectPlaylist(null),
-                        ),
-                        for (final playlist in widget.playlists)
-                          DsMenuItem(
-                            leading: const DsIcon(DsIcons.server, size: 15),
-                            checked: widget.playlistId == playlist.id,
-                            label: Text(playlist.name),
-                            onPressed: () => widget.onSelectPlaylist(playlist.id),
-                          ),
-                      ],
-                      builder: (context, controller, _) {
-                        var current = t.iptv.sourceAll;
-                        for (final playlist in widget.playlists) {
-                          if (playlist.id == widget.playlistId) current = playlist.name;
-                        }
-                        return DsButton(
-                          variant: DsButtonVariant.secondary,
-                          size: DsSize.sm,
-                          semanticLabel: t.iptv.sourceLabel,
-                          leading: const DsIcon(DsIcons.server, size: 14),
-                          onPressed: controller.toggle,
-                          child: Text(current),
-                        );
-                      },
+                    child: IptvPlaylistMenu(
+                      playlists: widget.playlists,
+                      activeId: widget.playlistId,
+                      showLeadingIcon: true,
+                      onSelect: widget.onSelectPlaylist,
                     ),
                   ),
                 TvInputField(

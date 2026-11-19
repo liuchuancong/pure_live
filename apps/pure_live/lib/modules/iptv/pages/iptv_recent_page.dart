@@ -14,9 +14,8 @@ import 'package:pure_live/modules/iptv/controllers/iptv_now_playing.dart' show i
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart'
-    show IptvChannelLogo, IptvNowCell, IptvOnAirEqualizer, IptvPageHead;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, SkeletonRows;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvNowCell, IptvOnAirEqualizer;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, ModulePageHead, SectionHeader, SkeletonRows;
 import 'package:pure_live/shared/widgets/app_dialog.dart';
 
 /// One watched channel and the record that says when.
@@ -145,7 +144,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
         // verbs no longer travel to the shell's own head.
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-          child: IptvPageHead(
+          child: ModulePageHead(
             title: t.iptv.recentTitle,
             description: t.iptv.recentRecords(count: shown.length),
             actions: [
@@ -192,7 +191,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
                       SliverPadding(
                         padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
                         sliver: SliverToBoxAdapter(
-                          child: _DayHeader(label: section.label, count: section.rows.length),
+                          child: SectionHeader(title: section.label, count: section.rows.length),
                         ),
                       ),
                       SliverPadding(
@@ -324,28 +323,6 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
       for (final (index, (label, section)) in buckets.indexed)
         if (section.isNotEmpty) (oneDay: index < 2, label: label, rows: section),
     ];
-  }
-}
-
-/// One day's head: its name and how many channels it holds, the pair the live
-/// module's history page already puts over each of its days.
-final class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.label, required this.count});
-
-  final String label;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        Text(label, style: theme.typography.labelStrong.copyWith(color: colors.text)),
-        DsBadge(label: Text('$count'), dot: false),
-      ],
-    );
   }
 }
 

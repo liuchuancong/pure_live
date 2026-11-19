@@ -401,8 +401,6 @@ final class _Header extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final controller = ref.read(iptvImportFlowProvider.notifier);
     final busy = flow.step == IptvImportStep.reading || flow.step == IptvImportStep.writing;
     final kind = DsSegmentedControl<IptvImportKind>(
@@ -427,36 +425,23 @@ final class _Header extends ConsumerWidget {
     final back = compact && flow.step != IptvImportStep.source && !busy
         ? controller.backToSource
         : () => Navigator.of(context).maybePop();
-    return Padding(
-      padding: EdgeInsets.fromLTRB(inset - DsSpace.s8, DsSpace.s8, inset, DsSpace.s8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                onPressed: back,
-                icon: const DsIcon(DsIcons.chevronLeft),
-                semanticLabel: t.common.back,
-              ),
-              Expanded(
-                child: Text(
-                  t.iptv.importPageTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.title.copyWith(color: colors.text),
-                ),
-              ),
-              if (!compact) _StepStrip(step: flow.step),
-              if (!compact) kind,
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        PageHeader(
+          title: t.iptv.importPageTitle,
+          onBack: back,
+          actions: [
+            if (!compact) ...[_StepStrip(step: flow.step), kind],
+          ],
+        ),
+        if (compact)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: Row(children: [Expanded(child: kind)]),
           ),
-          if (compact) Row(children: [Expanded(child: kind)]),
-        ],
-      ),
+      ],
     );
   }
 }

@@ -50,14 +50,10 @@ const DsTabsStyle _iptvScopeTabsStyle = DsTabsStyle(
 /// its rows instead of scrolling sideways.
 final class IptvPage extends ConsumerStatefulWidget {
   /// The IPTV module's channels page.
-  const IptvPage({required this.owner, this.initialScope, super.key});
+  const IptvPage({required this.owner, super.key});
 
   /// The menu entry this page is standing in for.
   final NavigationItem owner;
-
-  /// The channel scope the browser opens on; null leaves the previous choice
-  /// alone. The module's 收藏 entry opens the same table, favourites only.
-  final IptvChannelScope? initialScope;
 
   @override
   ConsumerState<IptvPage> createState() => _IptvPageState();
@@ -71,12 +67,6 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   @override
   void initState() {
     super.initState();
-    final scope = widget.initialScope;
-    if (scope != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) ref.read(iptvChannelsProvider.notifier).selectScope(scope);
-      });
-    }
     // The toolbar's word lands in the channel search in place. The listener
     // catches a word handed while the page is showing; the post-frame take
     // catches one handed as the page arrives.
@@ -443,22 +433,13 @@ final class _IptvSourcePickers extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: DsSpace.s8,
       children: [
-        DsMenuAnchor(
-          semanticLabel: t.iptv.sourceLabel,
-          items: [
-            DsMenuItem(
-              checked: channels.playlistId == null,
-              label: Text(t.iptv.sourceAll),
-              onPressed: () => ref.read(iptvChannelsProvider.notifier).selectPlaylist(null),
-            ),
-            for (final source in sources.playlists)
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.server, size: 15),
-                checked: source.id == channels.playlistId,
-                label: Text(source.name),
-                onPressed: () => ref.read(iptvChannelsProvider.notifier).selectPlaylist(source.id),
-              ),
-            const DsMenuDivider(),
+        IptvPlaylistMenu(
+          playlists: sources.playlists,
+          activeId: channels.playlistId,
+          currentLabel: playlist,
+          loading: sources.syncAll != null,
+          onSelect: (id) => ref.read(iptvChannelsProvider.notifier).selectPlaylist(id),
+          extraItems: [
             DsMenuItem(
               leading: const DsIcon(DsIcons.plus, size: 15),
               label: Text(t.iptv.importPlaylist),
@@ -471,18 +452,6 @@ final class _IptvSourcePickers extends ConsumerWidget {
                 onPressed: canSyncAll ? () => unawaited(syncAllIptvSources(context, ref)) : null,
               ),
           ],
-          builder: (context, controller, _) => DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            semanticLabel: t.iptv.sourceLabel,
-            loading: sources.syncAll != null,
-            trailing: const DsIcon(DsIcons.chevronDown, size: 14),
-            onPressed: controller.toggle,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
-              child: Text(playlist, maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-          ),
         ),
         DsMenuAnchor(
           semanticLabel: t.iptv.guideTitle,
@@ -589,8 +558,6 @@ final class _ChannelsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final browse = ref.watch(iptvBrowseSettingsProvider);
     final rows = channels.channels.take(channels.shown).toList(growable: false);
     // The stacked list answers the same three empties the three-pane's
@@ -604,71 +571,23 @@ final class _ChannelsList extends ConsumerWidget {
       separatorBuilder: (context, _) => const DsDivider(),
       itemBuilder: (context, index) {
         final channel = rows[index];
-        final number = browse.showChannelNumber ? channel.number : null;
+        // The stacked list wears the module's one channel row — the same
+        // tile the desktop pane draws, so the two surfaces never drift: a
+        // press plays, the heart sits in its trailing slot, and the row
+        // names its group only when the list spans several.
         return IptvChannelHoverPreview(
           channel: channel,
-          child: DsListRow(
-            semanticLabel: channel.entry.name,
-            leading: IptvChannelLogo(channel: channel),
-            title: Text(
-              channel.entry.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-            ),
-            detail: number == null
-                ? null
-                : Text(
-                    '$number',
-                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                  ),
-            description: browse.showProgrammeLine
-                ? IptvNowCell(slot: channels.slots[channel.id])
-                // Same rule as the table's group column: the row says which
-                // group it is in only when the list spans several — the column
-                // or its entry above already named the one that is open.
-                : channels.selectedGroup != null
-                ? null
-                : Text(
-                    _groupOf(t, channel),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                  ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s3,
-              children: [
-                _FavoriteCell(
-                  favorite: channel.favorite,
-                  onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
-                ),
-                IptvIconAction(icon: DsIcons.play, label: t.iptv.openChannel, onPressed: () => onOpen(channel)),
-              ],
-            ),
-            onPressed: () => onOpen(channel),
+          child: IptvChannelTile(
+            channel: channel,
+            slot: browse.showProgrammeLine ? channels.slots[channel.id] : null,
+            selected: false,
+            showNumber: browse.showChannelNumber,
+            groupLine: channels.selectedGroup != null ? null : _groupOf(t, channel),
+            onPlay: () => onOpen(channel),
+            onToggleFavourite: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
           ),
         );
       },
-    );
-  }
-}
-
-/// The heart in the table: the channel's favourite flag, pressed to flip it.
-final class _FavoriteCell extends StatelessWidget {
-  const _FavoriteCell({required this.favorite, required this.onPressed});
-
-  final bool favorite;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return IptvIconAction(
-      icon: DsIcons.heart,
-      label: favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
-      onPressed: onPressed,
-      color: favorite ? DsTheme.colorsOf(context).accent : null,
     );
   }
 }
@@ -683,50 +602,24 @@ final class _StartView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s12,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
-                child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
-              ),
-              Text(t.iptv.emptyStartTitle, style: theme.typography.title.copyWith(color: colors.text)),
-              Text(
-                t.iptv.emptyStartDescription,
-                textAlign: TextAlign.center,
-                style: theme.typography.body.copyWith(color: colors.textMuted),
-              ),
-              const SizedBox(height: DsSpace.s4),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s8,
-                children: [
-                  DsButton(
-                    onPressed: () => unawaited(runIptvPlaylistImport(context)),
-                    leading: const DsIcon(DsIcons.plus, size: 16),
-                    child: Text(t.iptv.emptyStartImportAction),
-                  ),
-                  DsButton(
-                    variant: DsButtonVariant.secondary,
-                    onPressed: () => unawaited(runIptvGuideImport(context)),
-                    leading: const DsIcon(DsIcons.calendarClock, size: 16),
-                    child: Text(t.iptv.importGuide),
-                  ),
-                ],
-              ),
-            ],
+      child: DsEmptyState(
+        icon: const DsIcon(DsIcons.antenna),
+        title: Text(t.iptv.emptyStartTitle),
+        description: Text(t.iptv.emptyStartDescription),
+        actions: [
+          DsButton(
+            onPressed: () => unawaited(runIptvPlaylistImport(context)),
+            leading: const DsIcon(DsIcons.plus, size: 16),
+            child: Text(t.iptv.emptyStartImportAction),
           ),
-        ),
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => unawaited(runIptvGuideImport(context)),
+            leading: const DsIcon(DsIcons.calendarClock, size: 16),
+            child: Text(t.iptv.importGuide),
+          ),
+        ],
       ),
     );
   }
@@ -817,33 +710,17 @@ final class _PlayerIdle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     return ColoredBox(
-      color: theme.colors.overlay,
+      color: DsTheme.of(context).colors.overlay,
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s8,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(16)),
-              child: Center(child: DsIcon(DsIcons.antenna, size: 26, color: colors.accentText)),
-            ),
-            Text(
-              // The selection named a channel the library dropped: that is
-              // said outright, not with the never-picked words.
-              broken ? t.iptv.playerChannelMissing : t.iptv.playerIdleTitle,
-              style: theme.typography.title.copyWith(color: colors.text),
-            ),
-            Text(
-              t.iptv.playerIdleHint,
-              textAlign: TextAlign.center,
-              style: theme.typography.body.copyWith(color: colors.textMuted),
-            ),
-          ],
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.antenna),
+          title: Text(
+            // The selection named a channel the library dropped: that is
+            // said outright, not with the never-picked words.
+            broken ? t.iptv.playerChannelMissing : t.iptv.playerIdleTitle,
+          ),
+          description: Text(t.iptv.playerIdleHint),
         ),
       ),
     );

@@ -31,7 +31,11 @@ final class IptvImportPreviewBody extends ConsumerWidget {
     final t = context.t;
     switch (flow.step) {
       case IptvImportStep.source:
-        return _Message(icon: DsIcons.listChecks, title: t.iptv.previewIdleTitle, body: t.iptv.previewIdleBody);
+        return DsEmptyState(
+          icon: const DsIcon(DsIcons.listChecks),
+          title: Text(t.iptv.previewIdleTitle),
+          description: Text(t.iptv.previewIdleBody),
+        );
       case IptvImportStep.reading:
         return _Busy(label: t.iptv.previewReading);
       case IptvImportStep.writing:
@@ -735,37 +739,6 @@ final class _Busy extends StatelessWidget {
           const DsSpinner(style: DsSpinnerStyle(size: 28)),
           Text(label, style: theme.typography.body.copyWith(color: colors.textMuted)),
           const SizedBox(width: 240, child: DsProgressBar()),
-        ],
-      ),
-    );
-  }
-}
-
-final class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.title, required this.body});
-
-  final DsIconData icon;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s12,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(14)),
-            child: Center(child: DsIcon(icon, size: 24, color: colors.accentText)),
-          ),
-          Text(title, style: theme.typography.heading.copyWith(color: colors.text)),
-          Text(body, style: theme.typography.body.copyWith(color: colors.textMuted)),
         ],
       ),
     );

@@ -339,7 +339,7 @@ final class _XtreamStatus extends StatelessWidget {
 /// A pressable bordered surface: the house tile the origin rows and the
 /// guide rows share, so all answer focus, hover and press alike — and a TV
 /// remote can land on each.
-final class _Tile extends StatefulWidget {
+final class _Tile extends StatelessWidget {
   const _Tile({required this.child, required this.onPressed, this.selected = false});
 
   final Widget child;
@@ -347,47 +347,36 @@ final class _Tile extends StatefulWidget {
   final bool selected;
 
   @override
-  State<_Tile> createState() => _TileState();
-}
-
-final class _TileState extends State<_Tile> {
-  bool _hover = false;
-  bool _focus = false;
-
-  @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final enabled = widget.onPressed != null;
-    final edge = _focus
-        ? colors.accent
-        : widget.selected
-        ? colors.accentEdge
-        : colors.border;
-    return FocusableActionDetector(
-      enabled: enabled,
+    final enabled = onPressed != null;
+    return DsPressable(
+      onPressed: onPressed,
+      selected: selected,
       mouseCursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onShowHoverHighlight: (value) => setState(() => _hover = value),
-      onShowFocusHighlight: (value) => setState(() => _focus = value),
-      actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => widget.onPressed?.call())},
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onPressed,
-        child: AnimatedContainer(
-          duration: theme.motion.toneDuration,
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        final focused = states.contains(WidgetState.focused);
+        final edge = focused
+            ? colors.accent
+            : selected
+            ? colors.accentEdge
+            : colors.border;
+        return Container(
           padding: const EdgeInsets.all(DsSpace.s12),
           decoration: BoxDecoration(
-            color: widget.selected
+            color: selected
                 ? colors.accentTint
-                : _hover && enabled
+                : lit && enabled
                 ? colors.controlHover
                 : colors.surface,
-            border: Border.all(color: edge, width: _focus ? 2 : 1),
+            border: Border.all(color: edge, width: focused ? 2 : 1),
             borderRadius: BorderRadius.circular(theme.radii.card - 4),
           ),
-          child: Opacity(opacity: enabled ? 1 : .55, child: widget.child),
-        ),
-      ),
+          child: Opacity(opacity: enabled ? 1 : .55, child: child),
+        );
+      },
     );
   }
 }

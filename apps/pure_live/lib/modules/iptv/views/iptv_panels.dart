@@ -4,66 +4,92 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_cache/live_cache.dart' show ImageCachePolicies;
-import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvProgrammeSlot;
+import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvPlaylist, IptvProgrammeSlot;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/shared/shared.dart' show cachedImage;
 
-/// The module's one page head: the 44px line every IPTV page opens with —
-/// the title, a muted description beside it, and the page's verbs at the
-/// end. The reference's `head44` row. A page applies its own inset padding
-/// around it and draws its own control lines under it; the row never folds
-/// the verbs — the title and description give way first, so the verbs stay
-/// visible to the width the module already supports — and a page whose verbs
-/// ride the shell's head instead passes none.
-final class IptvPageHead extends StatelessWidget {
-  const IptvPageHead({required this.title, this.description, this.actions = const <Widget>[], super.key});
+/// The playlist source's own picker: 全部来源, then one line per playlist
+/// with its checked state — the menu the browser's head and the guide's
+/// channel pane both wear, so the two never drift. The button names the
+/// open playlist; [extraItems] ride under the divider (the import and sync
+/// verbs the browser adds).
+final class IptvPlaylistMenu extends StatelessWidget {
+  const IptvPlaylistMenu({
+    required this.playlists,
+    required this.activeId,
+    required this.onSelect,
+    this.currentLabel,
+    this.extraItems = const <Widget>[],
+    this.loading = false,
+    this.showLeadingIcon = false,
+    super.key,
+  });
 
-  /// The page's name, in the head's strong label.
-  final String title;
+  /// The library's playlists, in the order the picker lists them.
+  final List<IptvPlaylist> playlists;
 
-  /// The muted facts beside the name — the counts, a search's tally. Null
-  /// leaves the title alone on the line.
-  final String? description;
+  /// The playlist the pages are reading now; null is 全部来源.
+  final String? activeId;
 
-  /// The page's verbs, laid out at the row's end.
-  final List<Widget> actions;
+  /// Picks a playlist; null picks them all.
+  final ValueChanged<String?> onSelect;
+
+  /// The open source's name on the button; null names 全部来源 or the
+  /// active playlist, the same way the menu's lines do.
+  final String? currentLabel;
+
+  /// The verbs under the divider, after the playlist lines.
+  final List<Widget> extraItems;
+
+  /// Spins the button while a sync runs.
+  final bool loading;
+
+  /// The server glyph rides the button where the pane has room to name the
+  /// picker twice; the head row drops it and wears the chevron instead.
+  final bool showLeadingIcon;
+
+  /// The button's word: the caller's label, or the menu's own answer —
+  /// the active playlist's name, or 全部来源 when everything shows.
+  String _labelOf(Translations t) {
+    if (currentLabel case final given?) return given;
+    var found = t.iptv.sourceAll;
+    for (final source in playlists) {
+      if (source.id == activeId) found = source.name;
+    }
+    return found;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return SizedBox(
-      height: 44,
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: title,
-                    style: theme.typography.labelStrong.copyWith(color: colors.text),
-                  ),
-                  if (description != null) ...[
-                    TextSpan(
-                      text: '  ·  ',
-                      style: theme.typography.small.copyWith(color: colors.textSubtle),
-                    ),
-                    TextSpan(
-                      text: description,
-                      style: theme.typography.small.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+    final t = context.t;
+    final label = _labelOf(t);
+    return DsMenuAnchor(
+      semanticLabel: t.iptv.sourceLabel,
+      items: [
+        DsMenuItem(checked: activeId == null, label: Text(t.iptv.sourceAll), onPressed: () => onSelect(null)),
+        for (final source in playlists)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.server, size: 15),
+            checked: source.id == activeId,
+            label: Text(source.name),
+            onPressed: () => onSelect(source.id),
           ),
-          ...actions,
-        ],
+        if (extraItems.isNotEmpty) const DsMenuDivider(),
+        ...extraItems,
+      ],
+      builder: (context, controller, _) => DsButton(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: t.iptv.sourceLabel,
+        loading: loading,
+        leading: showLeadingIcon ? const DsIcon(DsIcons.server, size: 14) : null,
+        trailing: showLeadingIcon ? null : const DsIcon(DsIcons.chevronDown, size: 14),
+        onPressed: controller.toggle,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 220),
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
       ),
     );
   }
@@ -164,20 +190,6 @@ final class IptvTablePanel extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The table style inside an [IptvTablePanel]: the panel already supplies
-/// the fill, corners and shadow, so the table draws only its rules.
-DsTableStyle iptvTableStyle(BuildContext context) {
-  final colors = DsTheme.colorsOf(context);
-  return DsTableStyle(
-    background: const Color(0x00000000),
-    shadows: const [],
-    borderRadius: BorderRadius.zero,
-    dividerColor: colors.border,
-    rowHeight: 64,
-    headerHeight: 36,
-  );
 }
 
 /// "1,024" for a count in a summary or a table cell.
