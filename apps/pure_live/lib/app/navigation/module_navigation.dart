@@ -1,4 +1,6 @@
 import 'package:flutter/widgets.dart' show Widget;
+
+import 'package:pure_live/app/pages/downloads_center_page.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart';
 import 'package:pure_live/modules/huya/huya.dart';
@@ -8,6 +10,7 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/modules/music/music.dart';
@@ -121,16 +124,16 @@ const SettingsGroup _sharedPlaybackGroup = (labelKey: 'groupPlayback', sections:
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   // The live home's rail: the three home destinations as one block — the
   // navigation setting orders and hides these, its default being favorites,
-  // hot feed and areas (the recording centre is not a rail row: recording
-  // lives in the room panel and the settings, and a library the live home
-  // never fills sat as a rail row) — then the tools block the tool-order
-  // setting sorts: multi-view, the link parser, the log console, search and
-  // history.
+  // hot feed and areas — then the tools block the tool-order setting sorts:
+  // multi-view, the recording centre, the link parser, the log console,
+  // search and history.
   AppModule.live: ModuleNavigation(
     menu: [
       [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
       [
         NavigationItem.multiview,
+        NavigationItem.record,
+        NavigationItem.downloadsCenter,
         NavigationItem.toolbox,
         NavigationItem.logs,
         NavigationItem.search,
@@ -352,10 +355,15 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.hot: PopularPage.new,
   NavigationItem.search: SearchPage.new,
   NavigationItem.multiview: MultiviewPage.new,
-  // The recording centre is per module even though the recorder is one machine:
-  // live's rail opens the router's page, every other rail opens its own list of
-  // its own takes — the IPTV one below, cut from the same folder tree.
-  NavigationItem.record: IptvRecordingsPage.new,
+  // One recording centre for every module: the recorder is one machine,
+  // and its centre is the one answer to where a capture lands — whatever
+  // the module that started it. A module's own takes are the centre's
+  // platform filter, not a second page.
+  NavigationItem.record: RecorderPage.new,
+  // The download centre beside it: one roof over the four queues the
+  // modules' own download pages keep — the centre embeds those pages, so
+  // the filters and verbs the module built stay the ones it answers.
+  NavigationItem.downloadsCenter: DownloadsCenterPage.new,
   NavigationItem.toolbox: ToolboxPage.new,
   // The log console is every module's tool, not the live rail's alone: the
   // record it reads is the one shared tree.

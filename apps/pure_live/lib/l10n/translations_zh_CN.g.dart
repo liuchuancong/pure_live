@@ -5362,6 +5362,9 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '录制中心'
 	String get record => '录制中心';
 
+	/// zh-CN: '下载中心'
+	String get downloadsCenter => '下载中心';
+
 	/// zh-CN: '设置'
 	String get settings => '设置';
 
@@ -15481,6 +15484,7 @@ extension on Translations {
 			'navigation.search' => '搜索直播',
 			'navigation.toolbox' => '工具箱',
 			'navigation.record' => '录制中心',
+			'navigation.downloadsCenter' => '下载中心',
 			'navigation.settings' => '设置',
 			'navigation.appearance' => '外观',
 			'navigation.proxy' => '网络代理',
@@ -15653,9 +15657,9 @@ extension on Translations {
 			'recorder.caCustomNotPem' => '这不是 PEM 文本的证书束（应包含 -----BEGIN CERTIFICATE-----）',
 			'recorder.caCustomPickFailed' => '读取证书文件失败',
 			'recorder.caCustomClear' => '恢复内置',
-			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.caCustomCleared' => '已恢复使用内置根证书',
 			'recorder.startNowBusyOther' => '另一个窗口正在录制这个房间',
 			'recorder.startNowCaFailed' => '自定义 CA 证书读不到，先重新选择或恢复内置',
 			'recorder.menuMore' => '更多操作',
@@ -16167,9 +16171,9 @@ extension on Translations {
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
-			'settings.groupVod' => 'Bilibili 视频',
 			_ => null,
 		} ?? switch (path) {
+			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
@@ -16681,9 +16685,9 @@ extension on Translations {
 			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
-			'settings.navKernel' => '播放器内核',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
@@ -17195,9 +17199,9 @@ extension on Translations {
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'settings.tagManagement' => '标签管理',
 			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
-			'settings.tagAdd' => '添加标签',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagAdd' => '添加标签',
 			'settings.tagEdit' => '编辑标签',
 			'settings.tagPin' => '移到最前',
 			'settings.tagSaveAction' => '保存',
@@ -17709,9 +17713,9 @@ extension on Translations {
 			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
 			'toolbox.nodeSourceRecommended' => '推荐接口',
 			'toolbox.nodeSourceHot' => '热门接口',
-			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',
 			'toolbox.logsExport' => '复制日志',

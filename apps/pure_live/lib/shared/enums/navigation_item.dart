@@ -45,6 +45,9 @@ enum NavigationItem {
   /// The recording branch.
   record(DsIcons.disc3),
 
+  /// The download centre branch: the four modules' queues under one roof.
+  downloadsCenter(DsIcons.download),
+
   /// The settings branch.
   settings(DsIcons.settings),
 
@@ -179,6 +182,7 @@ enum NavigationItem {
     NavigationItem.toolbox => t.navigation.toolbox,
     NavigationItem.logs => t.toolbox.toolLogsTitle,
     NavigationItem.record => t.navigation.record,
+    NavigationItem.downloadsCenter => t.navigation.downloadsCenter,
     NavigationItem.settings => t.navigation.settings,
     NavigationItem.appearance => t.navigation.appearance,
     NavigationItem.proxy => t.navigation.proxy,

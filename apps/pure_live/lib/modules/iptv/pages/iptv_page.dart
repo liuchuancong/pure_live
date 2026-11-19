@@ -683,7 +683,7 @@ final class _ChannelListPane extends ConsumerWidget {
               separatorBuilder: (context, _) => const DsDivider(indent: 60),
               itemBuilder: (context, index) {
                 final channel = rows[index];
-                return IptvChannelTile(
+                final row = IptvChannelTile(
                   channel: channel,
                   slot: slots[channel.id],
                   selected: selected == channel.id,
@@ -692,6 +692,10 @@ final class _ChannelListPane extends ConsumerWidget {
                   onPlay: () => onSelect(channel),
                   onToggleFavourite: () => onToggleFavourite(channel),
                 );
+                // The glance rides the rows the pane is not already playing:
+                // the selected channel's own stream runs in the player
+                // beside the list, and a second window of it says nothing.
+                return selected == channel.id ? row : IptvChannelHoverPreview(channel: channel, child: row);
               },
             ),
     );

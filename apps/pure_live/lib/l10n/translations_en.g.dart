@@ -1902,6 +1902,7 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get search => 'Search Live';
 	@override String get toolbox => 'Toolbox';
 	@override String get record => 'Recording';
+	@override String get downloadsCenter => 'Download centre';
 	@override String get settings => 'Settings';
 	@override String get appearance => 'Appearance';
 	@override String get proxy => 'Network proxy';
@@ -6626,6 +6627,7 @@ extension on TranslationsEn {
 			'navigation.search' => 'Search Live',
 			'navigation.toolbox' => 'Toolbox',
 			'navigation.record' => 'Recording',
+			'navigation.downloadsCenter' => 'Download centre',
 			'navigation.settings' => 'Settings',
 			'navigation.appearance' => 'Appearance',
 			'navigation.proxy' => 'Network proxy',
@@ -6798,9 +6800,9 @@ extension on TranslationsEn {
 			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
 			'recorder.caCustomClear' => 'Use bundled',
 			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
-			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.startNowBusyOther' => 'Another window is recording this room',
 			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
@@ -7312,9 +7314,9 @@ extension on TranslationsEn {
 			'settings.groupData' => 'Data',
 			'settings.groupAbout' => 'About',
 			'settings.groupIptv' => 'IPTV',
-			'settings.groupVod' => 'Bilibili video',
 			_ => null,
 		} ?? switch (path) {
+			'settings.groupVod' => 'Bilibili video',
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
@@ -7826,9 +7828,9 @@ extension on TranslationsEn {
 			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
-			'settings.navKernel' => 'Player engine',
 			_ => null,
 		} ?? switch (path) {
+			'settings.navKernel' => 'Player engine',
 			'settings.navRecording' => 'Recording',
 			'settings.videoDescription' => 'Quality, audio and how the picture fits.',
 			'settings.danmakuDescription' => 'Danmaku visibility, style and shields.',
@@ -8340,9 +8342,9 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryFinalFantasy' => 'Final Fantasy',
 			'settings.tagManagement' => 'Tag management',
 			'settings.tagManagementDesc' => 'Customize and manage the tags rooms are filtered by',
-			'settings.tagAdd' => 'Add tag',
 			_ => null,
 		} ?? switch (path) {
+			'settings.tagAdd' => 'Add tag',
 			'settings.tagEdit' => 'Edit tag',
 			'settings.tagPin' => 'Move to top',
 			'settings.tagSaveAction' => 'Save',
@@ -8854,9 +8856,9 @@ extension on TranslationsEn {
 			'toolbox.nodeAnswer' => ({required int count}) => '${count} rooms returned',
 			'toolbox.nodeSourceRecommended' => 'Recommended endpoint',
 			'toolbox.nodeSourceHot' => 'Hot-list endpoint',
-			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',
 			'toolbox.logsExport' => 'Copy log',

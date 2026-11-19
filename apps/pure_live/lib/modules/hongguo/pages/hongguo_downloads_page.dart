@@ -538,6 +538,11 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                     icon: DsIcons.refresh,
                     onPressed: () => setState(() => _recheck++),
                   ),
+                  DownloadQueueAction(
+                    label: t.navigation.downloadsCenter,
+                    icon: DsIcons.download,
+                    onPressed: () => openModuleItem(context, ref, NavigationItem.downloadsCenter),
+                  ),
                 ],
               ),
             ),

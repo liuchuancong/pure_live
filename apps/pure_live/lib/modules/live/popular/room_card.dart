@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
@@ -338,18 +338,20 @@ final class _GridTile extends StatefulWidget {
   State<_GridTile> createState() => _GridTileState();
 }
 
-final class _GridTileState extends State<_GridTile> {
+final class _GridTileState extends State<_GridTile> with CoverPreviewDwell<_GridTile> {
   /// The card's own interaction states, observed through the pressable:
   /// hover and focus reveal the cover's pieces, a press rebuilds nothing.
   final WidgetStatesController _states = WidgetStatesController();
   bool _hoverOrFocus = false;
 
-  /// The rest between the pointer's arrival and the live preview's first
-  /// frame: a grid walk must not open a stream under every card it crosses.
-  static const Duration _previewDwell = Duration(milliseconds: 500);
+  @override
+  bool get coverPreviewEnabled => widget.livePreview;
 
-  Timer? _dwell;
-  bool _previewing = false;
+  @override
+  bool get coverPreviewAllowed => widget.room.broadcast.isLiveNow;
+
+  @override
+  Widget buildCoverPreview() => RoomLivePreview(room: widget.room);
 
   @override
   void initState() {
@@ -361,34 +363,11 @@ final class _GridTileState extends State<_GridTile> {
     final value = _states.value;
     final next = value.contains(WidgetState.hovered) || value.contains(WidgetState.focused);
     if (next != _hoverOrFocus) setState(() => _hoverOrFocus = next);
-    _syncPreview(value);
-  }
-
-  /// The live preview follows the pointer alone: a rest on the card starts
-  /// it, the pointer leaving takes it back, and a press ends it at once —
-  /// the room is about to open on top of it. A keyboard's focus walks are
-  /// never a rest, so they play nothing.
-  void _syncPreview(Set<WidgetState> value) {
-    if (!widget.livePreview) return;
-    if (value.contains(WidgetState.pressed)) return _endPreview();
-    if (!value.contains(WidgetState.hovered) || !widget.room.broadcast.isLiveNow) return _endPreview();
-    _dwell ??= Timer(_previewDwell, () {
-      _dwell = null;
-      if (mounted && _states.value.contains(WidgetState.hovered) && !_previewing) {
-        setState(() => _previewing = true);
-      }
-    });
-  }
-
-  void _endPreview() {
-    _dwell?.cancel();
-    _dwell = null;
-    if (_previewing && mounted) setState(() => _previewing = false);
+    syncCoverPreview(value);
   }
 
   @override
   void dispose() {
-    _dwell?.cancel();
     _states.removeListener(_onStates);
     _states.dispose();
     super.dispose();
@@ -463,7 +442,7 @@ final class _GridTileState extends State<_GridTile> {
                     // where the cover stood in for it. It sits under the
                     // corner pieces, so the card's facts keep reading over the
                     // moving picture.
-                    if (widget.livePreview && _previewing) Positioned.fill(child: RoomLivePreview(room: widget.room)),
+                    if (widget.livePreview && coverPreviewing) Positioned.fill(child: buildCoverPreview()),
                     // The platform keeps the corner the state used to take:
                     // its mark and brand read at a glance, larger than the
                     // meta line ever had room for.

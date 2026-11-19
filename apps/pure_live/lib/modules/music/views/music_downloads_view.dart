@@ -12,6 +12,7 @@ import 'package:pure_live/app/routing/router/app_router.dart' show SettingsSecti
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
 import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/library/music_downloads.dart';
 import 'package:pure_live/modules/music/controller/playback/music_playback.dart' show musicPlayerProvider;
@@ -31,6 +32,7 @@ import 'package:pure_live/shared/shared.dart'
         DownloadStatusTabs,
         DownloadTaskCard,
         LiveWindow,
+        NavigationItem,
         downloadEtaText,
         downloadFilePresent,
         downloadRowGroupOf,
@@ -239,6 +241,11 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                     label: t.settings.downloadRecheck,
                     icon: DsIcons.refresh,
                     onPressed: () => setState(() => _recheck++),
+                  ),
+                  DownloadQueueAction(
+                    label: t.navigation.downloadsCenter,
+                    icon: DsIcons.download,
+                    onPressed: () => openModuleItem(context, ref, NavigationItem.downloadsCenter),
                   ),
                 ],
               ),

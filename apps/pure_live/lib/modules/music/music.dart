@@ -32,6 +32,7 @@ export 'pages/music_artist_page.dart';
 export 'pages/music_eq_center_page.dart';
 export 'pages/music_player_page.dart';
 export 'pages/music_settings_pane.dart';
+export 'views/music_downloads_view.dart';
 export 'widgets/music_actions.dart';
 export 'widgets/music_browse_widgets.dart';
 export 'widgets/music_widgets.dart';
