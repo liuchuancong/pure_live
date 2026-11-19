@@ -15,7 +15,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRe
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart' show iptvSourcesProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
-    show IptvGuideRow, iptvClockLabel, iptvDayLabel, iptvStartOfDay;
+    show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart' show runIptvGuideImport;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction, IptvPlaylistMenu;
 import 'package:pure_live/modules/iptv/views/iptv_reminders_panel.dart' show showIptvReminders;
@@ -206,11 +206,6 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
     final schedule = selected == null || library == null
         ? const <EpgProgramme>[]
         : library.schedule(selected, from: _day, span: dayEnd.difference(_day));
-    // "On air" is a fact about the day the panel shows, so the slot is read
-    // from this day's own list rather than from the library's wide current-
-    // hour window — a past day would otherwise be headed by today's
-    // programme.
-    final slot = _day == iptvStartOfDay(now) ? _slotOf(schedule, now) : null;
     final hasGuide = selected != null && library != null && library.guideKeyFor(selected) != null;
     // Three empties, not one message: a search that matched nothing, a group
     // the playlist left without channels, and a library nobody has filled. The
@@ -297,7 +292,6 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
                   channel: selected,
                   emptyNote: emptyNote,
                   schedule: schedule,
-                  slot: slot,
                   now: now,
                   hasGuide: hasGuide,
                   onReplay: (programme) {
@@ -376,24 +370,6 @@ IptvGroupFilter _groupFilterOf(IptvLibrary? library, {String? open, String? play
     totalCount: walk.length,
     selectedGroup: open != null && groups.contains(open) ? open : null,
   );
-}
-
-/// The current and next programme inside one day's list, read the way the
-/// library reads its own slot but from the programmes the panel actually
-/// shows.
-IptvProgrammeSlot _slotOf(List<EpgProgramme> schedule, DateTime now) {
-  EpgProgramme? current;
-  EpgProgramme? next;
-  for (final programme in schedule) {
-    if (programme.start.isAfter(now)) {
-      next ??= programme;
-      continue;
-    }
-    if (!programme.stop.isBefore(now) && (current == null || programme.start.isAfter(current.start))) {
-      current = programme;
-    }
-  }
-  return IptvProgrammeSlot(at: now, current: current, next: next);
 }
 
 /// The day's own controls, hosted at the end of the page head's actions: the
@@ -637,15 +613,14 @@ final class _ChannelPickerState extends ConsumerState<_ChannelPicker> {
   }
 }
 
-/// The open channel's day: the head that names whose day it is and what is on
-/// air now, then the day's programmes with their clocks, the one on air marked
-/// and the past ones replayable where the playlist offers catch-up.
+/// The open channel's day: the head that names whose day it is, then the
+/// day's programmes with their clocks, the one on air marked and the past
+/// ones replayable where the playlist offers catch-up.
 final class _SchedulePanel extends ConsumerWidget {
   const _SchedulePanel({
     required this.channel,
     required this.emptyNote,
     required this.schedule,
-    required this.slot,
     required this.now,
     required this.hasGuide,
     required this.onReplay,
@@ -660,10 +635,6 @@ final class _SchedulePanel extends ConsumerWidget {
   /// is the one case the panel answers with the import invitation.
   final String? emptyNote;
   final List<EpgProgramme> schedule;
-
-  /// The programme on air now and the one after it, for the day being shown;
-  /// null for a day the clock has already passed or not yet reached.
-  final IptvProgrammeSlot? slot;
   final DateTime now;
 
   /// Whether a guide source stands behind this channel at all — the panel
@@ -696,14 +667,7 @@ final class _SchedulePanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ScheduleHead(
-            channel: open,
-            slot: slot,
-            showNumber: browse.showChannelNumber,
-            showProgramme: browse.showProgrammeLine,
-            onPlay: onPlay,
-            onFavourite: onFavourite,
-          ),
+          _ScheduleHead(channel: open, showNumber: browse.showChannelNumber, onPlay: onPlay, onFavourite: onFavourite),
           const DsDivider(),
           Expanded(
             child: !hasGuide
@@ -766,17 +730,13 @@ final class _SchedulePanel extends ConsumerWidget {
 final class _ScheduleHead extends StatelessWidget {
   const _ScheduleHead({
     required this.channel,
-    required this.slot,
     required this.showNumber,
-    required this.showProgramme,
     required this.onPlay,
     required this.onFavourite,
   });
 
   final IptvChannel channel;
-  final IptvProgrammeSlot? slot;
   final bool showNumber;
-  final bool showProgramme;
   final VoidCallback onPlay;
   final VoidCallback onFavourite;
 
@@ -843,75 +803,18 @@ final class _ScheduleHead extends StatelessWidget {
         ),
       ],
     );
-    final programme = showProgramme ? _programmeLine(context) : null;
+    // The channel once, the day's rows beneath it: the schedule marks what
+    // is on air with its clocks and progress on the row itself, so the head
+    // does not say it again above them.
     return Padding(
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s12, DsSpace.s6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s6,
+      child: Row(
+        spacing: DsSpace.s8,
         children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(child: identity),
-              actions,
-            ],
-          ),
-          ?programme,
+          Expanded(child: identity),
+          actions,
         ],
       ),
     );
-  }
-
-  /// The on-air anchor for the day being read: what is on with its clock and
-  /// progress, or what comes next. Quiet when the day has neither — the panel
-  /// below already says 这一天没有节目, and saying it twice is not saying it
-  /// better.
-  Widget? _programmeLine(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final current = slot?.current;
-    final next = slot?.next;
-    if (current != null && current.title.isNotEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s4,
-        children: [
-          Row(
-            spacing: DsSpace.s6,
-            children: [
-              DsBadge(label: Text(t.iptv.onAir), status: DsStatus.danger),
-              Flexible(
-                child: Text(
-                  '${iptvClockLabel(current.start)}–${iptvClockLabel(current.stop)}  ${current.title}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: colors.textMuted),
-                ),
-              ),
-            ],
-          ),
-          if (slot?.progress case final progress?) DsProgressBar(value: progress, semanticLabel: t.iptv.onAir),
-        ],
-      );
-    }
-    if (next != null && next.title.isNotEmpty) {
-      return Row(
-        spacing: DsSpace.s6,
-        children: [
-          DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-          Flexible(
-            child: Text(
-              '${t.iptv.upNext} · ${iptvClockLabel(next.start)} · ${next.title}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.small.copyWith(color: colors.textSubtle),
-            ),
-          ),
-        ],
-      );
-    }
-    return null;
   }
 }

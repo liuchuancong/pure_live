@@ -3160,34 +3160,46 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 ],
               ),
             if (showDetails && uploader.isNotEmpty)
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  DsAvatar(
-                    initials: avatarInitials(uploader),
-                    image: avatar == null || avatar.isEmpty
-                        ? null
-                        : cachedImage(avatar, policy: ImageCachePolicies.avatar),
-                    size: DsSize.md,
-                    toneIndex: DsAvatar.toneFor(uploader),
-                    semanticLabel: uploader,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: DsSpace.s3,
-                      children: [
-                        Text(
-                          uploader,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
+              // The row is the uploader's own door: the space page keeps
+              // their archive list, and the detail's mid is its address. A
+              // source that names no mid leaves the row a name only.
+              DsPressable(
+                semanticLabel: uploader,
+                onPressed: (detail.uploaderMid ?? 0) <= 0
+                    ? null
+                    : () => unawaited(context.push('/vod/u/${detail.uploaderMid}')),
+                builder: (context, states, _) {
+                  final lit = states.contains(WidgetState.hovered);
+                  return Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      DsAvatar(
+                        initials: avatarInitials(uploader),
+                        image: avatar == null || avatar.isEmpty
+                            ? null
+                            : cachedImage(avatar, policy: ImageCachePolicies.avatar),
+                        size: DsSize.md,
+                        toneIndex: DsAvatar.toneFor(uploader),
+                        semanticLabel: uploader,
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: DsSpace.s3,
+                          children: [
+                            Text(
+                              uploader,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.bodyStrong.copyWith(color: lit ? colors.accentText : colors.text),
+                            ),
+                            Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                          ],
                         ),
-                        Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
             const DsDivider(),
             if (showParts && detail.parts.length > 1)

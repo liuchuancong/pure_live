@@ -84,9 +84,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
 
-  /// The ticked rows — the batch verbs' objects.
-  final Set<Object> _selected = {};
-
   /// The row the wide window's facts column speaks about; null lets the first
   /// visible row speak.
   String? _factsId;
@@ -123,66 +120,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     ];
   }
 
-  /// The ticked rows, in the queue's order.
-  List<audio.MusicDownloadTask> _picked(List<audio.MusicDownloadTask> tasks) => [
-    for (final task in tasks)
-      if (_selected.contains(task.id)) task,
-  ];
-
-  /// Runs [verb] over [rows], one after another: the queue answers per task, so
-  /// a batch is a run of calls rather than one of its own.
-  Future<void> _runOver(
-    List<audio.MusicDownloadTask> rows,
-    Future<void> Function(MusicDownloadsController controller, String id) verb,
-  ) async {
-    final controller = ref.read(musicDownloadsProvider.notifier);
-    for (final task in rows) {
-      await verb(controller, task.id);
-    }
-  }
-
-  /// Drops the ticked records after one ask; the files they name stay on disk,
-  /// which is what the body says rather than leaves to be guessed.
-  Future<void> _removePicked(List<audio.MusicDownloadTask> picked) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.settings.downloadRemoveBody,
-      confirmLabel: t.settings.downloadRemove,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    await _runOver(picked, (controller, id) => controller.remove(id));
-    if (mounted) setState(_selected.clear);
-  }
-
-  /// Deletes the ticked songs' files and records after one ask. Each failure is
-  /// said rather than swallowed, so a batch that names more than the disk holds
-  /// does not read as a clean run.
-  Future<void> _deletePicked(List<audio.MusicDownloadTask> picked) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.music.downloadDeleteFileBody,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    final controller = ref.read(musicDownloadsProvider.notifier);
-    for (final task in picked) {
-      try {
-        await controller.remove(task.id, deleteFile: true);
-      } on Object {
-        if (mounted) showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
-      }
-    }
-    if (mounted) setState(_selected.clear);
-  }
-
   /// Plays [task] inside the list the page is showing, in the module's own
   /// player: 上一首/下一首, the queue panel and the player page all carry the
   /// other finished downloads rather than stopping at the one tapped. A preview
@@ -208,9 +145,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
     final tasks = ref.watch(musicDownloadsProvider);
     final controller = ref.read(musicDownloadsProvider.notifier);
     final directory = ref.watch(appPathsProvider).music.path;
-    // A tick on a row the queue no longer holds no longer counts, and the batch
-    // bar would otherwise promise an action on nothing.
-    _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
     final shown = _visible(tasks);
     // One stat per row per queue shape, not one per tick: the same song answers
     // through its badge, its verb and its menu.
@@ -231,13 +165,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
         .fold<int>(0, (sum, task) => sum + (task.bytesTotal > 0 ? task.bytesTotal : task.bytesReceived));
     // What it is pulling right now, its third half: the lanes' own total.
     final speed = working.fold<int>(0, (sum, task) => sum + task.bytesPerSecond);
-    final picked = _picked(tasks);
-    final pausable = picked
-        .where(
-          (task) => task.status == audio.MusicDownloadStatus.running || task.status == audio.MusicDownloadStatus.queued,
-        )
-        .toList();
-    final resumable = picked.where((task) => task.isPaused || task.status == audio.MusicDownloadStatus.failed).toList();
     final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
     final filterActive = _statusGroup != DownloadStatusGroup.all || _playableOnly;
     final counts = <DownloadStatusGroup, int>{
@@ -276,10 +203,7 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                 },
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
-                onQuery: (value) => setState(() {
-                  _query = value;
-                  _selected.clear();
-                }),
+                onQuery: (value) => setState(() => _query = value),
                 actions: [
                   DownloadQueueAction(
                     label: t.settings.downloadManagerOpenFolder,
@@ -316,34 +240,6 @@ class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                     icon: DsIcons.refresh,
                     onPressed: () => setState(() => _recheck++),
                   ),
-                ],
-                selectedLabel: picked.isEmpty ? null : t.settings.downloadSelectedCount(count: picked.length),
-                selectionActions: [
-                  if (pausable.isNotEmpty)
-                    DownloadQueueAction(
-                      label: t.music.downloadPause,
-                      icon: DsIcons.pause,
-                      onPressed: () => unawaited(_runOver(pausable, (controller, id) => controller.pause(id))),
-                    ),
-                  if (resumable.isNotEmpty)
-                    DownloadQueueAction(
-                      label: t.music.downloadResume,
-                      icon: DsIcons.play,
-                      onPressed: () => unawaited(_runOver(resumable, (controller, id) => controller.resume(id))),
-                    ),
-                  DownloadQueueAction(
-                    label: t.settings.downloadRemove,
-                    icon: DsIcons.trash2,
-                    destructive: true,
-                    onPressed: () => unawaited(_removePicked(picked)),
-                  ),
-                  if (picked.any(_playableTask))
-                    DownloadQueueAction(
-                      label: t.settings.downloadDeleteFile,
-                      icon: DsIcons.fileX,
-                      destructive: true,
-                      onPressed: () => unawaited(_deletePicked(picked)),
-                    ),
                 ],
               ),
             ),

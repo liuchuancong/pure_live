@@ -77,8 +77,6 @@ final class DownloadQueueHeader extends StatelessWidget {
     required this.actions,
     this.settingsLabel,
     this.onSettings,
-    this.selectedLabel,
-    this.selectionActions = const [],
     super.key,
   });
 
@@ -104,12 +102,6 @@ final class DownloadQueueHeader extends StatelessWidget {
   /// The verbs that act on the whole queue.
   final List<DownloadQueueAction> actions;
 
-  /// What the ticked rows line says, e.g. 已选 3 项; null hides the line.
-  final String? selectedLabel;
-
-  /// The verbs that act on the ticked rows.
-  final List<DownloadQueueAction> selectionActions;
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -117,7 +109,6 @@ final class DownloadQueueHeader extends StatelessWidget {
     final colors = theme.colors;
     final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
     final live = actions.where((action) => action.onPressed != null);
-    final selected = selectionActions.where((action) => action.onPressed != null);
     final search = SizedBox(
       width: compact ? 132 : 220,
       child: DsSearchField(initialValue: query, onChanged: onQuery, placeholder: searchHint, semanticLabel: searchHint),
@@ -207,23 +198,6 @@ final class DownloadQueueHeader extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        if (selectedLabel != null && selected.isNotEmpty)
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Text(selectedLabel!, style: theme.typography.small.copyWith(color: colors.textMuted)),
-              ),
-              for (final action in selected)
-                DsButton(
-                  variant: action.destructive ? DsButtonVariant.dangerSoft : DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  leading: DsIcon(action.icon, size: 14),
-                  onPressed: action.onPressed,
-                  child: Text(action.label),
-                ),
-            ],
           ),
       ],
     );

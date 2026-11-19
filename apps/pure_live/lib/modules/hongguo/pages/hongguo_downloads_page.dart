@@ -405,9 +405,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
   /// Whether a row must still name a file the disk holds.
   bool _playableOnly = false;
 
-  /// The ticked rows — the batch verbs' objects.
-  final Set<Object> _selected = {};
-
   /// The row the wide window's facts column speaks about; null lets the first
   /// visible row speak.
   String? _factsId;
@@ -436,67 +433,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     ];
   }
 
-  /// The ticked rows, in the queue's order.
-  List<HongguoDownloadItem> _picked(List<HongguoDownloadItem> tasks) => [
-    for (final task in tasks)
-      if (_selected.contains(task.id)) task,
-  ];
-
-  /// Runs [verb] over [rows], one after another: the store writes per task, so
-  /// a batch is a run of writes rather than a call of its own.
-  Future<void> _runOver(
-    List<HongguoDownloadItem> rows,
-    Future<void> Function(HongguoDownloadsController controller, String id) verb,
-  ) async {
-    final controller = ref.read(hongguoDownloadsProvider.notifier);
-    for (final task in rows) {
-      await verb(controller, task.id);
-    }
-  }
-
-  /// Drops the ticked records after one ask; the files they name stay on disk,
-  /// which is what the body says rather than leaves to be guessed.
-  Future<void> _removePicked(List<HongguoDownloadItem> picked) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.settings.downloadRemoveBody,
-      confirmLabel: t.settings.downloadRemove,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    await _runOver(picked, (controller, id) => controller.remove(id));
-    if (mounted) setState(_selected.clear);
-  }
-
-  /// Deletes the ticked episodes' files and records after one ask. The store's
-  /// own remove answers for a file that already went away, and each failure is
-  /// said rather than swallowed, so a batch that names more than the disk holds
-  /// does not read as a clean run.
-  Future<void> _deletePicked(List<HongguoDownloadItem> picked) async {
-    final t = context.t;
-    final confirmed = await showAppConfirm(
-      context: context,
-      title: t.settings.downloadDeleteSelected(count: picked.length),
-      description: t.settings.downloadDeleteFileBody,
-      confirmLabel: t.common.delete,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    final controller = ref.read(hongguoDownloadsProvider.notifier);
-    for (final task in picked) {
-      try {
-        await controller.remove(task.id, deleteFile: true);
-      } on Object {
-        if (mounted) showDsToast(context: context, title: t.settings.downloadDeleteFailed, status: DsStatus.danger);
-      }
-    }
-    if (mounted) setState(_selected.clear);
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -507,9 +443,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     // the two settings that decide it.
     final retry = ref.watch(hongguoDownloadRetryProvider);
     final retryDelay = ref.watch(hongguoDownloadRetryDelayProvider);
-    // A tick on a row the queue no longer holds no longer counts, and the batch
-    // bar would otherwise promise an action on nothing.
-    _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
     final shown = _visible(tasks);
     // One stat per visible row per read, not one per cell: the same episode
     // answers through its badge, its verb and its menu, and asking the disk
@@ -528,13 +461,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     // What it is pulling right now, its third half: the lanes' own total, so a
     // running row's speed is not asked of every row to be read once.
     final speed = tasks.fold<int>(0, (sum, task) => sum + task.speed);
-    final picked = _picked(tasks);
-    final pausable = picked
-        .where((task) => task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.queued)
-        .toList();
-    final resumable = picked
-        .where((task) => task.phase == HongguoDownloadPhase.paused || task.phase == HongguoDownloadPhase.failed)
-        .toList();
     final factsTask = shown.where((task) => task.id == _factsId).firstOrNull ?? (shown.isEmpty ? null : shown.first);
     final filterActive = _statusGroup != DownloadStatusGroup.all || _playableOnly;
     final counts = <DownloadStatusGroup, int>{
@@ -575,10 +501,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                 },
                 searchHint: t.settings.downloadSearchPlaceholder,
                 query: _query,
-                onQuery: (value) => setState(() {
-                  _query = value;
-                  _selected.clear();
-                }),
+                onQuery: (value) => setState(() => _query = value),
                 actions: [
                   DownloadQueueAction(
                     label: t.settings.downloadManagerOpenFolder,
@@ -615,34 +538,6 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                     icon: DsIcons.refresh,
                     onPressed: () => setState(() => _recheck++),
                   ),
-                ],
-                selectedLabel: picked.isEmpty ? null : t.settings.downloadSelectedCount(count: picked.length),
-                selectionActions: [
-                  if (pausable.isNotEmpty)
-                    DownloadQueueAction(
-                      label: t.settings.downloadPause,
-                      icon: DsIcons.pause,
-                      onPressed: () => unawaited(_runOver(pausable, (controller, id) => controller.pause(id))),
-                    ),
-                  if (resumable.isNotEmpty)
-                    DownloadQueueAction(
-                      label: t.settings.downloadResume,
-                      icon: DsIcons.play,
-                      onPressed: () => unawaited(_runOver(resumable, (controller, id) => controller.resume(id))),
-                    ),
-                  DownloadQueueAction(
-                    label: t.settings.downloadRemove,
-                    icon: DsIcons.trash2,
-                    destructive: true,
-                    onPressed: () => unawaited(_removePicked(picked)),
-                  ),
-                  if (picked.any((task) => task.phase == HongguoDownloadPhase.done))
-                    DownloadQueueAction(
-                      label: t.settings.downloadDeleteFile,
-                      icon: DsIcons.fileX,
-                      destructive: true,
-                      onPressed: () => unawaited(_deletePicked(picked)),
-                    ),
                 ],
               ),
             ),
