@@ -103,12 +103,19 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // A backgrounded page does not need its clock or a pending resume pass.
-    if (state == AppLifecycleState.resumed) {
-      _syncTimer();
-      _scheduleResumeRefresh();
-    } else {
-      _cancelResumeRefresh();
-    }
+    // The platform delivers the callback wherever the frame happens to be,
+    // and a page being torn down is still registered for that moment: the
+    // work waits for the frame's end, and a dead page keeps its hands off
+    // the providers.
+    Future.microtask(() {
+      if (!ref.mounted) return;
+      if (state == AppLifecycleState.resumed) {
+        _syncTimer();
+        _scheduleResumeRefresh();
+      } else {
+        _cancelResumeRefresh();
+      }
+    });
   }
 
   /// Arms the reference's one-shot foreground refresh. It is independent of

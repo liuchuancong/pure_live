@@ -12,9 +12,13 @@ final class FavoritesPageRefresh extends Notifier<void Function()?> {
   void Function()? build() => null;
 
   /// The page publishes itself after the first frame; a stale closure is
-  /// harmless — it checks its own mounted state first.
+  /// harmless — it checks its own mounted state first. The clear comes from
+  /// the page's dispose, inside the tree's finalization where a provider
+  /// may not be written: the write waits for the frame's end, and runs
+  /// before any post-frame publish, so a page arriving as one leaves cannot
+  /// have its hook cleared by the page that left.
   void Function()? get handler => state;
-  set handler(void Function()? value) => state = value;
+  set handler(void Function()? value) => Future.microtask(() => state = value);
 
   /// Runs the page's refresh when there is one.
   void run() => state?.call();

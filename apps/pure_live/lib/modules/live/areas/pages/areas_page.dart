@@ -57,7 +57,12 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
       final away = _backgroundedAt == null ? Duration.zero : DateTime.now().difference(_backgroundedAt!);
       _backgroundedAt = null;
       if (away >= _resumeRefreshAfter) {
-        unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
+        // The lifecycle lands mid-frame at times: the refresh waits for the
+        // frame's end, and a torn-down page does not reach the providers.
+        Future.microtask(() {
+          if (!ref.mounted) return;
+          unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
+        });
       }
     }
   }
