@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -72,9 +72,11 @@ final class _RoomSearchPickerPanelState extends ConsumerState<_RoomSearchPickerP
 
   @override
   void dispose() {
-    if (_savedScope != _scopeNotifier.selected) {
-      _scopeNotifier.selected = _savedScope;
-    }
+    // The restore writes provider state, refused during teardown; the
+    // write re-checks the scope after the frame instead.
+    Timer.run(() {
+      if (_savedScope != _scopeNotifier.selected) _scopeNotifier.selected = _savedScope;
+    });
     _field.dispose();
     _scroll.dispose();
     super.dispose();

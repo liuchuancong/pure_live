@@ -395,7 +395,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     _geometrySub = null;
-    _danmakuNotifier.stop();
+    // The stop resets provider state, refused during teardown; it lands
+    // after the frame instead.
+    Timer.run(_danmakuNotifier.stop);
     _playFocus.dispose();
     super.dispose();
   }

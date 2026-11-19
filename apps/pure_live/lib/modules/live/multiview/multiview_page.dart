@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -190,7 +190,9 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   @override
   void dispose() {
     playbackRemote.unregister(_remoteTarget);
-    _playbackNotifier.setActive(active: false);
+    // Leaving publishes provider state, refused during teardown; the wall
+    // hears it after the frame instead.
+    Timer.run(() => _playbackNotifier.setActive(active: false));
     super.dispose();
   }
 

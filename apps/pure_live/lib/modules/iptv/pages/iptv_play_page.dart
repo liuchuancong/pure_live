@@ -367,7 +367,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     unawaited(_zapChanges?.cancel() ?? Future<void>.value());
     unawaited(_reminders?.cancel() ?? Future<void>.value());
     unawaited(_screenAwake.disable().catchError((Object _) {}));
-    _nowPlaying.clear();
+    // The route unmounts while the tree is being torn down, and riverpod
+    // refuses a provider write there; the on-air mark drops after the frame.
+    Timer.run(_nowPlaying.clear);
     final player = _handle?.id;
     if (player != null && _presentationMode != PresentationMode.normal) {
       unawaited(_presentationNotifier.exit(player));
