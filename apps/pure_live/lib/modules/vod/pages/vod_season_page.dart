@@ -32,10 +32,11 @@ import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodFoldedText, VodRailDoor, vodDurationText;
 import 'package:pure_live/shared/player/on_video_colors.dart';
 import 'package:pure_live/shared/player/playback_layout.dart' show kPlaybackWideBreakpoint;
-import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton;
+import 'package:pure_live/shared/player/player_bar_tier.dart' show PlayerBarButton, PlayerBarTier;
+import 'package:pure_live/shared/player/player_control_bar.dart' show PlayerControlBar;
 import 'package:pure_live/shared/player/player_overlay.dart' show PlayerGlassPill;
 import 'package:pure_live/shared/shared.dart'
     show
@@ -917,7 +918,12 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
       case VodDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.player.downloadDuplicate);
       case VodDownloadEnqueue.failed:
-        showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
+        showDsToast(
+          context: context,
+          title: t.settings.downloadStatusFailed,
+          description: result.error,
+          status: DsStatus.danger,
+        );
     }
   }
 
@@ -1311,7 +1317,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                       child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1100), child: stage()),
                     ),
                   ),
-                  if (!_railOpen) _SeasonRailDoor(onOpen: () => setState(() => _railOpen = true)),
+                  if (!_railOpen) VodRailDoor(label: t.vod.episodes, onOpen: () => setState(() => _railOpen = true)),
                 ],
               ),
             ),
@@ -1530,9 +1536,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   end: 0,
                   child: Container(
                     padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-                    decoration: BoxDecoration(
-                      gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-                    ),
+                    decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
                     child: Row(
                       spacing: DsSpace.s8,
                       children: [
@@ -1595,11 +1599,11 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                   bottom: 0,
                   start: 0,
                   end: 0,
-                  child: Container(
+                  // The archive bar's own chrome, not this page's: one
+                  // shade, one inset, and the archive's own buttons inside
+                  // it, so the two detail pages answer alike.
+                  child: PlayerControlBar(
                     padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s24, DsSpace.s8, DsSpace.s4),
-                    decoration: BoxDecoration(
-                      gradient: OnVideoColors.shade(edge: VerticalDirection.down, strong: OnVideoColors.scrimDeep),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       spacing: DsSpace.s4,
@@ -1627,7 +1631,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                               Expanded(
                                 child: Text(
                                   switch (download.progress) {
-                                    final progress? => t.settings.downloadPercent(percent: '${(progress * 100).round()}'),
+                                    final progress? => t.settings.downloadPercent(
+                                      percent: '${(progress * 100).round()}',
+                                    ),
                                     null => t.settings.downloadPercentUnknown,
                                   },
                                   maxLines: 1,
@@ -1687,50 +1693,51 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                             ),
                           ],
                         ),
+                        // The bar's spacing and its buttons are the shared
+                        // player's, so the season answers like the archive:
+                        // a press wakes the chrome, the steps sit beside
+                        // play, and the picture's menus keep their words.
                         Row(
-                          spacing: DsSpace.s8,
+                          spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                           children: [
                             // The steps between episodes, beside play: a season is
                             // watched in both directions, and the shelf under the
                             // picture keeps the jump to any one of them.
                             if (_hasPreviousEpisode)
-                              DsButton.icon(
-                                variant: DsButtonVariant.ghost,
-                                size: DsSize.sm,
-                                semanticLabel: t.vod.previousPart,
+                              PlayerBarButton(
+                                icon: DsIcons.skipBack,
+                                label: t.vod.previousPart,
                                 onPressed: () {
                                   _wake();
                                   _openSteppedEpisode(-1);
                                 },
-                                icon: const DsIcon(DsIcons.skipBack),
                               ),
                             if (_hasNextEpisode)
-                              DsButton.icon(
-                                variant: DsButtonVariant.ghost,
-                                size: DsSize.sm,
-                                semanticLabel: t.vod.nextPart,
+                              PlayerBarButton(
+                                icon: DsIcons.skipForward,
+                                label: t.vod.nextPart,
                                 onPressed: () {
                                   _wake();
                                   _openSteppedEpisode(1);
                                 },
-                                icon: const DsIcon(DsIcons.skipForward),
                               ),
-                            DsButton.icon(
-                              variant: DsButtonVariant.ghost,
-                              size: DsSize.sm,
-                              semanticLabel: playing ? t.player.pause : t.player.play,
-                              onPressed: handle == null ? null : _togglePlay,
-                              icon: DsIcon(playing ? DsIcons.pause : DsIcons.play),
+                            PlayerBarButton(
+                              iconAsset: playing ? 'assets/icons/pause.svg' : 'assets/icons/play.svg',
+                              label: playing ? t.player.pause : t.player.play,
+                              onPressed: handle == null
+                                  ? null
+                                  : () {
+                                      _wake();
+                                      unawaited(_togglePlay());
+                                    },
                             ),
                             if (qualities.isNotEmpty)
                               DsMenuAnchor(
                                 semanticLabel: _qualityMenuLabel(t),
-                                builder: (context, controller, child) => DsButton.icon(
-                                  variant: DsButtonVariant.ghost,
-                                  size: DsSize.sm,
-                                  semanticLabel: _qualityMenuLabel(t),
+                                builder: (context, controller, child) => PlayerBarButton(
+                                  icon: DsIcons.settings2,
+                                  label: _qualityMenuLabel(t),
                                   onPressed: controller.open,
-                                  icon: const DsIcon(DsIcons.settings2),
                                 ),
                                 items: [
                                   for (final quality in qualities)
@@ -1748,20 +1755,26 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
                                     ),
                                 ],
                               ),
-                            DsButton.icon(
-                              variant: DsButtonVariant.ghost,
-                              size: DsSize.sm,
-                              semanticLabel: t.player.download,
-                              onPressed: (episode?.cid ?? 0) <= 0 ? null : () => unawaited(_startDownload()),
-                              icon: const DsIcon(DsIcons.download),
+                            PlayerBarButton(
+                              icon: DsIcons.download,
+                              label: t.player.download,
+                              onPressed: (episode?.cid ?? 0) <= 0
+                                  ? null
+                                  : () {
+                                      _wake();
+                                      unawaited(_startDownload());
+                                    },
                             ),
                             if (!immersive)
-                              DsButton.icon(
-                                variant: DsButtonVariant.ghost,
-                                size: DsSize.sm,
-                                semanticLabel: t.player.fullscreen,
-                                onPressed: handle == null ? null : _toggleFullscreen,
-                                icon: const DsIcon(DsIcons.maximize2),
+                              PlayerBarButton(
+                                icon: DsIcons.maximize2,
+                                label: t.player.fullscreen,
+                                onPressed: handle == null
+                                    ? null
+                                    : () {
+                                        _wake();
+                                        _toggleFullscreen();
+                                      },
                               ),
                             if (_error != null)
                               Expanded(
@@ -2008,7 +2021,7 @@ final class _SeasonHead extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (showDetails && season.evaluate.isNotEmpty) _SeasonBlurb(text: season.evaluate),
+                  if (showDetails && season.evaluate.isNotEmpty) VodFoldedText(text: season.evaluate, maxLines: 2),
                 ],
               ),
             ),
@@ -2035,60 +2048,6 @@ final class _SeasonHead extends StatelessWidget {
           theme.typography.caption.copyWith(color: colors.onAccent, fontWeight: FontWeight.w700),
         ),
       ),
-    );
-  }
-}
-
-/// The season's blurb, folded to two lines until the viewer asks for the
-/// rest — the mockup's 简介 rule, measured the same way the video page's
-/// fold is, so it only offers the verb when the words really run past.
-final class _SeasonBlurb extends StatefulWidget {
-  const _SeasonBlurb({required this.text});
-
-  final String text;
-
-  @override
-  State<_SeasonBlurb> createState() => _SeasonBlurbState();
-}
-
-final class _SeasonBlurbState extends State<_SeasonBlurb> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final style = DsTheme.of(context).typography.body.copyWith(color: colors.textMuted);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: widget.text, style: style),
-          maxLines: 2,
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: constraints.maxWidth);
-        final overflows = painter.didExceedMaxLines;
-        painter.dispose();
-        if (!overflows) return Text(widget.text, style: style);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: DsSpace.s4,
-          children: [
-            Text(
-              widget.text,
-              maxLines: _expanded ? null : 2,
-              overflow: _expanded ? null : TextOverflow.ellipsis,
-              style: style,
-            ),
-            DsButton(
-              variant: DsButtonVariant.ghost,
-              size: DsSize.sm,
-              onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(_expanded ? t.common.collapse : t.common.expand),
-            ),
-          ],
-        );
-      },
     );
   }
 }
@@ -2443,57 +2402,6 @@ final class _SeasonSkeleton extends StatelessWidget {
                 child: DsSpinner(style: DsSpinnerStyle(size: 24)),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The door a folded rail leaves at the stage's end edge — the video
-/// page's rail door read on the season page: a narrow upright tab at the
-/// end edge, its chevron pointing the way the ladder comes back from.
-final class _SeasonRailDoor extends StatelessWidget {
-  const _SeasonRailDoor({required this.onOpen});
-
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return PositionedDirectional(
-      top: 0,
-      bottom: 0,
-      end: 0,
-      child: DsTooltip(
-        message: t.vod.episodes,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onOpen,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: colors.surface.withValues(alpha: 0.92),
-                border: BorderDirectional(start: BorderSide(color: colors.border)),
-              ),
-              child: SizedBox(
-                width: 28,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: DsSpace.s8,
-                  children: [
-                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
-                    RotatedBox(
-                      quarterTurns: 1,
-                      child: Text(t.vod.episodes, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
         ),
       ),

@@ -68,9 +68,7 @@ final class DownloadStatusTabs<T> extends StatelessWidget {
       semanticLabel: semanticLabel,
       style: const DsTabsStyle(padding: EdgeInsets.zero, dividerColor: Color(0x00000000)),
       onChanged: onChanged,
-      tabs: [
-        for (final tab in tabs) DsTab(value: tab.value, label: Text(tab.label), count: tab.count),
-      ],
+      tabs: [for (final tab in tabs) DsTab(value: tab.value, label: Text(tab.label), count: tab.count)],
     );
   }
 }

@@ -17,6 +17,7 @@ import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
         VodVideoCard,
         VodVideoRow,
         kVodCardInfoExtent,
+        kVodRowExtent,
         kVodSeasonTileAspect,
         vodDurationText,
         vodWatchStamp;
@@ -448,7 +449,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                           // The archive row is a cover beside two text lines: a hair
                           // taller than the room row so a two-line title never
                           // presses on its edge.
-                          listMainAxisExtent: 104,
+                          listMainAxisExtent: kVodRowExtent,
                           listItemBuilder: (context, video) => VodVideoRow(
                             video: video.video,
                             onOpen: _managing ? null : () => _open(video.bvid),

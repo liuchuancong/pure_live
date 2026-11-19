@@ -13,7 +13,7 @@ import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, Room
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar, kVodFeedTabsStyle;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
-    show VodSeasonCard, VodUserRow, VodVideoCard, VodVideoRow, kVodCardInfoExtent, kVodSeasonTileAspect;
+    show VodSeasonCard, VodUserRow, VodVideoCard, VodVideoRow, kVodCardInfoExtent, kVodRowExtent, kVodSeasonTileAspect;
 import 'package:pure_live/shared/shared.dart';
 
 /// The kind's tab words, the reference's five search types.
@@ -454,7 +454,7 @@ final class _SearchResults extends StatelessWidget {
           layout: layout,
           // The row card is a cover beside two text lines, the same fixed
           // height the browse feeds' list layout holds it at.
-          listMainAxisExtent: 104,
+          listMainAxisExtent: kVodRowExtent,
           listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onVideo(video)),
           infoExtent: kVodCardInfoExtent,
           crossSpacing: settings.crossSpacing,
@@ -499,7 +499,7 @@ final class _SearchResults extends StatelessWidget {
         return PagedCardGrid<VodUser>(
           items: state.users,
           layout: CardLayout.list,
-          listMainAxisExtent: 104,
+          listMainAxisExtent: kVodRowExtent,
           listItemBuilder: (context, user) => VodUserRow(user: user),
           crossSpacing: settings.crossSpacing,
           mainSpacing: settings.mainSpacing,

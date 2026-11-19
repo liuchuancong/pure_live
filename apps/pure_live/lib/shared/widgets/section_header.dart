@@ -9,10 +9,14 @@ import 'package:flutter/widgets.dart';
 /// competing section-header styles.
 final class SectionHeader extends StatelessWidget {
   /// Creates the header.
-  const SectionHeader({required this.title, this.count, this.hint, this.trailing = const [], super.key});
+  const SectionHeader({required this.title, this.count, this.hint, this.trailing = const [], this.leading, super.key});
 
   /// The section's name (`分P`, `评论`, `相关推荐`).
   final String title;
+
+  /// A small mark before the name, when the section carries one (the live
+  /// shelf's station square).
+  final Widget? leading;
 
   /// The section's size, said beside the name in the quieter voice.
   final int? count;
@@ -31,6 +35,7 @@ final class SectionHeader extends StatelessWidget {
     return Row(
       spacing: DsSpace.s8,
       children: [
+        ?leading,
         Text(title, style: typography.heading.copyWith(color: colors.text)),
         if (count != null)
           Text(count!.toString(), style: typography.numeric(typography.caption).copyWith(color: colors.textMuted)),

@@ -11,7 +11,8 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoCard, VodVideoRow, kVodCardInfoExtent;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
+    show VodVideoCard, VodVideoRow, kVodCardInfoExtent, kVodRowExtent;
 import 'package:pure_live/shared/shared.dart';
 
 /// One UP主's space page: who they are over the videos they have published —
@@ -94,7 +95,7 @@ final class _VodUploaderPageState extends ConsumerState<VodUploaderPage> {
                 child: PagedCardGrid<VodVideo>(
                   items: state.videos,
                   layout: layout,
-                  listMainAxisExtent: 104,
+                  listMainAxisExtent: kVodRowExtent,
                   listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => _openVideo(video)),
                   infoExtent: kVodCardInfoExtent,
                   crossSpacing: settings.crossSpacing,

@@ -378,8 +378,7 @@ final class DownloadTaskCard extends StatelessWidget {
   /// The row's state dot: the vivid mark the status palette keeps for dots,
   /// in the color the phase's badge would wear.
   Color _phaseSignal(DsColors colors) => switch (phase) {
-    DownloadRowPhase.running ||
-    DownloadRowPhase.processing => colors.info.signal,
+    DownloadRowPhase.running || DownloadRowPhase.processing => colors.info.signal,
     DownloadRowPhase.queued || DownloadRowPhase.cancelled => colors.neutral.signal,
     DownloadRowPhase.paused => colors.warning.signal,
     DownloadRowPhase.failed || DownloadRowPhase.missing => colors.danger.signal,

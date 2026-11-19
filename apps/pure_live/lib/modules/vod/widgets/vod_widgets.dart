@@ -89,6 +89,123 @@ double vodPosterExtentForWidth(double content, {double spacing = DsSpace.s16, in
     ? kVodPosterCardWidth
     : columnExtentForWidth(content, vodPosterColumns(content, spacing: spacing, pinned: pinned), spacing);
 
+/// The list form's row extent: the height a [VodVideoRow] holds in a grid's
+/// list layout, said once where the row itself lives.
+const double kVodRowExtent = 104;
+
+/// The door a folded rail leaves at the stage's end edge: a narrow upright
+/// tab, the room's immersive drawer door read on the detail pages. The
+/// chevron points the way the rail will come back from; [label] names it —
+/// the archive's related list, the season's episode ladder.
+final class VodRailDoor extends StatelessWidget {
+  const VodRailDoor({required this.label, required this.onOpen, super.key});
+
+  /// The door's word, tooltip and upright caption.
+  final String label;
+
+  /// Opens the rail.
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return PositionedDirectional(
+      top: 0,
+      bottom: 0,
+      end: 0,
+      child: DsTooltip(
+        message: label,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpen,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface.withValues(alpha: 0.92),
+                border: BorderDirectional(start: BorderSide(color: colors.border)),
+              ),
+              child: SizedBox(
+                width: 28,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
+                    RotatedBox(
+                      quarterTurns: 1,
+                      child: Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The detail pages' blurb, folded to [maxLines] until the viewer asks for
+/// the rest: the 展开 verb only appears when the words actually run past the
+/// fold, measured the same way on both pages so neither invents its own.
+final class VodFoldedText extends StatefulWidget {
+  const VodFoldedText({required this.text, this.maxLines = 6, super.key});
+
+  /// The blurb's words.
+  final String text;
+
+  /// The lines the fold holds; the archive keeps six, the season two.
+  final int maxLines;
+
+  @override
+  State<VodFoldedText> createState() => _VodFoldedTextState();
+}
+
+final class _VodFoldedTextState extends State<VodFoldedText> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final style = DsTheme.of(context).typography.body.copyWith(color: colors.textMuted);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: widget.maxLines,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        painter.dispose();
+        if (!overflows) return Text(widget.text, style: style);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s4,
+          children: [
+            Text(
+              widget.text,
+              maxLines: _expanded ? null : widget.maxLines,
+              overflow: _expanded ? null : TextOverflow.ellipsis,
+              style: style,
+            ),
+            DsButton(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.sm,
+              onPressed: () => setState(() => _expanded = !_expanded),
+              child: Text(_expanded ? t.common.collapse : t.common.expand),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// One Bilibili archive as a card in a browse or search grid, drawn in the
 /// live module's card language so the two stations read as one design: the
 /// counts sit on the cover's foot as dark capsules, the length closes the
@@ -98,7 +215,8 @@ double vodPosterExtentForWidth(double content, {double spacing = DsSpace.s16, in
 /// say; the title is not one of them.
 final class VodVideoCard extends ConsumerStatefulWidget {
   /// The card for [video]; [onOpen] opens its page. [preview] true plays the
-  /// archive on its cover while a pointer rests on the card.
+  /// archive on its cover while a pointer rests on the card. [rank] is the
+  /// board's 1-based position, shown over the cover where a wall ranks.
   const VodVideoCard({required this.video, this.onOpen, this.rank, this.preview = false, super.key});
 
   /// The archive shown.
@@ -329,7 +447,7 @@ final class _CoverChip extends StatelessWidget {
       text: label,
       maxWidth: 120,
       style: theme.typography.numeric(
-        theme.typography.caption.copyWith(fontSize: 10, color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+        theme.typography.caption.copyWith(fontSize: 10, color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -352,7 +470,7 @@ final class _VodDurationBadge extends StatelessWidget {
       compact: true,
       text: vodDurationText(duration),
       style: theme.typography.numeric(
-        theme.typography.caption.copyWith(fontSize: 10, color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+        theme.typography.caption.copyWith(fontSize: 10, color: OnVideoColors.foreground, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -574,192 +692,6 @@ final class _VodSeasonCardState extends ConsumerState<VodSeasonCard> with CoverP
           ],
         ),
       ),
-    );
-  }
-}
-
-/// One cinema season as the page opens with it: the poster at its own size and,
-/// beside it, everything the wall's card had no room for — where the season
-/// stands, its score and its crowd's figures, the episode on the picture and
-/// the tags the source files it under — with the blurb underneath, whole.
-///
-/// The name is written once, here. The card it came from keeps the score in
-/// its corner and the state on its one spare line, because that is all the
-/// room a wall tile has; a detail head has the column, so the figures belong
-/// in words.
-final class VodSeasonHead extends StatelessWidget {
-  /// The head for [season]; [episode] is the one the page plays, and
-  /// [showDetails] is the station's own switch for the figures and the blurb.
-  const VodSeasonHead({required this.season, this.episode, this.showDetails = true, super.key});
-
-  /// The season shown.
-  final VodSeasonDetail season;
-
-  /// The episode the page is playing, when one is.
-  final VodEpisode? episode;
-
-  /// Whether the score, the counts and the blurb appear.
-  final bool showDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final plays = season.viewCount;
-    final danmaku = season.danmakuCount;
-    final uploaded = season.publishedAt;
-    // A film's state line is its release day (`2023年03月31日上映`), which
-    // already says the year; a series' (`更新至第1278话`) does not, so only
-    // then does the line carry it.
-    final stateNamesYear = season.subtitle.contains(RegExp(r'\d{4}'));
-    final facts = [
-      if (season.subtitle.isNotEmpty) season.subtitle,
-      if (showDetails && season.rating.isNotEmpty) '${t.vod.score} ${season.rating}',
-      if (showDetails && plays != null && plays > 0) '${AudienceFormat.format(plays)} ${t.vod.views}',
-      if (showDetails && danmaku != null && danmaku > 0) '${AudienceFormat.format(danmaku)} ${t.vod.danmaku}',
-      if (showDetails && uploaded != null && !stateNamesYear) '${uploaded.year}',
-    ];
-    final tags = [if (season.area.isNotEmpty) season.area, ...season.styles];
-    final current = episode;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s12,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: DsSpace.s16,
-          children: [
-            // The poster at the size a detail page carries one, keeping the
-            // source's own 3:4 so the wall and the page draw the same art.
-            SizedBox(
-              width: 104,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(theme.radii.card),
-                child: AspectRatio(aspectRatio: 3 / 4, child: _seasonCover(season, context)),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s6,
-                children: [
-                  Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          season.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.heading.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                        ),
-                      ),
-                      if (season.followed) DsBadge(label: Text(t.vod.following), dot: false),
-                    ],
-                  ),
-                  if (current != null)
-                    Row(
-                      spacing: DsSpace.s6,
-                      children: [
-                        Flexible(child: DsBadge(label: Text(current.index), dot: false)),
-                        Expanded(
-                          child: Text(
-                            current.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(color: colors.text),
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (facts.isNotEmpty)
-                    Text(
-                      facts.join(' · '),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  if (tags.isNotEmpty)
-                    Wrap(
-                      spacing: DsSpace.s6,
-                      runSpacing: DsSpace.s6,
-                      children: [for (final tag in tags) DsBadge(label: Text(tag), dot: false)],
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (showDetails && season.evaluate.isNotEmpty) _VodSeasonBlurb(text: season.evaluate),
-      ],
-    );
-  }
-
-  /// The season's poster, or the theme's stand-in.
-  static Widget _seasonCover(VodSeasonDetail season, BuildContext context) {
-    final fallback = CoverFallback(title: season.title, padding: const EdgeInsets.all(DsSpace.s8));
-    final url = season.coverUrl;
-    if (url == null || url.isEmpty) return fallback;
-    return DsImage(
-      image: cachedImage(url, policy: ImageCachePolicies.videoCover),
-      aspectRatio: 3 / 4,
-      semanticLabel: season.title,
-      fallback: fallback,
-    );
-  }
-}
-
-/// The season's blurb, folded to four lines until the viewer asks for the
-/// rest — the switch the video page gives its own description, measured the
-/// same way so it only appears when the words really run past the fold.
-final class _VodSeasonBlurb extends StatefulWidget {
-  const _VodSeasonBlurb({required this.text});
-
-  final String text;
-
-  @override
-  State<_VodSeasonBlurb> createState() => _VodSeasonBlurbState();
-}
-
-final class _VodSeasonBlurbState extends State<_VodSeasonBlurb> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final style = DsTheme.of(context).typography.body.copyWith(color: colors.textMuted);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: widget.text, style: style),
-          maxLines: 4,
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: constraints.maxWidth);
-        final overflows = painter.didExceedMaxLines;
-        painter.dispose();
-        if (!overflows) return Text(widget.text, style: style);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: DsSpace.s4,
-          children: [
-            Text(
-              widget.text,
-              maxLines: _expanded ? null : 4,
-              overflow: _expanded ? null : TextOverflow.ellipsis,
-              style: style,
-            ),
-            DsButton(
-              variant: DsButtonVariant.ghost,
-              size: DsSize.sm,
-              onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(_expanded ? t.common.collapse : t.common.expand),
-            ),
-          ],
-        );
-      },
     );
   }
 }

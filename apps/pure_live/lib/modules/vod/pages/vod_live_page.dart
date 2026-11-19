@@ -110,16 +110,18 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
             padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
             // The shelf's own head: the station's mark, its words, and the
             // way out to the followed list the rail owns.
-            child: _SectionHeader(
-              mark: const _SiteMark(),
+            child: SectionHeader(
+              leading: const _SiteMark(),
               title: t.vod.liveFollowTitle,
-              action: DsButton(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                onPressed: () => unawaited(context.push(const FavoritesRoute().location)),
-                trailing: const DsIcon(DsIcons.chevronRight, size: 14),
-                child: Text(t.vod.liveFollowViewAll),
-              ),
+              trailing: [
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(context.push(const FavoritesRoute().location)),
+                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                  child: Text(t.vod.liveFollowViewAll),
+                ),
+              ],
             ),
           ),
           LayoutBuilder(
@@ -173,7 +175,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
           // The grid's own section head, the reference's words over its feed:
           // the tab above names the choice 推荐, this head names what stands
           // under it.
-          child: _SectionHeader(title: t.vod.liveRecommendTitle),
+          child: SectionHeader(title: t.vod.liveRecommendTitle),
         ),
         Expanded(
           child: PagedCardGrid<LiveRoom>(
@@ -212,33 +214,6 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
 
 /// One section's head row: an optional mark, the section's words, and the
 /// section's own way out at the row's end.
-final class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.mark, this.action});
-
-  /// The section's words.
-  final String title;
-
-  /// The mark the words open with, when the section carries one.
-  final Widget? mark;
-
-  /// The section's way out, at the row's end.
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return Row(
-      spacing: DsSpace.s6,
-      children: [
-        ?mark,
-        Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
-        if (action != null) const Spacer(),
-        ?action,
-      ],
-    );
-  }
-}
-
 /// The station's mark the followed shelf's head opens with: the one accent
 /// square the reference's section rows carry.
 final class _SiteMark extends StatelessWidget {

@@ -44,7 +44,8 @@ import 'package:pure_live/modules/vod/widgets/vod_media_source.dart'
 import 'package:pure_live/modules/vod/widgets/vod_picture_gestures.dart' show VodPictureGestures, VodTapSide;
 import 'package:pure_live/modules/vod/widgets/vod_player_chrome.dart'
     show VodGestureKind, VodGestureTip, VodPictureNotice, VodSeekBar, VodSubtitleLayer;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
+    show VodFoldedText, VodRailDoor, VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// One Bilibili archive's page: the player over media_core, the archive's
@@ -219,7 +220,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   bool _screenHeld = false;
 
   /// Whether the blurb shows in full rather than its first six lines.
-  bool _introExpanded = false;
   Timer? _hideTimer;
 
   /// The picker whose catalogue hangs over the picture, if any.
@@ -1526,7 +1526,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         } else if (item.phase == VodDownloadPhase.failed) {
           // The reason belongs on the toast: "下载失败" with no cause reads as
           // the app's own confusion, and the row keeps it too.
-          showDsToast(context: context, title: t.settings.downloadStatusFailed, description: item.error, status: DsStatus.danger);
+          showDsToast(
+            context: context,
+            title: t.settings.downloadStatusFailed,
+            description: item.error,
+            status: DsStatus.danger,
+          );
         }
       }
     });
@@ -1794,7 +1799,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                       children: [player, info],
                     ),
                   ),
-                  if (rail != null && !_railOpen) _RailDoor(onOpen: () => setState(() => _railOpen = true)),
+                  if (rail != null && !_railOpen)
+                    VodRailDoor(label: t.vod.related, onOpen: () => setState(() => _railOpen = true)),
                 ],
               ),
             ),
@@ -2006,7 +2012,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                       children: [
                                         const DsSpinner(style: DsSpinnerStyle(size: 14)),
                                         Text(switch (download.progress) {
-                                          final progress? => t.settings.downloadPercent(percent: '${(progress * 100).round()}'),
+                                          final progress? => t.settings.downloadPercent(
+                                            percent: '${(progress * 100).round()}',
+                                          ),
                                           null => t.settings.downloadPercentUnknown,
                                         }, style: theme.typography.caption.copyWith(color: OnVideoColors.foreground)),
                                         PlayerBarButton(
@@ -2222,9 +2230,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       // would only promise what cannot run yet.
       final ground = Container(
         padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-        decoration: BoxDecoration(
-          gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-        ),
+        decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
         child: Row(
           spacing: DsSpace.s8,
           children: [backPill, const Spacer(), if (_handle != null) actionPill, if (_handle != null) morePill],
@@ -2234,9 +2240,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-      decoration: BoxDecoration(
-        gradient: OnVideoColors.shade(edge: VerticalDirection.up),
-      ),
+      decoration: BoxDecoration(gradient: OnVideoColors.shade(edge: VerticalDirection.up)),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -2471,7 +2475,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       case VodDownloadEnqueue.duplicate:
         showDsToast(context: context, title: t.player.downloadDuplicate);
       case VodDownloadEnqueue.failed:
-        showDsToast(context: context, title: t.settings.downloadStatusFailed, description: result.error, status: DsStatus.danger);
+        showDsToast(
+          context: context,
+          title: t.settings.downloadStatusFailed,
+          description: result.error,
+          status: DsStatus.danger,
+        );
     }
   }
 
@@ -3033,45 +3042,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     return saved != null && saved.cid == part.cid ? saved.seconds : null;
   }
 
-  /// The archive's blurb: six lines until the viewer asks for the rest —
-  /// the reference's 展开. The switch only appears when the words actually
-  /// run past six lines.
+  /// The archive's blurb: the shared fold at its six-line default, so the
+  /// season's 简介 answers with the same shape.
   Widget _description(BuildContext context, VodDetail detail, Translations t) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final text = detail.description.isEmpty ? t.vod.noDescription : detail.description;
-    final style = theme.typography.body.copyWith(color: colors.textMuted);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final painter = TextPainter(
-          text: TextSpan(text: text, style: style),
-          maxLines: 6,
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: constraints.maxWidth);
-        final overflows = painter.didExceedMaxLines;
-        painter.dispose();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: DsSpace.s4,
-          children: [
-            Text(
-              text,
-              maxLines: _introExpanded ? null : 6,
-              overflow: _introExpanded ? null : TextOverflow.ellipsis,
-              style: style,
-            ),
-            if (overflows)
-              DsButton(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                onPressed: () => setState(() => _introExpanded = !_introExpanded),
-                child: Text(_introExpanded ? t.common.collapse : t.common.expand),
-              ),
-          ],
-        );
-      },
-    );
+    return VodFoldedText(text: text);
   }
 
   /// The archive's details under the picture. [showParts] leaves the parts
@@ -3635,57 +3610,6 @@ final class _CommentRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// The door a folded rail leaves at the stage's end edge: a narrow upright
-/// tab, the room's immersive drawer door read on the video page. The chevron
-/// points the way the rail will come back from.
-final class _RailDoor extends StatelessWidget {
-  const _RailDoor({required this.onOpen});
-
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return PositionedDirectional(
-      top: 0,
-      bottom: 0,
-      end: 0,
-      child: DsTooltip(
-        message: t.vod.related,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onOpen,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: colors.surface.withValues(alpha: 0.92),
-                border: BorderDirectional(start: BorderSide(color: colors.border)),
-              ),
-              child: SizedBox(
-                width: 28,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: DsSpace.s8,
-                  children: [
-                    DsIcon(DsIcons.chevronLeft, size: theme.sizes.iconSm, color: colors.textMuted),
-                    RotatedBox(
-                      quarterTurns: 1,
-                      child: Text(t.vod.related, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

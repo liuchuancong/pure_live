@@ -50,7 +50,6 @@ enum VodSpeedChoice {
     }
     return best;
   }
-
 }
 
 /// What the page does when a part reaches its end — the reference's

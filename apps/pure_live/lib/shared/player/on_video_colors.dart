@@ -47,6 +47,12 @@ abstract final class OnVideoColors {
   /// The empty part of a level bar over the picture.
   static const Color track = Color(0x33FFFFFF);
 
+  /// The seek layer's held stretches, under the played line.
+  static const Color held = Color(0x59FFFFFF);
+
+  /// The seek layer's chapter marks.
+  static const Color mark = Color(0x8CFFFFFF);
+
   /// The strong end of the shade a bar hangs on.
   static const Color scrim = Color(0xB3000000);
 

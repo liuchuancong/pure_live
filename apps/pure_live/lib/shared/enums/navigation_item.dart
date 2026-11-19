@@ -90,7 +90,6 @@ enum NavigationItem {
   /// The Huya station's material library (its own web surface).
   huyaMaterial(DsIcons.folderOpen),
 
-
   /// The Huya station's ranking boards.
   huyaRank(DsIcons.trophy),
 
